@@ -32,8 +32,9 @@ C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
 
 # Simulation Variables (Modify if directory structure changes)
-RTL_TB_MODULE = $(PROJECT)_tb
+RTL_TB_MODULE = cl_demo_tb
 SCRIPTS_DIR   = $(CL_DIR)/testbenches/rtlsim
+# SIM_ROOT used by included makefiles
 SIM_ROOT      = $(CL_DIR)/testbenches/sim/rtlsim
 
 # Cosim C-File Variables (Modify C_TB_TOP if the top file is not $(PROJECT).c
@@ -41,7 +42,7 @@ C_INC_DIR = $(CL_DIR)/software/include
 C_SRC_DIR = $(CL_DIR)/software
 # C_TB_TOP names the software C file that drives cosimulation
 C_TB_TOP  = $(HDK_COMMON_DIR)/software/src/test_null.c
-C_FILES   = $(C_TEST_NAME) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
+C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
 		$(C_COMMON_DIR)/src/fpga_pci_sv.c 
 
 # SV TEST LIST used by included makefiles (Purpose unclear)

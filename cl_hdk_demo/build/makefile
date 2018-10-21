@@ -8,4 +8,4 @@ endif
 
 clean:
 	rm -rf *.log *.jou *.out hd_visual src_post_encryption/ reports/ 
-	rm -rf checkpoints last_log .Xil
+	rm -rf checkpoints last_log .Xil .cache
