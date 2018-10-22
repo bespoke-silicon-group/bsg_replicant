@@ -48,10 +48,15 @@ C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
 # SV TEST LIST used by included makefiles (Purpose unclear)
 SV_TEST_LIST = $(PROJECT) 
 
-# all: run testbench without AXI protocol checkers
-all: make_sim_dir compile run
+ifdef CHECK
+XVLOG_OPTS +=-d ENABLE_PROTOCOL_CHK
+XELOG_OPTS +=$(XVLOG_OPTS)
+endif
 
-# check: run testbench with AXI protocol checkers
-check: make_sim_dir compile_chk run
+ifdef DEBUG
+XSIM_OPTS +=-gui
+endif
+
+run: make_sim_dir compile sim
 
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc

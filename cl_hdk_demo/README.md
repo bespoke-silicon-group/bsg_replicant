@@ -27,11 +27,17 @@ You can start your own AWS project in a few simple steps:
     - List your HDL source files in `testbenches/rtlsim/top.vivado.f`
     - Change the definition of `RTL_TB_MODULE` in `testbenches/rtlsim/makefile`
     - Run `make rtlsim`
+        - Run `make rtlsim DEBUG=1` to bring up the waveform debugger
+        - Run `make rtlsim CHECK=1` to instantiate the AXI Protocol checker
+        - Run `make rtlsim CHECK=1 DEBUG=1` to do both the above
 5. Create and run your C Co-Simulation
     - Rename, reuse, and modify the C source `software/cl_demo.c`
     - Change the definition of `C_TB_TOP` in `testbenches/cosim/makefile` to point to your new C file.
     - List your HDL source files in `testbenches/cosim/top.vivado.f` (Do not include the new top-level RTL testbench)
     - Run `make cosim`
+        - Run `make cosim DEBUG=1` to bring up the waveform debugger
+        - Run `make cosim CHECK=1` to instantiate the AXI Protocol checker
+        - Run `make cosim CHECK=1 DEBUG=1` to do both the above
 6. Create your AWS design tarball
     - List your hardware design files in `build/encrypt.tcl`
     - If necessary, edit the constraints in `build/constraints`

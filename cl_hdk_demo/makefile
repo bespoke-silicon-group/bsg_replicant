@@ -4,6 +4,7 @@ endif
 
 export CL_DIR ?= $(PWD)
 PROJECT = cl_demo
+GUI ?= 
 
 SIM_TARGETS=rtlsim cosim
 SW_TARGETS=software
@@ -20,7 +21,7 @@ $(SW_TARGETS):
 	PROJECT=$(PROJECT) make -C $@
 
 $(SIM_TARGETS):
-	PROJECT=$(PROJECT) make -C testbenches $@
+	PROJECT=$(PROJECT) GUI=$(GUI) make -C testbenches $@
 
 clean:
 	make -C testbenches clean
