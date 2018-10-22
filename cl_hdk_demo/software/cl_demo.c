@@ -29,16 +29,15 @@
 
 #include <utils/sh_dpi_tasks.h>
 
-/* Constants determined by the CL */
-/* a set of register offsets; this CL has only one */
-/* these register addresses should match the addresses in */
-/* /aws-fpga/hdk/cl/examples/common/cl_common_defines.vh */
-/* SV_TEST macro should be set if SW/HW co-simulation should be enabled */
 
+/* 
+ * Register offsets determined by the CL HDL. These addresses should match the
+ * addresses in the verilog headers 
+ */
 #define HELLO_WORLD_REG_ADDR UINT64_C(0x500)
 #define VLED_REG_ADDR	UINT64_C(0x504)
 
-/* use the stdout logger for printing debug information  */
+/* SV_TEST macro should be set if SW/HW co-simulation is enabled */
 #ifndef SV_TEST
 const struct logger *logger = &logger_stdout;
 /*
@@ -52,6 +51,7 @@ static uint16_t pci_device_id = 0xF000; /* PCI Device ID preassigned by Amazon f
  * check if the corresponding AFI for hello_world is loaded
  */
 int check_afi_ready(int slot_id);
+
 /*
  * An example to attach to an arbitrary slot, pf, and bar with register access.
  */
@@ -62,7 +62,6 @@ void usage(char* program_name) {
 }
 
 uint32_t byte_swap(uint32_t value);
- 
 #endif
 
 uint32_t byte_swap(uint32_t value) {
@@ -74,13 +73,18 @@ uint32_t byte_swap(uint32_t value) {
     return swapped_value;
 }
 
+
+/* 
+ * cosim_wrapper.sv calls test_main (not main). Use SV_TEST to switch between
+ * the two use-cases. 
+ */
 #ifdef SV_TEST
 //For cadence and questa simulators the main has to return some value
-   #ifdef INT_MAIN
+#ifdef INT_MAIN
    int test_main(uint32_t *exit_code) {
-   #else 
+#else 
    void test_main(uint32_t *exit_code) {
-   #endif 
+#endif 
 #else 
     int main(int argc, char **argv) {
 #endif
