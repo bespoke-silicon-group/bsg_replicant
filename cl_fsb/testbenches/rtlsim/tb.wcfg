@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="tb.wdb" id="1">
+         <top_modules>
+            <top_module name="arch_package" />
+            <top_module name="axi_fifo_mm_s_pkg" />
+            <top_module name="bsg_fsb_pkg" />
+            <top_module name="cl_fsb_tb" />
+            <top_module name="glbl" />
+            <top_module name="ipif_pkg" />
+            <top_module name="lib_pkg" />
+            <top_module name="proj_package" />
+            <top_module name="tb" />
+            <top_module name="tb_type_defines_pkg" />
+            <top_module name="vcomponents" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="874861333fs"></ZoomStartTime>
+      <ZoomEndTime time="8124861334fs"></ZoomEndTime>
+      <Cursor1Time time="6916528000fs"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="175"></NameColumnWidth>
+      <ValueColumnWidth column_width="142"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="43" />
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_aclk">
+      <obj_property name="ElementShortName">s_axi_aclk</obj_property>
+      <obj_property name="ObjectShortName">s_axi_aclk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_aresetn">
+      <obj_property name="ElementShortName">s_axi_aresetn</obj_property>
+      <obj_property name="ObjectShortName">s_axi_aresetn</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_awaddr">
+      <obj_property name="ElementShortName">s_axi_awaddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_awaddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_awvalid">
+      <obj_property name="ElementShortName">s_axi_awvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axi_awvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_awready">
+      <obj_property name="ElementShortName">s_axi_awready</obj_property>
+      <obj_property name="ObjectShortName">s_axi_awready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wdata">
+      <obj_property name="ElementShortName">s_axi_wdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_wdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wstrb">
+      <obj_property name="ElementShortName">s_axi_wstrb[3:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_wstrb[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wvalid">
+      <obj_property name="ElementShortName">s_axi_wvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axi_wvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wready">
+      <obj_property name="ElementShortName">s_axi_wready</obj_property>
+      <obj_property name="ObjectShortName">s_axi_wready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tvalid">
+      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tready">
+      <obj_property name="ElementShortName">m_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tdata">
+      <obj_property name="ElementShortName">m_axis_tdata[127:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tdata[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tstrb">
+      <obj_property name="ElementShortName">m_axis_tstrb[15:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tstrb[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tkeep">
+      <obj_property name="ElementShortName">m_axis_tkeep[15:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tkeep[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tlast">
+      <obj_property name="ElementShortName">m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tid">
+      <obj_property name="ElementShortName">m_axis_tid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tdest">
+      <obj_property name="ElementShortName">m_axis_tdest[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tdest[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tuser">
+      <obj_property name="ElementShortName">m_axis_tuser[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tuser[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/en_i">
+      <obj_property name="ElementShortName">en_i</obj_property>
+      <obj_property name="ObjectShortName">en_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/v_i">
+      <obj_property name="ElementShortName">v_i</obj_property>
+      <obj_property name="ObjectShortName">v_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/data_i">
+      <obj_property name="ElementShortName">data_i[79:0]</obj_property>
+      <obj_property name="ObjectShortName">data_i[79:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/ready_o">
+      <obj_property name="ElementShortName">ready_o</obj_property>
+      <obj_property name="ObjectShortName">ready_o</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/v_o">
+      <obj_property name="ElementShortName">v_o</obj_property>
+      <obj_property name="ObjectShortName">v_o</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/data_o">
+      <obj_property name="ElementShortName">data_o[79:0]</obj_property>
+      <obj_property name="ObjectShortName">data_o[79:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/yumi_i">
+      <obj_property name="ElementShortName">yumi_i</obj_property>
+      <obj_property name="ObjectShortName">yumi_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tvalid">
+      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tready">
+      <obj_property name="ElementShortName">m_axis_tready</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tdata">
+      <obj_property name="ElementShortName">m_axis_tdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tstrb">
+      <obj_property name="ElementShortName">m_axis_tstrb[3:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tstrb[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tkeep">
+      <obj_property name="ElementShortName">m_axis_tkeep[3:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tkeep[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tlast">
+      <obj_property name="ElementShortName">m_axis_tlast</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tid">
+      <obj_property name="ElementShortName">m_axis_tid[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tid[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tdest">
+      <obj_property name="ElementShortName">m_axis_tdest[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tdest[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tuser">
+      <obj_property name="ElementShortName">m_axis_tuser[0:0]</obj_property>
+      <obj_property name="ObjectShortName">m_axis_tuser[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_bvalid">
+      <obj_property name="ElementShortName">s_axi_bvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axi_bvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_bready">
+      <obj_property name="ElementShortName">s_axi_bready</obj_property>
+      <obj_property name="ObjectShortName">s_axi_bready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_araddr">
+      <obj_property name="ElementShortName">s_axi_araddr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_araddr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_arvalid">
+      <obj_property name="ElementShortName">s_axi_arvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axi_arvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_arready">
+      <obj_property name="ElementShortName">s_axi_arready</obj_property>
+      <obj_property name="ObjectShortName">s_axi_arready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rdata">
+      <obj_property name="ElementShortName">s_axi_rdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_rdata[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rresp">
+      <obj_property name="ElementShortName">s_axi_rresp[1:0]</obj_property>
+      <obj_property name="ObjectShortName">s_axi_rresp[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rvalid">
+      <obj_property name="ElementShortName">s_axi_rvalid</obj_property>
+      <obj_property name="ObjectShortName">s_axi_rvalid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rready">
+      <obj_property name="ElementShortName">s_axi_rready</obj_property>
+      <obj_property name="ObjectShortName">s_axi_rready</obj_property>
+   </wvobject>
+</wave_config>

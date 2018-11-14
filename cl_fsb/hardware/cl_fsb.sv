@@ -152,8 +152,14 @@ always_ff @(negedge rst_main_n or posedge clk_main_a0)
    .m_axi_rready  (sh_ocl_rready_q)
   );
 
+//--------------------------------------------------------------
+// PCIe OCL AXI-L Slave Accesses (accesses from PCIe AppPF BAR0)
+//--------------------------------------------------------------
+// Only supports single-beat accesses.
 
-s_axil_fsb_adapter axils_fsbm_adapter (
+// AXI-L Slave to FSB Loopback test module
+
+s_axil_fsb_adapter axil_slave_fsb_adapter (
   .s_axi_aclk   (clk_main_a0     ),
   .s_axi_aresetn(rst_main_n_sync ),
   .s_axi_awaddr (sh_ocl_awaddr_q ),
@@ -175,167 +181,6 @@ s_axil_fsb_adapter axils_fsbm_adapter (
   .s_axi_rready (sh_ocl_rready_q )
 );
 
-//--------------------------------------------------------------
-// PCIe OCL AXI-L Slave Accesses (accesses from PCIe AppPF BAR0)
-//--------------------------------------------------------------
-// Only supports single-beat accesses.
-
-   logic        awvalid;
-   logic [31:0] awaddr;
-   logic        wvalid;
-   logic [31:0] wdata;
-   logic [3:0]  wstrb;
-   logic        bready;
-   logic        arvalid;
-   logic [31:0] araddr;
-   logic        rready;
-
-   logic        awready;
-   logic        wready;
-   logic        bvalid;
-   logic [1:0]  bresp;
-   logic        arready;
-   logic        rvalid;
-   logic [31:0] rdata;
-   logic [1:0]  rresp;
-
-   // Inputs
-   assign awvalid         = sh_ocl_awvalid_q;
-   assign awaddr[31:0]    = sh_ocl_awaddr_q;
-   assign wvalid          = sh_ocl_wvalid_q;
-   assign wdata[31:0]     = sh_ocl_wdata_q;
-   assign wstrb[3:0]      = sh_ocl_wstrb_q;
-   assign bready          = sh_ocl_bready_q;
-   assign arvalid         = sh_ocl_arvalid_q;
-   assign araddr[31:0]    = sh_ocl_araddr_q;
-   assign rready          = sh_ocl_rready_q;
-
-   // Outputs
-   // assign ocl_sh_awready_q = awready;
-   // assign ocl_sh_wready_q  = wready;
-   // assign ocl_sh_bvalid_q  = bvalid;
-   // assign ocl_sh_bresp_q   = bresp[1:0];
-   // assign ocl_sh_arready_q = arready;
-   // assign ocl_sh_rvalid_q  = rvalid;
-   // assign ocl_sh_rdata_q   = rdata;
-   // assign ocl_sh_rresp_q   = rresp[1:0];
-
-// Write Request
-logic        wr_active;
-logic [31:0] wr_addr;
-
-always_ff @(posedge clk_main_a0)
-  if (!rst_main_n_sync) begin
-     wr_active <= 0;
-     wr_addr   <= 0;
-  end
-  else begin
-     wr_active <=  wr_active && bvalid  && bready ? 1'b0     :
-                  ~wr_active && awvalid           ? 1'b1     :
-                                                    wr_active;
-     wr_addr <= awvalid && ~wr_active ? awaddr : wr_addr     ;
-  end
-
-assign awready = ~wr_active;
-assign wready  =  wr_active && wvalid;
-
-// Write Response
-always_ff @(posedge clk_main_a0)
-  if (!rst_main_n_sync) 
-    bvalid <= 0;
-  else
-    bvalid <=  bvalid &&  bready           ? 1'b0  : 
-                         ~bvalid && wready ? 1'b1  :
-                                             bvalid;
-assign bresp = 0;
-
-// Read Request
-always_ff @(posedge clk_main_a0)
-   if (!rst_main_n_sync) begin
-      arvalid_q <= 0;
-      araddr_q  <= 0;
-   end
-   else begin
-      arvalid_q <= arvalid;
-      araddr_q  <= arvalid ? araddr : araddr_q;
-   end
-
-assign arready = !arvalid_q && !rvalid;
-
-// Read Response
-always_ff @(posedge clk_main_a0)
-   if (!rst_main_n_sync)
-   begin
-      rvalid <= 0;
-      rdata  <= 0;
-      rresp  <= 0;
-   end
-   else if (rvalid && rready)
-   begin
-      rvalid <= 0;
-      rdata  <= 0;
-      rresp  <= 0;
-   end
-   else if (arvalid_q) 
-   begin
-      rvalid <= 1;
-      rdata  <= (araddr_q == `DEMO_REG_ADDR) ? demo_q_byte_swapped[31:0]:
-                (araddr_q == `VLED_REG_ADDR       ) ? {16'b0,vled_q[15:0]            }:
-                                                      `UNIMPLEMENTED_REG_VALUE        ;
-      rresp  <= 0;
-   end
-
-//-------------------------------------------------
-// BRAM Demo Register
-//-------------------------------------------------
-// When read it, returns the byte-flipped value.
-
-always_ff @(posedge clk_main_a0)
-   if (!rst_main_n_sync) begin                    // Reset
-      demo_q[31:0] <= 32'h0000_0000;
-   end
-   else if (wready & (wr_addr == `DEMO_REG_ADDR)) begin  
-      demo_q[31:0] <= wdata[31:0];
-   end
-   else begin                                // Hold Value
-      demo_q[31:0] <= demo_q[31:0];
-   end
-
-assign demo_q_byte_swapped[31:0] = {demo_q[7:0],   demo_q[15:8],
-                                           demo_q[23:16], demo_q[31:24]};
-
-//-------------------------------------------------
-// Virtual LED Register
-//-------------------------------------------------
-// Flop/synchronize interface signals
-always_ff @(posedge clk_main_a0)
-   if (!rst_main_n_sync) begin                    // Reset
-      sh_cl_status_vdip_q[15:0]  <= 16'h0000;
-      sh_cl_status_vdip_q2[15:0] <= 16'h0000;
-      cl_sh_status_vled[15:0]    <= 16'h0000;
-   end
-   else begin
-      sh_cl_status_vdip_q[15:0]  <= sh_cl_status_vdip[15:0];
-      sh_cl_status_vdip_q2[15:0] <= sh_cl_status_vdip_q[15:0];
-      cl_sh_status_vled[15:0]    <= pre_cl_sh_status_vled[15:0];
-   end
-
-// The register contains 16 read-only bits corresponding to 16 LED's.
-// For this example, the virtual LED register shadows the demo
-// register.
-// The same LED values can be read from the CL to Shell interface
-// by using the linux FPGA tool: $ fpga-get-virtual-led -S 0
-
-always_ff @(posedge clk_main_a0)
-   if (!rst_main_n_sync) begin                    // Reset
-      vled_q[15:0] <= 16'h0000;
-   end
-   else begin
-      vled_q[15:0] <= demo_q[15:0];
-   end
-
-// The Virtual LED outputs will be masked with the Virtual DIP switches.
-assign pre_cl_sh_status_vled[15:0] = vled_q[15:0] & sh_cl_status_vdip_q2[15:0];
 
 //-------------------------------------------
 // Tie-Off Unused Global Signals

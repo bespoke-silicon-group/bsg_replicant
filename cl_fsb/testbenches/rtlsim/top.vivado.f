@@ -45,12 +45,12 @@
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/cl_fsb.sv
 ${CL_DIR}/hardware/s_axil_fsb_adapter.sv
-${CL_DIR}/../../bsg_lib/bsg_defines.v
-${CL_DIR}/../../bsg_lib/bsg_fsb_pkg.v
-${CL_DIR}/../../bsg_lib/bsg_two_fifo.v
-${CL_DIR}/../../bsg_lib/bsg_test_node_client.v
-${CL_DIR}/../../bsg_lib/bsg_mem_1r1w_synth.v
-${CL_DIR}/../../bsg_lib/bsg_mem_1r1w.v
+${CL_DIR}/../../bsg_ip_cores/bsg_misc/bsg_defines.v
+${CL_DIR}/../../bsg_ip_cores/bsg_fsb/bsg_fsb_pkg.v
+${CL_DIR}/../../bsg_ip_cores/bsg_dataflow/bsg_two_fifo.v
+${CL_DIR}/../../bsg_ip_cores/bsg_mem/bsg_mem_1r1w_synth.v
+${CL_DIR}/../../bsg_ip_cores/bsg_mem/bsg_mem_1r1w.v
+${CL_DIR}/../../bsg_designs/modules/bsg_guts/loopback/bsg_test_node_client.v
 
 # AWS design files
 ${HDK_SHELL_DESIGN_DIR}/ip/ila_vio_counter/sim/ila_vio_counter.v

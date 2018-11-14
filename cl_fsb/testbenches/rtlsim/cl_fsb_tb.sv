@@ -22,48 +22,58 @@ import tb_type_defines_pkg::*;
 // AXI ID
 parameter [5:0] AXI_ID = 6'h0;
 
-logic [31:0] rdata;
-logic [15:0] vdip_value;
-logic [15:0] vled_value;
+
+logic [31:0] rdata_byte_num;
+logic [31:0] rdata_word1;
+logic [31:0] rdata_word2;
+logic [31:0] rdata_word3;
+logic [31:0] rdata_word4;
+logic [128:0] rdata_readback;
 
 
    initial begin
 
       tb.power_up();
-      #10 $display("Code modification");
-      
-      #10 tb.set_virtual_dip_switch(.dip(0));
-      
-      #10 vdip_value = tb.get_virtual_dip_switch();
-      #10 $display ("value of vdip:%0x", vdip_value);
-      $display ("Writing 0xDEAD_BEEF to address 0x%x", `DEMO_REG_ADDR);
-      tb.poke(.addr(`DEMO_REG_ADDR), .data(32'hDEAD_BEEF), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL)); // write register
-      # 10;
-      tb.peek(.addr(`DEMO_REG_ADDR), .data(rdata), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));         // start read & write
-      $display ("Reading 0x%x from address 0x%x", rdata, `DEMO_REG_ADDR);
-      # 10;
-      if (rdata == 32'hEFBE_ADDE) // Check for byte swap in register read
-        $display ("TEST PASSED");
-      else
-        $display ("TEST FAILED");
-      # 10;
-      tb.peek_ocl(.addr(`VLED_REG_ADDR), .data(rdata));         // start read
-      $display ("Reading 0x%x from address 0x%x", rdata, `VLED_REG_ADDR);
-      # 10;
-      if (rdata == 32'h0000_BEEF) // Check for LED register read
-        $display ("TEST PASSED");
-      else
-        $display ("TEST FAILED");
-      # 10;
-      vled_value = tb.get_virtual_led();
-      # 10;
-      $display ("value of vled:%0x", vled_value);
+      $display ("AXI-L to FSB slave test:");
+
+      // initialize
+      // Note: only the address signals s_axi_awaddr(5:2) and s_axi_araddr(5:2) are decoded, so base address 32'h80000000 is not mandatory
+      tb.poke(.addr(32'h80000000), .data(32'hFFFFFFFF), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));  // Transmit Data FIFO Reset (TDFR) 
+      tb.poke(.addr(32'h80000004), .data(32'hFFFFFFFF), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));  // Interrupt Enable Register (IER)
+
+      // write
+      for (int i=0; i<4; i++) begin
+        tb.poke(.addr(32'h80000010), .data(32'h1 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h2 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h3 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h4 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000014), .data(32'h00000010), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        // 128 bits are then truncated to 80-bits fsb packet
+      end
+
+      // read
+      for (int i=0; i<4; i++) begin
+        tb.peek_ocl(.addr(32'h80000024), .data(rdata_byte_num));
+        if (rdata_byte_num == 32'h00000010) begin
+          $display ("READBACK LEN IS 16 BYTES, PASSED~");
+        end else begin
+          $display ("READBACK LEN FAILED!");
+        end
+        tb.peek_ocl(.addr(32'h80000020), .data(rdata_word1));
+        tb.peek_ocl(.addr(32'h80000020), .data(rdata_word2));
+        tb.peek_ocl(.addr(32'h80000020), .data(rdata_word3));
+        tb.peek_ocl(.addr(32'h80000020), .data(rdata_word4));
+        $display ("FSB READBACK DATA %h %h %h %h", rdata_word1, rdata_word2, rdata_word3, rdata_word4);
+        if (rdata_word1 == 32'h00000001 && rdata_word2 == 32'h00000002 && rdata_word3 == (((32'h3+i)&4'hF)<<12 + ((32'h3+i)>>12)&4'hF) && rdata_word4 == 32'h00000000) begin
+          $display ("FSB READBACK DATA PASSED~");
+        end else begin
+          $display ("FSB READBACK DATA FAILED!");
+        end
+      end
 
       tb.kernel_reset();
-      # 10;
       tb.power_down();
-      $display("%d", $stime);
-      
+
       $finish;
    end
 

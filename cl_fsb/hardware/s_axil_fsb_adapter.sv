@@ -1,39 +1,50 @@
-`define fsb
-module s_axil_fsb_adapter 
-  (input        s_axi_aclk     
-  ,input        s_axi_aresetn  
-  ,input [31:0] s_axi_awaddr   
-  ,input        s_axi_awvalid  
-  ,output        s_axi_awready  
-  ,input [31:0] s_axi_wdata    
-  ,input [ 3:0] s_axi_wstrb    
-  ,input        s_axi_wvalid   
-  ,output        s_axi_wready   
-  ,output [ 1:0] s_axi_bresp    
-  ,output        s_axi_bvalid   
-  ,input        s_axi_bready   
-  ,input [31:0] s_axi_araddr   
-  ,input        s_axi_arvalid  
-  ,output        s_axi_arready  
-  ,output [31:0] s_axi_rdata    
-  ,output [ 1:0] s_axi_rresp    
-  ,output        s_axi_rvalid   
-  ,input        s_axi_rready   
-);
-    logic aresetn;
+/**
+ *  s_axil_fsb_adapter.v
+ *
+ *  aws_sh axi-l (master) -> cl_bsg (slave)
+ */
 
-   logic axis_txd_tvalid     ;
-   logic axis_txd_tready     ;
-   logic axis_txd_tlast      ;
-   logic [31:0]  axis_txd_tdata      ;
-   
-   logic axis_rxd_tvalid     ;
-   logic axis_rxd_tready     ;
-   logic axis_rxd_tlast      ;
-   logic [31:0]  axis_rxd_tdata      ;
+module s_axil_fsb_adapter (
+  input         s_axi_aclk
+  ,input         s_axi_aresetn
+  ,input  [31:0] s_axi_awaddr
+  ,input         s_axi_awvalid
+  ,output        s_axi_awready
+  ,input  [31:0] s_axi_wdata
+  ,input  [ 3:0] s_axi_wstrb
+  ,input         s_axi_wvalid
+  ,output        s_axi_wready
+  ,output [ 1:0] s_axi_bresp
+  ,output        s_axi_bvalid
+  ,input         s_axi_bready
+  ,input  [31:0] s_axi_araddr
+  ,input         s_axi_arvalid
+  ,output        s_axi_arready
+  ,output [31:0] s_axi_rdata
+  ,output [ 1:0] s_axi_rresp
+  ,output        s_axi_rvalid
+  ,input         s_axi_rready
+);
+
+parameter FPGA_VERSION = "virtexuplus";
+
+  logic        aclk;
+  logic        aresetn        ;
+  logic        axis_txd_tvalid;
+  logic        axis_txd_tready;
+  logic        axis_txd_tlast ;
+  logic [31:0] axis_txd_tdata ;
+
+  logic        axis_rxd_tvalid;
+  logic        axis_rxd_tready;
+  logic        axis_rxd_tlast ;
+  logic [31:0] axis_rxd_tdata ;
+
+  assign aclk = s_axi_aclk;
+  assign aresetn = s_axi_aresetn;
 
 axi_fifo_mm_s # (
-  .C_FAMILY("virtexuplus"),
+  .C_FAMILY(FPGA_VERSION),
   .C_S_AXI_ID_WIDTH(4),
   .C_S_AXI_ADDR_WIDTH(32),
   .C_S_AXI_DATA_WIDTH(32),
@@ -64,9 +75,9 @@ axi_fifo_mm_s # (
   .C_USE_RX_DATA(1)
    ) 
 axi_fifo_mm_s_axi_lite  (
- .interrupt(),                           // output wire interrupt
- .s_axi_aclk(s_axi_aclk),                          // input wire s_axi_aclk
- .s_axi_aresetn(s_axi_aresetn),                    // input wire s_axi_aresetn
+ .interrupt(),                                     // output wire interrupt
+ .s_axi_aclk(aclk),                          // input wire s_axi_aclk
+ .s_axi_aresetn(aresetn),                    // input wire s_axi_aresetn
  .s_axi_awaddr(s_axi_awaddr),                      // input wire [31 : 0] s_axi_awaddr
  .s_axi_awvalid(s_axi_awvalid),                    // input wire s_axi_awvalid
  .s_axi_awready(s_axi_awready),                    // output wire s_axi_awready
@@ -108,13 +119,13 @@ axi_fifo_mm_s_axi_lite  (
  .s_axi4_arprot(3'h0),
  .s_axi4_arvalid(1'h0),
  .s_axi4_rready(1'h0),
- .mm2s_prmry_reset_out_n(),  // output wire mm2s_prmry_reset_out_n
+ .mm2s_prmry_reset_out_n(),                     // output wire mm2s_prmry_reset_out_n
  .axi_str_txd_tvalid(axis_txd_tvalid),          // output wire axi_str_txd_tvalid
  .axi_str_txd_tready(axis_txd_tready),          // input wire axi_str_txd_tready
  .axi_str_txd_tlast(axis_txd_tlast),            // output wire axi_str_txd_tlast
  .axi_str_txd_tdata(axis_txd_tdata),            // output wire [31 : 0] axi_str_txd_tdata
  .axi_str_txc_tready(1'h0),
- .s2mm_prmry_reset_out_n(),  // output wire s2mm_prmry_reset_out_n
+ .s2mm_prmry_reset_out_n(),                     // output wire s2mm_prmry_reset_out_n
  .axi_str_rxd_tvalid(axis_rxd_tvalid),          // input wire axi_str_rxd_tvalid
  .axi_str_rxd_tready(axis_rxd_tready),          // output wire axi_str_rxd_tready
  .axi_str_rxd_tlast(axis_rxd_tlast),            // input wire axi_str_rxd_tlast
@@ -126,14 +137,14 @@ axi_fifo_mm_s_axi_lite  (
  .axi_str_rxd_tuser(4'h0)
 );
 
-   logic axis_adpt_v;
-   logic adpt_axis_r;
-   logic [127:0] axis_adpt_data;
-   logic [15:0] axis_adpt_keep;
-   logic axis_adpt_last;
+  logic         axis_adpt_v   ;
+  logic         adpt_axis_r   ;
+  logic [127:0] axis_adpt_data;
+  logic [ 15:0] axis_adpt_keep;
+  logic         axis_adpt_last;
 
   axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
-    .C_FAMILY("virtexuplus"),
+    .C_FAMILY(FPGA_VERSION),
     .C_S_AXIS_TDATA_WIDTH(32),
     .C_M_AXIS_TDATA_WIDTH(128),
     .C_AXIS_TID_WIDTH(1),
@@ -142,7 +153,7 @@ axi_fifo_mm_s_axi_lite  (
     .C_M_AXIS_TUSER_WIDTH(1),
     .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
   ) axis_32_128 (
-    .aclk(aclk),
+    .aclk(s_axi_aclk),
     .aresetn(aresetn),
     .aclken(1'H1),
     .s_axis_tvalid(axis_txd_tvalid),
@@ -167,14 +178,12 @@ axi_fifo_mm_s_axi_lite  (
 
 
   logic bsg_reset;
-
-    
-  assign bsg_reset = ~aresetn;
-
   logic adpt_axis_v;
   logic [79:0] adpt_axis_data;
   logic axis_adpt_r;
   logic adpt_axis_last;
+
+  assign bsg_reset = ~aresetn;
   assign adpt_axis_last = adpt_axis_v & axis_adpt_r;
 
 bsg_test_node_client #(
@@ -183,7 +192,7 @@ bsg_test_node_client #(
     ,.client_id_p(0)
 ) fsb_client_node  
 
-(.clk_i(aclk)
+(.clk_i(s_axi_aclk)
    ,.reset_i(bsg_reset)
 
    // control
@@ -202,7 +211,7 @@ bsg_test_node_client #(
    );
 
   axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
-    .C_FAMILY("virtexuplus"),
+    .C_FAMILY(FPGA_VERSION),
     .C_S_AXIS_TDATA_WIDTH(128),
     .C_M_AXIS_TDATA_WIDTH(32),
     .C_AXIS_TID_WIDTH(1),
@@ -211,7 +220,7 @@ bsg_test_node_client #(
     .C_M_AXIS_TUSER_WIDTH(1),
     .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
   ) axis_128_32 (
-    .aclk(aclk),
+    .aclk(s_axi_aclk),
     .aresetn(aresetn),
     .aclken(1'H1),
     .s_axis_tvalid(adpt_axis_v),
