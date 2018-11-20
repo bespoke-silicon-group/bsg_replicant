@@ -43,8 +43,10 @@
 -include ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
 
 # Custom Logic (CL) design files
-${CL_DIR}/hardware/cl_fsb.sv
+${CL_DIR}/hardware/cl_fsb_bus_pkg.sv
 ${CL_DIR}/hardware/s_axil_fsb_adapter.sv
+# ${CL_DIR}/hardware/cl_ocl_slv.sv
+${CL_DIR}/hardware/cl_fsb.sv
 ${CL_DIR}/../../bsg_ip_cores/bsg_misc/bsg_defines.v
 ${CL_DIR}/../../bsg_ip_cores/bsg_fsb/bsg_fsb_pkg.v
 ${CL_DIR}/../../bsg_ip_cores/bsg_dataflow/bsg_two_fifo.v

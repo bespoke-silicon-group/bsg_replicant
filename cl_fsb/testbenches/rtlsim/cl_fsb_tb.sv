@@ -43,10 +43,10 @@ logic [128:0] rdata_readback;
 
       // write
       for (int i=0; i<4; i++) begin
-        tb.poke(.addr(32'h80000010), .data(32'h1 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
-        tb.poke(.addr(32'h80000010), .data(32'h2 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
-        tb.poke(.addr(32'h80000010), .data(32'h3 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
-        tb.poke(.addr(32'h80000010), .data(32'h4 + i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h1 + 4*i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h2 + 4*i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h3 + 4*i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+        tb.poke(.addr(32'h80000010), .data(32'h4 + 4*i), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
         tb.poke(.addr(32'h80000014), .data(32'h00000010), .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
         // 128 bits are then truncated to 80-bits fsb packet
       end
@@ -64,7 +64,9 @@ logic [128:0] rdata_readback;
         tb.peek_ocl(.addr(32'h80000020), .data(rdata_word3));
         tb.peek_ocl(.addr(32'h80000020), .data(rdata_word4));
         $display ("FSB READBACK DATA %h %h %h %h", rdata_word1, rdata_word2, rdata_word3, rdata_word4);
-        if (rdata_word1 == 32'h00000001 && rdata_word2 == 32'h00000002 && rdata_word3 == (((32'h3+i)&4'hF)<<12 + ((32'h3+i)>>12)&4'hF) && rdata_word4 == 32'h00000000) begin
+        if (rdata_word1 == (32'h00000001+4*i) && rdata_word2 == (32'h00000002+4*i) 
+        && rdata_word3 == ((((32'h3+4*i)&32'h0000000F)<<12) + (((32'h3+4*i)>>12)&32'h0000000F))
+        && rdata_word4 == 32'h00000000) begin
           $display ("FSB READBACK DATA PASSED~");
         end else begin
           $display ("FSB READBACK DATA FAILED!");

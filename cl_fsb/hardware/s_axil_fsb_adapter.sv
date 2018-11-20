@@ -5,31 +5,65 @@
  */
 
 module s_axil_fsb_adapter (
-  input         s_axi_aclk
-  ,input         s_axi_aresetn
-  ,input  [31:0] s_axi_awaddr
-  ,input         s_axi_awvalid
-  ,output        s_axi_awready
-  ,input  [31:0] s_axi_wdata
-  ,input  [ 3:0] s_axi_wstrb
-  ,input         s_axi_wvalid
-  ,output        s_axi_wready
-  ,output [ 1:0] s_axi_bresp
-  ,output        s_axi_bvalid
-  ,input         s_axi_bready
-  ,input  [31:0] s_axi_araddr
-  ,input         s_axi_arvalid
-  ,output        s_axi_arready
-  ,output [31:0] s_axi_rdata
-  ,output [ 1:0] s_axi_rresp
-  ,output        s_axi_rvalid
-  ,input         s_axi_rready
+  input clk_i
+  ,input resetn_i
+  ,axi_bus_t.master sh_ocl_bus
 );
 
 parameter FPGA_VERSION = "virtexuplus";
 
-  logic        aclk;
-  logic        aresetn        ;
+
+//---------------------------------
+// flop the input OCL bus
+//---------------------------------
+
+axi_bus_t sh_ocl_bus_q();
+
+axi_register_slice_light AXIL_OCL_REG_SLC (
+.aclk          (clk_i),
+.aresetn       (resetn_i),
+.s_axi_awaddr  (sh_ocl_bus.awaddr[31:0]),
+.s_axi_awprot   (2'h0),
+.s_axi_awvalid (sh_ocl_bus.awvalid),
+.s_axi_awready (sh_ocl_bus.awready),
+.s_axi_wdata   (sh_ocl_bus.wdata[31:0]),
+.s_axi_wstrb   (sh_ocl_bus.wstrb[3:0]),
+.s_axi_wvalid  (sh_ocl_bus.wvalid),
+.s_axi_wready  (sh_ocl_bus.wready),
+.s_axi_bresp   (sh_ocl_bus.bresp),
+.s_axi_bvalid  (sh_ocl_bus.bvalid),
+.s_axi_bready  (sh_ocl_bus.bready),
+.s_axi_araddr  (sh_ocl_bus.araddr[31:0]),
+.s_axi_arvalid (sh_ocl_bus.arvalid),
+.s_axi_arready (sh_ocl_bus.arready),
+.s_axi_rdata   (sh_ocl_bus.rdata[31:0]),
+.s_axi_rresp   (sh_ocl_bus.rresp),
+.s_axi_rvalid  (sh_ocl_bus.rvalid),
+.s_axi_rready  (sh_ocl_bus.rready),
+
+.m_axi_awaddr  (sh_ocl_bus_q.awaddr[31:0]), 
+.m_axi_awprot  (),
+.m_axi_awvalid (sh_ocl_bus_q.awvalid),
+.m_axi_awready (sh_ocl_bus_q.awready),
+.m_axi_wdata   (sh_ocl_bus_q.wdata[31:0]),  
+.m_axi_wstrb   (sh_ocl_bus_q.wstrb[3:0]),
+.m_axi_wvalid  (sh_ocl_bus_q.wvalid), 
+.m_axi_wready  (sh_ocl_bus_q.wready), 
+.m_axi_bresp   (sh_ocl_bus_q.bresp),  
+.m_axi_bvalid  (sh_ocl_bus_q.bvalid), 
+.m_axi_bready  (sh_ocl_bus_q.bready), 
+.m_axi_araddr  (sh_ocl_bus_q.araddr[31:0]), 
+.m_axi_arvalid (sh_ocl_bus_q.arvalid),
+.m_axi_arready (sh_ocl_bus_q.arready),
+.m_axi_rdata   (sh_ocl_bus_q.rdata[31:0]),  
+.m_axi_rresp   (sh_ocl_bus_q.rresp),  
+.m_axi_rvalid  (sh_ocl_bus_q.rvalid), 
+.m_axi_rready  (sh_ocl_bus_q.rready)
+);
+
+
+
+// wires for axi-stream of axi_fifo_mm_s output
   logic        axis_txd_tvalid;
   logic        axis_txd_tready;
   logic        axis_txd_tlast ;
@@ -39,9 +73,6 @@ parameter FPGA_VERSION = "virtexuplus";
   logic        axis_rxd_tready;
   logic        axis_rxd_tlast ;
   logic [31:0] axis_rxd_tdata ;
-
-  assign aclk = s_axi_aclk;
-  assign aresetn = s_axi_aresetn;
 
 axi_fifo_mm_s # (
   .C_FAMILY(FPGA_VERSION),
@@ -75,26 +106,26 @@ axi_fifo_mm_s # (
   .C_USE_RX_DATA(1)
    ) 
 axi_fifo_mm_s_axi_lite  (
- .interrupt(),                                     // output wire interrupt
- .s_axi_aclk(aclk),                          // input wire s_axi_aclk
- .s_axi_aresetn(aresetn),                    // input wire s_axi_aresetn
- .s_axi_awaddr(s_axi_awaddr),                      // input wire [31 : 0] s_axi_awaddr
- .s_axi_awvalid(s_axi_awvalid),                    // input wire s_axi_awvalid
- .s_axi_awready(s_axi_awready),                    // output wire s_axi_awready
- .s_axi_wdata(s_axi_wdata),                        // input wire [31 : 0] s_axi_wdata
- .s_axi_wstrb(s_axi_wstrb),                        // input wire [3 : 0] s_axi_wstrb
- .s_axi_wvalid(s_axi_wvalid),                      // input wire s_axi_wvalid
- .s_axi_wready(s_axi_wready),                      // output wire s_axi_wready
- .s_axi_bresp(s_axi_bresp),                        // output wire [1 : 0] s_axi_bresp
- .s_axi_bvalid(s_axi_bvalid),                      // output wire s_axi_bvalid
- .s_axi_bready(s_axi_bready),                      // input wire s_axi_bready
- .s_axi_araddr(s_axi_araddr),                      // input wire [31 : 0] s_axi_araddr
- .s_axi_arvalid(s_axi_arvalid),                    // input wire s_axi_arvalid
- .s_axi_arready(s_axi_arready),                    // output wire s_axi_arready
- .s_axi_rdata(s_axi_rdata),                        // output wire [31 : 0] s_axi_rdata
- .s_axi_rresp(s_axi_rresp),                        // output wire [1 : 0] s_axi_rresp
- .s_axi_rvalid(s_axi_rvalid),                      // output wire s_axi_rvalid
- .s_axi_rready(s_axi_rready),                      // input wire s_axi_rready
+ .interrupt(),                                  // output wire interrupt
+ .s_axi_aclk(clk_i),                            // input wire s_axi_aclk
+ .s_axi_aresetn(resetn_i),                      // input wire s_axi_aresetn
+ .s_axi_awaddr(sh_ocl_bus_q.awaddr),            // input wire [31 : 0] s_axi_awaddr
+ .s_axi_awvalid(sh_ocl_bus_q.awvalid),          // input wire s_axi_awvalid
+ .s_axi_awready(sh_ocl_bus_q.awready),          // output wire s_axi_awready
+ .s_axi_wdata(sh_ocl_bus_q.wdata),              // input wire [31 : 0] s_axi_wdata
+ .s_axi_wstrb(sh_ocl_bus_q.wstrb),              // input wire [3 : 0] s_axi_wstrb
+ .s_axi_wvalid(sh_ocl_bus_q.wvalid),            // input wire s_axi_wvalid
+ .s_axi_wready(sh_ocl_bus_q.wready),            // output wire s_axi_wready
+ .s_axi_bresp(sh_ocl_bus_q.bresp),              // output wire [1 : 0] s_axi_bresp
+ .s_axi_bvalid(sh_ocl_bus_q.bvalid),            // output wire s_axi_bvalid
+ .s_axi_bready(sh_ocl_bus_q.bready),            // input wire s_axi_bready
+ .s_axi_araddr(sh_ocl_bus_q.araddr),            // input wire [31 : 0] s_axi_araddr
+ .s_axi_arvalid(sh_ocl_bus_q.arvalid),          // input wire s_axi_arvalid
+ .s_axi_arready(sh_ocl_bus_q.arready),          // output wire s_axi_arready
+ .s_axi_rdata(sh_ocl_bus_q.rdata),              // output wire [31 : 0] s_axi_rdata
+ .s_axi_rresp(sh_ocl_bus_q.rresp),              // output wire [1 : 0] s_axi_rresp
+ .s_axi_rvalid(sh_ocl_bus_q.rvalid),            // output wire s_axi_rvalid
+ .s_axi_rready(sh_ocl_bus_q.rready),            // input wire s_axi_rready
  .s_axi4_awid(4'h0),
  .s_axi4_awaddr(32'h0),
  .s_axi4_awlen(8'h0),
@@ -153,8 +184,8 @@ axi_fifo_mm_s_axi_lite  (
     .C_M_AXIS_TUSER_WIDTH(1),
     .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
   ) axis_32_128 (
-    .aclk(s_axi_aclk),
-    .aresetn(aresetn),
+    .aclk(clk_i),
+    .aresetn(resetn_i),
     .aclken(1'H1),
     .s_axis_tvalid(axis_txd_tvalid),
     .s_axis_tready(axis_txd_tready),
@@ -176,14 +207,11 @@ axi_fifo_mm_s_axi_lite  (
     .m_axis_tuser()
   );
 
-
-  logic bsg_reset;
   logic adpt_axis_v;
   logic [79:0] adpt_axis_data;
   logic axis_adpt_r;
   logic adpt_axis_last;
 
-  assign bsg_reset = ~aresetn;
   assign adpt_axis_last = adpt_axis_v & axis_adpt_r;
 
 bsg_test_node_client #(
@@ -192,8 +220,8 @@ bsg_test_node_client #(
     ,.client_id_p(0)
 ) fsb_client_node  
 
-(.clk_i(s_axi_aclk)
-   ,.reset_i(bsg_reset)
+(.clk_i(clk_i)
+   ,.reset_i(~resetn_i)
 
    // control
    ,.en_i(1'b1)
@@ -220,8 +248,8 @@ bsg_test_node_client #(
     .C_M_AXIS_TUSER_WIDTH(1),
     .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
   ) axis_128_32 (
-    .aclk(s_axi_aclk),
-    .aresetn(aresetn),
+    .aclk(clk_i),
+    .aresetn(resetn_i),
     .aclken(1'H1),
     .s_axis_tvalid(adpt_axis_v),
     .s_axis_tready(axis_adpt_r),
