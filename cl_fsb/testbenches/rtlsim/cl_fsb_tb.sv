@@ -65,7 +65,7 @@ logic [128:0] rdata_readback;
         tb.peek_ocl(.addr(32'h80000020), .data(rdata_word4));
         $display ("FSB READBACK DATA %h %h %h %h", rdata_word1, rdata_word2, rdata_word3, rdata_word4);
         if (rdata_word1 == (32'h00000001+4*i) && rdata_word2 == (32'h00000002+4*i) 
-        && rdata_word3 == ((((32'h3+4*i)&32'h0000000F)<<12) + (((32'h3+4*i)>>12)&32'h0000000F))
+        && rdata_word3 == ((((32'h3+4*i)&32'h0000000F)<<12) + (((32'h3+4*i)>>12)&32'h0000000F) + ((32'h3 + 4*i)&32'h00000FF0))
         && rdata_word4 == 32'h00000000) begin
           $display ("FSB READBACK DATA PASSED~");
         end else begin
