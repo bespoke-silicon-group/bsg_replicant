@@ -29,6 +29,7 @@
 
 #include <utils/sh_dpi_tasks.h>
 
+#include "axiintrin.h"
 
 /* 
  * Register offsets determined by the CL HDL. These addresses should match the
@@ -247,30 +248,52 @@ int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
 #endif
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
     
+	/* Create 256 bit payload to write */
+	uint32_t expected[8];
+	for (int i = 0; i < 8; i++) {
+		expected[i] = value;
+	}
     /* write a value into the mapped address space */
-    uint32_t expected = byte_swap(value);
-    printf("Writing 0x%08x to HELLO_WORLD register (0x%016lx)\n", value, HELLO_WORLD_REG_ADDR);
-    rc = fpga_pci_poke(pci_bar_handle, HELLO_WORLD_REG_ADDR, value);
+	printf("Writing to device.\n");
+	_store_epu32(pci_bar_handle, expected); 
+	printf("Wrote to device.\n");
+	/* read back value */
+	uint32_t read[8];
+	printf("Reading from device.\n");
+	_load_epu32(pci_bar_handle, read);
+	printf("Read from device.\n");
+	/* check if expected = read */
+	printf("Checking correctness.\n");
+	bool pass = true;
+	for (int i = 0; i < 8; i++) {
+		int packet_type = i % (FSB_SIZE / AXI_SIZE);
+		switch (packet_type) {
+			case 0:
+			case 1: { // data DW 
+				if (expected[i] != read[i]) {
+					printf("Mismatch at %i. Expected: %x. Read: %x.\n", i, expected[i], read[i]);
+					pass = false;
+				}
+				break;
+			}
+			case 2: { // header DW
+				int temp = 	((expected[i] & 0x0000000F)<<12) + ((expected[i] >> 12) & 0x0000000F) + (expected[i] & 0x00000FF0);
+				if (read[i] != temp) {
+					printf("Mismatch at %i. Expected: %x. Read: %x.\n", i, expected[i], read[i]);
+					pass = false;
 
-    fail_on(rc, out, "Unable to write to the fpga !");
-
-    /* read it back and print it out; you should expect the byte order to be
-     * reversed (That's what this CL does) */
-    rc = fpga_pci_peek(pci_bar_handle, HELLO_WORLD_REG_ADDR, &value);
+				}
+				break;
+			}
+			default: {}
+		}
+	}
     
-    // cl_peek(HELLO_WORLD_REG_ADDR, &value);
-    // printf("Foo!\n");
-    fail_on(rc, out, "Unable to read read from the fpga !");
-    printf("=====  Entering peek_poke_example =====\n");
-    printf("register: 0x%x\n", value);
-    if(value == expected) {
+    if(pass)
         printf("TEST PASSED\n");
-        printf("Resulting value matched expected value 0x%x. It worked?!\n", expected);
-    }
-    else{
+    else
         printf("TEST FAILED");
-        printf("Resulting value did not match expected value 0x%x. Something didn't work.\n", expected);
-    }
+    
 out:
     /* clean up */
     if (pci_bar_handle >= 0) {
