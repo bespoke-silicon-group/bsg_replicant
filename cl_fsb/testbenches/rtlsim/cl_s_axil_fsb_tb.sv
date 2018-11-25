@@ -14,7 +14,7 @@
 // limitations under the License.
 
 
-module cl_fsb_tb();
+module cl_s_axil_fsb_tb();
 
 import tb_type_defines_pkg::*;
 `include "cl_common_defines.vh" // CL Defines with register addresses
@@ -79,4 +79,4 @@ logic [128:0] rdata_readback;
       $finish;
    end
 
-endmodule // test_cl_fsb
+endmodule // cl_s_axil_fsb_tb

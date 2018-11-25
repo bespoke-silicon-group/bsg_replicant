@@ -32,7 +32,7 @@ C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
 
 # Simulation Variables (Modify if directory structure changes)
-RTL_TB_MODULE = cl_fsb_tb
+RTL_TB_MODULE = cl_m_axi4_fsb_tb
 SCRIPTS_DIR   = $(CL_DIR)/testbenches/rtlsim
 # SIM_ROOT used by included makefiles
 SIM_ROOT      = $(CL_DIR)/testbenches/sim/rtlsim

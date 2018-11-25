@@ -30,4 +30,24 @@
 `define DEMO_REG_ADDR    32'h0000_0500
 `define VLED_REG_ADDR    32'h0000_0504
 
+// Defining local macros that will instantiate the desired DDR controllers in
+// the CL.
+`ifndef DDR_A_ABSENT
+  `define DDR_A_PRESENT 0
+`else
+  `define DDR_A_PRESENT 0
+`endif
+
+`ifndef DDR_B_ABSENT
+  `define DDR_B_PRESENT 0
+`else
+  `define DDR_B_PRESENT 0
+`endif
+
+`ifndef DDR_D_ABSENT
+  `define DDR_D_PRESENT 0
+`else
+  `define DDR_D_PRESENT 0
+`endif
+
 `endif

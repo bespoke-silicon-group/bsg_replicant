@@ -1,7 +1,7 @@
 /**
  *  s_axil_fsb_adapter.v
  *
- *  aws_sh axi-l (master) -> cl_bsg (slave)
+ *  axi-l (master) -> cl_bsg (slave)
  */
 
 module s_axil_fsb_adapter (

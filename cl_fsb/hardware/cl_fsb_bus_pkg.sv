@@ -13,7 +13,8 @@
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Copy from cl_dram_dma_pkg.sv --XL
+// Copy from cl_dram_dma_pkg.sv
+// Defines standard axi-4 interface (without user signal), and config bus --XL
 
 `ifndef CL_FSB_BUS_PKG
 `define CL_FSB_BUS_PKG
@@ -26,7 +27,7 @@
       logic awvalid;
       logic awready;
    
-      logic[15:0] wid;
+      logic[15:0] wid;  // this is not used in cl_ports.vh
       logic[511:0] wdata;
       logic[63:0] wstrb;
       logic wlast;

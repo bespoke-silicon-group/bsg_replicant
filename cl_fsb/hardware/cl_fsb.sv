@@ -20,6 +20,8 @@ module cl_fsb
 
 );
 
+`define TEST_AXI4_MASTER
+
 `include "cl_common_defines.vh"     // CL Defines for all examples
 `include "cl_id_defines.vh"         // Defines for ID0 and ID1 (PCI ID's)
 `include "cl_fsb_defines.vh"        // CL Defines for cl_fsb
@@ -37,7 +39,7 @@ module cl_fsb
 // `include "unused_flr_template.inc" // Function level reset done indication is handled by CL
 `include "unused_ddr_a_b_d_template.inc"
 `include "unused_ddr_c_template.inc"
-`include "unused_pcim_template.inc"
+// `include "unused_pcim_template.inc"
 `include "unused_dma_pcis_template.inc"
 `include "unused_cl_sda_template.inc"
 `include "unused_sh_bar1_template.inc"
@@ -100,7 +102,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
 
 
 //-------------------------------------------------
-// PCIe OCL AXI-L (SH to CL SLAVE, from AppPF BAR0)
+// PCIe OCL AXI-L (SH to CL, from AppPF BAR0)
 //-------------------------------------------------
 axi_bus_t sh_ocl_bus();
 
@@ -122,40 +124,142 @@ assign ocl_sh_rresp = sh_ocl_bus.rresp;
 assign ocl_sh_rdata = sh_ocl_bus.rdata[31:0];
 assign sh_ocl_bus.rready = sh_ocl_rready;
 
-// // below are buses to control the other modules
-// cfg_bus_t pcim_tst_cfg_bus();
 
-// (* dont_touch = "true" *) logic ocl_slv_sync_rst_n;
-// lib_pipe #(.WIDTH(1), .STAGES(4)) OCL_SLV_SLC_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(ocl_slv_sync_rst_n));
-// cl_ocl_slv CL_OCL_SLV (
-//    .clk(clk)
-//    ,.sync_rst_n(ocl_slv_sync_rst_n)
+`ifdef TEST_AXI4_MASTER
+//=================================================
+// Test AXI4 master to SH
+//=================================================
 
-//    ,.sh_cl_flr_assert_q(sh_cl_flr_assert_q)
+// generate *tst_cfg_us to control modules
 
-//    ,.sh_ocl_bus  (sh_ocl_bus)
+cfg_bus_t pcim_tst_cfg_bus();
 
-//    ,.pcim_tst_cfg_bus(pcim_tst_cfg_bus)
-//    ,.ddra_tst_cfg_bus() // ddra_tst_cfg_bus
-//    ,.ddrb_tst_cfg_bus() // ddrb_tst_cfg_bus
-//    ,.ddrc_tst_cfg_bus() // ddrc_tst_cfg_bus
-//    ,.ddrd_tst_cfg_bus() // ddrd_tst_cfg_bus
-//    ,.axi_mstr_cfg_bus() // axi_mstr_cfg_bus
-//    ,.int_tst_cfg_bus()  // int_tst_cfg_bus
+(* dont_touch = "true" *) logic ocl_slv_sync_rst_n;
+lib_pipe #(.WIDTH(1), .STAGES(4)) OCL_SLV_SLC_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(ocl_slv_sync_rst_n));
+cl_ocl_slv CL_OCL_SLV (
+   .clk(clk)
+   ,.sync_rst_n(ocl_slv_sync_rst_n)
+
+   ,.sh_cl_flr_assert_q(sh_cl_flr_assert_q)
+
+   ,.sh_ocl_bus  (sh_ocl_bus)
+
+   ,.pcim_tst_cfg_bus(pcim_tst_cfg_bus)
+   // ,.ddra_tst_cfg_bus() // ddra_tst_cfg_bus
+   // ,.ddrb_tst_cfg_bus() // ddrb_tst_cfg_bus
+   // ,.ddrc_tst_cfg_bus() // ddrc_tst_cfg_bus
+   // ,.ddrd_tst_cfg_bus() // ddrd_tst_cfg_bus
+   // ,.axi_mstr_cfg_bus() // axi_mstr_cfg_bus
+   // ,.int_tst_cfg_bus()  // int_tst_cfg_bus
+);
+
+
+//-------------------------------------------------
+// PCIM AXI-4 (CL to SH)
+//-------------------------------------------------
+axi_bus_t cl_sh_pcim_bus();
+
+assign cl_sh_pcim_awid = cl_sh_pcim_bus.awid;
+assign cl_sh_pcim_awaddr = cl_sh_pcim_bus.awaddr;
+assign cl_sh_pcim_awlen = cl_sh_pcim_bus.awlen;
+assign cl_sh_pcim_awsize = cl_sh_pcim_bus.awsize;
+assign cl_sh_pcim_awvalid = cl_sh_pcim_bus.awvalid;
+assign cl_sh_pcim_bus.awready = sh_cl_pcim_awready;
+
+assign cl_sh_pcim_wdata = cl_sh_pcim_bus.wdata;
+assign cl_sh_pcim_wstrb = cl_sh_pcim_bus.wstrb;
+assign cl_sh_pcim_wlast = cl_sh_pcim_bus.wlast;
+assign cl_sh_pcim_wvalid = cl_sh_pcim_bus.wvalid;
+assign cl_sh_pcim_bus.wready = sh_cl_pcim_wready;
+
+assign cl_sh_pcim_bus.bid = sh_cl_pcim_bid;
+assign cl_sh_pcim_bus.bresp = sh_cl_pcim_bresp;
+assign cl_sh_pcim_bus.bvalid = sh_cl_pcim_bvalid;
+assign cl_sh_pcim_bready = cl_sh_pcim_bus.bready;
+
+assign cl_sh_pcim_arid = cl_sh_pcim_bus.arid;
+assign cl_sh_pcim_araddr = cl_sh_pcim_bus.araddr;
+assign cl_sh_pcim_arlen = cl_sh_pcim_bus.arlen;
+assign cl_sh_pcim_arsize = cl_sh_pcim_bus.arsize;
+assign cl_sh_pcim_arvalid = cl_sh_pcim_bus.arvalid;
+assign cl_sh_pcim_bus.arready = sh_cl_pcim_arready;
+
+assign cl_sh_pcim_bus.rid = sh_cl_pcim_rid;
+assign cl_sh_pcim_bus.rdata = sh_cl_pcim_rdata;
+assign cl_sh_pcim_bus.rresp = sh_cl_pcim_rresp;
+assign cl_sh_pcim_bus.rlast = sh_cl_pcim_rlast;
+assign cl_sh_pcim_bus.rvalid = sh_cl_pcim_rvalid;
+assign cl_sh_pcim_rready = cl_sh_pcim_bus.rready;
+
+// note: cl_sh_pcim_aruser/awuser are ignored by the shell
+// and the axi4 size is set fixed for 64-bytes
+//  cl_sh_pcim_arsize/awsize = 3'b6;
+
+(* dont_touch = "true" *) logic pcim_mstr_sync_rst_n;
+lib_pipe #(.WIDTH(1), .STAGES(4)) PCIM_MSTR_SLC_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(pcim_mstr_sync_rst_n));
+
+// cl_pcim_mstr CL_PCIM_MSTR (
+
+//      .aclk(clk),
+//      .aresetn(pcim_mstr_sync_rst_n),
+
+//      .cfg_bus(pcim_tst_cfg_bus),
+
+//      .cl_sh_pcim_bus(cl_sh_pcim_bus)
 // );
 
+  logic fsb_wvalid;
+  logic [79:0] fsb_wdata;
+  logic fsb_yumi;
+  
+bsg_test_node_master #(
+  .ring_width_p(80)
+  ,.master_id_p (4'hF)
+  ,.client_id_p (4'hF)
+) fsb_node_master (
+  .clk_i  (clk),
+  .reset_i(~pcim_mstr_sync_rst_n),
+  .en_i   (1'b1),
+  .v_i    (0),
+  .data_i (80'h0),
+  .ready_o(),
+  .v_o    (fsb_wvalid),
+  .data_o (fsb_wdata),
+  .yumi_i (fsb_yumi)
+);
 
-// AXI-L Slave to FSB test module
+
+m_axi4_fsb_adapter #(
+  .DATA_WIDTH(512),
+  .NUM_RD_TAG(512),
+  .FSB_WIDTH (80 )
+) m_axi4_fsb (
+  .clk_i         (clk)
+  ,.resetn_i      (pcim_mstr_sync_rst_n)
+  ,.cfg_bus       (pcim_tst_cfg_bus)
+  ,.cl_sh_pcim_bus(cl_sh_pcim_bus)
+  ,.atg_dst_sel   ()
+  ,.fsb_wvalid    (fsb_wvalid)
+  ,.fsb_wdata     (fsb_wdata)
+  ,.fsb_yumi      (fsb_yumi)
+);
+
+`else
+//=================================================
+// Test AXI-L Slave to CL
+//=================================================
+
 // Loopback data sent to fsb, only supports single-beat accesses
 (* dont_touch = "true" *) logic ocl_slv_sync_rst_n;
 lib_pipe #(.WIDTH(1), .STAGES(4)) S_AXIL_FSB_ADAPTER_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(ocl_slv_sync_rst_n));
 
-s_axil_fsb_adapter axil_slave_fsb_adapter (
+s_axil_fsb_adapter s_axil_fsb (
   .clk_i      (clk)
   ,.resetn_i  (ocl_slv_sync_rst_n)
   ,.sh_ocl_bus(sh_ocl_bus)
 );
 
+`endif
 
 endmodule
 

@@ -6,199 +6,202 @@
       <db_ref path="tb.wdb" id="1">
          <top_modules>
             <top_module name="arch_package" />
-            <top_module name="axi_fifo_mm_s_pkg" />
             <top_module name="bsg_fsb_pkg" />
-            <top_module name="cl_fsb_tb" />
+            <top_module name="cl_m_axi4_fsb_tb" />
             <top_module name="glbl" />
-            <top_module name="ipif_pkg" />
-            <top_module name="lib_pkg" />
             <top_module name="proj_package" />
             <top_module name="tb" />
             <top_module name="tb_type_defines_pkg" />
-            <top_module name="vcomponents" />
          </top_modules>
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="874861333fs"></ZoomStartTime>
-      <ZoomEndTime time="8124861334fs"></ZoomEndTime>
-      <Cursor1Time time="6916528000fs"></Cursor1Time>
+      <ZoomStartTime time="7596585622fs"></ZoomStartTime>
+      <ZoomEndTime time="7952105385fs"></ZoomEndTime>
+      <Cursor1Time time="7740000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="175"></NameColumnWidth>
-      <ValueColumnWidth column_width="142"></ValueColumnWidth>
+      <NameColumnWidth column_width="229"></NameColumnWidth>
+      <ValueColumnWidth column_width="95"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="43" />
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_aclk">
-      <obj_property name="ElementShortName">s_axi_aclk</obj_property>
-      <obj_property name="ObjectShortName">s_axi_aclk</obj_property>
+   <WVObjectSize size="28" />
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/sync_rst_n">
+      <obj_property name="ElementShortName">sync_rst_n</obj_property>
+      <obj_property name="ObjectShortName">sync_rst_n</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_aresetn">
-      <obj_property name="ElementShortName">s_axi_aresetn</obj_property>
-      <obj_property name="ObjectShortName">s_axi_aresetn</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/cfg_rd_compare_en">
+      <obj_property name="ElementShortName">cfg_rd_compare_en</obj_property>
+      <obj_property name="ObjectShortName">cfg_rd_compare_en</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_awaddr">
-      <obj_property name="ElementShortName">s_axi_awaddr[31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awaddr[31:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_mem_left">
+      <obj_property name="ElementShortName">wr_mem_left[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_mem_left[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_awvalid">
-      <obj_property name="ElementShortName">s_axi_awvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awvalid</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/fsb_state">
+      <obj_property name="ElementShortName">fsb_state[1:0]</obj_property>
+      <obj_property name="ObjectShortName">fsb_state[1:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_awready">
-      <obj_property name="ElementShortName">s_axi_awready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_awready</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_inp">
+      <obj_property name="ElementShortName">wr_inp</obj_property>
+      <obj_property name="ObjectShortName">wr_inp</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wdata">
-      <obj_property name="ElementShortName">s_axi_wdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wdata[31:0]</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_trans_done">
+      <obj_property name="ElementShortName">wr_trans_done</obj_property>
+      <obj_property name="ObjectShortName">wr_trans_done</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wstrb">
-      <obj_property name="ElementShortName">s_axi_wstrb[3:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wstrb[3:0]</obj_property>
+   <wvobject type="group" fp_name="group118">
+      <obj_property name="label">fsb_master</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+      <wvobject type="logic" fp_name="/tb/card/fpga/CL/fsb_node_master/reset_i">
+         <obj_property name="ElementShortName">reset_i</obj_property>
+         <obj_property name="ObjectShortName">reset_i</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb/card/fpga/CL/fsb_node_master/en_i">
+         <obj_property name="ElementShortName">en_i</obj_property>
+         <obj_property name="ObjectShortName">en_i</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb/card/fpga/CL/fsb_node_master/v_i">
+         <obj_property name="ElementShortName">v_i</obj_property>
+         <obj_property name="ObjectShortName">v_i</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/tb/card/fpga/CL/fsb_node_master/data_i">
+         <obj_property name="ElementShortName">data_i[79:0]</obj_property>
+         <obj_property name="ObjectShortName">data_i[79:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb/card/fpga/CL/fsb_node_master/ready_o">
+         <obj_property name="ElementShortName">ready_o</obj_property>
+         <obj_property name="ObjectShortName">ready_o</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb/card/fpga/CL/fsb_node_master/v_o">
+         <obj_property name="ElementShortName">v_o</obj_property>
+         <obj_property name="ObjectShortName">v_o</obj_property>
+      </wvobject>
+      <wvobject type="array" fp_name="/tb/card/fpga/CL/fsb_node_master/data_o">
+         <obj_property name="ElementShortName">data_o[79:0]</obj_property>
+         <obj_property name="ObjectShortName">data_o[79:0]</obj_property>
+      </wvobject>
+      <wvobject type="logic" fp_name="/tb/card/fpga/CL/fsb_node_master/yumi_i">
+         <obj_property name="ElementShortName">yumi_i</obj_property>
+         <obj_property name="ObjectShortName">yumi_i</obj_property>
+      </wvobject>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wvalid">
-      <obj_property name="ElementShortName">s_axi_wvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wvalid</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awid">
+      <obj_property name="ElementShortName">awid[15:0]</obj_property>
+      <obj_property name="ObjectShortName">awid[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_wready">
-      <obj_property name="ElementShortName">s_axi_wready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_wready</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awaddr">
+      <obj_property name="ElementShortName">awaddr[63:0]</obj_property>
+      <obj_property name="ObjectShortName">awaddr[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tvalid">
-      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awlen">
+      <obj_property name="ElementShortName">awlen[7:0]</obj_property>
+      <obj_property name="ObjectShortName">awlen[7:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tready">
-      <obj_property name="ElementShortName">m_axis_tready</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awsize">
+      <obj_property name="ElementShortName">awsize[2:0]</obj_property>
+      <obj_property name="ObjectShortName">awsize[2:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tdata">
-      <obj_property name="ElementShortName">m_axis_tdata[127:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tdata[127:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/cnt_alignment">
+      <obj_property name="ElementShortName">cnt_alignment[4:0]</obj_property>
+      <obj_property name="ObjectShortName">cnt_alignment[4:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tstrb">
-      <obj_property name="ElementShortName">m_axis_tstrb[15:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tstrb[15:0]</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awvalid">
+      <obj_property name="ElementShortName">awvalid</obj_property>
+      <obj_property name="ObjectShortName">awvalid</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tkeep">
-      <obj_property name="ElementShortName">m_axis_tkeep[15:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tkeep[15:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_data">
+      <obj_property name="ElementShortName">wr_phase_data[511:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_phase_data[511:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tlast">
-      <obj_property name="ElementShortName">m_axis_tlast</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_strb">
+      <obj_property name="ElementShortName">wr_phase_strb[63:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_phase_strb[63:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tid">
-      <obj_property name="ElementShortName">m_axis_tid[0:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tid[0:0]</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awready">
+      <obj_property name="ElementShortName">awready</obj_property>
+      <obj_property name="ObjectShortName">awready</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tdest">
-      <obj_property name="ElementShortName">m_axis_tdest[0:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tdest[0:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wid">
+      <obj_property name="ElementShortName">wid[15:0]</obj_property>
+      <obj_property name="ObjectShortName">wid[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_32_128/m_axis_tuser">
-      <obj_property name="ElementShortName">m_axis_tuser[0:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tuser[0:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wdata">
+      <obj_property name="ElementShortName">wdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">wdata[511:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/en_i">
-      <obj_property name="ElementShortName">en_i</obj_property>
-      <obj_property name="ObjectShortName">en_i</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wstrb">
+      <obj_property name="ElementShortName">wstrb[63:0]</obj_property>
+      <obj_property name="ObjectShortName">wstrb[63:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/v_i">
-      <obj_property name="ElementShortName">v_i</obj_property>
-      <obj_property name="ObjectShortName">v_i</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wlast">
+      <obj_property name="ElementShortName">wlast</obj_property>
+      <obj_property name="ObjectShortName">wlast</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/data_i">
-      <obj_property name="ElementShortName">data_i[79:0]</obj_property>
-      <obj_property name="ObjectShortName">data_i[79:0]</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wvalid">
+      <obj_property name="ElementShortName">wvalid</obj_property>
+      <obj_property name="ObjectShortName">wvalid</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/ready_o">
-      <obj_property name="ElementShortName">ready_o</obj_property>
-      <obj_property name="ObjectShortName">ready_o</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wready">
+      <obj_property name="ElementShortName">wready</obj_property>
+      <obj_property name="ObjectShortName">wready</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/v_o">
-      <obj_property name="ElementShortName">v_o</obj_property>
-      <obj_property name="ObjectShortName">v_o</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/bid">
+      <obj_property name="ElementShortName">bid[15:0]</obj_property>
+      <obj_property name="ObjectShortName">bid[15:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/data_o">
-      <obj_property name="ElementShortName">data_o[79:0]</obj_property>
-      <obj_property name="ObjectShortName">data_o[79:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/bresp">
+      <obj_property name="ElementShortName">bresp[1:0]</obj_property>
+      <obj_property name="ObjectShortName">bresp[1:0]</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/fsb_client_node/yumi_i">
-      <obj_property name="ElementShortName">yumi_i</obj_property>
-      <obj_property name="ObjectShortName">yumi_i</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/bvalid">
+      <obj_property name="ElementShortName">bvalid</obj_property>
+      <obj_property name="ObjectShortName">bvalid</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tvalid">
-      <obj_property name="ElementShortName">m_axis_tvalid</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tvalid</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/bready">
+      <obj_property name="ElementShortName">bready</obj_property>
+      <obj_property name="ObjectShortName">bready</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tready">
-      <obj_property name="ElementShortName">m_axis_tready</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tready</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_valid">
+      <obj_property name="ElementShortName">wr_phase_valid</obj_property>
+      <obj_property name="ObjectShortName">wr_phase_valid</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tdata">
-      <obj_property name="ElementShortName">m_axis_tdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tdata[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tstrb">
-      <obj_property name="ElementShortName">m_axis_tstrb[3:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tstrb[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tkeep">
-      <obj_property name="ElementShortName">m_axis_tkeep[3:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tkeep[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tlast">
-      <obj_property name="ElementShortName">m_axis_tlast</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tlast</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tid">
-      <obj_property name="ElementShortName">m_axis_tid[0:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tid[0:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tdest">
-      <obj_property name="ElementShortName">m_axis_tdest[0:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tdest[0:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axis_128_32/m_axis_tuser">
-      <obj_property name="ElementShortName">m_axis_tuser[0:0]</obj_property>
-      <obj_property name="ObjectShortName">m_axis_tuser[0:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_bvalid">
-      <obj_property name="ElementShortName">s_axi_bvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_bvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_bready">
-      <obj_property name="ElementShortName">s_axi_bready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_bready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_araddr">
-      <obj_property name="ElementShortName">s_axi_araddr[31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_araddr[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_arvalid">
-      <obj_property name="ElementShortName">s_axi_arvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_arready">
-      <obj_property name="ElementShortName">s_axi_arready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_arready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rdata">
-      <obj_property name="ElementShortName">s_axi_rdata[31:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rdata[31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rresp">
-      <obj_property name="ElementShortName">s_axi_rresp[1:0]</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rresp[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rvalid">
-      <obj_property name="ElementShortName">s_axi_rvalid</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axil_slave_fsb_adapter/axi_fifo_mm_s_axi_lite/s_axi_rready">
-      <obj_property name="ElementShortName">s_axi_rready</obj_property>
-      <obj_property name="ObjectShortName">s_axi_rready</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_state">
+      <obj_property name="ElementShortName">wr_state[1:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_state[1:0]</obj_property>
    </wvobject>
 </wave_config>
