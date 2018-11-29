@@ -284,8 +284,8 @@ int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
 
 	/* get low and high parts of host memory address */
 	unsigned long addr_long = (unsigned long) host_memory_buffer;
-	uint32_t low = (uint32_t) (addr_long & 0x00000000ffffffff);
-	uint32_t high = (uint32_t) ((addr_long & 0xffffffff00000000) >> 32);
+	uint32_t low32 = (uint32_t) (addr_long & 0x00000000ffffffff);
+	uint32_t high32 = (uint32_t) ((addr_long & 0xffffffff00000000) >> 32);
 	printf("Host memory address: %lx\n", addr_long);
 	
 	// Setup the DMA

@@ -14,7 +14,7 @@
 // limitations under the License.
 
 module cosim_wrapper();
-
+	import "DPI-C" context task print_mem();
    initial begin
       int exit_code;
       
@@ -25,7 +25,7 @@ module cosim_wrapper();
       tb.test_main(exit_code);
       
       #10us;
-      tb.print_mem();
+      print_mem();
 
       tb.power_down();
       
