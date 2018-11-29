@@ -18,6 +18,9 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <string.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include "cl_utils.h"
 
 #ifdef SV_TEST
    #include "fpga_pci_sv.h"
@@ -30,6 +33,26 @@
 #include <utils/sh_dpi_tasks.h>
 
 #include "axiintrin.h"
+
+#define CFG_REG           UINT64_C(0x0)
+#define CNTL_START        UINT64_C(0x8)  			// WR
+#define CNTL_RESET        UINT64_C(0xc)  			// W
+
+#define WR_ADDR_LOW       UINT64_C(0x20)
+#define WR_ADDR_HIGH      UINT64_C(0x24)
+#define WR_DATA           UINT64_C(0x28)
+#define WR_LEN            UINT64_C(0x2c)
+#define WR_OFFSET         UINT64_C(0x30)
+
+#define RD_ADDR_LOW       UINT64_C(0x40)
+#define RD_ADDR_HIGH      UINT64_C(0x44)
+#define RD_DATA           UINT64_C(0x48)
+#define RD_LEN            UINT65_C(0x4c)
+
+#define WR_DST_SEL        0xe0
+
+#define WR_SEL            1
+#define ED_SEL            2
 
 /* 
  * Register offsets determined by the CL HDL. These addresses should match the
@@ -74,6 +97,7 @@ uint32_t byte_swap(uint32_t value) {
     return swapped_value;
 }
 
+char *host_memory_buffer; 
 
 /* 
  * cosim_wrapper.sv calls test_main (not main). Use SV_TEST to switch between
@@ -139,7 +163,7 @@ uint32_t byte_swap(uint32_t value) {
     /* Accessing the CL registers via AppPF BAR0, which maps to sh_cl_ocl_ AXI-Lite bus between AWS FPGA Shell and the CL*/
 
     printf("===== Starting with peek_poke_example =====\n");
-    rc = peek_poke_example(value, slot_id, FPGA_APP_PF, APP_PF_BAR0);
+    rc = peek_poke_example(value, slot_id, FPGA_APP_PF, APP_PF_BAR4);
     fail_on(rc, out, "peek-poke example failed");
 
     printf("Developers are encouraged to modify the Virtual DIP Switch by calling the linux shell command to demonstrate how AWS FPGA Virtual DIP switches can be used to change a CustomLogic functionality:\n");
@@ -232,6 +256,11 @@ out:
  */
 int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
     int rc;
+	uint64_t pcim_addr = 0x0000000012340000;
+	uint32_t pcim_data = 0x6c93af50;
+	uint32_t read_data;
+
+
     /* pci_bar_handle_t is a handler for an address space exposed by one PCI BAR on one of the PCI PFs of the FPGA */
 
     pci_bar_handle_t pci_bar_handle = PCI_BAR_HANDLE_INIT;
@@ -247,53 +276,55 @@ int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
     rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
 #endif
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
-    
-	/* Create 256 bit payload to write */
-	uint32_t expected[8];
-	for (int i = 0; i < 8; i++) {
-		expected[i] = value;
-	}
-    /* write a value into the mapped address space */
-	printf("Writing to device.\n");
-	_store_epu32(pci_bar_handle, expected); 
-	printf("Wrote to device.\n");
-	/* read back value */
-	uint32_t read[8];
-	printf("Reading from device.\n");
-	_load_epu32(pci_bar_handle, read);
-	printf("Read from device.\n");
-	/* check if expected = read */
-	printf("Checking correctness.\n");
-	bool pass = true;
-	for (int i = 0; i < 8; i++) {
-		int packet_type = i % (FSB_SIZE / AXI_SIZE);
-		switch (packet_type) {
-			case 0:
-			case 1: { // data DW 
-				if (expected[i] != read[i]) {
-					printf("Mismatch at %i. Expected: %x. Read: %x.\n", i, expected[i], read[i]);
-					pass = false;
-				}
-				break;
-			}
-			case 2: { // header DW
-				int temp = 	((expected[i] & 0x0000000F)<<12) + ((expected[i] >> 12) & 0x0000000F) + (expected[i] & 0x00000FF0);
-				if (read[i] != temp) {
-					printf("Mismatch at %i. Expected: %x. Read: %x.\n", i, expected[i], read[i]);
-					pass = false;
+	
+	/* Allocate host memory and tell cosimulation functions to use this memory. */
+	host_memory_buffer = (char *) aligned_alloc(64, 4 * 320);
+	sv_map_host_memory(host_memory_buffer);
 
-				}
-				break;
-			}
-			default: {}
-		}
-	}
-    
-    if(pass)
-        printf("TEST PASSED\n");
-    else
-        printf("TEST FAILED");
-    
+
+	/* get low and high parts of host memory address */
+	unsigned long addr_long = (unsigned long) host_memory_buffer;
+	uint32_t low = (uint32_t) (addr_long & 0x00000000ffffffff);
+	uint32_t high = (uint32_t) ((addr_long & 0xffffffff00000000) >> 32);
+	printf("Host memory address: %lx\n", addr_long);
+	
+	// Setup the DMA
+	rc = fpga_pci_poke(pci_bar_handle, CFG_REG, 0x8); 
+    	fail_on(rc, out, "Couldn't write to CFG_REG.");
+	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_LOW, low32); // write address low
+    	fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
+	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_HIGH, high32); // write address high
+    	fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
+   	rc = fpga_pci_poke(pci_bar_handle, WR_DATA, pcim_data); // write data, not used
+    	fail_on(rc, out, "Couldn't write to WR_DATA.");
+   	rc = fpga_pci_poke(pci_bar_handle, WR_LEN, 0x0); // write 64 bytes, 512bits
+    	fail_on(rc, out, "Couldn't write to WR_LEN.");
+    	rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (0x140-1)); // 320 bytes, 32 fsb pkts
+   	fail_on(rc, out, "Couldn't write to WR_OFFSET.");
+
+	// start write
+   	rc = fpga_pci_poke(pci_bar_handle, CNTL_START, WR_SEL);
+    	fail_on(rc, out, "Couldn't write to CNTL_START.");
+
+	// wait for writes to complete
+	int timeout_count = 0;
+    	do {
+		sleep(1);
+        	printf("Waiting for 1st write activity to complete: %d ms.\n", timeout_count);
+		rc = fpga_pci_peek(pci_bar_handle, CNTL_START, &read_data);
+		fail_on(rc, out, "Couldn't read from CNTL_START"); 
+        	timeout_count++;
+    	} while (((read_data & 1) != 0) && timeout_count < 10);
+
+     // check if DMA is complete
+  	if (((read_data & 1) != 0) && (timeout_count == 10))
+     		printf("Timeout waiting for 1st writes to complete.\n");
+   	else
+     		printf("PASS~~~ axi4 1st writes complete.\n");
+     	if (read_data & 8) // check bit 3
+     		printf("axi4 1st writes RESP ERROR.\n");
+
+  
 out:
     /* clean up */
     if (pci_bar_handle >= 0) {
@@ -305,6 +336,23 @@ out:
 
     /* if there is an error code, exit with status 1 */
     return (rc != 0 ? 1 : 0);
+}
+
+
+void print_mem () {
+	// print out memory 
+	sleep(1);  // ensure that axi packets are written into host memory
+	printf("Memory after DMA: \n");
+	for (int i = 0; i < 320*4; i++) {
+		printf("%02X", 0xff & host_memory_buffer[i]);
+		if (i % 10 == 0 && i > 0)
+			printf("\n");
+		else
+			printf(" ");
+} 
+
+
+
 }
 
 #ifdef SV_TEST

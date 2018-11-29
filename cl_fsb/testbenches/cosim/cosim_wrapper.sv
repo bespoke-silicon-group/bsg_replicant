@@ -24,10 +24,12 @@ module cosim_wrapper();
        
       tb.test_main(exit_code);
       
-      #50ns;
+      #10us;
+      tb.print_mem();
 
       tb.power_down();
       
+      	 
       $finish;
    end
 
