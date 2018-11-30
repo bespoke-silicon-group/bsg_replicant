@@ -36,6 +36,9 @@ module cl_m_axi4_fsb_tb();
 `define WR_SEL            32'h01
 `define ED_SEL            32'h02
 
+`define WR_BUFF_SIZE      32'h500
+`define WR_TAIL_OFFSET    64'h500
+
    import tb_type_defines_pkg::*;
 
    logic [63:0]  pcim_addr;
@@ -43,7 +46,9 @@ module cl_m_axi4_fsb_tb();
 
    logic [31:0]  read_data;
 
-   logic [79:0]  hm_data;
+   logic [79:0]  hm_fsb_pkt;
+   logic [63:0]  hm_tail_offset;
+   logic [7:0]   hm_byte;
 
    int           timeout_count;
 
@@ -62,21 +67,21 @@ module cl_m_axi4_fsb_tb();
          
          $display("[%t] : Programming cl_tst registers for PCIe", $realtime);
 
-         // Read compare
          tb.poke_ocl(.addr(`CFG_REG), .data(32'h0000_0008));
          tb.poke_ocl(.addr(`WR_ADDR_LOW), .data(pcim_addr[31:0]));    // write address low
          tb.poke_ocl(.addr(`WR_ADDR_HIGH), .data(pcim_addr[63:32]));  // write address high
          tb.poke_ocl(.addr(`WR_DATA), .data(pcim_data[31:0]));        // write data, not used
          tb.poke_ocl(.addr(`WR_LEN), .data(32'h0000_0000));           // write 64 bytes, 512bits
-         tb.poke_ocl(.addr(`WR_OFFSET), .data(32'h0000_0140-1));      // 320 bytes, 32 fsb pkts
+         tb.poke_ocl(.addr(`WR_OFFSET), .data(`WR_BUFF_SIZE-1));      // 320 bytes, 32 fsb pkts
          // Start write
          tb.poke_ocl(.addr(`CNTL_START), .data(`WR_SEL));
-         // # 900ns;
+
+         // wait until the buffer is full 
          timeout_count = 0;
          do begin
-            # 100ns;
-            $display("[%t] : Waiting for 1st write activity to complete", $realtime);
+            # 50ns;
             tb.peek_ocl(.addr(`CNTL_START), .data(read_data));
+            $display("[%t] : Waiting for 1st write activity to complete", $realtime);
             timeout_count ++;
          end while((read_data[0] !== 1'b0) && timeout_count < 10);
 
@@ -87,16 +92,51 @@ module cl_m_axi4_fsb_tb();
 
          tb.peek_ocl(.addr(`CNTL_START), .data(read_data));
          if (read_data[3])
-            $display("[%t] : axi4 1st writes RESP ERROR.", $realtime);
+            $display("[%t] : *** ERROR *** axi4 1st writes RESP is NOT OKAY.", $realtime);
 
 
-         # 1000ns;  // ensure that axi packets are written into host memory
-         for (int i=0; i<32; i++) begin
-            for(int k=0; k<10; k++) begin
-               hm_data[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+10*i+k));
+         // ~~~~~~~~~~~~~~ bfm backdoor check ~~~~~~~~~~~~~~
+         // check the write tail word in buffer
+         timeout_count = 0;
+         do begin
+            # 200ns
+            for (int i=0; i<8; i++) begin
+               hm_tail_offset[(i*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+`WR_TAIL_OFFSET+i));
             end
-            $display("read host @ memory %h ~ %h: %h", pcim_addr+10*i, pcim_addr+10*i+9, hm_data);
+            $display("[%t] : Readback the write tail word @ %h : %h \n", 
+               $realtime, pcim_addr+`WR_TAIL_OFFSET, hm_tail_offset);
+         end while((hm_tail_offset != pcim_addr + `WR_BUFF_SIZE) && (timeout_count < 50));
+
+         if ((hm_tail_offset != pcim_addr + `WR_BUFF_SIZE) && (timeout_count == 50))
+            $display("[%t] : *** ERROR *** Timeout to full the buffer.", $realtime);
+         else
+            $display("[%t] : PASS~~~ buffer is full.", $realtime);
+
+         // tb.hm_put_byte and tb.hm_get_byte are backdoor functions to access memory on HBM.
+
+         // for (int i=0; i<`WR_BUFF_SIZE/10; i++) begin
+         //    for(int k=0; k<10; k++) begin
+         //       tb.hm_put_byte(.addr(pcim_addr+10*i+k), .d(8'hFF & i));
+         //    end
+         //    hm_byte = 8'hFF & i;
+         //    $display("set host @ memory %h ~ %h: %h", pcim_addr+10*i, pcim_addr+10*i+9, {10{hm_byte}});
+         // end
+
+         for (int i=0; i<`WR_BUFF_SIZE/10; i++) begin
+            for(int k=0; k<10; k++) begin
+               hm_fsb_pkt[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+10*i+k));
+            end
+            $display("read host @ memory %h ~ %h: %h", pcim_addr+10*i, pcim_addr+10*i+9, hm_fsb_pkt);
          end
+
+         // check the write tail word does not overwirte elsewhere in buffer
+         for (int i=0; i<8; i++) begin
+            for (int j=0; j<8; j++) begin
+               hm_tail_offset[(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+`WR_TAIL_OFFSET+i*8+j));
+            end
+            $display("[%t] : Readback the write tail word @ %h : %h", $realtime, pcim_addr+`WR_TAIL_OFFSET+i*8, hm_tail_offset);
+         end
+         $display("[%t] : Readback 64 Bytes Done!\n", $realtime);
 
          tb.power_down();
 

@@ -8,6 +8,7 @@
   #(parameter DATA_WIDTH=512
     ,parameter NUM_RD_TAG=512
     ,parameter FSB_WIDTH=80
+    ,parameter BUF_TAIL_OFFSET=64'h500
   ) (
    input clk_i
    ,input resetn_i
@@ -184,7 +185,7 @@ always_ff @(negedge resetn_i or posedge clk_i)
 
 
 //---------------------------------------------
-// Flop read interface for timing
+// Flop read interface for timing (not used now)
 //---------------------------------------------
 logic[8:0] rid_q = 0;
 logic[DATA_WIDTH-1:0] rdata_q = 0;
@@ -214,16 +215,15 @@ always @(posedge clk)
 //        0 - write reset
 //        1 - read reset
 
-// 0x20:  write address low
-// 0x24:  write address high
-// 0x28:  write data at start
+// 0x20:  write start address low
+// 0x24:  write start address high
+// 0x28:  write end point (read tail)
 // 0x2c:  write length select
 //        7:0 - number of the AXI write data phases
 //        15:8 - last data adj, i.e. number of DW to adj last data phase
 //        31:16 - user defined
-// 0x2e:  write end address offset
+// 0x30:  write end address offset (buffer size)
 
-// 0x30:  0 -  0/1 to select which dst module the atg drives
 // 0x40:  read address low
 // 0x44:  read address high
 // 0x48:  expected read data to compare with write 
@@ -231,6 +231,8 @@ always @(posedge clk)
 //        7:0 - number of the AXI read data phases
 //        15:8 - last data adj, i.e. number of DW to adj last data phase
 //        31:16 - user defined
+
+// 0xe0:  0 -  0/1 to select which dst module the atg drives
 
 
 
@@ -379,7 +381,7 @@ end
 // AXI Write state machine      
 //--------------------------------
 
-logic wr_phase_end;     // end of data for this instruction (single transfer)
+logic wr_phase_end;   // end of data for this instruction (single transfer)
 logic wr_trans_done;  // done with write from cfg_write_address to addr + offset
 
 typedef enum logic[1:0] {
@@ -451,19 +453,36 @@ assign wr_inp = ((wr_state!=WR_IDLE) && (wr_state!=WR_STOP));
 // AXI transfer stop
 //--------------------------------
 
+
+// limit the address range for the transfer (test only)
 logic [31:0] wr_mem_left = 0;
 
-logic [31:0] wr_addr_last_phase;
+logic [31:0] wr_last_addr;
 
-assign wr_addr_last_phase = {cfg_adress_offset[31:6], 6'd0}; // must be 64 bytes aligned
+logic [31:0] wr_mem_left_next;
+
+assign wr_mem_left_next = wr_mem_left - DATA_BYTE_NUM - DATA_BYTE_NUM * cfg_write_length;
+
+assign wr_last_addr = {cfg_adress_offset[31:6], 6'd0}; // must be 64 bytes aligned
 
 always_ff @(posedge clk)
    if ((wr_state==WR_IDLE) || (wr_state==WR_STOP))
-      wr_mem_left <= wr_addr_last_phase;
+   begin
+      wr_mem_left <= wr_last_addr;
+   end
    else if ((wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT))
-      wr_mem_left <= wr_mem_left - DATA_BYTE_NUM - DATA_BYTE_NUM * cfg_write_length;
-
-assign wr_trans_done = (wr_mem_left==0);  // end of fsb pkt
+   begin
+    if(wr_dat_tail_flag)
+    begin
+      wr_mem_left <= wr_mem_left_next;  // tail is already updated, so we can count on
+      wr_trans_done <= 1'b0;
+    end
+    else
+    begin
+      wr_mem_left <= wr_mem_left;  // tais will be send next cycle
+      wr_trans_done <= (wr_mem_left==0);
+    end
+   end
 
 // soft stop
 always_ff @(posedge clk)
@@ -487,30 +506,51 @@ always_ff @(posedge clk)
 
 // AXI write address
 //--------------------------------
+logic [64:0] wr_addr_next;
 
 logic [63:0] wr_addr;
 
-always_ff @( posedge clk)
-   if (wr_state==WR_IDLE)
-      wr_addr <= cfg_write_address;  // must be 64 bytes aligned...
-   else if ((wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR))
-      // next frame address begins
-      wr_addr <= wr_addr + DATA_BYTE_NUM + DATA_BYTE_NUM * cfg_write_length;
+assign wr_addr_next = wr_addr + DATA_BYTE_NUM + DATA_BYTE_NUM * cfg_write_length;
+
+// the flag determines wheather to send data or tail in a axi write frame 
+logic wr_dat_tail_flag = 0;
 
 always_ff @( posedge clk)
-  if(!sync_rst_n || (wr_state_nxt!=WR_ADDR))
+   if (wr_state==WR_IDLE)
+   begin
+      wr_dat_tail_flag <= 0;  // keep this flag when soft stop occurs
+      wr_addr <= cfg_write_address;  // the start address shall be 64 bytes aligned...
+  end
+   else if ((wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT))
+   begin
+      // for next frame address
+      wr_dat_tail_flag <= ~wr_dat_tail_flag;
+      wr_addr <= wr_dat_tail_flag ? wr_addr_next : wr_addr;
+   end
+
+always_ff @( posedge clk)
+  if(!sync_rst_n)
   begin
     awvalid <= 0;
+    awaddr <= 0;
     awid <= 0;
     awlen <= 0;
     awuser <= 0;
   end
-  else if (wr_state==WR_ADDR)
+  else if ((wr_state==WR_ADDR) && (wr_state_nxt==WR_ADDR))
   begin
-    awvalid <= 1'b1;
-    awaddr <= wr_addr;  // addr is always avaliable
+    awvalid <= 1'b1;  // addr is prepared just after the last phase, so always avaliable
+    awaddr <= wr_dat_tail_flag ? (cfg_write_address + BUF_TAIL_OFFSET) : wr_addr;
     awid <= 0;
-    awlen <= cfg_write_length;
+    awlen <= wr_dat_tail_flag ? 8'b0 : cfg_write_length;
+    awuser <= 0;
+  end
+  else
+  begin
+    awvalid <= 0;
+    // awaddr <= 0;
+    awid <= 0;
+    awlen <= 0;
     awuser <= 0;
   end
 
@@ -518,30 +558,45 @@ always_ff @( posedge clk)
 // AXI write data
 //--------------------------------
 
-logic wr_phase_valid; // fsb pkt num is ready for one axi4 phase
+logic wr_whole_phase_valid; // fsb pkt is packed up for one axi phase
+logic wr_frctn_phase_valid; // fsb pkt is partly packed and hold for valid signal
+
+logic wr_phase_valid;
+
+assign wr_phase_valid = wr_dat_tail_flag ? (wr_state==WR_DAT) : wr_whole_phase_valid;
+
 logic [DATA_WIDTH-1:0] wr_phase_data = 0;
 logic [(DATA_WIDTH/8)-1:0] wr_phase_strb;
 
 always_ff @(posedge clk)
 begin
   if(wr_phase_valid)
-    wdata <= wr_phase_data;
-    wstrb <= wr_phase_strb;
+  begin
+    wdata <= wr_dat_tail_flag ? {{(DATA_WIDTH-64){1'b1}}, wr_addr_next} : wr_phase_data;
+    wstrb <= wr_dat_tail_flag ? 64'h0000_0000_0000_00FF : wr_phase_strb;
+  end
 end
 
 always_ff @( posedge clk)
-   if (!sync_rst_n || wr_state_nxt!=WR_DAT)
+   if (!sync_rst_n)
    begin
       wid <= 0;
       wvalid <= 0;
       wlast <= 0;
    end
-   else if ((wr_state==WR_DAT) && wr_phase_valid)
+   else if ((wr_state==WR_DAT) && (wr_state_nxt==WR_DAT) && wr_phase_valid)
    begin
       wid <= 0;
       wvalid <= 1'b1;
-      wlast <= wr_phase_end;
+      wlast <= wr_dat_tail_flag ? 1'b1 : wr_phase_end;
    end
+   else
+   begin
+      wid <= 0;
+      wvalid <= 1'b0;
+      wlast <= 1'b0;
+   end
+
 
 
 // burst control
@@ -579,7 +634,7 @@ begin
 
       FSB_INIT:
       begin
-        if ((wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR))
+        if ((wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR) && !wr_dat_tail_flag)
         begin
           if(fsb_wvalid)
             fsb_state_nxt = FSB_PILE;
@@ -621,8 +676,12 @@ begin
   endcase // fsb_state
 end
 
+
 // wr_phase_data are new, latch wdata enable
-assign wr_phase_valid = (fsb_state==FSB_SEND);
+assign wr_whole_phase_valid = (fsb_state==FSB_SEND);
+assign wr_frctn_phase_valid = (fsb_state==FSB_HOLD);
+
+logic ready_fsb;
 
 assign ready_fsb = (fsb_state==FSB_PILE);
 
@@ -631,6 +690,12 @@ always_ff @(posedge clk)
       fsb_state <= FSB_INIT;
    else
       fsb_state <= fsb_state_nxt;
+
+
+//--------------------------------
+// FSB control part
+// this should finally support the asynchronous data transfer.
+//--------------------------------
 
 // dequeue the fsb master
 assign fsb_yumi = ready_fsb && fsb_wvalid;
@@ -645,15 +710,15 @@ begin
     cnt_alignment <= 0;
   else if (ready_fsb && fsb_wvalid)
     cnt_alignment <= cnt_alignment + 1'b1;
-  else if (!fsb_wvalid)
-    cnt_alignment <= 0;
+  // else if (reset_fsb_adapter)
+  //   cnt_alignment <= 0;
 end
 
 assign fsb_piled_up = (cnt_alignment==5'd6) || (cnt_alignment==5'd12) 
           || (cnt_alignment==5'd19) || (cnt_alignment==5'd25) 
           || (cnt_alignment==5'd31);
 
-// count the fsb pkt stored in one axi4 frame
+// count the fsb pkt stored in one axi4 phase
 logic [2:0] cnt_fsb_latched;
 
 always_ff @(posedge clk)

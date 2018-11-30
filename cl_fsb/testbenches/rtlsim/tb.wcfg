@@ -16,15 +16,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="7596585622fs"></ZoomStartTime>
-      <ZoomEndTime time="7952105385fs"></ZoomEndTime>
-      <Cursor1Time time="7740000000fs"></Cursor1Time>
+      <ZoomStartTime time="9940561680fs"></ZoomStartTime>
+      <ZoomEndTime time="10130561681fs"></ZoomEndTime>
+      <Cursor1Time time="9964000000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="229"></NameColumnWidth>
-      <ValueColumnWidth column_width="95"></ValueColumnWidth>
+      <ValueColumnWidth column_width="165"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="28" />
+   <WVObjectSize size="32" />
    <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/sync_rst_n">
       <obj_property name="ElementShortName">sync_rst_n</obj_property>
       <obj_property name="ObjectShortName">sync_rst_n</obj_property>
@@ -88,17 +88,35 @@
          <obj_property name="ObjectShortName">yumi_i</obj_property>
       </wvobject>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awid">
-      <obj_property name="ElementShortName">awid[15:0]</obj_property>
-      <obj_property name="ObjectShortName">awid[15:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFA500</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_dat_tail_flag">
+      <obj_property name="ElementShortName">wr_dat_tail_flag</obj_property>
+      <obj_property name="ObjectShortName">wr_dat_tail_flag</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_addr_next">
+      <obj_property name="ElementShortName">wr_addr_next[64:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_addr_next[64:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_addr">
+      <obj_property name="ElementShortName">wr_addr[63:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_addr[63:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awaddr">
       <obj_property name="ElementShortName">awaddr[63:0]</obj_property>
       <obj_property name="ObjectShortName">awaddr[63:0]</obj_property>
       <obj_property name="CustomSignalColor">#FFA500</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_mem_left">
+      <obj_property name="ElementShortName">wr_mem_left[31:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_mem_left[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_end">
+      <obj_property name="ElementShortName">wr_phase_end</obj_property>
+      <obj_property name="ObjectShortName">wr_phase_end</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_running_length">
+      <obj_property name="ElementShortName">wr_running_length[7:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_running_length[7:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awlen">
       <obj_property name="ElementShortName">awlen[7:0]</obj_property>
@@ -116,11 +134,25 @@
       <obj_property name="ElementShortName">cnt_alignment[4:0]</obj_property>
       <obj_property name="ObjectShortName">cnt_alignment[4:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_state">
+      <obj_property name="ElementShortName">wr_state[1:0]</obj_property>
+      <obj_property name="ObjectShortName">wr_state[1:0]</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awvalid">
       <obj_property name="ElementShortName">awvalid</obj_property>
       <obj_property name="ObjectShortName">awvalid</obj_property>
       <obj_property name="CustomSignalColor">#FFA500</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awready">
+      <obj_property name="ElementShortName">awready</obj_property>
+      <obj_property name="ObjectShortName">awready</obj_property>
+      <obj_property name="CustomSignalColor">#FFA500</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_whole_phase_valid">
+      <obj_property name="ElementShortName">wr_whole_phase_valid</obj_property>
+      <obj_property name="ObjectShortName">wr_whole_phase_valid</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_data">
       <obj_property name="ElementShortName">wr_phase_data[511:0]</obj_property>
@@ -129,18 +161,6 @@
    <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_strb">
       <obj_property name="ElementShortName">wr_phase_strb[63:0]</obj_property>
       <obj_property name="ObjectShortName">wr_phase_strb[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/awready">
-      <obj_property name="ElementShortName">awready</obj_property>
-      <obj_property name="ObjectShortName">awready</obj_property>
-      <obj_property name="CustomSignalColor">#FFA500</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wid">
-      <obj_property name="ElementShortName">wid[15:0]</obj_property>
-      <obj_property name="ObjectShortName">wid[15:0]</obj_property>
-      <obj_property name="CustomSignalColor">#FFA500</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/axi4_m_bus/wdata">
       <obj_property name="ElementShortName">wdata[511:0]</obj_property>
@@ -195,13 +215,5 @@
       <obj_property name="ObjectShortName">bready</obj_property>
       <obj_property name="CustomSignalColor">#FFA500</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_phase_valid">
-      <obj_property name="ElementShortName">wr_phase_valid</obj_property>
-      <obj_property name="ObjectShortName">wr_phase_valid</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/m_axi4_fsb/wr_state">
-      <obj_property name="ElementShortName">wr_state[1:0]</obj_property>
-      <obj_property name="ObjectShortName">wr_state[1:0]</obj_property>
    </wvobject>
 </wave_config>
