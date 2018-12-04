@@ -36,22 +36,25 @@ module cl_m_axi4_fsb_tb();
   `define WR_SEL            32'h01
   `define ED_SEL            32'h02
 
-  `define WR_BUFF_SIZE      32'h280
+  `define WR_BUFF_SIZE      32'h280  // 640 Bytes
   `define WR_TAIL_OFFSET    64'h280
+
+  localparam num_pkt_lp = `WR_BUFF_SIZE/64;  // number of axi pkts in buffer
 
   import tb_type_defines_pkg::*;
 
-  logic [63:0] pcim_addr;
-  logic [31:0] pcim_data;
+  logic [63:0]  pcim_addr;
+  logic [31:0]  pcim_data;
 
-  logic [31:0] cfg_rdata;
+  logic [31:0]  cfg_rdata;
 
-  logic [79:0] hm_fsb_pkt    ;
-  logic [63:0] hm_tail_old   ;
-  logic [63:0] hm_tail       ;
-  logic [ 7:0] hm_byte       ;
-  bit          tail_change   ;
-  bit          fsb_valid_mask;
+  logic [num_pkt_lp*8-1:0] [127:0] hm_fsb_pkts;  // store 2*num_pkt_lp x 4*16 Byts for 2 reads
+  logic [127:0] hm_fsb_pkt    ;
+  logic [63:0]  hm_tail_old   ;
+  logic [63:0]  hm_tail       ;
+  logic [ 7:0]  hm_byte       ;
+  bit           tail_change   ;
+  bit           fsb_valid_mask;
 
   int timeout_count;
   initial begin
@@ -87,7 +90,7 @@ module cl_m_axi4_fsb_tb();
       # 100ns;
     end
 
-    // wait until the buffer is full
+    // wait until not writing, buffer is full
     // --------------------------------
     timeout_count = 0;
     do begin
@@ -114,9 +117,8 @@ module cl_m_axi4_fsb_tb();
 
     // read x2, update the head, so more data from fsb should come
     // --------------------------------
-
-    // read from 0 to WR_BUFF_SIZE-0x40
-    for (int i=0; i<`WR_BUFF_SIZE/64; i++)
+    // Note: only test in steps of 64 bytes for simplity...
+    for (int i=0; i<num_pkt_lp; i++)
       begin
         // check the write tail
         for (int j=0; j<8; j++) begin
@@ -124,13 +126,18 @@ module cl_m_axi4_fsb_tb();
         end
         $display("[%t] : Readback the write tail word @ %h : %h", $realtime, pcim_addr+`WR_TAIL_OFFSET, hm_tail[31:0]);
         # 500ns
-          if ((i*32'h40)!=hm_tail[31:0]) begin  // check current read head is not equal to tail
-            tb.poke_ocl(.addr(`WR_READ_HEAD), .data(32'h0000_0000 + i*32'h40));
+        if (hm_tail[31:0]!=(i*32'h40)) begin  // check current read head is not equal to tail
+          for (int j=0; j<4; j++) begin
+            for (int k=0; k<16; k++) begin
+              hm_fsb_pkts[4*i+j][(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+64*i+16*j+k));
+            end
           end
+          tb.poke_ocl(.addr(`WR_READ_HEAD), .data(32'h0000_0000 + i*32'h40));
+        end
       end
 
     // read again, from 0 to WR_BUFF_SIZE-0x40
-    for (int i=0; i<`WR_BUFF_SIZE/64; i++)
+    for (int i=0; i<num_pkt_lp; i++)
       begin
         // check the write tail
         for (int j=0; j<8; j++) begin
@@ -138,9 +145,14 @@ module cl_m_axi4_fsb_tb();
         end
         $display("[%t] : Readback the write tail word @ %h : %h", $realtime, pcim_addr+`WR_TAIL_OFFSET, hm_tail[31:0]);
         # 500ns
-          if ((i*32'h40)!=hm_tail[31:0]) begin  // check current read head is not equal to tail
-            tb.poke_ocl(.addr(`WR_READ_HEAD), .data(32'h0000_0000 + i*32'h40));
+        if (hm_tail[31:0]!=(i*32'h40)) begin  // check current read head is not equal to tail
+          for (int j=0; j<4; j++) begin
+            for (int k=0; k<16; k++) begin
+              hm_fsb_pkts[4*num_pkt_lp+4*i+j][(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+64*i+16*j+k));
+            end
           end
+          tb.poke_ocl(.addr(`WR_READ_HEAD), .data(32'h0000_0000 + i*32'h40));
+        end
       end
     // --------------------------------
 
@@ -149,7 +161,7 @@ module cl_m_axi4_fsb_tb();
     // bfm backdoor check
     // --------------------------------
 
-    // check if the tail is not updating any more
+    // pass the loop if the tail is not updating any more
     timeout_count = 0;
     hm_tail_old = 0;
     do begin
@@ -188,12 +200,17 @@ module cl_m_axi4_fsb_tb();
     //    $display("set host @ memory %h ~ %h: %h", pcim_addr+10*i, pcim_addr+10*i+9, {10{hm_byte}});
     // end
 
+    // print all read data in sequence
+    for (int i=0; i<num_pkt_lp*8; i++) begin
+      $display("read data @ time %d: %h", i, hm_fsb_pkts[i]);
+    end
+
     // check the data left in the memory buff
-    for (int i=0; i<`WR_BUFF_SIZE/10; i++) begin
-      for(int k=0; k<10; k++) begin
-        hm_fsb_pkt[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+10*i+k));
+    for (int i=0; i<`WR_BUFF_SIZE/16; i++) begin
+      for(int k=0; k<16; k++) begin
+        hm_fsb_pkt[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+16*i+k));
       end
-      $display("read host @ memory %h ~ %h: %h", pcim_addr+10*i, pcim_addr+10*i+9, hm_fsb_pkt);
+      $display("read host @ memory %h ~ %h: %h", pcim_addr+16*i, pcim_addr+16*i+15, hm_fsb_pkt);
     end
 
     tb.power_down();
