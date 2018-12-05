@@ -397,7 +397,7 @@ assign wr_stop_pend = wr_soft_stop;
 logic wr_dat_tail_flag;   // tail write flag, flips every frame
 
 // address
-logic [31:0] wr_addr_bus;        // current relative write address
+logic [63:0] wr_addr_bus;        // current relative write address
 logic [31:0] wr_last_addr;   // the last address for 64B-write
 
 
