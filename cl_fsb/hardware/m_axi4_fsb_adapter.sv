@@ -514,6 +514,7 @@ logic axi_frctn_valid_i; // fsb pkt is partly packed and hold for valid signal
 // where head stands for the read pointer at this write
 // tail stands for the write pointer after this write
 
+logic [31:0] wr_addr_next;
 logic wr_buffer_full;
 
 assign wr_hm_pause = wr_dat_tail_flag && wr_buffer_full;
@@ -570,7 +571,6 @@ always_ff @( posedge clk)
 
 // write address channel
 //--------------------------------
-logic [31:0] wr_addr_next;
 logic [31:0] wr_addr_inc_64;
 
 logic [63:0] wr_address;  // absolute bus address to write

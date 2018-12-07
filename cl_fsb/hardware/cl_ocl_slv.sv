@@ -15,21 +15,17 @@
 
 module cl_ocl_slv (
    
-   input clk,
-   input sync_rst_n,
-
-   input sh_cl_flr_assert_q,
-
-   axi_bus_t.master sh_ocl_bus,
-
-   cfg_bus_t.slave pcim_tst_cfg_bus
-   // ,
-   // cfg_bus_t.slave ddra_tst_cfg_bus,
-   // cfg_bus_t.slave ddrb_tst_cfg_bus,
-   // cfg_bus_t.slave ddrc_tst_cfg_bus,
-   // cfg_bus_t.slave ddrd_tst_cfg_bus,
-   // cfg_bus_t.slave axi_mstr_cfg_bus,
-   // cfg_bus_t.slave int_tst_cfg_bus
+   input clk
+   ,input sync_rst_n
+   ,input sh_cl_flr_assert_q
+   ,axil_bus_t.master sh_ocl_bus
+   ,cfg_bus_t.slave pcim_tst_cfg_bus
+   // ,cfg_bus_t.slave ddra_tst_cfg_bus
+   // ,cfg_bus_t.slave ddrb_tst_cfg_bus
+   // ,cfg_bus_t.slave ddrc_tst_cfg_bus
+   // ,cfg_bus_t.slave ddrd_tst_cfg_bus
+   // ,cfg_bus_t.slave axi_mstr_cfg_bus
+   // ,cfg_bus_t.slave int_tst_cfg_bus
 
 );
 
@@ -45,45 +41,45 @@ axi_bus_t sh_ocl_bus_q();
 //---------------------------------
 // flop the input OCL bus
 //---------------------------------
-   axi_register_slice_light AXIL_OCL_REG_SLC (
-    .aclk          (clk),
-    .aresetn       (sync_rst_n),
-    .s_axi_awaddr  (sh_ocl_bus.awaddr[31:0]),
-    .s_axi_awvalid (sh_ocl_bus.awvalid),
-    .s_axi_awready (sh_ocl_bus.awready),
-    .s_axi_wdata   (sh_ocl_bus.wdata[31:0]),
-    .s_axi_wstrb   (sh_ocl_bus.wstrb[3:0]),
-    .s_axi_wvalid  (sh_ocl_bus.wvalid),
-    .s_axi_wready  (sh_ocl_bus.wready),
-    .s_axi_bresp   (sh_ocl_bus.bresp),
-    .s_axi_bvalid  (sh_ocl_bus.bvalid),
-    .s_axi_bready  (sh_ocl_bus.bready),
-    .s_axi_araddr  (sh_ocl_bus.araddr[31:0]),
-    .s_axi_arvalid (sh_ocl_bus.arvalid),
-    .s_axi_arready (sh_ocl_bus.arready),
-    .s_axi_rdata   (sh_ocl_bus.rdata[31:0]),
-    .s_axi_rresp   (sh_ocl_bus.rresp),
-    .s_axi_rvalid  (sh_ocl_bus.rvalid),
-    .s_axi_rready  (sh_ocl_bus.rready),
- 
-    .m_axi_awaddr  (sh_ocl_bus_q.awaddr[31:0]), 
-    .m_axi_awvalid (sh_ocl_bus_q.awvalid),
-    .m_axi_awready (sh_ocl_bus_q.awready),
-    .m_axi_wdata   (sh_ocl_bus_q.wdata[31:0]),  
-    .m_axi_wstrb   (sh_ocl_bus_q.wstrb[3:0]),
-    .m_axi_wvalid  (sh_ocl_bus_q.wvalid), 
-    .m_axi_wready  (sh_ocl_bus_q.wready), 
-    .m_axi_bresp   (sh_ocl_bus_q.bresp),  
-    .m_axi_bvalid  (sh_ocl_bus_q.bvalid), 
-    .m_axi_bready  (sh_ocl_bus_q.bready), 
-    .m_axi_araddr  (sh_ocl_bus_q.araddr[31:0]), 
-    .m_axi_arvalid (sh_ocl_bus_q.arvalid),
-    .m_axi_arready (sh_ocl_bus_q.arready),
-    .m_axi_rdata   (sh_ocl_bus_q.rdata[31:0]),  
-    .m_axi_rresp   (sh_ocl_bus_q.rresp),  
-    .m_axi_rvalid  (sh_ocl_bus_q.rvalid), 
-    .m_axi_rready  (sh_ocl_bus_q.rready)
-   );
+ axi_register_slice_light AXIL_OCL_REG_SLC (
+  .aclk          (clk)
+  ,.aresetn       (sync_rst_n)
+  ,.s_axi_awaddr  (sh_ocl_bus.awaddr[31:0])
+  ,.s_axi_awvalid (sh_ocl_bus.awvalid)
+  ,.s_axi_awready (sh_ocl_bus.awready)
+  ,.s_axi_wdata   (sh_ocl_bus.wdata[31:0])
+  ,.s_axi_wstrb   (sh_ocl_bus.wstrb[3:0])
+  ,.s_axi_wvalid  (sh_ocl_bus.wvalid)
+  ,.s_axi_wready  (sh_ocl_bus.wready)
+  ,.s_axi_bresp   (sh_ocl_bus.bresp)
+  ,.s_axi_bvalid  (sh_ocl_bus.bvalid)
+  ,.s_axi_bready  (sh_ocl_bus.bready)
+  ,.s_axi_araddr  (sh_ocl_bus.araddr[31:0])
+  ,.s_axi_arvalid (sh_ocl_bus.arvalid)
+  ,.s_axi_arready (sh_ocl_bus.arready)
+  ,.s_axi_rdata   (sh_ocl_bus.rdata[31:0])
+  ,.s_axi_rresp   (sh_ocl_bus.rresp)
+  ,.s_axi_rvalid  (sh_ocl_bus.rvalid)
+  ,.s_axi_rready  (sh_ocl_bus.rready)
+
+  ,.m_axi_awaddr  (sh_ocl_bus_q.awaddr[31:0])
+  ,.m_axi_awvalid (sh_ocl_bus_q.awvalid)
+  ,.m_axi_awready (sh_ocl_bus_q.awready)
+  ,.m_axi_wdata   (sh_ocl_bus_q.wdata[31:0])
+  ,.m_axi_wstrb   (sh_ocl_bus_q.wstrb[3:0])
+  ,.m_axi_wvalid  (sh_ocl_bus_q.wvalid)
+  ,.m_axi_wready  (sh_ocl_bus_q.wready)
+  ,.m_axi_bresp   (sh_ocl_bus_q.bresp)
+  ,.m_axi_bvalid  (sh_ocl_bus_q.bvalid)
+  ,.m_axi_bready  (sh_ocl_bus_q.bready)
+  ,.m_axi_araddr  (sh_ocl_bus_q.araddr[31:0])
+  ,.m_axi_arvalid (sh_ocl_bus_q.arvalid)
+  ,.m_axi_arready (sh_ocl_bus_q.arready)
+  ,.m_axi_rdata   (sh_ocl_bus_q.rdata[31:0])
+  ,.m_axi_rresp   (sh_ocl_bus_q.rresp)
+  ,.m_axi_rvalid  (sh_ocl_bus_q.rvalid)
+  ,.m_axi_rready  (sh_ocl_bus_q.rready)
+ );
 
 
 //-------------------------------------------------
@@ -113,7 +109,7 @@ logic slv_cyc_done;              //Cycle is done
 
 logic[31:0] slv_rdata;           //Latch rdata
 
-logic[17:0] slv_sel;              //Slave select
+logic[3:0] slv_sel;             //Slave select (only map it to log2(NUM_TST) -XL)
 
 logic[31:0] slv_tst_addr[NUM_TST-1:0];
 logic[31:0] slv_tst_wdata[NUM_TST-1:0];
@@ -131,7 +127,7 @@ logic slv_did_req;            //Once cycle request, latch that did the request
 assign slv_wr_req = sh_ocl_bus_q.awvalid;
 assign slv_rd_req = sh_ocl_bus_q.arvalid;
 assign slv_mx_rsp_ready = (slv_cyc_wr)? sh_ocl_bus_q.bready: sh_ocl_bus_q.rready;
-assign slv_mx_req_valid = (slv_cyc_wr)?   sh_ocl_bus_q.wvalid: 1'b1;
+assign slv_mx_req_valid = (slv_cyc_wr)? sh_ocl_bus_q.wvalid: 1'b1;
 
 //Fixed write hi-pri
 assign slv_arb_wr = slv_wr_req;
@@ -161,10 +157,10 @@ always_ff @(negedge sync_rst_n or posedge clk)
 
    
 //Mux address
-assign slv_mx_addr = (slv_cyc_wr)? slv_req_wr_addr : slv_req_rd_addr;
+assign slv_mx_addr = (slv_cyc_wr)? slv_req_wr_addr[31:0] : slv_req_rd_addr[31:0];
    
 //Slave select (256B per slave)
-assign slv_sel = slv_mx_addr[24:8];
+assign slv_sel = slv_mx_addr[11:8];
    
 //Latch the winner
 always_ff @(negedge sync_rst_n or posedge clk)

@@ -7,23 +7,34 @@
 module s_axil_fsb_adapter (
   input clk_i
   ,input resetn_i
-  ,axi_bus_t.master sh_ocl_bus
+  ,axil_bus_t.master sh_ocl_bus
+  ,input adpt_slave_v
+  ,input [79:0] adpt_slave_data
+  ,output adpt_slave_r
+  ,output adpt_master_v
+  ,output [79:0] adpt_master_data
+  ,input adpt_master_r
 );
 
 parameter FPGA_VERSION = "virtexuplus";
 
+// bus for axil flop output
+axil_bus_t sh_ocl_bus_q();
 
-//---------------------------------
+// bus for axi_fifo_mm_s axis output
+axis_bus_t #(.TDATA_WIDTH(32)) fifo_axis_bus();
+
+// bus for datawidth coverter X4 output and datawidth coverter /4 input
+axis_bus_t #(.TDATA_WIDTH(128)) axis_fsb_bus();
+
+
 // flop the input OCL bus
 //---------------------------------
-
-axi_bus_t sh_ocl_bus_q();
-
 axi_register_slice_light AXIL_OCL_REG_SLC (
 .aclk          (clk_i),
 .aresetn       (resetn_i),
 .s_axi_awaddr  (sh_ocl_bus.awaddr[31:0]),
-.s_axi_awprot   (2'h0),
+.s_axi_awprot  (2'h0),
 .s_axi_awvalid (sh_ocl_bus.awvalid),
 .s_axi_awready (sh_ocl_bus.awready),
 .s_axi_wdata   (sh_ocl_bus.wdata[31:0]),
@@ -63,17 +74,9 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
 
 
 
-// wires for axi-stream of axi_fifo_mm_s output
-  logic        axis_txd_tvalid;
-  logic        axis_txd_tready;
-  logic        axis_txd_tlast ;
-  logic [31:0] axis_txd_tdata ;
 
-  logic        axis_rxd_tvalid;
-  logic        axis_rxd_tready;
-  logic        axis_rxd_tlast ;
-  logic [31:0] axis_rxd_tdata ;
-
+// convert axil to axis
+//---------------------------------
 axi_fifo_mm_s # (
   .C_FAMILY(FPGA_VERSION),
   .C_S_AXI_ID_WIDTH(4),
@@ -151,124 +154,105 @@ axi_fifo_mm_s_axi_lite  (
  .s_axi4_arvalid(1'h0),
  .s_axi4_rready(1'h0),
  .mm2s_prmry_reset_out_n(),                     // output wire mm2s_prmry_reset_out_n
- .axi_str_txd_tvalid(axis_txd_tvalid),          // output wire axi_str_txd_tvalid
- .axi_str_txd_tready(axis_txd_tready),          // input wire axi_str_txd_tready
- .axi_str_txd_tlast(axis_txd_tlast),            // output wire axi_str_txd_tlast
- .axi_str_txd_tdata(axis_txd_tdata),            // output wire [31 : 0] axi_str_txd_tdata
+ .axi_str_txd_tvalid(fifo_axis_bus.txd_tvalid),          // output wire axi_str_txd_tvalid
+ .axi_str_txd_tready(fifo_axis_bus.txd_tready),          // input wire axi_str_txd_tready
+ .axi_str_txd_tlast(fifo_axis_bus.txd_tlast),            // output wire axi_str_txd_tlast
+ .axi_str_txd_tdata(fifo_axis_bus.txd_tdata),            // output wire [31 : 0] axi_str_txd_tdata
  .axi_str_txc_tready(1'h0),
  .s2mm_prmry_reset_out_n(),                     // output wire s2mm_prmry_reset_out_n
- .axi_str_rxd_tvalid(axis_rxd_tvalid),          // input wire axi_str_rxd_tvalid
- .axi_str_rxd_tready(axis_rxd_tready),          // output wire axi_str_rxd_tready
- .axi_str_rxd_tlast(axis_rxd_tlast),            // input wire axi_str_rxd_tlast
+ .axi_str_rxd_tvalid(fifo_axis_bus.rxd_tvalid),          // input wire axi_str_rxd_tvalid
+ .axi_str_rxd_tready(fifo_axis_bus.rxd_tready),          // output wire axi_str_rxd_tready
+ .axi_str_rxd_tlast(fifo_axis_bus.rxd_tlast),            // input wire axi_str_rxd_tlast
  .axi_str_rxd_tkeep(4'h0),
- .axi_str_rxd_tdata(axis_rxd_tdata),            // input wire [31 : 0] axi_str_rxd_tdata
+ .axi_str_rxd_tdata(fifo_axis_bus.rxd_tdata),            // input wire [31 : 0] axi_str_rxd_tdata
  .axi_str_rxd_tstrb(4'h0),
  .axi_str_rxd_tdest(4'h0),
  .axi_str_rxd_tid(4'h0),
  .axi_str_rxd_tuser(4'h0)
 );
 
-  logic         axis_adpt_v   ;
-  logic         adpt_axis_r   ;
-  logic [127:0] axis_adpt_data;
-  logic [ 15:0] axis_adpt_keep;
-  logic         axis_adpt_last;
+axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
+  .C_FAMILY(FPGA_VERSION),
+  .C_S_AXIS_TDATA_WIDTH(32),
+  .C_M_AXIS_TDATA_WIDTH(128),
+  .C_AXIS_TID_WIDTH(1),
+  .C_AXIS_TDEST_WIDTH(1),
+  .C_S_AXIS_TUSER_WIDTH(1),
+  .C_M_AXIS_TUSER_WIDTH(1),
+  .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
+) axis_32_128 (
+  .aclk(clk_i),
+  .aresetn(resetn_i),
+  .aclken(1'H1),
+  .s_axis_tvalid(fifo_axis_bus.txd_tvalid),
+  .s_axis_tready(fifo_axis_bus.txd_tready),
+  .s_axis_tdata(fifo_axis_bus.txd_tdata),
+  .s_axis_tstrb(4'HF),
+  .s_axis_tkeep(4'HF),
+  .s_axis_tlast(fifo_axis_bus.txd_tlast),
+  .s_axis_tid(1'H0),
+  .s_axis_tdest(1'H0),
+  .s_axis_tuser(1'H0),
+  .m_axis_tvalid(axis_fsb_bus.txd_tvalid),  // ->
+  .m_axis_tready(axis_fsb_bus.txd_tready),  // <-
+  .m_axis_tdata(axis_fsb_bus.txd_tdata),    // ->
+  .m_axis_tstrb(),
+  .m_axis_tkeep(axis_fsb_bus.txd_tkeep),    // ->
+  .m_axis_tlast(axis_fsb_bus.txd_tlast),    // ->
+  .m_axis_tid(),
+  .m_axis_tdest(),
+  .m_axis_tuser()
+);
 
-  axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
-    .C_FAMILY(FPGA_VERSION),
-    .C_S_AXIS_TDATA_WIDTH(32),
-    .C_M_AXIS_TDATA_WIDTH(128),
-    .C_AXIS_TID_WIDTH(1),
-    .C_AXIS_TDEST_WIDTH(1),
-    .C_S_AXIS_TUSER_WIDTH(1),
-    .C_M_AXIS_TUSER_WIDTH(1),
-    .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
-  ) axis_32_128 (
-    .aclk(clk_i),
-    .aresetn(resetn_i),
-    .aclken(1'H1),
-    .s_axis_tvalid(axis_txd_tvalid),
-    .s_axis_tready(axis_txd_tready),
-    .s_axis_tdata(axis_txd_tdata),
-    .s_axis_tstrb(4'HF),
-    .s_axis_tkeep(4'HF),
-    .s_axis_tlast(axis_txd_tlast),
-    .s_axis_tid(1'H0),
-    .s_axis_tdest(1'H0),
-    .s_axis_tuser(1'H0),
-    .m_axis_tvalid(axis_adpt_v),
-    .m_axis_tready(adpt_axis_r),
-    .m_axis_tdata(axis_adpt_data),
-    .m_axis_tstrb(),
-    .m_axis_tkeep(axis_adpt_keep),
-    .m_axis_tlast(axis_adpt_last),
-    .m_axis_tid(),
-    .m_axis_tdest(),
-    .m_axis_tuser()
-  );
+assign adpt_master_v = axis_fsb_bus.txd_tvalid;
+assign adpt_master_data = axis_fsb_bus.txd_tdata[79:0];
+// assign axis_fsb_bus.txd_tlast;
+assign axis_fsb_bus.txd_tready = adpt_master_r;
 
-  logic adpt_axis_v;
-  logic [79:0] adpt_axis_data;
-  logic axis_adpt_r;
-  logic adpt_axis_last;
+//  ||
+//  \/
+// FSB MODULE
+//  ||
+//  \/
 
-  assign adpt_axis_last = adpt_axis_v & axis_adpt_r;
+assign axis_fsb_bus.rxd_tvalid = adpt_slave_v;
+assign axis_fsb_bus.rxd_tdata = {48'h0000_0000_0000, adpt_slave_data};
+assign axis_fsb_bus.rxd_tlast = adpt_slave_v & axis_fsb_bus.rxd_tready;
 
-bsg_test_node_client #(
-    .ring_width_p(80)
-    ,.master_id_p(0)
-    ,.client_id_p(0)
-) fsb_client_node  
+assign adpt_slave_r = axis_fsb_bus.rxd_tready;
 
-(.clk_i(clk_i)
-   ,.reset_i(~resetn_i)
 
-   // control
-   ,.en_i(1'b1)
-
-   // input channel
-   ,.v_i(axis_adpt_v)
-   ,.data_i(axis_adpt_data[79:0])
-   ,.ready_o(adpt_axis_r)
-
-   // output channel
-   ,.v_o(adpt_axis_v)
-   ,.data_o(adpt_axis_data)
-   ,.yumi_i(adpt_axis_last)   // late
-
-   );
-
-  axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
-    .C_FAMILY(FPGA_VERSION),
-    .C_S_AXIS_TDATA_WIDTH(128),
-    .C_M_AXIS_TDATA_WIDTH(32),
-    .C_AXIS_TID_WIDTH(1),
-    .C_AXIS_TDEST_WIDTH(1),
-    .C_S_AXIS_TUSER_WIDTH(1),
-    .C_M_AXIS_TUSER_WIDTH(1),
-    .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
-  ) axis_128_32 (
-    .aclk(clk_i),
-    .aresetn(resetn_i),
-    .aclken(1'H1),
-    .s_axis_tvalid(adpt_axis_v),
-    .s_axis_tready(axis_adpt_r),
-    .s_axis_tdata({48'h000000000000, adpt_axis_data}),
-    .s_axis_tstrb(16'HFFFF),
-    .s_axis_tkeep(16'HFFFF),
-    .s_axis_tlast(adpt_axis_last),
-    .s_axis_tid(1'H0),
-    .s_axis_tdest(1'H0),
-    .s_axis_tuser(1'H0),
-    .m_axis_tvalid(axis_rxd_tvalid),
-    .m_axis_tready(axis_rxd_tready),
-    .m_axis_tdata(axis_rxd_tdata),
-    .m_axis_tstrb(),
-    .m_axis_tkeep(),
-    .m_axis_tlast(axis_rxd_tlast),
-    .m_axis_tid(),
-    .m_axis_tdest(),
-    .m_axis_tuser()
-  );
+axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
+  .C_FAMILY(FPGA_VERSION),
+  .C_S_AXIS_TDATA_WIDTH(128),
+  .C_M_AXIS_TDATA_WIDTH(32),
+  .C_AXIS_TID_WIDTH(1),
+  .C_AXIS_TDEST_WIDTH(1),
+  .C_S_AXIS_TUSER_WIDTH(1),
+  .C_M_AXIS_TUSER_WIDTH(1),
+  .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
+) axis_128_32 (
+  .aclk(clk_i),
+  .aresetn(resetn_i),
+  .aclken(1'H1),
+  .s_axis_tvalid(axis_fsb_bus.rxd_tvalid),
+  .s_axis_tready(axis_fsb_bus.rxd_tready),
+  .s_axis_tdata(axis_fsb_bus.rxd_tdata),
+  .s_axis_tstrb(16'HFFFF),
+  .s_axis_tkeep(16'HFFFF),
+  .s_axis_tlast(axis_fsb_bus.rxd_tlast),
+  .s_axis_tid(1'H0),
+  .s_axis_tdest(1'H0),
+  .s_axis_tuser(1'H0),
+  .m_axis_tvalid(fifo_axis_bus.rxd_tvalid),
+  .m_axis_tready(fifo_axis_bus.rxd_tready),
+  .m_axis_tdata(fifo_axis_bus.rxd_tdata),
+  .m_axis_tstrb(),
+  .m_axis_tkeep(),
+  .m_axis_tlast(fifo_axis_bus.rxd_tlast),
+  .m_axis_tid(),
+  .m_axis_tdest(),
+  .m_axis_tuser()
+);
 
 endmodule
