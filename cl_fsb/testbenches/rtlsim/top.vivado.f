@@ -77,9 +77,12 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/axi_clock_converter_v2_1_vl
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/fifo_generator_v13_2_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 
+${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/c631/hdl/axi_crossbar_v2_1_vl_rfs.v
+
 # Simulator-specific design files
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
 
 # Testbench design files
 ${CL_DIR}/testbenches/rtlsim/cl_s_axil_fsb_tb.sv
 ${CL_DIR}/testbenches/rtlsim/cl_m_axi4_fsb_tb.sv
+${CL_DIR}/testbenches/rtlsim/cl_crossbar_tb.sv

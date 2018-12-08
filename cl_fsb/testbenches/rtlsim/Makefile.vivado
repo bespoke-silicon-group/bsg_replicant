@@ -17,7 +17,7 @@
 ## Makefile For Vivado compiles and simulations
 ##################################################################
 
-XILINX_LIBRARIES = -L axi_fifo_mm_s_v4_1_14 -L axis_dwidth_converter_v1_1_16 -L axis_register_slice_v1_1_17 -L axis_infrastructure_v1_1_0
+XILINX_LIBRARIES = -L axi_fifo_mm_s_v4_1_14 -L axis_dwidth_converter_v1_1_16 -L axis_register_slice_v1_1_17 -L axis_infrastructure_v1_1_0 -L axi_crossbar_v2_1_18 -L axi_crossbar_v2_1
 
 compile: $(SIM_ROOT)
 	mkdir -p $(SIM_ROOT)

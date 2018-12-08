@@ -18,77 +18,159 @@
 
 `ifndef CL_FSB_BUS_PKG
 `define CL_FSB_BUS_PKG
- 
-   interface axi_bus_t;
-      logic[15:0] awid;
-      logic[63:0] awaddr;
-      logic[7:0] awlen;
-      logic [2:0] awsize;
-      logic awvalid;
-      logic awready;
-   
-      logic[15:0] wid;  // this is not used in cl_ports.vh
-      logic[511:0] wdata;
-      logic[63:0] wstrb;
-      logic wlast;
-      logic wvalid;
-      logic wready;
-         
-      logic[15:0] bid;
-      logic[1:0] bresp;
-      logic bvalid;
-      logic bready;
-         
-      logic[15:0] arid;
-      logic[63:0] araddr;
-      logic[7:0] arlen;
-      logic [2:0] arsize;
-      logic arvalid;
-      logic arready;
-         
-      logic[15:0] rid;
-      logic[511:0] rdata;
-      logic[1:0] rresp;
-      logic rlast;
-      logic rvalid;
-      logic rready;
 
-      modport master (input awid, awaddr, awlen, awsize, awvalid, output awready,
-                      input wid, wdata, wstrb, wlast, wvalid, output wready,
-                      output bid, bresp, bvalid, input bready,
-                      input arid, araddr, arlen, arsize, arvalid, output arready,
-                      output rid, rdata, rresp, rlast, rvalid, input rready);
+interface axi_bus_t;
 
-      modport slave (output awid, awaddr, awlen, awsize, awvalid, input awready,
-                     output wid, wdata, wstrb, wlast, wvalid, input wready,
-                     input bid, bresp, bvalid, output bready,
-                     output arid, araddr, arlen, arsize, arvalid, input arready,
-                     input rid, rdata, rresp, rlast, rvalid, output rready);
-   endinterface
+  logic [15:0] awid   ;
+  logic [63:0] awaddr ;
+  logic [ 7:0] awlen  ;
+  logic [ 2:0] awsize ;
+  logic        awvalid;
+  logic        awready;
+
+  logic [ 15:0] wid   ; // this is not used in cl_ports.vh
+  logic [511:0] wdata ;
+  logic [ 63:0] wstrb ;
+  logic         wlast ;
+  logic         wvalid;
+  logic         wready;
+
+  logic [15:0] bid   ;
+  logic [ 1:0] bresp ;
+  logic        bvalid;
+  logic        bready;
+
+  logic [15:0] arid   ;
+  logic [63:0] araddr ;
+  logic [ 7:0] arlen  ;
+  logic [ 2:0] arsize ;
+  logic        arvalid;
+  logic        arready;
+
+  logic [ 15:0] rid   ;
+  logic [511:0] rdata ;
+  logic [  1:0] rresp ;
+  logic         rlast ;
+  logic         rvalid;
+  logic         rready;
+
+  modport master (
+    input awid, awaddr, awlen, awsize, awvalid, output awready,
+    input wid, wdata, wstrb, wlast, wvalid, output wready,
+    output bid, bresp, bvalid, input bready,
+    input arid, araddr, arlen, arsize, arvalid, output arready,
+    output rid, rdata, rresp, rlast, rvalid, input rready
+  );
+
+  modport slave (
+    output awid, awaddr, awlen, awsize, awvalid, input awready,
+    output wid, wdata, wstrb, wlast, wvalid, input wready,
+    input bid, bresp, bvalid, output bready,
+    output arid, araddr, arlen, arsize, arvalid, input arready,
+    input rid, rdata, rresp, rlast, rvalid, output rready
+  );
+endinterface
 
 
-   interface cfg_bus_t;
-      logic [31:0] addr;
-      logic [31:0] wdata;
-      logic wr;
-      logic rd;
-      logic ack;
-      logic[31:0] rdata;
+interface axil_bus_t #(parameter NUM_SLOTS=1);
 
-      modport master (input addr, wdata, wr, rd, output ack, rdata);
+  logic [NUM_SLOTS*32-1:0] awaddr;
+  // lo gic[2:0] wrprot;
+  logic [NUM_SLOTS-1:0] awvalid;
+  logic [NUM_SLOTS-1:0] awready;
 
-      modport slave (output addr, wdata, wr, rd, input ack, rdata);
-   endinterface
+  logic [NUM_SLOTS*32-1:0] wdata ;
+  logic [ NUM_SLOTS*4-1:0] wstrb ;
+  logic [   NUM_SLOTS-1:0] wvalid;
+  logic [   NUM_SLOTS-1:0] wready;
 
-   interface scrb_bus_t;
-      logic [63:0] addr;
-      logic [2:0] state;
-      logic enable;
-      logic done;
+  logic [NUM_SLOTS*2-1:0] bresp ;
+  logic [  NUM_SLOTS-1:0] bvalid;
+  logic [  NUM_SLOTS-1:0] bready;
 
-      modport master (input enable, output addr, state, done);
+  logic [NUM_SLOTS*32-1:0] araddr;
+  // logic[2:0] arprot;
+  logic [NUM_SLOTS-1:0] arvalid;
+  logic [NUM_SLOTS-1:0] arready;
 
-      modport slave (output enable, input addr, state, done);
-   endinterface
+  logic [NUM_SLOTS*32-1:0] rdata ;
+  logic [ NUM_SLOTS*2-1:0] rresp ;
+  logic [   NUM_SLOTS-1:0] rvalid;
+  logic [   NUM_SLOTS-1:0] rready;
+
+  modport master (
+    input awaddr, awvalid, output awready,
+    input wdata, wstrb, wvalid, output wready,
+    output bresp, bvalid, input bready,
+    input araddr, arvalid, output arready,
+    output rdata, rresp, rvalid, input rready
+  );
+
+  modport slave (
+    output awaddr, awvalid, input awready,
+    output wdata, wstrb, wvalid, input wready,
+    input bresp, bvalid, output bready,
+    output araddr, arvalid, input arready,
+    input rdata, rresp, rvalid, output rready
+  );
+
+endinterface
+
+
+interface axis_bus_t #(parameter TDATA_WIDTH=32);
+
+  logic [TDATA_WIDTH-1:0] txd_tdata ;
+  logic                   txd_tlast ;
+  logic                   txd_tvalid;
+  logic                   txd_tready;
+
+  logic [TDATA_WIDTH/8-1:0] txd_tkeep;
+
+  logic [TDATA_WIDTH-1:0] rxd_tdata ;
+  logic                   rxd_tlast ;
+  logic                   rxd_tvalid;
+  logic                   rxd_tready;
+
+  modport master (
+    input txd_tdata, txd_tlast, txd_tvalid, txd_tkeep, output txd_tready,
+    output rxd_tdata, rxd_tlast, rxd_tvalid, input rxd_tready
+  );
+
+  modport slave (
+    output txd_tdata, txd_tlast, txd_tvalid, txd_tkeep, input txd_tready,
+    input rxd_tdata, rxd_tlast, rxd_tvalid, output rxd_tready
+  );
+
+endinterface
+
+
+interface cfg_bus_t;
+
+  logic [31:0] addr ;
+  logic [31:0] wdata;
+  logic        wr   ;
+  logic        rd   ;
+  logic        ack  ;
+  logic [31:0] rdata;
+
+  modport master (input addr, wdata, wr, rd, output ack, rdata);
+
+  modport slave (output addr, wdata, wr, rd, input ack, rdata);
+
+endinterface
+
+
+interface scrb_bus_t;
+
+  logic [63:0] addr  ;
+  logic [ 2:0] state ;
+  logic        enable;
+  logic        done  ;
+
+  modport master (input enable, output addr, state, done);
+
+  modport slave (output enable, input addr, state, done);
+
+endinterface
 
 `endif //CL_FSB_BUS_PKG
