@@ -40,10 +40,9 @@
 
 #define WR_ADDR_LOW       UINT64_C(0x20)
 #define WR_ADDR_HIGH      UINT64_C(0x24)
-#define WR_DATA           UINT64_C(0x28)
+#define WR_HEAD           UINT64_C(0x28)
 #define WR_LEN            UINT64_C(0x2c)
 #define WR_OFFSET         UINT64_C(0x30)
-
 #define RD_ADDR_LOW       UINT64_C(0x40)
 #define RD_ADDR_HIGH      UINT64_C(0x44)
 #define RD_DATA           UINT64_C(0x48)
@@ -97,7 +96,11 @@ uint32_t byte_swap(uint32_t value) {
     return swapped_value;
 }
 
+/* global variables */
 char *host_memory_buffer; 
+size_t buffer_size = 640;
+uint32_t head = 0; 
+uint8_t user_buf[128];
 
 /* 
  * cosim_wrapper.sv calls test_main (not main). Use SV_TEST to switch between
@@ -162,24 +165,9 @@ char *host_memory_buffer;
     
     /* Accessing the CL registers via AppPF BAR0, which maps to sh_cl_ocl_ AXI-Lite bus between AWS FPGA Shell and the CL*/
 
-    printf("===== Starting with peek_poke_example =====\n");
-    rc = peek_poke_example(value, slot_id, FPGA_APP_PF, APP_PF_BAR4);
-    fail_on(rc, out, "peek-poke example failed");
-
-    printf("Developers are encouraged to modify the Virtual DIP Switch by calling the linux shell command to demonstrate how AWS FPGA Virtual DIP switches can be used to change a CustomLogic functionality:\n");
-    printf("$ fpga-set-virtual-dip-switch -S (slot-id) -D (16 digit setting)\n\n");
-    printf("In this example, setting a virtual DIP switch to zero clears the corresponding LED, even if the peek-poke example would set it to 1.\nFor instance:\n");
-
-    printf(
-        "# sudo fpga-set-virtual-dip-switch -S 0 -D 1111111111111111\n"
-        "# sudo fpga-get-virtual-led  -S 0\n"
-        "FPGA slot id 0 have the following Virtual LED:\n"
-        "1010-1101-1101-1110\n"
-        "# sudo fpga-set-virtual-dip-switch -S 0 -D 0000000000000000\n"
-        "# sudo fpga-get-virtual-led  -S 0\n"
-        "FPGA slot id 0 have the following Virtual LED:\n"
-        "0000-0000-0000-0000\n"
-    );
+    printf("===== Head/Tail DMA =====\n");
+    rc = head_tail_dma(value, slot_id, FPGA_APP_PF, APP_PF_BAR4);
+    fail_on(rc, out, "Head/Tail DMA failed");
 
 #ifndef SV_TEST
     return rc;
@@ -200,7 +188,7 @@ out:
 
 /* As HW simulation test is not run on a AFI, the below function is not valid */
 #ifndef SV_TEST
-
+	
  int check_afi_ready(int slot_id) {
    struct fpga_mgmt_image_info info = {0}; 
    int rc;
@@ -251,13 +239,24 @@ out:
 
 #endif
 
+void print_mem () {
+	// print out memory 
+	sleep(1);  // ensure that axi packets are written into host memory
+	for (int i = 0; i < buffer_size + 64; i++) {
+		printf("%02X", 0xff & host_memory_buffer[i]);
+		if ((i + 1) % 16 == 0)
+			printf("\n");
+		else
+			printf(" ");
+	} 
+}
+
 /*
  * An example to attach to an arbitrary slot, pf, and bar with register access.
  */
-int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
+int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id) {
     int rc;
-	uint64_t pcim_addr = 0x0000000012340000;
-	uint32_t pcim_data = 0x6c93af50;
+	// uint32_t pcim_data = 0x6c93af50;
 	uint32_t read_data;
 
 
@@ -278,7 +277,9 @@ int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
 	
 	/* Allocate host memory and tell cosimulation functions to use this memory. */
-	host_memory_buffer = (char *) aligned_alloc(64, 4 * 320);
+	size_t align = 64;
+	host_memory_buffer = (char *) aligned_alloc(align, buffer_size + 64);
+	memset(host_memory_buffer, 0, buffer_size + 64);
 	sv_map_host_memory(host_memory_buffer);
 
 
@@ -289,22 +290,22 @@ int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
 	printf("Host memory address: %lx\n", addr_long);
 	
 	// Setup the DMA
-	rc = fpga_pci_poke(pci_bar_handle, CFG_REG, 0x8); 
-    	fail_on(rc, out, "Couldn't write to CFG_REG.");
+	rc = fpga_pci_poke(pci_bar_handle, CFG_REG, 0x10); 
+    fail_on(rc, out, "Couldn't write to CFG_REG.");
 	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_LOW, low32); // write address low
-    	fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
+    fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
 	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_HIGH, high32); // write address high
-    	fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
-   	rc = fpga_pci_poke(pci_bar_handle, WR_DATA, pcim_data); // write data, not used
-    	fail_on(rc, out, "Couldn't write to WR_DATA.");
+    fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
+   	rc = fpga_pci_poke(pci_bar_handle, WR_HEAD, head);     
+	fail_on(rc, out, "Couldn't write to WR_HEAD.");
    	rc = fpga_pci_poke(pci_bar_handle, WR_LEN, 0x0); // write 64 bytes, 512bits
-    	fail_on(rc, out, "Couldn't write to WR_LEN.");
-    	rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (0x140-1)); // 320 bytes, 32 fsb pkts
+    fail_on(rc, out, "Couldn't write to WR_LEN.");
+    rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size-1)); 
    	fail_on(rc, out, "Couldn't write to WR_OFFSET.");
 
 	// start write
    	rc = fpga_pci_poke(pci_bar_handle, CNTL_START, WR_SEL);
-    	fail_on(rc, out, "Couldn't write to CNTL_START.");
+    fail_on(rc, out, "Couldn't write to CNTL_START.");
 
 	// wait for writes to complete
 	int timeout_count = 0;
@@ -321,15 +322,29 @@ int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id) {
      		printf("Timeout waiting for 1st writes to complete.\n");
    	else
      		printf("PASS~~~ axi4 1st writes complete.\n");
-     	if (read_data & 8) // check bit 3
-     		printf("axi4 1st writes RESP ERROR.\n");
+    if (read_data & 8) // check bit 3
+    	printf("axi4 1st writes RESP ERROR.\n");
 
-  
+   	rc = fpga_pci_poke(pci_bar_handle, CNTL_START, WR_SEL);
+    fail_on(rc, out, "Couldn't write to CNTL_START.");
+
+	int seconds = 0;
+//	bool done_writing = false; 
+//	while (seconds < 60) {
+//		sleep(1); /* wait another second */
+//		seconds++;
+//		uint32_t *tail_p = (uint32_t *) (host_memory_buffer + buffer_size);
+//		// done_writing = (*tail_p == buffer_size - 64);
+//		printf("Slept for %d seconds. Tail is now at 0x%X.\n", seconds, *tail_p);
+//		// printf("First byte of data: %X\n", (uint32_t) host_memory_buffer[0]); 
+//	}  
+//
+
 out:
     /* clean up */
     if (pci_bar_handle >= 0) {
         rc = fpga_pci_detach(pci_bar_handle);
-        if (rc) {
+		if (rc) {
             printf("Failure while detaching from the fpga.\n");
         }
     }
@@ -339,20 +354,88 @@ out:
 }
 
 
-void print_mem () {
-	// print out memory 
-	sleep(1);  // ensure that axi packets are written into host memory
-	printf("Memory after DMA: \n");
-	for (int i = 0; i < 320*4; i++) {
-		printf("%02X", 0xff & host_memory_buffer[i]);
-		if (i % 10 == 0 && i > 0)
+void check_mem () {
+	
+	bool pass = true;
+	uint32_t counter = 0x0;
+
+	for (int fsb = 2*16; fsb < buffer_size - 4*16; fsb += 16) {
+		for (int i = 0; i < 8; i++) { // data bytes
+			uint8_t byte = host_memory_buffer[fsb + i];
+			uint8_t id = (byte & 0xE0) >> 5; 
+			uint8_t data = byte & (0x1F);			
+			if (id != i || data != counter) {
+				pass = false;
+				break;
+			} 
+		}		
+		for (int i = 8; i < 10; i++) {
+			// check header
+		}
+		counter = (counter + 1) % 32;
+	}	
+
+	if (pass) 
+		printf("Pass! Memory is correct.\n");
+	else
+		printf("Fail!\n");
+}
+
+int pop_data (int pop_size, int *pop_fail) {
+    
+    /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
+	if (fpga_pci_init())
+		printf("Unable to initialize fpga_pci library.\n");
+
+
+	/* check if there is data to read */
+	uint32_t *tail = (uint32_t *) (host_memory_buffer + buffer_size);
+	int old_head = head; // for debugging messages 
+	bool can_read;
+	uint32_t num_dw;
+	if (*tail >= head)
+		num_dw = *tail - head;
+	else
+		num_dw = *tail - head + buffer_size;
+	can_read = num_dw >= pop_size;
+	if (!can_read) {
+		printf("pop_data(): can't read %d bytes because (Head, Tail) = (%d, %d);\n only %d bytes available. Will try this again.\n",  pop_size, head, *tail, num_dw); 
+		*pop_fail = 1;
+		return 1;
+	}
+	/* there is enough unread data; first, read data that lies before the end of system memory buffer */
+	uint32_t before_dw = (buffer_size - head >= pop_size) ? pop_size : buffer_size - head; 
+	for (int i = 0; i < before_dw; i++) 
+		user_buf[i] = host_memory_buffer[head + i];		
+	head = (head + before_dw) % buffer_size;
+	/* read data that wraps over the end of system memory buffer */
+	uint32_t after_dw = pop_size - before_dw;
+	if (after_dw > 0) { /* if there is still data to read */
+		/* read this data into a user buffer */
+		for (int i = 0; i < after_dw; i++) 
+			user_buf[before_dw + i] = host_memory_buffer[i];
+		head = (head + after_dw) % buffer_size; /* update head */	
+	}
+
+   	if (fpga_pci_poke(PCI_BAR_HANDLE_INIT, WR_HEAD, head)) /* update head register on device */
+		printf("Couldn't write to head register.\n"); 
+
+	/* print what has been read */
+	printf("User program has popped data at [%u, %u)", old_head, old_head + before_dw);
+	if (after_dw)
+		printf(" and [0, %u):\n", after_dw);
+	else
+		printf(":\n");
+	for (int i = 0; i < pop_size; i++) {
+		printf("0x%02X", (uint32_t) user_buf[i]);
+		if ((i + 1) % 16 == 0) 
 			printf("\n");
 		else
 			printf(" ");
-} 
-
-
-
+	}	
+	printf("\n");
+	*pop_fail = 0;
+	return 0;
 }
 
 #ifdef SV_TEST
