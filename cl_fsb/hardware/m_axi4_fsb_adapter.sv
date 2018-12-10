@@ -1,5 +1,5 @@
 /**
- *  m_axi4_fsb_adapter.v
+ *  m_axi4_fsb_adapter.sv
  *
  *  cl_bsg (master) -> axi-4 (slave)
  */
@@ -515,8 +515,10 @@ logic axi_frctn_valid_i; // fsb pkt is partly packed and hold for valid signal
 // tail stands for the write pointer after this write
 
 logic [31:0] wr_addr_next;
+logic [31:0] wr_next_tail;
 logic wr_buffer_full;
 
+assign wr_next_tail = wr_addr_next;
 assign wr_hm_pause = wr_dat_tail_flag && wr_buffer_full;
 assign wr_hm_avaliable = !wr_buffer_full;
 
@@ -525,9 +527,9 @@ always_ff @(posedge clk)
     begin
       wr_buffer_full <= 0;
     end
-  else if ((wr_addr_next >= cfg_hm_read_head + wr_last_addr)
-    || (((cfg_hm_read_head - wr_addr_next) <= DATA_BYTE_NUM)
-      && (cfg_hm_read_head!=wr_addr_next)))
+  else if ((wr_next_tail >= (cfg_hm_read_head + wr_last_addr))
+    || (((cfg_hm_read_head - wr_next_tail) <= DATA_BYTE_NUM)
+      && (cfg_hm_read_head != wr_next_tail)))
   begin
     wr_buffer_full <= 1'b1;
   end
@@ -539,7 +541,7 @@ always_ff @(posedge clk)
 
 // 2. FSB invalid
 always_ff @(posedge clk)
-  if (!wr_dat_tail_flag)  // pause until the tail is sent
+  if (!wr_dat_tail_flag)  // pause after the tail is sent
     wr_fsb_pause <= axi_frctn_valid_i;  // we assume always send fraction
 
 

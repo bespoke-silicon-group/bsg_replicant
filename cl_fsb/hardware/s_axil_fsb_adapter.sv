@@ -1,5 +1,5 @@
 /**
- *  s_axil_fsb_adapter.v
+ *  s_axil_fsb_adapter.sv
  *
  *  axi-l (master) -> cl_bsg (slave)
  */
@@ -193,21 +193,21 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .s_axis_tid(1'H0),
   .s_axis_tdest(1'H0),
   .s_axis_tuser(1'H0),
-  .m_axis_tvalid(axis_fsb_bus.txd_tvalid),  // ->
-  .m_axis_tready(axis_fsb_bus.txd_tready),  // <-
-  .m_axis_tdata(axis_fsb_bus.txd_tdata),    // ->
+  .m_axis_tvalid(axis_fsb_bus.rxd_tvalid),  // ->
+  .m_axis_tready(axis_fsb_bus.rxd_tready),  // <-
+  .m_axis_tdata(axis_fsb_bus.rxd_tdata),    // ->
   .m_axis_tstrb(),
-  .m_axis_tkeep(axis_fsb_bus.txd_tkeep),    // ->
-  .m_axis_tlast(axis_fsb_bus.txd_tlast),    // ->
+  .m_axis_tkeep(axis_fsb_bus.rxd_tkeep),    // ->
+  .m_axis_tlast(axis_fsb_bus.rxd_tlast),    // ->
   .m_axis_tid(),
   .m_axis_tdest(),
   .m_axis_tuser()
 );
 
-assign adpt_master_v = axis_fsb_bus.txd_tvalid;
-assign adpt_master_data = axis_fsb_bus.txd_tdata[79:0];
-// assign axis_fsb_bus.txd_tlast;
-assign axis_fsb_bus.txd_tready = adpt_master_r;
+assign adpt_master_v = axis_fsb_bus.rxd_tvalid;
+assign adpt_master_data = axis_fsb_bus.rxd_tdata[79:0];
+// assign axis_fsb_bus.rxd_tlast;
+assign axis_fsb_bus.rxd_tready = adpt_master_r;
 
 //  ||
 //  \/
@@ -215,11 +215,11 @@ assign axis_fsb_bus.txd_tready = adpt_master_r;
 //  ||
 //  \/
 
-assign axis_fsb_bus.rxd_tvalid = adpt_slave_v;
-assign axis_fsb_bus.rxd_tdata = {48'h0000_0000_0000, adpt_slave_data};
-assign axis_fsb_bus.rxd_tlast = adpt_slave_v & axis_fsb_bus.rxd_tready;
+assign axis_fsb_bus.txd_tvalid = adpt_slave_v;
+assign axis_fsb_bus.txd_tdata = {48'h0000_0000_0000, adpt_slave_data};
+assign axis_fsb_bus.txd_tlast = adpt_slave_v & axis_fsb_bus.txd_tready;
 
-assign adpt_slave_r = axis_fsb_bus.rxd_tready;
+assign adpt_slave_r = axis_fsb_bus.txd_tready;
 
 
 axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
@@ -235,12 +235,12 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .aclk(clk_i),
   .aresetn(resetn_i),
   .aclken(1'H1),
-  .s_axis_tvalid(axis_fsb_bus.rxd_tvalid),
-  .s_axis_tready(axis_fsb_bus.rxd_tready),
-  .s_axis_tdata(axis_fsb_bus.rxd_tdata),
+  .s_axis_tvalid(axis_fsb_bus.txd_tvalid),
+  .s_axis_tready(axis_fsb_bus.txd_tready),
+  .s_axis_tdata(axis_fsb_bus.txd_tdata),
   .s_axis_tstrb(16'HFFFF),
   .s_axis_tkeep(16'HFFFF),
-  .s_axis_tlast(axis_fsb_bus.rxd_tlast),
+  .s_axis_tlast(axis_fsb_bus.txd_tlast),
   .s_axis_tid(1'H0),
   .s_axis_tdest(1'H0),
   .s_axis_tuser(1'H0),

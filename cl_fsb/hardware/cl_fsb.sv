@@ -41,7 +41,7 @@ module cl_fsb
 `include "unused_ddr_a_b_d_template.inc"
 `include "unused_ddr_c_template.inc"
 // `include "unused_pcim_template.inc"
-`include "unused_dma_pcis_template.inc"
+// `include "unused_dma_pcis_template.inc"
 `include "unused_cl_sda_template.inc"
 `include "unused_sh_bar1_template.inc"
 `include "unused_apppf_irq_template.inc"
@@ -134,6 +134,8 @@ assign sh_ocl_bus.rready       = sh_ocl_rready;
 
 axil_bus_t #(.NUM_SLOTS(1)) sh_ocl_mux00();
 axil_bus_t #(.NUM_SLOTS(1)) sh_ocl_mux01();
+axil_bus_t #(.NUM_SLOTS(1)) sh_ocl_mux02();
+axil_bus_t #(.NUM_SLOTS(1)) sh_ocl_mux03();
 
 (* dont_touch = "true" *) logic axi_crossbar_sync_rst_n;
 lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_CROSSBAR_RST_N (
@@ -143,14 +145,23 @@ lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_CROSSBAR_RST_N (
   ,.out_bus(axi_crossbar_sync_rst_n)
 );
 
-s_axil_crossbar_1_2 axil_s1_m2 (
+// s_axil_crossbar_1_2 axil_s1_m2 (
+//   .aclk          (clk)
+//   ,.aresetn       (axi_crossbar_sync_rst_n)
+//   ,.axil_m_bus    (sh_ocl_bus)
+//   ,.axil_s_m00_bus(sh_ocl_mux00)
+//   ,.axil_s_m01_bus(sh_ocl_mux01)
+// );
+
+s_axil_crossbar_1_4 axil_s1_m4 (
   .aclk          (clk)
   ,.aresetn       (axi_crossbar_sync_rst_n)
   ,.axil_m_bus    (sh_ocl_bus)
-  ,.axil_s_m00_bus(sh_ocl_mux00)
-  ,.axil_s_m01_bus(sh_ocl_mux01)
+  ,.axil_s_m00_bus(sh_ocl_mux00) // -> s_axil_fsb
+  ,.axil_s_m01_bus(sh_ocl_mux01) // -> cl_ocl_slv -> m_axi4_fsb_cfg
+  ,.axil_s_m02_bus(sh_ocl_mux02) // -> s_axi4_fsb_cfg
+  ,.axil_s_m03_bus(sh_ocl_mux03) // -> to be determined
 );
-
 
 // m_axi4_crossbar_2_1 axi4_m2_s1 ();
 
@@ -273,7 +284,7 @@ lib_pipe #(.WIDTH(1), .STAGES(4)) OCL_SLV_SLC_RST_N (
   ,.out_bus(ocl_slv_sync_rst_n)
 );
 
-logic adpt_slave;
+logic adpt_slave_v;
 logic [79:0] adpt_slave_data;
 logic adpt_slave_r;
 
@@ -309,6 +320,68 @@ bsg_test_node_client #(
   ,.v_o    (adpt_slave_v)
   ,.data_o (adpt_slave_data)
   ,.yumi_i ((adpt_slave_r&&adpt_slave_v))
+);
+
+//=================================================
+// AXI4 to FSB slave 
+//=================================================
+
+axi_bus_t sh_cl_dma_pcis_bus();
+
+assign sh_cl_dma_pcis_bus.awid[5:0] = sh_cl_dma_pcis_awid;
+assign sh_cl_dma_pcis_bus.awaddr    = sh_cl_dma_pcis_awaddr;
+assign sh_cl_dma_pcis_bus.awlen     = sh_cl_dma_pcis_awlen;
+assign sh_cl_dma_pcis_bus.awsize    = sh_cl_dma_pcis_awsize;
+assign sh_cl_dma_pcis_bus.awvalid   = sh_cl_dma_pcis_awvalid;
+assign cl_sh_dma_pcis_awready       = sh_cl_dma_pcis_bus.awready;
+
+assign sh_cl_dma_pcis_bus.wdata     = sh_cl_dma_pcis_wdata;
+assign sh_cl_dma_pcis_bus.wstrb     = sh_cl_dma_pcis_wstrb;
+assign sh_cl_dma_pcis_bus.wlast     = sh_cl_dma_pcis_wlast;
+assign sh_cl_dma_pcis_bus.wvalid    = sh_cl_dma_pcis_wvalid;
+assign cl_sh_dma_pcis_wready        = sh_cl_dma_pcis_bus.wready;
+
+assign cl_sh_dma_pcis_bid           = {2'b0, sh_cl_dma_pcis_bus.bid[3:0]};
+assign cl_sh_dma_pcis_bresp         = sh_cl_dma_pcis_bus.bresp;
+assign cl_sh_dma_pcis_bvalid        = sh_cl_dma_pcis_bus.bvalid;
+assign sh_cl_dma_pcis_bus.bready    = sh_cl_dma_pcis_bready;
+
+assign sh_cl_dma_pcis_bus.arid[5:0] = sh_cl_dma_pcis_arid;
+assign sh_cl_dma_pcis_bus.araddr    = sh_cl_dma_pcis_araddr;
+assign sh_cl_dma_pcis_bus.arlen     = sh_cl_dma_pcis_arlen;
+assign sh_cl_dma_pcis_bus.arsize    = sh_cl_dma_pcis_arsize;
+assign sh_cl_dma_pcis_bus.arvalid   = sh_cl_dma_pcis_arvalid;
+assign cl_sh_dma_pcis_arready       = sh_cl_dma_pcis_bus.arready;
+
+assign cl_sh_dma_pcis_rid           = {2'b0, sh_cl_dma_pcis_bus.rid[3:0]};
+assign cl_sh_dma_pcis_rdata         = sh_cl_dma_pcis_bus.rdata;
+assign cl_sh_dma_pcis_rresp         = sh_cl_dma_pcis_bus.rresp;
+assign cl_sh_dma_pcis_rlast         = sh_cl_dma_pcis_bus.rlast;
+assign cl_sh_dma_pcis_rvalid        = sh_cl_dma_pcis_bus.rvalid;
+assign sh_cl_dma_pcis_bus.rready    = sh_cl_dma_pcis_rready;
+
+(* dont_touch = "true" *) logic dma_pcis_sync_rst_n;
+lib_pipe #(.WIDTH(1), .STAGES(4)) DMA_PCIS_SLC_RST_N (
+  .clk    (clk)
+  ,.rst_n  (1'b1)
+  ,.in_bus (sync_rst_n)
+  ,.out_bus(dma_pcis_sync_rst_n)
+);
+
+
+// Simple loop back 4x128bits without FSB client.
+// TODO: AXI4-512bit bus should be able to write single FSB packet (128bit,80bit) .
+s_axi4_fsb_adapter s_axi4_fsb (
+  .clk_i           (clk),
+  .resetn_i        (dma_pcis_sync_rst_n),
+  .sh_ocl_bus      (sh_ocl_mux02),
+  .sh_cl_dma_pcis  (sh_cl_dma_pcis_bus),
+  .adpt_slave_v    (),
+  .adpt_slave_data (),
+  .adpt_slave_r    (),
+  .adpt_master_v   (),
+  .adpt_master_data(),
+  .adpt_master_r   ()
 );
 
 endmodule

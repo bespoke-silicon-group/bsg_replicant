@@ -21,7 +21,7 @@
 
 interface axi_bus_t;
 
-  logic [15:0] awid   ;
+  logic [15:0] awid   ;  // [5:0]
   logic [63:0] awaddr ;
   logic [ 7:0] awlen  ;
   logic [ 2:0] awsize ;
@@ -35,19 +35,19 @@ interface axi_bus_t;
   logic         wvalid;
   logic         wready;
 
-  logic [15:0] bid   ;
+  logic [15:0] bid   ;  // [5:0]
   logic [ 1:0] bresp ;
   logic        bvalid;
   logic        bready;
 
-  logic [15:0] arid   ;
+  logic [15:0] arid   ;  // [5:0]
   logic [63:0] araddr ;
   logic [ 7:0] arlen  ;
   logic [ 2:0] arsize ;
   logic        arvalid;
   logic        arready;
 
-  logic [ 15:0] rid   ;
+  logic [ 15:0] rid   ;  // [5:0]
   logic [511:0] rdata ;
   logic [  1:0] rresp ;
   logic         rlast ;
@@ -123,13 +123,13 @@ interface axis_bus_t #(parameter TDATA_WIDTH=32);
   logic                   txd_tlast ;
   logic                   txd_tvalid;
   logic                   txd_tready;
-
   logic [TDATA_WIDTH/8-1:0] txd_tkeep;
 
   logic [TDATA_WIDTH-1:0] rxd_tdata ;
   logic                   rxd_tlast ;
   logic                   rxd_tvalid;
   logic                   rxd_tready;
+  logic [TDATA_WIDTH/8-1:0] rxd_tkeep;
 
   modport master (
     input txd_tdata, txd_tlast, txd_tvalid, txd_tkeep, output txd_tready,
@@ -137,7 +137,7 @@ interface axis_bus_t #(parameter TDATA_WIDTH=32);
   );
 
   modport slave (
-    output txd_tdata, txd_tlast, txd_tvalid, txd_tkeep, input txd_tready,
+    output txd_tdata, txd_tlast, txd_tvalid, rxd_tkeep, input txd_tready,
     input rxd_tdata, rxd_tlast, rxd_tvalid, output rxd_tready
   );
 
