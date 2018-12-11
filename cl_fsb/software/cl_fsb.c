@@ -34,24 +34,28 @@
 
 #include "axiintrin.h"
 
-#define CFG_REG           UINT64_C(0x0)
-#define CNTL_START        UINT64_C(0x8)  			// WR
-#define CNTL_RESET        UINT64_C(0xc)  			// W
 
-#define WR_ADDR_LOW       UINT64_C(0x20)
-#define WR_ADDR_HIGH      UINT64_C(0x24)
-#define WR_HEAD           UINT64_C(0x28)
-#define WR_LEN            UINT64_C(0x2c)
-#define WR_OFFSET         UINT64_C(0x30)
-#define RD_ADDR_LOW       UINT64_C(0x40)
-#define RD_ADDR_HIGH      UINT64_C(0x44)
-#define RD_DATA           UINT64_C(0x48)
-#define RD_LEN            UINT65_C(0x4c)
+	
+#define CROSSBAR_M1           UINT64_C(0x00001000)
 
-#define WR_DST_SEL        0xe0
+#define CFG_REG           UINT64_C(0x1000 + 0x0)
+#define CNTL_START        UINT64_C(0x1000 + 0x8)  			// WR
+#define CNTL_RESET        UINT64_C(0x1000 + 0xc)  			// W
 
-#define WR_SEL            1
-#define ED_SEL            2
+#define WR_ADDR_LOW       UINT64_C(0x1000 + 0x20)
+#define WR_ADDR_HIGH      UINT64_C(0x1000 + 0x24)
+#define WR_HEAD           UINT64_C(0x1000 + 0x28)
+#define WR_LEN            UINT64_C(0x1000 + 0x2c)
+#define WR_OFFSET         UINT64_C(0x1000 + 0x30)
+#define RD_ADDR_LOW       UINT64_C(0x1000 + 0x40)
+#define RD_ADDR_HIGH      UINT64_C(0x1000 + 0x44)
+#define RD_DATA           UINT64_C(0x1000 + 0x48)
+#define RD_LEN            UINT65_C(0x1000 + 0x4c)
+
+#define WR_DST_SEL        0x1000 + 0xe0
+
+#define WR_SEL            0x1000 + 1
+#define ED_SEL            0x1000 + 2
 
 /* 
  * Register offsets determined by the CL HDL. These addresses should match the

@@ -360,28 +360,28 @@ assign cl_sh_dma_pcis_rlast         = sh_cl_dma_pcis_bus.rlast;
 assign cl_sh_dma_pcis_rvalid        = sh_cl_dma_pcis_bus.rvalid;
 assign sh_cl_dma_pcis_bus.rready    = sh_cl_dma_pcis_rready;
 
-(* dont_touch = "true" *) logic dma_pcis_sync_rst_n;
-lib_pipe #(.WIDTH(1), .STAGES(4)) DMA_PCIS_SLC_RST_N (
-  .clk    (clk)
-  ,.rst_n  (1'b1)
-  ,.in_bus (sync_rst_n)
-  ,.out_bus(dma_pcis_sync_rst_n)
-);
-
-
-// Simple loop back 4x128bits without FSB client.
-// TODO: AXI4-512bit bus should be able to write single FSB packet (128bit,80bit) .
-s_axi4_fsb_adapter s_axi4_fsb (
-  .clk_i           (clk),
-  .resetn_i        (dma_pcis_sync_rst_n),
-  .sh_ocl_bus      (sh_ocl_mux02),
-  .sh_cl_dma_pcis  (sh_cl_dma_pcis_bus),
-  .adpt_slave_v    (),
-  .adpt_slave_data (),
-  .adpt_slave_r    (),
-  .adpt_master_v   (),
-  .adpt_master_data(),
-  .adpt_master_r   ()
-);
-
+//(* dont_touch = "true" *) logic dma_pcis_sync_rst_n;
+//lib_pipe #(.WIDTH(1), .STAGES(4)) DMA_PCIS_SLC_RST_N (
+//  .clk    (clk)
+//  ,.rst_n  (1'b1)
+//  ,.in_bus (sync_rst_n)
+//  ,.out_bus(dma_pcis_sync_rst_n)
+//);
+//
+//
+//// Simple loop back 4x128bits without FSB client.
+//// TODO: AXI4-512bit bus should be able to write single FSB packet (128bit,80bit) .
+//s_axi4_fsb_adapter s_axi4_fsb (
+//  .clk_i           (clk),
+//  .resetn_i        (dma_pcis_sync_rst_n),
+//  .sh_ocl_bus      (sh_ocl_mux02),
+//  .sh_cl_dma_pcis  (sh_cl_dma_pcis_bus),
+//  .adpt_slave_v    (),
+//  .adpt_slave_data (),
+//  .adpt_slave_r    (),
+//  .adpt_master_v   (),
+//  .adpt_master_data(),
+//  .adpt_master_r   ()
+//);
+//
 endmodule
