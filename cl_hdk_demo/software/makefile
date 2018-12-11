@@ -13,6 +13,10 @@
 # implied. See the License for the specific language governing permissions and
 # limitations under the License.
 
+ifndef PROJECT
+$(error "PROJECT undefined. Set PROJECT before running this makefile")
+endif
+
 VPATH = src:include:$(HDK_DIR)/common/software/src:$(HDK_DIR)/common/software/include
 
 INCLUDES = -I$(SDK_DIR)/userspace/include
@@ -24,9 +28,9 @@ CFLAGS = -DCONFIG_LOGLEVEL=4 -g -Wall $(INCLUDES)
 
 LDLIBS = -lfpga_mgmt -lrt -lpthread
 
-SRC = ${SDK_DIR}/userspace/utils/sh_dpi_tasks.c cl_demo.c
+SRC = ${SDK_DIR}/userspace/utils/sh_dpi_tasks.c $(PROJECT).c
 OBJ = $(SRC:.c=.o)
-BIN = cl_demo
+BIN = $(PROJECT)
 
 all: $(BIN) check_env
 

@@ -23,7 +23,7 @@ You can start your own AWS project in a few simple steps:
     - Rename, reuse, and modify the top-level `hardware/cl-demo.sv` file
         - Make sure that the top-level module in your top-level design file matches the PROJECT variable.
 4. Create and run your RTL Simulation
-    - Rename, reuse, and modify the `testbenches/rtlsim/cl_demo_tb.sv` RTL Testbench file
+    - Rename, reuse, and modify the `testbenches/rtlsim/cl_tb.sv` RTL Testbench file
     - List your HDL source files in `testbenches/rtlsim/top.vivado.f`
     - Change the definition of `RTL_TB_MODULE` in `testbenches/rtlsim/makefile`
     - Run `make rtlsim`

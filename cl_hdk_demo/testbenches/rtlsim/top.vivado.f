@@ -69,4 +69,4 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
 
 # Testbench design files
-${CL_DIR}/testbenches/rtlsim/cl_demo_tb.sv
+${CL_DIR}/testbenches/rtlsim/cl_tb.sv
