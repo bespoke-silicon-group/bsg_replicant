@@ -1,4 +1,4 @@
-proc setup { name cl_dir} {
+proc setup { name cl_dir new_ip_paths} {
     if { $name == "" } {
 	puts ""
 	set errmsg "The script requires a non-empty name"
@@ -25,7 +25,14 @@ proc setup { name cl_dir} {
     remove_files -fileset sim_1 $cl_dir/$name/$name.srcs/sim_1/imports/tests/test_hello_world.sv
     remove_files {*/hello_world.v}
 
+    set cur_ip_paths [get_property ip_repo_paths [current_project] ]
+
+    set_property ip_repo_paths [lappend new_ip_paths $cur_ip_paths] [current_project]
+
+    update_ip_catalog
+
     add_files -fileset sim_1 $cl_dir/testbenches/rtlsim/test_cl.sv
+    add_files -fileset sim_1 $cl_dir/testbenches/cosim/cosim_wrapper.sv
 
 
     delete_bd_objs [get_bd_nets]
@@ -62,6 +69,6 @@ the directory of this project"
     return 1
 }
 
-setup [lindex $argv 0] [lindex $argv 1]
+setup [lindex $argv 0] [lindex $argv 1] "../ip"
 
 exit
