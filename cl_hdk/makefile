@@ -24,6 +24,6 @@ $(SIM_TARGETS):
 	PROJECT=$(PROJECT) GUI=$(GUI) make -C testbenches $@
 
 clean:
-	make -C testbenches clean
-	make -C build clean
-	make -C software clean
+	PROJECT=$(PROJECT) make -C testbenches clean
+	PROJECT=$(PROJECT) make -C build clean
+	PROJECT=$(PROJECT) make -C software clean
