@@ -14,7 +14,7 @@
 // limitations under the License.
 
 
-module test_cl();
+module rtlsim_tb();
 
 import tb_type_defines_pkg::*;
 
@@ -71,4 +71,4 @@ integer i;
       $finish;
    end
 
-endmodule // test_hello_world
+endmodule

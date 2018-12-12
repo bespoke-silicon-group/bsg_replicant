@@ -28,13 +28,20 @@ AWS_DPI_INC      = $(SDK_INC_DIR) $(SDK_UTILS_DIR) $(HDK_SOFTWARE_DIR)/include $
 # CL Variables
 CL_DIR           = $(PWD)
 CL_SCRIPTS_DIR   = $(CL_DIR)/scripts
+TESTBENCH_DIR    = $(CL_DIR)/testbenches
+
+# RTL Simulation Variabls
+RTLSIM_TOP       = rtlsim_tb
+RTLSIM_SV_SRC    = $(TESTBENCH_DIR)/rtlsim/$(RTLSIM_TOP).sv
 
 # Cosimulation Variabls
 COSIM_INC_DIR    = $(CL_DIR)/software/include
 COSIM_SRC_DIR    = $(CL_DIR)/software
-# COSIM_SRC names the software C files that drive cosimulation
-COSIM_SRC        = $(COSIM_SRC_DIR)/$(TARGET).c
+# COSIM_C_SRC names the software C files that drive cosimulation
+COSIM_C_SRC      = $(COSIM_SRC_DIR)/$(TARGET).c
 VIVADO_SIM_PATH  = $(TARGET)/$(TARGET).sim/sim_1/behav/xsim/
+COSIM_TOP        = cosim_wrapper
+COSIM_SV_SRC     = $(TESTBENCH_DIR)/cosim/$(COSIM_TOP).sv
 
 # Finally, build up the compiler options
 INCLUDES         = $(AWS_DPI_INC) $(COSIM_INC_DIR)
@@ -53,7 +60,8 @@ XSC_FLAGS        = $(foreach flag,$(CFLAGS),--additional_option $(flag))
 setup: $(TARGET) 
 $(TARGET): $(TARGET).setup.log
 $(TARGET).setup.log: $(HLS_TARGETS) cl.tcl
-	vivado -mode tcl -source $(CL_SCRIPTS_DIR)/setup.tcl -log $@ -tclargs $(TARGET) $(CL_DIR)
+	vivado -mode tcl -source $(CL_SCRIPTS_DIR)/setup.tcl -log $@ \
+		-tclargs $(TARGET) $(CL_DIR) $(IP_PATH) $(RTLSIM_SV_SRC) $(COSIM_SV_SRC) $(RTLSIM_TOP)
 
 # HLS_TARGETS builds each of the HLS ips specified in HLS_IPS
 $(HLS_TARGETS):
@@ -66,15 +74,15 @@ $(TARGET).compile.log: $(TARGET)
 
 # rtlsim runs RTL simulation
 rtlsim: $(TARGET) $(TARGET).rtlsim.log
-$(TARGET).rtlsim.log: $(TARGET) 
+$(TARGET).rtlsim.log: $(TARGET) $(RTLSIM_SV_SRC)
 	rm -f $(TARGET).cosim.setup.log
 	vivado $(TARGET)/$(TARGET).xpr -mode tcl -source $(CL_SCRIPTS_DIR)/rtlsim.tcl \
-		 -log $@ -tclargs cl_top test_cl
+		 -log $@ -tclargs $(RTLSIM_TOP)
 
 # The following are cosimulation variables.
 # The cosimulation flow is tricky. The tl;dr flow is:
-# 1. Open the Vivado project, and re-define the CL_NAME and TEST_NAME variables
-#    that switch between testbenches (cosim.setup.log)
+# 1. Open the Vivado project, and re-define the TEST_NAME variable
+#    that switches between testbenches (cosim.setup.log)
 # 2. Generate the simulation scripts, pointing at cosimulation files
 #    (cosim.setup.log)
 # 3. Compile the simulation using the generated script (compile.log)
@@ -86,13 +94,13 @@ $(TARGET).rtlsim.log: $(TARGET)
 $(TARGET).cosim.setup.log: $(TARGET)
 	rm -f $(TARGET).rtlsim.log
 	vivado $(TARGET)/$(TARGET).xpr -mode tcl -source $(CL_SCRIPTS_DIR)/cosim.tcl \
-		-log $@ -tclargs cl_top test_cosim 
+		-log $@ -tclargs $(COSIM_TOP)
 
 $(VIVADO_SIM_PATH)/compile.log: $(TARGET).cosim.setup.log
 	cd $(VIVADO_SIM_PATH); ./compile.sh
 
-$(VIVADO_SIM_PATH)/dpi.so: $(TARGET).cosim.setup.log $(VIVADO_SIM_PATH)/compile.log $(COSIM_SRC) $(AWS_DPI_SRC)
-	xsc $(COSIM_SRC) $(AWS_DPI_SRC) $(XSC_INCLUDES) $(XSC_FLAGS) -o $@
+$(VIVADO_SIM_PATH)/dpi.so: $(TARGET).cosim.setup.log $(VIVADO_SIM_PATH)/compile.log $(COSIM_C_SRC) $(AWS_DPI_SRC)
+	xsc $(COSIM_C_SRC) $(AWS_DPI_SRC) $(XSC_INCLUDES) $(XSC_FLAGS) -o $@
 
 $(VIVADO_SIM_PATH)/elaborate.log: $(VIVADO_SIM_PATH)/dpi.so
 	cd $(VIVADO_SIM_PATH); ./elaborate.sh
