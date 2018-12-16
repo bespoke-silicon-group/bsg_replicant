@@ -7,8 +7,7 @@
 
 module s_axil_crossbar_1_4 (
   input wire aclk
-  ,
-  input wire aresetn
+  ,input wire aresetn
   ,axil_bus_t.master axil_m_bus
   ,axil_bus_t.slave axil_s_m00_bus
   ,axil_bus_t.slave axil_s_m01_bus
@@ -121,9 +120,6 @@ module s_axil_crossbar_1_4 (
     ,axil_s_m00_bus.rready
   }   = axil_s_mux_bus.rready;
 
-  logic [2:0] s_axi_awprot = 0;
-  logic [2:0] s_axi_arprot = 0;
-
   localparam C_NUM_MASTER_SLOTS = 4;
   localparam C_M_AXI_BASE_ADDR
     = 256'h00000000_00003000_00000000_00002000_00000000_00001000_00000000_00000000;
@@ -175,7 +171,7 @@ module s_axil_crossbar_1_4 (
     .s_axi_awburst (2'H0                      ),
     .s_axi_awlock  (1'H0                      ),
     .s_axi_awcache (4'H0                      ),
-    .s_axi_awprot  (s_axi_awprot              ),
+    .s_axi_awprot  (3'H0                      ),
     .s_axi_awqos   (4'H0                      ),
     .s_axi_awuser  (1'H0                      ),
     .s_axi_awvalid (axil_m_bus.awvalid        ),
@@ -199,7 +195,7 @@ module s_axil_crossbar_1_4 (
     .s_axi_arburst (2'H0                      ),
     .s_axi_arlock  (1'H0                      ),
     .s_axi_arcache (4'H0                      ),
-    .s_axi_arprot  (s_axi_arprot              ),
+    .s_axi_arprot  (3'H0                      ),
     .s_axi_arqos   (4'H0                      ),
     .s_axi_aruser  (1'H0                      ),
     .s_axi_arvalid (axil_m_bus.arvalid        ),

@@ -19,40 +19,45 @@
 `ifndef CL_FSB_BUS_PKG
 `define CL_FSB_BUS_PKG
 
-interface axi_bus_t;
+interface axi_bus_t #(
+    parameter NUM_SLOTS=1
+    ,parameter ID_WIDTH=6
+    ,parameter ADDR_WIDTH=64
+    ,parameter DATA_WIDTH=512
+  );
 
-  logic [15:0] awid   ;  // [5:0]
-  logic [63:0] awaddr ;
-  logic [ 7:0] awlen  ;
-  logic [ 2:0] awsize ;
-  logic        awvalid;
-  logic        awready;
+  logic [  NUM_SLOTS*ID_WIDTH-1:0] awid   ; // [5:0]
+  logic [NUM_SLOTS*ADDR_WIDTH-1:0] awaddr ;
+  logic [         NUM_SLOTS*8-1:0] awlen  ;
+  logic [         NUM_SLOTS*3-1:0] awsize ; // [2:0]
+  logic [           NUM_SLOTS-1:0] awvalid;
+  logic [           NUM_SLOTS-1:0] awready;
 
-  logic [ 15:0] wid   ; // this is not used in cl_ports.vh
-  logic [511:0] wdata ;
-  logic [ 63:0] wstrb ;
-  logic         wlast ;
-  logic         wvalid;
-  logic         wready;
+  logic [    NUM_SLOTS*ID_WIDTH-1:0] wid   ; // this is not used in cl_ports.vh
+  logic [  NUM_SLOTS*DATA_WIDTH-1:0] wdata ;
+  logic [NUM_SLOTS*DATA_WIDTH/8-1:0] wstrb ;
+  logic [             NUM_SLOTS-1:0] wlast ;
+  logic [             NUM_SLOTS-1:0] wvalid;
+  logic [             NUM_SLOTS-1:0] wready;
 
-  logic [15:0] bid   ;  // [5:0]
-  logic [ 1:0] bresp ;
-  logic        bvalid;
-  logic        bready;
+  logic [NUM_SLOTS*ID_WIDTH-1:0] bid   ; // [5:0]
+  logic [       NUM_SLOTS*2-1:0] bresp ;
+  logic [         NUM_SLOTS-1:0] bvalid;
+  logic [         NUM_SLOTS-1:0] bready;
 
-  logic [15:0] arid   ;  // [5:0]
-  logic [63:0] araddr ;
-  logic [ 7:0] arlen  ;
-  logic [ 2:0] arsize ;
-  logic        arvalid;
-  logic        arready;
+  logic [  NUM_SLOTS*ID_WIDTH-1:0] arid   ; // [5:0]
+  logic [NUM_SLOTS*ADDR_WIDTH-1:0] araddr ;
+  logic [         NUM_SLOTS*8-1:0] arlen  ;
+  logic [         NUM_SLOTS*3-1:0] arsize ;
+  logic [           NUM_SLOTS-1:0] arvalid;
+  logic [           NUM_SLOTS-1:0] arready;
 
-  logic [ 15:0] rid   ;  // [5:0]
-  logic [511:0] rdata ;
-  logic [  1:0] rresp ;
-  logic         rlast ;
-  logic         rvalid;
-  logic         rready;
+  logic [  NUM_SLOTS*ID_WIDTH-1:0] rid   ; // [5:0]
+  logic [NUM_SLOTS*DATA_WIDTH-1:0] rdata ;
+  logic [         NUM_SLOTS*2-1:0] rresp ;
+  logic [           NUM_SLOTS-1:0] rlast ;
+  logic [           NUM_SLOTS-1:0] rvalid;
+  logic [           NUM_SLOTS-1:0] rready;
 
   modport master (
     input awid, awaddr, awlen, awsize, awvalid, output awready,
@@ -119,26 +124,26 @@ endinterface
 
 interface axis_bus_t #(parameter TDATA_WIDTH=32);
 
-  logic [TDATA_WIDTH-1:0] txd_tdata ;
-  logic                   txd_tlast ;
-  logic                   txd_tvalid;
-  logic                   txd_tready;
-  logic [TDATA_WIDTH/8-1:0] txd_tkeep;
+  logic [  TDATA_WIDTH-1:0] txd_tdata ;
+  logic                     txd_tlast ;
+  logic                     txd_tvalid;
+  logic                     txd_tready;
+  logic [TDATA_WIDTH/8-1:0] txd_tkeep ;
 
-  logic [TDATA_WIDTH-1:0] rxd_tdata ;
-  logic                   rxd_tlast ;
-  logic                   rxd_tvalid;
-  logic                   rxd_tready;
-  logic [TDATA_WIDTH/8-1:0] rxd_tkeep;
+  logic [  TDATA_WIDTH-1:0] rxd_tdata ;
+  logic                     rxd_tlast ;
+  logic                     rxd_tvalid;
+  logic                     rxd_tready;
+  logic [TDATA_WIDTH/8-1:0] rxd_tkeep ;
 
   modport master (
     input txd_tdata, txd_tlast, txd_tvalid, txd_tkeep, output txd_tready,
-    output rxd_tdata, rxd_tlast, rxd_tvalid, input rxd_tready
+    output rxd_tdata, rxd_tlast, rxd_tvalid, rxd_tkeep, input rxd_tready
   );
 
   modport slave (
-    output txd_tdata, txd_tlast, txd_tvalid, rxd_tkeep, input txd_tready,
-    input rxd_tdata, rxd_tlast, rxd_tvalid, output rxd_tready
+    output txd_tdata, txd_tlast, txd_tvalid, txd_tkeep, input txd_tready,
+    input rxd_tdata, rxd_tlast, rxd_tvalid, rxd_tkeep, output rxd_tready
   );
 
 endinterface

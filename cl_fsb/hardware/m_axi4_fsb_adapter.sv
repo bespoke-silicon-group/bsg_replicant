@@ -1,12 +1,11 @@
 /**
  *  m_axi4_fsb_adapter.sv
  *
- *  cl_bsg (master) -> axi-4 (slave)
+ *  cl_bsg (CL) -> axi-4 (SH)
  */
 
  module m_axi4_fsb_adapter 
   #(parameter DATA_WIDTH=512
-    ,parameter NUM_RD_TAG=512
     ,parameter FSB_WIDTH=80
   ) (
    input clk_i
@@ -206,34 +205,39 @@ always @(posedge clk)
 //-------------------------------------------
 // register configuration
 //-------------------------------------------
-// 0x00:
-//        3 - read compare
+// 0x00:  CFG_REG
+//        3 - read compare                                (not implemented yet)
 //        4 - fsb_wvalid mask
-// 0x08:  (Write Only)
-//        0 - write to go
-//        1 - read to go
-// 0x0c:
-//        0 - write reset
-//        1 - read reset
+// 0x08:  CNTL_REG
+//        0 - wr 0/1: stop/start; rd 0/1: write is out/in process
+//        1 - read control
+// 0x0c:  RESET_REG
+//        0 - reset write FSM to IDLE state 
+//        1 - reset read                                  (not implemented yet)
 
 // 0x20:  write start address low
 // 0x24:  write start address high
-// 0x28:  write end point (read head)
-// 0x2c:  write length select
-//        7:0 - number of the AXI write data phases
-//        15:8 - last data adj, i.e. number of DW to adj last data phase
-//        31:16 - user defined
-// 0x30:  write end address offset (buffer size)
 
-// 0x40:  read address low
-// 0x44:  read address high
-// 0x48:  expected read data to compare with write 
-// 0x4c:  read length select
+// 0x28:  write end point (read head)
+
+// 0x2c:  write length select
+//        7:0 - write phases number per transaction   (only 0 is supported now)
+//        15:8 - DW size to adj last data phase           (not implemented yet)
+//        31:16 - user defined                            (not implemented yet)
+
+// 0x30:  WR_OFFSET
+//        last write address offset, eqs (buffer size - 1)[:6]
+
+// 0x40:  read address low                                (not implemented yet)
+// 0x44:  read address high                               (not implemented yet)
+// 0x48:  expected read data to compare with write        (not implemented yet)
+// 0x4c:  read length select                              (not implemented yet)
 //        7:0 - number of the AXI read data phases
 //        15:8 - last data adj, i.e. number of DW to adj last data phase
 //        31:16 - user defined
 
-// 0xe0:  0 -  0/1 to select which dst module the atg drives
+// 0xe0:  DST_SEL_REG
+//        0 -  0/1 to select which dst module the atg drives
 
 
 
@@ -278,7 +282,7 @@ always_ff @(posedge clk)
 // store control registers
 //-------------------------------------------
 logic cfg_rd_compare_en = 0;
-logic cfg_fsb_wr_mask = 0;
+logic cfg_wvalid_mask = 0;
 
 logic [63:0] cfg_write_address = 0;
 logic [31:0] cfg_hm_read_head = 0;
@@ -305,7 +309,7 @@ always @(posedge clk)
       if (cfg_addr_q==8'h0)
       begin
          cfg_rd_compare_en <= cfg_wdata_q[3];
-         cfg_fsb_wr_mask <= cfg_wdata_q[4];
+         cfg_wvalid_mask <= cfg_wdata_q[4];
       end
       else if (cfg_addr_q==8'h20)
          cfg_write_address[31:0] <= cfg_wdata_q;
@@ -570,6 +574,30 @@ always_ff @( posedge clk)
       wr_dat_tail_flag <= ~wr_dat_tail_flag;
     end
 
+logic last_write_success;
+
+always_ff @( posedge clk)
+  if (!sync_rst_n)
+    begin
+      last_write_success  <= 1'b1;
+    end
+  else if (bvalid)
+    begin
+      last_write_success <= 1'b1;
+    end
+  else if ((wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR))
+    begin
+      last_write_success <= 1'b0;
+    end
+
+assign bready = 1;  // Don't do anything with BRESP
+
+
+// record the bus status
+logic bresp_q;
+always_ff @(posedge clk)
+  if (bvalid & bready)
+    bresp_q = bresp[1];
 
 // write address channel
 //--------------------------------
@@ -616,7 +644,7 @@ always_ff @( posedge clk)
     awlen <= 0;
     awuser <= 0;
   end
-  else if ((wr_state==WR_ADDR) && (wr_state_nxt==WR_ADDR))
+  else if ((wr_state==WR_ADDR) && (wr_state_nxt==WR_ADDR) && last_write_success)
   begin
     awvalid <= 1'b1;  // always avaliable
     awaddr <= wr_address;
@@ -668,8 +696,6 @@ assign wr_strb = wr_dat_tail_flag ? 64'h0000_0000_0000_00FF : wr_phase_strb;
 
 assign wr_data_last = (wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT);
 
-assign bready = 1;  // Don't do anything with BRESP
-
 assign axi_ready_o = (wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR) && !wr_dat_tail_flag;
 
 // burst control
@@ -707,13 +733,7 @@ always_ff @( posedge clk)
       wvalid <= 1'b0;
       wlast  <= 1'b0;
     end
-
-// record the bus status
-logic bresp_q;
-always_ff @(posedge clk)
-  if (bvalid & bready)
-    bresp_q = bresp;
-
+  
 
 
 // ======================================
@@ -803,7 +823,7 @@ always_ff @(posedge clk)
 // (P=fsb_ready)  : 
 // fsb_yumi       : 1  1  1  1  1  1  1
 
-assign fsb_v_o_masked = cfg_fsb_wr_mask & fsb_wvalid;
+assign fsb_v_o_masked = cfg_wvalid_mask & fsb_wvalid;
 
 assign fsb_ready = (fsb_state==FSB_PILE);
 assign axi_whole_valid_i = (fsb_state==FSB_SEND);

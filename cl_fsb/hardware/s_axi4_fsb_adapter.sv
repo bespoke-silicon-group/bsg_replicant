@@ -1,7 +1,7 @@
 /**
  *  s_axi4_fsb_adapter.sv
  *
- *  axi4 (master) -> cl_bsg (slave)
+ *  axi4 (SH) <-> cl_bsg (CL)
  */
 
 module s_axi4_fsb_adapter (

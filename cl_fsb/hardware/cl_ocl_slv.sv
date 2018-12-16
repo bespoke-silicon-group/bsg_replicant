@@ -19,12 +19,12 @@ module cl_ocl_slv (
    ,input sync_rst_n
    ,input sh_cl_flr_assert_q
    ,axil_bus_t.master sh_ocl_bus
-   ,cfg_bus_t.slave pcim_tst_cfg_bus
+   ,cfg_bus_t.slave ocl_cfg_bus_0
    // ,cfg_bus_t.slave ddra_tst_cfg_bus
    // ,cfg_bus_t.slave ddrb_tst_cfg_bus
    // ,cfg_bus_t.slave ddrc_tst_cfg_bus
    // ,cfg_bus_t.slave ddrd_tst_cfg_bus
-   // ,cfg_bus_t.slave axi_mstr_cfg_bus
+   ,cfg_bus_t.slave ocl_cfg_bus_5
    // ,cfg_bus_t.slave int_tst_cfg_bus
 
 );
@@ -33,7 +33,6 @@ cfg_bus_t ddra_tst_cfg_bus();
 cfg_bus_t ddrb_tst_cfg_bus();
 cfg_bus_t ddrc_tst_cfg_bus();
 cfg_bus_t ddrd_tst_cfg_bus();
-cfg_bus_t axi_mstr_cfg_bus();
 cfg_bus_t int_tst_cfg_bus();
 
 axi_bus_t sh_ocl_bus_q();
@@ -305,10 +304,10 @@ assign sh_ocl_bus_q.rvalid = (slv_state==SLV_RESP) && !slv_cyc_wr;
 
 
 //assign individual cfg bus
-assign pcim_tst_cfg_bus.addr = slv_tst_addr[0];
-assign pcim_tst_cfg_bus.wdata = slv_tst_wdata[0];
-assign pcim_tst_cfg_bus.wr = slv_tst_wr[0];
-assign pcim_tst_cfg_bus.rd = slv_tst_rd[0];
+assign ocl_cfg_bus_0.addr = slv_tst_addr[0];
+assign ocl_cfg_bus_0.wdata = slv_tst_wdata[0];
+assign ocl_cfg_bus_0.wr = slv_tst_wr[0];
+assign ocl_cfg_bus_0.rd = slv_tst_rd[0];
 
 assign ddra_tst_cfg_bus.addr = slv_tst_addr[1];
 assign ddra_tst_cfg_bus.wdata = slv_tst_wdata[1];
@@ -330,10 +329,10 @@ assign ddrd_tst_cfg_bus.wdata = slv_tst_wdata[4];
 assign ddrd_tst_cfg_bus.wr = slv_tst_wr[4];
 assign ddrd_tst_cfg_bus.rd = slv_tst_rd[4];
 
-assign axi_mstr_cfg_bus.addr = slv_tst_addr[5];
-assign axi_mstr_cfg_bus.wdata = slv_tst_wdata[5];
-assign axi_mstr_cfg_bus.wr = slv_tst_wr[5];
-assign axi_mstr_cfg_bus.rd = slv_tst_rd[5];
+assign ocl_cfg_bus_5.addr = slv_tst_addr[5];
+assign ocl_cfg_bus_5.wdata = slv_tst_wdata[5];
+assign ocl_cfg_bus_5.wr = slv_tst_wr[5];
+assign ocl_cfg_bus_5.rd = slv_tst_rd[5];
 
 assign int_tst_cfg_bus.addr = slv_tst_addr[13];
 assign int_tst_cfg_bus.wdata = slv_tst_wdata[13];
@@ -344,8 +343,8 @@ assign int_tst_cfg_bus.rd = slv_tst_rd[13];
 //respond back with deadbeef for addresses not implemented
 always_comb begin
   //for pcim
-  tst_slv_ack[0] = pcim_tst_cfg_bus.ack;
-  tst_slv_rdata[0] = pcim_tst_cfg_bus.rdata;
+  tst_slv_ack[0] = ocl_cfg_bus_0.ack;
+  tst_slv_rdata[0] = ocl_cfg_bus_0.rdata;
   //for DDRA
   tst_slv_ack[1] = ddra_tst_cfg_bus.ack;
   tst_slv_rdata[1] = ddra_tst_cfg_bus.rdata; 
@@ -359,8 +358,8 @@ always_comb begin
   tst_slv_ack[4] = ddrd_tst_cfg_bus.ack;
   tst_slv_rdata[4] = ddrd_tst_cfg_bus.rdata;
   //for AXI Master
-  tst_slv_ack[5] = axi_mstr_cfg_bus.ack;
-  tst_slv_rdata[5] = axi_mstr_cfg_bus.rdata;
+  tst_slv_ack[5] = ocl_cfg_bus_5.ack;
+  tst_slv_rdata[5] = ocl_cfg_bus_5.rdata;
   //for int ATG
   tst_slv_ack[13] = int_tst_cfg_bus.ack;
   tst_slv_rdata[13] = int_tst_cfg_bus.rdata;
