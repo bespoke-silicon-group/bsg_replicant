@@ -102,7 +102,7 @@ uint32_t byte_swap(uint32_t value) {
 
 /* global variables */
 char *host_memory_buffer; 
-size_t buffer_size = 640;
+size_t buffer_size = 4*1024-64;
 uint32_t head = 0; 
 uint8_t user_buf[128];
 
@@ -295,16 +295,16 @@ int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id) {
 	
 	// Setup the DMA
 	rc = fpga_pci_poke(pci_bar_handle, CFG_REG, 0x10); 
-    fail_on(rc, out, "Couldn't write to CFG_REG.");
+    	fail_on(rc, out, "Couldn't write to CFG_REG.");
 	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_LOW, low32); // write address low
-    fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
+    	fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
 	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_HIGH, high32); // write address high
-    fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
+    	fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
    	rc = fpga_pci_poke(pci_bar_handle, WR_HEAD, head);     
 	fail_on(rc, out, "Couldn't write to WR_HEAD.");
    	rc = fpga_pci_poke(pci_bar_handle, WR_LEN, 0x0); // write 64 bytes, 512bits
-    fail_on(rc, out, "Couldn't write to WR_LEN.");
-    rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size-1)); 
+    	fail_on(rc, out, "Couldn't write to WR_LEN.");
+    	rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size-1)); 
    	fail_on(rc, out, "Couldn't write to WR_OFFSET.");
 
 	// start write
@@ -343,6 +343,8 @@ int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id) {
 //		// printf("First byte of data: %X\n", (uint32_t) host_memory_buffer[0]); 
 //	}  
 //
+
+
 
 out:
     /* clean up */
@@ -394,6 +396,7 @@ int pop_data (int pop_size, int *pop_fail) {
 
 	/* check if there is data to read */
 	uint32_t *tail = (uint32_t *) (host_memory_buffer + buffer_size);
+	printf("pop_data(): tail is at 0x%x\n", *tail);
 	int old_head = head; // for debugging messages 
 	bool can_read;
 	uint32_t num_dw;
@@ -440,6 +443,36 @@ int pop_data (int pop_size, int *pop_fail) {
 	printf("\n");
 	*pop_fail = 0;
 	return 0;
+}
+
+void disable_datagen () {
+    /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
+	printf("disable_datagen()");
+	if (fpga_pci_init())
+		printf("Unable to initialize fpga_pci library.\n");
+	
+	int rc = fpga_pci_poke(PCI_BAR_HANDLE_INIT, CFG_REG, 0); 
+
+	if (rc)
+		printf("disable_datagen(): error writing to CFG_REG.\n");
+	else
+		printf("disable_datagen(): successfully disabled datagen.\n");
+}
+
+void enable_datagen () {
+    /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
+	printf("enable_datagen()");
+	if (fpga_pci_init())
+		printf("Unable to initialize fpga_pci library.\n");
+
+
+	int rc = fpga_pci_poke(PCI_BAR_HANDLE_INIT, CFG_REG, 0x10); 
+   	rc = fpga_pci_poke(PCI_BAR_HANDLE_INIT, CNTL_START, WR_SEL);
+	
+	if (rc)
+		printf("enable_datagen(): error writing to CFG_REG.\n");
+	else
+		printf("enable_datagen(): successfully enabled datagen.\n");
 }
 
 #ifdef SV_TEST

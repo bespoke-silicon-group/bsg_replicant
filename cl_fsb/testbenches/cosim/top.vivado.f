@@ -50,6 +50,7 @@ ${CL_DIR}/ip/axi_register_slice_axi4.sv
 ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
 ${CL_DIR}/hardware/s_axil_crossbar_1_2.sv
 ${CL_DIR}/hardware/s_axil_crossbar_1_4.sv
+${CL_DIR}/hardware/m_axi4_crossbar_2_1.sv
 ${CL_DIR}/hardware/cl_ocl_slv.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 ${CL_DIR}/../../bsg_ip_cores/bsg_misc/bsg_defines.v
@@ -82,6 +83,7 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/fifo_generator_v13_2_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 
 ${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/c631/hdl/axi_crossbar_v2_1_vl_rfs.v
+${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/9909/hdl/axi_data_fifo_v2_1_vl_rfs.v
 
 # Simulator-specific design files
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
