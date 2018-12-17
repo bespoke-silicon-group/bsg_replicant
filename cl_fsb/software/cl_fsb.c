@@ -102,7 +102,7 @@ uint32_t byte_swap(uint32_t value) {
 
 /* global variables */
 char *host_memory_buffer; 
-size_t buffer_size = 4*1024-64;
+size_t buffer_size = 4*1024*1024-64;
 uint32_t head = 0; 
 uint8_t user_buf[128];
 
