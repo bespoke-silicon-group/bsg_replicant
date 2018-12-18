@@ -79,17 +79,17 @@ static uint16_t pci_device_id = 0xF000; /* PCI Device ID preassigned by Amazon f
  */
 int check_afi_ready(int slot_id);
 
-/*
- * An example to attach to an arbitrary slot, pf, and bar with register access.
- */
-int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id);
-
 void usage(char* program_name) {
     printf("usage: %s [--slot <slot-id>][<poke-value>]\n", program_name);
 }
-
 uint32_t byte_swap(uint32_t value);
 #endif
+
+int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id);
+void check_mem();
+void enable_datagen();
+void disable_datagen();
+int pop_data (int pop_size); 
 
 uint32_t byte_swap(uint32_t value) {
     uint32_t swapped_value = 0;
@@ -102,7 +102,7 @@ uint32_t byte_swap(uint32_t value) {
 
 /* global variables */
 char *host_memory_buffer; 
-size_t buffer_size = 4*1024*1024-64;
+size_t buffer_size = 4*1024*1024;
 uint32_t head = 0; 
 uint8_t user_buf[128];
 
@@ -170,8 +170,27 @@ uint8_t user_buf[128];
     /* Accessing the CL registers via AppPF BAR0, which maps to sh_cl_ocl_ AXI-Lite bus between AWS FPGA Shell and the CL*/
 
     printf("===== Head/Tail DMA =====\n");
-    rc = head_tail_dma(value, slot_id, FPGA_APP_PF, APP_PF_BAR4);
+    
+	/* allocate DMA buffer/and config the CL */
+	rc = head_tail_dma(value, slot_id, FPGA_APP_PF, APP_PF_BAR4);
     fail_on(rc, out, "Head/Tail DMA failed");
+	
+	sv_pause(10);				   
+	check_mem(); /* check buffer data against pattern */
+	  
+	printf("Now start popping off data.\n");
+	int num_pops = 0, pop_size = 0, pop_fail = 0;
+	while (num_pops <= 20) {
+		pop_size = (num_pops % 2) ? 64 : 128;
+		pop_fail = pop_data(pop_size);
+		if(!pop_fail)
+		if (num_pops == 4) 
+			disable_datagen();
+		else if (num_pops == 13)
+    		enable_datagen();	
+		num_pops++;
+		sv_pause(1);
+	}
 
 #ifndef SV_TEST
     return rc;
@@ -295,16 +314,16 @@ int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id) {
 	
 	// Setup the DMA
 	rc = fpga_pci_poke(pci_bar_handle, CFG_REG, 0x10); 
-    	fail_on(rc, out, "Couldn't write to CFG_REG.");
+    fail_on(rc, out, "Couldn't write to CFG_REG.");
 	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_LOW, low32); // write address low
-    	fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
+    fail_on(rc, out, "Couldn't write to WR_ADDR_LOW.");
 	rc = fpga_pci_poke(pci_bar_handle, WR_ADDR_HIGH, high32); // write address high
-    	fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
+    fail_on(rc, out, "Couldn't write to WR_ADDR_HIGH.");
    	rc = fpga_pci_poke(pci_bar_handle, WR_HEAD, head);     
 	fail_on(rc, out, "Couldn't write to WR_HEAD.");
    	rc = fpga_pci_poke(pci_bar_handle, WR_LEN, 0x0); // write 64 bytes, 512bits
-    	fail_on(rc, out, "Couldn't write to WR_LEN.");
-    	rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size-1)); 
+    fail_on(rc, out, "Couldn't write to WR_LEN.");
+    rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size-1)); 
    	fail_on(rc, out, "Couldn't write to WR_OFFSET.");
 
 	// start write
@@ -333,17 +352,6 @@ int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id) {
     fail_on(rc, out, "Couldn't write to CNTL_START.");
 
 	int seconds = 0;
-//	bool done_writing = false; 
-//	while (seconds < 60) {
-//		sleep(1); /* wait another second */
-//		seconds++;
-//		uint32_t *tail_p = (uint32_t *) (host_memory_buffer + buffer_size);
-//		// done_writing = (*tail_p == buffer_size - 64);
-//		printf("Slept for %d seconds. Tail is now at 0x%X.\n", seconds, *tail_p);
-//		// printf("First byte of data: %X\n", (uint32_t) host_memory_buffer[0]); 
-//	}  
-//
-
 
 
 out:
@@ -371,8 +379,9 @@ void check_mem () {
 			uint8_t id = (byte & 0xE0) >> 5; 
 			uint8_t data = byte & (0x1F);			
 			if (id != i || data != counter) {
+				printf("check_mem(): mismatch @ fsb #%d\n", fsb);
 				pass = false;
-				break;
+				goto test_finish;
 			} 
 		}		
 		for (int i = 8; i < 10; i++) {
@@ -380,14 +389,14 @@ void check_mem () {
 		}
 		counter = (counter + 1) % 32;
 	}	
-
+	test_finish:
 	if (pass) 
 		printf("Pass! Memory is correct.\n");
 	else
 		printf("Fail!\n");
 }
 
-int pop_data (int pop_size, int *pop_fail) {
+int pop_data (int pop_size) {
     
     /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
 	if (fpga_pci_init())
@@ -407,7 +416,6 @@ int pop_data (int pop_size, int *pop_fail) {
 	can_read = num_dw >= pop_size;
 	if (!can_read) {
 		printf("pop_data(): can't read %d bytes because (Head, Tail) = (%d, %d);\n only %d bytes available. Will try this again.\n",  pop_size, head, *tail, num_dw); 
-		*pop_fail = 1;
 		return 1;
 	}
 	/* there is enough unread data; first, read data that lies before the end of system memory buffer */
@@ -441,13 +449,12 @@ int pop_data (int pop_size, int *pop_fail) {
 			printf(" ");
 	}	
 	printf("\n");
-	*pop_fail = 0;
 	return 0;
 }
 
 void disable_datagen () {
     /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
-	printf("disable_datagen()");
+	printf("disable_datagen()\n");
 	if (fpga_pci_init())
 		printf("Unable to initialize fpga_pci library.\n");
 	
@@ -461,7 +468,7 @@ void disable_datagen () {
 
 void enable_datagen () {
     /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
-	printf("enable_datagen()");
+	printf("enable_datagen()\n");
 	if (fpga_pci_init())
 		printf("Unable to initialize fpga_pci library.\n");
 
