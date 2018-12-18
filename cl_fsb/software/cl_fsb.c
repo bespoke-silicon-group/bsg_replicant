@@ -86,7 +86,7 @@ uint32_t byte_swap(uint32_t value);
 #endif
 
 int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id);
-void check_mem();
+void check_mem(int num_pages);
 void enable_datagen();
 void disable_datagen();
 int pop_data (int pop_size); 
@@ -176,7 +176,7 @@ uint8_t user_buf[128];
     fail_on(rc, out, "Head/Tail DMA failed");
 	
 	sv_pause(10);				   
-	check_mem(); /* check buffer data against pattern */
+	check_mem(5); /* check buffer data against pattern */
 	  
 	printf("Now start popping off data.\n");
 	int num_pops = 0, pop_size = 0, pop_fail = 0;
@@ -368,12 +368,14 @@ out:
 }
 
 
-void check_mem () {
+void check_mem (int num_pages) {
 	
 	bool pass = true;
 	uint32_t counter = 0x0;
 
-	for (int fsb = 2*16; fsb < buffer_size - 4*16; fsb += 16) {
+	int end = ((num_pages * 4096) >  (buffer_size - 64)) ? (buffer_size - 64) : (num_pages * 4096);
+	printf("end: %d\n", end);
+	for (int fsb = 2*16; fsb < (end/10); fsb += 16) {
 		for (int i = 0; i < 8; i++) { // data bytes
 			uint8_t byte = host_memory_buffer[fsb + i];
 			uint8_t id = (byte & 0xE0) >> 5; 
