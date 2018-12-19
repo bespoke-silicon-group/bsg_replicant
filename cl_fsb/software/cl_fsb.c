@@ -323,7 +323,7 @@ int head_tail_dma(uint32_t value, int slot_id, int pf_id, int bar_id) {
 	fail_on(rc, out, "Couldn't write to WR_HEAD.");
    	rc = fpga_pci_poke(pci_bar_handle, WR_LEN, 0x0); // write 64 bytes, 512bits
     fail_on(rc, out, "Couldn't write to WR_LEN.");
-    rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size-1)); 
+    rc = fpga_pci_poke(pci_bar_handle, WR_OFFSET, (uint32_t) (buffer_size)); 
    	fail_on(rc, out, "Couldn't write to WR_OFFSET.");
 
 	// start write

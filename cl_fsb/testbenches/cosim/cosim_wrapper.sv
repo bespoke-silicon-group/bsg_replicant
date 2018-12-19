@@ -17,7 +17,7 @@
 
 module cosim_wrapper();
 	initial begin
-    int exit_code;
+    	int exit_code;
 	tb.power_up();
 	tb.test_main(exit_code); /* initiates device write */
 	tb.power_down();		

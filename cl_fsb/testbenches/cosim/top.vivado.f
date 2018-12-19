@@ -46,11 +46,10 @@
 ${CL_DIR}/hardware/cl_fsb_bus_pkg.sv
 ${CL_DIR}/hardware/s_axil_fsb_adapter.sv
 ${CL_DIR}/hardware/s_axi4_fsb_adapter.sv
-${CL_DIR}/ip/axi_register_slice_axi4.sv
 ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
-${CL_DIR}/hardware/s_axil_crossbar_1_2.sv
-${CL_DIR}/hardware/s_axil_crossbar_1_4.sv
-${CL_DIR}/hardware/m_axi4_crossbar_2_1.sv
+${CL_DIR}/hardware/m_axi4_axis_adapter.sv
+${CL_DIR}/hardware/cl_to_axi4_adapter.sv
+${CL_DIR}/hardware/cl_axis_test_master.sv
 ${CL_DIR}/hardware/cl_ocl_slv.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 ${CL_DIR}/../../bsg_ip_cores/bsg_misc/bsg_defines.v
