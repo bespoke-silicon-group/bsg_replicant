@@ -34,7 +34,7 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
 .aclk          (clk_i),
 .aresetn       (resetn_i),
 .s_axi_awaddr  (sh_ocl_bus.awaddr[31:0]),
-.s_axi_awprot  (2'h0),
+.s_axi_awprot  (3'h0),
 .s_axi_awvalid (sh_ocl_bus.awvalid),
 .s_axi_awready (sh_ocl_bus.awready),
 .s_axi_wdata   (sh_ocl_bus.wdata[31:0]),

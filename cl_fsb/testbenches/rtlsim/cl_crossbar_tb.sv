@@ -24,7 +24,7 @@ module cl_crossbar_tb();
   parameter WR_ADDR_HIGH = 32'h24;
   parameter WR_READ_HEAD = 32'h28;
   parameter WR_LEN       = 32'h2c;
-  parameter WR_OFFSET    = 32'h30;
+  parameter WR_BUF_SIZE  = 32'h30;
 
   parameter WR_START = 32'h01;
   parameter WR_STOP =  32'h00;
@@ -47,8 +47,8 @@ module cl_crossbar_tb();
   parameter AXI4_READ  = 32'h8000_2000;
 
 
-  parameter BUFF1_SIZE = 32'h280;
-  parameter BUFF2_SIZE = 32'h140;
+  parameter BUFF1_SIZE = 32'd640;
+  parameter BUFF2_SIZE = 32'd1024;
 
   parameter READ_CYCLES = 2;
 
@@ -63,11 +63,15 @@ module cl_crossbar_tb();
     poke_ddr_stat();
     
     $display ("No.1A ===> FSB to AXI-4 write test:");
-    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_0000_0000), .WR_BUFF_SIZE(BUFF1_SIZE),
+    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_0000_0000), 
+      .BURST_LEN(0),
+      .WR_BUFF_SIZE(BUFF1_SIZE),
       .CFG_BASE_ADDR(CROSSBAR_M1));
 
     $display ("No.1B ===> FSB to AXI-4 write test:");
-    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), .WR_BUFF_SIZE(BUFF2_SIZE),
+    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), 
+      .BURST_LEN(1),
+      .WR_BUFF_SIZE(BUFF2_SIZE),
       .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
 
     pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
@@ -95,7 +99,7 @@ module cl_crossbar_tb();
        error_count ++;
     end
     else begin
-        $display("~~~PASSED~~~ : Data Matched~~~~~~");
+        $display("~~~PASS~~~ : Data is Matched.");
         $display("Expected Data: %0h", exp_data);
         $display("Actual   Data: %0h", act_data);
     end
@@ -118,10 +122,10 @@ module cl_crossbar_tb();
 
   task DMA_pcim_config(logic [63:0] start_addr, logic [31:0] burst_len, buffer_size, CFG_BASE_ADDR);
     $display("[%t] : Configuring adapter for DMA write", $realtime);
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_ADDR_LOW), .data(start_addr[31:0]));    // write address low
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_ADDR_HIGH), .data(start_addr[63:32]));  // write address high
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_LEN), .data(burst_len));           // write 64 bytes, 512bits
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_OFFSET), .data(buffer_size-1));        // 320 bytes, 32 fsb pkts
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_ADDR_LOW), .data(start_addr[31:0]));   // write address low
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_ADDR_HIGH), .data(start_addr[63:32])); // write address high
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_LEN), .data(burst_len));               // write burst size, 0=512bits
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_BUF_SIZE), .data(buffer_size));        // buffer size, tail offset
   endtask
 
 
@@ -169,7 +173,7 @@ module cl_crossbar_tb();
     logic [63:0] hm_tail_old = 0;
     logic [63:0] hm_tail;
     do begin
-      # 100ns
+      # 300ns
         for (int i=0; i<8; i++) begin
           hm_tail[(i*8)+:8] = tb.hm_get_byte(.addr(buffer_address+i));
         end
@@ -285,29 +289,27 @@ module cl_crossbar_tb();
   endtask
 
 
-  task pcim_DMA_write_buffer (logic [63:0] pcim_addr, logic [31:0] WR_BUFF_SIZE, CFG_BASE_ADDR);
-
-    int buf_pkts_num = WR_BUFF_SIZE/64; // number of axi pkts in buffer
+  task pcim_DMA_write_buffer (logic [63:0] pcim_addr, logic [31:0] BURST_LEN, WR_BUFF_SIZE, CFG_BASE_ADDR);
 
     logic [ 63:0] hm_tail;
     logic [127:0] hm_fsb_pkt;
 
-    DMA_pcim_config(.start_addr(pcim_addr), .burst_len(0), .buffer_size(WR_BUFF_SIZE), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    DMA_pcim_config(.start_addr(pcim_addr), .burst_len(BURST_LEN), .buffer_size(WR_BUFF_SIZE), .CFG_BASE_ADDR(CFG_BASE_ADDR));
 
     DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CFG_BASE_ADDR));
 
     DMA_transfer_start(.adapter_wr_start(WR_START), .CFG_BASE_ADDR(CFG_BASE_ADDR));
     
-    // test fsb wvalid pauses
-    // --------------------------------------------
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CFG_BASE_ADDR));
-    # 100ns;
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CFG_BASE_ADDR));
-    # 100ns;
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CFG_BASE_ADDR));
-    # 100ns;
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CFG_BASE_ADDR));
-    // --------------------------------------------
+    // // test fsb wvalid pauses
+    // // --------------------------------------------
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    // # 100ns;
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    // # 100ns;
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    // # 100ns;
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    // // --------------------------------------------
 
 
     DMA_write_stat_check(.timeout_count(10), .CFG_BASE_ADDR(CFG_BASE_ADDR));
@@ -323,8 +325,8 @@ module cl_crossbar_tb();
     logic [READ_CYCLES*BUFF1_SIZE/16-1:0] [127:0] hm_fsb_pkts;
     logic [ 63:0] hm_tail;
     logic [127:0] hm_fsb_pkt;
-    for (int n=0; n<READ_CYCLES; n++) begin  // read in steps of 64 bytes, 2 times from 0x00 to offset
-      for (int i=0; i<BUFF1_SIZE/64; i++)
+    for (int n=0; n<READ_CYCLES; n++) begin
+      for (int i=0; i<BUFF1_SIZE/64; i++)  // read in steps of 64 bytes
         begin
           for (int j=0; j<8; j++) begin
             hm_tail[(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+BUFF1_SIZE+j)); // check the write tail
@@ -346,38 +348,36 @@ module cl_crossbar_tb();
     // --------------------------------------------
     // 1. print all read data in sequence
     for (int i=0; i<BUFF1_SIZE/16*READ_CYCLES; i++) begin
-      $display("read data @No. %h: %h", i, hm_fsb_pkts[i]);
+      $display("read data @No. %d: %h", i, hm_fsb_pkts[i]);
     end
     // 2. print data left in memory buff
     for (int i=0; i<BUFF1_SIZE/16; i++) begin
       for(int k=0; k<16; k++) begin
         hm_fsb_pkt[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+16*i+k));
       end
-      $display("host memory @%h +:16: %h", pcim_addr+16*i, hm_fsb_pkt);
+      $display("host memory @%d +:16: %h", pcim_addr+16*i, hm_fsb_pkt);
     end
   endtask
 
 
   task pcim_reads_buffer2(logic [63:0] pcim_addr, logic [31:0] CFG_BASE_ADDR);
 
-    logic [READ_CYCLES*BUFF2_SIZE/16-1:0] [127:0] hm_fsb_pkts;
+    logic [READ_CYCLES*BUFF2_SIZE/64-1:0] [511:0] hm_fsb_pkts;
     logic [ 63:0] hm_tail;
-    logic [127:0] hm_fsb_pkt;
-    for (int n=0; n<READ_CYCLES; n++) begin  // read in steps of 64 bytes, 2 times from 0x00 to offset
-      for (int i=0; i<BUFF2_SIZE/64; i++)
+    logic [511:0] hm_fsb_pkt;
+    for (int n=0; n<READ_CYCLES; n++) begin
+      for (int i=0; i<BUFF2_SIZE/64; i++)  // read in steps of 64 bytes
         begin
           for (int j=0; j<8; j++) begin
             hm_tail[(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+BUFF2_SIZE+j)); // check the write tail
           end
           $display("[%t] : Readback the write tail word @ %h : %h", $realtime, pcim_addr+BUFF2_SIZE, hm_tail[31:0]);
-          # 100ns // Delay enough time to ensure that we have data in buffer to read
-            if (hm_tail[31:0]!=(i*32'h40)) begin  // check current read head is not equal to tail
-              for (int j=0; j<4; j++) begin
-                for (int k=0; k<16; k++) begin
-                  hm_fsb_pkts[BUFF2_SIZE/16*n+4*i+j][(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+64*i+16*j+k));
-                end
+          # 200ns // Delay enough time to ensure that we have data in buffer to read
+            if (hm_tail[31:0]!=(i*32'd64)) begin  // check current read head is not equal to tail
+              for (int j=0; j<64; j++) begin
+                  hm_fsb_pkts[BUFF2_SIZE/64*n+i][(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+64*i+j));
               end
-              tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_READ_HEAD), .data(32'h0000_0000 + i*32'h40));  // update the head
+              tb.poke_ocl(.addr(CFG_BASE_ADDR+WR_READ_HEAD), .data(32'h0000_0000 + i*32'd64));  // update the head
             end
         end
       end
@@ -385,15 +385,15 @@ module cl_crossbar_tb();
     // bfm backdoor check
     // --------------------------------------------
     // 1. print all read data in sequence
-    for (int i=0; i<BUFF2_SIZE/16*READ_CYCLES; i++) begin
-      $display("read data @No. %h: %h", i, hm_fsb_pkts[i]);
+    for (int i=0; i<BUFF2_SIZE/64*READ_CYCLES; i++) begin
+      $display("read data @No. %d: %h", i, hm_fsb_pkts[i]);
     end
     // 2. print data left in memory buff
-    for (int i=0; i<BUFF2_SIZE/16; i++) begin
-      for(int k=0; k<16; k++) begin
-        hm_fsb_pkt[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+16*i+k));
+    for (int i=0; i<BUFF2_SIZE/64; i++) begin
+      for(int k=0; k<64; k++) begin
+        hm_fsb_pkt[(k*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+64*i+k));
       end
-      $display("host memory @%h +:16: %h", pcim_addr+16*i, hm_fsb_pkt);
+      $display("host memory @%d +:64: %h", pcim_addr+64*i, hm_fsb_pkt);
     end
   endtask
 

@@ -31,7 +31,7 @@ axis_bus_t #(.TDATA_WIDTH(128)) axis_fsb_bus();
 
 // flop the input PCIS_DMA bus
 //---------------------------------
-axi_register_slice_axi4 AXI4_PCIS_REG_SLC (
+axi_register_slice AXI4_PCIS_REG_SLC (
   .aclk          (clk_i                   ),
   .aresetn       (resetn_i                ),
   .s_axi_awaddr  (sh_cl_dma_pcis.awaddr   ),
@@ -239,7 +239,7 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .s_axis_tvalid(fifo_axis_bus.txd_tvalid),
   .s_axis_tready(fifo_axis_bus.txd_tready),
   .s_axis_tdata(fifo_axis_bus.txd_tdata),
-  .s_axis_tstrb(16'H0),
+  .s_axis_tstrb(64'H0),
   .s_axis_tkeep(fifo_axis_bus.txd_tkeep),
   .s_axis_tlast(fifo_axis_bus.txd_tlast),
   .s_axis_tid(1'H0),

@@ -19,4 +19,6 @@
 // Value to return for PCIS access to unimplemented register address
 `define UNIMPLEMENTED_REG_VALUE 32'hdeaddead
 
+`define FSB_WIDTH 80
+
 `endif

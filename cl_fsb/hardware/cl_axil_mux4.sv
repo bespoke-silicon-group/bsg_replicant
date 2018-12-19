@@ -1,11 +1,11 @@
 /**
-*  s_axil_crossbar_1_4.sv
+*  cl_axil_mux4.sv
 *
-*  wrapper for xilinx crossbar ip, 1 to 4 multiplexer
+*  axil 1 to 4 multiplexer
 */
 
 
-module s_axil_crossbar_1_4 (
+module cl_axil_mux4 (
   input wire aclk
   ,input wire aresetn
   ,axil_bus_t.master axil_m_bus

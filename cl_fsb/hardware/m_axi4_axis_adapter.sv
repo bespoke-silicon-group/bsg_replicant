@@ -1,12 +1,12 @@
 /**
- *  m_axi4_fsb_adapter.sv
+ *  m_axi4_axis_adapter.sv
  *
- *  cl_bsg (CL) -> axi-4 (SH)
+ *  axi-stream (CL) -> axi-4 (SH)
  */
 
- module m_axi4_fsb_adapter 
-  #(parameter DATA_WIDTH=512
-    ,parameter FSB_WIDTH=80
+
+ module m_axi4_axis_adapter #(
+  parameter DATA_WIDTH=512
   ) (
    input clk_i
    ,input resetn_i
@@ -14,15 +14,13 @@
    ,cfg_bus_t.master cfg_bus
    ,axi_bus_t.slave cl_sh_pcim_bus
 
-   ,input fsb_wvalid
-   ,input [FSB_WIDTH-1:0] fsb_wdata
-   ,output logic fsb_yumi
+   ,axis_bus_t.master axis_data_bus
 
    ,output logic atg_dst_sel
  );
  
 localparam DATA_BYTE_NUM = DATA_WIDTH/8;
-
+localparam MAX_BURST_SIZE = 2;  // 512bit * 2
 
 //-------------------------------------
 // AXI4 register slice 
@@ -65,7 +63,7 @@ logic rvalid;
 logic [17:0] ruser = 0;
 logic rready;
 
-axi_bus_t #(.NUM_SLOTS(1),.ID_WIDTH(16),.ADDR_WIDTH(64),.DATA_WIDTH(512)) axi4_m_bus();
+axi_bus_t axi4_m_bus();
 
 assign axi4_m_bus.awid = {7'b0, awid};
 assign axi4_m_bus.awaddr = awaddr;
@@ -231,7 +229,7 @@ always @(posedge clk)
 //-------------------------------------------
 // 0x00:  CFG_REG
 //        3 - read compare                                (not implemented yet)
-//        4 - fsb_wvalid mask
+//        4 - axis_txvalid mask
 // 0x08:  CNTL_REG
 //        0 - wr 0/1: stop/start; rd 0/1: write is out/in process
 //        1 - read control
@@ -416,8 +414,8 @@ always_ff @(posedge clk)
 logic wr_hm_pause;        // host memory is full and tail is updated
 logic wr_hm_avaliable;    // host memory is avaliable again
 
-logic wr_fsb_pause;       // fsb is invalid and tail is updated
-logic wr_fsb_avaliable;   // fsb is avaliable again, i.e. valid=1
+logic wr_axis_pause;       // axis is invalid and tail is updated
+logic wr_axis_valid;   // fsb is avaliable again, i.e. valid=1
 
 logic wr_soft_stop;       // stop from controller
 assign wr_stop_pend = wr_soft_stop;
@@ -463,7 +461,7 @@ begin
       begin
          if (wvalid && wready && wlast)
          begin
-            if ((wr_hm_pause || wr_fsb_pause || wr_soft_stop) && wr_dat_tail_flag)  // wr_trans_done
+            if ((wr_hm_pause || wr_axis_pause || wr_soft_stop) && wr_dat_tail_flag)  // wr_trans_done
                wr_state_nxt = WR_STOP;
             else
                wr_state_nxt = WR_ADDR;
@@ -476,7 +474,7 @@ begin
       begin
         if (cfg_write_reset)
           wr_state_nxt = WR_IDLE;
-        else if (wr_hm_avaliable && wr_fsb_avaliable && !wr_soft_stop)
+        else if (wr_hm_avaliable && wr_axis_valid && !wr_soft_stop)
           wr_state_nxt = WR_ADDR;
         else
           wr_state_nxt = WR_STOP;
@@ -501,35 +499,6 @@ assign wr_inp = ((wr_state!=WR_IDLE) && (wr_state!=WR_STOP));
 
 logic axi_whole_valid_i; // fsb pkt is packed up for one axi phase
 logic axi_frctn_valid_i; // fsb pkt is partly packed and hold for valid signal
-
-// this is left for testing, useful to terminate single buff write
-
-// logic wr_trans_done;  // write from cfg_write_address to addr + offset, test only
-// logic [31:0] wr_mem_left = 0;
-// logic [31:0] wr_last_addr;
-// logic [31:0] wr_mem_left_next;
-
-// assign wr_mem_left_next = wr_mem_left - DATA_BYTE_NUM - DATA_BYTE_NUM * cfg_write_length;
-// assign wr_last_addr = {cfg_buffer_size[31:6], 6'd0}; // must be 64 bytes aligned
-
-// always_ff @(posedge clk)
-//    if (wr_state==WR_IDLE)
-//    begin
-//       wr_mem_left <= wr_last_addr;
-//    end
-//    else if ((wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT))
-//    begin
-//     if (wr_dat_tail_flag)
-//     begin
-//       wr_mem_left <= wr_mem_left_next;  // tail is already updated, so we can count on
-//       wr_trans_done <= 1'b0;
-//     end
-//     else
-//     begin
-//       wr_mem_left <= wr_mem_left;  // tais will be send next cycle
-//       wr_trans_done <= (wr_mem_left==0);
-//     end
-//    end
 
 
 // these handles AXI stops
@@ -556,7 +525,7 @@ always_ff @(posedge clk)
       wr_buffer_full <= 0;
     end
   else if ((wr_next_tail >= (cfg_hm_read_head + wr_last_addr))
-    || (((cfg_hm_read_head - wr_next_tail) <= DATA_BYTE_NUM)
+    || (((cfg_hm_read_head - wr_next_tail) <= DATA_BYTE_NUM*(32'b1 + cfg_write_length))
       && (cfg_hm_read_head != wr_next_tail)))
   begin
     wr_buffer_full <= 1'b1;
@@ -567,10 +536,10 @@ always_ff @(posedge clk)
     end
 
 
-// 2. FSB invalid
+// 2. AXIS invalid
 always_ff @(posedge clk)
   if (!wr_dat_tail_flag)  // pause after the tail is sent
-    wr_fsb_pause <= axi_frctn_valid_i;  // we assume always send fraction
+    wr_axis_pause <= axi_frctn_valid_i;  // we assume always send fraction
 
 
 // 3. soft stop (take effect immediately)
@@ -625,21 +594,21 @@ always_ff @(posedge clk)
 
 // write address channel
 //--------------------------------
-logic [31:0] wr_addr_inc_64;
+logic [31:0] wr_addr_inc_pkt;
 
 logic [63:0] wr_address;  // absolute bus address to write
 logic wr_len;             // burst length
 
 assign wr_last_addr = cfg_buffer_size - DATA_BYTE_NUM*(32'b1 + cfg_write_length);
 
-assign wr_addr_inc_64 = (wr_addr_next==wr_last_addr) ? 0
-                        : wr_addr_next + DATA_BYTE_NUM * (8'b1 + cfg_write_length);
+assign wr_addr_inc_pkt = (wr_addr_next==wr_last_addr) ? 0
+                        : wr_addr_next + DATA_BYTE_NUM * (32'b1 + cfg_write_length);
 
 always_ff @(posedge clk)
   if ((wr_state==WR_IDLE))
     wr_addr_next <= 0;
   else if (axi_whole_valid_i && (wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT))
-    wr_addr_next <= wr_addr_inc_64;
+    wr_addr_next <= wr_addr_inc_pkt;
   else
     wr_addr_next <= wr_addr_next;
 
@@ -689,17 +658,15 @@ always_ff @( posedge clk)
 // write data channel
 //--------------------------------
 logic wr_phase_valid;
-logic wr_phase_end;
+logic wr_phase_next_end;
 logic wr_data_last;
-logic axi_ready_o;    // axi ready signal to fsb FSM
+logic axi_trans_start;    // axi ready signal to axis FSM
 
-logic [7:0] wr_running_length;
+logic [DATA_WIDTH*MAX_BURST_SIZE-1:0] wr_data_phases;
+logic [DATA_WIDTH*MAX_BURST_SIZE/8-1:0] wr_strb_phases;
 
-logic [DATA_WIDTH-1:0] wr_phase_data;
-logic [(DATA_WIDTH/8)-1:0] wr_phase_strb;
-
-logic [DATA_WIDTH-1:0] wr_data;
-logic [(DATA_WIDTH/8)-1:0] wr_strb;
+logic [DATA_WIDTH*MAX_BURST_SIZE-1:0] wr_data;
+logic [DATA_WIDTH*MAX_BURST_SIZE/8-1:0] wr_strb;
 
 logic [31:0] wr_addr_frac_next;
 logic [31:0] wr_tail_data;
@@ -708,35 +675,83 @@ assign wr_phase_valid = wr_dat_tail_flag
                         ? (wr_state==WR_DAT) 
                         : (axi_whole_valid_i || axi_frctn_valid_i);
 
-assign wr_tail_data = wr_fsb_pause 
-                      ? wr_addr_frac_next + wr_addr_next
+assign wr_tail_data = wr_axis_pause 
+                      ? wr_addr_next + wr_addr_frac_next
                       : wr_addr_next;
 
 assign wr_data = wr_dat_tail_flag 
-                ? {{(DATA_WIDTH-32){1'b1}}, wr_tail_data} 
-                : wr_phase_data;
+                ? {{(DATA_WIDTH*MAX_BURST_SIZE-32){1'b1}}, wr_tail_data} 
+                : wr_data_phases;
 
-assign wr_strb = wr_dat_tail_flag ? 64'h0000_0000_0000_00FF : wr_phase_strb;
+assign wr_strb = wr_dat_tail_flag 
+                ? {{(DATA_WIDTH*MAX_BURST_SIZE/8-32){1'b0}},32'hFF}
+                : wr_strb_phases;
 
 assign wr_data_last = (wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT);
 
-assign axi_ready_o = (wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR) && !wr_dat_tail_flag;
+assign axi_trans_start = (wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR) && !wr_dat_tail_flag;
+
 
 // burst control
-assign wr_phase_end = (wr_running_length==0);
+logic [2:0] t_cnt;
+logic [2:0] t_cnt_next;
+
+assign t_cnt_next = (wvalid && wready) ? (t_cnt + 1'b1) : t_cnt;
+assign wr_phase_next_end = (t_cnt_next==cfg_write_length[2:0]);
+
 
 always_ff @(posedge clk)
-  if (wr_state==WR_ADDR)
-    wr_running_length <= cfg_write_length;
-  else if (wvalid && wready)
-    wr_running_length <= wr_running_length - 1;
+  if ((wr_state==WR_ADDR) || (t_cnt==cfg_write_length[2:0]))
+    t_cnt <= 1'b0;
+  else
+    t_cnt <= t_cnt_next;
 
 always_ff @(posedge clk)
-  if(wr_phase_valid)
-    begin
-      wdata <= wr_data;
-      wstrb <= wr_strb;
-    end
+  if(wr_phase_valid && ~wvalid) begin
+      wdata <= wr_data[DATA_WIDTH-1:0]; 
+      wstrb <= wr_strb[DATA_WIDTH/8-1:0];
+  end
+  else 
+  if (wvalid && wready) begin
+    case (t_cnt)
+      3'd0: 
+        begin 
+          wdata <= wr_data[2*DATA_WIDTH-1:DATA_WIDTH]; 
+          wstrb <= wr_strb[2*DATA_WIDTH/8-1:DATA_WIDTH/8];
+        end
+      3'd1:
+        begin 
+          wdata <= wr_data[3*DATA_WIDTH-1:2*DATA_WIDTH]; 
+          wstrb <= wr_strb[3*DATA_WIDTH/8-1:2*DATA_WIDTH/8];
+        end
+      3'd2:
+        begin 
+          wdata <= wr_data[4*DATA_WIDTH-1:3*DATA_WIDTH]; 
+          wstrb <= wr_strb[4*DATA_WIDTH/8-1:3*DATA_WIDTH/8];
+        end
+      3'd3:
+        begin 
+          wdata <= wr_data[5*DATA_WIDTH-1:4*DATA_WIDTH]; 
+          wstrb <= wr_strb[5*DATA_WIDTH/8-1:4*DATA_WIDTH/8];
+        end
+      3'd4:
+        begin 
+          wdata <= wr_data[6*DATA_WIDTH-1:5*DATA_WIDTH]; 
+          wstrb <= wr_strb[6*DATA_WIDTH/8-1:5*DATA_WIDTH/8];
+        end
+      3'd5:
+        begin 
+          wdata <= wr_data[7*DATA_WIDTH-1:6*DATA_WIDTH]; 
+          wstrb <= wr_strb[7*DATA_WIDTH/8-1:6*DATA_WIDTH/8];
+        end
+      3'd6:
+        begin 
+          wdata <= wr_data[8*DATA_WIDTH-1:7*DATA_WIDTH]; 
+          wstrb <= wr_strb[8*DATA_WIDTH/8-1:7*DATA_WIDTH/8];
+        end
+      default: begin end
+    endcase // t_cnt
+  end
 
 always_ff @( posedge clk)
   if (!sync_rst_n)
@@ -749,7 +764,7 @@ always_ff @( posedge clk)
     begin
       wid    <= 0;
       wvalid <= 1'b1;
-      wlast  <= wr_dat_tail_flag ? 1'b1 : wr_phase_end;
+      wlast  <= wr_dat_tail_flag ? 1'b1 : wr_phase_next_end;
     end
   else
     begin
@@ -761,357 +776,212 @@ always_ff @( posedge clk)
 
 
 // ======================================
-// fsb side
+// axi stream side
 // TODO: add FIFO to maximize bandwidth
 // ======================================
 
-logic fsb_ready;
-logic fsb_piled_up;
-logic fsb_v_o_masked; // fsb is valid again
+logic [511:0] axis_txdata;
+// logic axis_txlast;
+logic axis_txvalid;
+// logic [63:0] axis_txkeep;  // we assume this is '1
+logic axis_txready;
+
+assign axis_txdata = axis_data_bus.txd_tdata;
+// assign axis_txlast = axis_data_bus.txd_tlast;
+assign axis_txvalid = axis_data_bus.txd_tvalid;
+// assign axis_txkeep = axis_data_bus.txd_tkeep;
+assign axis_data_bus.txd_tready = axis_txready;
+
+logic axis_pile_ready;
+logic axis_packet_ready;
+logic axis_tx_wvalid; // axis is valid again
 
 //--------------------------------
 // fsb packet state matchine
 //--------------------------------
 
 typedef enum logic[1:0] {
-   FSB_INIT = 0
-   ,FSB_PILE = 1
-   ,FSB_HOLD = 2
-   ,FSB_SEND = 3
-   } fsb_pkt_state_t;
+   AXIS_INIT = 0
+   ,AXIS_PILE = 1
+   ,AXIS_HOLD = 2
+   ,AXIS_SEND = 3
+   } axis_frame_state_t;
 
-fsb_pkt_state_t fsb_state, fsb_state_nxt;
+axis_frame_state_t axis_state, axis_snext;
 
 always_comb
   begin
-    fsb_state_nxt = fsb_state;
-    case(fsb_state)
+    axis_snext = axis_state;
+    case(axis_state)
 
-      FSB_INIT :
+      AXIS_INIT :
         begin
-          if (axi_ready_o)
+          if (axi_trans_start)
             begin
-              if(fsb_v_o_masked)
-                fsb_state_nxt = FSB_PILE;
+              if(axis_tx_wvalid)
+                axis_snext = AXIS_PILE;
               else
-                fsb_state_nxt = FSB_HOLD;
+                axis_snext = AXIS_HOLD;
             end
           else
-            fsb_state_nxt = FSB_INIT;
+            axis_snext = AXIS_INIT;
         end
 
-      FSB_PILE :
+      AXIS_PILE :
         begin
-          if (fsb_piled_up && fsb_v_o_masked)  // we assume fsb pkts are multiple of DATA_FSB_NUM
-            fsb_state_nxt = FSB_SEND;
-          else if (!fsb_v_o_masked)
-            fsb_state_nxt = FSB_HOLD;
+          if (axis_packet_ready && axis_tx_wvalid)  // we assume fsb pkts are multiple of DATA_FSB_NUM
+            axis_snext = AXIS_SEND;
+          else if (!axis_tx_wvalid)
+            axis_snext = AXIS_HOLD;
           else
-            fsb_state_nxt = FSB_PILE;
+            axis_snext = AXIS_PILE;
         end
 
-      FSB_HOLD :
+      AXIS_HOLD :
         begin
           if (wr_data_last)
-            fsb_state_nxt = FSB_INIT;
+            axis_snext = AXIS_INIT;
           else
-            fsb_state_nxt = FSB_HOLD;
+            axis_snext = AXIS_HOLD;
         end
 
-      FSB_SEND :
+      AXIS_SEND :
         begin
           if (wr_data_last)  // only support 1 phase for now
-            fsb_state_nxt = FSB_INIT;
+            axis_snext = AXIS_INIT;
           else
-            fsb_state_nxt = FSB_SEND;
+            axis_snext = AXIS_SEND;
         end
 
-    endcase // fsb_state
+    endcase // axis_state
   end
 
 always_ff @(posedge clk)
    if(!sync_rst_n)
-      fsb_state <= FSB_INIT;
+      axis_state <= AXIS_INIT;
    else
-      fsb_state <= fsb_state_nxt;
+      axis_state <= axis_snext;
 
 
 //--------------------------------
-// FSB control part
+// AXIS control part
 //--------------------------------
 // asynchronous data transfer should be finally supported
 
-// fsb_v_o_masked1: 1  1  1  1  1  1  1
-// fsb_piled_up   : 0  1  2  3  4  5  6| 7  7..8  9  10 11 12
-// fsb_state      : P  P  P  P  P  P  P  S
-// (P=fsb_ready)  : 
-// fsb_yumi       : 1  1  1  1  1  1  1
+assign axis_tx_wvalid = cfg_wvalid_mask & axis_txvalid;
 
-assign fsb_v_o_masked = cfg_wvalid_mask & fsb_wvalid;
+assign axis_pile_ready = (axis_state==AXIS_PILE);
+assign axi_whole_valid_i = (axis_state==AXIS_SEND);
+assign axi_frctn_valid_i = (axis_state==AXIS_HOLD);
 
-assign fsb_ready = (fsb_state==FSB_PILE);
-assign axi_whole_valid_i = (fsb_state==FSB_SEND);
-assign axi_frctn_valid_i = (fsb_state==FSB_HOLD);
-
-// dequeue the fsb master
-assign fsb_yumi = fsb_ready && fsb_v_o_masked;
-assign wr_fsb_avaliable = fsb_v_o_masked;
+// dequeue the axis master
+assign axis_txready = axis_pile_ready && axis_tx_wvalid;
+assign wr_axis_valid = axis_tx_wvalid;
 
 
-// fsb pkt counter
+// AXIS pkt counter
 //--------------------------------
-logic [DATA_WIDTH-1:0] axi_phase_d;
-assign wr_phase_data = axi_phase_d;
+logic [DATA_WIDTH*MAX_BURST_SIZE-1:0] axi_phase_d;
+assign wr_data_phases = axi_phase_d;
 
-logic [1:0] cnt_16B;
+logic [2:0] cnt_phases;
+assign axis_packet_ready = (cnt_phases==cfg_write_length[2:0]) && axis_txready;
+
 always_ff @(posedge clk)
-  if (wr_state==WR_IDLE)
-    cnt_16B <= 0;
-  else if (fsb_yumi)
-    cnt_16B <= cnt_16B + 2'b1;
-
-assign fsb_piled_up = (cnt_16B==2'd3) && fsb_yumi;
+  if ((wr_state==WR_IDLE) || axis_packet_ready)
+    cnt_phases <= 0;
+  else if (axis_txready)
+    cnt_phases <= cnt_phases + 2'b1;
 
 
 // strb and address generator
 //--------------------------------
-logic [(DATA_WIDTH/8)-1:0] wr_phase_strb_comb;
+logic [(DATA_WIDTH*MAX_BURST_SIZE/8)-1:0] wr_strb_comb;
 logic [31:0] wr_addr_frac_comb;
 
 always_ff @(posedge clk)
 begin
-  if ((fsb_state==FSB_PILE || fsb_state==FSB_INIT)
-      && (fsb_state_nxt==FSB_HOLD)) // when fsb is invalid
+  if ((axis_state==AXIS_PILE || axis_state==AXIS_INIT)
+      && (axis_snext==AXIS_HOLD)) // when AXIS is invalid
   begin
-    wr_phase_strb <= wr_phase_strb_comb;
     wr_addr_frac_next <= wr_addr_frac_comb;
+    wr_strb_phases <= wr_strb_comb;
   end
   else
   begin
-    wr_phase_strb <= 64'hFFFF_FFFF_FFFF_FFFF;
     wr_addr_frac_next <= wr_addr_frac_next;
+    wr_strb_phases <= {DATA_WIDTH/8*MAX_BURST_SIZE{1'b1}};
   end
 end
 
 always_comb
 begin
-  case(cnt_16B)
-    2'd0: 
+  case(cnt_phases)
+    3'd0: 
     begin 
       wr_addr_frac_comb = 32'd0;
-      wr_phase_strb_comb = {(1){16'h0000}} & 64'hFFFF_FFFF_FFFF_FFFF;
+      wr_strb_comb = 64'h0000_0000_0000_0000 | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
     end
-    2'd1: 
+    3'd1: 
     begin 
-      wr_addr_frac_comb = 32'd16;
-      wr_phase_strb_comb = {(1){16'hFFFF}} & 64'hFFFF_FFFF_FFFF_FFFF;
+      wr_addr_frac_comb = 32'd64;
+      wr_strb_comb = {(1){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
     end
-    2'd2: 
+    3'd2: 
     begin 
-      wr_addr_frac_comb = 32'd32;
-      wr_phase_strb_comb = {(2){16'hFFFF}} & 64'hFFFF_FFFF_FFFF_FFFF;
+      wr_addr_frac_comb = 32'd128;
+      wr_strb_comb = {(2){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
     end
-    2'd3: 
+    3'd3: 
     begin 
-      wr_addr_frac_comb = 32'd48;
-      wr_phase_strb_comb = {(3){16'hFFFF}} & 64'hFFFF_FFFF_FFFF_FFFF;
+      wr_addr_frac_comb = 32'd192;
+      wr_strb_comb = {(3){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
+    end
+    3'd4: 
+    begin 
+      wr_addr_frac_comb = 32'd256;
+      wr_strb_comb = {(4){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
+    end
+    3'd5: 
+    begin 
+      wr_addr_frac_comb = 32'd320;
+      wr_strb_comb = {(5){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
+    end
+    3'd6: 
+    begin 
+      wr_addr_frac_comb = 32'd384;
+      wr_strb_comb = {(6){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
+    end
+    3'd7: 
+    begin 
+      wr_addr_frac_comb = 32'd448;
+      wr_strb_comb = {(7){64'hFFFF_FFFF_FFFF_FFFF}} | {DATA_WIDTH/8*MAX_BURST_SIZE{1'b0}};
     end
     default: begin end
   endcase
 end
 
+
 // data register
 //--------------------------------
 always_ff @(posedge clk)
-  if (fsb_yumi)
-  case(cnt_16B)
-    2'd0: axi_phase_d[128*0+:128] <= {48'd0, fsb_wdata};
-    2'd1: axi_phase_d[128*1+:128] <= {48'd0, fsb_wdata};
-    2'd2: axi_phase_d[128*2+:128] <= {48'd0, fsb_wdata};
-    2'd3: axi_phase_d[128*3+:128] <= {48'd0, fsb_wdata};
+  if (axis_txready)
+  case(cnt_phases)
+    3'd0: axi_phase_d[1*DATA_WIDTH-1:0*DATA_WIDTH] <= axis_txdata;
+    3'd1: axi_phase_d[2*DATA_WIDTH-1:1*DATA_WIDTH] <= axis_txdata;
+    3'd2: axi_phase_d[3*DATA_WIDTH-1:2*DATA_WIDTH] <= axis_txdata;
+    3'd3: axi_phase_d[4*DATA_WIDTH-1:3*DATA_WIDTH] <= axis_txdata;
+    3'd4: axi_phase_d[5*DATA_WIDTH-1:4*DATA_WIDTH] <= axis_txdata;
+    3'd5: axi_phase_d[6*DATA_WIDTH-1:5*DATA_WIDTH] <= axis_txdata;
+    3'd6: axi_phase_d[7*DATA_WIDTH-1:6*DATA_WIDTH] <= axis_txdata;
+    3'd7: axi_phase_d[8*DATA_WIDTH-1:7*DATA_WIDTH] <= axis_txdata;
     default : begin end
-  endcase // cnt_16B
+  endcase // cnt_phases
 
-
-// // count the fsb pkt number before LCM
-// logic [4:0] cnt_alignment;
-// logic [FSB_WIDTH-1:0] wr_fsb_data_rsd;
-
-// always_ff @(posedge clk)
-// begin
-//   if (wr_state==WR_IDLE)
-//   begin
-//     cnt_alignment <= 0;
-//     wr_fsb_data_rsd <= 0;
-//   end
-//   else if (fsb_yumi)
-//   begin
-//     cnt_alignment <= cnt_alignment + 1'b1;
-//     wr_fsb_data_rsd <= fsb_wdata;
-//   // else if (reset_fsb_adapter)
-//   //   cnt_alignment <= 0;
-//   end
-// end
-
-// assign fsb_piled_up = ((cnt_alignment==5'd6) || (cnt_alignment==5'd12) 
-//                     || (cnt_alignment==5'd19) || (cnt_alignment==5'd25) 
-//                     || (cnt_alignment==5'd31)) && fsb_yumi;
-
-// always_ff @(posedge clk)
-// begin
-//   if (fsb_yumi)
-//     case(cnt_alignment)
-//       5'd0:   axi_phase_d[FSB_WIDTH*0+:FSB_WIDTH] <= fsb_wdata;
-//       5'd1:   axi_phase_d[FSB_WIDTH*1+:FSB_WIDTH] <= fsb_wdata;
-//       5'd2:   axi_phase_d[FSB_WIDTH*2+:FSB_WIDTH] <= fsb_wdata;
-//       5'd3:   axi_phase_d[FSB_WIDTH*3+:FSB_WIDTH] <= fsb_wdata;
-//       5'd4:   axi_phase_d[FSB_WIDTH*4+:FSB_WIDTH] <= fsb_wdata;
-//       5'd5:   axi_phase_d[FSB_WIDTH*5+:FSB_WIDTH] <= fsb_wdata;
-//       5'd6:   axi_phase_d[DATA_WIDTH-1:FSB_WIDTH*6] <= fsb_wdata[31:0];
-
-//       5'd7:   axi_phase_d[FSB_WIDTH*0+:48+FSB_WIDTH] <= {fsb_wdata, wr_fsb_data_rsd[79:32]};
-//       5'd8:   axi_phase_d[48+FSB_WIDTH*1+:FSB_WIDTH] <= fsb_wdata;
-//       5'd9:   axi_phase_d[48+FSB_WIDTH*2+:FSB_WIDTH] <= fsb_wdata;
-//       5'd10:  axi_phase_d[48+FSB_WIDTH*3+:FSB_WIDTH] <= fsb_wdata;
-//       5'd11:  axi_phase_d[48+FSB_WIDTH*4+:FSB_WIDTH] <= fsb_wdata;
-//       5'd12:  axi_phase_d[DATA_WIDTH-1:48+FSB_WIDTH*5] <= fsb_wdata[63:0];
-
-//       5'd13:  axi_phase_d[FSB_WIDTH*0+:16+FSB_WIDTH] <= {fsb_wdata, wr_fsb_data_rsd[79:64]};
-//       5'd14:  axi_phase_d[16+FSB_WIDTH*1+:FSB_WIDTH] <= fsb_wdata;
-//       5'd15:  axi_phase_d[16+FSB_WIDTH*2+:FSB_WIDTH] <= fsb_wdata;
-//       5'd16:  axi_phase_d[16+FSB_WIDTH*3+:FSB_WIDTH] <= fsb_wdata;
-//       5'd17:  axi_phase_d[16+FSB_WIDTH*4+:FSB_WIDTH] <= fsb_wdata;
-//       5'd18:  axi_phase_d[16+FSB_WIDTH*5+:FSB_WIDTH] <= fsb_wdata;
-//       5'd19:  axi_phase_d[DATA_WIDTH-1:16+FSB_WIDTH*6] <= fsb_wdata[15:0];
-
-//       5'd20:  axi_phase_d[FSB_WIDTH*0+:64+FSB_WIDTH] <= {fsb_wdata, wr_fsb_data_rsd[79:16]};
-//       5'd21:  axi_phase_d[64+FSB_WIDTH*1+:FSB_WIDTH] <= fsb_wdata;
-//       5'd22:  axi_phase_d[64+FSB_WIDTH*2+:FSB_WIDTH] <= fsb_wdata;
-//       5'd23:  axi_phase_d[64+FSB_WIDTH*3+:FSB_WIDTH] <= fsb_wdata;
-//       5'd24:  axi_phase_d[64+FSB_WIDTH*4+:FSB_WIDTH] <= fsb_wdata;
-//       5'd25:  axi_phase_d[DATA_WIDTH-1:64+FSB_WIDTH*5] <= fsb_wdata[47:0];
-
-//       5'd26:  axi_phase_d[FSB_WIDTH*0+:32+FSB_WIDTH] <= {fsb_wdata, wr_fsb_data_rsd[79:48]};
-//       5'd27:  axi_phase_d[32+FSB_WIDTH*1+:FSB_WIDTH] <= fsb_wdata;
-//       5'd28:  axi_phase_d[32+FSB_WIDTH*2+:FSB_WIDTH] <= fsb_wdata;
-//       5'd29:  axi_phase_d[32+FSB_WIDTH*3+:FSB_WIDTH] <= fsb_wdata;
-//       5'd30:  axi_phase_d[32+FSB_WIDTH*4+:FSB_WIDTH] <= fsb_wdata;
-//       5'd31:  axi_phase_d[DATA_WIDTH-1:32+FSB_WIDTH*5] <= fsb_wdata;
-//       default: begin end
-//     endcase
-// end
-
-// always_comb
-// begin
-//   case(cnt_alignment)
-//     0:  begin
-//           wr_addr_frac_comb = 32'd0;
-//           wr_phase_strb_comb = {(0){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     1:  begin
-//           wr_addr_frac_comb = 32'd10;
-//           wr_phase_strb_comb = {(1){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     2:  begin
-//           wr_addr_frac_comb = 32'd20;
-//           wr_phase_strb_comb = {(2){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     3:  begin
-//           wr_addr_frac_comb = 32'd30;
-//           wr_phase_strb_comb = {(3){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     4:  begin
-//           wr_addr_frac_comb = 32'd40;
-//           wr_phase_strb_comb = {(4){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     5:  begin
-//           wr_addr_frac_comb = 32'd50;
-//           wr_phase_strb_comb = {(5){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     6:  begin
-//           wr_addr_frac_comb = 32'd60;
-//           wr_phase_strb_comb = {(6){10'b11_1111_1111}} & 64'hFFFF_FFFF_FFFF_FFFF; end
-
-//     7:  begin
-//           wr_addr_frac_comb = 32'd64 + 32'd6;
-//           wr_phase_strb_comb =(({(7-7){10'b11_1111_1111}}<<6)|6'b11_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     8:  begin
-//           wr_addr_frac_comb = 32'd64 + 32'd16;
-//           wr_phase_strb_comb =(({(8-7){10'b11_1111_1111}}<<6)|6'b11_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     9:  begin
-//           wr_addr_frac_comb = 32'd64 + 32'd26;
-//           wr_phase_strb_comb =(({(9-7){10'b11_1111_1111}}<<6)|6'b11_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     10: begin
-//           wr_addr_frac_comb = 32'd64 + 32'd36;
-//           wr_phase_strb_comb =(({(10-7){10'b11_1111_1111}}<<6)|6'b11_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     11: begin
-//           wr_addr_frac_comb = 32'd64 + 32'd46;
-//           wr_phase_strb_comb =(({(11-7){10'b11_1111_1111}}<<6)|6'b11_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     12: begin
-//           wr_addr_frac_comb = 32'd64 + 32'd56;
-//           wr_phase_strb_comb =(({(12-7){10'b11_1111_1111}}<<6)|6'b11_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-
-//     13: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd2;
-//           wr_phase_strb_comb = (({(13-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     14: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd12;
-//           wr_phase_strb_comb = (({(14-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     15: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd22;
-//           wr_phase_strb_comb = (({(15-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     16: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd32;
-//           wr_phase_strb_comb = (({(16-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     17: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd42;
-//           wr_phase_strb_comb = (({(17-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     18: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd52;
-//           wr_phase_strb_comb = (({(18-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     19: begin
-//           wr_addr_frac_comb = 32'd64*2 + 32'd62;
-//           wr_phase_strb_comb = (({(19-13){10'b11_1111_1111}}<<2)|2'b11) & 64'hFFFF_FFFF_FFFF_FFFF; end
-
-//     20: begin
-//           wr_addr_frac_comb = 32'd64*3 + 32'd8;
-//           wr_phase_strb_comb = (({(20-20){10'b11_1111_1111}}<<8)|8'b1111_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     21: begin
-//           wr_addr_frac_comb = 32'd64*3 + 32'd18;
-//           wr_phase_strb_comb = (({(21-20){10'b11_1111_1111}}<<8)|8'b1111_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     22: begin
-//           wr_addr_frac_comb = 32'd64*3 + 32'd28;
-//           wr_phase_strb_comb = (({(22-20){10'b11_1111_1111}}<<8)|8'b1111_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     23: begin
-//           wr_addr_frac_comb = 32'd64*3 + 32'd38;
-//           wr_phase_strb_comb = (({(23-20){10'b11_1111_1111}}<<8)|8'b1111_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     24: begin
-//           wr_addr_frac_comb = 32'd64*3 + 32'd48;
-//           wr_phase_strb_comb = (({(24-20){10'b11_1111_1111}}<<8)|8'b1111_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     25: begin
-//           wr_addr_frac_comb = 32'd64*3 + 32'd58;
-//           wr_phase_strb_comb = (({(25-20){10'b11_1111_1111}}<<8)|8'b1111_1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-
-//     26: begin
-//           wr_addr_frac_comb = 32'd64*4 + 32'd4;
-//           wr_phase_strb_comb = (({(26-26){10'b11_1111_1111}}<<4)|4'b1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     27: begin
-//           wr_addr_frac_comb = 32'd64*4 + 32'd14;
-//           wr_phase_strb_comb = (({(27-26){10'b11_1111_1111}}<<4)|4'b1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     28: begin
-//           wr_addr_frac_comb = 32'd64*4 + 32'd24;
-//           wr_phase_strb_comb = (({(28-26){10'b11_1111_1111}}<<4)|4'b1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     29: begin
-//           wr_addr_frac_comb = 32'd64*4 + 32'd34;
-//           wr_phase_strb_comb = (({(29-26){10'b11_1111_1111}}<<4)|4'b1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     30: begin
-//           wr_addr_frac_comb = 32'd64*4 + 32'd44;
-//           wr_phase_strb_comb = (({(30-26){10'b11_1111_1111}}<<4)|4'b1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     31: begin
-//           wr_addr_frac_comb = 32'd64*4 + 32'd54;
-//           wr_phase_strb_comb = (({(31-26){10'b11_1111_1111}}<<4)|4'b1111) & 64'hFFFF_FFFF_FFFF_FFFF; end
-//     default: begin end
-//   endcase
-// end
 
 //--------------------------------
 // AXI read state machine (to be added)
 //--------------------------------
 assign rd_inp = 0;
 
-
-endmodule
+endmodule // the

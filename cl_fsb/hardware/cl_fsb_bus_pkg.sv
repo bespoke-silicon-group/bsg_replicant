@@ -122,7 +122,7 @@ interface axil_bus_t #(parameter NUM_SLOTS=1);
 endinterface
 
 
-interface axis_bus_t #(parameter TDATA_WIDTH=32);
+interface axis_bus_t #(parameter TDATA_WIDTH=512);
 
   logic [  TDATA_WIDTH-1:0] txd_tdata ;
   logic                     txd_tlast ;

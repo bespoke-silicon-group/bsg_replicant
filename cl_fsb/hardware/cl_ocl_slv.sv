@@ -17,7 +17,7 @@ module cl_ocl_slv (
    
    input clk
    ,input sync_rst_n
-   ,input sh_cl_flr_assert_q
+   ,input sh_cl_flr_assert
    ,axil_bus_t.master sh_ocl_bus
    ,cfg_bus_t.slave ocl_cfg_bus_0
    // ,cfg_bus_t.slave ddra_tst_cfg_bus
@@ -172,7 +172,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
 always_comb
 begin
    slv_state_nxt = slv_state;
-   if (sh_cl_flr_assert_q)
+   if (sh_cl_flr_assert)
       slv_state_nxt = SLV_IDLE;
    else
    begin
