@@ -54,7 +54,6 @@ module cl_axis_test_master
 
   logic cnt_done;
   logic cnt_dn_reg;
-  logic loop_done;
 
   assign t_done = (t_cnt == packet_size_lp - 1'b1);  // aligns with txlast
   assign p_done = (p_cnt == MULTPKT_NUM - 1'b1);

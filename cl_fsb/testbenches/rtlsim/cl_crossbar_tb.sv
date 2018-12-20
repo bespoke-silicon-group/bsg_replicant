@@ -47,12 +47,13 @@ module cl_crossbar_tb();
   parameter AXI4_READ  = 32'h8000_2000;
 
 
-  parameter BUFF1_SIZE = 32'd640;
-  parameter BUFF2_SIZE = 32'd1024;
+  parameter BUFF1_SIZE = 32'd5120;
+  parameter BUFF2_SIZE = 32'd5120;
 
-  parameter READ_CYCLES = 2;
+  parameter READ_CYCLES = 0;
 
   int timeout_count;
+  int fail=0;
   int error_count = 0;
 
   initial begin
@@ -69,7 +70,7 @@ module cl_crossbar_tb();
       .CFG_BASE_ADDR(CROSSBAR_M1));
 
     $display ("No.1B ===> FSB to AXI-4 write test:");
-    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), 
+    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
       .BURST_LEN(1),
       .WR_BUFF_SIZE(BUFF2_SIZE),
       .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
@@ -80,11 +81,26 @@ module cl_crossbar_tb();
     $display ("No.2 (concurrent test) ===> AXI-L to FSB slave test:");
     ocl_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0));
 
-    $display ("N0.3 ===> AXI4 to FSB slave test:");
-    pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
+    // $display ("N0.3 ===> AXI4 to FSB slave test:");
+    // pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
 
     tb.kernel_reset();
     tb.power_down();
+
+    //---------------------------
+    // Report pass/fail status
+    //---------------------------
+    $display("[%t] : Checking total error count...", $realtime);
+    if (error_count > 0)begin
+       fail = 1;
+    end
+    $display("[%t] : Detected %3d errors during this test", $realtime, error_count);
+
+    if (fail || (tb.chk_prot_err_stat())) begin
+       $display("[%t] : *** TEST FAILED ***", $realtime);
+    end else begin
+       $display("[%t] : *** TEST PASSED ***", $realtime);
+    end
 
     $finish;
 
@@ -173,7 +189,7 @@ module cl_crossbar_tb();
     logic [63:0] hm_tail_old = 0;
     logic [63:0] hm_tail;
     do begin
-      # 300ns
+      # 2000ns
         for (int i=0; i<8; i++) begin
           hm_tail[(i*8)+:8] = tb.hm_get_byte(.addr(buffer_address+i));
         end
@@ -332,7 +348,7 @@ module cl_crossbar_tb();
             hm_tail[(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+BUFF1_SIZE+j)); // check the write tail
           end
           $display("[%t] : Readback the write tail word @ %h : %h", $realtime, pcim_addr+BUFF1_SIZE, hm_tail[31:0]);
-          # 100ns // Delay enough time to ensure that we have data in buffer to read
+          # 500ns // Delay enough time to ensure that we have data in buffer to read
             if (hm_tail[31:0]!=(i*32'h40)) begin  // check current read head is not equal to tail
               for (int j=0; j<4; j++) begin
                 for (int k=0; k<16; k++) begin
@@ -372,7 +388,7 @@ module cl_crossbar_tb();
             hm_tail[(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+BUFF2_SIZE+j)); // check the write tail
           end
           $display("[%t] : Readback the write tail word @ %h : %h", $realtime, pcim_addr+BUFF2_SIZE, hm_tail[31:0]);
-          # 200ns // Delay enough time to ensure that we have data in buffer to read
+          # 500ns // Delay enough time to ensure that we have data in buffer to read
             if (hm_tail[31:0]!=(i*32'd64)) begin  // check current read head is not equal to tail
               for (int j=0; j<64; j++) begin
                   hm_fsb_pkts[BUFF2_SIZE/64*n+i][(j*8)+:8] = tb.hm_get_byte(.addr(pcim_addr+64*i+j));

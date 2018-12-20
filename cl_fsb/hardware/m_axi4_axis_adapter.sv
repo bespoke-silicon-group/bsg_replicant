@@ -63,7 +63,7 @@ logic rvalid;
 logic [17:0] ruser = 0;
 logic rready;
 
-axi_bus_t axi4_m_bus();
+axi_bus_t #(.NUM_SLOTS(1),.ID_WIDTH(16),.ADDR_WIDTH(64),.DATA_WIDTH(512)) axi4_m_bus();
 
 assign axi4_m_bus.awid = {7'b0, awid};
 assign axi4_m_bus.awaddr = awaddr;

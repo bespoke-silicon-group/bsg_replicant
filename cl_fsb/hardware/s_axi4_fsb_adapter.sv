@@ -34,6 +34,7 @@ axis_bus_t #(.TDATA_WIDTH(128)) axis_fsb_bus();
 axi_register_slice AXI4_PCIS_REG_SLC (
   .aclk          (clk_i                   ),
   .aresetn       (resetn_i                ),
+  .s_axi_awid    (16'h0),
   .s_axi_awaddr  (sh_cl_dma_pcis.awaddr   ),
   .s_axi_awlen   (sh_cl_dma_pcis.awlen    ),
   .s_axi_awsize  (sh_cl_dma_pcis.awsize   ),
@@ -50,9 +51,11 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .s_axi_wlast   (sh_cl_dma_pcis.wlast    ),
   .s_axi_wvalid  (sh_cl_dma_pcis.wvalid   ),
   .s_axi_wready  (sh_cl_dma_pcis.wready   ),
+  .s_axi_bid     (),
   .s_axi_bresp   (sh_cl_dma_pcis.bresp    ),
   .s_axi_bvalid  (sh_cl_dma_pcis.bvalid   ),
   .s_axi_bready  (sh_cl_dma_pcis.bready   ),
+  .s_axi_arid    (16'h0),
   .s_axi_araddr  (sh_cl_dma_pcis.araddr   ),
   .s_axi_arlen   (sh_cl_dma_pcis.arlen    ),
   .s_axi_arsize  (sh_cl_dma_pcis.arsize   ),
@@ -64,11 +67,13 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .s_axi_arqos   (4'h0                    ),
   .s_axi_arvalid (sh_cl_dma_pcis.arvalid  ),
   .s_axi_arready (sh_cl_dma_pcis.arready  ),
+  .s_axi_rid     (),
   .s_axi_rdata   (sh_cl_dma_pcis.rdata    ),
   .s_axi_rresp   (sh_cl_dma_pcis.rresp    ),
   .s_axi_rlast   (sh_cl_dma_pcis.rlast    ),
   .s_axi_rvalid  (sh_cl_dma_pcis.rvalid   ),
   .s_axi_rready  (sh_cl_dma_pcis.rready   ),
+  .m_axi_awid    (),
   .m_axi_awaddr  (sh_cl_pcis_bus_q.awaddr ),
   .m_axi_awlen   (sh_cl_pcis_bus_q.awlen  ),
   .m_axi_awsize  (sh_cl_pcis_bus_q.awsize ),
@@ -85,9 +90,11 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .m_axi_wlast   (sh_cl_pcis_bus_q.wlast  ),
   .m_axi_wvalid  (sh_cl_pcis_bus_q.wvalid ),
   .m_axi_wready  (sh_cl_pcis_bus_q.wready ),
+  .m_axi_bid     (16'h0),
   .m_axi_bresp   (sh_cl_pcis_bus_q.bresp  ),
   .m_axi_bvalid  (sh_cl_pcis_bus_q.bvalid ),
   .m_axi_bready  (sh_cl_pcis_bus_q.bready ),
+  .m_axi_arid    (),
   .m_axi_araddr  (sh_cl_pcis_bus_q.araddr ),
   .m_axi_arlen   (sh_cl_pcis_bus_q.arlen  ),
   .m_axi_arsize  (sh_cl_pcis_bus_q.arsize ),
@@ -99,15 +106,13 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .m_axi_arqos   (                        ),
   .m_axi_arvalid (sh_cl_pcis_bus_q.arvalid),
   .m_axi_arready (sh_cl_pcis_bus_q.arready),
+  .m_axi_rid     ({10'b0,sh_cl_pcis_bus_q.rid}),
   .m_axi_rdata   (sh_cl_pcis_bus_q.rdata  ),
   .m_axi_rresp   (sh_cl_pcis_bus_q.rresp  ),
   .m_axi_rlast   (sh_cl_pcis_bus_q.rlast  ),
   .m_axi_rvalid  (sh_cl_pcis_bus_q.rvalid ),
   .m_axi_rready  (sh_cl_pcis_bus_q.rready )
 );
-
-assign sh_cl_pcis_bus_q.awid = 0;
-assign sh_cl_pcis_bus_q.bid  = 0;
 
 
 // convert axi4 to axis
@@ -163,7 +168,7 @@ axi_fifo_mm_s #(
   .s_axi_rresp           (sh_ocl_bus.rresp             ), // output wire [1 : 0] s_axi_rresp
   .s_axi_rvalid          (sh_ocl_bus.rvalid            ), // output wire s_axi_rvalid
   .s_axi_rready          (sh_ocl_bus.rready            ), // input wire s_axi_rready
-  .s_axi4_awid           (sh_cl_pcis_bus_q.awid[3:0]   ), // input wire [3 : 0] s_axi4_awid
+  .s_axi4_awid           (4'h0                         ), // input wire [3 : 0] s_axi4_awid
   .s_axi4_awaddr         (sh_cl_pcis_bus_q.awaddr[31:0]), // input wire [31 : 0] s_axi4_awaddr
   .s_axi4_awlen          (sh_cl_pcis_bus_q.awlen       ), // input wire [7 : 0] s_axi4_awlen
   .s_axi4_awsize         (sh_cl_pcis_bus_q.awsize      ), // input wire [2 : 0] s_axi4_awsize
@@ -178,11 +183,11 @@ axi_fifo_mm_s #(
   .s_axi4_wlast          (sh_cl_pcis_bus_q.wlast       ), // input wire s_axi4_wlast
   .s_axi4_wvalid         (sh_cl_pcis_bus_q.wvalid      ), // input wire s_axi4_wvalid
   .s_axi4_wready         (sh_cl_pcis_bus_q.wready      ), // output wire s_axi4_wready
-  .s_axi4_bid            (sh_cl_pcis_bus_q.bid[3:0]    ), // output wire [3 : 0] s_axi4_bid
+  .s_axi4_bid            (                             ), // output wire [3 : 0] s_axi4_bid
   .s_axi4_bresp          (sh_cl_pcis_bus_q.bresp       ), // output wire [1 : 0] s_axi4_bresp
   .s_axi4_bvalid         (sh_cl_pcis_bus_q.bvalid      ), // output wire s_axi4_bvalid
   .s_axi4_bready         (sh_cl_pcis_bus_q.bready      ), // input wire s_axi4_bready
-  .s_axi4_arid           (sh_cl_pcis_bus_q.arid[3:0]   ), // input wire [3 : 0] s_axi4_arid
+  .s_axi4_arid           (4'h0                         ), // input wire [3 : 0] s_axi4_arid
   .s_axi4_araddr         (sh_cl_pcis_bus_q.araddr[31:0]), // input wire [31 : 0] s_axi4_araddr
   .s_axi4_arlen          (sh_cl_pcis_bus_q.arlen       ), // input wire [7 : 0] s_axi4_arlen
   .s_axi4_arsize         (sh_cl_pcis_bus_q.arsize      ), // input wire [2 : 0] s_axi4_arsize
@@ -192,7 +197,7 @@ axi_fifo_mm_s #(
   .s_axi4_arprot         (3'h0                         ), // input wire [2 : 0] s_axi4_arprot
   .s_axi4_arvalid        (sh_cl_pcis_bus_q.arvalid     ), // input wire s_axi4_arvalid
   .s_axi4_arready        (sh_cl_pcis_bus_q.arready     ), // output wire s_axi4_arready
-  .s_axi4_rid            (sh_cl_pcis_bus_q.rid[3:0]    ), // output wire [3 : 0] s_axi4_rid
+  .s_axi4_rid            (                             ), // output wire [3 : 0] s_axi4_rid
   .s_axi4_rdata          (sh_cl_pcis_bus_q.rdata       ), // output wire [511 : 0] s_axi4_rdata
   .s_axi4_rresp          (sh_cl_pcis_bus_q.rresp       ), // output wire [1 : 0] s_axi4_rresp
   .s_axi4_rlast          (sh_cl_pcis_bus_q.rlast       ), // output wire s_axi4_rlast
