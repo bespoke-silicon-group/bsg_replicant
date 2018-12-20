@@ -81,8 +81,8 @@ module cl_crossbar_tb();
     $display ("No.2 (concurrent test) ===> AXI-L to FSB slave test:");
     ocl_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0));
 
-    // $display ("N0.3 ===> AXI4 to FSB slave test:");
-    // pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
+    $display ("N0.3 ===> AXI4 to FSB slave test:");
+    pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
 
     tb.kernel_reset();
     tb.power_down();

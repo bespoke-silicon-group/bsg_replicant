@@ -28,6 +28,9 @@ axis_bus_t #(.TDATA_WIDTH(512)) fifo_axis_bus();
 // bus for datawidth coverter X4 output and datawidth coverter /4 input
 axis_bus_t #(.TDATA_WIDTH(128)) axis_fsb_bus();
 
+logic [15:0] sh_cl_dma_pcis_rid;
+
+assign sh_cl_dma_pcis.rid = sh_cl_dma_pcis_rid[5:0];
 
 // flop the input PCIS_DMA bus
 //---------------------------------
@@ -67,7 +70,7 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .s_axi_arqos   (4'h0                    ),
   .s_axi_arvalid (sh_cl_dma_pcis.arvalid  ),
   .s_axi_arready (sh_cl_dma_pcis.arready  ),
-  .s_axi_rid     (),
+  .s_axi_rid     (sh_cl_dma_pcis_rid      ),
   .s_axi_rdata   (sh_cl_dma_pcis.rdata    ),
   .s_axi_rresp   (sh_cl_dma_pcis.rresp    ),
   .s_axi_rlast   (sh_cl_dma_pcis.rlast    ),
@@ -106,7 +109,7 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .m_axi_arqos   (                        ),
   .m_axi_arvalid (sh_cl_pcis_bus_q.arvalid),
   .m_axi_arready (sh_cl_pcis_bus_q.arready),
-  .m_axi_rid     ({10'b0,sh_cl_pcis_bus_q.rid}),
+  .m_axi_rid     (16'h0                   ),
   .m_axi_rdata   (sh_cl_pcis_bus_q.rdata  ),
   .m_axi_rresp   (sh_cl_pcis_bus_q.rresp  ),
   .m_axi_rlast   (sh_cl_pcis_bus_q.rlast  ),

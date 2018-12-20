@@ -28,34 +28,34 @@ localparam MAX_BURST_SIZE = 2;  // 512bit * 2
 //-------------------------------------
 
 // axi-4 signals to below
-logic [8:0] awid; 
+logic [5:0] awid; 
 logic [63:0] awaddr;
 logic[7:0] awlen;
 logic awvalid;
 logic[10:0] awuser = 0; // not used
 logic awready;
 
-logic [8:0] wid; // not used
+logic [5:0] wid; // not used
 logic [DATA_WIDTH-1:0] wdata = 0;
 logic [(DATA_WIDTH/8)-1:0] wstrb = 0;
 logic wlast;
 logic wvalid;
 logic wready;
 
-logic [8:0] bid;
+logic [5:0] bid;
 logic [1:0] bresp;
 logic  bvalid;
 logic [17:0] buser = 0;
 logic  bready;
 
-logic [8:0] arid;
+logic [5:0] arid;
 logic [63:0] araddr;
 logic [7:0] arlen;
 logic  arvalid;
 logic [10:0] aruser = 0; // not used
 logic arready;
 
-logic [8:0] rid;
+logic [5:0] rid;
 logic [DATA_WIDTH-1:0] rdata;
 logic [1:0] rresp;
 logic rlast;
@@ -63,9 +63,9 @@ logic rvalid;
 logic [17:0] ruser = 0;
 logic rready;
 
-axi_bus_t #(.NUM_SLOTS(1),.ID_WIDTH(16),.ADDR_WIDTH(64),.DATA_WIDTH(512)) axi4_m_bus();
+axi_bus_t #(.NUM_SLOTS(1),.ID_WIDTH(6),.ADDR_WIDTH(64),.DATA_WIDTH(512)) axi4_m_bus();
 
-assign axi4_m_bus.awid = {7'b0, awid};
+assign axi4_m_bus.awid = awid;
 assign axi4_m_bus.awaddr = awaddr;
 assign axi4_m_bus.awlen = awlen;
 assign axi4_m_bus.awsize = 3'h6;
@@ -78,108 +78,155 @@ assign axi4_m_bus.wlast = wlast;
 assign axi4_m_bus.wvalid = wvalid;
 assign wready = axi4_m_bus.wready;
 
-assign bid = axi4_m_bus.bid[8:0];
+assign bid = axi4_m_bus.bid;
 assign bresp = axi4_m_bus.bresp;
 assign bvalid = axi4_m_bus.bvalid;
 assign axi4_m_bus.bready = bready;
 
-assign axi4_m_bus.arid = {7'b0, arid};
+assign axi4_m_bus.arid = arid;
 assign axi4_m_bus.araddr = araddr;
 assign axi4_m_bus.arlen = arlen;
 assign axi4_m_bus.arsize = 3'h6;
 assign axi4_m_bus.arvalid = arvalid;
 assign arready = axi4_m_bus.arready;
 
-assign rid = axi4_m_bus.rid[8:0];
+assign rid = axi4_m_bus.rid;
 assign rdata = axi4_m_bus.rdata;
 assign rresp = axi4_m_bus.rresp;
 assign rlast = axi4_m_bus.rlast;
 assign rvalid = axi4_m_bus.rvalid;
 assign axi4_m_bus.rready = rready;
 
-axi_register_slice PCI_AXI4_REG_SLC (
-  .aclk          (clk_i                 ),
-  .aresetn       (resetn_i              ),
-  
-  .s_axi_awid    (axi4_m_bus.awid       ),
-  .s_axi_awaddr  (axi4_m_bus.awaddr     ),
-  .s_axi_awlen   (axi4_m_bus.awlen      ),
-  .s_axi_awsize  (axi4_m_bus.awsize     ),
-  .s_axi_awburst (2'h0                  ),
-  .s_axi_awlock  (1'h0                  ),
-  .s_axi_awcache (4'h0                  ),
-  .s_axi_awprot  (3'h0                  ),
-  .s_axi_awregion(4'h0                  ),
-  .s_axi_awqos   (4'h0                  ),
-  .s_axi_awvalid (axi4_m_bus.awvalid    ),
-  .s_axi_awready (axi4_m_bus.awready    ),
-  .s_axi_wdata   (axi4_m_bus.wdata      ),
-  .s_axi_wstrb   (axi4_m_bus.wstrb      ),
-  .s_axi_wlast   (axi4_m_bus.wlast      ),
-  .s_axi_wvalid  (axi4_m_bus.wvalid     ),
-  .s_axi_wready  (axi4_m_bus.wready     ),
-  .s_axi_bid     (axi4_m_bus.bid        ),
-  .s_axi_bresp   (axi4_m_bus.bresp      ),
-  .s_axi_bvalid  (axi4_m_bus.bvalid     ),
-  .s_axi_bready  (axi4_m_bus.bready     ),
-  .s_axi_arid    (axi4_m_bus.arid       ),
-  .s_axi_araddr  (axi4_m_bus.araddr     ),
-  .s_axi_arlen   (axi4_m_bus.arlen      ),
-  .s_axi_arsize  (axi4_m_bus.arsize     ),
-  .s_axi_arburst (2'h0                  ),
-  .s_axi_arlock  (1'h0                  ),
-  .s_axi_arcache (4'h0                  ),
-  .s_axi_arprot  (3'h0                  ),
-  .s_axi_arregion(4'h0                  ),
-  .s_axi_arqos   (4'h0                  ),
-  .s_axi_arvalid (axi4_m_bus.arvalid    ),
-  .s_axi_arready (axi4_m_bus.arready    ),
-  .s_axi_rid     (axi4_m_bus.rid        ),
-  .s_axi_rdata   (axi4_m_bus.rdata      ),
-  .s_axi_rresp   (axi4_m_bus.rresp      ),
-  .s_axi_rlast   (axi4_m_bus.rlast      ),
-  .s_axi_rvalid  (axi4_m_bus.rvalid     ),
-  .s_axi_rready  (axi4_m_bus.rready     ),
-  .m_axi_awid    (cl_sh_pcim_bus.awid   ),
-  .m_axi_awaddr  (cl_sh_pcim_bus.awaddr ),
-  .m_axi_awlen   (cl_sh_pcim_bus.awlen  ),
-  .m_axi_awsize  (cl_sh_pcim_bus.awsize ),
-  .m_axi_awburst (                      ),
-  .m_axi_awlock  (                      ),
-  .m_axi_awcache (                      ),
-  .m_axi_awprot  (                      ),
-  .m_axi_awregion(                      ),
-  .m_axi_awqos   (                      ),
-  .m_axi_awvalid (cl_sh_pcim_bus.awvalid),
-  .m_axi_awready (cl_sh_pcim_bus.awready),
-  .m_axi_wdata   (cl_sh_pcim_bus.wdata  ),
-  .m_axi_wstrb   (cl_sh_pcim_bus.wstrb  ),
-  .m_axi_wlast   (cl_sh_pcim_bus.wlast  ),
-  .m_axi_wvalid  (cl_sh_pcim_bus.wvalid ),
-  .m_axi_wready  (cl_sh_pcim_bus.wready ),
-  .m_axi_bid     (cl_sh_pcim_bus.bid    ),
-  .m_axi_bresp   (cl_sh_pcim_bus.bresp  ),
-  .m_axi_bvalid  (cl_sh_pcim_bus.bvalid ),
-  .m_axi_bready  (cl_sh_pcim_bus.bready ),
-  .m_axi_arid    (cl_sh_pcim_bus.arid   ),
-  .m_axi_araddr  (cl_sh_pcim_bus.araddr ),
-  .m_axi_arlen   (cl_sh_pcim_bus.arlen  ),
-  .m_axi_arsize  (cl_sh_pcim_bus.arsize ),
-  .m_axi_arburst (                      ),
-  .m_axi_arlock  (                      ),
-  .m_axi_arcache (                      ),
-  .m_axi_arprot  (                      ),
-  .m_axi_arregion(                      ),
-  .m_axi_arqos   (                      ),
-  .m_axi_arvalid (cl_sh_pcim_bus.arvalid),
-  .m_axi_arready (cl_sh_pcim_bus.arready),
-  .m_axi_rid     (cl_sh_pcim_bus.rid    ),
-  .m_axi_rdata   (cl_sh_pcim_bus.rdata  ),
-  .m_axi_rresp   (cl_sh_pcim_bus.rresp  ),
-  .m_axi_rlast   (cl_sh_pcim_bus.rlast  ),
-  .m_axi_rvalid  (cl_sh_pcim_bus.rvalid ),
-  .m_axi_rready  (cl_sh_pcim_bus.rready )
-);
+
+axi_register_slice_v2_1_15_axi_register_slice #(
+    .C_FAMILY("virtexuplus"),
+    .C_AXI_PROTOCOL(0),
+    .C_AXI_ID_WIDTH(6),
+    .C_AXI_ADDR_WIDTH(64),
+    .C_AXI_DATA_WIDTH(512),
+    .C_AXI_SUPPORTS_USER_SIGNALS(0),
+    .C_AXI_AWUSER_WIDTH(1),
+    .C_AXI_ARUSER_WIDTH(1),
+    .C_AXI_WUSER_WIDTH(1),
+    .C_AXI_RUSER_WIDTH(1),
+    .C_AXI_BUSER_WIDTH(1),
+    .C_REG_CONFIG_AW(1),
+    .C_REG_CONFIG_W(1),
+    .C_REG_CONFIG_B(1),
+    .C_REG_CONFIG_AR(1),
+    .C_REG_CONFIG_R(1),
+    .C_NUM_SLR_CROSSINGS(0),
+    .C_PIPELINES_MASTER_AW(0),
+    .C_PIPELINES_MASTER_W(0),
+    .C_PIPELINES_MASTER_B(0),
+    .C_PIPELINES_MASTER_AR(0),
+    .C_PIPELINES_MASTER_R(0),
+    .C_PIPELINES_SLAVE_AW(0),
+    .C_PIPELINES_SLAVE_W(0),
+    .C_PIPELINES_SLAVE_B(0),
+    .C_PIPELINES_SLAVE_AR(0),
+    .C_PIPELINES_SLAVE_R(0),
+    .C_PIPELINES_MIDDLE_AW(0),
+    .C_PIPELINES_MIDDLE_W(0),
+    .C_PIPELINES_MIDDLE_B(0),
+    .C_PIPELINES_MIDDLE_AR(0),
+    .C_PIPELINES_MIDDLE_R(0)
+  ) inst (
+    .aclk(clk_i),
+    .aclk2x(1'H0),
+    .aresetn(resetn_i),
+    .s_axi_awid(axi4_m_bus.awid),
+    .s_axi_awaddr(axi4_m_bus.awaddr),
+    .s_axi_awlen(axi4_m_bus.awlen),
+    .s_axi_awsize(axi4_m_bus.awsize),
+    .s_axi_awburst(2'h0),
+    .s_axi_awlock(1'h0),
+    .s_axi_awcache(4'h0),
+    .s_axi_awprot(3'h0),
+    .s_axi_awregion(4'h0),
+    .s_axi_awqos(4'h0),
+    .s_axi_awuser(1'H0),
+    .s_axi_awvalid(axi4_m_bus.awvalid),
+    .s_axi_awready(axi4_m_bus.awready),
+    .s_axi_wid(6'H0000),
+    .s_axi_wdata(axi4_m_bus.wdata),
+    .s_axi_wstrb(axi4_m_bus.wstrb),
+    .s_axi_wlast(axi4_m_bus.wlast),
+    .s_axi_wuser(1'H0),
+    .s_axi_wvalid(axi4_m_bus.wvalid),
+    .s_axi_wready(axi4_m_bus.wready),
+    .s_axi_bid(axi4_m_bus.bid),
+    .s_axi_bresp(axi4_m_bus.bresp),
+    .s_axi_buser(),
+    .s_axi_bvalid(axi4_m_bus.bvalid),
+    .s_axi_bready(axi4_m_bus.bready),
+    .s_axi_arid(axi4_m_bus.arid),
+    .s_axi_araddr(axi4_m_bus.araddr),
+    .s_axi_arlen(axi4_m_bus.arlen),
+    .s_axi_arsize(axi4_m_bus.arsize),
+    .s_axi_arburst(2'h0),
+    .s_axi_arlock(1'h0),
+    .s_axi_arcache(4'h0),
+    .s_axi_arprot(3'h0),
+    .s_axi_arregion(4'h0),
+    .s_axi_arqos(4'h0),
+    .s_axi_aruser(1'H0),
+    .s_axi_arvalid(axi4_m_bus.arvalid),
+    .s_axi_arready(axi4_m_bus.arready),
+    .s_axi_rid(axi4_m_bus.rid),
+    .s_axi_rdata(axi4_m_bus.rdata),
+    .s_axi_rresp(axi4_m_bus.rresp),
+    .s_axi_rlast(axi4_m_bus.rlast),
+    .s_axi_ruser(),
+    .s_axi_rvalid(axi4_m_bus.rvalid),
+    .s_axi_rready(axi4_m_bus.rready),
+    .m_axi_awid(cl_sh_pcim_bus.awid),
+    .m_axi_awaddr(cl_sh_pcim_bus.awaddr),
+    .m_axi_awlen(cl_sh_pcim_bus.awlen),
+    .m_axi_awsize(cl_sh_pcim_bus.awsize),
+    .m_axi_awburst(),
+    .m_axi_awlock(),
+    .m_axi_awcache(),
+    .m_axi_awprot(),
+    .m_axi_awregion(),
+    .m_axi_awqos(),
+    .m_axi_awuser(),
+    .m_axi_awvalid(cl_sh_pcim_bus.awvalid),
+    .m_axi_awready(cl_sh_pcim_bus.awready),
+    .m_axi_wid(),
+    .m_axi_wdata(cl_sh_pcim_bus.wdata),
+    .m_axi_wstrb(cl_sh_pcim_bus.wstrb),
+    .m_axi_wlast(cl_sh_pcim_bus.wlast),
+    .m_axi_wuser(),
+    .m_axi_wvalid(cl_sh_pcim_bus.wvalid),
+    .m_axi_wready(cl_sh_pcim_bus.wready),
+    .m_axi_bid(cl_sh_pcim_bus.bid),
+    .m_axi_bresp(cl_sh_pcim_bus.bresp),
+    .m_axi_buser(1'H0),
+    .m_axi_bvalid(cl_sh_pcim_bus.bvalid),
+    .m_axi_bready(cl_sh_pcim_bus.bready),
+    .m_axi_arid(cl_sh_pcim_bus.arid),
+    .m_axi_araddr(cl_sh_pcim_bus.araddr),
+    .m_axi_arlen(cl_sh_pcim_bus.arlen),
+    .m_axi_arsize(cl_sh_pcim_bus.arsize),
+    .m_axi_arburst(),
+    .m_axi_arlock(),
+    .m_axi_arcache(),
+    .m_axi_arprot(),
+    .m_axi_arregion(),
+    .m_axi_arqos(),
+    .m_axi_aruser(),
+    .m_axi_arvalid(cl_sh_pcim_bus.arvalid),
+    .m_axi_arready(cl_sh_pcim_bus.arready),
+    .m_axi_rid(cl_sh_pcim_bus.rid),
+    .m_axi_rdata(cl_sh_pcim_bus.rdata),
+    .m_axi_rresp(cl_sh_pcim_bus.rresp),
+    .m_axi_rlast(cl_sh_pcim_bus.rlast),
+    .m_axi_ruser(1'H0),
+    .m_axi_rvalid(cl_sh_pcim_bus.rvalid),
+    .m_axi_rready(cl_sh_pcim_bus.rready)
+  );
+
 
 
 // Global clock
@@ -208,7 +255,7 @@ always_ff @(negedge resetn_i or posedge clk_i)
 //---------------------------------------------
 // Flop read interface for timing (not used now)
 //---------------------------------------------
-logic[8:0] rid_q = 0;
+logic[5:0] rid_q = 0;
 logic[DATA_WIDTH-1:0] rdata_q = 0;
 logic[1:0] rresp_q = 0;
 logic rlast_q = 0;
@@ -713,42 +760,42 @@ always_ff @(posedge clk)
   end
   else 
   if (wvalid && wready) begin
-    case (t_cnt)
+    case (t_cnt)  // only 2 burst is supported
       3'd0: 
         begin 
           wdata <= wr_data[2*DATA_WIDTH-1:DATA_WIDTH]; 
           wstrb <= wr_strb[2*DATA_WIDTH/8-1:DATA_WIDTH/8];
         end
-      3'd1:
-        begin 
-          wdata <= wr_data[3*DATA_WIDTH-1:2*DATA_WIDTH]; 
-          wstrb <= wr_strb[3*DATA_WIDTH/8-1:2*DATA_WIDTH/8];
-        end
-      3'd2:
-        begin 
-          wdata <= wr_data[4*DATA_WIDTH-1:3*DATA_WIDTH]; 
-          wstrb <= wr_strb[4*DATA_WIDTH/8-1:3*DATA_WIDTH/8];
-        end
-      3'd3:
-        begin 
-          wdata <= wr_data[5*DATA_WIDTH-1:4*DATA_WIDTH]; 
-          wstrb <= wr_strb[5*DATA_WIDTH/8-1:4*DATA_WIDTH/8];
-        end
-      3'd4:
-        begin 
-          wdata <= wr_data[6*DATA_WIDTH-1:5*DATA_WIDTH]; 
-          wstrb <= wr_strb[6*DATA_WIDTH/8-1:5*DATA_WIDTH/8];
-        end
-      3'd5:
-        begin 
-          wdata <= wr_data[7*DATA_WIDTH-1:6*DATA_WIDTH]; 
-          wstrb <= wr_strb[7*DATA_WIDTH/8-1:6*DATA_WIDTH/8];
-        end
-      3'd6:
-        begin 
-          wdata <= wr_data[8*DATA_WIDTH-1:7*DATA_WIDTH]; 
-          wstrb <= wr_strb[8*DATA_WIDTH/8-1:7*DATA_WIDTH/8];
-        end
+      // 3'd1:
+      //   begin 
+      //     wdata <= wr_data[3*DATA_WIDTH-1:2*DATA_WIDTH]; 
+      //     wstrb <= wr_strb[3*DATA_WIDTH/8-1:2*DATA_WIDTH/8];
+      //   end
+      // 3'd2:
+      //   begin 
+      //     wdata <= wr_data[4*DATA_WIDTH-1:3*DATA_WIDTH]; 
+      //     wstrb <= wr_strb[4*DATA_WIDTH/8-1:3*DATA_WIDTH/8];
+      //   end
+      // 3'd3:
+      //   begin 
+      //     wdata <= wr_data[5*DATA_WIDTH-1:4*DATA_WIDTH]; 
+      //     wstrb <= wr_strb[5*DATA_WIDTH/8-1:4*DATA_WIDTH/8];
+      //   end
+      // 3'd4:
+      //   begin 
+      //     wdata <= wr_data[6*DATA_WIDTH-1:5*DATA_WIDTH]; 
+      //     wstrb <= wr_strb[6*DATA_WIDTH/8-1:5*DATA_WIDTH/8];
+      //   end
+      // 3'd5:
+      //   begin 
+      //     wdata <= wr_data[7*DATA_WIDTH-1:6*DATA_WIDTH]; 
+      //     wstrb <= wr_strb[7*DATA_WIDTH/8-1:6*DATA_WIDTH/8];
+      //   end
+      // 3'd6:
+      //   begin 
+      //     wdata <= wr_data[8*DATA_WIDTH-1:7*DATA_WIDTH]; 
+      //     wstrb <= wr_strb[8*DATA_WIDTH/8-1:7*DATA_WIDTH/8];
+      //   end
       default: begin end
     endcase // t_cnt
   end
@@ -966,15 +1013,15 @@ end
 //--------------------------------
 always_ff @(posedge clk)
   if (axis_txready)
-  case(cnt_phases)
+  case(cnt_phases)  // only 2 burst is supported
     3'd0: axi_phase_d[1*DATA_WIDTH-1:0*DATA_WIDTH] <= axis_txdata;
     3'd1: axi_phase_d[2*DATA_WIDTH-1:1*DATA_WIDTH] <= axis_txdata;
-    3'd2: axi_phase_d[3*DATA_WIDTH-1:2*DATA_WIDTH] <= axis_txdata;
-    3'd3: axi_phase_d[4*DATA_WIDTH-1:3*DATA_WIDTH] <= axis_txdata;
-    3'd4: axi_phase_d[5*DATA_WIDTH-1:4*DATA_WIDTH] <= axis_txdata;
-    3'd5: axi_phase_d[6*DATA_WIDTH-1:5*DATA_WIDTH] <= axis_txdata;
-    3'd6: axi_phase_d[7*DATA_WIDTH-1:6*DATA_WIDTH] <= axis_txdata;
-    3'd7: axi_phase_d[8*DATA_WIDTH-1:7*DATA_WIDTH] <= axis_txdata;
+    // 3'd2: axi_phase_d[3*DATA_WIDTH-1:2*DATA_WIDTH] <= axis_txdata;
+    // 3'd3: axi_phase_d[4*DATA_WIDTH-1:3*DATA_WIDTH] <= axis_txdata;
+    // 3'd4: axi_phase_d[5*DATA_WIDTH-1:4*DATA_WIDTH] <= axis_txdata;
+    // 3'd5: axi_phase_d[6*DATA_WIDTH-1:5*DATA_WIDTH] <= axis_txdata;
+    // 3'd6: axi_phase_d[7*DATA_WIDTH-1:6*DATA_WIDTH] <= axis_txdata;
+    // 3'd7: axi_phase_d[8*DATA_WIDTH-1:7*DATA_WIDTH] <= axis_txdata;
     default : begin end
   endcase // cnt_phases
 
