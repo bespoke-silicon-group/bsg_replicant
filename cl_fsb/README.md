@@ -32,6 +32,8 @@ Two types of traffics are currently supported between the AWS Shell (SH) and the
 
 ![Diagram](hardware/cl_fsb.jpg)
 
+[goole slide link](https://docs.google.com/presentation/d/1EDS8-JkrU--ctf9R_k9M3MO6HkVmlG01Ve7-Ici_TxU/edit?usp=sharing)
+
 ## Functional Description
 ### 1. AXI-Lite to FSB adapter
 
@@ -45,7 +47,7 @@ Similar to point 1 above. The AXI4 interface has a 512-bit TDATA, so we first us
 
 ### 3. FSB to AXI4 adapter
 
-This module is a FSB DMA write engine. It is configured by OCL AXI-L interface, the same interface as point 1 above. The data is written to SH through a 512-bit PCIM AXI-4 outbound interface in the CL. Thus each AXI-4 packet carries four 128-bit packets from FSB (lowest 80-bit as the payload). 
+This module is a FSB DMA write engine. It is configured via OCL AXI-L interface, the same interface as point 1 above. The data is written to SH through a 512-bit PCIM AXI-4 outbound interface in the CL. Thus each AXI-4 packet carries four 128-bit packets from FSB (lowest 80-bit as the payload). 
 
 To start the DMA transfer, wirte the host memory buffer size to the WR_BUF_SIZE register and then set the WR_START register. See [cl_crossbar_tb.sv](./testbenches/rtlsim/cl_crossbar_tb.sv) for detail.
 
