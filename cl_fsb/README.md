@@ -1,75 +1,77 @@
-# BSG Custom Logic (CL) HDK Demo
+# BSG Custom Logic (CL) AXI to FSB Adapter
 
-This folder is a slightly modified version of the cl_hello_world example in the
-aws-fpga example repository.
+This folder contains the design to convert between AXI interface and FSB interface.
+
+- Hardware: Logic Design in verilog
+- Software: A DMA write demo in C++
+- Testbench: Verification in both rtlsim and cosim
+
+For how to compile and run the simulation in AWS HDK flow, please refer to [this hdk demo](../cl_hdk/README.md).
+
+For more information of AXI interfaces provided by the shell, please refer to [aws-fpga git repository](https://github.com/aws/aws-fpga/blob/master/hdk/docs/AWS_Shell_Interface_Specification.md).
 
 ## Contents
 
-- `build`: Contains the build flow scripts for AWS-F1
-- `hardware`: Contains the top-level design files for your design
-- `makefile`: Contains targets for RTL simulation, Co-Simulation, and Bild
-- `software`: Contains the C-software for C Co-Simulation, and running on AWS-F1
-- `testbenches`: Contains the testbench files for RTL and C Co-Simulation
-- `README.md`: This file
+1. `Overview`: Block diagram for this design
+2. `Functional Description`: Explains the functionality of each block
+3. `Testbench`: The test flow
 
-## Getting Started
+## Overview
 
-You can start your own AWS project in a few simple steps:
+Two types of traffics are currently supported between the AWS Shell (SH) and the custom logic (CL)
 
-1. Copy this directory to a new location and rename it
-2. Change the definition of `PROJECT` in the makefile
-    - **`PROJECT` should match the name of the top-level module for your design**
-3. Add your files to the `hardware` folder
-    - Rename, reuse, and modify the top-level `hardware/cl-demo.sv` file
-        - Make sure that the top-level module in your top-level design file matches the PROJECT variable.
-4. Create and run your RTL Simulation
-    - Rename, reuse, and modify the `testbenches/rtlsim/cl_demo_tb.sv` RTL Testbench file
-    - List your HDL source files in `testbenches/rtlsim/top.vivado.f`
-    - Change the definition of `RTL_TB_MODULE` in `testbenches/rtlsim/makefile`
-    - Run `make rtlsim`
-        - Run `make rtlsim DEBUG=1` to bring up the waveform debugger
-        - Run `make rtlsim CHECK=1` to instantiate the AXI Protocol checker
-        - Run `make rtlsim CHECK=1 DEBUG=1` to do both the above
-5. Create and run your C Co-Simulation
-    - Rename, reuse, and modify the C source `software/cl_demo.c`
-    - Change the definition of `C_TB_TOP` in `testbenches/cosim/makefile` to point to your new C file.
-    - List your HDL source files in `testbenches/cosim/top.vivado.f` (Do not include the new top-level RTL testbench)
-    - Run `make cosim`
-        - Run `make cosim DEBUG=1` to bring up the waveform debugger
-        - Run `make cosim CHECK=1` to instantiate the AXI Protocol checker
-        - Run `make cosim CHECK=1 DEBUG=1` to do both the above
-6. Create your AWS design tarball
-    - List your hardware design files in `build/encrypt.tcl`
-    - If necessary, edit the constraints in `build/constraints`
-    - Run `make build`
-    - Wait...
-    - Your build results will be a `.tar.gz` file in `build/checkpoints/to_aws`
+1. SH writes/reads to the CL. (SH as the master, CL as the slave)
+    - AXI-Lite -> FSB: s_axil_fsb_adapter.sv
+    - AXI4 -> FSB: s_axi4_fsb_adapter.sv
 
-## Differences from cl_hello_world
-The high-level modifications are as follows: 
+2. CL DMA writes to the SH. (CL as the master, SH as the slave)
+    - FSB -> AXI4: m_axi4_fsb_adapter.sv
+    - AXI-Stream -> AXI4: m_axi4_axis_adapter.sv
 
-- Renamed `verif` folder to `testbenches`
-- Renamed `design` to `hardware`
-- Added a top-level makefile with the following targets:
-    - `rtlsim`: runs RTL simulation from the `testbenches/rtlsim` directory
-    - `cosim`: runs Co-Simulation from the `testbenchmes/cosim` directory using
-      the C application in `software`
-    - `build`: runs the HDL Build flow from the `build` directory. This target can
-      take several hours.
+### Block diagram
 
-In general, the major changes in the makefile structure make it easier to re-use
-this directory as a basis for new AWS-F1 projects with a simplified directory
-and makefile structure.
+![Diagram](hardware/cl_fsb.jpg)
 
-## Notes:
+## Functional Description
+### 1. AXI-Lite to FSB adapter
 
-The top-level makefile exports `CL_DIR` as an environment variable, as the path
-to this directory.. This is necessary for the HDK build flow. If you run the
-makefiles from the sub-directories you must have CL_DIR defined in your own
-environment
+This module uses Xilinx 'axi_fifo_mm_s' IP to convert memory mapped AXI-Lite access to a AXI-Stream interface and finally to FSB.
 
-The top-level makefile defines the PROJECT environment variable for the
-sub-makefiles. Likewise, if you run makefiles in the sub-directories you must
-define `PROJECT` from the command line (`PROJECT=cl_demo make <target>`) or in
-your environment. `PROJECT` must contain the name of the top-level module in
-your top-level design file.
+FSB data is 80-bit wide by default. So we use the axis_dwidth_converter IP as a 4:1 upsizer, packeting four 32-bit data into one 128-bit date. Then, for simplicity, we handle the data width mismatch by keeping the 80 lowest bits as the payload and throw away the upper 48 bits. Finally we make a 1:4 Downsizer to unpack the 128-bit AXI-Stream data to 32-bit data and send it back to 'axi_fifo_mm_s'. 
+
+### 2. AXI4 to FSB adapter
+
+Similar to point 1 above. The AXI4 interface has a 512-bit TDATA, so we first use the 1:4 Downsizer to get the 128-bit AXIS data and access to FSB interface. A 4:1 Upsizer is then used to packet the stream data to 512 bits again and interface to 'axi_fifo_mm_s'.
+
+### 3. FSB to AXI4 adapter
+
+This module is a FSB DMA write engine. It is configured by OCL AXI-L interface, the same interface as point 1 above. The data is written to SH through a 512-bit PCIM AXI-4 outbound interface in the CL. Thus each AXI-4 packet carries four 128-bit packets from FSB (lowest 80-bit as the payload). 
+
+To start the DMA transfer, wirte the host memory buffer size to the WR_BUF_SIZE register and then set the WR_START register. See [cl_crossbar_tb.sv](./testbenches/rtlsim/cl_crossbar_tb.sv) for detail.
+
+In the process of data transfer, we use `head` to represent the read pointer and `tail` to represent the write pointer. `head` and `tail` are updated by driver(SH)/adapter(CL) after every read/write transaction. The `head` and `tail` should never cross each other.
+
+Interuptions:
+
+The DMA write will pause when either these following 2 situations occur:
+
+1. The buffer becomes full    
+    - head < tail && tail >= wr_last_addr
+
+    - head > tail && head - tail <= 0x40 (bytesNum per AXI4 write)
+
+2. The falling edge of FSB valid signal
+    - The adapter will push through any received FSB data and use the AXI4 strobe signal to ensure not writing garbage data to the host memory.
+
+    - When valid signal is high again, the adapter will contiune accepting more FSB data and pack it back with the previous 'broken' AXI4 packet. This ensures that every AXI4 write will start from the addresses that are 0x40 bytes aligned, so as not crossing the 4K boundaries and violating [AXI4/PCIe specificatoin](https://github.com/aws/aws-fpga/blob/master/hdk/docs/AWS_Shell_Interface_Specification.md#axi4-error-handling-for-cl-outbound-transactions).
+
+### 4. AXI-Stream to AXI4 adapter
+
+Similar to point 3 above. This module will send two 512-bit data per packet (AXI4 burst of 2).
+
+
+## Testbench
+
+AXI protocol checker can be used to print the possible AXI4-PCIe violations. To enable this, set the C_PC_MESSAGE_LEVEL parameter of axi_protocol_checker module in sh_bfm.sv.
+
+For useful functions in cosim, please refer to [this doc](https://github.com/aws/aws-fpga/blob/master/hdk/docs/RTL_Simulating_CL_Designs.md).
