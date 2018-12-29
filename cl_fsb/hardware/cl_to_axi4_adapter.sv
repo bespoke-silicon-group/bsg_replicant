@@ -180,7 +180,7 @@ assign {axi4_m_s01_bus.rlast, axi4_m_s00_bus.rlast} = axi4_m_mux_bus.rlast;
 assign {axi4_m_s01_bus.rvalid, axi4_m_s00_bus.rvalid} = axi4_m_mux_bus.rvalid;
 assign axi4_m_mux_bus.rready = {axi4_m_s01_bus.rready, axi4_m_s00_bus.rready};
 
-axi_crossbar_v2_1_16_axi_crossbar #(
+axi_crossbar_v2_1_18_axi_crossbar #(
   .C_FAMILY                   ("virtexuplus"       ),
   .C_NUM_SLAVE_SLOTS          (2                   ),
   .C_NUM_MASTER_SLOTS         (1                   ),

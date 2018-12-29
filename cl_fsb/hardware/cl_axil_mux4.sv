@@ -131,7 +131,7 @@ module cl_axil_mux4 (
   localparam C_M_AXI_SECURE = {C_NUM_MASTER_SLOTS{32'h0000_0000}};
 
 
-  axi_crossbar_v2_1_16_axi_crossbar #(
+  axi_crossbar_v2_1_18_axi_crossbar #(
     .C_FAMILY                   ("virtexuplus"             ),
     .C_NUM_SLAVE_SLOTS          (1                         ),
     .C_NUM_MASTER_SLOTS         (C_NUM_MASTER_SLOTS        ),

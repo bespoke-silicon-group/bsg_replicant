@@ -100,7 +100,7 @@ assign rvalid = axi4_m_bus.rvalid;
 assign axi4_m_bus.rready = rready;
 
 
-axi_register_slice_v2_1_15_axi_register_slice #(
+axi_register_slice_v2_1_17_axi_register_slice #(
     .C_FAMILY("virtexuplus"),
     .C_AXI_PROTOCOL(0),
     .C_AXI_ID_WIDTH(6),
