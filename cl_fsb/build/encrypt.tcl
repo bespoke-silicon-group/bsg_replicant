@@ -46,7 +46,8 @@ file copy -force $CL_DIR/hardware/s_axi4_fsb_adapter.sv                 $TARGET_
 file copy -force $CL_DIR/hardware/m_axi4_fsb_adapter.sv                 $TARGET_DIR
 file copy -force $CL_DIR/hardware/m_axi4_axis_adapter.sv                $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_to_axi4_adapter.sv                 $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_axis_test_master.sv                $TARGET_DIR 
+file copy -force $CL_DIR/hardware/cl_axis_test_master.sv                $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_axil_mux4.sv                       $TARGET_DIR 
 file copy -force $CL_DIR/hardware/cl_ocl_slv.sv                         $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR
 
@@ -80,8 +81,8 @@ file copy -force $UNUSED_TEMPLATES_DIR/unused_flr_template.inc        $TARGET_DI
 exec chmod +w {*}[glob $TARGET_DIR/*]
 
 # encrypt .v/.sv/.vh/inc as verilog files
-encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_keyfile.txt -lang verilog  [glob -nocomplain -- $TARGET_DIR/*.?v] [glob -nocomplain -- $TARGET_DIR/*.vh] [glob -nocomplain -- $TARGET_DIR/*.inc]
+# encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_keyfile.txt -lang verilog  [glob -nocomplain -- $TARGET_DIR/*.?v] [glob -nocomplain -- $TARGET_DIR/*.vh] [glob -nocomplain -- $TARGET_DIR/*.inc]
 
 # encrypt *vhdl files
-encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_vhdl_keyfile.txt -lang vhdl -quiet [ glob -nocomplain -- $TARGET_DIR/*.vhd? ]
+# encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_vhdl_keyfile.txt -lang vhdl -quiet [ glob -nocomplain -- $TARGET_DIR/*.vhd? ]
 

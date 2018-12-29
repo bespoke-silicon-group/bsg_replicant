@@ -50,6 +50,7 @@ ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_axis_adapter.sv
 ${CL_DIR}/hardware/cl_to_axi4_adapter.sv
 ${CL_DIR}/hardware/cl_axis_test_master.sv
+${CL_DIR}/hardware/cl_axil_mux4.sv
 ${CL_DIR}/hardware/cl_ocl_slv.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 #TODO: You should define BSG_IP_DIR and BSG_DESIGNS_DIR environment variables and use those instead
