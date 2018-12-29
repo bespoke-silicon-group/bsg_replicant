@@ -51,9 +51,13 @@ puts "Shell Version:          $shell_version";
 puts "Vivado Script Name:     $argv0";
 puts "Strategy:               $strategy";
 puts "PCI Device ID           $device_id";
+set ::env(device_id) $device_id
 puts "PCI Vendor ID           $vendor_id";
+set ::env(vendor_id) $vendor_id
 puts "PCI Subsystem ID        $subsystem_id";
+set ::env(subsystem_id) $subsystem_id
 puts "PCI Subsystem Vendor ID $subsystem_vendor_id";
+set ::env(subsystem_vendor_id) $subsystem_vendor_id
 puts "Clock Recipe A:         $clock_recipe_a";
 set ::env(CLOCK_A_RECIPE) [string index $clock_recipe_a end]
 puts "Clock Recipe B:         $clock_recipe_b";
