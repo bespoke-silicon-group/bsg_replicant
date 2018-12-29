@@ -2,6 +2,16 @@ ifndef HDK_DIR
 $(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
 endif
 
+ifndef BSG_IP_DIR
+$(info "BSG_IP_DIR set to default")
+export BSG_IP_DIR = $(PWD)/../../bsg_ip_cores
+endif
+
+ifndef BSG_DESGINS_DIR
+$(info "BSG_DESGINS_DIR set to default")
+export BSG_DESGINS_DIR = $(PWD)/../../bsg_designs
+endif
+
 export CL_DIR ?= $(PWD)
 PROJECT = cl_fsb
 GUI ?= 

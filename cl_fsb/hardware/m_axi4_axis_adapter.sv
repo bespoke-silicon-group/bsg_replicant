@@ -646,6 +646,8 @@ logic [31:0] wr_addr_inc_pkt;
 logic [63:0] wr_address;  // absolute bus address to write
 logic wr_len;             // burst length
 
+logic wr_phase_valid;
+
 assign wr_last_addr = cfg_buffer_size - DATA_BYTE_NUM*(32'b1 + cfg_write_length);
 
 assign wr_addr_inc_pkt = (wr_addr_next==wr_last_addr) ? 0
@@ -684,7 +686,7 @@ always_ff @( posedge clk)
     awlen <= 0;
     awuser <= 0;
   end
-  else if ((wr_state==WR_ADDR) && (wr_state_nxt==WR_ADDR) && last_write_success)
+  else if ((wr_state==WR_ADDR) && (wr_state_nxt==WR_ADDR) && 1) //last_write_success, wr_phase_valid
   begin
     awvalid <= 1'b1;  // always avaliable
     awaddr <= wr_address;
@@ -704,7 +706,7 @@ always_ff @( posedge clk)
 
 // write data channel
 //--------------------------------
-logic wr_phase_valid;
+
 logic wr_phase_next_end;
 logic wr_data_last;
 logic axi_trans_start;    // axi ready signal to axis FSM
