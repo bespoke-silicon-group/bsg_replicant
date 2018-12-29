@@ -40,6 +40,26 @@ file copy -force $CL_DIR/hardware/cl_id_defines.vh                      $TARGET_
 file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR 
 file copy -force $CL_DIR/hardware/cl_common_defines.vh                  $TARGET_DIR
 
+file copy -force $CL_DIR/hardware/cl_fsb_bus_pkg.sv                     $TARGET_DIR    
+file copy -force $CL_DIR/hardware/s_axil_fsb_adapter.sv                 $TARGET_DIR
+file copy -force $CL_DIR/hardware/s_axi4_fsb_adapter.sv                 $TARGET_DIR 
+file copy -force $CL_DIR/hardware/m_axi4_fsb_adapter.sv                 $TARGET_DIR
+file copy -force $CL_DIR/hardware/m_axi4_axis_adapter.sv                $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_to_axi4_adapter.sv                 $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_axis_test_master.sv                $TARGET_DIR 
+file copy -force $CL_DIR/hardware/cl_ocl_slv.sv                         $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR
+
+file copy -force $BSG_IP_DIR/bsg_misc/bsg_defines.v                                                 $TARGET_DIR
+file copy -force $BSG_IP_DIR/bsg_fsb/bsg_fsb_pkg.v                                                  $TARGET_DIR
+file copy -force $BSG_IP_DIR/bsg_dataflow/bsg_two_fifo.v                                            $TARGET_DIR
+file copy -force $BSG_IP_DIR/bsg_mem/bsg_mem_1r1w_synth.v                                           $TARGET_DIR
+file copy -force $BSG_IP_DIR/bsg_mem/bsg_mem_1r1w.v                                                 $TARGET_DIR
+
+file copy -force $BSG_IP_DIR/bsg_test/test_bsg_data_gen.v                                           $TARGET_DIR
+file copy -force $BSG_DESIGNS_DIR/modules/bsg_guts/loopback/bsg_test_node_client.v                  $TARGET_DIR
+file copy -force $BSG_DESIGNS_DIR/modules/bsg_guts/loopback/bsg_test_node_master.v                  $TARGET_DIR
+
 file copy -force $VIVADO_IP_DIR/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v                    $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v        $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v                  $TARGET_DIR

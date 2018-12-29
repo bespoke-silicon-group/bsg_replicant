@@ -47,19 +47,20 @@ ${CL_DIR}/hardware/cl_fsb_bus_pkg.sv
 ${CL_DIR}/hardware/s_axil_fsb_adapter.sv
 ${CL_DIR}/hardware/s_axi4_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
+${CL_DIR}/hardware/m_axi4_axis_adapter.sv
 ${CL_DIR}/hardware/cl_to_axi4_adapter.sv
 ${CL_DIR}/hardware/cl_axis_test_master.sv
 ${CL_DIR}/hardware/cl_ocl_slv.sv
 ${CL_DIR}/hardware/cl_fsb.sv
-#TODO: You should define BSG_IP_DIR and BSG_DESGINS_DIR environment variables and use those instead
+#TODO: You should define BSG_IP_DIR and BSG_DESIGNS_DIR environment variables and use those instead
 ${BSG_IP_DIR}/bsg_misc/bsg_defines.v
 ${BSG_IP_DIR}/bsg_fsb/bsg_fsb_pkg.v
 ${BSG_IP_DIR}/bsg_dataflow/bsg_two_fifo.v
 ${BSG_IP_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
 ${BSG_IP_DIR}/bsg_mem/bsg_mem_1r1w.v
 ${BSG_IP_DIR}/bsg_test/test_bsg_data_gen.v
-${BSG_DESGINS_DIR}/modules/bsg_guts/loopback/bsg_test_node_client.v
-${BSG_DESGINS_DIR}/modules/bsg_guts/loopback/bsg_test_node_master.v
+${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_client.v
+${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_master.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v
