@@ -41,7 +41,10 @@ puts "AWS FPGA: ([clock format [clock seconds] -format %T]) Reading developer's 
 # Reading the .sv and .v files, as proper designs would not require
 # reading .v, .vh, nor .inc files
 
-read_verilog -sv [glob $ENC_SRC_DIR/*.?v]
+read_verilog -sv [glob $ENC_SRC_DIR/*.{v,sv}]
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_defines.v]
+set_property is_global_include true [get_files $ENC_SRC_DIR/bsg_defines.v]
 
 #---- End of section replaced by User ----
 

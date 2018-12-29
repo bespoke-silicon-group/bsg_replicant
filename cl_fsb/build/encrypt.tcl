@@ -21,6 +21,9 @@
 
 set HDK_SHELL_DIR $::env(HDK_SHELL_DIR)
 set CL_DIR $::env(CL_DIR)
+set BSG_IP_DIR $::env(BSG_IP_DIR)
+set BSG_DESIGNS_DIR $::env(BSG_DESIGNS_DIR)
+set VIVADO_IP_DIR $::env(XILINX_VIVADO)/data/ip/xilinx/
 
 set TARGET_DIR $CL_DIR/build/src_post_encryption
 set UNUSED_TEMPLATES_DIR $HDK_SHELL_DIR/design/interfaces
@@ -36,6 +39,12 @@ file copy -force $CL_DIR/hardware/cl_fsb_defines.vh                     $TARGET_
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                      $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR 
 file copy -force $CL_DIR/hardware/cl_common_defines.vh                  $TARGET_DIR
+
+file copy -force $VIVADO_IP_DIR/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v                    $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v        $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v                  $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v        $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vlsyn_rfs.v $TARGET_DIR
 
 file copy -force $UNUSED_TEMPLATES_DIR/unused_apppf_irq_template.inc  $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_cl_sda_template.inc     $TARGET_DIR

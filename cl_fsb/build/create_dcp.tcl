@@ -55,8 +55,11 @@ puts "PCI Vendor ID           $vendor_id";
 puts "PCI Subsystem ID        $subsystem_id";
 puts "PCI Subsystem Vendor ID $subsystem_vendor_id";
 puts "Clock Recipe A:         $clock_recipe_a";
+set ::env(CLOCK_A_RECIPE) [string index $clock_recipe_a end]
 puts "Clock Recipe B:         $clock_recipe_b";
+set ::env(CLOCK_B_RECIPE) [string index $clock_recipe_b end]
 puts "Clock Recipe C:         $clock_recipe_c";
+set ::env(CLOCK_C_RECIPE) [string index $clock_recipe_c end]
 puts "URAM option:            $uram_option";
 puts "Notify when done:       $notify_via_sns";
 
