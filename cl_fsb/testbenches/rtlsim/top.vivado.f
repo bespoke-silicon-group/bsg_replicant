@@ -17,6 +17,7 @@
 
 -sourcelibext .v
 -sourcelibext .sv
+-sourcelibext .vh
 -sourcelibext .svh
 
 # Custom Logic (CL) source directories
@@ -43,7 +44,8 @@
 -include ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
 
 # Custom Logic (CL) design files
-${CL_DIR}/hardware/cl_fsb_bus_pkg.sv
+${CL_DIR}/hardware/bsg_axi_bus_pkg.vh
+${CL_DIR}/hardware/cl_fsb_bus_pkg.vh
 ${CL_DIR}/hardware/s_axil_fsb_adapter.sv
 ${CL_DIR}/hardware/s_axi4_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
@@ -53,20 +55,28 @@ ${CL_DIR}/hardware/cl_axis_test_master.sv
 ${CL_DIR}/hardware/cl_axil_mux4.sv
 ${CL_DIR}/hardware/cl_ocl_slv.sv
 ${CL_DIR}/hardware/cl_fsb.sv
-#TODO: You should define BSG_IP_DIR and BSG_DESIGNS_DIR environment variables and use those instead
+
+# BSG files
 ${BSG_IP_DIR}/bsg_misc/bsg_defines.v
 ${BSG_IP_DIR}/bsg_fsb/bsg_fsb_pkg.v
-${BSG_IP_DIR}/bsg_dataflow/bsg_two_fifo.v
+
+${BSG_IP_DIR}/bsg_misc/bsg_circular_ptr.v
 ${BSG_IP_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
 ${BSG_IP_DIR}/bsg_mem/bsg_mem_1r1w.v
+${BSG_IP_DIR}/bsg_dataflow/bsg_fifo_1r1w_small.v
+${BSG_IP_DIR}/bsg_dataflow/bsg_fifo_tracker.v
+${BSG_IP_DIR}/bsg_dataflow/bsg_two_fifo.v
 ${BSG_IP_DIR}/bsg_test/test_bsg_data_gen.v
+
 ${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_client.v
 ${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_master.v
-${XILINX_VIVADO}/data/ip/xilinx/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v
+
+# Vivado library files
 ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v
-${XILINX_VIVADO}/data/ip/xilinx/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v
+${XILINX_VIVADO}/data/ip/xilinx/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vlsyn_rfs.v
+${XILINX_VIVADO}/data/ip/xilinx/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v
 
 # AWS design files
 ${HDK_SHELL_DESIGN_DIR}/ip/ila_vio_counter/sim/ila_vio_counter.v
@@ -88,8 +98,8 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/axi_clock_converter_v2_1_vl
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/fifo_generator_v13_2_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 
-${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/c631/hdl/axi_crossbar_v2_1_vl_rfs.v
-${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/9909/hdl/axi_data_fifo_v2_1_vl_rfs.v
+# ${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/c631/hdl/axi_crossbar_v2_1_vl_rfs.v
+# ${HDK_SHELL_DESIGN_DIR}/ip/cl_axi_interconnect/ipshared/9909/hdl/axi_data_fifo_v2_1_vl_rfs.v
 
 # Simulator-specific design files
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f

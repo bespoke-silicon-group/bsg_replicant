@@ -4,10 +4,17 @@
  *  axi-lite (SH) <-> cl_bsg (CL)
  */
 
-module s_axil_fsb_adapter (
+`include "bsg_axi_bus_pkg.vh"
+
+module s_axil_fsb_adapter #(
+  axil_slot_num_p = 1
+  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(axil_slot_num_p)
+  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(axil_slot_num_p)
+)(
   input clk_i
   ,input resetn_i
-  ,axil_bus_t.master sh_ocl_bus
+  ,input [axil_mosi_bus_width_lp-1:0] sh_ocl_bus_i
+  ,output [axil_miso_bus_width_lp-1:0] sh_ocl_bus_o
   ,input adpt_slave_v
   ,input [79:0] adpt_slave_data
   ,output adpt_slave_r
@@ -21,6 +28,13 @@ parameter FPGA_VERSION = "virtexuplus";
 // bus for axil flop output
 axil_bus_t sh_ocl_bus_q();
 
+`declare_bsg_axil_bus_s(axil_slot_num_p, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+
+bsg_axil_mosi_bus_s sh_ocl_bus_i_cast;
+bsg_axil_miso_bus_s sh_ocl_bus_o_cast;
+assign sh_ocl_bus_i_cast = sh_ocl_bus_i;
+assign sh_ocl_bus_o = sh_ocl_bus_o_cast;
+
 // bus for axi_fifo_mm_s axis output
 axis_bus_t #(.TDATA_WIDTH(32)) fifo_axis_bus();
 
@@ -33,24 +47,24 @@ axis_bus_t #(.TDATA_WIDTH(128)) axis_fsb_bus();
 axi_register_slice_light AXIL_OCL_REG_SLC (
 .aclk          (clk_i),
 .aresetn       (resetn_i),
-.s_axi_awaddr  (sh_ocl_bus.awaddr[31:0]),
+.s_axi_awaddr  (sh_ocl_bus_i_cast.awaddr[31:0]),
 .s_axi_awprot  (3'h0),
-.s_axi_awvalid (sh_ocl_bus.awvalid),
-.s_axi_awready (sh_ocl_bus.awready),
-.s_axi_wdata   (sh_ocl_bus.wdata[31:0]),
-.s_axi_wstrb   (sh_ocl_bus.wstrb[3:0]),
-.s_axi_wvalid  (sh_ocl_bus.wvalid),
-.s_axi_wready  (sh_ocl_bus.wready),
-.s_axi_bresp   (sh_ocl_bus.bresp),
-.s_axi_bvalid  (sh_ocl_bus.bvalid),
-.s_axi_bready  (sh_ocl_bus.bready),
-.s_axi_araddr  (sh_ocl_bus.araddr[31:0]),
-.s_axi_arvalid (sh_ocl_bus.arvalid),
-.s_axi_arready (sh_ocl_bus.arready),
-.s_axi_rdata   (sh_ocl_bus.rdata[31:0]),
-.s_axi_rresp   (sh_ocl_bus.rresp),
-.s_axi_rvalid  (sh_ocl_bus.rvalid),
-.s_axi_rready  (sh_ocl_bus.rready),
+.s_axi_awvalid (sh_ocl_bus_i_cast.awvalid),
+.s_axi_awready (sh_ocl_bus_o_cast.awready),
+.s_axi_wdata   (sh_ocl_bus_i_cast.wdata[31:0]),
+.s_axi_wstrb   (sh_ocl_bus_i_cast.wstrb[3:0]),
+.s_axi_wvalid  (sh_ocl_bus_i_cast.wvalid),
+.s_axi_wready  (sh_ocl_bus_o_cast.wready),
+.s_axi_bresp   (sh_ocl_bus_o_cast.bresp),
+.s_axi_bvalid  (sh_ocl_bus_o_cast.bvalid),
+.s_axi_bready  (sh_ocl_bus_i_cast.bready),
+.s_axi_araddr  (sh_ocl_bus_i_cast.araddr[31:0]),
+.s_axi_arvalid (sh_ocl_bus_i_cast.arvalid),
+.s_axi_arready (sh_ocl_bus_o_cast.arready),
+.s_axi_rdata   (sh_ocl_bus_o_cast.rdata[31:0]),
+.s_axi_rresp   (sh_ocl_bus_o_cast.rresp),
+.s_axi_rvalid  (sh_ocl_bus_o_cast.rvalid),
+.s_axi_rready  (sh_ocl_bus_i_cast.rready),
 
 .m_axi_awaddr  (sh_ocl_bus_q.awaddr[31:0]), 
 .m_axi_awprot  (),

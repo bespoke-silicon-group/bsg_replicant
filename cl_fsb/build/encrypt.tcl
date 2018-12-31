@@ -51,33 +51,46 @@ file copy -force $CL_DIR/hardware/cl_axil_mux4.sv                       $TARGET_
 file copy -force $CL_DIR/hardware/cl_ocl_slv.sv                         $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR
 
+# BSG files
 file copy -force $BSG_IP_DIR/bsg_misc/bsg_defines.v                                                 $TARGET_DIR
 file copy -force $BSG_IP_DIR/bsg_fsb/bsg_fsb_pkg.v                                                  $TARGET_DIR
-file copy -force $BSG_IP_DIR/bsg_dataflow/bsg_two_fifo.v                                            $TARGET_DIR
+
+file copy -force $BSG_IP_DIR//bsg_misc/bsg_circular_ptr.v                                           $TARGET_DIR
 file copy -force $BSG_IP_DIR/bsg_mem/bsg_mem_1r1w_synth.v                                           $TARGET_DIR
 file copy -force $BSG_IP_DIR/bsg_mem/bsg_mem_1r1w.v                                                 $TARGET_DIR
-
+file copy -force $BSG_IP_DIR/bsg_dataflow/bsg_fifo_1r1w_small.v                                     $TARGET_DIR
+file copy -force $BSG_IP_DIR/bsg_dataflow/bsg_fifo_tracker.v                                        $TARGET_DIR
+file copy -force $BSG_IP_DIR/bsg_dataflow/bsg_two_fifo.v                                            $TARGET_DIR
 file copy -force $BSG_IP_DIR/bsg_test/test_bsg_data_gen.v                                           $TARGET_DIR
+
 file copy -force $BSG_DESIGNS_DIR/modules/bsg_guts/loopback/bsg_test_node_client.v                  $TARGET_DIR
 file copy -force $BSG_DESIGNS_DIR/modules/bsg_guts/loopback/bsg_test_node_master.v                  $TARGET_DIR
 
-file copy -force $VIVADO_IP_DIR/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v                    $TARGET_DIR
+# Vivado library files
 file copy -force $VIVADO_IP_DIR/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v        $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v                  $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v        $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v                  $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vlsyn_rfs.v $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/axis_dwidth_converter_v1_1/hdl/axis_dwidth_converter_v1_1_vl_rfs.v  $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v                    $TARGET_DIR
+
 file copy -force $VIVADO_IP_DIR/axi_infrastructure_v1_1/hdl/axi_infrastructure_v1_1_0.vh            $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_infrastructure_v1_1/hdl/axi_infrastructure_v1_1_vl_rfs.v        $TARGET_DIR
-
 file copy -force $VIVADO_IP_DIR/axi_fifo_mm_s_v4_1/hdl/axi_fifo_mm_s_v4_1_rfs.vhd                   $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axi_lite_ipif_v3_0/hdl/axi_lite_ipif_v3_0_vh_rfs.vhd                $TARGET_DIR
+
+file copy -force $VIVADO_IP_DIR/blk_mem_gen_v8_4/hdl/blk_mem_gen_v8_4_vhsyn_rfs.vhd                 $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/lib_pkg_v1_0/hdl/lib_pkg_v1_0_rfs.vhd                               $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/lib_fifo_v1_0/hdl/lib_fifo_v1_0_rfs.vhd                             $TARGET_DIR
+
 file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v                 $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.vhd               $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_vhsyn_rfs.vhd         $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/blk_mem_gen_v8_4/hdl/blk_mem_gen_v8_4_vhsyn_rfs.vhd                 $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/lib_pkg_v1_0/hdl/lib_pkg_v1_0_rfs.vhd                               $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/axi_lite_ipif_v3_0/hdl/axi_lite_ipif_v3_0_vh_rfs.vhd                $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/lib_fifo_v1_0/hdl/lib_fifo_v1_0_rfs.vhd                             $TARGET_DIR
+
+file copy -force $VIVADO_IP_DIR/axis_register_slice_v1_1/hdl/axis_register_slice_v1_1_vl_rfs.v      $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_0.vh          $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_vl_rfs.v      $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_data_fifo_v1_1/hdl/axis_data_fifo_v1_1_vl_rfs.v                $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_dwidth_converter_v1_1/hdl/axis_dwidth_converter_v1_1_vl_rfs.v  $TARGET_DIR
 
 file copy -force $UNUSED_TEMPLATES_DIR/unused_apppf_irq_template.inc  $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_cl_sda_template.inc     $TARGET_DIR

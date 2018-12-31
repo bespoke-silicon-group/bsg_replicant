@@ -4,131 +4,106 @@
 *  axil 1 to 4 multiplexer
 */
 
+`include "bsg_axi_bus_pkg.vh"
 
-module cl_axil_mux4 (
-  input wire aclk
-  ,input wire aresetn
-  ,axil_bus_t.master axil_m_bus
-  ,axil_bus_t.slave axil_s_m00_bus
-  ,axil_bus_t.slave axil_s_m01_bus
-  ,axil_bus_t.slave axil_s_m02_bus
-  ,axil_bus_t.slave axil_s_m03_bus
+module cl_axil_mux4 #(
+  mst_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
+  ,mst_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
+  ,slv_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
+  ,slv_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
+) (
+  input                              clk_i
+  ,input                              reset_i
+  ,input  [mst_mosi_bus_width_lp-1:0] mst_bus_i
+  ,output [mst_miso_bus_width_lp-1:0] mst_bus_o
+  // slave
+  ,input  [slv_miso_bus_width_lp-1:0] slv_0_bus_i
+  ,output [slv_mosi_bus_width_lp-1:0] slv_0_bus_o
+  ,input  [slv_miso_bus_width_lp-1:0] slv_1_bus_i
+  ,output [slv_mosi_bus_width_lp-1:0] slv_1_bus_o
+  ,input  [slv_miso_bus_width_lp-1:0] slv_2_bus_i
+  ,output [slv_mosi_bus_width_lp-1:0] slv_2_bus_o
+  ,input  [slv_miso_bus_width_lp-1:0] slv_3_bus_i
+  ,output [slv_mosi_bus_width_lp-1:0] slv_3_bus_o
 );
 
-  axil_bus_t #(.NUM_SLOTS(4)) axil_s_mux_bus ();
+  // axil_bus_t #(.NUM_SLOTS(4)) axil_s_mux_bus ();
 
-  assign {
-    axil_s_m03_bus.awaddr
-    ,axil_s_m02_bus.awaddr
-    ,axil_s_m01_bus.awaddr
-    ,axil_s_m00_bus.awaddr
-  }  = axil_s_mux_bus.awaddr;
-  assign {
-    axil_s_m03_bus.awvalid
-    ,axil_s_m02_bus.awvalid
-    ,axil_s_m01_bus.awvalid
-    ,axil_s_m00_bus.awvalid
-  } = axil_s_mux_bus.awvalid;
-  assign axil_s_mux_bus.awready
-    = {axil_s_m03_bus.awready
-      ,axil_s_m02_bus.awready
-      ,axil_s_m01_bus.awready
-      ,axil_s_m00_bus.awready};
-  assign {
-    axil_s_m03_bus.wdata
-    ,axil_s_m02_bus.wdata
-    ,axil_s_m01_bus.wdata
-    ,axil_s_m00_bus.wdata
-  }     = axil_s_mux_bus.wdata;
-  assign {
-    axil_s_m03_bus.wstrb
-    ,axil_s_m02_bus.wstrb
-    ,axil_s_m01_bus.wstrb
-    ,axil_s_m00_bus.wstrb
-  }     = axil_s_mux_bus.wstrb;
-  assign {
-    axil_s_m03_bus.wvalid
-    ,axil_s_m02_bus.wvalid
-    ,axil_s_m01_bus.wvalid
-    ,axil_s_m00_bus.wvalid
-  }   = axil_s_mux_bus.wvalid;
-  assign axil_s_mux_bus.wready
-    = {axil_s_m03_bus.wready
-      ,axil_s_m02_bus.wready
-      ,axil_s_m01_bus.wready
-      ,axil_s_m00_bus.wready};
-  assign axil_s_mux_bus.bresp
-    = {axil_s_m03_bus.bresp
-      ,axil_s_m02_bus.bresp
-      ,axil_s_m01_bus.bresp
-      ,axil_s_m00_bus.bresp};
-  assign axil_s_mux_bus.bvalid
-    = {axil_s_m03_bus.bvalid
-      ,axil_s_m02_bus.bvalid
-      ,axil_s_m01_bus.bvalid
-      ,axil_s_m00_bus.bvalid};
-  assign {
-    axil_s_m03_bus.bready
-    ,axil_s_m02_bus.bready
-    ,axil_s_m01_bus.bready
-    ,axil_s_m00_bus.bready
-  }   = axil_s_mux_bus.bready;
-  assign {
-    axil_s_m03_bus.araddr
-    ,axil_s_m02_bus.araddr
-    ,axil_s_m01_bus.araddr
-    ,axil_s_m00_bus.araddr
-  }   = axil_s_mux_bus.araddr;
-  assign {
-    axil_s_m03_bus.arvalid
-    ,axil_s_m02_bus.arvalid
-    ,axil_s_m01_bus.arvalid
-    ,axil_s_m00_bus.arvalid
-  } = axil_s_mux_bus.arvalid;
-  assign axil_s_mux_bus.arready
-    = {
-      axil_s_m03_bus.arready
-      ,axil_s_m02_bus.arready
-      ,axil_s_m01_bus.arready
-      ,axil_s_m00_bus.arready
-    };
-  assign axil_s_mux_bus.rdata
-    = {
-      axil_s_m03_bus.rdata
-      ,axil_s_m02_bus.rdata
-      ,axil_s_m01_bus.rdata
-      ,axil_s_m00_bus.rdata
-    };
-  assign axil_s_mux_bus.rresp
-    = {
-      axil_s_m03_bus.rresp
-      ,axil_s_m02_bus.rresp
-      ,axil_s_m01_bus.rresp
-      ,axil_s_m00_bus.rresp
-    };
-  assign axil_s_mux_bus.rvalid
-    = {
-      axil_s_m03_bus.rvalid
-      ,axil_s_m02_bus.rvalid
-      ,axil_s_m01_bus.rvalid
-      ,axil_s_m00_bus.rvalid
-    };
-  assign {
-    axil_s_m03_bus.rready
-    ,axil_s_m02_bus.rready
-    ,axil_s_m01_bus.rready
-    ,axil_s_m00_bus.rready
-  }   = axil_s_mux_bus.rready;
+
+
+  `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+
+  bsg_axil_mosi_bus_s mst_bus_i_cast, slv_0_bus_o_cast, slv_1_bus_o_cast, slv_2_bus_o_cast, slv_3_bus_o_cast;
+  bsg_axil_miso_bus_s mst_bus_o_cast, slv_0_bus_i_cast, slv_1_bus_i_cast, slv_2_bus_i_cast, slv_3_bus_i_cast;
+
+  assign mst_bus_i_cast = mst_bus_i;
+  assign mst_bus_o      = mst_bus_o_cast;
+
+  assign slv_0_bus_i_cast = slv_0_bus_i;
+  assign slv_0_bus_o      = slv_0_bus_o_cast;
+  assign slv_1_bus_i_cast = slv_1_bus_i;
+  assign slv_1_bus_o      = slv_1_bus_o_cast;
+  assign slv_2_bus_i_cast = slv_2_bus_i;
+  assign slv_2_bus_o      = slv_2_bus_o_cast;
+  assign slv_3_bus_i_cast = slv_3_bus_i;
+  assign slv_3_bus_o      = slv_3_bus_o_cast;
+
+
+  `declare_bsg_axil_bus_s(4, bsg_axil_mosi_4bus_s, bsg_axil_miso_4bus_s);
+
+  bsg_axil_mosi_4bus_s slv_mux_o_bus_cast;
+  bsg_axil_miso_4bus_s slv_mux_i_bus_cast;
+
+  assign {slv_3_bus_o_cast.awaddr, slv_2_bus_o_cast.awaddr, slv_1_bus_o_cast.awaddr, slv_0_bus_o_cast.awaddr}
+    = slv_mux_o_bus_cast.awaddr;
+  assign {slv_3_bus_o_cast.awvalid, slv_2_bus_o_cast.awvalid, slv_1_bus_o_cast.awvalid, slv_0_bus_o_cast.awvalid}
+    = slv_mux_o_bus_cast.awvalid;
+  assign {slv_3_bus_o_cast.wdata, slv_2_bus_o_cast.wdata, slv_1_bus_o_cast.wdata, slv_0_bus_o_cast.wdata}
+    = slv_mux_o_bus_cast.wdata;
+  assign {slv_3_bus_o_cast.wstrb, slv_2_bus_o_cast.wstrb, slv_1_bus_o_cast.wstrb, slv_0_bus_o_cast.wstrb}
+    = slv_mux_o_bus_cast.wstrb;
+  assign {slv_3_bus_o_cast.wvalid, slv_2_bus_o_cast.wvalid, slv_1_bus_o_cast.wvalid, slv_0_bus_o_cast.wvalid}
+    = slv_mux_o_bus_cast.wvalid;
+
+  assign {slv_3_bus_o_cast.bready, slv_2_bus_o_cast.bready, slv_1_bus_o_cast.bready, slv_0_bus_o_cast.bready}
+    = slv_mux_o_bus_cast.bready;
+
+  assign {slv_3_bus_o_cast.araddr, slv_2_bus_o_cast.araddr, slv_1_bus_o_cast.araddr, slv_0_bus_o_cast.araddr}
+    = slv_mux_o_bus_cast.araddr;
+  assign {slv_3_bus_o_cast.arvalid, slv_2_bus_o_cast.arvalid, slv_1_bus_o_cast.arvalid, slv_0_bus_o_cast.arvalid}
+    = slv_mux_o_bus_cast.arvalid;
+  assign {slv_3_bus_o_cast.rready, slv_2_bus_o_cast.rready, slv_1_bus_o_cast.rready, slv_0_bus_o_cast.rready}
+    = slv_mux_o_bus_cast.rready;
+
+
+  assign slv_mux_i_bus_cast.awready
+    = {slv_3_bus_i_cast.awready, slv_2_bus_i_cast.awready, slv_1_bus_i_cast.awready, slv_0_bus_i_cast.awready};
+  assign slv_mux_i_bus_cast.wready
+    = {slv_3_bus_i_cast.wready, slv_2_bus_i_cast.wready, slv_1_bus_i_cast.wready, slv_0_bus_i_cast.wready};
+
+  assign slv_mux_i_bus_cast.bresp
+    = {slv_3_bus_i_cast.bresp, slv_2_bus_i_cast.bresp, slv_1_bus_i_cast.bresp, slv_0_bus_i_cast.bresp};
+  assign slv_mux_i_bus_cast.bvalid
+    = {slv_3_bus_i_cast.bvalid, slv_2_bus_i_cast.bvalid, slv_1_bus_i_cast.bvalid, slv_0_bus_i_cast.bvalid};
+
+  assign slv_mux_i_bus_cast.arready
+    = {slv_3_bus_i_cast.arready, slv_2_bus_i_cast.arready, slv_1_bus_i_cast.arready, slv_0_bus_i_cast.arready};
+  assign slv_mux_i_bus_cast.rdata
+    = {slv_3_bus_i_cast.rdata, slv_2_bus_i_cast.rdata, slv_1_bus_i_cast.rdata, slv_0_bus_i_cast.rdata};
+  assign slv_mux_i_bus_cast.rresp
+    = {slv_3_bus_i_cast.rresp, slv_2_bus_i_cast.rresp, slv_1_bus_i_cast.rresp, slv_0_bus_i_cast.rresp};
+  assign slv_mux_i_bus_cast.rvalid
+    = {slv_3_bus_i_cast.rvalid, slv_2_bus_i_cast.rvalid, slv_1_bus_i_cast.rvalid, slv_0_bus_i_cast.rvalid};
 
   localparam C_NUM_MASTER_SLOTS = 4;
   localparam C_M_AXI_BASE_ADDR
     = 256'h00000000_00003000_00000000_00002000_00000000_00001000_00000000_00000000;
-  localparam C_M_AXI_ADDR_WIDTH = {C_NUM_MASTER_SLOTS{32'h0000_000c}};
+  localparam C_M_AXI_ADDR_WIDTH         = {C_NUM_MASTER_SLOTS{32'h0000_000c}};
   localparam C_M_AXI_WRITE_CONNECTIVITY = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_READ_CONNECTIVITY = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_WRITE_ISSUING = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_READ_ISSUING = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_SECURE = {C_NUM_MASTER_SLOTS{32'h0000_0000}};
+  localparam C_M_AXI_READ_CONNECTIVITY  = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
+  localparam C_M_AXI_WRITE_ISSUING      = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
+  localparam C_M_AXI_READ_ISSUING       = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
+  localparam C_M_AXI_SECURE             = {C_NUM_MASTER_SLOTS{32'h0000_0000}};
 
 
   axi_crossbar_v2_1_18_axi_crossbar #(
@@ -162,10 +137,10 @@ module cl_axil_mux4 (
     .C_M_AXI_SECURE             (C_M_AXI_SECURE            ),
     .C_CONNECTIVITY_MODE        (0                         )
   ) inst (
-    .aclk          (aclk                      ),
-    .aresetn       (aresetn                   ),
+    .aclk          (clk_i                     ),
+    .aresetn       (~reset_i                  ),
     .s_axi_awid    (1'H0                      ),
-    .s_axi_awaddr  (axil_m_bus.awaddr         ),
+    .s_axi_awaddr  (mst_bus_i_cast.awaddr     ),
     .s_axi_awlen   (8'H00                     ),
     .s_axi_awsize  (3'H0                      ),
     .s_axi_awburst (2'H0                      ),
@@ -174,22 +149,22 @@ module cl_axil_mux4 (
     .s_axi_awprot  (3'H0                      ),
     .s_axi_awqos   (4'H0                      ),
     .s_axi_awuser  (1'H0                      ),
-    .s_axi_awvalid (axil_m_bus.awvalid        ),
-    .s_axi_awready (axil_m_bus.awready        ),
+    .s_axi_awvalid (mst_bus_i_cast.awvalid    ),
+    .s_axi_awready (mst_bus_o_cast.awready    ),
     .s_axi_wid     (1'H0                      ),
-    .s_axi_wdata   (axil_m_bus.wdata          ),
-    .s_axi_wstrb   (axil_m_bus.wstrb          ),
+    .s_axi_wdata   (mst_bus_i_cast.wdata      ),
+    .s_axi_wstrb   (mst_bus_i_cast.wstrb      ),
     .s_axi_wlast   (1'H1                      ),
     .s_axi_wuser   (1'H0                      ),
-    .s_axi_wvalid  (axil_m_bus.wvalid         ),
-    .s_axi_wready  (axil_m_bus.wready         ),
+    .s_axi_wvalid  (mst_bus_i_cast.wvalid     ),
+    .s_axi_wready  (mst_bus_o_cast.wready     ),
     .s_axi_bid     (                          ),
-    .s_axi_bresp   (axil_m_bus.bresp          ),
+    .s_axi_bresp   (mst_bus_o_cast.bresp      ),
     .s_axi_buser   (                          ),
-    .s_axi_bvalid  (axil_m_bus.bvalid         ),
-    .s_axi_bready  (axil_m_bus.bready         ),
+    .s_axi_bvalid  (mst_bus_o_cast.bvalid     ),
+    .s_axi_bready  (mst_bus_i_cast.bready     ),
     .s_axi_arid    (1'H0                      ),
-    .s_axi_araddr  (axil_m_bus.araddr         ),
+    .s_axi_araddr  (mst_bus_i_cast.araddr     ),
     .s_axi_arlen   (8'H00                     ),
     .s_axi_arsize  (3'H0                      ),
     .s_axi_arburst (2'H0                      ),
@@ -198,17 +173,17 @@ module cl_axil_mux4 (
     .s_axi_arprot  (3'H0                      ),
     .s_axi_arqos   (4'H0                      ),
     .s_axi_aruser  (1'H0                      ),
-    .s_axi_arvalid (axil_m_bus.arvalid        ),
-    .s_axi_arready (axil_m_bus.arready        ),
+    .s_axi_arvalid (mst_bus_i_cast.arvalid    ),
+    .s_axi_arready (mst_bus_o_cast.arready    ),
     .s_axi_rid     (                          ),
-    .s_axi_rdata   (axil_m_bus.rdata          ),
-    .s_axi_rresp   (axil_m_bus.rresp          ),
+    .s_axi_rdata   (mst_bus_o_cast.rdata      ),
+    .s_axi_rresp   (mst_bus_o_cast.rresp      ),
     .s_axi_rlast   (                          ),
     .s_axi_ruser   (                          ),
-    .s_axi_rvalid  (axil_m_bus.rvalid         ),
-    .s_axi_rready  (axil_m_bus.rready         ),
+    .s_axi_rvalid  (mst_bus_o_cast.rvalid     ),
+    .s_axi_rready  (mst_bus_i_cast.rready     ),
     .m_axi_awid    (                          ),
-    .m_axi_awaddr  (axil_s_mux_bus.awaddr     ),
+    .m_axi_awaddr  (slv_mux_o_bus_cast.awaddr ),
     .m_axi_awlen   (                          ),
     .m_axi_awsize  (                          ),
     .m_axi_awburst (                          ),
@@ -218,22 +193,22 @@ module cl_axil_mux4 (
     .m_axi_awregion(                          ),
     .m_axi_awqos   (                          ),
     .m_axi_awuser  (                          ),
-    .m_axi_awvalid (axil_s_mux_bus.awvalid    ),
-    .m_axi_awready (axil_s_mux_bus.awready    ),
+    .m_axi_awvalid (slv_mux_o_bus_cast.awvalid),
+    .m_axi_awready (slv_mux_i_bus_cast.awready),
     .m_axi_wid     (                          ),
-    .m_axi_wdata   (axil_s_mux_bus.wdata      ),
-    .m_axi_wstrb   (axil_s_mux_bus.wstrb      ),
+    .m_axi_wdata   (slv_mux_o_bus_cast.wdata  ),
+    .m_axi_wstrb   (slv_mux_o_bus_cast.wstrb  ),
     .m_axi_wlast   (                          ),
     .m_axi_wuser   (                          ),
-    .m_axi_wvalid  (axil_s_mux_bus.wvalid     ),
-    .m_axi_wready  (axil_s_mux_bus.wready     ),
+    .m_axi_wvalid  (slv_mux_o_bus_cast.wvalid ),
+    .m_axi_wready  (slv_mux_i_bus_cast.wready ),
     .m_axi_bid     ({C_NUM_MASTER_SLOTS{1'b0}}),
-    .m_axi_bresp   (axil_s_mux_bus.bresp      ),
+    .m_axi_bresp   (slv_mux_i_bus_cast.bresp  ),
     .m_axi_buser   ({C_NUM_MASTER_SLOTS{1'b0}}),
-    .m_axi_bvalid  (axil_s_mux_bus.bvalid     ),
-    .m_axi_bready  (axil_s_mux_bus.bready     ),
+    .m_axi_bvalid  (slv_mux_i_bus_cast.bvalid ),
+    .m_axi_bready  (slv_mux_o_bus_cast.bready ),
     .m_axi_arid    (                          ),
-    .m_axi_araddr  (axil_s_mux_bus.araddr     ),
+    .m_axi_araddr  (slv_mux_o_bus_cast.araddr ),
     .m_axi_arlen   (                          ),
     .m_axi_arsize  (                          ),
     .m_axi_arburst (                          ),
@@ -243,15 +218,15 @@ module cl_axil_mux4 (
     .m_axi_arregion(                          ),
     .m_axi_arqos   (                          ),
     .m_axi_aruser  (                          ),
-    .m_axi_arvalid (axil_s_mux_bus.arvalid    ),
-    .m_axi_arready (axil_s_mux_bus.arready    ),
+    .m_axi_arvalid (slv_mux_o_bus_cast.arvalid),
+    .m_axi_arready (slv_mux_i_bus_cast.arready),
     .m_axi_rid     ({C_NUM_MASTER_SLOTS{1'b0}}),
-    .m_axi_rdata   (axil_s_mux_bus.rdata      ),
-    .m_axi_rresp   (axil_s_mux_bus.rresp      ),
+    .m_axi_rdata   (slv_mux_i_bus_cast.rdata  ),
+    .m_axi_rresp   (slv_mux_i_bus_cast.rresp  ),
     .m_axi_rlast   ({C_NUM_MASTER_SLOTS{1'b1}}),
     .m_axi_ruser   ({C_NUM_MASTER_SLOTS{1'b0}}),
-    .m_axi_rvalid  (axil_s_mux_bus.rvalid     ),
-    .m_axi_rready  (axil_s_mux_bus.rready     )
+    .m_axi_rvalid  (slv_mux_i_bus_cast.rvalid ),
+    .m_axi_rready  (slv_mux_o_bus_cast.rready )
   );
 
 endmodule

@@ -63,26 +63,26 @@ module cl_crossbar_tb();
     tb.nsec_delay(2000);
     poke_ddr_stat();
     
-    $display ("No.1A ===> FSB to AXI-4 write test:");
-    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_0000_0000), 
-      .BURST_LEN(0),
-      .WR_BUFF_SIZE(BUFF1_SIZE),
-      .CFG_BASE_ADDR(CROSSBAR_M1));
+    // $display ("No.1A ===> FSB to AXI-4 write test:");
+    // pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_0000_0000), 
+    //   .BURST_LEN(0),
+    //   .WR_BUFF_SIZE(BUFF1_SIZE),
+    //   .CFG_BASE_ADDR(CROSSBAR_M1));
 
-    $display ("No.1B ===> FSB to AXI-4 write test:");
-    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
-      .BURST_LEN(1),
-      .WR_BUFF_SIZE(BUFF2_SIZE),
-      .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
+    // $display ("No.1B ===> AXIS to AXI-4 write test:");
+    // pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
+    //   .BURST_LEN(1),
+    //   .WR_BUFF_SIZE(BUFF2_SIZE),
+    //   .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
 
-    pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-    pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
+    // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
 
     $display ("No.2 (concurrent test) ===> AXI-L to FSB slave test:");
     ocl_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0));
 
-    $display ("N0.3 ===> AXI4 to FSB slave test:");
-    pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
+    // $display ("N0.3 ===> AXI4 to FSB slave test:");
+    // pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
 
     tb.kernel_reset();
     tb.power_down();
@@ -290,11 +290,11 @@ module cl_crossbar_tb();
 
         tb.poke(.addr(AXI4_WRITE), .data(pcis_wr_data), .size(DataSize::DATA_SIZE'(6)));
         tb.poke_ocl(.addr(CFG_BASE_ADDR+AXI4_SEND), .data(32'h040));  // write 64 bytes
-        $display("[%t] : axi4 send data = %0h", $realtime, pcis_wr_data);
+        // $display("[%t] : axi4 send data = %0h", $realtime, pcis_wr_data);
 
         tb.poke_ocl(.addr(CFG_BASE_ADDR+AXI4_FETCH), .data(32'h040)); // readback 64 bytes
         tb.peek(.addr(AXI4_READ), .data(pcis_rd_data), .size(DataSize::DATA_SIZE'(6)));
-        $display("[%t] : axi4 readback data = %0h", $realtime, pcis_rd_data);
+        // $display("[%t] : axi4 readback data = %0h", $realtime, pcis_rd_data);
         for (int num_bytes=0; num_bytes<64; num_bytes++) begin           
              pcis_exp_data[((addr+num_bytes)*8)+:8] = pcis_wr_data[(num_bytes*8)+:8];
              pcis_act_data[((addr+num_bytes)*8)+:8] = pcis_rd_data[(num_bytes*8)+:8];

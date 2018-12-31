@@ -66,47 +66,62 @@ m_axi4_fsb_adapter #(
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   axis_bus_t #(.TDATA_WIDTH(512)) axis_data_fifo_bus ();
 
-  axis_data_fifo_v1_1_18_axis_data_fifo #(
-    .C_FAMILY("virtexuplus"),
-    .C_AXIS_TDATA_WIDTH(512),
-    .C_AXIS_TID_WIDTH(1),
-    .C_AXIS_TDEST_WIDTH(1),
-    .C_AXIS_TUSER_WIDTH(1),
-    .C_AXIS_SIGNAL_SET('B00000000000000000000000000011111),
-    .C_FIFO_DEPTH(16),
-    .C_FIFO_MODE(1),
-    .C_IS_ACLK_ASYNC(0),
-    .C_SYNCHRONIZER_STAGE(2),
-    .C_ACLKEN_CONV_MODE(0)
-  ) axis_512x16_fifo (
-    .s_axis_aresetn(resetn_i),
-    .m_axis_aresetn(1'H0),
-    .s_axis_aclk(clk_i),
-    .s_axis_aclken(1'H1),
-    .s_axis_tvalid(axis_data_bus.txd_tvalid),
-    .s_axis_tready(axis_data_bus.txd_tready),
-    .s_axis_tdata(axis_data_bus.txd_tdata),
-    .s_axis_tstrb(64'hFFFF_FFFF_FFFF_FFFF),
-    .s_axis_tkeep(axis_data_bus.txd_tkeep),
-    .s_axis_tlast(axis_data_bus.txd_tlast),
-    .s_axis_tid(1'H0),
-    .s_axis_tdest(1'H0),
-    .s_axis_tuser(1'H0),
-    .m_axis_aclk(1'H0),
-    .m_axis_aclken(1'H1),
-    .m_axis_tvalid(axis_data_fifo_bus.txd_tvalid),
-    .m_axis_tready(axis_data_fifo_bus.txd_tready),
-    .m_axis_tdata(axis_data_fifo_bus.txd_tdata),
-    .m_axis_tstrb(),
-    .m_axis_tkeep(axis_data_fifo_bus.txd_tkeep),
-    .m_axis_tlast(axis_data_fifo_bus.txd_tlast),
-    .m_axis_tid(),
-    .m_axis_tdest(),
-    .m_axis_tuser(),
-    .axis_data_count(),
-    .axis_wr_data_count(),
-    .axis_rd_data_count()
+  bsg_fifo_1r1w_small #(
+    .width_p(512)
+    ,.els_p             (8)
+    ,.ready_THEN_valid_p(0))
+  axis_fifo_512 (
+    .clk_i  (clk_i),
+    .reset_i(~resetn_i),
+    .v_i    (axis_data_bus.txd_tvalid),
+    .ready_o(axis_data_bus.txd_tready),
+    .data_i (axis_data_bus.txd_tdata ),
+    .v_o    (axis_data_fifo_bus.txd_tvalid),
+    .data_o (axis_data_fifo_bus.txd_tdata),
+    .yumi_i (axis_data_fifo_bus.txd_tready)
   );
+
+  // axis_data_fifo_v1_1_18_axis_data_fifo #(
+  //   .C_FAMILY("virtexuplus"),
+  //   .C_AXIS_TDATA_WIDTH(512),
+  //   .C_AXIS_TID_WIDTH(1),
+  //   .C_AXIS_TDEST_WIDTH(1),
+  //   .C_AXIS_TUSER_WIDTH(1),
+  //   .C_AXIS_SIGNAL_SET('B00000000000000000000000000011111),
+  //   .C_FIFO_DEPTH(16),
+  //   .C_FIFO_MODE(1),
+  //   .C_IS_ACLK_ASYNC(0),
+  //   .C_SYNCHRONIZER_STAGE(2),
+  //   .C_ACLKEN_CONV_MODE(0)
+  // ) axis_fifo_512 (
+  //   .s_axis_aresetn(resetn_i),
+  //   .m_axis_aresetn(1'H0),
+  //   .s_axis_aclk(clk_i),
+  //   .s_axis_aclken(1'H1),
+  //   .s_axis_tvalid(axis_data_bus.txd_tvalid),
+  //   .s_axis_tready(axis_data_bus.txd_tready),
+  //   .s_axis_tdata(axis_data_bus.txd_tdata),
+  //   .s_axis_tstrb(64'hFFFF_FFFF_FFFF_FFFF),
+  //   .s_axis_tkeep(axis_data_bus.txd_tkeep),
+  //   .s_axis_tlast(axis_data_bus.txd_tlast),
+  //   .s_axis_tid(1'H0),
+  //   .s_axis_tdest(1'H0),
+  //   .s_axis_tuser(1'H0),
+  //   .m_axis_aclk(1'H0),
+  //   .m_axis_aclken(1'H1),
+  //   .m_axis_tvalid(axis_data_fifo_bus.txd_tvalid),
+  //   .m_axis_tready(axis_data_fifo_bus.txd_tready),
+  //   .m_axis_tdata(axis_data_fifo_bus.txd_tdata),
+  //   .m_axis_tstrb(),
+  //   .m_axis_tkeep(axis_data_fifo_bus.txd_tkeep),
+  //   .m_axis_tlast(axis_data_fifo_bus.txd_tlast),
+  //   .m_axis_tid(),
+  //   .m_axis_tdest(),
+  //   .m_axis_tuser(),
+  //   .axis_data_count(),
+  //   .axis_wr_data_count(),
+  //   .axis_rd_data_count()
+  // );
 
 
 
