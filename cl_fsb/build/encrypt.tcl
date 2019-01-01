@@ -69,10 +69,12 @@ file copy -force $VIVADO_IP_DIR/axi_dwidth_converter_v2_1/hdl/axi_dwidth_convert
 file copy -force $VIVADO_IP_DIR/axis_dwidth_converter_v1_1/hdl/axis_dwidth_converter_v1_1_vl_rfs.v  $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_infrastructure_v1_1/hdl/axi_infrastructure_v1_1_0.vh            $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_infrastructure_v1_1/hdl/axi_infrastructure_v1_1_vl_rfs.v        $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_0.vh          $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_vl_rfs.v      $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_register_slice_v1_1/hdl/axis_register_slice_v1_1_vl_rfs.v      $TARGET_DIR
+file copy -force $VIVADO_IP_DIR/axis_data_fifo_v1_1/hdl/axis_data_fifo_v1_1_vl_rfs.v                $TARGET_DIR
 
 file copy -force $VIVADO_IP_DIR/axi_fifo_mm_s_v4_1/hdl/axi_fifo_mm_s_v4_1_rfs.vhd                   $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v                 $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.vhd               $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_vhsyn_rfs.vhd         $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/blk_mem_gen_v8_4/hdl/blk_mem_gen_v8_4_vhsyn_rfs.vhd                 $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/lib_pkg_v1_0/hdl/lib_pkg_v1_0_rfs.vhd                               $TARGET_DIR
