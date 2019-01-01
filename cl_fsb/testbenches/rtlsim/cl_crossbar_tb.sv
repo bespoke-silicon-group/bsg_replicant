@@ -63,26 +63,26 @@ module cl_crossbar_tb();
     tb.nsec_delay(2000);
     poke_ddr_stat();
     
-    // $display ("No.1A ===> FSB to AXI-4 write test:");
-    // pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_0000_0000), 
-    //   .BURST_LEN(0),
-    //   .WR_BUFF_SIZE(BUFF1_SIZE),
-    //   .CFG_BASE_ADDR(CROSSBAR_M1));
+    $display ("No.1A ===> FSB to AXI-4 write test:");
+    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_0000_0000), 
+      .BURST_LEN(0),
+      .WR_BUFF_SIZE(BUFF1_SIZE),
+      .CFG_BASE_ADDR(CROSSBAR_M1));
 
-    // $display ("No.1B ===> AXIS to AXI-4 write test:");
-    // pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
-    //   .BURST_LEN(1),
-    //   .WR_BUFF_SIZE(BUFF2_SIZE),
-    //   .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
+    $display ("No.1B ===> AXIS to AXI-4 write test:");
+    pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
+      .BURST_LEN(1),
+      .WR_BUFF_SIZE(BUFF2_SIZE),
+      .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
 
-    // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-    // pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
+    pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
 
     $display ("No.2 (concurrent test) ===> AXI-L to FSB slave test:");
     ocl_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0));
 
-    // $display ("N0.3 ===> AXI4 to FSB slave test:");
-    // pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
+    $display ("N0.3 ===> AXI4 to FSB slave test:");
+    pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
 
     tb.kernel_reset();
     tb.power_down();

@@ -5,23 +5,36 @@
  */
 
  module m_axi4_fsb_adapter 
-  #(parameter DATA_WIDTH=512
-    ,parameter FSB_WIDTH=80
+  #(
+    fsb_width_p=80
+    ,data_width_p=512
+  ,axi_id_width_p = 6
+  ,axi_addr_width_p = 64
+  ,axi_mosi_bus_width_lp = `bsg_axi_mosi_bus_width(1, axi_id_width_p, axi_addr_width_p, data_width_p)
+  ,axi_miso_bus_width_lp = `bsg_axi_miso_bus_width(1, axi_id_width_p, axi_addr_width_p, data_width_p)
+  ,axis_bus_width_lp = `bsg_axis_bus_width(data_width_p)
   ) (
    input clk_i
-   ,input resetn_i
+   ,input reset_i
 
    ,cfg_bus_t.master cfg_bus
-   ,axi_bus_t.slave cl_sh_pcim_bus
-
+  ,input        [axi_miso_bus_width_lp-1:0] m_axi_bus_i
+  ,output       [axi_mosi_bus_width_lp-1:0] m_axi_bus_o
    ,input fsb_wvalid
-   ,input [FSB_WIDTH-1:0] fsb_wdata
+   ,input [fsb_width_p-1:0] fsb_wdata
    ,output logic fsb_yumi
 
    ,output logic atg_dst_sel
  );
  
-localparam DATA_BYTE_NUM = DATA_WIDTH/8;
+localparam data_byte_num_lp = data_width_p/8;
+
+`declare_bsg_axi_bus_s(1, axi_id_width_p, axi_addr_width_p, data_width_p,
+  bsg_axi_mosi_bus_s, bsg_axi_miso_bus_s);
+bsg_axi_mosi_bus_s m_axi_bus_o_cast, axi_mosi_bus_r;
+bsg_axi_miso_bus_s m_axi_bus_i_cast, axi_miso_bus_r;
+assign m_axi_bus_i_cast = m_axi_bus_i;
+assign m_axi_bus_o      = m_axi_bus_o_cast;
 
 
 //-------------------------------------
@@ -38,8 +51,8 @@ logic[10:0] awuser = 0; // not used
 logic awready;
 
 logic [5:0] wid; // not used
-logic [DATA_WIDTH-1:0] wdata = 0;
-logic [(DATA_WIDTH/8)-1:0] wstrb = 0;
+logic [data_width_p-1:0] wdata = 0;
+logic [(data_width_p/8)-1:0] wstrb = 0;
 logic wlast;
 logic wvalid;
 logic wready;
@@ -58,46 +71,44 @@ logic [10:0] aruser = 0; // not used
 logic arready;
 
 logic [5:0] rid;
-logic [DATA_WIDTH-1:0] rdata;
+logic [data_width_p-1:0] rdata;
 logic [1:0] rresp;
 logic rlast;
 logic rvalid;
 logic [17:0] ruser = 0;
 logic rready;
 
-axi_bus_t #(.NUM_SLOTS(1),.ID_WIDTH(6),.ADDR_WIDTH(64),.DATA_WIDTH(512)) axi4_m_bus();
+assign axi_mosi_bus_r.awid = awid;
+assign axi_mosi_bus_r.awaddr = awaddr;
+assign axi_mosi_bus_r.awlen = awlen;
+assign axi_mosi_bus_r.awsize = 3'h6;
+assign axi_mosi_bus_r.awvalid = awvalid;
+assign awready = axi_miso_bus_r.awready;
 
-assign axi4_m_bus.awid = awid;
-assign axi4_m_bus.awaddr = awaddr;
-assign axi4_m_bus.awlen = awlen;
-assign axi4_m_bus.awsize = 3'h6;
-assign axi4_m_bus.awvalid = awvalid;
-assign awready = axi4_m_bus.awready;
+assign axi_mosi_bus_r.wdata = wdata; 
+assign axi_mosi_bus_r.wstrb = wstrb;
+assign axi_mosi_bus_r.wlast = wlast;
+assign axi_mosi_bus_r.wvalid = wvalid;
+assign wready = axi_miso_bus_r.wready;
 
-assign axi4_m_bus.wdata = wdata; 
-assign axi4_m_bus.wstrb = wstrb;
-assign axi4_m_bus.wlast = wlast;
-assign axi4_m_bus.wvalid = wvalid;
-assign wready = axi4_m_bus.wready;
+assign bid = axi_miso_bus_r.bid;
+assign bresp = axi_miso_bus_r.bresp;
+assign bvalid = axi_miso_bus_r.bvalid;
+assign axi_mosi_bus_r.bready = bready;
 
-assign bid = axi4_m_bus.bid;
-assign bresp = axi4_m_bus.bresp;
-assign bvalid = axi4_m_bus.bvalid;
-assign axi4_m_bus.bready = bready;
+assign axi_mosi_bus_r.arid = arid;
+assign axi_mosi_bus_r.araddr = araddr;
+assign axi_mosi_bus_r.arlen = arlen;
+assign axi_mosi_bus_r.arsize = 3'h6;
+assign axi_mosi_bus_r.arvalid = arvalid;
+assign arready = axi_miso_bus_r.arready;
 
-assign axi4_m_bus.arid = arid;
-assign axi4_m_bus.araddr = araddr;
-assign axi4_m_bus.arlen = arlen;
-assign axi4_m_bus.arsize = 3'h6;
-assign axi4_m_bus.arvalid = arvalid;
-assign arready = axi4_m_bus.arready;
-
-assign rid = axi4_m_bus.rid;
-assign rdata = axi4_m_bus.rdata;
-assign rresp = axi4_m_bus.rresp;
-assign rlast = axi4_m_bus.rlast;
-assign rvalid = axi4_m_bus.rvalid;
-assign axi4_m_bus.rready = rready;
+assign rid = axi_miso_bus_r.rid;
+assign rdata = axi_miso_bus_r.rdata;
+assign rresp = axi_miso_bus_r.rresp;
+assign rlast = axi_miso_bus_r.rlast;
+assign rvalid = axi_miso_bus_r.rvalid;
+assign axi_mosi_bus_r.rready = rready;
 
 
 axi_register_slice_v2_1_17_axi_register_slice #(
@@ -136,11 +147,11 @@ axi_register_slice_v2_1_17_axi_register_slice #(
   ) inst (
     .aclk(clk_i),
     .aclk2x(1'H0),
-    .aresetn(resetn_i),
-    .s_axi_awid(axi4_m_bus.awid),
-    .s_axi_awaddr(axi4_m_bus.awaddr),
-    .s_axi_awlen(axi4_m_bus.awlen),
-    .s_axi_awsize(axi4_m_bus.awsize),
+    .aresetn(~reset_i),
+    .s_axi_awid(axi_mosi_bus_r.awid),
+    .s_axi_awaddr(axi_mosi_bus_r.awaddr),
+    .s_axi_awlen(axi_mosi_bus_r.awlen),
+    .s_axi_awsize(axi_mosi_bus_r.awsize),
     .s_axi_awburst(2'h0),
     .s_axi_awlock(1'h0),
     .s_axi_awcache(4'h0),
@@ -148,24 +159,24 @@ axi_register_slice_v2_1_17_axi_register_slice #(
     .s_axi_awregion(4'h0),
     .s_axi_awqos(4'h0),
     .s_axi_awuser(1'H0),
-    .s_axi_awvalid(axi4_m_bus.awvalid),
-    .s_axi_awready(axi4_m_bus.awready),
+    .s_axi_awvalid(axi_mosi_bus_r.awvalid),
+    .s_axi_awready(axi_miso_bus_r.awready),
     .s_axi_wid(6'H0000),
-    .s_axi_wdata(axi4_m_bus.wdata),
-    .s_axi_wstrb(axi4_m_bus.wstrb),
-    .s_axi_wlast(axi4_m_bus.wlast),
+    .s_axi_wdata(axi_mosi_bus_r.wdata),
+    .s_axi_wstrb(axi_mosi_bus_r.wstrb),
+    .s_axi_wlast(axi_mosi_bus_r.wlast),
     .s_axi_wuser(1'H0),
-    .s_axi_wvalid(axi4_m_bus.wvalid),
-    .s_axi_wready(axi4_m_bus.wready),
-    .s_axi_bid(axi4_m_bus.bid),
-    .s_axi_bresp(axi4_m_bus.bresp),
+    .s_axi_wvalid(axi_mosi_bus_r.wvalid),
+    .s_axi_wready(axi_miso_bus_r.wready),
+    .s_axi_bid(axi_miso_bus_r.bid),
+    .s_axi_bresp(axi_miso_bus_r.bresp),
     .s_axi_buser(),
-    .s_axi_bvalid(axi4_m_bus.bvalid),
-    .s_axi_bready(axi4_m_bus.bready),
-    .s_axi_arid(axi4_m_bus.arid),
-    .s_axi_araddr(axi4_m_bus.araddr),
-    .s_axi_arlen(axi4_m_bus.arlen),
-    .s_axi_arsize(axi4_m_bus.arsize),
+    .s_axi_bvalid(axi_miso_bus_r.bvalid),
+    .s_axi_bready(axi_mosi_bus_r.bready),
+    .s_axi_arid(axi_mosi_bus_r.arid),
+    .s_axi_araddr(axi_mosi_bus_r.araddr),
+    .s_axi_arlen(axi_mosi_bus_r.arlen),
+    .s_axi_arsize(axi_mosi_bus_r.arsize),
     .s_axi_arburst(2'h0),
     .s_axi_arlock(1'h0),
     .s_axi_arcache(4'h0),
@@ -173,19 +184,19 @@ axi_register_slice_v2_1_17_axi_register_slice #(
     .s_axi_arregion(4'h0),
     .s_axi_arqos(4'h0),
     .s_axi_aruser(1'H0),
-    .s_axi_arvalid(axi4_m_bus.arvalid),
-    .s_axi_arready(axi4_m_bus.arready),
-    .s_axi_rid(axi4_m_bus.rid),
-    .s_axi_rdata(axi4_m_bus.rdata),
-    .s_axi_rresp(axi4_m_bus.rresp),
-    .s_axi_rlast(axi4_m_bus.rlast),
+    .s_axi_arvalid(axi_mosi_bus_r.arvalid),
+    .s_axi_arready(axi_miso_bus_r.arready),
+    .s_axi_rid(axi_miso_bus_r.rid),
+    .s_axi_rdata(axi_miso_bus_r.rdata),
+    .s_axi_rresp(axi_miso_bus_r.rresp),
+    .s_axi_rlast(axi_miso_bus_r.rlast),
     .s_axi_ruser(),
-    .s_axi_rvalid(axi4_m_bus.rvalid),
-    .s_axi_rready(axi4_m_bus.rready),
-    .m_axi_awid(cl_sh_pcim_bus.awid),
-    .m_axi_awaddr(cl_sh_pcim_bus.awaddr),
-    .m_axi_awlen(cl_sh_pcim_bus.awlen),
-    .m_axi_awsize(cl_sh_pcim_bus.awsize),
+    .s_axi_rvalid(axi_miso_bus_r.rvalid),
+    .s_axi_rready(axi_mosi_bus_r.rready),
+    .m_axi_awid(m_axi_bus_o_cast.awid),
+    .m_axi_awaddr(m_axi_bus_o_cast.awaddr),
+    .m_axi_awlen(m_axi_bus_o_cast.awlen),
+    .m_axi_awsize(m_axi_bus_o_cast.awsize),
     .m_axi_awburst(),
     .m_axi_awlock(),
     .m_axi_awcache(),
@@ -193,24 +204,24 @@ axi_register_slice_v2_1_17_axi_register_slice #(
     .m_axi_awregion(),
     .m_axi_awqos(),
     .m_axi_awuser(),
-    .m_axi_awvalid(cl_sh_pcim_bus.awvalid),
-    .m_axi_awready(cl_sh_pcim_bus.awready),
+    .m_axi_awvalid(m_axi_bus_o_cast.awvalid),
+    .m_axi_awready(m_axi_bus_i_cast.awready),
     .m_axi_wid(),
-    .m_axi_wdata(cl_sh_pcim_bus.wdata),
-    .m_axi_wstrb(cl_sh_pcim_bus.wstrb),
-    .m_axi_wlast(cl_sh_pcim_bus.wlast),
+    .m_axi_wdata(m_axi_bus_o_cast.wdata),
+    .m_axi_wstrb(m_axi_bus_o_cast.wstrb),
+    .m_axi_wlast(m_axi_bus_o_cast.wlast),
     .m_axi_wuser(),
-    .m_axi_wvalid(cl_sh_pcim_bus.wvalid),
-    .m_axi_wready(cl_sh_pcim_bus.wready),
-    .m_axi_bid(cl_sh_pcim_bus.bid),
-    .m_axi_bresp(cl_sh_pcim_bus.bresp),
+    .m_axi_wvalid(m_axi_bus_o_cast.wvalid),
+    .m_axi_wready(m_axi_bus_i_cast.wready),
+    .m_axi_bid(m_axi_bus_i_cast.bid),
+    .m_axi_bresp(m_axi_bus_i_cast.bresp),
     .m_axi_buser(1'H0),
-    .m_axi_bvalid(cl_sh_pcim_bus.bvalid),
-    .m_axi_bready(cl_sh_pcim_bus.bready),
-    .m_axi_arid(cl_sh_pcim_bus.arid),
-    .m_axi_araddr(cl_sh_pcim_bus.araddr),
-    .m_axi_arlen(cl_sh_pcim_bus.arlen),
-    .m_axi_arsize(cl_sh_pcim_bus.arsize),
+    .m_axi_bvalid(m_axi_bus_i_cast.bvalid),
+    .m_axi_bready(m_axi_bus_o_cast.bready),
+    .m_axi_arid(m_axi_bus_o_cast.arid),
+    .m_axi_araddr(m_axi_bus_o_cast.araddr),
+    .m_axi_arlen(m_axi_bus_o_cast.arlen),
+    .m_axi_arsize(m_axi_bus_o_cast.arsize),
     .m_axi_arburst(),
     .m_axi_arlock(),
     .m_axi_arcache(),
@@ -218,15 +229,15 @@ axi_register_slice_v2_1_17_axi_register_slice #(
     .m_axi_arregion(),
     .m_axi_arqos(),
     .m_axi_aruser(),
-    .m_axi_arvalid(cl_sh_pcim_bus.arvalid),
-    .m_axi_arready(cl_sh_pcim_bus.arready),
-    .m_axi_rid(cl_sh_pcim_bus.rid),
-    .m_axi_rdata(cl_sh_pcim_bus.rdata),
-    .m_axi_rresp(cl_sh_pcim_bus.rresp),
-    .m_axi_rlast(cl_sh_pcim_bus.rlast),
+    .m_axi_arvalid(m_axi_bus_o_cast.arvalid),
+    .m_axi_arready(m_axi_bus_i_cast.arready),
+    .m_axi_rid(m_axi_bus_i_cast.rid),
+    .m_axi_rdata(m_axi_bus_i_cast.rdata),
+    .m_axi_rresp(m_axi_bus_i_cast.rresp),
+    .m_axi_rlast(m_axi_bus_i_cast.rlast),
     .m_axi_ruser(1'H0),
-    .m_axi_rvalid(cl_sh_pcim_bus.rvalid),
-    .m_axi_rready(cl_sh_pcim_bus.rready)
+    .m_axi_rvalid(m_axi_bus_i_cast.rvalid),
+    .m_axi_rready(m_axi_bus_o_cast.rready)
   );
 
 
@@ -240,8 +251,8 @@ assign clk = clk_i;
 logic pre_sync_rst_n;
 logic sync_rst_n;
 
-always_ff @(negedge resetn_i or posedge clk_i)
-   if (!resetn_i)
+always_ff @(negedge !reset_i or posedge clk_i)
+   if (reset_i)
    begin
       pre_sync_rst_n <= 0;
       sync_rst_n <= 0;
@@ -257,7 +268,7 @@ always_ff @(negedge resetn_i or posedge clk_i)
 // Flop read interface for timing (not used now)
 //---------------------------------------------
 logic[5:0] rid_q = 0;
-logic[DATA_WIDTH-1:0] rdata_q = 0;
+logic[data_width_p-1:0] rdata_q = 0;
 logic[1:0] rresp_q = 0;
 logic rlast_q = 0;
 logic rvalid_q = 0;
@@ -555,7 +566,7 @@ logic axi_frctn_valid_i; // fsb pkt is partly packed and hold for valid signal
 // logic [31:0] wr_last_addr;
 // logic [31:0] wr_mem_left_next;
 
-// assign wr_mem_left_next = wr_mem_left - DATA_BYTE_NUM - DATA_BYTE_NUM * cfg_write_length;
+// assign wr_mem_left_next = wr_mem_left - data_byte_num_lp - data_byte_num_lp * cfg_write_length;
 // assign wr_last_addr = {cfg_buffer_size[31:6], 6'd0}; // must be 64 bytes aligned
 
 // always_ff @(posedge clk)
@@ -602,7 +613,7 @@ always_ff @(posedge clk)
       wr_buffer_full <= 0;
     end
   else if ((wr_next_tail >= (cfg_hm_read_head + wr_last_addr))
-    || (((cfg_hm_read_head - wr_next_tail) <= DATA_BYTE_NUM)
+    || (((cfg_hm_read_head - wr_next_tail) <= data_byte_num_lp)
       && (cfg_hm_read_head != wr_next_tail)))
   begin
     wr_buffer_full <= 1'b1;
@@ -676,10 +687,10 @@ logic [31:0] wr_addr_inc_64;
 logic [63:0] wr_address;  // absolute bus address to write
 logic wr_len;             // burst length
 
-assign wr_last_addr = cfg_buffer_size - DATA_BYTE_NUM*(32'b1 + cfg_write_length);
+assign wr_last_addr = cfg_buffer_size - data_byte_num_lp*(32'b1 + cfg_write_length);
 
 assign wr_addr_inc_64 = (wr_addr_next==wr_last_addr) ? 0
-                        : wr_addr_next + DATA_BYTE_NUM * (8'b1 + cfg_write_length);
+                        : wr_addr_next + data_byte_num_lp * (8'b1 + cfg_write_length);
 
 always_ff @(posedge clk)
   if ((wr_state==WR_IDLE))
@@ -741,11 +752,11 @@ logic axi_ready_o;    // axi ready signal to fsb FSM
 
 logic [7:0] wr_running_length;
 
-logic [DATA_WIDTH-1:0] wr_phase_data;
-logic [(DATA_WIDTH/8)-1:0] wr_phase_strb;
+logic [data_width_p-1:0] wr_phase_data;
+logic [(data_width_p/8)-1:0] wr_phase_strb;
 
-logic [DATA_WIDTH-1:0] wr_data;
-logic [(DATA_WIDTH/8)-1:0] wr_strb;
+logic [data_width_p-1:0] wr_data;
+logic [(data_width_p/8)-1:0] wr_strb;
 
 logic [31:0] wr_addr_frac_next;
 logic [31:0] wr_tail_data;
@@ -759,7 +770,7 @@ assign wr_tail_data = wr_fsb_pause
                       : wr_addr_next;
 
 assign wr_data = wr_dat_tail_flag 
-                ? {{(DATA_WIDTH-32){1'b1}}, wr_tail_data} 
+                ? {{(data_width_p-32){1'b1}}, wr_tail_data} 
                 : wr_phase_data;
 
 assign wr_strb = wr_dat_tail_flag ? 64'h0000_0000_0000_00FF : wr_phase_strb;
@@ -906,7 +917,7 @@ assign wr_fsb_avaliable = fsb_v_o_masked;
 
 // fsb pkt counter
 //--------------------------------
-logic [DATA_WIDTH-1:0] axi_phase_d;
+logic [data_width_p-1:0] axi_phase_d;
 assign wr_phase_data = axi_phase_d;
 
 logic [1:0] cnt_16B;
@@ -921,7 +932,7 @@ assign fsb_piled_up = (cnt_16B==2'd3) && fsb_yumi;
 
 // strb and address generator
 //--------------------------------
-logic [(DATA_WIDTH/8)-1:0] wr_phase_strb_comb;
+logic [(data_width_p/8)-1:0] wr_phase_strb_comb;
 logic [31:0] wr_addr_frac_comb;
 
 always_ff @(posedge clk)

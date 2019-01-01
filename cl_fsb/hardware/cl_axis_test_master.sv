@@ -1,38 +1,47 @@
 /**
 *  cl_axis_test_master.sv
 *
-*  axi-stream master node
+*  axi-stream master node, read is not implemented
 */
 
-module cl_axis_test_master 
-  #(
-    parameter DATA_WIDTH = 512
-    ,parameter SINGLE_NUM = 256
-    ,parameter PACKET_SIZE = 16
-    ,parameter MULTPKT_NUM = 240
-    ) 
-  (input clk_i
-   ,input reset_i
-   ,input en_i
-   ,axis_bus_t.slave axis_data_bus
-   ,output loop_done
-  );
+`include "bsg_axi_bus_pkg.vh"
 
-  localparam [15:0] single_num_lp = SINGLE_NUM;
-  localparam [15:0] packet_size_lp = PACKET_SIZE;
-  localparam [15:0] multpkt_num_lp = MULTPKT_NUM;
+module cl_axis_test_master #(
+  data_width_p = 512
+  ,single_num_p = 256
+  ,packet_size_p = 16
+  ,pkts_num_p = 240
+  ,axis_bus_width_lp = `bsg_axis_bus_width(data_width_p)
+) (
+  input                          clk_i
+  ,input                          reset_i
+  ,input                          en_i
+  ,input  [axis_bus_width_lp-1:0] m_axis_bus_i
+  ,output [axis_bus_width_lp-1:0] m_axis_bus_o
+  ,output                         loop_done
+);
 
-  logic [DATA_WIDTH-1:0] txdata;
-  logic txlast;
-  logic txvalid;
-  logic [DATA_WIDTH/8-1:0] txkeep;
-  logic txready;
+  localparam [15:0] single_num_lp  = single_num_p ;
+  localparam [15:0] packet_size_lp = packet_size_p;
+  localparam [15:0] pkts_num_lp    = pkts_num_p   ;
 
-  assign axis_data_bus.txd_tdata = txdata;
-  assign axis_data_bus.txd_tlast = txlast;
-  assign axis_data_bus.txd_tvalid = txvalid;
-  assign axis_data_bus.txd_tkeep = txkeep;
-  assign txready = axis_data_bus.txd_tready;
+  logic [  data_width_p-1:0] txdata ;
+  logic                      txlast ;
+  logic                      txvalid;
+  logic [data_width_p/8-1:0] txkeep ;
+  logic                      txready;
+
+  `declare_bsg_axis_bus_s(data_width_p, bsg_axis_mosi_bus_s, bsg_axis_miso_bus_s);
+  bsg_axis_mosi_bus_s m_axis_bus_o_cast;
+  bsg_axis_miso_bus_s m_axis_bus_i_cast;
+  assign m_axis_bus_i_cast = m_axis_bus_i;
+  assign m_axis_bus_o      = m_axis_bus_o_cast;
+
+  assign m_axis_bus_o_cast.txd_tdata  = txdata;
+  assign m_axis_bus_o_cast.txd_tlast  = txlast;
+  assign m_axis_bus_o_cast.txd_tvalid = txvalid;
+  assign m_axis_bus_o_cast.txd_tkeep  = txkeep;
+  assign txready                      = m_axis_bus_i_cast.txd_tready;
 
 
   // Register Reset
@@ -46,17 +55,17 @@ module cl_axis_test_master
 
 
   // control signals
-  logic transfer;
-  logic [15:0] t_cnt;  // frame cnt
-  logic [15:0] p_cnt;  // packet cnt
-  logic t_done;
-  logic p_done;
+  logic        transfer;
+  logic [15:0] t_cnt   ; // frame cnt
+  logic [15:0] p_cnt   ; // packet cnt
+  logic        t_done  ;
+  logic        p_done  ;
 
-  logic cnt_done;
+  logic cnt_done  ;
   logic cnt_dn_reg;
 
   assign t_done = (t_cnt == packet_size_lp - 1'b1);  // aligns with txlast
-  assign p_done = (p_cnt == MULTPKT_NUM - 1'b1);
+  assign p_done = (p_cnt == pkts_num_lp - 1'b1);
 
   assign transfer = txready && txvalid;
   assign cnt_done = (transfer && t_done && p_done);
@@ -65,10 +74,10 @@ module cl_axis_test_master
 
   always_ff @(posedge clk_i) begin
     if(reset_i) begin
-      p_cnt <= 16'h0000;
-      t_cnt <= 16'h0000;
+      p_cnt      <= 16'h0000;
+      t_cnt      <= 16'h0000;
       cnt_dn_reg <= 1'b0;
-      txkeep <= {DATA_WIDTH/8{1'b1}};
+      txkeep     <= {data_width_p/8{1'b1}};
     end
     else begin
       // Increment counters
@@ -83,7 +92,7 @@ module cl_axis_test_master
   // TXDATA
   genvar i;
   generate
-    for(i=0; i<DATA_WIDTH/8; i=i+1) begin: txdata_incr_gen
+    for(i=0; i<data_width_p/8; i=i+1) begin: txdata_incr_gen
       always_ff @(posedge clk_i) begin
         if(reset_i) begin
           txdata[8*i+:8] <= 8'h00;
@@ -102,17 +111,17 @@ module cl_axis_test_master
       txvalid <= 1'b0;
     end
     else
-    begin
-      if(~en_i) begin
-        txvalid <= 1'b0;
+      begin
+        if(~en_i) begin
+          txvalid <= 1'b0;
+        end
+        else if(reset_dly) begin
+          txvalid <= 1'b1;
+        end
+        else begin
+          txvalid <= txvalid;
+        end
       end
-      else if(reset_dly) begin
-        txvalid <= 1'b1;
-      end
-      else begin
-        txvalid <= txvalid;
-      end
-    end
   end
 
 
@@ -122,20 +131,20 @@ module cl_axis_test_master
       txlast <= 1'b0;
     end
     else
-    begin
-      if(reset_dly) begin
-        txlast <= 1'b1;
+      begin
+        if(reset_dly) begin
+          txlast <= 1'b1;
+        end
+        else if((p_cnt >= (single_num_lp - 1'b1)) && transfer && txlast) begin
+          txlast <= 1'b0;
+        end
+        else if(t_cnt == (packet_size_lp - 16'd2) && transfer) begin
+          txlast <= 1'b1;
+        end
+        else begin
+          txlast <= txlast;
+        end
       end
-      else if((p_cnt >= (single_num_lp - 1'b1)) && transfer && txlast) begin
-        txlast <= 1'b0;
-      end
-      else if(t_cnt == (packet_size_lp - 16'd2) && transfer) begin
-        txlast <= 1'b1;
-      end
-      else begin
-        txlast <= txlast;
-      end
-    end
   end
 
 endmodule // cl_axis_test_master
