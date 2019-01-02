@@ -312,20 +312,20 @@ assign s_axis_bus_o_cast.txd_tready = axis_txd_tready;
 
 // Sync reset
 //---------------------------------------------
-logic pre_sync_rst_n;
+// logic pre_sync_rst_n;
 logic sync_rst_n;
-
-always_ff @(negedge ~reset_i or posedge clk_i)
-   if (reset_i)
-   begin
-      pre_sync_rst_n <= 0;
-      sync_rst_n <= 0;
-   end
-   else
-   begin
-      pre_sync_rst_n <= 1;
-      sync_rst_n <= pre_sync_rst_n;
-   end
+assign sync_rst_n = ~reset_i;
+// always_ff @(negedge ~reset_i or posedge clk_i)
+//    if (reset_i)
+//    begin
+//       pre_sync_rst_n <= 0;
+//       sync_rst_n <= 0;
+//    end
+//    else
+//    begin
+//       pre_sync_rst_n <= 1;
+//       sync_rst_n <= pre_sync_rst_n;
+//    end
 
 //-------------------------------------------
 // register configuration
@@ -369,11 +369,6 @@ always_ff @(negedge ~reset_i or posedge clk_i)
 //-------------------------------------------
 // axil_mosi_bus_r
 // axil_miso_bus_r
-
-
-
-logic clk;
-assign clk = clk_i;
 
 typedef enum logic[2:0] {
    SLV_IDLE = 0,
@@ -434,7 +429,7 @@ begin
 end
 
 //State machine flops
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
       slv_state <= SLV_IDLE;
    else
@@ -449,7 +444,7 @@ assign slv_rd_req = axil_mosi_bus_r.arvalid;
 
 // select the wr cycle
 logic slv_cyc_wr; 
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
       slv_cyc_wr <= 0;
    else if (slv_state==SLV_IDLE)
@@ -460,7 +455,7 @@ logic [31:0] slv_req_rd_addr;
 logic [31:0] slv_req_wr_addr;
 logic [31:0] base_addr_cast;
 
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
   begin
     {slv_req_rd_addr, slv_req_wr_addr} <= 64'd0;
@@ -499,7 +494,7 @@ assign slv_cyc_done = base_addr_eq ? cfg_data_ack : 1'b1;
 // cfg address & data
 logic [7:0] cfg_addr;
 logic [31:0] cfg_wdata;
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
    begin
       cfg_addr <= '{default:'0};
@@ -513,7 +508,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
 
 // cfg write & read enable signals, generate 1 clock pulse
 logic cfg_wen, cfg_ren, slv_did_req;
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
     begin
       cfg_wen <= 0;
@@ -527,7 +522,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
         : 0;
     end
 
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
     begin
       slv_did_req <= 0;
@@ -544,14 +539,14 @@ always_ff @(negedge sync_rst_n or posedge clk)
 
 // latch the return data
 logic [31:0] cfg_rdata;
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
       axil_miso_bus_r.rdata <= 0;
    else if (slv_cyc_done)
       axil_miso_bus_r.rdata <= base_addr_eq ? cfg_rdata : 32'hdead_beef;
 
 // ready back to axil for request
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
     begin
       axil_miso_bus_r.awready <= 0;

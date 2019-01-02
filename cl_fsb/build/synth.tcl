@@ -42,15 +42,6 @@ puts "AWS FPGA: ([clock format [clock seconds] -format %T]) Reading developer's 
 # reading .v, .vh, nor .inc files
 
 read_verilog -sv [glob $ENC_SRC_DIR/*.{v,sv,vh}]
-# read_verilog -library fifo_generator_v13_2_2 $ENC_SRC_DIR/fifo_generator_v13_2_rfs.v
-
-+set_property include_dirs $ENC_SRC_DIR [current_fileset]
-
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_defines.v]
-set_property is_global_include true [get_files $ENC_SRC_DIR/bsg_defines.v]
-
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/cl_fsb_defines.vh]
-set_property is_global_include true [get_files $ENC_SRC_DIR/cl_fsb_defines.vh]
 
 read_vhdl -library axi_fifo_mm_s_v4_1_14 $ENC_SRC_DIR/axi_fifo_mm_s_v4_1_rfs.vhd
 read_vhdl -library lib_pkg_v1_0_2 $ENC_SRC_DIR/lib_pkg_v1_0_rfs.vhd
@@ -59,9 +50,12 @@ read_vhdl -library fifo_generator_v13_2_2 $ENC_SRC_DIR/fifo_generator_v13_2_vhsy
 read_vhdl -library blk_mem_gen_v8_4_1 $ENC_SRC_DIR/blk_mem_gen_v8_4_vhsyn_rfs.vhd
 read_vhdl -library lib_fifo_v1_0_11 $ENC_SRC_DIR/lib_fifo_v1_0_rfs.vhd
 
-#set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/axi_infrastructure_v1_1_0.vh]
+set_property include_dirs $ENC_SRC_DIR [current_fileset]
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_defines.v]
+set_property is_global_include true [get_files $ENC_SRC_DIR/bsg_defines.v]
 
-
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/cl_fsb_defines.vh]
+set_property is_global_include true [get_files $ENC_SRC_DIR/cl_fsb_defines.vh]
 
 #---- End of section replaced by User ----
 

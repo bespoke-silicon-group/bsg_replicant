@@ -296,20 +296,23 @@ axi_register_slice_v2_1_17_axi_register_slice #(
 
 // Sync reset
 //---------------------------------------------
-logic pre_sync_rst_n;
+// logic pre_sync_rst_n;
 logic sync_rst_n;
 
-always_ff @(negedge !reset_i or posedge clk_i)
-   if (reset_i)
-   begin
-      pre_sync_rst_n <= 0;
-      sync_rst_n <= 0;
-   end
-   else
-   begin
-      pre_sync_rst_n <= 1;
-      sync_rst_n <= pre_sync_rst_n;
-   end
+assign sync_rst_n =  ~reset_i;
+// always_ff @(negedge (~reset_i) or posedge clk_i)
+// begin
+//    if (reset_i)
+//    begin
+//       pre_sync_rst_n <= 0;
+//       sync_rst_n <= 0;
+//    end
+//    else
+//    begin
+//       pre_sync_rst_n <= 1;
+//       sync_rst_n <= pre_sync_rst_n;
+//    end
+//  end
 
 //-------------------------------------------
 // register configuration
@@ -347,10 +350,6 @@ always_ff @(negedge !reset_i or posedge clk_i)
 
 // 0xe0:  DST_SEL_REG
 //        0 -  0/1 to select which dst module the atg drives
-
-logic clk;
-assign clk = clk_i;
-
 
 typedef enum logic[2:0] {
    SLV_IDLE = 0,
@@ -411,7 +410,7 @@ begin
 end
 
 //State machine flops
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
       slv_state <= SLV_IDLE;
    else
@@ -426,7 +425,7 @@ assign slv_rd_req = axil_mosi_bus_r.arvalid;
 
 // select the wr cycle
 logic slv_cyc_wr; 
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
       slv_cyc_wr <= 0;
    else if (slv_state==SLV_IDLE)
@@ -437,7 +436,7 @@ logic [31:0] slv_req_rd_addr;
 logic [31:0] slv_req_wr_addr;
 logic [31:0] base_addr_cast;
 
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
   begin
     {slv_req_rd_addr, slv_req_wr_addr} <= 64'd0;
@@ -476,7 +475,7 @@ assign slv_cyc_done = base_addr_eq ? cfg_data_ack : 1'b1;
 // cfg address & data
 logic [7:0] cfg_addr;
 logic [31:0] cfg_wdata;
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
    begin
       cfg_addr <= '{default:'0};
@@ -490,7 +489,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
 
 // cfg write & read enable signals, generate 1 clock pulse
 logic cfg_wen, cfg_ren, slv_did_req;
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
     begin
       cfg_wen <= 0;
@@ -504,7 +503,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
         : 0;
     end
 
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
     begin
       slv_did_req <= 0;
@@ -521,14 +520,14 @@ always_ff @(negedge sync_rst_n or posedge clk)
 
 // latch the return data
 logic [31:0] cfg_rdata;
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
    if (!sync_rst_n)
       axil_miso_bus_r.rdata <= 0;
    else if (slv_cyc_done)
       axil_miso_bus_r.rdata <= base_addr_eq ? cfg_rdata : 32'hdead_beef;
 
 // ready back to axil for request
-always_ff @(negedge sync_rst_n or posedge clk)
+always_ff @(negedge sync_rst_n or posedge clk_i)
   if (!sync_rst_n)
     begin
       axil_miso_bus_r.awready <= 0;
@@ -555,7 +554,7 @@ logic cfg_wr_stretch, cfg_rd_stretch;
 logic[7:0] cfg_addr_q;
 logic[31:0] cfg_wdata_q;
 
-always @(posedge clk)
+always @(posedge clk_i)
    if (!sync_rst_n)
    begin
       cfg_wr_stretch <= 0;
@@ -574,7 +573,7 @@ always @(posedge clk)
 
 
 // Ack for cycle
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
    if (!sync_rst_n)
       cfg_data_ack <= 0;
    else
@@ -605,7 +604,7 @@ logic cfg_atg_dst_sel = 0;
 
 assign atg_dst_sel = cfg_atg_dst_sel;
 
-always @(posedge clk)
+always @(posedge clk_i)
    if (cfg_wr_stretch)
    begin
       if (cfg_addr_q==8'h0)
@@ -662,7 +661,7 @@ assign cfg_write_reset = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h0c) 
 assign cfg_read_reset = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[1]);
 
 // Readback mux
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   begin
     if (cfg_wr_stretch)
       case (cfg_addr_q)
@@ -763,7 +762,7 @@ begin
    endcase
 end
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
    if (!sync_rst_n)
       wr_state <= WR_IDLE;
    else
@@ -790,7 +789,7 @@ logic axi_frctn_valid_i; // fsb pkt is partly packed and hold for valid signal
 // assign wr_mem_left_next = wr_mem_left - data_byte_num_lp - data_byte_num_lp * cfg_write_length;
 // assign wr_last_addr = {cfg_buffer_size[31:6], 6'd0}; // must be 64 bytes aligned
 
-// always_ff @(posedge clk)
+// always_ff @(posedge clk_i)
 //    if (wr_state==WR_IDLE)
 //    begin
 //       wr_mem_left <= wr_last_addr;
@@ -828,7 +827,7 @@ assign wr_next_tail = wr_addr_next;
 assign wr_hm_pause = wr_dat_tail_flag && wr_buffer_full;
 assign wr_hm_avaliable = !wr_buffer_full;
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if (wr_state==WR_IDLE)
     begin
       wr_buffer_full <= 0;
@@ -846,13 +845,13 @@ always_ff @(posedge clk)
 
 
 // 2. FSB invalid
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if (!wr_dat_tail_flag)  // pause after the tail is sent
     wr_fsb_pause <= axi_frctn_valid_i;  // we assume always send fraction
 
 
 // 3. soft stop (take effect immediately)
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
    if (!sync_rst_n)
       wr_soft_stop <= 0;
    else
@@ -866,7 +865,7 @@ always_ff @(posedge clk)
 
 // tail write flag
 //--------------------------------
-always_ff @( posedge clk)
+always_ff @( posedge clk_i)
   if ((wr_state==WR_IDLE))
     begin
       wr_dat_tail_flag <= 0;  // I choose to keep the flag when soft stop occurs
@@ -878,7 +877,7 @@ always_ff @( posedge clk)
 
 logic last_write_success;
 
-always_ff @( posedge clk)
+always_ff @( posedge clk_i)
   if (!sync_rst_n)
     begin
       last_write_success  <= 1'b1;
@@ -897,7 +896,7 @@ assign bready = 1;  // Don't do anything with BRESP
 
 // record the bus status
 logic bresp_q;
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if (bvalid & bready)
     bresp_q = bresp[1];
 
@@ -913,7 +912,7 @@ assign wr_last_addr = cfg_buffer_size - data_byte_num_lp*(32'b1 + cfg_write_leng
 assign wr_addr_inc_64 = (wr_addr_next==wr_last_addr) ? 0
                         : wr_addr_next + data_byte_num_lp * (8'b1 + cfg_write_length);
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if ((wr_state==WR_IDLE))
     wr_addr_next <= 0;
   else if (axi_whole_valid_i && (wr_state==WR_DAT) && (wr_state_nxt!=WR_DAT))
@@ -921,7 +920,7 @@ always_ff @(posedge clk)
   else
     wr_addr_next <= wr_addr_next;
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
    if ((wr_state==WR_IDLE))
    begin
       wr_addr_bus <= cfg_write_address;  // the start address must be 64 bytes aligned
@@ -937,7 +936,7 @@ assign wr_address = wr_addr_bus;
 
 assign wr_len = wr_dat_tail_flag ? 8'b0 : cfg_write_length;
 
-always_ff @( posedge clk)
+always_ff @( posedge clk_i)
   if(!sync_rst_n)
   begin
     awvalid <= 0;
@@ -1003,20 +1002,20 @@ assign axi_ready_o = (wr_state==WR_ADDR) && (wr_state_nxt!=WR_ADDR) && !wr_dat_t
 // burst control
 assign wr_phase_end = (wr_running_length==0);
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if (wr_state==WR_ADDR)
     wr_running_length <= cfg_write_length;
   else if (wvalid && wready)
     wr_running_length <= wr_running_length - 1;
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if(wr_phase_valid)
     begin
       wdata <= wr_data;
       wstrb <= wr_strb;
     end
 
-always_ff @( posedge clk)
+always_ff @( posedge clk_i)
   if (!sync_rst_n)
     begin
       wid    <= 0;
@@ -1107,7 +1106,7 @@ always_comb
     endcase // fsb_state
   end
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
    if(!sync_rst_n)
       fsb_state <= FSB_INIT;
    else
@@ -1142,7 +1141,7 @@ logic [data_width_p-1:0] axi_phase_d;
 assign wr_phase_data = axi_phase_d;
 
 logic [1:0] cnt_16B;
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if (wr_state==WR_IDLE)
     cnt_16B <= 0;
   else if (fsb_yumi)
@@ -1156,7 +1155,7 @@ assign fsb_piled_up = (cnt_16B==2'd3) && fsb_yumi;
 logic [(data_width_p/8)-1:0] wr_phase_strb_comb;
 logic [31:0] wr_addr_frac_comb;
 
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
 begin
   if ((fsb_state==FSB_PILE || fsb_state==FSB_INIT)
       && (fsb_state_nxt==FSB_HOLD)) // when fsb is invalid
@@ -1200,7 +1199,7 @@ end
 
 // data register
 //--------------------------------
-always_ff @(posedge clk)
+always_ff @(posedge clk_i)
   if (fsb_yumi)
   case(cnt_16B)
     2'd0: axi_phase_d[128*0+:128] <= {48'd0, fsb_wdata};
