@@ -40,5 +40,4 @@ clean:
 	make -C testbenches clean
 	make -C build clean
 	make -C software clean
-	make -C ip clean
 	rm -f *.log *.jou *.pb

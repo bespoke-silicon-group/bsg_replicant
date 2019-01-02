@@ -1,31 +1,31 @@
 /**
- *  s_axil_fsb_adapter.sv
+ *  s_axil_m_fsb_adapter.sv
  *
  *  axi-lite (SH) <-> cl_bsg (CL)
  */
 
 `include "bsg_axi_bus_pkg.vh"
 
-module s_axil_fsb_adapter #(
-  sh_ocl_slot_num_p = 1
-  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(sh_ocl_slot_num_p)
-  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(sh_ocl_slot_num_p)
+module s_axil_m_fsb_adapter #(
+   fsb_width_p = "inv"
+  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
+  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
 )(
   input clk_i
-  ,input resetn_i
+  ,input reset_i
   ,input [axil_mosi_bus_width_lp-1:0] sh_ocl_bus_i
   ,output [axil_miso_bus_width_lp-1:0] sh_ocl_bus_o
   ,input m_fsb_v_i
-  ,input [79:0] m_fsb_data_i
+  ,input [fsb_width_p-1:0] m_fsb_data_i
   ,output m_fsb_r_o
-  ,output s_fsb_v_o
-  ,output [79:0] s_fsb_data_o
-  ,input s_fsb_r_i
+  ,output m_fsb_v_o
+  ,output [fsb_width_p-1:0] m_fsb_data_o
+  ,input m_fsb_r_i
 );
 
 parameter fpga_version_p = "virtexuplus";
 
-`declare_bsg_axil_bus_s(sh_ocl_slot_num_p, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+`declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 
 bsg_axil_mosi_bus_s sh_ocl_bus_i_cast, sh_ocl_bus_mosi_r;
 bsg_axil_miso_bus_s sh_ocl_bus_o_cast, sh_ocl_bus_miso_r;
@@ -36,7 +36,7 @@ assign sh_ocl_bus_o = sh_ocl_bus_o_cast;
 //---------------------------------
 axi_register_slice_light AXIL_OCL_REG_SLC (
   .aclk         (clk_i                    ),
-  .aresetn      (resetn_i                 ),
+  .aresetn      (~reset_i                 ),
   .s_axi_awaddr (sh_ocl_bus_i_cast.awaddr ),
   .s_axi_awprot (3'h0                     ),
   .s_axi_awvalid(sh_ocl_bus_i_cast.awvalid),
@@ -120,7 +120,7 @@ axi_fifo_mm_s #(
 ) axi_fifo_mm_s_axi_lite (
   .interrupt             (                         ), // output wire interrupt
   .s_axi_aclk            (clk_i                    ), // input wire s_axi_aclk
-  .s_axi_aresetn         (resetn_i                 ), // input wire s_axi_aresetn
+  .s_axi_aresetn         (~reset_i                 ), // input wire s_axi_aresetn
   .s_axi_awaddr          (sh_ocl_bus_mosi_r.awaddr ), // input wire [31 : 0] s_axi_awaddr
   .s_axi_awvalid         (sh_ocl_bus_mosi_r.awvalid), // input wire s_axi_awvalid
   .s_axi_awready         (sh_ocl_bus_miso_r.awready), // output wire s_axi_awready
@@ -191,7 +191,7 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
 ) axis_32_128 (
   .aclk(clk_i),
-  .aresetn(resetn_i),
+  .aresetn(~reset_i),
   .aclken(1'H1),
   .s_axis_tvalid(mosi_axisx32_bus.txd_tvalid),
   .s_axis_tready(miso_axisx32_bus.txd_tready),
@@ -213,9 +213,9 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .m_axis_tuser()
 );
 
-assign s_fsb_v_o = mosi_axisx128_bus.txd_tvalid;
-assign s_fsb_data_o = mosi_axisx128_bus.txd_tdata[79:0];
-assign miso_axisx128_bus.txd_tready = s_fsb_r_i;
+assign m_fsb_v_o = mosi_axisx128_bus.txd_tvalid;
+assign m_fsb_data_o = mosi_axisx128_bus.txd_tdata[fsb_width_p-1:0];
+assign miso_axisx128_bus.txd_tready = m_fsb_r_i;
 
 //  ||
 //  \/
@@ -241,7 +241,7 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
 ) axis_128_32 (
   .aclk(clk_i),
-  .aresetn(resetn_i),
+  .aresetn(~reset_i),
   .aclken(1'H1),
   .s_axis_tvalid(miso_axisx128_bus.rxd_tvalid),
   .s_axis_tready(mosi_axisx128_bus.rxd_tready),

@@ -46,13 +46,13 @@
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/bsg_axi_bus_pkg.vh
 ${CL_DIR}/hardware/cl_fsb_bus_pkg.vh
-${CL_DIR}/hardware/s_axil_fsb_adapter.sv
-${CL_DIR}/hardware/s_axi4_fsb_adapter.sv
+${CL_DIR}/hardware/axi_fsb_adapters.v
+${CL_DIR}/hardware/s_axil_m_fsb_adapter.sv
+${CL_DIR}/hardware/s_axi4_m_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_axis_adapter.sv
 ${CL_DIR}/hardware/cl_to_axi4_adapter.sv
 ${CL_DIR}/hardware/cl_axis_test_master.sv
-${CL_DIR}/hardware/cl_axil_mux4.sv
 ${CL_DIR}/hardware/cl_ocl_slv.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 

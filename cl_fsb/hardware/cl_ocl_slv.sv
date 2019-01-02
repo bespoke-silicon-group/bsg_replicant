@@ -85,7 +85,7 @@ axi_bus_t sh_ocl_bus_q();
 // Slave state machine (accesses from PCIe on BAR0 for CL registers)
 //-------------------------------------------------
 
-parameter NUM_TST = (1 + 4 + 4 + 4 + 1 + 2);
+parameter slv_num_lp = (1 + 4 + 4 + 4 + 1 + 2);
 
 typedef enum logic[2:0] {
    SLV_IDLE = 0,
@@ -108,16 +108,16 @@ logic slv_cyc_done;              //Cycle is done
 
 logic[31:0] slv_rdata;           //Latch rdata
 
-logic[3:0] slv_sel;             //Slave select (only map it to log2(NUM_TST) -XL)
+logic[3:0] slv_sel;             //Slave select (only map it to log2(slv_num_lp) -XL)
 
-logic[31:0] slv_tst_addr[NUM_TST-1:0];
-logic[31:0] slv_tst_wdata[NUM_TST-1:0];
-logic[NUM_TST-1:0] slv_tst_wr;
-logic[NUM_TST-1:0] slv_tst_rd;
+logic[31:0] slv_tst_addr[slv_num_lp-1:0];
+logic[31:0] slv_tst_wdata[slv_num_lp-1:0];
+logic[slv_num_lp-1:0] slv_tst_wr;
+logic[slv_num_lp-1:0] slv_tst_rd;
 logic slv_mx_req_valid;
 
-logic[NUM_TST-1:0] tst_slv_ack;
-logic[31:0] tst_slv_rdata [NUM_TST-1:0];
+logic[slv_num_lp-1:0] tst_slv_ack;
+logic[31:0] tst_slv_rdata [slv_num_lp-1:0];
 
 logic slv_did_req;            //Once cycle request, latch that did the request
 
@@ -231,7 +231,7 @@ always_ff @(negedge sync_rst_n or posedge clk)
    end
    else
    begin
-      for (int i=0; i<NUM_TST; i++)
+      for (int i=0; i<slv_num_lp; i++)
       begin
          slv_tst_addr[i] <= slv_mx_addr;
          slv_tst_wdata[i] <= sh_ocl_bus_q.wdata;
@@ -262,20 +262,20 @@ always_ff @(negedge sync_rst_n or posedge clk)
    end
    else
    begin
-      slv_tst_wr <= (slv_sel<NUM_TST) ? ((slv_state==SLV_CYC) & slv_mx_req_valid & slv_cyc_wr & !slv_did_req) << slv_sel
+      slv_tst_wr <= (slv_sel<slv_num_lp) ? ((slv_state==SLV_CYC) & slv_mx_req_valid & slv_cyc_wr & !slv_did_req) << slv_sel
                                       : 0;
-      slv_tst_rd <= (slv_sel<NUM_TST) ? ((slv_state==SLV_CYC) & slv_mx_req_valid & !slv_cyc_wr & !slv_did_req) << slv_sel
+      slv_tst_rd <= (slv_sel<slv_num_lp) ? ((slv_state==SLV_CYC) & slv_mx_req_valid & !slv_cyc_wr & !slv_did_req) << slv_sel
                                       : 0;
    end
 
-assign slv_cyc_done = (slv_sel<NUM_TST) ? tst_slv_ack[slv_sel] : 1'b1;
+assign slv_cyc_done = (slv_sel<slv_num_lp) ? tst_slv_ack[slv_sel] : 1'b1;
 
 //Latch the return data
 always_ff @(negedge sync_rst_n or posedge clk)
    if (!sync_rst_n)
       slv_rdata <= 0;
    else if (slv_cyc_done)
-      slv_rdata <= (slv_sel<NUM_TST) ? tst_slv_rdata[slv_sel] : 32'hdead_beef;
+      slv_rdata <= (slv_sel<slv_num_lp) ? tst_slv_rdata[slv_sel] : 32'hdead_beef;
 
 //Ready back to AXI for request
 always_ff @(negedge sync_rst_n or posedge clk)

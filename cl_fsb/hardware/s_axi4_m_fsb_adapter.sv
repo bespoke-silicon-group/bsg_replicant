@@ -1,26 +1,22 @@
 /**
- *  s_axi4_fsb_adapter.sv
+ *  s_axi4_m_fsb_adapter.sv
  *
  *  axi4 (SH) <-> cl_bsg (CL)
  */
 
 `include "bsg_axi_bus_pkg.vh"
 
-module s_axi4_fsb_adapter #(
-  sh_ocl_slot_num_p = 1
-  ,sh_pcis_slot_num_p = 1
-  ,sh_pcis_id_width_p = 6
+module s_axi4_m_fsb_adapter #(
+  sh_pcis_id_width_p = 6
   ,sh_pcis_addr_width_p = 64
   ,sh_pcis_data_width_p = 512
-  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(sh_ocl_slot_num_p)
-  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(sh_ocl_slot_num_p)
-  ,axi_mosi_bus_width_lp = `bsg_axi_mosi_bus_width(
-  sh_pcis_slot_num_p, sh_pcis_id_width_p, sh_pcis_addr_width_p, sh_pcis_data_width_p)
-  ,axi_miso_bus_width_lp = `bsg_axi_miso_bus_width(
-  sh_pcis_slot_num_p, sh_pcis_id_width_p, sh_pcis_addr_width_p, sh_pcis_data_width_p)
+  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
+  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
+  ,axi_mosi_bus_width_lp = `bsg_axi_mosi_bus_width(1, sh_pcis_id_width_p, sh_pcis_addr_width_p, sh_pcis_data_width_p)
+  ,axi_miso_bus_width_lp = `bsg_axi_miso_bus_width(1, sh_pcis_id_width_p, sh_pcis_addr_width_p, sh_pcis_data_width_p)
 ) (
   input                               clk_i
-  ,input                               resetn_i
+  ,input                               reset_i
   ,input  [axil_mosi_bus_width_lp-1:0] sh_ocl_bus_i
   ,output [axil_miso_bus_width_lp-1:0] sh_ocl_bus_o
   ,input  [ axi_mosi_bus_width_lp-1:0] sh_pcis_bus_i
@@ -36,20 +32,14 @@ module s_axi4_fsb_adapter #(
 parameter fpga_version_p = "virtexuplus";
 
 
-`declare_bsg_axil_bus_s(sh_ocl_slot_num_p, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+`declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 bsg_axil_mosi_bus_s sh_ocl_bus_i_cast;
 bsg_axil_miso_bus_s sh_ocl_bus_o_cast;
 assign sh_ocl_bus_i_cast = sh_ocl_bus_i;
 assign sh_ocl_bus_o = sh_ocl_bus_o_cast;
 
-`declare_bsg_axi_bus_s(
-  sh_pcis_slot_num_p
-  ,sh_pcis_id_width_p
-  ,sh_pcis_addr_width_p
-  ,sh_pcis_data_width_p
-  ,bsg_axi_mosi_bus_s
-  ,bsg_axi_miso_bus_s
-  );
+`declare_bsg_axi_bus_s(1, sh_pcis_id_width_p, sh_pcis_addr_width_p, sh_pcis_data_width_p,
+  bsg_axi_mosi_bus_s, bsg_axi_miso_bus_s);
 
 bsg_axi_mosi_bus_s sh_pcis_bus_i_cast, sh_pcis_bus_mosi_r;
 bsg_axi_miso_bus_s sh_pcis_bus_o_cast, sh_pcis_bus_miso_r;
@@ -60,10 +50,12 @@ assign sh_pcis_bus_o = sh_pcis_bus_o_cast;
 // flop the input PCIS_DMA bus
 //---------------------------------
 logic [15:0] sh_cl_dma_pcis_rid;
+logic [15:0] sh_cl_dma_pcis_bid;
 assign sh_pcis_bus_o_cast.rid = sh_cl_dma_pcis_rid[5:0];
+assign sh_pcis_bus_o_cast.bid = sh_cl_dma_pcis_bid[5:0];
 axi_register_slice AXI4_PCIS_REG_SLC (
   .aclk          (clk_i                   ),
-  .aresetn       (resetn_i                ),
+  .aresetn       (~reset_i                ),
   .s_axi_awid    (16'h0),
   .s_axi_awaddr  (sh_pcis_bus_i_cast.awaddr   ),
   .s_axi_awlen   (sh_pcis_bus_i_cast.awlen    ),
@@ -81,7 +73,7 @@ axi_register_slice AXI4_PCIS_REG_SLC (
   .s_axi_wlast   (sh_pcis_bus_i_cast.wlast    ),
   .s_axi_wvalid  (sh_pcis_bus_i_cast.wvalid   ),
   .s_axi_wready  (sh_pcis_bus_o_cast.wready   ),
-  .s_axi_bid     (),
+  .s_axi_bid     (sh_cl_dma_pcis_bid),
   .s_axi_bresp   (sh_pcis_bus_o_cast.bresp    ),
   .s_axi_bvalid  (sh_pcis_bus_o_cast.bvalid   ),
   .s_axi_bready  (sh_pcis_bus_i_cast.bready   ),
@@ -188,7 +180,7 @@ axi_fifo_mm_s #(
 ) axi_fifo_mm_s_axi4 (
   .interrupt             (                             ), // output wire interrupt
   .s_axi_aclk            (clk_i                        ), // input wire s_axi_aclk
-  .s_axi_aresetn         (resetn_i                     ), // input wire s_axi_aresetn
+  .s_axi_aresetn         (~reset_i                     ), // input wire s_axi_aresetn
   .s_axi_awaddr          (sh_ocl_bus_i_cast.awaddr            ), // input wire [31 : 0] s_axi_awaddr
   .s_axi_awvalid         (sh_ocl_bus_i_cast.awvalid           ), // input wire s_axi_awvalid
   .s_axi_awready         (sh_ocl_bus_o_cast.awready           ), // output wire s_axi_awready
@@ -278,7 +270,7 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
 ) axis_32_128 (
   .aclk(clk_i),
-  .aresetn(resetn_i),
+  .aresetn(~reset_i),
   .aclken(1'H1),
   .s_axis_tvalid(mosi_axisx512_bus.txd_tvalid),
   .s_axis_tready(miso_axisx512_bus.txd_tready),
@@ -336,7 +328,7 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_AXIS_SIGNAL_SET   ('B00000000000000000000000000010011)
 ) axis_128_32 (
   .aclk         (clk_i                   ),
-  .aresetn      (resetn_i                ),
+  .aresetn      (~reset_i                ),
   .aclken       (1'H1                    ),
   .s_axis_tvalid(miso_axisx128_bus.rxd_tvalid ),
   .s_axis_tready(mosi_axisx128_bus.rxd_tready ),
