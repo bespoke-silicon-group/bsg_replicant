@@ -47,7 +47,6 @@ ${CL_DIR}/hardware/cl_fsb_bus_pkg.sv
 ${CL_DIR}/hardware/s_axil_fsb_adapter.sv
 ${CL_DIR}/hardware/s_axi4_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_axis_adapter.sv
 ${CL_DIR}/hardware/cl_to_axi4_adapter.sv
 ${CL_DIR}/hardware/cl_axis_test_master.sv
 ${CL_DIR}/hardware/cl_axil_mux4.sv
