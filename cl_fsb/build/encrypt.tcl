@@ -35,21 +35,17 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 
 # List your design files below. Include any .inc files, but do NOT include
 # AWS source files.
-file copy -force $CL_DIR/hardware/cl_fsb_defines.vh                     $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                      $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR 
+file copy -force $CL_DIR/hardware/cl_fsb_defines.vh                     $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_common_defines.vh                  $TARGET_DIR
 
-file copy -force $CL_DIR/hardware/cl_fsb_bus_pkg.sv                     $TARGET_DIR    
-file copy -force $CL_DIR/hardware/s_axil_fsb_adapter.sv                 $TARGET_DIR
-file copy -force $CL_DIR/hardware/s_axi4_fsb_adapter.sv                 $TARGET_DIR 
-file copy -force $CL_DIR/hardware/m_axi4_fsb_adapter.sv                 $TARGET_DIR
-file copy -force $CL_DIR/hardware/m_axi4_axis_adapter.sv                $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_to_axi4_adapter.sv                 $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_axis_test_master.sv                $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_axil_mux4.sv                       $TARGET_DIR 
-file copy -force $CL_DIR/hardware/cl_ocl_slv.sv                         $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_fsb_bus_pkg.sv                     $TARGET_DIR
+file copy -force $CL_DIR/hardware/s_axil_m_fsb_adapter.sv               $TARGET_DIR
+file copy -force $CL_DIR/hardware/s_axi4_m_fsb_adapter.sv               $TARGET_DIR
+file copy -force $CL_DIR/hardware/m_axi4_s_fsb_adapter.sv               $TARGET_DIR
+file copy -force $CL_DIR/hardware/m_axi4_s_axis_adapter.sv              $TARGET_DIR
+file copy -force $CL_DIR/hardware/bsg_axis_gen_master.sv                $TARGET_DIR
 
 # BSG files
 file copy -force $BSG_IP_DIR/bsg_misc/bsg_defines.v                                                 $TARGET_DIR
@@ -82,10 +78,7 @@ file copy -force $VIVADO_IP_DIR/blk_mem_gen_v8_4/hdl/blk_mem_gen_v8_4_vhsyn_rfs.
 file copy -force $VIVADO_IP_DIR/lib_pkg_v1_0/hdl/lib_pkg_v1_0_rfs.vhd                               $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/lib_fifo_v1_0/hdl/lib_fifo_v1_0_rfs.vhd                             $TARGET_DIR
 
-file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v                 $TARGET_DIR
-file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.vhd               $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/fifo_generator_v13_2/hdl/fifo_generator_v13_2_vhsyn_rfs.vhd         $TARGET_DIR
-
 file copy -force $VIVADO_IP_DIR/axis_register_slice_v1_1/hdl/axis_register_slice_v1_1_vl_rfs.v      $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_0.vh          $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_vl_rfs.v      $TARGET_DIR

@@ -1,12 +1,12 @@
 /**
-*  cl_axis_test_master.sv
+*  bsg_axis_gen_master.sv
 *
 *  axi-stream master node, read is not implemented
 */
 
 `include "bsg_axi_bus_pkg.vh"
 
-module cl_axis_test_master #(
+module bsg_axis_gen_master #(
   data_width_p = 512
   ,single_num_p = 256
   ,packet_size_p = 16
@@ -147,4 +147,4 @@ module cl_axis_test_master #(
       end
   end
 
-endmodule // cl_axis_test_master
+endmodule // bsg_axis_gen_master

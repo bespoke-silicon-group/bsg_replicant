@@ -46,13 +46,12 @@
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/bsg_axi_bus_pkg.vh
 ${CL_DIR}/hardware/cl_fsb_bus_pkg.vh
-${CL_DIR}/hardware/s_axil_fsb_adapter.sv
-${CL_DIR}/hardware/s_axi4_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_axis_adapter.sv
-${CL_DIR}/hardware/cl_to_axi4_adapter.sv
-${CL_DIR}/hardware/cl_axis_test_master.sv
-${CL_DIR}/hardware/cl_ocl_slv.sv
+${CL_DIR}/hardware/axi_fsb_adapters.v
+${CL_DIR}/hardware/s_axil_m_fsb_adapter.sv
+${CL_DIR}/hardware/s_axi4_m_fsb_adapter.sv
+${CL_DIR}/hardware/m_axi4_s_fsb_adapter.sv
+${CL_DIR}/hardware/m_axi4_s_axis_adapter.sv
+${CL_DIR}/hardware/bsg_axis_gen_master.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 
 # BSG files
@@ -74,7 +73,7 @@ ${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_master.v
 ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v
-${XILINX_VIVADO}/data/ip/xilinx/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vlsyn_rfs.v
+${XILINX_VIVADO}/data/ip/xilinx/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v
 
 # AWS design files

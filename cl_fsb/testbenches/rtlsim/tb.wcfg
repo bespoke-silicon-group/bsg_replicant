@@ -20,197 +20,53 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="7847470720fs"></ZoomStartTime>
-      <ZoomEndTime time="9147470721fs"></ZoomEndTime>
-      <Cursor1Time time="7821369000fs"></Cursor1Time>
+      <ZoomStartTime time="7414138649fs"></ZoomStartTime>
+      <ZoomEndTime time="7494547471fs"></ZoomEndTime>
+      <Cursor1Time time="7481146000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="156"></NameColumnWidth>
-      <ValueColumnWidth column_width="145"></ValueColumnWidth>
+      <ValueColumnWidth column_width="113"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="45" />
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tdata">
-      <obj_property name="ElementShortName">txd_tdata[511:0]</obj_property>
-      <obj_property name="ObjectShortName">txd_tdata[511:0]</obj_property>
+   <WVObjectSize size="9" />
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_adapter/clk_i">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tlast">
-      <obj_property name="ElementShortName">txd_tlast</obj_property>
-      <obj_property name="ObjectShortName">txd_tlast</obj_property>
+   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_adapter/reset_i">
+      <obj_property name="ElementShortName">reset_i</obj_property>
+      <obj_property name="ObjectShortName">reset_i</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tvalid">
-      <obj_property name="ElementShortName">txd_tvalid</obj_property>
-      <obj_property name="ObjectShortName">txd_tvalid</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/sh_ocl_3_i">
+      <obj_property name="ElementShortName">sh_ocl_3_i</obj_property>
+      <obj_property name="ObjectShortName">sh_ocl_3_i</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tready">
-      <obj_property name="ElementShortName">txd_tready</obj_property>
-      <obj_property name="ObjectShortName">txd_tready</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/sh_ocl_3_o">
+      <obj_property name="ElementShortName">sh_ocl_3_o</obj_property>
+      <obj_property name="ObjectShortName">sh_ocl_3_o</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wr_buffer_full">
-      <obj_property name="ElementShortName">wr_buffer_full</obj_property>
-      <obj_property name="ObjectShortName">wr_buffer_full</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/slv_state">
+      <obj_property name="ElementShortName">slv_state[2:0]</obj_property>
+      <obj_property name="ObjectShortName">slv_state[2:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tkeep">
-      <obj_property name="ElementShortName">txd_tkeep[63:0]</obj_property>
-      <obj_property name="ObjectShortName">txd_tkeep[63:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/s_axil_bus_i_cast">
+      <obj_property name="ElementShortName">s_axil_bus_i_cast</obj_property>
+      <obj_property name="ObjectShortName">s_axil_bus_i_cast</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tdata">
-      <obj_property name="ElementShortName">rxd_tdata[511:0]</obj_property>
-      <obj_property name="ObjectShortName">rxd_tdata[511:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/s_axil_bus_o_cast">
+      <obj_property name="ElementShortName">s_axil_bus_o_cast</obj_property>
+      <obj_property name="ObjectShortName">s_axil_bus_o_cast</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tlast">
-      <obj_property name="ElementShortName">rxd_tlast</obj_property>
-      <obj_property name="ObjectShortName">rxd_tlast</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/axil_mosi_bus_r">
+      <obj_property name="ElementShortName">axil_mosi_bus_r</obj_property>
+      <obj_property name="ObjectShortName">axil_mosi_bus_r</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tvalid">
-      <obj_property name="ElementShortName">rxd_tvalid</obj_property>
-      <obj_property name="ObjectShortName">rxd_tvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tready">
-      <obj_property name="ElementShortName">rxd_tready</obj_property>
-      <obj_property name="ObjectShortName">rxd_tready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tkeep">
-      <obj_property name="ElementShortName">rxd_tkeep[63:0]</obj_property>
-      <obj_property name="ObjectShortName">rxd_tkeep[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wr_state">
-      <obj_property name="ElementShortName">wr_state[1:0]</obj_property>
-      <obj_property name="ObjectShortName">wr_state[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/t_cnt">
-      <obj_property name="ElementShortName">t_cnt[2:0]</obj_property>
-      <obj_property name="ObjectShortName">t_cnt[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/axis_state">
-      <obj_property name="ElementShortName">axis_state[1:0]</obj_property>
-      <obj_property name="ObjectShortName">axis_state[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wr_dat_tail_flag">
-      <obj_property name="ElementShortName">wr_dat_tail_flag</obj_property>
-      <obj_property name="ObjectShortName">wr_dat_tail_flag</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wr_axis_valid">
-      <obj_property name="ElementShortName">wr_axis_valid</obj_property>
-      <obj_property name="ObjectShortName">wr_axis_valid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/axi_whole_valid_i">
-      <obj_property name="ElementShortName">axi_whole_valid_i</obj_property>
-      <obj_property name="ObjectShortName">axi_whole_valid_i</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/axi_frctn_valid_i">
-      <obj_property name="ElementShortName">axi_frctn_valid_i</obj_property>
-      <obj_property name="ObjectShortName">axi_frctn_valid_i</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wr_data">
-      <obj_property name="ElementShortName">wr_data[1023:0]</obj_property>
-      <obj_property name="ObjectShortName">wr_data[1023:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wr_strb">
-      <obj_property name="ElementShortName">wr_strb[127:0]</obj_property>
-      <obj_property name="ObjectShortName">wr_strb[127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/awaddr">
-      <obj_property name="ElementShortName">awaddr[63:0]</obj_property>
-      <obj_property name="ObjectShortName">awaddr[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/awlen">
-      <obj_property name="ElementShortName">awlen[7:0]</obj_property>
-      <obj_property name="ObjectShortName">awlen[7:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/awvalid">
-      <obj_property name="ElementShortName">awvalid</obj_property>
-      <obj_property name="ObjectShortName">awvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/awready">
-      <obj_property name="ElementShortName">awready</obj_property>
-      <obj_property name="ObjectShortName">awready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wdata">
-      <obj_property name="ElementShortName">wdata[511:0]</obj_property>
-      <obj_property name="ObjectShortName">wdata[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wstrb">
-      <obj_property name="ElementShortName">wstrb[63:0]</obj_property>
-      <obj_property name="ObjectShortName">wstrb[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wlast">
-      <obj_property name="ElementShortName">wlast</obj_property>
-      <obj_property name="ObjectShortName">wlast</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wvalid">
-      <obj_property name="ElementShortName">wvalid</obj_property>
-      <obj_property name="ObjectShortName">wvalid</obj_property>
-      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/wready">
-      <obj_property name="ElementShortName">wready</obj_property>
-      <obj_property name="ObjectShortName">wready</obj_property>
-      <obj_property name="CustomSignalColor">#FAAFBE</obj_property>
-      <obj_property name="UseCustomSignalColor">true</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/bid">
-      <obj_property name="ElementShortName">bid[8:0]</obj_property>
-      <obj_property name="ObjectShortName">bid[8:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/bresp">
-      <obj_property name="ElementShortName">bresp[1:0]</obj_property>
-      <obj_property name="ObjectShortName">bresp[1:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/bvalid">
-      <obj_property name="ElementShortName">bvalid</obj_property>
-      <obj_property name="ObjectShortName">bvalid</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/buser">
-      <obj_property name="ElementShortName">buser[17:0]</obj_property>
-      <obj_property name="ObjectShortName">buser[17:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_pcim_write/axis_wr_axi4/bready">
-      <obj_property name="ElementShortName">bready</obj_property>
-      <obj_property name="ObjectShortName">bready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tdata">
-      <obj_property name="ElementShortName">txd_tdata[511:0]</obj_property>
-      <obj_property name="ObjectShortName">txd_tdata[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tlast">
-      <obj_property name="ElementShortName">txd_tlast</obj_property>
-      <obj_property name="ObjectShortName">txd_tlast</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tvalid">
-      <obj_property name="ElementShortName">txd_tvalid</obj_property>
-      <obj_property name="ObjectShortName">txd_tvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tready">
-      <obj_property name="ElementShortName">txd_tready</obj_property>
-      <obj_property name="ObjectShortName">txd_tready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/txd_tkeep">
-      <obj_property name="ElementShortName">txd_tkeep[63:0]</obj_property>
-      <obj_property name="ObjectShortName">txd_tkeep[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tdata">
-      <obj_property name="ElementShortName">rxd_tdata[511:0]</obj_property>
-      <obj_property name="ObjectShortName">rxd_tdata[511:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tlast">
-      <obj_property name="ElementShortName">rxd_tlast</obj_property>
-      <obj_property name="ObjectShortName">rxd_tlast</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tvalid">
-      <obj_property name="ElementShortName">rxd_tvalid</obj_property>
-      <obj_property name="ObjectShortName">rxd_tvalid</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tready">
-      <obj_property name="ElementShortName">rxd_tready</obj_property>
-      <obj_property name="ObjectShortName">rxd_tready</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/rxd_tkeep">
-      <obj_property name="ElementShortName">rxd_tkeep[63:0]</obj_property>
-      <obj_property name="ObjectShortName">rxd_tkeep[63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axis_stream_master/axis_data_bus/TDATA_WIDTH">
-      <obj_property name="ElementShortName">TDATA_WIDTH[31:0]</obj_property>
-      <obj_property name="ObjectShortName">TDATA_WIDTH[31:0]</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/axil_miso_bus_r">
+      <obj_property name="ElementShortName">axil_miso_bus_r</obj_property>
+      <obj_property name="ObjectShortName">axil_miso_bus_r</obj_property>
+      <obj_property name="isExpanded"></obj_property>
    </wvobject>
 </wave_config>

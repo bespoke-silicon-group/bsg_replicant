@@ -1,23 +1,29 @@
 /**
- *  m_axi4_fsb_adapter.sv
+ *  m_axi4_s_fsb_adapter.sv
  *
  *  cl_bsg (CL) -> axi-4 (SH)
  */
 
- module m_axi4_fsb_adapter 
+`include "bsg_axi_bus_pkg.vh"
+
+ module m_axi4_s_fsb_adapter 
   #(
     fsb_width_p=80
     ,data_width_p=512
   ,axi_id_width_p = 6
   ,axi_addr_width_p = 64
+  ,axil_base_addr_p = 32'h0000_1000
+  ,axil_base_width_p = 12
+  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
+  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
   ,axi_mosi_bus_width_lp = `bsg_axi_mosi_bus_width(1, axi_id_width_p, axi_addr_width_p, data_width_p)
   ,axi_miso_bus_width_lp = `bsg_axi_miso_bus_width(1, axi_id_width_p, axi_addr_width_p, data_width_p)
   ,axis_bus_width_lp = `bsg_axis_bus_width(data_width_p)
   ) (
    input clk_i
    ,input reset_i
-
-   ,cfg_bus_t.master cfg_bus
+  ,input [axil_mosi_bus_width_lp-1:0] s_axil_bus_i
+  ,output [axil_miso_bus_width_lp-1:0] s_axil_bus_o
   ,input        [axi_miso_bus_width_lp-1:0] m_axi_bus_i
   ,output       [axi_mosi_bus_width_lp-1:0] m_axi_bus_o
    ,input fsb_wvalid
@@ -29,6 +35,12 @@
  
 localparam data_byte_num_lp = data_width_p/8;
 
+`declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+bsg_axil_mosi_bus_s s_axil_bus_i_cast, axil_mosi_bus_r;
+bsg_axil_miso_bus_s s_axil_bus_o_cast, axil_miso_bus_r;
+assign s_axil_bus_i_cast = s_axil_bus_i;
+assign s_axil_bus_o = s_axil_bus_o_cast;
+
 `declare_bsg_axi_bus_s(1, axi_id_width_p, axi_addr_width_p, data_width_p,
   bsg_axi_mosi_bus_s, bsg_axi_miso_bus_s);
 bsg_axi_mosi_bus_s m_axi_bus_o_cast, axi_mosi_bus_r;
@@ -38,9 +50,50 @@ assign m_axi_bus_o      = m_axi_bus_o_cast;
 
 
 //-------------------------------------
-// AXI4 register slice 
 // Flop signals between CL and SH
 //-------------------------------------
+axi_register_slice_light axil_register_slice (
+  .aclk         (clk_i                    ),
+  .aresetn      (~reset_i                 ),
+  .s_axi_awaddr (s_axil_bus_i_cast.awaddr ),
+  .s_axi_awprot (3'h0                     ),
+  .s_axi_awvalid(s_axil_bus_i_cast.awvalid),
+  .s_axi_awready(s_axil_bus_o_cast.awready),
+  .s_axi_wdata  (s_axil_bus_i_cast.wdata  ),
+  .s_axi_wstrb  (s_axil_bus_i_cast.wstrb  ),
+  .s_axi_wvalid (s_axil_bus_i_cast.wvalid ),
+  .s_axi_wready (s_axil_bus_o_cast.wready ),
+  .s_axi_bresp  (s_axil_bus_o_cast.bresp  ),
+  .s_axi_bvalid (s_axil_bus_o_cast.bvalid ),
+  .s_axi_bready (s_axil_bus_i_cast.bready ),
+  .s_axi_araddr (s_axil_bus_i_cast.araddr ),
+  .s_axi_arvalid(s_axil_bus_i_cast.arvalid),
+  .s_axi_arready(s_axil_bus_o_cast.arready),
+  .s_axi_rdata  (s_axil_bus_o_cast.rdata  ),
+  .s_axi_rresp  (s_axil_bus_o_cast.rresp  ),
+  .s_axi_rvalid (s_axil_bus_o_cast.rvalid ),
+  .s_axi_rready (s_axil_bus_i_cast.rready ),
+  
+  .m_axi_awaddr (axil_mosi_bus_r.awaddr    ),
+  .m_axi_awprot (                         ),
+  .m_axi_awvalid(axil_mosi_bus_r.awvalid   ),
+  .m_axi_awready(axil_miso_bus_r.awready   ),
+  .m_axi_wdata  (axil_mosi_bus_r.wdata     ),
+  .m_axi_wstrb  (axil_mosi_bus_r.wstrb     ),
+  .m_axi_wvalid (axil_mosi_bus_r.wvalid    ),
+  .m_axi_wready (axil_miso_bus_r.wready    ),
+  .m_axi_bresp  (axil_miso_bus_r.bresp     ),
+  .m_axi_bvalid (axil_miso_bus_r.bvalid    ),
+  .m_axi_bready (axil_mosi_bus_r.bready    ),
+  .m_axi_araddr (axil_mosi_bus_r.araddr    ),
+  .m_axi_arvalid(axil_mosi_bus_r.arvalid   ),
+  .m_axi_arready(axil_miso_bus_r.arready   ),
+  .m_axi_rdata  (axil_miso_bus_r.rdata     ),
+  .m_axi_rresp  (axil_miso_bus_r.rresp     ),
+  .m_axi_rvalid (axil_miso_bus_r.rvalid    ),
+  .m_axi_rready (axil_mosi_bus_r.rready    )
+);
+
 
 // axi-4 signals to below
 logic [5:0] awid; 
@@ -241,11 +294,6 @@ axi_register_slice_v2_1_17_axi_register_slice #(
   );
 
 
-// Global clock
-//---------------------------------------------
-logic clk;
-assign clk = clk_i;
-
 // Sync reset
 //---------------------------------------------
 logic pre_sync_rst_n;
@@ -262,26 +310,6 @@ always_ff @(negedge !reset_i or posedge clk_i)
       pre_sync_rst_n <= 1;
       sync_rst_n <= pre_sync_rst_n;
    end
-
-
-//---------------------------------------------
-// Flop read interface for timing (not used now)
-//---------------------------------------------
-logic[5:0] rid_q = 0;
-logic[data_width_p-1:0] rdata_q = 0;
-logic[1:0] rresp_q = 0;
-logic rlast_q = 0;
-logic rvalid_q = 0;
-
-always @(posedge clk)
-   begin
-      rid_q <= rid;
-      rdata_q <= rdata;
-      rresp_q <= rresp;
-      rlast_q <= rlast;
-      rvalid_q <= rvalid;
-   end
-
 
 //-------------------------------------------
 // register configuration
@@ -320,19 +348,212 @@ always @(posedge clk)
 // 0xe0:  DST_SEL_REG
 //        0 -  0/1 to select which dst module the atg drives
 
+logic clk;
+assign clk = clk_i;
 
 
-// pip the cfg_bus, store address and wdata
-//-------------------------------------------
-logic cfg_wr_stretch; // cfg_wr_stretch is 1 cycle ahead of the tst_cfg_ack
-logic cfg_rd_stretch;
+typedef enum logic[2:0] {
+   SLV_IDLE = 0,
+   SLV_WR_ADDR = 1,
+   SLV_CYC = 2,
+   SLV_RESP = 3
+   } axi_cfg_state_e;
 
-logic[7:0] cfg_addr_q = 0;  // the upper bits are decoded at cl_ocl_clv
-logic[31:0] cfg_wdata_q = 0;
+axi_cfg_state_e slv_state, slv_state_nxt;
 
-logic tst_cfg_ack;
+logic slv_wr_req, slv_rd_req;
+logic slv_cyc_done;
+logic slv_mx_rsp_ready;
 
-assign cfg_bus.ack = tst_cfg_ack;
+//State machine
+always_comb
+begin
+   slv_state_nxt = slv_state;
+   if (reset_i)
+      slv_state_nxt = SLV_IDLE;
+   else
+   begin
+   case (slv_state)
+
+      SLV_IDLE:
+      begin
+         if (slv_wr_req)
+            slv_state_nxt = SLV_WR_ADDR;
+         else if (slv_rd_req)
+            slv_state_nxt = SLV_CYC;
+         else
+            slv_state_nxt = SLV_IDLE;
+      end
+
+      SLV_WR_ADDR:
+      begin
+         slv_state_nxt = SLV_CYC;
+      end
+
+      SLV_CYC:
+      begin
+         if (slv_cyc_done)
+            slv_state_nxt = SLV_RESP;
+         else
+            slv_state_nxt = SLV_CYC;
+      end
+
+      SLV_RESP:
+      begin
+         if (slv_mx_rsp_ready)
+            slv_state_nxt = SLV_IDLE;
+         else
+            slv_state_nxt = SLV_RESP;
+      end
+
+   endcase
+   end
+end
+
+//State machine flops
+always_ff @(negedge sync_rst_n or posedge clk)
+   if (!sync_rst_n)
+      slv_state <= SLV_IDLE;
+   else
+      slv_state <= slv_state_nxt;
+
+
+// input signals from master
+
+// w/r start request, addr valid
+assign slv_wr_req = axil_mosi_bus_r.awvalid;
+assign slv_rd_req = axil_mosi_bus_r.arvalid;
+
+// select the wr cycle
+logic slv_cyc_wr; 
+always_ff @(negedge sync_rst_n or posedge clk)
+   if (!sync_rst_n)
+      slv_cyc_wr <= 0;
+   else if (slv_state==SLV_IDLE)
+      slv_cyc_wr <= slv_wr_req;
+
+// latch the w/r address
+logic [31:0] slv_req_rd_addr;
+logic [31:0] slv_req_wr_addr;
+logic [31:0] base_addr_cast;
+
+always_ff @(negedge sync_rst_n or posedge clk)
+  if (!sync_rst_n)
+  begin
+    {slv_req_rd_addr, slv_req_wr_addr} <= 64'd0;
+    base_addr_cast <= axil_base_addr_p;
+  end
+  else if ((slv_state == SLV_IDLE) && slv_wr_req)
+  begin
+    slv_req_wr_addr <= axil_mosi_bus_r.awaddr;
+  end
+  else if ((slv_state == SLV_IDLE) && slv_rd_req)
+  begin
+    slv_req_rd_addr <= axil_mosi_bus_r.araddr;
+  end
+
+logic [31:0] slv_mx_addr;
+assign slv_mx_addr = (slv_cyc_wr)? slv_req_wr_addr : slv_req_rd_addr;
+
+// w|r data ready, bready|rready
+assign slv_mx_rsp_ready = (slv_cyc_wr) ? axil_mosi_bus_r.bready : axil_mosi_bus_r.rready;
+
+// w|r data valid, wvalid| read is always valid from slave
+logic slv_mx_req_valid;
+assign slv_mx_req_valid = (slv_cyc_wr)? axil_mosi_bus_r.wvalid: 1'b1;
+
+// input signal from slave
+logic base_addr_eq;
+assign base_addr_eq = (slv_mx_addr[axil_base_width_p+:4]==base_addr_cast[axil_base_width_p+:4]);
+
+
+logic cfg_data_ack;
+assign slv_cyc_done = base_addr_eq ? cfg_data_ack : 1'b1;
+
+
+// output signal to slave
+
+// cfg address & data
+logic [7:0] cfg_addr;
+logic [31:0] cfg_wdata;
+always_ff @(negedge sync_rst_n or posedge clk)
+   if (!sync_rst_n)
+   begin
+      cfg_addr <= '{default:'0};
+      cfg_wdata <= '{default:'0};
+   end
+   else
+   begin
+     cfg_addr <= slv_mx_addr[7:0];
+     cfg_wdata <= axil_mosi_bus_r.wdata;
+   end
+
+// cfg write & read enable signals, generate 1 clock pulse
+logic cfg_wen, cfg_ren, slv_did_req;
+always_ff @(negedge sync_rst_n or posedge clk)
+  if (!sync_rst_n)
+    begin
+      cfg_wen <= 0;
+      cfg_ren <= 0;
+    end
+  else
+    begin
+      cfg_wen <= base_addr_eq ? ((slv_state==SLV_CYC) & slv_mx_req_valid & slv_cyc_wr & !slv_did_req)
+        : 0;
+      cfg_ren <= base_addr_eq ? ((slv_state==SLV_CYC) & slv_mx_req_valid & !slv_cyc_wr & !slv_did_req)
+        : 0;
+    end
+
+always_ff @(negedge sync_rst_n or posedge clk)
+  if (!sync_rst_n)
+    begin
+      slv_did_req <= 0;
+    end
+  else if (slv_state==SLV_IDLE)
+    begin
+      slv_did_req <= 0;
+    end
+  else if (cfg_wen || cfg_ren)
+    begin
+      slv_did_req <= 1;
+    end
+
+
+// latch the return data
+logic [31:0] cfg_rdata;
+always_ff @(negedge sync_rst_n or posedge clk)
+   if (!sync_rst_n)
+      axil_miso_bus_r.rdata <= 0;
+   else if (slv_cyc_done)
+      axil_miso_bus_r.rdata <= base_addr_eq ? cfg_rdata : 32'hdead_beef;
+
+// ready back to axil for request
+always_ff @(negedge sync_rst_n or posedge clk)
+  if (!sync_rst_n)
+    begin
+      axil_miso_bus_r.awready <= 0;
+      axil_miso_bus_r.wready <= 0;
+      axil_miso_bus_r.arready <= 0;
+    end
+  else
+    begin
+      axil_miso_bus_r.awready <= (slv_state_nxt==SLV_WR_ADDR);
+      axil_miso_bus_r.wready <= ((slv_state==SLV_CYC) && (slv_state_nxt!=SLV_CYC)) && slv_cyc_wr;
+      axil_miso_bus_r.arready <= ((slv_state==SLV_CYC) && (slv_state_nxt!=SLV_CYC)) && ~slv_cyc_wr;
+    end
+
+
+// response back to axil
+assign axil_miso_bus_r.bresp = 2'b00;
+assign axil_miso_bus_r.bvalid = (slv_state==SLV_RESP) && slv_cyc_wr;
+
+assign axil_miso_bus_r.rresp = 2'b00;
+assign axil_miso_bus_r.rvalid = (slv_state==SLV_RESP) && !slv_cyc_wr;
+
+
+logic cfg_wr_stretch, cfg_rd_stretch;
+logic[7:0] cfg_addr_q;
+logic[31:0] cfg_wdata_q;
 
 always @(posedge clk)
    if (!sync_rst_n)
@@ -342,12 +563,12 @@ always @(posedge clk)
    end
    else 
    begin
-      cfg_wr_stretch <= cfg_bus.wr || (cfg_wr_stretch && !tst_cfg_ack);
-      cfg_rd_stretch <= cfg_bus.rd || (cfg_rd_stretch && !tst_cfg_ack);
-      if (cfg_bus.wr||cfg_bus.rd)
+      cfg_wr_stretch <= cfg_wen || (cfg_wr_stretch && !cfg_data_ack);
+      cfg_rd_stretch <= cfg_ren || (cfg_rd_stretch && !cfg_data_ack);
+      if (cfg_wen||cfg_ren)
       begin
-         cfg_addr_q <= cfg_bus.addr[7:0];
-         cfg_wdata_q <= cfg_bus.wdata;
+         cfg_addr_q <= cfg_addr;
+         cfg_wdata_q <= cfg_wdata;
       end
    end
 
@@ -355,9 +576,9 @@ always @(posedge clk)
 // Ack for cycle
 always_ff @(posedge clk)
    if (!sync_rst_n)
-      tst_cfg_ack <= 0;
+      cfg_data_ack <= 0;
    else
-      tst_cfg_ack <= ((cfg_wr_stretch||cfg_rd_stretch) && !tst_cfg_ack); 
+      cfg_data_ack <= ((cfg_wr_stretch||cfg_rd_stretch) && !cfg_data_ack); 
 
 
 // store control registers
@@ -431,36 +652,36 @@ logic cfg_rd_stop;
 logic cfg_write_reset;
 logic cfg_read_reset;
 
-assign cfg_wr_go = (cfg_wr_stretch && tst_cfg_ack && (cfg_addr_q==8'h08) && cfg_wdata_q[0]) && !wr_inp;
-assign cfg_rd_go = (cfg_wr_stretch && tst_cfg_ack && (cfg_addr_q==8'h08) && cfg_wdata_q[1]) && !rd_inp;
+assign cfg_wr_go = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h08) && cfg_wdata_q[0]) && !wr_inp;
+assign cfg_rd_go = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h08) && cfg_wdata_q[1]) && !rd_inp;
 
-assign cfg_wr_stop = (cfg_wr_stretch && tst_cfg_ack && (cfg_addr_q==8'h08) && ~cfg_wdata_q[0]);
-assign cfg_rd_stop = (cfg_wr_stretch && tst_cfg_ack && (cfg_addr_q==8'h08) && ~cfg_wdata_q[1]);
+assign cfg_wr_stop = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h08) && ~cfg_wdata_q[0]);
+assign cfg_rd_stop = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h08) && ~cfg_wdata_q[1]);
 
-assign cfg_write_reset = (cfg_wr_stretch && tst_cfg_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[0]);
-assign cfg_read_reset = (cfg_wr_stretch && tst_cfg_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[1]);
+assign cfg_write_reset = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[0]);
+assign cfg_read_reset = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[1]);
 
 // Readback mux
 always_ff @(posedge clk)
   begin
     if (cfg_wr_stretch)
       case (cfg_addr_q)
-        8'h00 : cfg_bus.rdata <= {8'h0, 8'h0, 8'h0, 4'h0, cfg_rd_compare_en, 3'h0};
-        8'h08 : cfg_bus.rdata <= {28'b0, bresp_q, wr_stop_pend, rd_inp, wr_inp};
-        8'h20 : cfg_bus.rdata <= cfg_write_address[31:0];
-        8'h24 : cfg_bus.rdata <= cfg_write_address[63:32];
-        8'h28 : cfg_bus.rdata <= cfg_hm_read_head;
-        8'h2c : cfg_bus.rdata <= {cfg_write_user, cfg_write_last_length, cfg_write_length};
-        8'h30 : cfg_bus.rdata <= cfg_buffer_size;
+        8'h00 : cfg_rdata <= {8'h0, 8'h0, 8'h0, 4'h0, cfg_rd_compare_en, 3'h0};
+        8'h08 : cfg_rdata <= {28'b0, bresp_q, wr_stop_pend, rd_inp, wr_inp};
+        8'h20 : cfg_rdata <= cfg_write_address[31:0];
+        8'h24 : cfg_rdata <= cfg_write_address[63:32];
+        8'h28 : cfg_rdata <= cfg_hm_read_head;
+        8'h2c : cfg_rdata <= {cfg_write_user, cfg_write_last_length, cfg_write_length};
+        8'h30 : cfg_rdata <= cfg_buffer_size;
 
-        8'h40 : cfg_bus.rdata <= cfg_read_address[31:0];
-        8'h44 : cfg_bus.rdata <= cfg_read_address[63:32];
-        8'h48 : cfg_bus.rdata <= cfg_read_data;
-        8'h4c : cfg_bus.rdata <= {cfg_read_user, cfg_read_last_length, cfg_read_length};
+        8'h40 : cfg_rdata <= cfg_read_address[31:0];
+        8'h44 : cfg_rdata <= cfg_read_address[63:32];
+        8'h48 : cfg_rdata <= cfg_read_data;
+        8'h4c : cfg_rdata <= {cfg_read_user, cfg_read_last_length, cfg_read_length};
 
-        8'he0 : cfg_bus.rdata <= {31'b0, cfg_atg_dst_sel};
+        8'he0 : cfg_rdata <= {31'b0, cfg_atg_dst_sel};
 
-        default : cfg_bus.rdata <= 32'hffffffff;
+        default : cfg_rdata <= 32'hffffffff;
       endcase
   end
 

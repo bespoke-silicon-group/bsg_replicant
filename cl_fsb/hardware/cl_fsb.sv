@@ -109,9 +109,10 @@ assign cl_sh_id1[31:0] = `CL_SH_ID1;
 
 
 
-//=================================================
-// SH ocl bus multiplexer
-//=================================================
+//---------------------------------------------------------------
+//                    SH ocl bus multiplexer                    |
+//                                                              |
+//---------------------------------------------------------------
 `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 bsg_axil_mosi_bus_s sh_ocl_mosi_bus, sh_ocl_0_i, sh_ocl_1_i, sh_ocl_2_i, sh_ocl_3_i;
 bsg_axil_miso_bus_s sh_ocl_miso_bus, sh_ocl_0_o, sh_ocl_1_o, sh_ocl_2_o, sh_ocl_3_o;
@@ -163,22 +164,23 @@ assign axil_miso_busX4.rdata   = {sh_ocl_3_o.rdata, sh_ocl_2_o.rdata, sh_ocl_1_o
 assign axil_miso_busX4.rresp   = {sh_ocl_3_o.rresp, sh_ocl_2_o.rresp, sh_ocl_1_o.rresp, sh_ocl_0_o.rresp};
 assign axil_miso_busX4.rvalid  = {sh_ocl_3_o.rvalid, sh_ocl_2_o.rvalid, sh_ocl_1_o.rvalid, sh_ocl_0_o.rvalid};
 
-//-------------------------------------------------
+
 // PCIe OCL AXI-L (SH to CL, from AppPF BAR0)
-// this interface has 4 address ranges to use:
-// 0x0000_0000 ~ 0x0000_0FFF : ctrl axil adapter  SH <-> CL
-// 0x0000_1000 ~ 0x0000_1FFF : config 2 adapters  CL --> SH
-// 0x0000_2000 ~ 0x0000_2FFF : config axi adapter SH <-> CL
-// 0x0000_3000 ~             : to be determined
+// sh ocl axil bus
+//          -> crossbar
+//                   -> |ctrl   axil SH <-> CL (0x0000_0000 ~ 0x0000_0FFF)
+//                   -> |config  FBS CL --> SH (0x0000_1000 ~ 0x0000_1FFF)
+//                   -> |config axi4 SH <-> CL (0x0000_2000 ~ 0x0000_2FFF)
+//                   -> |config axis CL --> SH (0x0000_3000 ~ 0x0000_3FFF)
 //-------------------------------------------------
-  localparam C_NUM_MASTER_SLOTS = 4;
-  localparam C_M_AXI_BASE_ADDR = 256'h00000000_00003000_00000000_00002000_00000000_00001000_00000000_00000000;
-  localparam C_M_AXI_ADDR_WIDTH         = {C_NUM_MASTER_SLOTS{32'h0000_000c}};
-  localparam C_M_AXI_WRITE_CONNECTIVITY = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_READ_CONNECTIVITY  = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_WRITE_ISSUING      = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_READ_ISSUING       = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
-  localparam C_M_AXI_SECURE             = {C_NUM_MASTER_SLOTS{32'h0000_0000}};
+localparam C_NUM_MASTER_SLOTS         = 4                                                                           ;
+localparam C_M_AXI_BASE_ADDR          = 256'h00000000_00003000_00000000_00002000_00000000_00001000_00000000_00000000;
+localparam C_M_AXI_ADDR_WIDTH         = {C_NUM_MASTER_SLOTS{32'h0000_000c}}                                         ;
+localparam C_M_AXI_WRITE_CONNECTIVITY = {C_NUM_MASTER_SLOTS{32'h0000_0001}}                                         ;
+localparam C_M_AXI_READ_CONNECTIVITY  = {C_NUM_MASTER_SLOTS{32'h0000_0001}}                                         ;
+localparam C_M_AXI_WRITE_ISSUING      = {C_NUM_MASTER_SLOTS{32'h0000_0001}}                                         ;
+localparam C_M_AXI_READ_ISSUING       = {C_NUM_MASTER_SLOTS{32'h0000_0001}}                                         ;
+localparam C_M_AXI_SECURE             = {C_NUM_MASTER_SLOTS{32'h0000_0000}}                                         ;
 
 (* dont_touch = "true" *) logic crsbar_rstn;
 lib_pipe #(.WIDTH(1), .STAGES(4)) CROSSBAR_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(crsbar_rstn));
@@ -306,37 +308,10 @@ axi_crossbar_v2_1_18_axi_crossbar #(
 );
 
 
-(* dont_touch = "true" *) logic fsb_node_rstn;
-lib_pipe #(.WIDTH(1), .STAGES(4)) FSB_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(fsb_node_rstn));
-//=================================================
-// SH AXI-Lite rd/wr to FSB
-//=================================================
-logic m0_fsb_v_i, m0_fsb_v_o;
-logic [`FSB_WIDTH-1:0] m0_fsb_data_i, m0_fsb_data_o;
-logic m0_fsb_yumi_o, m0_fsb_ready_i;
-
-bsg_test_node_client #(
-  .ring_width_p(`FSB_WIDTH),
-  .master_id_p (0 ),
-  .client_id_p (0 )
-) fsb_client_node (
-  .clk_i  (clk)
-  ,.reset_i(~fsb_node_rstn)
-  ,.en_i   (1'b1)
-  // input channel
-  ,.v_i    (m0_fsb_v_o)
-  ,.data_i (m0_fsb_data_o)
-  ,.ready_o(m0_fsb_ready_i)
-  // output channel
-  ,.v_o    (m0_fsb_v_i)
-  ,.data_o (m0_fsb_data_i)
-  ,.yumi_i ((m0_fsb_yumi_o&&m0_fsb_v_i))
-);
-
-
-//=================================================
-// SH AXI rd/wr to FSB
-//=================================================
+//---------------------------------------------------------------
+//                    axi pcis bus                              |
+//                                                              |
+//---------------------------------------------------------------
 localparam sh_pcis_id_width_lp = 6;
 localparam sh_pcis_addr_width_lp = 64;
 localparam sh_pcis_data_width_lp = 512;
@@ -380,203 +355,65 @@ assign cl_sh_dma_pcis_rvalid   = sh_pcis_miso_bus.rvalid;
 assign sh_pcis_mosi_bus.rready = sh_cl_dma_pcis_rready;
 
 
-//=================================================
-// CL AXIS DMA wr to SH AXI
-//=================================================
+
+//---------------------------------------------------------------
+//                     axi pcim bus                             |
+//                                                              |
+//---------------------------------------------------------------
+
+//       fsb-axi4 -> |
+//      axis_axi4 -> |crossbar -> pcim bus
 localparam sh_pcim_id_width_lp   = 6  ;
 localparam sh_pcim_addr_width_lp = 64 ;
 localparam sh_pcim_data_width_lp = 512;
+
 `declare_bsg_axi_bus_s(1, sh_pcim_id_width_lp, sh_pcim_addr_width_lp, sh_pcim_data_width_lp
   ,bsg_pcim_mosi_s
   ,bsg_pcim_miso_s);
 bsg_pcim_mosi_s sh_pcim_mosi_bus, pcim_0_o, pcim_1_o;
 bsg_pcim_miso_s sh_pcim_miso_bus, pcim_0_i, pcim_1_i;
 
-assign cl_sh_pcim_awid        = {10'b0, sh_pcim_mosi_bus.awid};
-assign cl_sh_pcim_awaddr      = sh_pcim_mosi_bus.awaddr;
-assign cl_sh_pcim_awlen       = sh_pcim_mosi_bus.awlen;
-assign cl_sh_pcim_awsize      = sh_pcim_mosi_bus.awsize;
-assign cl_sh_pcim_awvalid     = sh_pcim_mosi_bus.awvalid;
-assign sh_pcim_miso_bus.awready = sh_cl_pcim_awready;
-
-assign cl_sh_pcim_wdata       = sh_pcim_mosi_bus.wdata;
-assign cl_sh_pcim_wstrb       = sh_pcim_mosi_bus.wstrb;
-assign cl_sh_pcim_wlast       = sh_pcim_mosi_bus.wlast;
-assign cl_sh_pcim_wvalid      = sh_pcim_mosi_bus.wvalid;
-assign sh_pcim_miso_bus.wready  = sh_cl_pcim_wready;
-
-assign sh_pcim_miso_bus.bid     = sh_cl_pcim_bid[5:0];
-assign sh_pcim_miso_bus.bresp   = sh_cl_pcim_bresp;
-assign sh_pcim_miso_bus.bvalid  = sh_cl_pcim_bvalid;
-assign cl_sh_pcim_bready      = sh_pcim_mosi_bus.bready;
-
-assign cl_sh_pcim_arid        = {10'b0, sh_pcim_mosi_bus.arid};
-assign cl_sh_pcim_araddr      = sh_pcim_mosi_bus.araddr;
-assign cl_sh_pcim_arlen       = sh_pcim_mosi_bus.arlen;
-assign cl_sh_pcim_arsize      = sh_pcim_mosi_bus.arsize;
-assign cl_sh_pcim_arvalid     = sh_pcim_mosi_bus.arvalid;
-assign sh_pcim_miso_bus.arready = sh_cl_pcim_arready;
-
-assign sh_pcim_miso_bus.rid     = sh_cl_pcim_rid[5:0];
-assign sh_pcim_miso_bus.rdata   = sh_cl_pcim_rdata;
-assign sh_pcim_miso_bus.rresp   = sh_cl_pcim_rresp;
-assign sh_pcim_miso_bus.rlast   = sh_cl_pcim_rlast;
-assign sh_pcim_miso_bus.rvalid  = sh_cl_pcim_rvalid;
-assign cl_sh_pcim_rready      = sh_pcim_mosi_bus.rready;
-
-
-
-// --------------------------------
-bsg_axil_mosi_bus_s s2_axil_bus_i_cast;
-bsg_axil_miso_bus_s s2_axil_bus_o_cast;
-assign s2_axil_bus_i_cast = sh_ocl_1_i;
-assign sh_ocl_1_o         = s2_axil_bus_o_cast;
-
-axil_bus_t sh_ocl_cfg_bus ();
-assign sh_ocl_cfg_bus.awaddr  = s2_axil_bus_i_cast.awaddr;
-assign sh_ocl_cfg_bus.awvalid = s2_axil_bus_i_cast.awvalid;
-assign sh_ocl_cfg_bus.wdata   = s2_axil_bus_i_cast.wdata;
-assign sh_ocl_cfg_bus.wstrb   = s2_axil_bus_i_cast.wstrb;
-assign sh_ocl_cfg_bus.wvalid  = s2_axil_bus_i_cast.wvalid;
-assign sh_ocl_cfg_bus.bready  = s2_axil_bus_i_cast.bready;
-assign sh_ocl_cfg_bus.araddr  = s2_axil_bus_i_cast.araddr;
-assign sh_ocl_cfg_bus.arvalid = s2_axil_bus_i_cast.arvalid;
-assign sh_ocl_cfg_bus.rready  = s2_axil_bus_i_cast.rready;
-
-assign s2_axil_bus_o_cast.awready = sh_ocl_cfg_bus.awready;
-assign s2_axil_bus_o_cast.wready  = sh_ocl_cfg_bus.wready;
-assign s2_axil_bus_o_cast.bresp   = sh_ocl_cfg_bus.bresp;
-assign s2_axil_bus_o_cast.bvalid  = sh_ocl_cfg_bus.bvalid;
-assign s2_axil_bus_o_cast.arready = sh_ocl_cfg_bus.arready;
-assign s2_axil_bus_o_cast.rdata   = sh_ocl_cfg_bus.rdata;
-assign s2_axil_bus_o_cast.rresp   = sh_ocl_cfg_bus.rresp;
-assign s2_axil_bus_o_cast.rvalid  = sh_ocl_cfg_bus.rvalid;
-
-cfg_bus_t ocl_cfg_bus_0 ();
-cfg_bus_t ocl_cfg_bus_5 ();
-// control bus distributor
-// --------------------------------------------
-cl_ocl_slv CL_OCL_SLV (
-  .clk             (clk           ),
-  .sync_rst_n      (fsb_node_rstn        ),
-  .sh_cl_flr_assert(sh_cl_flr_assert_q),
-  .sh_ocl_bus      (sh_ocl_cfg_bus  ),
-  .ocl_cfg_bus_0   (ocl_cfg_bus_0   ),
-  .ocl_cfg_bus_5   (ocl_cfg_bus_5   )
-);
-
-
-
-logic s_fsb_v_i;
-logic [`FSB_WIDTH-1:0] s_fsb_data_i;
-logic s_fsb_yumi_o;
-
-bsg_test_node_master #(
-  .ring_width_p(`FSB_WIDTH),
-  .master_id_p (4'hF      ),
-  .client_id_p (4'hF      )
-) fsb_node_master (
-  .clk_i  (clk               ),
-  .reset_i(~fsb_node_rstn    ),
-  .en_i   (1'b1              ),
-  .v_i    (1'b0              ),
-  .data_i ({`FSB_WIDTH{1'b0}}),
-  .ready_o(                  ),
-  .v_o    (s_fsb_v_i         ),
-  .data_o (s_fsb_data_i      ),
-  .yumi_i (s_fsb_yumi_o      )
-);
-
-
-(* dont_touch = "true" *) logic axi_fsb_rstn;
-lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_FSB_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(axi_fsb_rstn));
-axi_fsb_adapters #(
-  .fsb_width_p     (`FSB_WIDTH           ),
-  .axi_id_width_p  (sh_pcis_id_width_lp  ), // assert = sh_pcim_id_width_lp
-  .axi_addr_width_p(sh_pcis_addr_width_lp), // assert = sh_pcim_addr_width_lp
-  .axi_data_width_p(sh_pcis_data_width_lp)  // assert = sh_pcim_data_width_lp
-) axi_fsb_adapters (
-  .clk_i         (clk             ),
-  .reset_i       (~axi_fsb_rstn   ),
-  .s0_axil_bus_i (sh_ocl_0_i      ),
-  .s0_axil_bus_o (sh_ocl_0_o      ),
-  .s1_axil_bus_i (sh_ocl_2_i      ),
-  .s1_axil_bus_o (sh_ocl_2_o      ),
-  .s2_axil_bus_i (      ),
-  .s2_axil_bus_o (      ),
-  .ocl_cfg_bus_0 (ocl_cfg_bus_0),
-  .s1_axi_bus_i  (sh_pcis_mosi_bus),
-  .s1_axi_bus_o  (sh_pcis_miso_bus),
-  .m0_fsb_v_i    (m0_fsb_v_i      ),
-  .m0_fsb_data_i (m0_fsb_data_i   ),
-  .m0_fsb_yumi_o (m0_fsb_yumi_o   ),
-  .m0_fsb_v_o    (m0_fsb_v_o      ),
-  .m0_fsb_data_o (m0_fsb_data_o   ),
-  .m0_fsb_ready_i(m0_fsb_ready_i  ),
-  .m1_fsb_v_i    (                ),
-  .m1_fsb_data_i (                ),
-  .m1_fsb_yumi_o (                ),
-  .m1_fsb_v_o    (                ),
-  .m1_fsb_data_o (                ),
-  .m1_fsb_ready_i(                ),
-  .m_axi_bus_i   (pcim_0_i        ),
-  .m_axi_bus_o   (pcim_0_o        ),
-  .s_fsb_v_i     (s_fsb_v_i       ),
-  .s_fsb_data_i  (s_fsb_data_i    ),
-  .s_fsb_yumi_o  (s_fsb_yumi_o    )
-);
-
-
-
-// No.2 master axis
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-`declare_bsg_axis_bus_s(512, bsg_axis_mosi_bus_s, bsg_axis_miso_bus_s);
-bsg_axis_mosi_bus_s axis_gen_mosi_bus, m_fifo_s_axis_i;
-bsg_axis_miso_bus_s axis_gen_miso_bus, m_fifo_s_axis_o;
-
-(* dont_touch = "true" *) logic axi_axis_rstn;
-lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_AXIS_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(axi_axis_rstn));
-cl_axis_test_master #(.data_width_p(512)) axis_master (
-  .clk_i       (clk           ),
-  .reset_i     (~axi_axis_rstn),
-  .en_i        (1'b1          ),
-  .m_axis_bus_i(axis_gen_miso_bus    ),
-  .m_axis_bus_o(axis_gen_mosi_bus    ),
-  .loop_done   (              )
-);
-
-bsg_fifo_1r1w_small #(
-  .width_p           (512),
-  .els_p             (8  ),
-  .ready_THEN_valid_p(0  )
-) axis_fifo_512 (
-  .clk_i  (clk                         ),
-  .reset_i(~axi_axis_rstn              ),
-  .v_i    (axis_gen_mosi_bus.txd_tvalid),
-  .ready_o(axis_gen_miso_bus.txd_tready),
-  .data_i (axis_gen_mosi_bus.txd_tdata ),
-  .v_o    (m_fifo_s_axis_i.txd_tvalid  ),
-  .data_o (m_fifo_s_axis_i.txd_tdata   ),
-  .yumi_i (m_fifo_s_axis_o.txd_tready  )
-);
-
-m_axi4_axis_adapter axi4_adapter (
-  .clk_i       (clk            ),
-  .reset_i     (~axi_axis_rstn ),
-  .cfg_bus     (ocl_cfg_bus_5  ),
-  .m_axi_bus_i (pcim_1_i       ),
-  .m_axi_bus_o (pcim_1_o       ),
-  .s_axis_bus_i(m_fifo_s_axis_i),
-  .s_axis_bus_o(m_fifo_s_axis_o),
-  .atg_dst_sel (               )
-);
-
-
 `declare_bsg_axi_bus_s(2, sh_pcim_id_width_lp, sh_pcim_addr_width_lp, sh_pcim_data_width_lp,
   bsg_axi_mosi_2bus_s, bsg_axi_miso_2bus_s);
 bsg_axi_mosi_2bus_s axi_mosi_busX2;
 bsg_axi_miso_2bus_s axi_miso_busX2;
 
+// cast pcim bus
+//-------------------------------------------------
+assign cl_sh_pcim_awid          = {10'b0, sh_pcim_mosi_bus.awid};
+assign cl_sh_pcim_awaddr        = sh_pcim_mosi_bus.awaddr;
+assign cl_sh_pcim_awlen         = sh_pcim_mosi_bus.awlen;
+assign cl_sh_pcim_awsize        = sh_pcim_mosi_bus.awsize;
+assign cl_sh_pcim_awvalid       = sh_pcim_mosi_bus.awvalid;
+assign sh_pcim_miso_bus.awready = sh_cl_pcim_awready;
+
+assign cl_sh_pcim_wdata        = sh_pcim_mosi_bus.wdata;
+assign cl_sh_pcim_wstrb        = sh_pcim_mosi_bus.wstrb;
+assign cl_sh_pcim_wlast        = sh_pcim_mosi_bus.wlast;
+assign cl_sh_pcim_wvalid       = sh_pcim_mosi_bus.wvalid;
+assign sh_pcim_miso_bus.wready = sh_cl_pcim_wready;
+
+assign sh_pcim_miso_bus.bid    = sh_cl_pcim_bid[5:0];
+assign sh_pcim_miso_bus.bresp  = sh_cl_pcim_bresp;
+assign sh_pcim_miso_bus.bvalid = sh_cl_pcim_bvalid;
+assign cl_sh_pcim_bready       = sh_pcim_mosi_bus.bready;
+
+assign cl_sh_pcim_arid          = {10'b0, sh_pcim_mosi_bus.arid};
+assign cl_sh_pcim_araddr        = sh_pcim_mosi_bus.araddr;
+assign cl_sh_pcim_arlen         = sh_pcim_mosi_bus.arlen;
+assign cl_sh_pcim_arsize        = sh_pcim_mosi_bus.arsize;
+assign cl_sh_pcim_arvalid       = sh_pcim_mosi_bus.arvalid;
+assign sh_pcim_miso_bus.arready = sh_cl_pcim_arready;
+
+assign sh_pcim_miso_bus.rid    = sh_cl_pcim_rid[5:0];
+assign sh_pcim_miso_bus.rdata  = sh_cl_pcim_rdata;
+assign sh_pcim_miso_bus.rresp  = sh_cl_pcim_rresp;
+assign sh_pcim_miso_bus.rlast  = sh_cl_pcim_rlast;
+assign sh_pcim_miso_bus.rvalid = sh_cl_pcim_rvalid;
+assign cl_sh_pcim_rready       = sh_pcim_mosi_bus.rready;
+
+// demux pcim bus
+//-------------------------------------------------
 assign axi_mosi_busX2.awid    = {pcim_1_o.awid, pcim_0_o.awid};
 assign axi_mosi_busX2.awaddr  = {pcim_1_o.awaddr, pcim_0_o.awaddr};
 assign axi_mosi_busX2.awlen   = {pcim_1_o.awlen, pcim_0_o.awlen};
@@ -731,6 +568,149 @@ axi_crossbar_v2_1_18_axi_crossbar #(
   .m_axi_ruser   (1'H0                    ),
   .m_axi_rvalid  (sh_pcim_miso_bus.rvalid ),
   .m_axi_rready  (sh_pcim_mosi_bus.rready )
+);
+
+
+//---------------------------------------------------------------
+//                    axi - fsb adapters                        |
+//                                                              |
+//---------------------------------------------------------------
+
+(* dont_touch = "true" *) logic fsb_node_rstn;
+lib_pipe #(.WIDTH(1), .STAGES(4)) FSB_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(fsb_node_rstn));
+
+// fsb slave
+//-------------------------------------------------
+logic                  m0_fsb_v_i, m0_fsb_v_o;
+logic [`FSB_WIDTH-1:0] m0_fsb_data_i, m0_fsb_data_o;
+logic                  m0_fsb_yumi_o, m0_fsb_ready_i;
+bsg_test_node_client #(
+  .ring_width_p(`FSB_WIDTH),
+  .master_id_p (0         ),
+  .client_id_p (0         )
+) fsb_client_node (
+  .clk_i  (clk           ),
+  .reset_i(~fsb_node_rstn),
+  .en_i   (1'b1          ),
+  // input channel
+  .v_i    (m0_fsb_v_o    ),
+  .data_i (m0_fsb_data_o ),
+  .ready_o(m0_fsb_ready_i),
+  // output channel
+  .v_o    (m0_fsb_v_i    ),
+  .data_o (m0_fsb_data_i ),
+  .yumi_i (m0_fsb_yumi_o )
+);
+
+
+// fsb master
+//-------------------------------------------------
+logic                  s_fsb_v_i   ;
+logic [`FSB_WIDTH-1:0] s_fsb_data_i;
+logic                  s_fsb_yumi_o;
+
+bsg_test_node_master #(
+  .ring_width_p(`FSB_WIDTH),
+  .master_id_p (4'hF      ),
+  .client_id_p (4'hF      )
+) fsb_node_master (
+  .clk_i  (clk               ),
+  .reset_i(~fsb_node_rstn    ),
+  .en_i   (1'b1              ),
+  .v_i    (1'b0              ),
+  .data_i ({`FSB_WIDTH{1'b0}}),
+  .ready_o(                  ),
+  .v_o    (s_fsb_v_i         ),
+  .data_o (s_fsb_data_i      ),
+  .yumi_i (s_fsb_yumi_o      )
+);
+
+
+// axi to fsb adapters
+// 1. axil -> fsb
+// 2. axi4 -> fsb
+// 3. fsb  -> axi4
+//-------------------------------------------------
+(* dont_touch = "true" *) logic axi_fsb_rstn;
+lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_FSB_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(axi_fsb_rstn));
+axi_fsb_adapters #(
+  .fsb_width_p     (`FSB_WIDTH           ),
+  .axi_id_width_p  (sh_pcis_id_width_lp  ), // assert = sh_pcim_id_width_lp
+  .axi_addr_width_p(sh_pcis_addr_width_lp), // assert = sh_pcim_addr_width_lp
+  .axi_data_width_p(sh_pcis_data_width_lp)  // assert = sh_pcim_data_width_lp
+) axi_fsb_adapters (
+  .clk_i         (clk             ),
+  .reset_i       (~axi_fsb_rstn   ),
+  .s0_axil_bus_i (sh_ocl_0_i      ),
+  .s0_axil_bus_o (sh_ocl_0_o      ),
+  .s1_axil_bus_i (sh_ocl_2_i      ),
+  .s1_axil_bus_o (sh_ocl_2_o      ),
+  .s2_axil_bus_i (sh_ocl_1_i      ),
+  .s2_axil_bus_o (sh_ocl_1_o      ),
+  .s1_axi_bus_i  (sh_pcis_mosi_bus),
+  .s1_axi_bus_o  (sh_pcis_miso_bus),
+  .m0_fsb_v_i    (m0_fsb_v_i      ),
+  .m0_fsb_data_i (m0_fsb_data_i   ),
+  .m0_fsb_yumi_o (m0_fsb_yumi_o   ),
+  .m0_fsb_v_o    (m0_fsb_v_o      ),
+  .m0_fsb_data_o (m0_fsb_data_o   ),
+  .m0_fsb_ready_i(m0_fsb_ready_i  ),
+  .m1_fsb_v_i    (                ),
+  .m1_fsb_data_i (                ),
+  .m1_fsb_yumi_o (                ),
+  .m1_fsb_v_o    (                ),
+  .m1_fsb_data_o (                ),
+  .m1_fsb_ready_i(                ),
+  .m_axi_bus_i   (pcim_0_i        ),
+  .m_axi_bus_o   (pcim_0_o        ),
+  .s_fsb_v_i     (s_fsb_v_i       ),
+  .s_fsb_data_i  (s_fsb_data_i    ),
+  .s_fsb_yumi_o  (s_fsb_yumi_o    )
+);
+
+
+// axis master
+//-------------------------------------------------
+`declare_bsg_axis_bus_s(512, bsg_axis_mosi_bus_s, bsg_axis_miso_bus_s);
+bsg_axis_mosi_bus_s axis_gen_mosi_bus, m_fifo_s_axis_i;
+bsg_axis_miso_bus_s axis_gen_miso_bus, m_fifo_s_axis_o;
+
+(* dont_touch = "true" *) logic axi_axis_rstn;
+lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_AXIS_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(axi_axis_rstn));
+bsg_axis_gen_master #(.data_width_p(512)) axis_master (
+  .clk_i       (clk              ),
+  .reset_i     (~axi_axis_rstn   ),
+  .en_i        (1'b1             ),
+  .m_axis_bus_i(axis_gen_miso_bus),
+  .m_axis_bus_o(axis_gen_mosi_bus),
+  .loop_done   (                 )
+);
+
+bsg_fifo_1r1w_small #(
+  .width_p           (512),
+  .els_p             (8  ),
+  .ready_THEN_valid_p(0  )
+) axis_fifo_512 (
+  .clk_i  (clk                         ),
+  .reset_i(~axi_axis_rstn              ),
+  .v_i    (axis_gen_mosi_bus.txd_tvalid),
+  .ready_o(axis_gen_miso_bus.txd_tready),
+  .data_i (axis_gen_mosi_bus.txd_tdata ),
+  .v_o    (m_fifo_s_axis_i.txd_tvalid  ),
+  .data_o (m_fifo_s_axis_i.txd_tdata   ),
+  .yumi_i (m_fifo_s_axis_o.txd_tready  )
+);
+
+m_axi4_s_axis_adapter axi4_adapter (
+  .clk_i       (clk            ),
+  .reset_i     (~axi_axis_rstn ),
+  .s_axil_bus_i(sh_ocl_3_i     ),
+  .s_axil_bus_o(sh_ocl_3_o     ),
+  .m_axi_bus_i (pcim_1_i       ),
+  .m_axi_bus_o (pcim_1_o       ),
+  .s_axis_bus_i(m_fifo_s_axis_i),
+  .s_axis_bus_o(m_fifo_s_axis_o),
+  .atg_dst_sel (               )
 );
 
 

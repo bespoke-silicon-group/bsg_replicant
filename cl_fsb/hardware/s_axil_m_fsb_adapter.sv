@@ -227,7 +227,7 @@ assign miso_axisx128_bus.rxd_tvalid = m_fsb_v_i;
 assign miso_axisx128_bus.rxd_tdata = {48'h0000_0000_0000, m_fsb_data_i};
 assign miso_axisx128_bus.rxd_tlast = m_fsb_v_i & mosi_axisx128_bus.rxd_tready;
 
-assign m_fsb_r_o = mosi_axisx128_bus.rxd_tready;
+assign m_fsb_r_o = mosi_axisx128_bus.rxd_tready & m_fsb_v_i;
 
 
 axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
