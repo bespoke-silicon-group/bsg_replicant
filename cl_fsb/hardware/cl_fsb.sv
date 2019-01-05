@@ -13,6 +13,10 @@
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
+`define FSB_LEGACY
+`include "bsg_fsb_pkg.v"
+`undef FSB_LEGACY
+
 module cl_fsb
 
 (
@@ -44,9 +48,9 @@ module cl_fsb
 `include "unused_sh_bar1_template.inc"
 `include "unused_apppf_irq_template.inc"
 
-
 `include "bsg_axi_bus_pkg.vh"
 
+// `undef FSB_LEGACY
 //-------------------------------------------------
 // global signals
 //-------------------------------------------------

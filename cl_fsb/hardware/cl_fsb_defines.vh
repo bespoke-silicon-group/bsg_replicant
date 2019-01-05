@@ -50,6 +50,4 @@
   `define DDR_D_PRESENT 0
 `endif
 
-// `define FSB_LEGACY
-
 `endif

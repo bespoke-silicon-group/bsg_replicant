@@ -45,7 +45,6 @@
 
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/bsg_axi_bus_pkg.vh
-${CL_DIR}/hardware/cl_fsb_bus_pkg.vh
 ${CL_DIR}/hardware/axi_fsb_adapters.v
 ${CL_DIR}/hardware/s_axil_m_fsb_adapter.sv
 ${CL_DIR}/hardware/s_axi4_m_fsb_adapter.sv
@@ -55,7 +54,9 @@ ${CL_DIR}/hardware/bsg_axis_gen_master.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 
 # BSG files
+-include ${BSG_IP_DIR}/bsg_misc
 ${BSG_IP_DIR}/bsg_misc/bsg_defines.v
+-include ${BSG_IP_DIR}/bsg_fsb
 ${BSG_IP_DIR}/bsg_fsb/bsg_fsb_pkg.v
 
 ${BSG_IP_DIR}/bsg_misc/bsg_circular_ptr.v
