@@ -13,36 +13,13 @@
 # implied. See the License for the specific language governing permissions and
 # limitations under the License.
 
-obj-m += bsg_dma_driver.o
 
-VPATH = src:include:$(HDK_DIR)/common/software/src:$(HDK_DIR)/common/software/include
-
-INCLUDES = -I$(SDK_DIR)/userspace/include
-INCLUDES += -I $(HDK_DIR)/common/software/include
-INCLUDES += -I ./include
 
 CC = gcc
-CFLAGS = -DCONFIG_LOGLEVEL=4 -g -Wall $(INCLUDES)
+obj-m += bsg_dma_driver.o
 
-LDLIBS = -lfpga_mgmt -lrt -lpthread
-
-SRC = ${SDK_DIR}/userspace/utils/sh_dpi_tasks.c cl_fsb.c
-OBJ = $(SRC:.c=.o)
-BIN = cl_fsb
-
-all: $(BIN) check_env
-
-$(BIN): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
-
-
-driver: 
+driver:
 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
 
 clean:
-	rm -f *.o *.ko $(BIN)
-
-check_env:
-ifndef SDK_DIR
-    $(error SDK_DIR is undefined. Try "source sdk_setup.sh" to set the software environment)
-endif
+	rm -f *.o *.ko modules.order Module.symvers bsg_dma_driver.mod.c

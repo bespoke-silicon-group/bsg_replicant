@@ -1,3 +1,6 @@
+#ifndef DEVICE_H
+#define DEVICE_H
+ 
 uint32_t axi4_size = 0;
 uint32_t axi4_align = 64; 
 
@@ -14,3 +17,4 @@ const uint32_t STOP = 0;
 const uint32_t WR = 1;
 const uint32_t RD = 2;
 
+#endif

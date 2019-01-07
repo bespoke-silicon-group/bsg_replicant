@@ -3,7 +3,14 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <stdbool.h>
+
+// #define COSIM 
+
+#ifdef COSIM
 #include "fpga_pci_sv.h"
+#endif
 
 struct Host {
 	char *buf, *buf_cpy;
@@ -21,6 +28,7 @@ struct Host {
 	void (*print) (struct Host *host, uint32_t ofs, uint32_t size); 
 };
 
+/* These functions can't be used with deployed programs. */
 uint32_t get_wr_addr_high (struct Host * host) {
 	uint32_t high = (uint32_t) ((((uint64_t) host->buf) & 0xffffffff00000000) >> 32);
 	return high;
@@ -36,11 +44,12 @@ uint32_t get_wr_addr_low (struct Host * host) {
 
 void check_mem (struct Host *host, int num_pages) {
 	
+	int fsb;
 	bool pass = true;
 	uint32_t counter = 0x0;
-
+	
 	int end = ((num_pages * 4096) >  (host->buf_size - 64)) ? (host->buf_size - 64) : (num_pages * 4096);
-	for (int fsb = 2*16; fsb < (end/10); fsb += 16) {
+	for (fsb = 2*16; fsb < (end/10); fsb += 16) {
 		for (int i = 0; i < 8; i++) { // data bytes
 			uint8_t byte = host->buf[fsb + i];
 			uint8_t id = (byte & 0xE0) >> 5; 
@@ -92,6 +101,7 @@ void print_pop(struct Host *host, uint32_t pop_size) {
 /* User program continually pops 64B followed by 128B i
  * Bug to be fixed: Printed pop data is wrong even though memory is correct
  * according to check_mem().
+ * TODO: only works in cosim because of sv_pause. 
  * */
 
 void pop_loop (struct Host *host) {
@@ -106,7 +116,11 @@ void pop_loop (struct Host *host) {
 		if (!read_64) {
 			printf("Fail. User could not read 64B. The test is stuck. \n.");
 		}
+		#ifdef COSIM
 		sv_pause(1);
+		#else
+		sleep(1);
+		#endif 
 	}
 }
 
@@ -120,18 +134,23 @@ void clear_buf(struct Host *host) {
 }
 
 void empty_full (struct Host *host) {
+	int i;
 	if (host->buf_size > 4096) {
 		printf("Test not run because buffer is bigger than 4096B.\n");
 		return;
 	}
-	for (int i = 0; i < 10; i++) {
+	for (i = 0; i < 10; i++) {
 		clear_buf(host);
 		host->write_wr_head(host, 0);	
 		host->head = 0;
 		// fill the buffer
 		host->start_write(host);
+		#ifdef COSIM
 		sv_pause(10); // fill buffer
-	
+		#else
+		sleep(1);
+		#endif
+
 		/* check buffer is full */
 		uint32_t tail = *((uint32_t *) (host->buf + host->buf_size));
  		
@@ -142,7 +161,7 @@ void empty_full (struct Host *host) {
 
 		/* check tail is stationary */
 		bool pass = true;
-		for (int i = 0; i < 3; i++) {
+		for (i = 0; i < 3; i++) {
 			uint32_t new_tail = *((uint32_t *) (host->buf + host->buf_size));
 			if (new_tail != tail) {
 				pass = false;
@@ -180,9 +199,5 @@ void empty_full (struct Host *host) {
 	}
 	printf("empty_full: All tests pass!\n");
 }
-
-
-
-
 
 #endif
