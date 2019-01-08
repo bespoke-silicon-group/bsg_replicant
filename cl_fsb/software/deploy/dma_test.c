@@ -7,6 +7,8 @@
 #include "../device.h"
 
 int main () {
+	int val;
+
 	printf("Running head/tail DMA tests.\n\n");
 
 	/* Setup host */
@@ -19,10 +21,20 @@ int main () {
 	ioctl(dev_fd, IOCTL_WR_LEN, axi4_size);
 	ioctl(dev_fd, IOCTL_WR_BUF_SIZE);
 
+	/* read regs */
+	ioctl(dev_fd, IOCTL_READ_WR_ADDR_HIGH, &val);
+	printf("WR_ADDR_HIGH: %d\n", val);
+	ioctl(dev_fd, IOCTL_READ_WR_ADDR_LOW, &val);
+	printf("WR_ADDR_LOW: %d\n", val);
+	ioctl(dev_fd, IOCTL_READ_WR_LEN, axi4_size, &val);
+	printf("WR_LEN: %d\n", val);
+	ioctl(dev_fd, IOCTL_READ_WR_BUF_SIZE, &val);
+	printf("WR_BUF_SIZE: %d\n", val);
+
 	/* start write */
 	host->start_write(host);
 	
-	sleep(1);
+	sleep(10);
 	
 	/* read */
 	host->pop(host, 64);

@@ -25,9 +25,10 @@ MODULE_VERSION("1.0.0");
 #define FUNCTION 0
 #define OCL_BAR 0
 
-#define TEST_0
+//#define TEST_0
+#define USE_FPGA
 
-static int slot = 0x0f; // needs to be changed depending on instance? 
+static int slot = 0x1d; // needs to be changed depending on instance? 
 module_param(slot, int, 0);
 MODULE_PARM_DESC(slot, "The Slot Index of the F1 Card");
 
@@ -56,15 +57,18 @@ void __iomem *ocl_base; /* config space */
 
 /* Helper functions for reading from/writing to config space. */
 static void poke_ocl(unsigned int offset, unsigned int data) {
-	unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
-	*phy_addr = data;
+	//unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
+	//*phy_addr = data;
+	printk("BSG DMA driver: poke() called with data = %d\n", data);
+	iowrite32(data, ocl_base + offset);
 }
 
-//static unsigned int peek_ocl(unsigned int offset) {
-//	unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
-//	return *phy_addr;
-//}
-//
+static unsigned int peek_ocl(unsigned int offset) {
+	// unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
+	//return *phy_addr;
+	return ioread32(ocl_base + offset);
+}
+
 static int __init dma_init(void) {
 	int result;
 	printk(KERN_NOTICE "Installing BSG DMA module\n");
@@ -110,7 +114,7 @@ static int __init dma_init(void) {
 	  return result;
 	}
 	
-	dma_buffer = kmalloc(DMA_BUFFER_SIZE, GFP_DMA | GFP_USER);	  // DMA buffer, do not swap memory
+	dma_buffer = kmalloc(DMA_BUFFER_SIZE + 64, GFP_DMA | GFP_USER);	  // DMA buffer, do not swap memory
 	phys_dma_buffer = (unsigned char *) virt_to_phys(dma_buffer);  // get the physical address for later
 	
 	#ifdef TEST_0
@@ -205,7 +209,8 @@ ssize_t dma_read(struct file *filp, char __user *buf, size_t pop_size, loff_t *f
 long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_param) {
 
 	uint32_t val = (uint32_t) ioctl_param;
-	
+	int i;
+
 	#ifdef TEST_0
 	printk(KERN_INFO "BSG DMA Driver (Test 0): IOCTL parameter is %d.\n", val);
 	switch (ioctl_num) {
@@ -235,22 +240,18 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 			break;
 		case (IOCTL_CLEAR_BUFFER):
 			printk("BSG DMA Driver (Test 0): IOCTL call made to clear the buffer.\n");
-			break;
+			break;	
 		default:
 			printk("BSG DMA Driver (Test 0): IOCTL default case.\n");
 	}
 	#endif 
 
-	#ifdef USE_FPGA
-	int i;
 	switch (ioctl_num) {
 		case (IOCTL_WR_ADDR_HIGH):
-			val = (uint32_t) ((((uint64_t) phys_dma_buffer) & 0xffffffff00000000) >> 32);
-			poke_ocl(CROSSBAR_M1 + WR_ADDR_HIGH, val);
+			poke_ocl(CROSSBAR_M1 + WR_ADDR_HIGH,   (unsigned int)((unsigned long)phys_dma_buffer >> 32l));
 			break;
 		case (IOCTL_WR_ADDR_LOW):
-			val = (uint32_t) (((unsigned long) phys_dma_buffer) & 0x00000000ffffffff);
-			poke_ocl(CROSSBAR_M1 + WR_ADDR_LOW, val);
+			poke_ocl(CROSSBAR_M1 + WR_ADDR_LOW,   ((unsigned int)(unsigned long)phys_dma_buffer & 0xffffffffl));
 			break;
 		case (IOCTL_WR_HEAD):
 			poke_ocl(CROSSBAR_M1 + WR_HEAD, val);
@@ -268,6 +269,7 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 			poke_ocl(CROSSBAR_M1 + CNTL_REG, val);
 			break;
 		case (IOCTL_TAIL):
+			//printk(KERN_INFO "BSG DMA Driver: ");
 			if (copy_to_user((void *)ioctl_param, dma_buffer + DMA_BUFFER_SIZE, sizeof(uint32_t)) != 0)
 				return -EFAULT;
 			break;
@@ -275,9 +277,44 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 			for(i = 0; i < DMA_BUFFER_SIZE + 64; i++) 
 				dma_buffer[i] = 0;
 			break;
+		case (IOCTL_READ_WR_ADDR_HIGH):
+			val = peek_ocl(CROSSBAR_M1 + WR_ADDR_HIGH);
+			printk("BSG DMA driver: high wr address is %d\n", val);
+			if (copy_to_user((void *) ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+			break;
+		case (IOCTL_READ_WR_ADDR_LOW):
+			val = peek_ocl(CROSSBAR_M1 + WR_ADDR_LOW);
+			printk("BSG DMA driver: low wr address is %d\n", val);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+			break;
+		case (IOCTL_READ_WR_LEN):
+			val = peek_ocl(CROSSBAR_M1 + WR_LEN);
+			printk("BSG DMA driver: wr len is %d\n", val);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+			break;
+		case (IOCTL_READ_WR_BUF_SIZE):
+			val = peek_ocl(CROSSBAR_M1 + WR_BUF_SIZE);
+			printk("BSG DMA driver: buf size is %d\n", val);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+			break;
+		case (IOCTL_READ_CFG):
+			val = peek_ocl(CROSSBAR_M1 + CFG_REG);
+			printk("BSG DMA driver: cfg reg is %d\n", val);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+			break;
+		case (IOCTL_READ_CNTL):
+			val = peek_ocl(CROSSBAR_M1 + CNTL_REG);
+			printk("BSG DMA driver: cntl reg is %d\n", val);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+			break;
 		default:
 			return -EINVAL;			
 	}
-	#endif
 	return 0;
 }
