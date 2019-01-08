@@ -1,8 +1,5 @@
 /*
- * Adapted from Amazon's PCIM driver, which has the following notice:
- * See license.txt for details.
- *  __init: done, __exit: done
- *  fops: open: done, read: done,  write: unsupported, ioctl: done
+ * Adapted from Amazon's PCIM driver; see license.txt. 
  * */
 
 #include <linux/module.h>
@@ -28,6 +25,8 @@ MODULE_VERSION("1.0.0");
 #define FUNCTION 0
 #define OCL_BAR 0
 
+#define TEST_0
+
 static int slot = 0x0f; // needs to be changed depending on instance? 
 module_param(slot, int, 0);
 MODULE_PARM_DESC(slot, "The Slot Index of the F1 Card");
@@ -41,11 +40,11 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 ssize_t dma_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 
 struct file_operations dma_fops = {
- .read =           dma_read,
- // .write =          dma_write, (writes not exposed to user)
- .unlocked_ioctl = dma_ioctl,
- .open =           dma_open,
- .release =        dma_release
+	.read =		   dma_read,
+	// .write =		  dma_write, (writes not exposed to user)
+	.unlocked_ioctl = dma_ioctl,
+	.open =		   dma_open,	
+	.release =		   dma_release
 };
 
 int dma_major = 0;
@@ -57,86 +56,87 @@ void __iomem *ocl_base; /* config space */
 
 /* Helper functions for reading from/writing to config space. */
 static void poke_ocl(unsigned int offset, unsigned int data) {
-  unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
-  *phy_addr = data;
+	unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
+	*phy_addr = data;
 }
+
 //static unsigned int peek_ocl(unsigned int offset) {
-//  unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
-//  return *phy_addr;
+//	unsigned int *phy_addr = (unsigned int *)(ocl_base + offset);
+//	return *phy_addr;
 //}
 //
 static int __init dma_init(void) {
-  int result;
+	int result;
+	printk(KERN_NOTICE "Installing BSG DMA module\n");
 
-  printk(KERN_NOTICE "Installing BSG DMA module\n");
+	dma_dev = pci_get_domain_bus_and_slot(DOMAIN, BUS, PCI_DEVFN(slot,FUNCTION));
+  	
+	if (dma_dev == NULL) {
+		printk(KERN_ALERT "BSG DMA driver: Unable to locate PCI card.\n");
+		return -1;
+  	}
 
-  dma_dev = pci_get_domain_bus_and_slot(DOMAIN, BUS, PCI_DEVFN(slot,FUNCTION));
-  if (dma_dev == NULL) {
-    printk(KERN_ALERT "BSG DMA driver: Unable to locate PCI card.\n");
-    return -1;
-  }
+	printk(KERN_INFO "vendor: %x, device: %x\n", dma_dev->vendor, dma_dev->device);
 
-  printk(KERN_INFO "vendor: %x, device: %x\n", dma_dev->vendor, dma_dev->device);
+  	result = pci_enable_device(dma_dev);
+	printk(KERN_INFO "Enable result: %x\n", result);
 
-  result = pci_enable_device(dma_dev);
-  printk(KERN_INFO "Enable result: %x\n", result);
+ 	result = pci_request_region(dma_dev, OCL_BAR, "OCL Region");
+  	if (result <0) {
+		printk(KERN_ALERT "BSG DMA driver: Cannot obtain the OCL region.\n");
+		return result;
+	}
+	
+	ocl_base = (void __iomem *) pci_iomap(dma_dev, OCL_BAR, 0);	// BAR=0 (OCL), maxlen = 0 (map entire bar)
 
-  result = pci_request_region(dma_dev, OCL_BAR, "OCL Region");
-  if (result <0) {
-    printk(KERN_ALERT "BSG DMA driver: Cannot obtain the OCL region.\n");
-    return result;
-  }
+	result = alloc_chrdev_region(&dev_no, 0, 1, "bsg_dma_driver");   // get an assigned major device number
+	
+	if (result <0) {
+		printk(KERN_ALERT "BSG DMA driver: Cannot obtain major number.\n");
+		return result;
+  	}
 
-  ocl_base = (void __iomem *) pci_iomap(dma_dev, OCL_BAR, 0);   // BAR=0 (OCL), maxlen = 0 (map entire bar)
+	dma_major = MAJOR(dev_no);
+	printk(KERN_INFO "BSG DMA driver; The major number is: %d\n", dma_major);
+	
+	kernel_cdev = cdev_alloc();
+	kernel_cdev->ops = &dma_fops;
+	kernel_cdev->owner = THIS_MODULE;
+	
+	result = cdev_add(kernel_cdev, dev_no, 1);
+	
+	if (result <0) {
+	  printk(KERN_ALERT "BSG DMA driver: Unable to add cdev.\n");
+	  return result;
+	}
+	
+	dma_buffer = kmalloc(DMA_BUFFER_SIZE, GFP_DMA | GFP_USER);	  // DMA buffer, do not swap memory
+	phys_dma_buffer = (unsigned char *) virt_to_phys(dma_buffer);  // get the physical address for later
+	
+	#ifdef TEST_0
+		printk(KERN_INFO "BSG DMA driver (debug): Buffer Physical Address: %p, Buffer Virtual Address: %p, Config Base Address: %p\n", phys_dma_buffer, dma_buffer, ocl_base);
+	#endif	
 
-
-  result = alloc_chrdev_region(&dev_no, 0, 1, "bsg_dma_driver");   // get an assigned major device number
-
-  if (result <0) {
-    printk(KERN_ALERT "BSG DMA driver: Cannot obtain major number.\n");
-    return result;
-  }
-
-  dma_major = MAJOR(dev_no);
-  printk(KERN_INFO "BSG DMA driver; The major number is: %d\n", dma_major);
-
-  kernel_cdev = cdev_alloc();
-  kernel_cdev->ops = &dma_fops;
-  kernel_cdev->owner = THIS_MODULE;
-
-  result = cdev_add(kernel_cdev, dev_no, 1);
-
-  if (result <0) {
-    printk(KERN_ALERT "BSG DMA driver: Unable to add cdev.\n");
-    return result;
-  }
-
-  dma_buffer = kmalloc(DMA_BUFFER_SIZE, GFP_DMA | GFP_USER);    // DMA buffer, do not swap memory
-  phys_dma_buffer = (unsigned char *) virt_to_phys(dma_buffer);  // get the physical address for later
-
-  return 0;
+	return 0;
 }
 
 static void __exit dma_exit(void) {
 
-  cdev_del(kernel_cdev);
+	cdev_del(kernel_cdev);
+	
+	unregister_chrdev_region(dev_no, 1);
 
-  unregister_chrdev_region(dev_no, 1);
-
-  if (dma_buffer != NULL)
-    kfree(dma_buffer);
+ 	if (dma_buffer != NULL)
+		kfree(dma_buffer);
   
-
-  if (dma_dev != NULL) {
-    pci_iounmap(dma_dev, ocl_base);
-    pci_disable_device(dma_dev);
-
-    pci_release_region(dma_dev, OCL_BAR);
-
-    pci_dev_put(dma_dev);                    // free device memory
-  }
-
-  printk(KERN_NOTICE "BSG DMA driver: Removing bsg_dma module\n");
+	if (dma_dev != NULL) {
+		pci_iounmap(dma_dev, ocl_base);
+		pci_disable_device(dma_dev);
+		pci_release_region(dma_dev, OCL_BAR);
+		pci_dev_put(dma_dev);					 // free device memory
+	}
+	
+	printk(KERN_NOTICE "BSG DMA driver: Removing bsg_dma module\n");
 }
 
 module_init(dma_init);
@@ -144,19 +144,19 @@ module_init(dma_init);
 module_exit(dma_exit);
 
 int dma_open(struct inode *inode, struct file *filp) {
-  printk(KERN_NOTICE "BSG DMA driver: opened. \n");
-  return 0;
+	printk(KERN_NOTICE "BSG DMA driver: opened. \n");
+	return 0;
 }
 
 int dma_release(struct inode *inode, struct file *filp) {
-  printk(KERN_NOTICE "BSG DMA driver: closed. \n");
-  return 0;
+	printk(KERN_NOTICE "BSG DMA driver: closed. \n");
+	return 0;
 }
 
 /*
  * Copies data from DMA buffer to user's buf. Updates f_pos (head) and updates device's head register. 
  * in the future:
- * 	checks on buf
+ *	checks on buf
  * */
 ssize_t dma_read(struct file *filp, char __user *buf, size_t pop_size, loff_t *f_pos) {
 	uint32_t tail = dma_buffer[DMA_BUFFER_SIZE];
@@ -166,20 +166,23 @@ ssize_t dma_read(struct file *filp, char __user *buf, size_t pop_size, loff_t *f
 	bool can_read;
 	uint32_t unused, num_cpy;
 	unsigned long result;
+	
 	if (tail >= head)
 		unused = tail - head;
 	else
 		unused = tail - head + DMA_BUFFER_SIZE;
+	
 	can_read = unused >= pop_size;
 
 	if (!can_read) {
-		printk(KERN_NOTICE "bsg dma driver: can't read %zd bytes because (Head, Tail) = (%lld, %u);\n only %u bytes available.\n",  pop_size, *f_pos, tail, unused); 
+		printk(KERN_NOTICE "bsg dma driver: can't read %zd bytes because (Head, Tail) = (%lld, %u);\n only %u bytes available.\n",	pop_size, *f_pos, tail, unused); 
 		return pop_size;
 	}
+	
 	/* there is enough unread data; first, read data that lies before the end of system memory buffer */
 	num_cpy = (DMA_BUFFER_SIZE - head >= pop_size) ? pop_size : DMA_BUFFER_SIZE - head; 
 	result = copy_to_user(buf + head, dma_buffer + head, num_cpy);
-    if (result)	{
+	if (result)	{
 		printk(KERN_INFO "BSG DMA driver: Could not copy %ld bytes\n", result);
 		return pop_size;
 	}
@@ -187,21 +190,59 @@ ssize_t dma_read(struct file *filp, char __user *buf, size_t pop_size, loff_t *f
 	num_cpy = pop_size - num_cpy;  /* data that wraps over the end of system memory buffer */
 	if (num_cpy > 0) { /* if there is still data to read */
 		result = copy_to_user(buf, dma_buffer, num_cpy);
-	    if (result)	{
+		if (result)	{
 			printk(KERN_INFO "Could not copy %ld bytes\n", result);
 			return pop_size;
 		}
-		head = head + num_cpy; 	
+		head = head + num_cpy;	
 	}
 
-   	poke_ocl(CROSSBAR_M1 + WR_HEAD, head); /* update head register on device */
+	poke_ocl(CROSSBAR_M1 + WR_HEAD, head); /* update head register on device */
 	*f_pos = head; /* update driver copy of head */	
 	return 0;
 }
 
 long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_param) {
-	int i;
+
 	uint32_t val = (uint32_t) ioctl_param;
+	
+	#ifdef TEST_0
+	printk(KERN_INFO "BSG DMA Driver (Test 0): IOCTL parameter is %d.\n", val);
+	switch (ioctl_num) {
+		case (IOCTL_WR_ADDR_HIGH):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update high write address.\n");
+			break;
+		case (IOCTL_WR_ADDR_LOW):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update low write address.\n");
+			break;
+		case (IOCTL_WR_HEAD):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update write head.\n");
+			break;
+		case (IOCTL_WR_LEN):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update write length.\n");
+			break;
+		case (IOCTL_WR_BUF_SIZE):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update buffer size.\n");
+			break;
+		case (IOCTL_CFG):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update cfg reg.\n");
+			break;
+		case (IOCTL_CNTL):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to update cntl reg.\n");
+			break;
+		case (IOCTL_TAIL):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to read back the tail.\n");
+			break;
+		case (IOCTL_CLEAR_BUFFER):
+			printk("BSG DMA Driver (Test 0): IOCTL call made to clear the buffer.\n");
+			break;
+		default:
+			printk("BSG DMA Driver (Test 0): IOCTL default case.\n");
+	}
+	#endif 
+
+	#ifdef USE_FPGA
+	int i;
 	switch (ioctl_num) {
 		case (IOCTL_WR_ADDR_HIGH):
 			val = (uint32_t) ((((uint64_t) phys_dma_buffer) & 0xffffffff00000000) >> 32);
@@ -237,5 +278,6 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 		default:
 			return -EINVAL;			
 	}
+	#endif
 	return 0;
 }
