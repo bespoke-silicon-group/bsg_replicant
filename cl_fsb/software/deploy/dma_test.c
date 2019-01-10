@@ -46,7 +46,7 @@ int main () {
 	/* start write */
 	host->start_write(host);
 	
-	sleep(1);
+	sleep(10);
 	
 	/* read */
 	pop_loop(host);

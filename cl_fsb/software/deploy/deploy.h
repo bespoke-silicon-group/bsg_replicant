@@ -1,9 +1,12 @@
+#define _XOPEN_SOURCE 500
+#define _BSD_SOURCE
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 // our software stack
 #include "../host.h"
@@ -67,8 +70,48 @@ static void stop (struct Host *host) {
  * TODO: return read's return value. 
  * */
 static bool pop (struct Host *host, uint32_t pop_size) {
-	if (read(dev_fd, host->buf_cpy, pop_size))		
+
+	uint32_t tail;
+	ioctl(dev_fd, IOCTL_TAIL, &tail);
+	
+	uint32_t head = host->head; 
+	
+	bool can_read;
+	uint32_t unused, num_cpy;
+	int result;
+	
+	if (tail >= head)
+		unused = tail - head;
+	else
+		unused = tail - head + DMA_BUFFER_SIZE;
+	
+	can_read = unused >= pop_size;
+
+	if (!can_read) {
+		printf("host: can't read %u bytes because (Head, Tail) = (%u, %u);\n only %u bytes available.\n", pop_size, head, tail, unused); 
 		return false;
+	}
+	
+	/* there is enough unread data; first, read data that lies before the end of system memory buffer */
+	num_cpy = (DMA_BUFFER_SIZE - head >= pop_size) ? pop_size : DMA_BUFFER_SIZE - head; 
+	result = read(dev_fd, host->buf_cpy + head, num_cpy);
+	if (result != num_cpy)	{
+		printf("host: could not copy %u bytes.\n", pop_size);
+		return false;
+	}
+	head = (head + num_cpy) % DMA_BUFFER_SIZE;
+	num_cpy = pop_size - num_cpy;  /* data that wraps over the end of system memory buffer */
+	if (num_cpy > 0) { /* if there is still data to read */
+		result = read(dev_fd, host->buf_cpy, num_cpy);
+		if (result != num_cpy)	{
+			printf("host: could not copy %u bytes.\n", pop_size);
+			return false;
+		}
+		head = head + num_cpy;	
+	}
+
+	ioctl(dev_fd, IOCTL_WR_HEAD, head); /* update head register on device */
+	host->head = head; /* update its own copy of head */	
 	return true;
 } 
 

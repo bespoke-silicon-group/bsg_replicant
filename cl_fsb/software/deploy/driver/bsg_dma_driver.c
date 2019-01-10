@@ -52,6 +52,7 @@ int dma_major = 0;
 struct pci_dev *dma_dev;
 unsigned char *dma_buffer; /* DMA buffer */
 unsigned char *phys_dma_buffer;
+unsigned int head;
 
 void __iomem *ocl_base; /* config space */
 
@@ -181,47 +182,10 @@ int dma_release(struct inode *inode, struct file *filp) {
  *	checks on buf
  * */
 ssize_t dma_read(struct file *filp, char __user *buf, size_t pop_size, loff_t *f_pos) {
-	uint32_t tail = dma_buffer[DMA_BUFFER_SIZE];
-	
-	uint32_t head = *f_pos; 
-	
-	bool can_read;
-	uint32_t unused, num_cpy;
-	unsigned long result;
-	
-	if (tail >= head)
-		unused = tail - head;
-	else
-		unused = tail - head + DMA_BUFFER_SIZE;
-	
-	can_read = unused >= pop_size;
-
-	if (!can_read) {
-		printk(KERN_NOTICE "BSG DMA driver: can't read %zd bytes because (Head, Tail) = (%lld, %u);\n only %u bytes available.\n",	pop_size, *f_pos, tail, unused); 
-		return pop_size;
-	}
-	
-	/* there is enough unread data; first, read data that lies before the end of system memory buffer */
-	num_cpy = (DMA_BUFFER_SIZE - head >= pop_size) ? pop_size : DMA_BUFFER_SIZE - head; 
-	result = copy_to_user(buf + head, dma_buffer + head, num_cpy);
-	if (result)	{
-		printk(KERN_INFO "BSG DMA driver: Could not copy %ld bytes\n", result);
-		return pop_size;
-	}
-	head = (head + num_cpy) % DMA_BUFFER_SIZE;
-	num_cpy = pop_size - num_cpy;  /* data that wraps over the end of system memory buffer */
-	if (num_cpy > 0) { /* if there is still data to read */
-		result = copy_to_user(buf, dma_buffer, num_cpy);
-		if (result)	{
-			printk(KERN_INFO "Could not copy %ld bytes\n", result);
-			return pop_size;
-		}
-		head = head + num_cpy;	
-	}
-
-	poke_ocl(CROSSBAR_M1 + WR_HEAD, head); /* update head register on device */
-	*f_pos = head; /* update driver copy of head */	
-	return 0;
+	int ofs = (int) head;
+	if (copy_to_user((void *) buf, (void *) &dma_buffer[ofs], pop_size) != 0)
+		return 0;
+	return pop_size;
 }
 
 long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_param) {
@@ -272,6 +236,7 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 			poke_ocl(CROSSBAR_M1 + WR_ADDR_LOW,   ((unsigned int)(unsigned long)phys_dma_buffer & 0xffffffffl));
 			break;
 		case (IOCTL_WR_HEAD):
+			head = val;
 			poke_ocl(CROSSBAR_M1 + WR_HEAD, val);
 			break;
 		case (IOCTL_WR_LEN):
