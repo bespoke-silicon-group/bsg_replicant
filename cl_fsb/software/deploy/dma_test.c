@@ -16,28 +16,40 @@ int main () {
 	deploy_init_host(host, DMA_BUFFER_SIZE, axi4_align);	
 	
 	/* Setup device */
-	ioctl(dev_fd, IOCTL_WR_ADDR_HIGH);
-	ioctl(dev_fd, IOCTL_WR_ADDR_LOW);
-	ioctl(dev_fd, IOCTL_WR_LEN, axi4_size);
-	ioctl(dev_fd, IOCTL_WR_BUF_SIZE);
+	ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
+	ioctl(dev_fd, IOCTL_WR_HEAD, 0);
 
-	/* read regs */
+	ioctl(dev_fd, IOCTL_WR_ADDR_HIGH);
+	#ifdef DEBUG
 	ioctl(dev_fd, IOCTL_READ_WR_ADDR_HIGH, &val);
 	printf("WR_ADDR_HIGH: %d\n", val);
+	#endif
+
+	ioctl(dev_fd, IOCTL_WR_ADDR_LOW);
+	#ifdef DEBUG
 	ioctl(dev_fd, IOCTL_READ_WR_ADDR_LOW, &val);
 	printf("WR_ADDR_LOW: %d\n", val);
-	ioctl(dev_fd, IOCTL_READ_WR_LEN, axi4_size, &val);
+	#endif
+	
+	ioctl(dev_fd, IOCTL_WR_LEN, axi4_size);
+	#ifdef DEBUG
+	ioctl(dev_fd, IOCTL_READ_WR_LEN, &val);
 	printf("WR_LEN: %d\n", val);
+	#endif
+
+	ioctl(dev_fd, IOCTL_WR_BUF_SIZE);
+	#ifdef DEBUG
 	ioctl(dev_fd, IOCTL_READ_WR_BUF_SIZE, &val);
 	printf("WR_BUF_SIZE: %d\n", val);
+	#endif
 
 	/* start write */
 	host->start_write(host);
 	
-	sleep(10);
+	sleep(1);
 	
 	/* read */
-	host->pop(host, 64);
-	host->print(host, 0, 64);	
-
+	pop_loop(host);
+	
+	return 0;
 }
