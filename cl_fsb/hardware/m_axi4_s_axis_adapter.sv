@@ -361,6 +361,8 @@ assign sync_rst_n = ~reset_i;
 //        15:8 - last data adj, i.e. number of DW to adj last data phase
 //        31:16 - user defined
 
+// 0x60:  write phase number
+
 // 0xe0:  DST_SEL_REG
 //        0 -  0/1 to select which dst module the atg drives
 
@@ -679,10 +681,24 @@ assign cfg_rd_stop = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h08) && ~
 assign cfg_write_reset = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[0]);
 assign cfg_read_reset = (cfg_wr_stretch && cfg_data_ack && (cfg_addr_q==8'h0c) && cfg_wdata_q[1]);
 
+
+logic[31:0] write_phase_cnt;
+
+always_ff @(posedge clk_i)
+  begin
+    if (cfg_wr_go) begin
+      write_phase_cnt <= 0;
+    end
+    else if (wvalid && wready) begin
+      write_phase_cnt <= write_phase_cnt + 1'b1;
+    end
+  end
+
+
 // Readback mux
 always_ff @(posedge clk_i)
   begin
-    if (cfg_wr_stretch)
+    if (cfg_rd_stretch)
       case (cfg_addr_q)
         8'h00 : cfg_rdata <= {8'h0, 8'h0, 8'h0, 4'h0, cfg_rd_compare_en, 3'h0};
         8'h08 : cfg_rdata <= {28'b0, bresp_q, wr_stop_pend, rd_inp, wr_inp};
@@ -696,6 +712,8 @@ always_ff @(posedge clk_i)
         8'h44 : cfg_rdata <= cfg_read_address[63:32];
         8'h48 : cfg_rdata <= cfg_read_data;
         8'h4c : cfg_rdata <= {cfg_read_user, cfg_read_last_length, cfg_read_length};
+
+        8'h60 : cfg_rdata <= write_phase_cnt;
 
         8'he0 : cfg_rdata <= {31'b0, cfg_atg_dst_sel};
 
@@ -887,8 +905,11 @@ assign bready = 1;  // Don't do anything with BRESP
 // record the bus status
 logic bresp_q;
 always_ff @(posedge clk_i)
-  if (bvalid & bready)
-    bresp_q = bresp[1];
+  if (!sync_rst_n)
+    bresp_q <= 0;
+  else if (bvalid & bready)
+    bresp_q <= bresp[1];
+
 
 // write address channel
 //--------------------------------

@@ -20,53 +20,26 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="7414138649fs"></ZoomStartTime>
-      <ZoomEndTime time="7494547471fs"></ZoomEndTime>
-      <Cursor1Time time="7481146000fs"></Cursor1Time>
+      <ZoomStartTime time="12125866800fs"></ZoomStartTime>
+      <ZoomEndTime time="14669866801fs"></ZoomEndTime>
+      <Cursor1Time time="7718924000fs"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="156"></NameColumnWidth>
-      <ValueColumnWidth column_width="113"></ValueColumnWidth>
+      <NameColumnWidth column_width="431"></NameColumnWidth>
+      <ValueColumnWidth column_width="475"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="9" />
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_adapter/clk_i">
-      <obj_property name="ElementShortName">clk_i</obj_property>
-      <obj_property name="ObjectShortName">clk_i</obj_property>
+   <WVObjectSize size="3" />
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/rdata">
+      <obj_property name="ElementShortName">rdata[511:0]</obj_property>
+      <obj_property name="ObjectShortName">rdata[511:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/tb/card/fpga/CL/axi4_adapter/reset_i">
-      <obj_property name="ElementShortName">reset_i</obj_property>
-      <obj_property name="ObjectShortName">reset_i</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/cfg_addr_q">
+      <obj_property name="ElementShortName">cfg_addr_q[7:0]</obj_property>
+      <obj_property name="ObjectShortName">cfg_addr_q[7:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/sh_ocl_3_i">
-      <obj_property name="ElementShortName">sh_ocl_3_i</obj_property>
-      <obj_property name="ObjectShortName">sh_ocl_3_i</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/sh_ocl_3_o">
-      <obj_property name="ElementShortName">sh_ocl_3_o</obj_property>
-      <obj_property name="ObjectShortName">sh_ocl_3_o</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/slv_state">
-      <obj_property name="ElementShortName">slv_state[2:0]</obj_property>
-      <obj_property name="ObjectShortName">slv_state[2:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/s_axil_bus_i_cast">
-      <obj_property name="ElementShortName">s_axil_bus_i_cast</obj_property>
-      <obj_property name="ObjectShortName">s_axil_bus_i_cast</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/s_axil_bus_o_cast">
-      <obj_property name="ElementShortName">s_axil_bus_o_cast</obj_property>
-      <obj_property name="ObjectShortName">s_axil_bus_o_cast</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/axil_mosi_bus_r">
-      <obj_property name="ElementShortName">axil_mosi_bus_r</obj_property>
-      <obj_property name="ObjectShortName">axil_mosi_bus_r</obj_property>
-      <obj_property name="isExpanded"></obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/axil_miso_bus_r">
-      <obj_property name="ElementShortName">axil_miso_bus_r</obj_property>
-      <obj_property name="ObjectShortName">axil_miso_bus_r</obj_property>
+   <wvobject type="array" fp_name="/tb/card/fpga/CL/axi4_adapter/cfg_rdata">
+      <obj_property name="ElementShortName">cfg_rdata[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cfg_rdata[31:0]</obj_property>
       <obj_property name="isExpanded"></obj_property>
    </wvobject>
 </wave_config>

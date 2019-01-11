@@ -26,6 +26,8 @@ module cl_crossbar_tb();
   parameter WR_LEN       = 32'h2c;
   parameter WR_BUF_SIZE  = 32'h30;
 
+  parameter WR_PHASE_NUM = 32'h60;
+
   parameter WR_START = 32'h01;
   parameter WR_STOP =  32'h00;
 
@@ -156,16 +158,19 @@ module cl_crossbar_tb();
 
   task DMA_write_stat_check(int timeout_count, logic [31:0] CFG_BASE_ADDR);
     int cnt = 0;
-    logic [31:0] cfg_rdata;
+    logic [31:0] cfg_rdata_ctrl;
+    logic [31:0] cfg_rdata_wr_phase_num;
     do begin
-      # 10ns;
+      # 2000ns;
       // check if is still writting
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+CNTL_REG), .data(cfg_rdata));
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+CNTL_REG), .data(cfg_rdata_ctrl));
       $display("[%t] : Waiting for 1st write activity to complete", $realtime);
       cnt ++;
-    end while((cfg_rdata[0] !== 1'b0) && cnt < timeout_count);
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+WR_PHASE_NUM), .data(cfg_rdata_wr_phase_num));
+      $display("[%t] : Number of write phases since last start is %d:", $realtime, cfg_rdata_wr_phase_num);
+    end while((cfg_rdata_ctrl[0] !== 1'b0) && cnt < timeout_count);
 
-    if ((cfg_rdata[0] !== 1'b0) && (cnt == timeout_count))
+    if ((cfg_rdata_ctrl[0] !== 1'b0) || (cnt == timeout_count))
       $display("[%t] : *** ERROR *** Timeout waiting for 1st writes to complete.", $realtime);
     else
       $display("[%t] : PASS ~~~ axi4 1st writes complete.", $realtime);
@@ -327,7 +332,7 @@ module cl_crossbar_tb();
     // // --------------------------------------------
 
 
-    DMA_write_stat_check(.timeout_count(10), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    DMA_write_stat_check(.timeout_count(50), .CFG_BASE_ADDR(CFG_BASE_ADDR));
     DMA_adapter_error_check(.CFG_BASE_ADDR(CFG_BASE_ADDR));
 
     DMA_buffer_full_check(.buffer_address(pcim_addr+WR_BUFF_SIZE), .timeout_count(50));
