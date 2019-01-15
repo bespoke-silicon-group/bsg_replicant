@@ -100,12 +100,12 @@ logic [5:0] awid;
 logic [63:0] awaddr;
 logic[7:0] awlen;
 logic awvalid;
-logic[10:0] awuser = 0; // not used
+logic[10:0] awuser; // not used
 logic awready;
 
 logic [5:0] wid; // not used
-logic [data_width_p-1:0] wdata = 0;
-logic [(data_width_p/8)-1:0] wstrb = 0;
+logic [data_width_p-1:0] wdata;
+logic [(data_width_p/8)-1:0] wstrb;
 logic wlast;
 logic wvalid;
 logic wready;
@@ -113,14 +113,14 @@ logic wready;
 logic [5:0] bid;
 logic [1:0] bresp;
 logic  bvalid;
-logic [17:0] buser = 0;
+// logic [17:0] buser = 0;
 logic  bready;
 
 logic [5:0] arid;
 logic [63:0] araddr;
 logic [7:0] arlen;
 logic  arvalid;
-logic [10:0] aruser = 0; // not used
+// logic [10:0] aruser = 0; // not used
 logic arready;
 
 logic [5:0] rid;
@@ -128,7 +128,7 @@ logic [data_width_p-1:0] rdata;
 logic [1:0] rresp;
 logic rlast;
 logic rvalid;
-logic [17:0] ruser = 0;
+// logic [17:0] ruser = 0;
 logic rready;
 
 assign axi_mosi_bus_r.awid = awid;
@@ -584,59 +584,70 @@ always_ff @(posedge clk_i)
 
 // store control registers
 //-------------------------------------------
-logic cfg_rd_compare_en = 0;
-logic cfg_wvalid_mask = 0;
+logic cfg_rd_compare_en;
+logic cfg_wvalid_mask;
 
-logic [63:0] cfg_write_address = 0;
-logic [31:0] cfg_hm_read_head = 0;
-logic [31:0] cfg_buffer_size = 0;
+logic [63:0] cfg_write_address;
+logic [31:0] cfg_hm_read_head;
+logic [31:0] cfg_buffer_size;
 
 logic[7:0] cfg_write_length;
 logic[7:0] cfg_write_last_length;
 logic[15:0] cfg_write_user;
 
-logic [63:0] cfg_read_address = 0;
-logic [31:0] cfg_read_data = 0;
+logic [63:0] cfg_read_address;
+logic [31:0] cfg_read_data;
 
 logic[7:0] cfg_read_length;
 logic[7:0] cfg_read_last_length;
 logic[15:0] cfg_read_user;
 
-logic cfg_atg_dst_sel = 0;
+logic cfg_atg_dst_sel;
 
 assign atg_dst_sel = cfg_atg_dst_sel;
 
-always @(posedge clk_i)
-   if (cfg_wr_stretch)
-   begin
-      if (cfg_addr_q==8'h0)
-      begin
-         cfg_rd_compare_en <= cfg_wdata_q[3];
-         cfg_wvalid_mask <= cfg_wdata_q[4];
-      end
-      else if (cfg_addr_q==8'h20)
-         cfg_write_address[31:0] <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h24)
-         cfg_write_address[63:32] <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h28)
-         cfg_hm_read_head <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h2c)
-         {cfg_write_user, cfg_write_last_length, cfg_write_length} <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h30)
-         cfg_buffer_size <= cfg_wdata_q;
+always_ff @(posedge clk_i)
+  if (!sync_rst_n)
+  begin
+     cfg_rd_compare_en <= 0;
+     cfg_wvalid_mask <= 0;
+     cfg_write_address <= 0;
+     cfg_hm_read_head <= 0;
+     cfg_buffer_size <= 0;
+     cfg_write_length <= 0;
+     cfg_write_last_length <= 0;
+     cfg_write_user <= 0;
+  end
+  else if (cfg_wr_stretch)
+  begin
+    if (cfg_addr_q==8'h0)
+    begin
+       cfg_rd_compare_en <= cfg_wdata_q[3];
+       cfg_wvalid_mask <= cfg_wdata_q[4];
+    end
+    else if (cfg_addr_q==8'h20)
+       cfg_write_address[31:0] <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h24)
+       cfg_write_address[63:32] <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h28)
+       cfg_hm_read_head <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h2c)
+       {cfg_write_user, cfg_write_last_length, cfg_write_length} <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h30)
+       cfg_buffer_size <= cfg_wdata_q;
 
-      else if (cfg_addr_q==8'h40)
-         cfg_read_address[31:0] <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h44)
-         cfg_read_address[63:32] <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h48)
-         cfg_read_data <= cfg_wdata_q;
-      else if (cfg_addr_q==8'h4c)
-         {cfg_read_user, cfg_read_last_length, cfg_read_length} <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h40)
+       cfg_read_address[31:0] <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h44)
+       cfg_read_address[63:32] <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h48)
+       cfg_read_data <= cfg_wdata_q;
+    else if (cfg_addr_q==8'h4c)
+       {cfg_read_user, cfg_read_last_length, cfg_read_length} <= cfg_wdata_q;
 
-      else if (cfg_addr_q==8'he0)
-         cfg_atg_dst_sel <= cfg_wdata_q[0];
-   end
+    else if (cfg_addr_q==8'he0)
+       cfg_atg_dst_sel <= cfg_wdata_q[0];
+  end
 
 
 // record control signals

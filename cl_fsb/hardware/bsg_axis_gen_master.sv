@@ -45,7 +45,7 @@ module bsg_axis_gen_master #(
 
 
   // Register Reset
-  logic [1:0] reset_reg = 2'b0;
+  logic [1:0] reset_reg;
   always_ff @(posedge clk_i) begin
     reset_reg <= {reset_reg[0], reset_i};
   end
@@ -65,7 +65,7 @@ module bsg_axis_gen_master #(
   logic cnt_dn_reg;
 
   assign t_done = (t_cnt == packet_size_lp - 1'b1);  // aligns with txlast
-  assign p_done = (p_cnt == pkts_num_lp - 1'b1);
+  assign p_done = (p_cnt == pkts_num_lp - 1'b1);  // count pkt to pkts_num_p and start over again
 
   assign transfer = txready && txvalid;
   assign cnt_done = (transfer && t_done && p_done);
