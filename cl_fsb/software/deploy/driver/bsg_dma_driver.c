@@ -223,6 +223,9 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 		case (IOCTL_CLEAR_BUFFER):
 			printk("BSG DMA Driver (Test 0): IOCTL call made to clear the buffer.\n");
 			break;	
+		case (IOCTL_PKT_NUM):	
+        		printk("BSG DMA Driver (Test 0): IOCTL call made to get the number of sent packets.\n");
+        		break;
 		default:
 			printk("BSG DMA Driver (Test 0): IOCTL default case.\n");
 	}
@@ -293,6 +296,11 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
 				return -EFAULT;
 			break;
+		case (IOCTL_PKT_NUM):                                                             	
+			val = peek_ocl(CROSSBAR_M1 + PKT_NUM);                                     		
+	        	if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                		return -EFAULT;
+                	break;
 		default:
 			return -EINVAL;			
 	}

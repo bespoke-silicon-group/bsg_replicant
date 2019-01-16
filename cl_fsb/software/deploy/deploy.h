@@ -84,11 +84,19 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 		unused = tail - head;
 	else
 		unused = tail - head + DMA_BUFFER_SIZE;
+
+	uint32_t free_space;
+	free_space = DMA_BUFFER_SIZE - unused;
+	
+	if (free_space <= 5120) {
+		printf("WARNNING!!!! : CL does not have enough place to write. %d\n", free_space);
+	}
 	
 	can_read = unused >= pop_size;
 
 	if (!can_read) {
-		printf("host: can't read %u bytes because (Head, Tail) = (%u, %u);\n only %u bytes available.\n", pop_size, head, tail, unused); 
+//		printf("host: can't read %u bytes because (Head, Tail) = (%u, %u);\n only %u bytes available.\n", pop_size, head, tail, unused); 
+//		printf("..(%u, %u)\n", head, tail);
 		return false;
 	}
 	
@@ -114,6 +122,15 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 	host->head = head; /* update its own copy of head */	
 	return true;
 } 
+
+
+static uint32_t get_pkt_num (struct Host *host) {
+	uint32_t pkt_num = 0;
+	if (ioctl(dev_fd, IOCTL_PKT_NUM, &pkt_num) != 0)
+		printf("ioctl error. return pkt_num as 0.\n");
+	return pkt_num;
+}
+
 
 /* 
  * prints data as a sequence of unsigned chars.
@@ -160,5 +177,6 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 	host->stop = stop;
 	host->pop = pop;
 	host->print = print;
+	host->get_pkt_num = get_pkt_num;
 }
 

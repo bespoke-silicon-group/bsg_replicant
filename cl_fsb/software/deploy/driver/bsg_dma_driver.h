@@ -1,7 +1,7 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
-#define DMA_BUFFER_SIZE 512
+#define DMA_BUFFER_SIZE 512000
 
 #define F1_MAGIC 'F'
 
@@ -26,6 +26,7 @@
  
 #define IOCTL_CLEAR_BUFFER _IO(F1_MAGIC, 15)
 
+#define IOCTL_PKT_NUM _IOR(F1_MAGIC, 16, uint32_t)
 #endif
 
 
