@@ -24,6 +24,7 @@ MODULE_VERSION("1.0.0");
 #define BUS 0
 #define FUNCTION 0
 #define OCL_BAR 0
+#define DDR_BAR 3
 
 #define USE_FPGA
 // #define DEBUG
@@ -100,8 +101,14 @@ static int __init dma_init(void) {
 	printk(KERN_INFO "BSG DMA driver: Enable result: %x\n", result);
 	#endif
 
+ 	result = pci_request_region(dma_dev, DDR_BAR, "DDR Region");
+  	if (result < 0) {
+		printk(KERN_ALERT "BSG DMA driver: Cannot obtain the DDR region.\n");
+		return result;
+	}
+	
  	result = pci_request_region(dma_dev, OCL_BAR, "OCL Region");
-  	if (result <0) {
+  	if (result < 0) {
 		printk(KERN_ALERT "BSG DMA driver: Cannot obtain the OCL region.\n");
 		return result;
 	}
@@ -152,6 +159,7 @@ static void __exit dma_exit(void) {
 	if (dma_dev != NULL) {
 		pci_iounmap(dma_dev, ocl_base);
 		pci_disable_device(dma_dev);
+		pci_release_region(dma_dev, DDR_BAR);
 		pci_release_region(dma_dev, OCL_BAR);
 		pci_dev_put(dma_dev);					 // free device memory
 	}
