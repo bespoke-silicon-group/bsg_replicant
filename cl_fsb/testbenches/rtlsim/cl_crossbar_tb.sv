@@ -26,6 +26,8 @@ module cl_crossbar_tb();
   parameter WR_LEN       = 32'h2c;
   parameter WR_BUF_SIZE  = 32'h30;
 
+  parameter WR_PHASE_NUM = 32'h60;
+
   parameter WR_START = 32'h01;
   parameter WR_STOP =  32'h00;
 
@@ -68,15 +70,14 @@ module cl_crossbar_tb();
       .BURST_LEN(0),
       .WR_BUFF_SIZE(BUFF1_SIZE),
       .CFG_BASE_ADDR(CROSSBAR_M1));
+    pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
 
-    $display ("No.1B ===> FSB to AXI-4 write test:");
+    $display ("No.1B ===> AXIS to AXI-4 write test:");
     pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
       .BURST_LEN(1),
       .WR_BUFF_SIZE(BUFF2_SIZE),
-      .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
-
-    pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-    pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
+      .CFG_BASE_ADDR(CROSSBAR_M3));
+    pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M3));
 
     $display ("No.2 (concurrent test) ===> AXI-L to FSB slave test:");
     ocl_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0));
@@ -157,16 +158,19 @@ module cl_crossbar_tb();
 
   task DMA_write_stat_check(int timeout_count, logic [31:0] CFG_BASE_ADDR);
     int cnt = 0;
-    logic [31:0] cfg_rdata;
+    logic [31:0] cfg_rdata_ctrl;
+    logic [31:0] cfg_rdata_wr_phase_num;
     do begin
-      # 10ns;
+      # 2000ns;
       // check if is still writting
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+CNTL_REG), .data(cfg_rdata));
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+CNTL_REG), .data(cfg_rdata_ctrl));
       $display("[%t] : Waiting for 1st write activity to complete", $realtime);
       cnt ++;
-    end while((cfg_rdata[0] !== 1'b0) && cnt < timeout_count);
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+WR_PHASE_NUM), .data(cfg_rdata_wr_phase_num));
+      $display("[%t] : Number of write phases since last start is %d:", $realtime, cfg_rdata_wr_phase_num);
+    end while((cfg_rdata_ctrl[0] !== 1'b0) && cnt < timeout_count);
 
-    if ((cfg_rdata[0] !== 1'b0) && (cnt == timeout_count))
+    if ((cfg_rdata_ctrl[0] !== 1'b0) || (cnt == timeout_count))
       $display("[%t] : *** ERROR *** Timeout waiting for 1st writes to complete.", $realtime);
     else
       $display("[%t] : PASS ~~~ axi4 1st writes complete.", $realtime);
@@ -290,11 +294,11 @@ module cl_crossbar_tb();
 
         tb.poke(.addr(AXI4_WRITE), .data(pcis_wr_data), .size(DataSize::DATA_SIZE'(6)));
         tb.poke_ocl(.addr(CFG_BASE_ADDR+AXI4_SEND), .data(32'h040));  // write 64 bytes
-        $display("[%t] : axi4 send data = %0h", $realtime, pcis_wr_data);
+        // $display("[%t] : axi4 send data = %0h", $realtime, pcis_wr_data);
 
         tb.poke_ocl(.addr(CFG_BASE_ADDR+AXI4_FETCH), .data(32'h040)); // readback 64 bytes
         tb.peek(.addr(AXI4_READ), .data(pcis_rd_data), .size(DataSize::DATA_SIZE'(6)));
-        $display("[%t] : axi4 readback data = %0h", $realtime, pcis_rd_data);
+        // $display("[%t] : axi4 readback data = %0h", $realtime, pcis_rd_data);
         for (int num_bytes=0; num_bytes<64; num_bytes++) begin           
              pcis_exp_data[((addr+num_bytes)*8)+:8] = pcis_wr_data[(num_bytes*8)+:8];
              pcis_act_data[((addr+num_bytes)*8)+:8] = pcis_rd_data[(num_bytes*8)+:8];
@@ -328,7 +332,7 @@ module cl_crossbar_tb();
     // // --------------------------------------------
 
 
-    DMA_write_stat_check(.timeout_count(10), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    DMA_write_stat_check(.timeout_count(50), .CFG_BASE_ADDR(CFG_BASE_ADDR));
     DMA_adapter_error_check(.CFG_BASE_ADDR(CFG_BASE_ADDR));
 
     DMA_buffer_full_check(.buffer_address(pcim_addr+WR_BUFF_SIZE), .timeout_count(50));
