@@ -14,12 +14,22 @@ int main () {
 	/* Setup host */
 	struct Host *host = (struct Host *) malloc(sizeof(struct Host));	 
 	deploy_init_host(host, DMA_BUFFER_SIZE, axi4_align);	
+
+	/* mmap the OCL BAR */
+	 char *ocl_base = deploy_mmap_ocl();
+	if (ocl_base == 0) {
+		printf("Error when mmap'ing OCL Bar.\n");
+		return 0;
+	}
+	printf("OCL base address is %p\n", ocl_base);
 	
 	/* Setup device */
 	ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
+	
 	ioctl(dev_fd, IOCTL_WR_HEAD, 0);
 
 	ioctl(dev_fd, IOCTL_WR_ADDR_HIGH);
+
 	#ifdef DEBUG
 	ioctl(dev_fd, IOCTL_READ_WR_ADDR_HIGH, &val);
 	printf("WR_ADDR_HIGH: %d\n", val);
@@ -44,12 +54,18 @@ int main () {
 	#endif
 
 	/* start write */
-	host->start_write(host);
-	
+	//host->start_write(host);
+	uint32_t *temp = (uint32_t *) (ocl_base + CROSSBAR_M1 + CFG_REG);
+	*temp = 0x10;
+	temp = (uint32_t *) (ocl_base + CROSSBAR_M1 + CNTL_REG);
+	*temp = 0x1;
+
 	sleep(10);
 	
 	/* read */
 	pop_loop(host);
+
 	
+	//deploy_close();
 	return 0;
 }

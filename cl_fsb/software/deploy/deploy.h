@@ -5,8 +5,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 
 // our software stack
 #include "../host.h"
@@ -137,7 +139,7 @@ void print(struct Host *host, uint32_t ofs, uint32_t size) {
 }
 
 void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
-	dev_fd = open(dev_path, O_RDONLY);
+	dev_fd = open(dev_path, O_RDWR);
 	if (dev_fd == -1) {
 		printf("Unable to open device.\n");
 		return; 
@@ -161,4 +163,21 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 	host->pop = pop;
 	host->print = print;
 }
+
+char *deploy_mmap_ocl () {
+	if (dev_fd == -1)
+		return 0;
+	char *ocl_base = mmap(NULL, 0x2000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0); 
+	if (ocl_base == MAP_FAILED) {
+		printf("mmap failed.\n");
+		return 0;
+	}
+	return ocl_base;
+} 
+
+void deploy_close () {
+	if (dev_fd != -1)
+		close(dev_fd);
+}
+
 

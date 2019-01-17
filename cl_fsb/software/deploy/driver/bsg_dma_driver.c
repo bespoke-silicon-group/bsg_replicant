@@ -38,11 +38,12 @@ static dev_t dev_no;
 int dma_open(struct inode *inode, struct file *flip);
 int dma_release(struct inode *inode, struct file *flip);
 long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_param);
+int dma_mmap (struct file *filp, struct vm_area_struct *vma);
 ssize_t dma_read(struct file *filp, char __user *buf, size_t count, loff_t *f_pos);
 
 struct file_operations dma_fops = {
 	.read =		   dma_read,
-	// .write =		  dma_write, (writes not exposed to user)
+	.mmap = dma_mmap,
 	.unlocked_ioctl = dma_ioctl,
 	.open =		   dma_open,	
 	.release =		   dma_release
@@ -188,6 +189,31 @@ ssize_t dma_read(struct file *filp, char __user *buf, size_t pop_size, loff_t *f
 	return pop_size;
 }
 
+int dma_mmap (struct file *filp, struct vm_area_struct *vma) {
+	unsigned long mmap_size, offset, phys_start;
+	int err;
+	
+	printk(KERN_ALERT "BSG DMA driver: in mmap() function.\n");	
+
+	mmap_size = vma->vm_end - vma->vm_start;
+	if (mmap_size > pci_resource_len(dma_dev, OCL_BAR)) {
+		printk(KERN_ERR "BSG DMA driver: User tried to mmap %lu bytes, but OCL BAR is of size %lu.\n", mmap_size, (unsigned long) pci_resource_len(dma_dev, OCL_BAR));
+		return(-EINVAL); /* asked for too much memory */
+	}
+	offset = vma->vm_pgoff << PAGE_SHIFT; 
+	phys_start = ((unsigned long) pci_resource_start(dma_dev, OCL_BAR)) + offset;
+	vma->vm_flags |= VM_LOCKED | VM_DONTEXPAND | VM_DONTDUMP | VM_IO;
+	
+	/* do the mapping */
+	err = remap_pfn_range(vma, (unsigned long) vma->vm_start, phys_start >> PAGE_SHIFT, mmap_size, vma->vm_page_prot);
+	if (err < 0) {
+		printk(KERN_ERR "BSG DMA driver: remap_pfn_range() failed.\n");
+		return(-EAGAIN);
+	}
+	printk(KERN_INFO "BSG DMA driver: mmap successful.\n");
+	return 0;
+}
+
 long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_param) {
 
 	uint32_t val = (uint32_t) ioctl_param;
@@ -223,6 +249,9 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 		case (IOCTL_CLEAR_BUFFER):
 			printk("BSG DMA Driver (Test 0): IOCTL call made to clear the buffer.\n");
 			break;	
+		case (GET_OCL):
+			// TODO: copy userspace OCL base address
+			break;		
 		default:
 			printk("BSG DMA Driver (Test 0): IOCTL default case.\n");
 	}
