@@ -7,6 +7,8 @@
 #include <stdbool.h>
 
 #include <sys/time.h>
+#include <unistd.h>
+
 // #define COSIM 
 
 #ifdef COSIM
@@ -107,8 +109,17 @@ void print_pop(struct Host *host, uint32_t pop_size) {
  * */
 
 void pop_loop (struct Host *host) {
-	double init_time;
-	for (int i=0; i<10000; i++) {
+	int pts=5;
+	double init_time[pts];
+	uint32_t init_pkt_num[pts];
+	int loop_num = 1000000;
+	uint32_t read_byte = 4096;
+	struct timespec cur_time;
+	double time_us;	
+	clock_gettime(_POSIX_MONOTONIC_CLOCK, &cur_time);
+	double start_time = (double)(cur_time.tv_sec*1000000 + cur_time.tv_nsec/1000);
+	uint32_t host_pkt_num;
+	for (int i=0; i<loop_num; i++) {
 //	while (true) {
 //		bool read_64 = host->pop(host, 64);
 //		if (read_64) {
@@ -123,35 +134,66 @@ void pop_loop (struct Host *host) {
 //		if (!read_64) {
 //			printf("Fail. User could not read 64B. The test is stuck. \n.");
 //		}
-		uint32_t read_byte = 12800;
-		uint32_t pkt_num;
 		bool read_trunk = host->pop(host, read_byte);
                 if (read_trunk) {
-	        	printf("read %u bytes -->", read_byte);
+	        	printf(".", read_byte);
 		}
-		uint32_t host_pkt_num = host->get_pkt_num(host);
-			struct timeval cur_time;
-        		double time_us;
-	
-		printf("CL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
 		if (i==0) {
-//			struct timeval cur_time;
-//			double time_us;
-			gettimeofday(&cur_time, NULL);
-			time_us = (double)(cur_time.tv_usec);
-			init_time = time_us;
-			pkt_num = host_pkt_num;
-		} else if (i==10000-1) {
-//			struct timeval cur_time;
-//        		double time_us;
-        		gettimeofday(&cur_time, NULL);
-        		time_us = (double)(cur_time.tv_usec);
-			printf("===> initial time: %f, end time %f; %u, %u\n", init_time, time_us, pkt_num, host_pkt_num); 
-		}          	
+		 	host_pkt_num = host->get_pkt_num(host); 
+        		clock_gettime(_POSIX_MONOTONIC_CLOCK, &cur_time);
+        		time_us = (double)(cur_time.tv_sec*1000000 + cur_time.tv_nsec/1000);
+        		printf("\nCL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
+
+			init_time[0] = time_us;
+			init_pkt_num[0] = host_pkt_num;
+		} 
+		else if (i==(int)(loop_num/(pts-1))) {
+		 	host_pkt_num = host->get_pkt_num(host); 
+        		clock_gettime(_POSIX_MONOTONIC_CLOCK, &cur_time);                   	
+        		time_us = (double)(cur_time.tv_sec*1000000 + cur_time.tv_nsec/1000);
+        		printf("\nCL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
+			init_time[1] = time_us;
+			init_pkt_num[1] = host_pkt_num;
+		}
+		else if (i==(int)(loop_num/(pts-1)*2-1)) {
+		 	host_pkt_num = host->get_pkt_num(host); 
+        		clock_gettime(_POSIX_MONOTONIC_CLOCK, &cur_time);
+        		time_us = (double)(cur_time.tv_sec*1000000 + cur_time.tv_nsec/1000);
+        		printf("\nCL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
+			init_time[2] = time_us;
+			init_pkt_num[2] = host_pkt_num;	
+		}
+		else if (i==(int)(loop_num/(pts-1)*3-1)) {
+		 	host_pkt_num = host->get_pkt_num(host); 
+        		clock_gettime(_POSIX_MONOTONIC_CLOCK, &cur_time);
+        		time_us = (double)(cur_time.tv_sec*1000000 + cur_time.tv_nsec/1000);
+        		printf("\nCL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
+
+			init_time[3] = time_us;
+			init_pkt_num[3] = host_pkt_num;
+		}
+		else if (i==(int)(loop_num/(pts-1)*4-1)) {
+		 	host_pkt_num = host->get_pkt_num(host); 
+        		clock_gettime(_POSIX_MONOTONIC_CLOCK, &cur_time);
+        		time_us = (double)(cur_time.tv_sec*1000000 + cur_time.tv_nsec/1000);
+        		printf("\nCL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
+
+			init_time[4] = time_us;
+			init_pkt_num[4] = host_pkt_num;
+
+			printf("===> initial time: %f, end time %f; %u, %u\n", init_time[0], init_time[pts-1], init_pkt_num[0], init_pkt_num[pts-1]); 
+
+		double BW0 = ((init_pkt_num[1]-init_pkt_num[0])/(init_time[1]-init_time[0]))*512*1000000;
+		double BW1 = ((init_pkt_num[2]-init_pkt_num[1])/(init_time[2]-init_time[1]))*512*1000000;
+		double BW2 = ((init_pkt_num[3]-init_pkt_num[2])/(init_time[3]-init_time[2]))*512*1000000;
+		double BW3 = ((init_pkt_num[4]-init_pkt_num[3])/(init_time[4]-init_time[3]))*512*1000000;
+		double BWavg = (BW0 + BW1 + BW2 + BW3)/4;	
+		printf("Start Writting at %f, Bandwidth is %6.3f, %6.3f, %6.3f, %6.3f, %f(average); Latency is %f.\n", start_time, BW0, BW1, BW2, BW3, BWavg, init_time[4] - init_pkt_num[4]/BWavg/512/1000000 - start_time);
+		}	
 		#ifdef COSIM
 		sv_pause(1);
 		#else
-		sleep(0.1);
+		//sleep(0.9);
 		#endif 
 	}
 }

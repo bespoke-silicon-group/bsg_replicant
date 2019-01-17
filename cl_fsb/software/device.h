@@ -1,10 +1,10 @@
 #ifndef DEVICE_H
 #define DEVICE_H
  
-uint32_t axi4_size = 1;
+uint32_t axi4_size = 0;
 uint32_t axi4_align = 128; 
 
-const uint64_t CROSSBAR_M1 = 0x00003000;
+const uint64_t CROSSBAR_M1 = 0x00001000;
 const uint64_t CFG_REG = 0;
 const uint64_t CNTL_REG = 0x8; 
 const uint64_t WR_ADDR_LOW = 0x20;
