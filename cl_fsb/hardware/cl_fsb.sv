@@ -15,7 +15,7 @@
 
 `define FSB_LEGACY
 `include "bsg_fsb_pkg.v"
-`undef FSB_LEGACY
+// `undef FSB_LEGACY
 
 module cl_fsb
 
@@ -579,54 +579,59 @@ axi_crossbar_v2_1_18_axi_crossbar #(
 //                    axi - fsb adapters                        |
 //                                                              |
 //---------------------------------------------------------------
-
+localparam axil_slv_num_lp = 10;
+localparam fsb_width_lp = `FSB_WIDTH;
 (* dont_touch = "true" *) logic fsb_node_rstn;
 lib_pipe #(.WIDTH(1), .STAGES(4)) FSB_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(fsb_node_rstn));
 
 // fsb slave
 //-------------------------------------------------
-logic                  m0_fsb_v_i, m0_fsb_v_o;
-logic [`FSB_WIDTH-1:0] m0_fsb_data_i, m0_fsb_data_o;
-logic                  m0_fsb_yumi_o, m0_fsb_ready_i;
-bsg_test_node_client #(
-  .ring_width_p(`FSB_WIDTH),
-  .master_id_p (0         ),
-  .client_id_p (0         )
-) fsb_client_node (
-  .clk_i  (clk           ),
-  .reset_i(~fsb_node_rstn),
-  .en_i   (1'b1          ),
-  // input channel
-  .v_i    (m0_fsb_v_o    ),
-  .data_i (m0_fsb_data_o ),
-  .ready_o(m0_fsb_ready_i),
-  // output channel
-  .v_o    (m0_fsb_v_i    ),
-  .data_o (m0_fsb_data_i ),
-  .yumi_i (m0_fsb_yumi_o )
-);
+logic [axil_slv_num_lp-1:0] m0_fsb_v_i, m0_fsb_v_o;
+logic [(fsb_width_lp*axil_slv_num_lp)-1:0] m0_fsb_data_i, m0_fsb_data_o;
+logic [axil_slv_num_lp-1:0] m0_fsb_yumi_o, m0_fsb_ready_i;
 
+genvar i;
+for (i=0;i<axil_slv_num_lp;i=i+1)
+begin: bsg_test_node_slv
+  bsg_test_node_client #(
+    .ring_width_p(fsb_width_lp),
+    .master_id_p (0           ),
+    .client_id_p (0           )
+  ) fsb_client_node (
+    .clk_i  (clk                                        ),
+    .reset_i(~fsb_node_rstn                             ),
+    .en_i   (1'b1                                       ),
+    // input channel
+    .v_i    (m0_fsb_v_o[i]                              ),
+    .data_i (m0_fsb_data_o[fsb_width_lp*i+:fsb_width_lp]),
+    .ready_o(m0_fsb_ready_i[i]                          ),
+    // output channel
+    .v_o    (m0_fsb_v_i[i]                              ),
+    .data_o (m0_fsb_data_i[fsb_width_lp*i+:fsb_width_lp]),
+    .yumi_i (m0_fsb_yumi_o[i]                           )
+  );
+end
 
 // fsb master
 //-------------------------------------------------
 logic                  s_fsb_v_i   ;
-logic [`FSB_WIDTH-1:0] s_fsb_data_i;
+logic [fsb_width_lp-1:0] s_fsb_data_i;
 logic                  s_fsb_yumi_o;
 
 bsg_test_node_master #(
-  .ring_width_p(`FSB_WIDTH),
-  .master_id_p (4'hF      ),
-  .client_id_p (4'hF      )
+  .ring_width_p(fsb_width_lp),
+  .master_id_p (4'hF        ),
+  .client_id_p (4'hF        )
 ) fsb_node_master (
-  .clk_i  (clk               ),
-  .reset_i(~fsb_node_rstn    ),
-  .en_i   (1'b1              ),
-  .v_i    (1'b0              ),
-  .data_i ({`FSB_WIDTH{1'b0}}),
-  .ready_o(                  ),
-  .v_o    (s_fsb_v_i         ),
-  .data_o (s_fsb_data_i      ),
-  .yumi_i (s_fsb_yumi_o      )
+  .clk_i  (clk                 ),
+  .reset_i(~fsb_node_rstn      ),
+  .en_i   (1'b1                ),
+  .v_i    (1'b0                ),
+  .data_i ({fsb_width_lp{1'b0}}),
+  .ready_o(                    ),
+  .v_o    (s_fsb_v_i           ),
+  .data_o (s_fsb_data_i        ),
+  .yumi_i (s_fsb_yumi_o        )
 );
 
 
@@ -638,7 +643,8 @@ bsg_test_node_master #(
 (* dont_touch = "true" *) logic axi_fsb_rstn;
 lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_FSB_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(axi_fsb_rstn));
 axi_fsb_adapters #(
-  .fsb_width_p     (`FSB_WIDTH           ),
+  .fsb_width_p     (fsb_width_lp         ),
+  .axil_slv_num_p  (axil_slv_num_lp      ),
   .axi_id_width_p  (sh_pcis_id_width_lp  ), // assert = sh_pcim_id_width_lp
   .axi_addr_width_p(sh_pcis_addr_width_lp), // assert = sh_pcim_addr_width_lp
   .axi_data_width_p(sh_pcis_data_width_lp)  // assert = sh_pcim_data_width_lp
