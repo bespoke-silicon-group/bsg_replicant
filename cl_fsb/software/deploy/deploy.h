@@ -99,22 +99,24 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 		unused = tail - head;
 	else
 		unused = tail - head + DMA_BUFFER_SIZE;
+	
+	can_read = unused >= pop_size;
 
 	uint32_t free_space;
 	free_space = DMA_BUFFER_SIZE - unused;
 	
-	if (free_space <= 5120) {
-		printf("WARNNING!!!! : CL does not have enough place to write. %d\n", free_space);
-	}
-	
-	can_read = unused >= pop_size;
+	if (free_space <= 4096) {
+		printf("WARNNING!!!! : CL does not have enough place to write. free bytes is %d\n", free_space);
+	} else {
+	} 
 
 	if (!can_read) {
 //		printf("host: can't read %u bytes because (Head, Tail) = (%u, %u);\n only %u bytes available.\n", pop_size, head, tail, unused); 
-//		printf("..(%u, %u)\n", head, tail);
+//		printf("wait for enough data: (%d, %d)", unused, free_space);
+		printf(".");
 		return false;
 	}
-	
+                                                                                        	
 	/* there is enough unread data; first, read data that lies before the end of system memory buffer */
 	num_cpy = (DMA_BUFFER_SIZE - head >= pop_size) ? pop_size : DMA_BUFFER_SIZE - head; 
 	result = read(dev_fd, host->buf_cpy + head, num_cpy);

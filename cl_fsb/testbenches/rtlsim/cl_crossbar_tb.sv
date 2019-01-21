@@ -26,12 +26,17 @@ module cl_crossbar_tb();
   parameter WR_LEN       = 32'h2c;
   parameter WR_BUF_SIZE  = 32'h30;
 
+  parameter WR_PHASE_NUM = 32'h60;
+
   parameter WR_START = 32'h01;
   parameter WR_STOP =  32'h00;
 
   // parameter for axil read/write adapter
   parameter IST_REG    = 32'h0000_0000;
   parameter IER_REG    = 32'h0000_0004;
+
+  parameter TDFV_REG   = 32'h0000_000C;
+  parameter RDFO_REG   = 32'h0000_001C;
 
   parameter AXIL_SEND  = 32'h0000_0014;
   parameter AXIL_FETCH = 32'h0000_0024;
@@ -68,18 +73,27 @@ module cl_crossbar_tb();
       .BURST_LEN(0),
       .WR_BUFF_SIZE(BUFF1_SIZE),
       .CFG_BASE_ADDR(CROSSBAR_M1));
+    pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
 
-    $display ("No.1B ===> FSB to AXI-4 write test:");
+    $display ("No.1B ===> AXIS to AXI-4 write test:");
     pcim_DMA_write_buffer(.pcim_addr(64'h0000_0000_1000_0000), // +64h40 to raise AXI_ERRM_AWADDR_BOUNDARY
       .BURST_LEN(1),
       .WR_BUFF_SIZE(BUFF2_SIZE),
-      .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
+      .CFG_BASE_ADDR(CROSSBAR_M3));
+    pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M3));
 
-    pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-    pcim_reads_buffer2(.pcim_addr(64'h0000_0000_1000_0000), .CFG_BASE_ADDR(CROSSBAR_M1+12'h500));
-
-    $display ("No.2 (concurrent test) ===> AXI-L to FSB slave test:");
-    ocl_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0));
+    $display ("No.2A (concurrent test) ===> AXI-L write to FSB slave:");
+    for (int i=0; i<10; i++)
+    begin
+      $display("write to fsb_client No. %d", i);
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(1));
+    end
+    $display ("No.2B (concurrent test) ===> AXI-L read from FSB slave:");    
+    for (int i=0; i<10; i++)
+    begin
+      $display("read from fsb_client No. %d", i);
+      ocl_FSB_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(1));
+    end
 
     $display ("N0.3 ===> AXI4 to FSB slave test:");
     pcis_FSB_poke_peek_test(.CFG_BASE_ADDR(CROSSBAR_M2));
@@ -157,16 +171,19 @@ module cl_crossbar_tb();
 
   task DMA_write_stat_check(int timeout_count, logic [31:0] CFG_BASE_ADDR);
     int cnt = 0;
-    logic [31:0] cfg_rdata;
+    logic [31:0] cfg_rdata_ctrl;
+    logic [31:0] cfg_rdata_wr_phase_num;
     do begin
-      # 10ns;
+      # 2000ns;
       // check if is still writting
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+CNTL_REG), .data(cfg_rdata));
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+CNTL_REG), .data(cfg_rdata_ctrl));
       $display("[%t] : Waiting for 1st write activity to complete", $realtime);
       cnt ++;
-    end while((cfg_rdata[0] !== 1'b0) && cnt < timeout_count);
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+WR_PHASE_NUM), .data(cfg_rdata_wr_phase_num));
+      $display("[%t] : Number of write phases since last start is %d:", $realtime, cfg_rdata_wr_phase_num);
+    end while((cfg_rdata_ctrl[0] !== 1'b0) && cnt < timeout_count);
 
-    if ((cfg_rdata[0] !== 1'b0) && (cnt == timeout_count))
+    if ((cfg_rdata_ctrl[0] !== 1'b0) || (cnt == timeout_count))
       $display("[%t] : *** ERROR *** Timeout waiting for 1st writes to complete.", $realtime);
     else
       $display("[%t] : PASS ~~~ axi4 1st writes complete.", $realtime);
@@ -215,12 +232,8 @@ module cl_crossbar_tb();
   endtask
 
 
-  task ocl_FSB_poke_peek_test(logic [31:0] CFG_BASE_ADDR);
-    logic [31:0] rdata_num_B;
-    logic [31:0] rdata_word1;
-    logic [31:0] rdata_word2;
-    logic [31:0] rdata_word3;
-    logic [31:0] rdata_word4;
+  task ocl_FSB_poke_test(logic [31:0] CFG_BASE_ADDR, int num);
+    logic [31:0] stat_register;
 
     // initialize, using poke() for fun ";)
     // Note: address bit range: only s_axi_awaddr(5:2) and s_axi_araddr(5:2) are decoded
@@ -230,21 +243,41 @@ module cl_crossbar_tb();
             .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
 
     // write
-    for (int i=0; i<4; i++) begin
+    for (int i=0; i<num; i++) 
+    begin
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(stat_register));
+      $display("The Transmit Data FIFO Vacancy is : %d", stat_register);
       tb.poke_ocl(.addr(CFG_BASE_ADDR+AXIL_WRITE), .data(32'h1 + 4*i));
       tb.poke_ocl(.addr(CFG_BASE_ADDR+AXIL_WRITE), .data(32'h2 + 4*i));
       tb.poke_ocl(.addr(CFG_BASE_ADDR+AXIL_WRITE), .data(32'h3 + 4*i));
       tb.poke_ocl(.addr(CFG_BASE_ADDR+AXIL_WRITE), .data(32'h4 + 4*i));
+      # 800ns
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(stat_register));
+      $display("The Transmit Data FIFO Vacancy is : %d", stat_register);
       tb.poke_ocl(.addr(CFG_BASE_ADDR+AXIL_SEND), .data(32'h00000010));
       // 128 bits are then truncated to 80-bits fsb packet
     end
+  endtask
+
+  task ocl_FSB_peek_test(logic [31:0] CFG_BASE_ADDR, int num);
+    logic [31:0] stat_register;
+    logic [31:0] rdata_num_B;
+    logic [31:0] rdata_word1;
+    logic [31:0] rdata_word2;
+    logic [31:0] rdata_word3;
+    logic [31:0] rdata_word4;
 
     // read
-    for (int i=0; i<4; i++) begin
-      tb.peek_ocl(.addr(AXIL_FETCH), .data(rdata_num_B));
+    for (int i=0; i<num; i++) 
+    begin
+      # 200ns
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(stat_register));
+      $display("The Receive Data FIFO Occupancy is : %d", stat_register);
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+AXIL_FETCH), .data(rdata_num_B));
       if (rdata_num_B == 32'h00000010) begin
         $display ("READBACK LEN IS 16 BYTES, PASSED~");
-      end else begin
+      end else 
+      begin
         $display ("READBACK LEN FAILED!");
       end
       tb.peek_ocl(.addr(CFG_BASE_ADDR+AXIL_READ), .data(rdata_word1));
@@ -255,15 +288,15 @@ module cl_crossbar_tb();
       if (rdata_word1 == (32'h00000001+4*i) && rdata_word2 == (32'h00000002+4*i)
         && rdata_word3 == ((((32'h3+4*i)&32'h0000000F)<<12) 
                         + (((32'h3+4*i)>>12)&32'h0000000F) 
-                        + ((32'h3 + 4*i)&32'h00000FF0))
-        && rdata_word4 == 32'h00000000) begin
+                        + ((32'h3+4*i)&32'h00000FF0))
+        && rdata_word4 == 32'h00000000) 
+      begin
         $display ("FSB READBACK DATA PASSED~");
       end else begin
         $display ("FSB READBACK DATA FAILED!");
       end
     end
   endtask
-
 
   task pcis_FSB_poke_peek_test(logic [31:0] CFG_BASE_ADDR);
     // axi4 pcis write/read
@@ -290,11 +323,11 @@ module cl_crossbar_tb();
 
         tb.poke(.addr(AXI4_WRITE), .data(pcis_wr_data), .size(DataSize::DATA_SIZE'(6)));
         tb.poke_ocl(.addr(CFG_BASE_ADDR+AXI4_SEND), .data(32'h040));  // write 64 bytes
-        $display("[%t] : axi4 send data = %0h", $realtime, pcis_wr_data);
+        // $display("[%t] : axi4 send data = %0h", $realtime, pcis_wr_data);
 
         tb.poke_ocl(.addr(CFG_BASE_ADDR+AXI4_FETCH), .data(32'h040)); // readback 64 bytes
         tb.peek(.addr(AXI4_READ), .data(pcis_rd_data), .size(DataSize::DATA_SIZE'(6)));
-        $display("[%t] : axi4 readback data = %0h", $realtime, pcis_rd_data);
+        // $display("[%t] : axi4 readback data = %0h", $realtime, pcis_rd_data);
         for (int num_bytes=0; num_bytes<64; num_bytes++) begin           
              pcis_exp_data[((addr+num_bytes)*8)+:8] = pcis_wr_data[(num_bytes*8)+:8];
              pcis_act_data[((addr+num_bytes)*8)+:8] = pcis_rd_data[(num_bytes*8)+:8];
@@ -328,7 +361,7 @@ module cl_crossbar_tb();
     // // --------------------------------------------
 
 
-    DMA_write_stat_check(.timeout_count(10), .CFG_BASE_ADDR(CFG_BASE_ADDR));
+    DMA_write_stat_check(.timeout_count(50), .CFG_BASE_ADDR(CFG_BASE_ADDR));
     DMA_adapter_error_check(.CFG_BASE_ADDR(CFG_BASE_ADDR));
 
     DMA_buffer_full_check(.buffer_address(pcim_addr+WR_BUFF_SIZE), .timeout_count(50));
@@ -414,3 +447,29 @@ module cl_crossbar_tb();
   endtask
 
 endmodule
+
+
+
+// Table 2-4: Register Names and Descriptions (Xilinx IP Datasheet PG080)
+// Register Name                AXI Address                       Access
+// Interrupt Status Register (ISR) C_BASEADDR + 0x0 Read/Clear on Write(1)
+// Interrupt Enable Register (IER)) C_BASEADDR + 0x4 Read/Write
+// Transmit Data FIFO Reset (TDFR) C_BASEADDR + 0x8 Write(2)
+// Transmit Data FIFO Vacancy (TDFV) C_BASEADDR + 0xC Read
+    //  N writes to Transmit FIFO. 
+    // The value of this register after reset is C_TX_FIFO_DEPTH-4. The register does not
+    // decrement for every Transmit Data FIFO Data Write Port (TDFD) write. 
+    // It decrements by two for every two write locations.
+// Transmit Data FIFO 32-bit Wide Data Write Port (TDFD) C_BASEADDR + 0x10 or C_AXI4_BASEADDR + 0x0000 Write(3)
+// Transmit Length Register (TLR) C_BASEADDR + 0x14 Write
+// Receive Data FIFO reset (RDFR) C_BASEADDR + 0x18 Write(2)
+// Receive Data FIFO Occupancy (RDFO) C_BASEADDR + 0x1C Read
+// Receive Data FIFO 32-bit Wide Data Read Port (RDFD) C_BASEADDR + 0x20 or C_AXI4_BASEADDR + 0x1000 Read(3)
+// Receive Length Register (RLR) C_BASEADDR + 0x24 Read
+// AXI4-Stream Reset (SRR) C_BASEADDR + 0x28 Write(2)
+// Transmit Destination Register (TDR) C_BASEADDR + 0x2C Write
+// Receive Destination Register (RDR) C_BASEADDR + 0x30 Read
+// Transmit ID Register(4) C_BASEADDR + x34 Write
+// Transmit USER Register(4) C_BASEADDR + x38 Write
+// Receive ID Register(4) C_BASEADDR + x3C Read
+// Receive USER Register(4) C_BASEADDR + x40 Read

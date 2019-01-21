@@ -7,6 +7,8 @@
 #include <stdbool.h>
 
 #include <sys/time.h>
+#include <unistd.h>
+
 // #define COSIM 
 
 #ifdef COSIM
@@ -121,29 +123,10 @@ void pop_loop (struct Host *host) {
 		if (!read_64) {
 			printf("Fail. User could not read 64B. The test is stuck. \n.");
 		}
-		uint32_t host_pkt_num = host->get_pkt_num(host);
-			struct timeval cur_time;
-        		double time_us;
-	
-		printf("CL has sent %u packets @ %f us.\n", host_pkt_num, time_us);
-		if (i==0) {
-//			struct timeval cur_time;
-//			double time_us;
-			gettimeofday(&cur_time, NULL);
-			time_us = (double)(cur_time.tv_usec);
-			init_time = time_us;
-			pkt_num = host_pkt_num;
-		} else if (i==10000-1) {
-//			struct timeval cur_time;
-//        		double time_us;
-        		gettimeofday(&cur_time, NULL);
-        		time_us = (double)(cur_time.tv_usec);
-			printf("===> initial time: %f, end time %f; %u, %u\n", init_time, time_us, pkt_num, host_pkt_num); 
-		}          	
 		#ifdef COSIM
 		sv_pause(1);
 		#else
-		sleep(0.1);
+		//sleep(0.9);
 		#endif 
 	}
 }

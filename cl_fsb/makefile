@@ -25,23 +25,19 @@ BUILD_TARGETS=build
 
 all: $(SIM_TARGETS) $(BUILD_TARGETS)
 
-.PHONY: build ip
+.PHONY: build
 
-ip:
-	PROJECT=$(PROJECT) make -C $@ 
-
-$(BUILD_TARGETS): ip
+$(BUILD_TARGETS):
 	PROJECT=$(PROJECT) make -C $@
 
-$(SW_TARGETS): ip
+$(SW_TARGETS):
 	PROJECT=$(PROJECT) make -C $@
 
-$(SIM_TARGETS): ip
+$(SIM_TARGETS):
 	PROJECT=$(PROJECT) GUI=$(GUI) make -C testbenches $@
 
 clean:
 	make -C testbenches clean
 	make -C build clean
 	make -C software clean
-	make -C ip clean
 	rm -f *.log *.jou *.pb

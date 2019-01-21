@@ -264,7 +264,7 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 			// TODO: copy userspace OCL base address
 			break;		
 		default:
-			printk("BSG DMA Driver (Test 0): IOCTL default case.\n");
+			printk("BSG DMA Driver Other test.\n");
 	}
 	#endif 
 
@@ -338,8 +338,148 @@ long dma_ioctl(struct file *filp, unsigned int ioctl_num, unsigned long ioctl_pa
 	        	if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
                 		return -EFAULT;
                 	break;
-		default:
-			return -EINVAL;			
+
+
+		case (FIFO_IST_WR):
+                        poke_ocl( FIFO_IST + val, 0xFFFFFFFF);
+                        break;
+                case (FIFO_IER_WR):
+                        poke_ocl( FIFO_IER + val, 0xFFFFFFFF);
+                        break;
+// 1st fifo
+                case (FIFO_TDFV_RD0):
+                        val = peek_ocl(CROSSBAR_M0 + FIFO_TDFV);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFO_RD0):            
+                        val = peek_ocl(CROSSBAR_M0 + FIFO_RDFO);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFD_RD0):
+                        val = peek_ocl(CROSSBAR_M0 + FIFO_RDFD);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RLR_RD0):                                                                    
+                        val = peek_ocl(CROSSBAR_M0 + FIFO_RLR);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+                        break;
+                case (FIFO_TDFD_WR0):                                                                   
+                        poke_ocl(CROSSBAR_M0 + FIFO_TDFD, val);                                                 
+                        break;
+                case (FIFO_TLR_WR0):                                                                    
+                        poke_ocl(CROSSBAR_M0 + FIFO_TLR, val);                                                  
+                        break;
+// 2nd fifo
+                case (FIFO_TDFV_RD1):
+                        val = peek_ocl(CROSSBAR_M0_1 + FIFO_TDFV);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFO_RD1):            
+                        val = peek_ocl(CROSSBAR_M0_1 + FIFO_RDFO);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFD_RD1):
+                        val = peek_ocl(CROSSBAR_M0_1 + FIFO_RDFD);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RLR_RD1):                                                                    
+                        val = peek_ocl(CROSSBAR_M0_1 + FIFO_RLR);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+                        break;
+                case (FIFO_TDFD_WR1):                                                                   
+                        poke_ocl(CROSSBAR_M0_1 + FIFO_TDFD, val);                                                 
+                        break;
+                case (FIFO_TLR_WR1):                                                                    
+                        poke_ocl(CROSSBAR_M0_1 + FIFO_TLR, val);
+			break;
+
+// 3rd fifo
+                case (FIFO_TDFV_RD2):
+                        val = peek_ocl(CROSSBAR_M0_2 + FIFO_TDFV);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFO_RD2):            
+                        val = peek_ocl(CROSSBAR_M0_2 + FIFO_RDFO);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFD_RD2):
+                        val = peek_ocl(CROSSBAR_M0_2 + FIFO_RDFD);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RLR_RD2):                                                                    
+                        val = peek_ocl(CROSSBAR_M0_2 + FIFO_RLR);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+                        break;
+                case (FIFO_TDFD_WR2):                                                                   
+                        poke_ocl(CROSSBAR_M0_2 + FIFO_TDFD, val);                                                 
+                        break;
+                case (FIFO_TLR_WR2):                                                                    
+                        poke_ocl(CROSSBAR_M0_2 + FIFO_TLR, val);
+			break;
+
+// 4th fifo
+                case (FIFO_TDFV_RD3):
+                        val = peek_ocl(CROSSBAR_M0_3 + FIFO_TDFV);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFO_RD3):            
+                        val = peek_ocl(CROSSBAR_M0_3 + FIFO_RDFO);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RDFD_RD3):
+                        val = peek_ocl(CROSSBAR_M0_3 + FIFO_RDFD);
+                        if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+                                return -EFAULT;
+                        break;
+                case (FIFO_RLR_RD3):                                                                    
+                        val = peek_ocl(CROSSBAR_M0_3 + FIFO_RLR);
+			if (copy_to_user((void *)ioctl_param, (void *) &val, sizeof(uint32_t)) != 0)
+				return -EFAULT;
+                        break;
+                case (FIFO_TDFD_WR3):                                                                   
+                        poke_ocl(CROSSBAR_M0_3 + FIFO_TDFD, val);                                                 
+                        break;
+                case (FIFO_TLR_WR3):                                                                    
+                        poke_ocl(CROSSBAR_M0_3 + FIFO_TLR, val);
+			break;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                default: 
+                        return -EINVAL;
 	}
 	return 0;
 }
