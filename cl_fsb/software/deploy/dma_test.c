@@ -8,6 +8,7 @@
 
 int main () {
 	int val;
+	int write, read;
 
 	printf("Running head/tail DMA tests.\n\n");
 
@@ -21,9 +22,12 @@ int main () {
 		printf("Error when mmap'ing OCL Bar.\n");
 		return 0;
 	}
+
+	#ifdef DEBUG
 	printf("OCL base address is %p\n", ocl_base);
+	#endif 
 	
-	/* Setup device */
+	/* Setup dma device */
 	ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
 	
 	write_wr_head(host, 0);
@@ -62,7 +66,7 @@ int main () {
 	pop_loop(host);
 
 	host->stop(host);
-	
+
 	deploy_close();
 	return 0;
 }

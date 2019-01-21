@@ -16,7 +16,7 @@
 #include "driver/bsg_dma_driver.h"
 #include "fifo.h"
 
-#define debug 0
+// define DEBUG
 
 static const uint32_t BUF_SIZE = 4 * 1024 * 1024;
 static const uint32_t ALIGNMENT = 64;
@@ -157,30 +157,31 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 		printf("Unable to open device.\n");
 		return; 
 	}
-	host->buf_size = DMA_BUFFER_SIZE; /* global buffer */
-	host->buf = NULL; /* TODO: rename to mmap_buf */
-	ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
-	host->buf_cpy = (char *) aligned_alloc(align, buf_size + 64); /* user copy of buffer */
-	memset(host->buf_cpy, 0, buf_size + 64);
-	
-	host->head = 0;
-	
-	host->get_tail = get_tail;	
-	//host->write_wr_addr_high = write_wr_addr_high;
-	//host->write_wr_addr_low = write_wr_addr_low;
-	host->write_wr_head = write_wr_head;
-	host->write_wr_len = write_wr_len;
-	host->write_wr_buf_size = write_wr_buf_size;
-	host->start_write = start_write;
-	host->stop = stop;
-	host->pop = pop;
-	host->print = print;
+	if (buf_size > 0) {
+		host->buf_size = DMA_BUFFER_SIZE; /* global buffer */
+		host->buf = NULL; /* TODO: rename to mmap_buf */
+		ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
+		host->buf_cpy = (char *) aligned_alloc(align, buf_size + 64); /* user copy of buffer */
+		memset(host->buf_cpy, 0, buf_size + 64);
+		
+		host->head = 0;
+		
+		host->get_tail = get_tail;	
+
+		host->write_wr_head = write_wr_head;
+		host->write_wr_len = write_wr_len;
+		host->write_wr_buf_size = write_wr_buf_size;
+		host->start_write = start_write;
+		host->stop = stop;
+		host->pop = pop;
+		host->print = print;
+	}
 }
 
 char *deploy_mmap_ocl () {
 	if (dev_fd == -1)
 		return 0;
-	char *addr = mmap(NULL, 0x1000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, CROSSBAR_M1); 
+	char *addr = mmap(NULL, 0x2000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0); 
 	if (addr == MAP_FAILED) {
 		printf("mmap failed.\n");
 		return 0;
@@ -197,41 +198,80 @@ void deploy_close () {
 }
 
 /*
- * reads from the nth fifo
+ * writes 128B to the nth fifo
  * returns true on success and false on failure.
  * */
-bool deploy_write_fifo (uint8_t n, int val) {
+bool deploy_write_fifo (uint8_t n, int *val) {
+	
 	if (n >= NUM_FIFO) {
 		printf("invalid fifo.\n");
 		return false;
 	}
 
-	else if (fifo[n][FIFO_VACANCY] < 1) {
-		printf("fifo full.\n");
+	uint16_t *reg = (uint16_t *) (ocl_base + fifo[n][FIFO_VACANCY]);
+	#ifdef DEBUG
+	printf("write(): vacancy is %u\n", *reg);	
+	#endif
+
+	if (*reg < 4) {
+		printf("not enough space in fifo.\n");
 		return false;
 	}
 	
-	*((int *) (ocl_base + fifo[n][FIFO_WRITE])) = val;
+	for (int i = 0; i < 4; i++) {
+		//printf("writing %d to reg %d\n", val[i], fifo[n][FIFO_WRITE]);
+		*((int *) (ocl_base + fifo[n][FIFO_WRITE])) = val[i];
+	}
+	while (*reg != 508) {
+		*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
+	//	printf("write(): vacancy not yet updated.\n");
+	}
+
 	return true;
 }
 
 /*
- * writes to the nth fifo
+ * reads 128B from the nth fifo
  * returns dequeued element on success and INT_MAX on failure.
  * */
-int deploy_read_fifo (uint8_t n) {
+int *deploy_read_fifo (uint8_t n) {
 	if (n >= NUM_FIFO) {
-		printf("invalid fifo.\n.");
-		return INT_MAX;
+		printf("Invalid fifo.\n.");
+		return NULL;
 	}
 
-	else if (fifo[n][FIFO_OCCUPANCY] < 1) {
-		printf("fifo empty.\n");
-		return INT_MAX;
+	uint16_t *reg = (uint16_t *) (ocl_base + fifo[n][FIFO_OCCUPANCY]);
+;
+	while (*reg < 1) {
+		printf("Occupancy still 0.\n");
 	}
-	
-	int val = *((int *) (ocl_base + fifo[n][FIFO_READ]));
+//	#ifdef DEBUG
+//	printf("read(): occupancy is %u\n", *reg);	
+//	#endif
+//	if (*reg < 1) {
+//		printf("not enough data in fifo.\n");
+//		return NULL;
+//	}
+
+	reg = ((uint16_t *) (ocl_base + fifo[n][FIFO_RECEIVE_LENGTH]));
+	#ifdef DEBUG
+	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], *reg);
+	#endif
+	int *val = (int *) calloc(4, sizeof(int));
+	for (int i = 0; i < 4; i++) {
+		val[i] = *((int *) (ocl_base + fifo[n][FIFO_READ]));
+	}
+
+	/* dummy reads */
 	return val;
+
 }
 
-
+/* clears interrupts for the nth fifo */
+void clear_int (uint8_t n) {
+	if (n >= NUM_FIFO) { 
+		printf("Invalid fifo.\n");
+		return;
+	}
+	*((int *) (ocl_base + fifo[n][FIFO_ISR])) = 0xFFFFFFFF;
+}
