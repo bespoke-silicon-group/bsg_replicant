@@ -20,11 +20,14 @@ CFLAGS = -std=c11 $(INCLUDES)
 
 CC = gcc
 
-dma_dest: dma_test.o 
+fifo_test: fifo_test.o deploy.h
+	gcc $(CFLAGS) fifo_test.o -o fifo_test $(INCUDES)
+
+dma_dest: dma_test.o deploy.h
 	gcc $(CFLAGS) dma_test.o -o dma_test $(INCUDES)
 
 hw_test: hw_test.o 
 	gcc $(CFLAGS) hw_test.o -o hw_test $(INCUDES)
 
 clean:
-	rm -f *.o dma_test hw_test
+	rm -f *.o dma_test fifo_test hw_test

@@ -23,8 +23,10 @@
 #define IOCTL_READ_WR_BUF_SIZE _IOR(F1_MAGIC, 12, uint32_t)
 #define IOCTL_READ_CFG _IOR(F1_MAGIC, 13, uint32_t)
 #define IOCTL_READ_CNTL _IOR(F1_MAGIC, 14, uint32_t)
+
+#define IOCTL_GET_OCL _IOR(F1_MAGIC, 15, uint32_t)
  
-#define IOCTL_CLEAR_BUFFER _IO(F1_MAGIC, 15)
+#define IOCTL_CLEAR_BUFFER _IO(F1_MAGIC, 16)
 
 #define IOCTL_PKT_NUM _IOR(F1_MAGIC, 16, uint32_t)
 #endif
