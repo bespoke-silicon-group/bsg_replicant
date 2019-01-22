@@ -1,5 +1,3 @@
-#define _XOPEN_SOURCE 500
-#define _BSD_SOURCE
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,7 +34,7 @@ static uint32_t get_tail (struct Host *host) {
 
 static void write_wr_head (struct Host *host, uint32_t val) {
 	if (ocl_base) {
-		uint32_t *reg = (uint32_t *) (ocl_base + WR_HEAD);
+		uint32_t *reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + WR_HEAD);
 		*reg = val;
 	}
 	else {
@@ -47,7 +45,7 @@ static void write_wr_head (struct Host *host, uint32_t val) {
 
 static void write_wr_len (struct Host *host, uint32_t val) {
 	if (ocl_base) {
-		uint32_t *reg = (uint32_t *) (ocl_base + WR_LEN);
+		uint32_t *reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + WR_LEN);
 		*reg = val;
 	}
 	else {
@@ -63,9 +61,9 @@ static void write_wr_buf_size (struct Host *host, uint32_t val) {
 
 static void start_write (struct Host *host) {
 	if (ocl_base) {
-		uint32_t *reg = (uint32_t *) (ocl_base + CFG_REG);
+		uint32_t *reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + CFG_REG);
 		*reg = 0x10;
-		reg = (uint32_t *) (ocl_base + CNTL_REG);
+		reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + CNTL_REG);
 		*reg = 0x1;
 	}
 	else {
@@ -85,6 +83,9 @@ static void stop (struct Host *host) {
  * TODO: return read's return value. 
  * */
 static bool pop (struct Host *host, uint32_t pop_size) {
+	
+	printf("pop(): %d bytes\n", pop_size);
+
 
 	uint32_t tail;
 	ioctl(dev_fd, IOCTL_TAIL, &tail);
@@ -102,18 +103,9 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 	
 	can_read = unused >= pop_size;
 
-	uint32_t free_space;
-	free_space = DMA_BUFFER_SIZE - unused;
-	
-	if (free_space <= 4096) {
-		printf("WARNNING!!!! : CL does not have enough place to write. free bytes is %d\n", free_space);
-	} else {
-	} 
 
 	if (!can_read) {
-//		printf("host: can't read %u bytes because (Head, Tail) = (%u, %u);\n only %u bytes available.\n", pop_size, head, tail, unused); 
-//		printf("wait for enough data: (%d, %d)", unused, free_space);
-		printf(".");
+		printf("host: can't read %u bytes because (Head, Tail) = (%u, %u);\n only %u bytes available.\n", pop_size, head, tail, unused); 
 		return false;
 	}
                                                                                         	
@@ -124,6 +116,16 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 		printf("host: could not copy %u bytes.\n", pop_size);
 		return false;
 	}
+
+	/* print what has just been copied */
+	for (uint32_t i = head; i < head + num_cpy; i++) {
+		printf("0x%2X", 0xFF & host->buf_cpy[i]);
+		if ((i + 1) % 16 == 0)
+			printf("\n");
+		else
+			printf(" ");
+	}
+
 	head = (head + num_cpy) % DMA_BUFFER_SIZE;
 	num_cpy = pop_size - num_cpy;  /* data that wraps over the end of system memory buffer */
 	if (num_cpy > 0) { /* if there is still data to read */
@@ -132,22 +134,22 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 			printf("host: could not copy %u bytes.\n", pop_size);
 			return false;
 		}
+		/* print what has just been copied */
+		for (uint32_t i = 0; i < num_cpy; i++) {
+			printf("0x%2X", 0xFF & host->buf_cpy[i]);
+			if ((i + 1) % 16 == 0)
+				printf("\n");
+			else
+				printf(" ");
+		}
 		head = head + num_cpy;	
 	}
 
+	usleep(10);
 	ioctl(dev_fd, IOCTL_WR_HEAD, head); /* update head register on device */
 	host->head = head; /* update its own copy of head */	
 	return true;
 } 
-
-
-static uint32_t get_pkt_num (struct Host *host) {
-	uint32_t pkt_num = 0;
-	if (ioctl(dev_fd, IOCTL_PKT_NUM, &pkt_num) != 0)
-		printf("ioctl error. return pkt_num as 0.\n");
-	return pkt_num;
-}
-
 
 /* 
  * prints data as a sequence of unsigned chars.
@@ -200,7 +202,7 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 char *deploy_mmap_ocl () {
 	if (dev_fd == -1)
 		return 0;
-	char *addr = mmap(NULL, 0x2000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0); 
+	char *addr = mmap(NULL, 0x4000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0); 
 	if (addr == MAP_FAILED) {
 		printf("mmap failed.\n");
 		return 0;
@@ -211,7 +213,7 @@ char *deploy_mmap_ocl () {
 
 void deploy_close () {
 	if (ocl_base)
-		munmap(ocl_base, 0x1000);
+		munmap(ocl_base, 0x4000);
 	if (dev_fd != -1)
 		close(dev_fd);
 }

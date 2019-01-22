@@ -1,4 +1,4 @@
-#define _BSG_SOURCE
+#define _BSD_SOURCE
 #define _XOPEN_SOURCE 500
 
 #include <stdio.h>
@@ -58,7 +58,7 @@ void test_fifos () {
 			deploy_write_fifo(i, &write[fsb_p*4]); /* write the packets */
 		}
 
-		//usleep(100);
+		usleep(100);
 		
 		/* read from fifo i */
 		bool pass = true;
