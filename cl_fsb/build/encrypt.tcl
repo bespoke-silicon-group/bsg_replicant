@@ -50,6 +50,7 @@ file copy -force $CL_DIR/hardware/cl_axis_test_master.sv                $TARGET_
 file copy -force $CL_DIR/hardware/cl_axil_mux4.sv                       $TARGET_DIR 
 file copy -force $CL_DIR/hardware/cl_ocl_slv.sv                         $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_fsb.sv                             $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_simple_loopback.v                  $TARGET_DIR
 
 file copy -force $BSG_IP_DIR/bsg_misc/bsg_defines.v                                                 $TARGET_DIR
 file copy -force $BSG_IP_DIR/bsg_fsb/bsg_fsb_pkg.v                                                  $TARGET_DIR

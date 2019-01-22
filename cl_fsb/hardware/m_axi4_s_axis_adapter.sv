@@ -833,7 +833,7 @@ logic axi_frctn_valid_i; // fsb pkt is partly packed and hold for valid signal
 
 // 1. buffer full
 // two cases when the buffer becomes full
-// a): head < tail & tail >= wr_last_addr
+// a): head < tail & tail - head >= wr_last_addr
 // b): head > tail & head - tail <= 0x40
 // where head stands for the read pointer at this write
 // tail stands for the write pointer after this write

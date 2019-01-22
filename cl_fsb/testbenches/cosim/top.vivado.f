@@ -52,6 +52,7 @@ ${CL_DIR}/hardware/m_axi4_s_fsb_adapter.sv
 ${CL_DIR}/hardware/m_axi4_s_axis_adapter.sv
 ${CL_DIR}/hardware/bsg_axis_gen_master.sv
 ${CL_DIR}/hardware/cl_fsb.sv
+${CL_DIR}/hardware/cl_simple_loopback.v
 
 # BSG files
 -include ${BSG_IP_DIR}/bsg_misc

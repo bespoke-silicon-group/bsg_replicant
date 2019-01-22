@@ -58,7 +58,7 @@ Interuptions:
 The DMA write will pause when either these following 2 situations occur:
 
 1. The buffer becomes full    
-    - head < tail && tail >= wr_last_addr
+    - head < tail && tail - head >= wr_last_addr
 
     - head > tail && head - tail <= 0x40 (bytesNum per AXI4 write)
 

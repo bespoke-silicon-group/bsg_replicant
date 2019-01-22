@@ -593,11 +593,10 @@ logic [axil_slv_num_lp-1:0] m0_fsb_yumi_o, m0_fsb_ready_i;
 genvar i;
 for (i=0;i<axil_slv_num_lp;i=i+1)
 begin: bsg_test_node_slv
-  bsg_test_node_client #(
-    .ring_width_p(fsb_width_lp),
-    .master_id_p (0           ),
-    .client_id_p (0           )
-  ) fsb_client_node (
+  cl_simple_loopback #(
+    .data_width_p(80)
+    ,.mask_p      ({80{1'b1}})
+  ) fsb_loopback_node (
     .clk_i  (clk                                        ),
     .reset_i(~fsb_node_rstn                             ),
     .en_i   (1'b1                                       ),
