@@ -1,24 +1,15 @@
-# Amazon FPGA Hardware Development Kit
-#
-# Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#
-# Licensed under the Amazon Software License (the "License"). You may not use
-# this file except in compliance with the License. A copy of the License is
-# located at
-#
-#    http://aws.amazon.com/asl/
-#
-# or in the "license" file accompanying this file. This file is distributed on
-# an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or
-# implied. See the License for the specific language governing permissions and
-# limitations under the License.
 
 INCLUDES = -I$(SDK_DIR)/userspace/include
-INCLUDES += -I $(HDK_DIR)/common/software/include
+INCLUDES += -I$(HDK_DIR)/common/software/include 
+INCLUDES += -I$(CONCURRENT_QUEUE)
 
 CFLAGS = -std=c11 $(INCLUDES) 
+CXXFLAGS = -std=c++11 $(INCLUDES)
 
 CC = gcc
+
+fifo_threads: fifo_threads.o deploy.h 
+	g++ $(CXXFLAGS) fifo_threads.o -o fifo_threads $(INCLUDES)
 
 fifo_test: fifo_test.o deploy.h
 	gcc $(CFLAGS) fifo_test.o -o fifo_test $(INCUDES)
@@ -30,4 +21,4 @@ hw_test: hw_test.o
 	gcc $(CFLAGS) hw_test.o -o hw_test $(INCUDES)
 
 clean:
-	rm -f *.o dma_test fifo_test hw_test
+	rm -f *.o dma_test fifo_test hw_test fifo_threads

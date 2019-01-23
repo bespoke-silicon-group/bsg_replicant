@@ -18,7 +18,7 @@
 struct Host {
 	char *buf, *buf_cpy;
 	uint32_t head, buf_size;
-	uint32_t (*get_tail) ();
+	uint32_t (*get_tail) (struct Host *host);
 	void (*write_cfg_reg) (struct Host *host, uint32_t val);
 	void (*write_wr_addr_high) (struct Host *host, uint32_t val);
 	void (*write_wr_addr_low) (struct Host *host, uint32_t val);

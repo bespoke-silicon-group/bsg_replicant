@@ -202,7 +202,7 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 char *deploy_mmap_ocl () {
 	if (dev_fd == -1)
 		return 0;
-	char *addr = mmap(NULL, 0x4000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0); 
+	char *addr = (char *) mmap(NULL, 0x4000, PROT_READ | PROT_WRITE, MAP_SHARED, dev_fd, 0); 
 	if (addr == MAP_FAILED) {
 		printf("mmap failed.\n");
 		return 0;
