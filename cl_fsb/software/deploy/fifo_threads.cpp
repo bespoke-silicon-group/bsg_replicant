@@ -31,81 +31,89 @@ vector<ConcurrentQueue<pair<uint8_t, int *>>> requests(10); /* FPGA requests acr
 mutex print_mutex;
 
 
+/*
+ * Right now:
+ *	 U = {u_1, ..., u_m} that can access any fifo
+ *	 C = {c_1, ..., c_n} that complete requests
+ * Change:
+ *	U = {u_1, ...,u_m} can only access its fifos
+ *		error check threads vying for same fifo (later)
+ *	u_i
+ *		requests fifos
+ *		calls deploy_write and deploy_read to them 
+ * */
+
+
+/* Helper testing functions */
 namespace FIFO {
-	uint8_t READ = 0;
-	uint8_t WRITE = 1;
+	void get_random (int *buf) {
+		if (buf) {
+			for (int i = 0; i < DW_PER_FSB; i++) {
+				buf[i] = rand();  
+			} 
+		}
+	}
+	
+	bool is_equal (int *read, int *write) {
+		if (read && write) {
+			bool pass  = true;
+			for (int i = 0; i < 2; i++) {
+				if (read[i] != write[i]) {
+					pass = false;
+					break;
+				}
+			}
+			return pass;
+		}
+		else 
+			return false;
+	}
+	int NUM_PACKETS = 1;
+	uint8_t NUM_USERS = 10;
 };
 
-/*
- * handles requests for fifo.
+
+/* writes data to fifo n and reads it back in a loop 
+ * writes 1 128b packet to FPGA and then reads it back
  * */
-void handle_request (uint8_t fifo) {
-	while (true) {
-		pair<uint8_t, int *> request;
-		bool valid = requests[fifo].try_dequeue(request);
-		if (valid) {
-			if (request.first == FIFO::READ) {
-				int *data = deploy_read_fifo(fifo);
-				if (data) {
-					for (int i = 0; i < DW_PER_FSB; i++)
-						request.second[i] = data[i];
-					request.second[DW_PER_FSB] = 1; /* signal thread that data has been read */
-					free(data);
-				}	
-			}	
-			else if (request.first == FIFO::WRITE) {
-				deploy_write_fifo(fifo, request.second);
-			}
-		}
-	}
-}
-
-
-void get_random (int *buf) {
-	if (buf) {
-		for (int i = 0; i < DW_PER_FSB; i++) {
-			buf[i] = rand();  
-		} 
-	}
-}
-
-bool is_equal (int *read, int *write) {
-	if (read && write) {
-		bool pass  = true;
-		for (int i = 0; i < DW_PER_FSB; i++) {
-			if (read[i] != write[i]) {
-				pass = false;
-				break;
-			}
-		}
-		return pass;
-	}
-	else 
-		return false;
-}
-
-
-/* writes data to fifo n and reads it back in a loop */
 void user (int n) {
-	int *write = (int *) calloc(DW_PER_FSB, sizeof(int));
-	while (true) {
-		get_random(write); 
-		int *read = (int *) calloc(DW_PER_FSB + 1, sizeof(int));
-		requests[n].enqueue(make_pair(FIFO::WRITE, write)); /* issue a write request */
-		requests[n].enqueue(make_pair(FIFO_READ, read)); /* issue a read request */
-		while (!read[DW_PER_FSB]) {} /* wait for read to be completed. TODO: sleep instead of spinlocking */	
-		if (is_equal(read, write)) {/* compare read and write data */
-			print_mutex.lock();
-			cout << "Pass!" << endl;
-			print_mutex.unlock();
+	
+	vector<int *> writes;
+	bool valid; 
+
+	for (int i = 0; i < FIFO::NUM_PACKETS; i++) {
+		int *write = (int *) calloc(DW_PER_FSB, sizeof(int));
+		FIFO::get_random(write); 
+		deploy_write_fifo(i, write); /* write the packets */
+		writes.push_back(write);
+	}
+
+	bool pass = true;
+	for (int fsb_p = 0; fsb_p < FIFO::NUM_PACKETS; fsb_p++) {
+		int *read = deploy_read_fifo(n);
+		if (!read) {
+			printf("fifo test %d failed. No read data for fsb packet %d received.\n", n, fsb_p);
+			pass = false;
 		}
 		else {
-			print_mutex.lock();
-			cout << "Fail!" << endl;
-			print_mutex.unlock();
+			for (int j = 0; j < 2; j++) {
+				if (read[j] != writes[fsb_p][j]) {
+					printf("fifo test %d failed. Mismatch at fsb packet %d, DW %d: Received %d instead of %x. \n", n, fsb_p, j, read[j], j);
+					pass = false;
+					break;
+				}
+			}
 		}
-		free(read);
+		if (read)
+			free(read);
+
 	}
+	if (pass) {
+		printf("fifo test %d passed.\n", n) ;
+	}
+
+	for (int i = 0; i < FIFO::NUM_PACKETS; i++)
+		free(writes[i]);
 }
 
 int main () {
@@ -123,21 +131,14 @@ int main () {
 		return 0;
 	}
 
-	/* spawn service threads */
-	vector<thread> service_threads;
-	for (int i = 0; i < NUM_FIFO; i++) {
-		service_threads.push_back(thread(handle_request, i));
-		service_threads[i].join();
-	}	
-
-
 	/* spawn user threads */
 	vector<thread> users;
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < FIFO::NUM_USERS; i++) {
 		users.push_back(thread(user, i));
+	}
+	for (int i = 0; i < FIFO::NUM_USERS; i++) {
 		users[i].join();
 	} 	
-
 	return 0;
 }
 

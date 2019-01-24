@@ -109,20 +109,20 @@ void print_pop(struct Host *host, uint32_t pop_size) {
  * */
 
 void pop_loop (struct Host *host) {
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < 15; i++) {
 		bool read_64 = host->pop(host, 64);
 		if (read_64)
 			printf("\n");
-		bool read_128 = host->pop(host, 128);
-		if (read_128)
-			printf("\n");
+//		bool read_128 = host->pop(host, 128);
+//		if (read_128)
+//			printf("\n");
 		if (!read_64) {
 			printf("Fail. User could not read 64B. The test is stuck. \n.");
 		}
 		#ifdef COSIM
 		sv_pause(1);
 		#else
-		//sleep(0.9);
+		sleep(1);
 		#endif 
 	}
 }

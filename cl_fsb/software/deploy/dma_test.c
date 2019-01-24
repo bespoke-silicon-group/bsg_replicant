@@ -8,20 +8,10 @@
 #include "deploy.h"
 #include "../device.h"
 
-void write_fifo_0(int byte_num);
-void write_fifo_1(int byte_num);
-void write_fifo_2(int byte_num);
-void write_fifo_3(int byte_num);
-void read_fifo_0();
-void read_fifo_1();
-void read_fifo_2();
-void read_fifo_3();
-
 int main () {
 	int val;
 	int write, read;
 
-	sleep(5);
 	printf("Running head/tail DMA tests.\n\n");
 
 	/* Setup host */
@@ -35,14 +25,13 @@ int main () {
 		return 0;
 	}
 
-//	#ifdef DEBUG
+	#ifdef DEBUG
 	printf("OCL base address is %p\n", ocl_base);
-//	#endif 
+	#endif 
 	
 	/* Setup dma device */
 	ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
 	
-	write_wr_head(host, 0);
 
 	ioctl(dev_fd, IOCTL_WR_ADDR_HIGH);
 	#ifdef DEBUG
@@ -68,16 +57,22 @@ int main () {
 	printf("WR_BUF_SIZE: %d\n", val);
 	#endif
 
-	/* start write */
+	write_wr_head(host, 0);
 	
-	host->start_write(host);
 
 	sleep(1);
+	/* start write */
+	host->start_write(host);
+	printf("Started the write.\n");
 
+	sleep(10);
+	host->stop(host);		
 	/* read */
 	pop_loop(host);
 
-	host->stop(host);
+	/* stop */
+	*((uint32_t *) (ocl_base + CROSSBAR_M1 + CNTL_REG)) = 0;
+	write_reset(host, 1);	
 
 	deploy_close();
 

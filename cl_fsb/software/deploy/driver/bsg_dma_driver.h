@@ -1,7 +1,7 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
-#define DMA_BUFFER_SIZE 4096
+#define DMA_BUFFER_SIZE 512
 
 #define F1_MAGIC 'F'
 

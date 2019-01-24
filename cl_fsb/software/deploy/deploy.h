@@ -33,13 +33,21 @@ static uint32_t get_tail (struct Host *host) {
 }
 
 static void write_wr_head (struct Host *host, uint32_t val) {
+//	if (ocl_base) {
+//		uint32_t *reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + WR_HEAD);
+//		*reg = val;
+//	}
+	if (ioctl(dev_fd, IOCTL_WR_HEAD, val) != 0) 
+		printf("ioctl error.\n"); 
+}
+
+static void write_reset (struct Host *host, uint32_t val) {
 	if (ocl_base) {
-		uint32_t *reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + WR_HEAD);
+		uint32_t *reg = (uint32_t *) (ocl_base + CROSSBAR_M1 + RESET_REG);
 		*reg = val;
 	}
 	else {
-		if (ioctl(dev_fd, IOCTL_WR_HEAD, val) != 0) 
-			printf("ioctl error.\n"); 
+		printf("write_reset(): mmap not supported. Register not written to.\n");
 	}
 }
 
@@ -84,13 +92,14 @@ static void stop (struct Host *host) {
  * */
 static bool pop (struct Host *host, uint32_t pop_size) {
 	
-	printf("pop(): %d bytes\n", pop_size);
 
 
 	uint32_t tail;
 	ioctl(dev_fd, IOCTL_TAIL, &tail);
 	
 	uint32_t head = host->head; 
+
+	printf("pop(): %d bytes. (Head, Tail) = (%u, %u).\n", pop_size, head, tail);
 	
 	bool can_read;
 	uint32_t unused, num_cpy;
@@ -118,7 +127,7 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 	}
 
 	/* print what has just been copied */
-	for (uint32_t i = head; i < head + num_cpy; i++) {
+	for (uint32_t i = 0; i < DMA_BUFFER_SIZE; i++) {
 		printf("0x%2X", 0xFF & host->buf_cpy[i]);
 		if ((i + 1) % 16 == 0)
 			printf("\n");
@@ -134,20 +143,21 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 			printf("host: could not copy %u bytes.\n", pop_size);
 			return false;
 		}
-		/* print what has just been copied */
-		for (uint32_t i = 0; i < num_cpy; i++) {
-			printf("0x%2X", 0xFF & host->buf_cpy[i]);
-			if ((i + 1) % 16 == 0)
-				printf("\n");
-			else
-				printf(" ");
-		}
+	//	/* print what has just been copied */
+	//	for (uint32_t i = 0; i < num_cpy; i++) {
+	//		printf("0x%2X", 0xFF & host->buf_cpy[i]);
+	//		if ((i + 1) % 16 == 0)
+	//			printf("\n");
+	//		else
+	//			printf(" ");
+	//	}
 		head = head + num_cpy;	
 	}
 
 	usleep(10);
 	ioctl(dev_fd, IOCTL_WR_HEAD, head); /* update head register on device */
 	host->head = head; /* update its own copy of head */	
+	printf("pop(): successful. New (Head, Tail) = (%u, %u).\n", head, tail);
 	return true;
 } 
 
