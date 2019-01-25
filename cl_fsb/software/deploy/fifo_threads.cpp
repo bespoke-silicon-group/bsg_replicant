@@ -18,18 +18,13 @@
 #include "../device.h"
 #include "fifo.h"
 
-/* concurrency */
-#include "concurrentqueue.h"
 
 using namespace std;
-using namespace moodycamel;
 
 static const int DW_PER_FSB = 4;
 void test_fifos();
 void loop_test(int n, void (*f) ());
-vector<ConcurrentQueue<pair<uint8_t, int *>>> requests(10); /* FPGA requests across threads */
-mutex print_mutex;
-
+mutex pcie, print_mutex;
 
 /*
  * Right now:
@@ -68,8 +63,11 @@ namespace FIFO {
 		else 
 			return false;
 	}
-	int NUM_PACKETS = 1;
+	int NUM_PACKETS = 10;
 	uint8_t NUM_USERS = 10;
+	
+	int *writes;
+	int *reads;
 };
 
 
@@ -77,43 +75,46 @@ namespace FIFO {
  * writes 1 128b packet to FPGA and then reads it back
  * */
 void user (int n) {
-	
-	vector<int *> writes;
 	bool valid; 
+	int *write = FIFO::writes + (n * FIFO::NUM_PACKETS * DW_PER_FSB);	
 
+	
 	for (int i = 0; i < FIFO::NUM_PACKETS; i++) {
-		int *write = (int *) calloc(DW_PER_FSB, sizeof(int));
-		FIFO::get_random(write); 
-		deploy_write_fifo(i, write); /* write the packets */
-		writes.push_back(write);
+		pcie.lock();
+		deploy_write_fifo(n, write + i * DW_PER_FSB); /* write the packets */
+		pcie.unlock();
 	}
-
+		
 	bool pass = true;
 	for (int fsb_p = 0; fsb_p < FIFO::NUM_PACKETS; fsb_p++) {
-		int *read = deploy_read_fifo(n);
+		pcie.lock();
+		int *read = deploy_read_fifo(n, FIFO::reads + (n * FIFO::NUM_PACKETS * DW_PER_FSB + (fsb_p * DW_PER_FSB)));
+		pcie.unlock();
 		if (!read) {
+			print_mutex.lock();
 			printf("fifo test %d failed. No read data for fsb packet %d received.\n", n, fsb_p);
+			print_mutex.unlock();
 			pass = false;
 		}
 		else {
 			for (int j = 0; j < 2; j++) {
-				if (read[j] != writes[fsb_p][j]) {
-					printf("fifo test %d failed. Mismatch at fsb packet %d, DW %d: Received %d instead of %x. \n", n, fsb_p, j, read[j], j);
+				if (read[j] != (write + fsb_p * DW_PER_FSB)[j]) {
+					print_mutex.lock();
+					printf("fifo test %d failed. Mismatch at fsb packet %d, DW %d: Received %d instead of %d. Address of written DW: %p.\n", n, fsb_p, j, read[j], (write + fsb_p * DW_PER_FSB)[j], write + fsb_p * DW_PER_FSB + j );
+					printf("Write base: %p, Read base: %p\n", fifo[n][FIFO_WRITE] & (~ 0xFF), fifo[n][FIFO_READ] & (~ 0xFF));
+					print_mutex.unlock();
 					pass = false;
 					break;
 				}
 			}
 		}
-		if (read)
-			free(read);
-
 	}
+	
 	if (pass) {
+		print_mutex.lock();
 		printf("fifo test %d passed.\n", n) ;
+		print_mutex.unlock();
 	}
-
-	for (int i = 0; i < FIFO::NUM_PACKETS; i++)
-		free(writes[i]);
 }
 
 int main () {
@@ -131,6 +132,22 @@ int main () {
 		return 0;
 	}
 
+	FIFO::writes = (int *) calloc(NUM_FIFO * FIFO::NUM_PACKETS * DW_PER_FSB, sizeof(int));
+	for (int fifo = 0; fifo < NUM_FIFO; fifo++) {
+		for (int pkt = 0; pkt < FIFO::NUM_PACKETS; pkt++) {
+			for (int dw = 0; dw < DW_PER_FSB; dw++) {
+				FIFO::get_random(FIFO::writes + (NUM_FIFO * FIFO::NUM_PACKETS * DW_PER_FSB) + (pkt * FIFO::NUM_PACKETS) + dw);
+			}
+		}
+	}
+	
+	FIFO::reads = (int *) calloc(NUM_FIFO * FIFO::NUM_PACKETS * DW_PER_FSB, sizeof(int));
+
+
+	/* clear fifo interrupts */
+	for (int fifo = 0; fifo < NUM_FIFO; fifo++)
+		clear_int(fifo);
+
 	/* spawn user threads */
 	vector<thread> users;
 	for (int i = 0; i < FIFO::NUM_USERS; i++) {
@@ -139,6 +156,20 @@ int main () {
 	for (int i = 0; i < FIFO::NUM_USERS; i++) {
 		users[i].join();
 	} 	
+
+
+	/* what has been written */
+//	for (int fifo = 0; fifo < NUM_FIFO; fifo++) {
+//		for (int pkt = 0; pkt < FIFO::NUM_PACKETS; pkt++) {
+//			cout << "fifo " << fifo << ", packet " << pkt << ": "; 
+//			for (int dw = 0; dw < DW_PER_FSB; dw++)
+//				cout << FIFO::writes[(fifo * FIFO::NUM_PACKETS * DW_PER_FSB) +  (pkt * DW_PER_FSB) + dw] << " ";
+//		}
+//		cout << endl;
+//	}
+
+	free(FIFO::writes);
+	free(FIFO::reads);
 	return 0;
 }
 
