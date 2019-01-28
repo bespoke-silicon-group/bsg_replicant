@@ -4,7 +4,7 @@ INCLUDES += -I$(HDK_DIR)/common/software/include
 INCLUDES += -I$(CONCURRENT_QUEUE)
 
 CFLAGS = -std=c11 $(INCLUDES) 
-CXXFLAGS = -std=c++11 -pthread $(INCLUDES)
+CXXFLAGS = -std=c++11 -pthread -O0 $(INCLUDES)
 
 CC = gcc
 

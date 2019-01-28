@@ -240,6 +240,8 @@ bool deploy_write_fifo (uint8_t n, int *val) {
 	}
 
 	uint16_t *reg = (uint16_t *) (ocl_base + fifo[n][FIFO_VACANCY]);
+	uint16_t init_vacancy = *reg;
+
 	#ifdef DEBUG
 	printf("write(): vacancy is %u\n", *reg);	
 	#endif
@@ -253,9 +255,11 @@ bool deploy_write_fifo (uint8_t n, int *val) {
 		//printf("writing %d to reg %d\n", val[i], fifo[n][FIFO_WRITE]);
 		*((int *) (ocl_base + fifo[n][FIFO_WRITE])) = val[i];
 	}
-	while (*reg != 508) {
+	uint32_t tries = 0;
+	while (*reg != init_vacancy) {
 		*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
-	//	printf("write(): vacancy not yet updated.\n");
+		tries++;
+		//printf("deploy_write(): fifo: %u, try: %u, initial vacancy: %u, current vacancy: %u.\n", n, tries, init_vacancy, *reg);
 	}
 
 	return true;
@@ -265,16 +269,18 @@ bool deploy_write_fifo (uint8_t n, int *val) {
  * reads 128B from the nth fifo
  * returns dequeued element on success and INT_MAX on failure.
  * */
-int *deploy_read_fifo (uint8_t n) {
+int *deploy_read_fifo (uint8_t n, int *val) {
 	if (n >= NUM_FIFO) {
 		printf("Invalid fifo.\n.");
 		return NULL;
 	}
 
 	uint16_t *reg = (uint16_t *) (ocl_base + fifo[n][FIFO_OCCUPANCY]);
-;
+
+	uint32_t num_tries = 0;
 	while (*reg < 1) {
-		printf("Occupancy still 0.\n");
+		num_tries++;
+		//printf("deploy_read(): Fifo %u, try %u, Occupancy still 0.\n", n, num_tries);
 	}
 //	#ifdef DEBUG
 //	printf("read(): occupancy is %u\n", *reg);	
@@ -288,7 +294,10 @@ int *deploy_read_fifo (uint8_t n) {
 	#ifdef DEBUG
 	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], *reg);
 	#endif
-	int *val = (int *) calloc(4, sizeof(int));
+
+	if (!val)
+		val = (int *) calloc(4, sizeof(int));
+
 	for (int i = 0; i < 4; i++) {
 		val[i] = *((int *) (ocl_base + fifo[n][FIFO_READ]));
 	}
