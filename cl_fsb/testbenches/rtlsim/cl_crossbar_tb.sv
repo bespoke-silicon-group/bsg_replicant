@@ -33,7 +33,7 @@ module cl_crossbar_tb();
   parameter WR_RESET = 32'h01;
 
   // parameter for axil read/write adapter
-  parameter IST_REG = 32'h0000_0000;
+  parameter ISR_REG = 32'h0000_0000;
   parameter IER_REG = 32'h0000_0004;
 
   parameter TDFV_REG = 32'h0000_000C;
@@ -75,12 +75,16 @@ module cl_crossbar_tb();
     // peek and poke test
     // ========================================================================
 
-    // $display ("No.1A (concurrent test) ===> AXI-L write to FSB slave:");
-    // for (int i=0; i<10; i++)
-    // begin
-    //   $display("write to fsb_client No. %d", i);
-    //   ocl_FSB_poke_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 + 32'h100 * i), .num(1));
-    // end
+    $display ("No.1A (concurrent test) ===> AXI-L write to FSB slave:");
+    for (int i=0; i<2; i++)
+    begin
+      $display("initiate FIFO IP No. %d", i);
+      ocl_power_up_init(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i));
+      $display("write to fsb_client No. %d", i);
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(1));
+      $display("read from fsb_client No. %d", i);
+      ocl_FSB_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(1));
+    end
     // $display ("No.1B (concurrent test) ===> AXI-L read from FSB slave:");    
     // for (int i=0; i<10; i++)
     // begin
@@ -96,69 +100,69 @@ module cl_crossbar_tb();
     // DMA driver test
     // ========================================================================
 
-    $display ("No.2A ===> FSB data write to Host:");
+    // $display ("No.2A ===> FSB data write to Host:");
 
-    DMA_pcim_config(.start_addr(64'h0000_0000_0000_0000), .burst_len(0), .buffer_size(BUFF1_SIZE), .CFG_BASE_ADDR(CROSSBAR_M1));
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
-    DMA_transfer_start(.start_stop_reg(WR_START), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // DMA_pcim_config(.start_addr(64'h0000_0000_0000_0000), .burst_len(0), .buffer_size(BUFF1_SIZE), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // DMA_transfer_start(.start_stop_reg(WR_START), .CFG_BASE_ADDR(CROSSBAR_M1));
     
-    // test master wvalid pause feature
-    // --------------------------------------------
-    # 500ns; // writting
+    // // test master wvalid pause feature
+    // // --------------------------------------------
+    // # 500ns; // writting
 
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-    pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(-1));
-    # 100ns
-    DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
-    # 5000ns; // writting
-    // --------------------------------------------
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(-1));
+    // # 100ns
+    // DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // # 5000ns; // writting
+    // // --------------------------------------------
 
-    for (int i=0; i<2; i++) begin
-      # 13ns
-      DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-      # 31ns
-      DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
-      # 20ns
-      // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-      pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
-      pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
-      pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
-      // # 20ns
-      // // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-      // pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(128));
-    end
+    // for (int i=0; i<2; i++) begin
+    //   # 13ns
+    //   DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   # 31ns
+    //   DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   # 20ns
+    //   // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
+    //   pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
+    //   pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
+    //   // # 20ns
+    //   // // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   // pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(128));
+    // end
 
-    // test the soft stop and reset feature
-    // --------------------------------------------
-    DMA_transfer_start(.start_stop_reg(WR_STOP), .CFG_BASE_ADDR(CROSSBAR_M1));
-    DMA_check_tail(.pcim_addr(64'h0000_0000_0000_0000), .BUFF_SIZE(BUFF1_SIZE));
-    # 500ns
-    DMA_transfer_reset(.reset_wd(WR_RESET), .CFG_BASE_ADDR(CROSSBAR_M1));
-    DMA_check_tail(.pcim_addr(64'h0000_0000_0000_0000), .BUFF_SIZE(BUFF1_SIZE));
-    # 500ns
-    DMA_transfer_start(.start_stop_reg(WR_START), .CFG_BASE_ADDR(CROSSBAR_M1));
-    DMA_check_tail(.pcim_addr(64'h0000_0000_0000_0000), .BUFF_SIZE(BUFF1_SIZE));
-    // --------------------------------------------
+    // // test the soft stop and reset feature
+    // // --------------------------------------------
+    // DMA_transfer_start(.start_stop_reg(WR_STOP), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // DMA_check_tail(.pcim_addr(64'h0000_0000_0000_0000), .BUFF_SIZE(BUFF1_SIZE));
+    // # 500ns
+    // DMA_transfer_reset(.reset_wd(WR_RESET), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // DMA_check_tail(.pcim_addr(64'h0000_0000_0000_0000), .BUFF_SIZE(BUFF1_SIZE));
+    // # 500ns
+    // DMA_transfer_start(.start_stop_reg(WR_START), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // DMA_check_tail(.pcim_addr(64'h0000_0000_0000_0000), .BUFF_SIZE(BUFF1_SIZE));
+    // // --------------------------------------------
 
-    for (int i=0; i<3; i++) begin
-      # 13ns
-      DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-      # 31ns
-      DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
-      # 20ns
-      // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-      pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
-      pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
-      pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
-      // # 20ns
-      // // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
-      // pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(128));
-    end
+    // for (int i=0; i<3; i++) begin
+    //   # 13ns
+    //   DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   # 31ns
+    //   DMA_master_wvalid_mask(.fsb_wvalid_mask(32'h0000_0010), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   # 20ns
+    //   // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
+    //   pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
+    //   pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(64));
+    //   // # 20ns
+    //   // // pcim_reads_buffer1(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1));
+    //   // pcim_pop_buffer(.pcim_addr(64'h0000_0000_0000_0000), .CFG_BASE_ADDR(CROSSBAR_M1), .BUFF_SIZE(BUFF1_SIZE), .pop_size(128));
+    // end
 
-    # 500ns
-    DMA_write_stat_check(.timeout_count(50), .CFG_BASE_ADDR(CROSSBAR_M1));
-    // DMA_buffer_full_check(.buffer_address(pcim_addr+WR_BUFF_SIZE), .timeout_count(50));
-    DMA_adapter_error_check(.CFG_BASE_ADDR(CROSSBAR_M1));
+    // # 500ns
+    // DMA_write_stat_check(.timeout_count(50), .CFG_BASE_ADDR(CROSSBAR_M1));
+    // // DMA_buffer_full_check(.buffer_address(pcim_addr+WR_BUFF_SIZE), .timeout_count(50));
+    // DMA_adapter_error_check(.CFG_BASE_ADDR(CROSSBAR_M1));
 
 
 
@@ -206,6 +210,17 @@ module cl_crossbar_tb();
     end
   endtask
 
+  task compare_dword(logic [32:0] act_data, exp_data);
+    if(act_data !== exp_data) begin
+        $display($time,,,"***ERROR*** : Data Mismatch!!!");
+        $display("Expected Data: %0h", exp_data);
+        $display("Actual   Data: %0h", act_data);
+       error_count ++;
+    end
+    else begin
+        $display("~~~PASS~~~ : Actual Data %0h is Matched with Expected Data %0h.", act_data, exp_data);
+    end
+  endtask
 
   task disp_err(input string s);
     $display($time,,,"***ERROR*** : %s", s);
@@ -224,58 +239,98 @@ module cl_crossbar_tb();
 // basic peek and poke test with axi_fifo_mm_s
 // ============================================================================
 
-  task ocl_FSB_poke_test(logic [31:0] CFG_BASE_ADDR, int num);
-    logic [31:0] stat_register;
+  task ocl_power_up_init(logic [31:0] CFG_BASE_ADDR);
+    logic [31:0] rd_reg;
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    $display($time,,,"Read Interrupt Status Register: %0h", rd_reg);
 
-    // initialize, using poke() for fun ";)
-    // Note: address bit range: only s_axi_awaddr(5:2) and s_axi_araddr(5:2) are decoded
-    tb.poke(.addr(CFG_BASE_ADDR+IST_REG), .data(32'hFFFFFFFF), // Clear Interrupt Status Register (ISR)
-            .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
-    tb.poke(.addr(CFG_BASE_ADDR+IER_REG), .data(32'hFFFFFFFF), // Set Interrupt Enable Register (IER)
-            .id(AXI_ID), .size(DataSize::UINT16), .intf(AxiPort::PORT_OCL));
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
+    $display($time,,,"Clear reset done interrupt bits");
+
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    $display($time,,,"Interrupt Status Register: %0h", rd_reg);
+
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(rd_reg));
+    $display($time,,,"Interrupt Enable Register: %0h", rd_reg);
+
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
+    $display($time,,,"Transmit Data FIFO Vacancy Register: %0h", rd_reg);
+
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(rd_reg));
+    $display($time,,,"Receive Data FIFO Occupancy Register: %0h", rd_reg);
+  endtask
+
+  task ocl_FSB_poke_test(logic [31:0] CFG_BASE_ADDR, int num);
+    logic [31:0] rd_reg;
+    
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'h0C00_0000));
+    $display($time,,,"Enable Transmit and Receive Complete interrupt");
 
     // write
     for (int i=0; i<num; i++) 
     begin
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(stat_register));
-      $display("The Transmit Data FIFO Vacancy is : %d", stat_register);
+      // tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
+      // $display("The Transmit Data FIFO Vacancy is : %d", rd_reg);
       tb.poke_ocl(.addr(CFG_BASE_ADDR+TDFD_REG), .data(32'h1 + 4*i));
       tb.poke_ocl(.addr(CFG_BASE_ADDR+TDFD_REG), .data(32'h2 + 4*i));
       tb.poke_ocl(.addr(CFG_BASE_ADDR+TDFD_REG), .data(32'h3 + 4*i));
       tb.poke_ocl(.addr(CFG_BASE_ADDR+TDFD_REG), .data(32'h4 + 4*i));
-      # 800ns
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(stat_register));
-      $display("The Transmit Data FIFO Vacancy is : %d", stat_register);
       tb.poke_ocl(.addr(CFG_BASE_ADDR+AXIL_TLR), .data(32'h00000010));
-      // 128 bits are then truncated to 80-bits fsb packet
+      // check if write complete
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+      $display($time,,,"Interrupt Status Register: %h", rd_reg);
+      compare_dword(rd_reg, 32'h0820_0000);  // 0800_0000 is for write complete, 0020_0000 is for write FIFO empty
+
+      tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
+      $display($time,,,"Clear ISR, transmit complete done reset");
+
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+      $display($time,,,"Interrupt Status Register: %h", rd_reg);
+
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
+      $display("The Transmit Data FIFO Vacancy is : %d", rd_reg);
     end
   endtask
 
   task ocl_FSB_peek_test(logic [31:0] CFG_BASE_ADDR, int num);
-    logic [31:0] stat_register;
+    logic [31:0] rd_reg;
     logic [31:0] rdata_num_B;
     logic [31:0] rdata_word1;
     logic [31:0] rdata_word2;
     logic [31:0] rdata_word3;
     logic [31:0] rdata_word4;
 
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'h0410_0000));
+    $display($time,,,"Enable Write and Receive Complete and Receive FIFO Program Full threshold interrupt");
+
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    $display($time,,,"Interrupt Status Register : %h", rd_reg);
+    // check if read complete
+    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    $display($time,,,"Interrupt Status Register: %h", rd_reg);
+    compare_dword(rd_reg, 32'h0408_0000);  // 0800_0000 is for read complete, 0008_0000 is for read FIFO empty
     // read
     for (int i=0; i<num; i++) 
     begin
-      # 200ns
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(stat_register));
-      $display("The Receive Data FIFO Occupancy is : %d", stat_register);
       tb.peek_ocl(.addr(CFG_BASE_ADDR+AXIL_RLR), .data(rdata_num_B));
-      if (rdata_num_B == 32'h00000010) begin
-        $display ("READBACK LEN IS 16 BYTES, PASSED~");
-      end else 
-      begin
-        $display ("READBACK LEN FAILED!!!");
-      end
+      $display($time,,,"READBACK data from RLR is : %h", rdata_num_B);
+
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word1));
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word2));
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word3));
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word4));
+      # 200ns
+      // check if read complete
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+      $display($time,,,"Interrupt Status Register: %h", rd_reg);
+      compare_dword(rd_reg, 32'h0408_0000);  // 0800_0000 is for read complete, 0008_0000 is for read FIFO empty
+
+      tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'h0410_0000));
+      $display($time,,,"Clear ISR, receive complete done reset");
+
+      tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(rd_reg));
+      $display($time,,,"Receive FIFO Occupancy Register: %h", rd_reg);
+
       $display ("FSB READBACK DATA %h %h %h %h", rdata_word1, rdata_word2, rdata_word3, rdata_word4);
       if (rdata_word1 == (32'h00000001+4*i) && rdata_word2 == (32'h00000002+4*i)
         // && rdata_word3 == ((((32'h3+4*i)&32'h0000000F)<<12) 
@@ -298,7 +353,7 @@ module cl_crossbar_tb();
     bit   [511:0] pcis_exp_data;
     bit   [511:0] pcis_act_data;
     int pcis_data = 0;
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+IST_REG), .data(32'hFFFFFFFF));
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'hFFFFFFFF));
     tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'hFFFFFFFF));
     $display("[%t] : RESET axi_fifo_mm_s.", $realtime);
 

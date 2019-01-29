@@ -53,6 +53,7 @@ ${CL_DIR}/hardware/m_axi4_s_axis_adapter.sv
 ${CL_DIR}/hardware/bsg_axis_gen_master.sv
 ${CL_DIR}/hardware/cl_fsb.sv
 ${CL_DIR}/hardware/cl_simple_loopback.v
+${CL_DIR}/hardware/cl_ila_axil.v
 
 # BSG files
 -include ${BSG_IP_DIR}/bsg_misc
@@ -77,6 +78,8 @@ ${XILINX_VIVADO}/data/ip/xilinx/axi_register_slice_v2_1/hdl/axi_register_slice_v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v
+#${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v
+
 
 # AWS design files
 ${HDK_SHELL_DESIGN_DIR}/ip/ila_vio_counter/sim/ila_vio_counter.v

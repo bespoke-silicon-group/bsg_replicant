@@ -307,7 +307,7 @@ if {$implement} {
    write_checkpoint -force $CL_DIR/build/checkpoints/to_aws/${timestamp}.SH_CL_routed.dcp
    
    # Generate debug probes file. Uncomment line below if debugging is enabled 
-   # write_debug_probes -force -no_partial_ltxfile -file $CL_DIR/build/checkpoints/${timestamp}.debug_probes.ltx
+   write_debug_probes -force -no_partial_ltxfile -file $CL_DIR/build/checkpoints/${timestamp}.debug_probes.ltx
 
    close_project
 }

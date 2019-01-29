@@ -617,21 +617,40 @@ logic                  s_fsb_v_i   ;
 logic [fsb_width_lp-1:0] s_fsb_data_i;
 logic                  s_fsb_yumi_o;
 
-bsg_test_node_master #(
-  .ring_width_p(fsb_width_lp),
-  .master_id_p (4'hF        ),
-  .client_id_p (4'hF        )
-) fsb_node_master (
-  .clk_i  (clk                 ),
-  .reset_i(~fsb_node_rstn      ),
-  .en_i   (1'b1                ),
-  .v_i    (1'b0                ),
-  .data_i ({fsb_width_lp{1'b0}}),
-  .ready_o(                    ),
-  .v_o    (s_fsb_v_i           ),
-  .data_o (s_fsb_data_i        ),
-  .yumi_i (s_fsb_yumi_o        )
+// bsg_test_node_master #(
+//   .ring_width_p(fsb_width_lp),
+//   .master_id_p (4'hF        ),
+//   .client_id_p (4'hF        )
+// ) fsb_node_master (
+//   .clk_i  (clk                 ),
+//   .reset_i(~fsb_node_rstn      ),
+//   .en_i   (1'b1                ),
+//   .v_i    (1'b0                ),
+//   .data_i ({fsb_width_lp{1'b0}}),
+//   .ready_o(                    ),
+//   .v_o    (s_fsb_v_i           ),
+//   .data_o (s_fsb_data_i        ),
+//   .yumi_i (s_fsb_yumi_o        )
+// );
+`declare_bsg_axis_bus_s(128, bsg_axis_128_mosi_bus_s, bsg_axis_128_miso_bus_s);
+bsg_axis_128_mosi_bus_s fsb_gen_mosi_bus;
+bsg_axis_128_miso_bus_s fsb_gen_miso_bus;
+
+assign fsb_gen_miso_bus.txd_tready = s_fsb_yumi_o;
+assign s_fsb_v_i = fsb_gen_mosi_bus.txd_tvalid;
+assign s_fsb_data_i = fsb_gen_mosi_bus.txd_tdata[79:0];
+
+(* dont_touch = "true" *) logic axi4_fsb_rstn;
+lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_fsb_RST_N (.clk(clk), .rst_n(1'b1), .in_bus(sync_rst_n), .out_bus(axi4_fsb_rstn));
+bsg_axis_gen_master #(.data_width_p(128)) fsb_master (
+  .clk_i       (clk              ),
+  .reset_i     (~axi4_fsb_rstn   ),
+  .en_i        (1'b1             ),
+  .m_axis_bus_i(fsb_gen_miso_bus),
+  .m_axis_bus_o(fsb_gen_mosi_bus),
+  .loop_done   (                 )
 );
+
 
 
 // axi to fsb adapters
@@ -722,5 +741,77 @@ m_axi4_s_axis_adapter axi4_adapter (
   .atg_dst_sel (               )
 );
 
+
+
+//---------------------------------------------------------------
+//                    axi - fsb adapters                        |
+//                                                              |
+//---------------------------------------------------------------
+`ifndef DISABLE_VJTAG_DEBUG
+
+// Flop for timing global clock counter
+logic[63:0] sh_cl_glcount0_q;
+
+always_ff @(posedge clk_main_a0)
+   if (!sync_rst_n)
+      sh_cl_glcount0_q <= 0;
+   else
+      sh_cl_glcount0_q <= sh_cl_glcount0;
+
+
+   ila_0 CL_ILA_0 (
+                   .clk    (clk_main_a0),
+                   .probe0 (sh_ocl_mosi_bus.awvalid),
+                   .probe1 ({sh_ocl_mosi_bus.wdata, sh_ocl_mosi_bus.awaddr}),
+                   .probe2 (sh_ocl_miso_bus.awready),
+                   .probe3 (sh_ocl_mosi_bus.wvalid),
+                   .probe4 ({sh_ocl_miso_bus.rdata, sh_ocl_mosi_bus.araddr}),
+                   .probe5 (sh_ocl_miso_bus.wready)
+                   );
+
+
+// // Integrated Logic Analyzers (ILA)
+//   cl_ila_axil axil_analyser (
+//     .clk    (clk_main_a0            ),
+//     .probe0 (sh_ocl_mosi_bus.awvalid),
+//     .probe1 (sh_ocl_mosi_bus.awaddr ),
+//     .probe2 (sh_ocl_miso_bus.awready),
+//     .probe3 (sh_ocl_mosi_bus.wvalid ),
+//     .probe4 (sh_ocl_mosi_bus.wdata  ),
+//     .probe5 (sh_ocl_mosi_bus
+//       .wstrb  ),
+//     .probe6 (sh_ocl_miso_bus.wready ),
+//     .probe7 (sh_ocl_miso_bus.bresp  ),
+//     .probe8 (sh_ocl_miso_bus.bvalid ),
+//     .probe9 (sh_ocl_mosi_bus.bready ),
+//     .probe10(sh_ocl_mosi_bus.araddr ),
+//     .probe11(sh_ocl_mosi_bus.arvalid),
+//     .probe12(sh_ocl_miso_bus.arready),
+//     .probe13(sh_ocl_miso_bus.rdata  ),
+//     .probe14(sh_ocl_miso_bus.rresp  ),
+//     .probe15(sh_ocl_miso_bus.rvalid ),
+//     .probe16(sh_ocl_rready          ),
+//     .probe17(0                      ),
+//     .probe18(0                      )
+//   );
+
+// Debug Bridge 
+ cl_debug_bridge CL_DEBUG_BRIDGE (
+      .clk(clk_main_a0),
+      .S_BSCAN_drck(drck),
+      .S_BSCAN_shift(shift),
+      .S_BSCAN_tdi(tdi),
+      .S_BSCAN_update(update),
+      .S_BSCAN_sel(sel),
+      .S_BSCAN_tdo(tdo),
+      .S_BSCAN_tms(tms),
+      .S_BSCAN_tck(tck),
+      .S_BSCAN_runtest(runtest),
+      .S_BSCAN_reset(reset),
+      .S_BSCAN_capture(capture),
+      .S_BSCAN_bscanid_en(bscanid_en)
+   );
+
+`endif //  `ifndef DISABLE_VJTAG_DEBUG
 
 endmodule

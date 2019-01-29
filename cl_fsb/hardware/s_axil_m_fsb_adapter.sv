@@ -99,7 +99,7 @@ axi_fifo_mm_s #(
   .C_TX_FIFO_PE_THRESHOLD(2           ),
   .C_RX_FIFO_PF_THRESHOLD(507         ),
   .C_RX_FIFO_PE_THRESHOLD(2           ),
-  .C_USE_TX_CUT_THROUGH  (0           ),
+  .C_USE_TX_CUT_THROUGH  (1           ),
   .C_DATA_INTERFACE_TYPE (0           ),
   .C_BASEADDR            (32'h80000000),
   .C_HIGHADDR            (32'h80000FFF),
@@ -113,7 +113,7 @@ axi_fifo_mm_s #(
   .C_AXIS_TID_WIDTH      (4           ),
   .C_AXIS_TDEST_WIDTH    (4           ),
   .C_AXIS_TUSER_WIDTH    (4           ),
-  .C_USE_RX_CUT_THROUGH  (0           ),
+  .C_USE_RX_CUT_THROUGH  (1           ),
   .C_USE_TX_DATA         (1           ),
   .C_USE_TX_CTRL         (0           ),
   .C_USE_RX_DATA         (1           )
@@ -179,6 +179,17 @@ axi_fifo_mm_s #(
   .axi_str_rxd_tid       (4'h0                     ),
   .axi_str_rxd_tuser     (4'h0                     )
 );
+
+   ila_0 CL_ILA_0 (
+                   .clk    (clk_i),
+                   .probe0 (mosi_axisx32_bus.txd_tvalid),
+                   .probe1 (0),
+                   .probe2 (miso_axisx32_bus.txd_tready),
+                   .probe3 (mosi_axisx32_bus.txd_tlast),
+                   .probe4 (0),
+                   .probe5 (miso_axisx128_bus.txd_tready)
+                   );
+
 
 axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_FAMILY(fpga_version_p),
