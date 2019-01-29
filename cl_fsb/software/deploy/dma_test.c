@@ -65,7 +65,7 @@ int main () {
 	host->start_write(host);
 	printf("Started the write.\n");
 
-	sleep(10);
+	sleep(1);
 	host->stop(host);		
 	/* read */
 	pop_loop(host);
@@ -74,7 +74,9 @@ int main () {
 	*((uint32_t *) (ocl_base + CROSSBAR_M1 + CNTL_REG)) = 0;
 	write_reset(host, 1);	
 
-	deploy_close();
+	deploy_close(host);
+
+	free(host);
 
 	return 0;
 }
