@@ -43,13 +43,21 @@ void loop_test (int n, void (*f) () ) {
 		f();
 }
 void test_fifos () {
+	printf("Running test.\n");
 	int *write, *read, num_fsb;
-	num_fsb = 10;
+	num_fsb = 1;
 	write = calloc(num_fsb * NUM_FIFO * DW_PER_FSB, sizeof(int)); 	
 
 	/* clear fifo interrupts */
 	for (int fifo = 0; fifo < NUM_FIFO; fifo++)
 		clear_int(fifo);
+
+	/* set destination */
+	for (int fifo = 0; fifo < NUM_FIFO; fifo++) {
+		if (!set_dest(fifo))
+			return;
+	}	
+
 
 	for (int pkt = 0; pkt < num_fsb; pkt++) {
 		/* write to fifos */
