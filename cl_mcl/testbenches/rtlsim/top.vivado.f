@@ -46,9 +46,10 @@
 
 # Custom Logic (CL) design files
 # ${CL_DIR}/hdl/bsg_axi_bus_pkg.vh
-${CL_DIR}/hdl/axil_to_mcl.v
 ${CL_DIR}/hardware/cl_fsb.sv
-${CL_DIR}/hardware/cl_simple_loopback.v
+${CL_DIR}/hdl/axil_to_mcl.v
+${CL_DIR}/hdl/cl_simple_loopback.v
+${CL_DIR}/hdl/s_axil_m_fsb_adapter.v
 # ${CL_DIR}/hardware/cl_ila_axil.v
 
 # BSG files
@@ -64,9 +65,6 @@ ${BSG_IP_DIR}/bsg_dataflow/bsg_fifo_1r1w_small.v
 ${BSG_IP_DIR}/bsg_dataflow/bsg_fifo_tracker.v
 ${BSG_IP_DIR}/bsg_dataflow/bsg_two_fifo.v
 ${BSG_IP_DIR}/bsg_test/test_bsg_data_gen.v
-
-${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_client.v
-${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_master.v
 
 # Vivado library files
 ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v
@@ -104,6 +102,4 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
 
 # Testbench design files
-${CL_DIR}/testbenches/rtlsim/cl_s_axil_fsb_tb.sv
-${CL_DIR}/testbenches/rtlsim/cl_m_axi4_fsb_tb.sv
 ${CL_DIR}/testbenches/rtlsim/cl_crossbar_tb.sv
