@@ -76,12 +76,12 @@ module cl_crossbar_tb();
     // ========================================================================
 
     $display ("No.1A (concurrent test) ===> AXI-L write to FSB slave:");
-    for (int i=0; i<2; i++)
+    for (int i=0; i<1; i++)
     begin
       $display("initiate FIFO IP No. %d", i);
       ocl_power_up_init(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i));
       $display("write to fsb_client No. %d", i);
-      ocl_FSB_poke_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(1));
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(2));
       $display("read from fsb_client No. %d", i);
       ocl_FSB_peek_test(.CFG_BASE_ADDR(CROSSBAR_M0 + 32'h100 * i), .num(1));
     end
@@ -283,12 +283,8 @@ module cl_crossbar_tb();
 
       tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
       $display($time,,,"Clear ISR, transmit complete done reset");
-
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
-      $display($time,,,"Interrupt Status Register: %h", rd_reg);
-
       tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
-      $display("The Transmit Data FIFO Vacancy is : %d", rd_reg);
+      $display($time,,,"The Transmit Data FIFO Vacancy is : %d", rd_reg);
     end
   endtask
 
@@ -300,15 +296,10 @@ module cl_crossbar_tb();
     logic [31:0] rdata_word3;
     logic [31:0] rdata_word4;
 
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'h0410_0000));
+    // tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'h0410_0000));
+    tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'hFFFF_FFFF));
     $display($time,,,"Enable Write and Receive Complete and Receive FIFO Program Full threshold interrupt");
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
-    $display($time,,,"Interrupt Status Register : %h", rd_reg);
-    // check if read complete
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
-    $display($time,,,"Interrupt Status Register: %h", rd_reg);
-    compare_dword(rd_reg, 32'h0408_0000);  // 0800_0000 is for read complete, 0008_0000 is for read FIFO empty
     // read
     for (int i=0; i<num; i++) 
     begin
@@ -319,13 +310,13 @@ module cl_crossbar_tb();
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word2));
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word3));
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rdata_word4));
-      # 200ns
       // check if read complete
+      #100ns
       tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
       $display($time,,,"Interrupt Status Register: %h", rd_reg);
       compare_dword(rd_reg, 32'h0408_0000);  // 0800_0000 is for read complete, 0008_0000 is for read FIFO empty
 
-      tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'h0410_0000));
+      tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'h0400_0000));
       $display($time,,,"Clear ISR, receive complete done reset");
 
       tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(rd_reg));
