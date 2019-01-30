@@ -270,16 +270,9 @@ bool deploy_write_fifo (uint8_t n, int *val) {
 	}
 	
 	for (int i = 0; i < 4; i++) {
-		//printf("writing %d to reg %d\n", val[i], fifo[n][FIFO_WRITE]);
 		*((int *) (ocl_base + fifo[n][FIFO_WRITE])) = val[i];
 	}
 	*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
-	uint32_t tries = 0;
-	while (*reg != init_vacancy) {
-		*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
-		tries++;
-		printf("deploy_write(): fifo: %u, try: %u, initial vacancy: %u, current vacancy: %u.\n", n, tries, init_vacancy, *reg);
-	}
 
 	return true;
 }
@@ -309,15 +302,12 @@ int *deploy_read_fifo (uint8_t n, int *val) {
 //		return NULL;
 //	}
 
-	reg = ((uint16_t *) (ocl_base + fifo[n][FIFO_RECEIVE_LENGTH]));
+	uint32_t *reg32 = ((uint32_t *) (ocl_base + fifo[n][FIFO_RECEIVE_LENGTH]));
 	num_tries = 0;
-	while (*reg != 16) {
+	while (*reg32 != 16) {
 		num_tries++;
 		printf("Waiting for receive length register to update. Register value (now) is %u instead of 16.\n", *reg);
 	} /* wait for receive length reg to be nonzero */
-	//#ifdef DEBUG
-	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], *reg);
-	//#endif
 
 	if (!val)
 		val = (int *) calloc(4, sizeof(int));
@@ -344,7 +334,7 @@ void clear_int (uint8_t n) {
 bool set_dest (uint8_t n) {
 	if (n >= NUM_FIFO) { 
 		printf("Invalid fifo.\n");
-		return;
+		return false;
 	}
 	*((int *) (ocl_base + fifo[n][FIFO_TDR])) = 0;
 	
@@ -353,10 +343,7 @@ bool set_dest (uint8_t n) {
 		printf("Setting destination was unsuccessful.\n");
 		return false;
 	}
-	else {
-		printf("Setting destination was successful!\n");
-		return true;
-	}
+	return true;
 
 }
 
@@ -379,7 +366,27 @@ void dump_trace (struct Host *host) {
 	}
 }
 
+/* read 32b from OCL bar at offset ofs 
+ * OCL BAR needs to be memory-mapped; 0 returned otherwise.
+ * */
+uint32_t ocl_read (uint32_t ofs) {
+	if (ocl_base) {
+		uint32_t *reg = (uint32_t *) (ocl_base + ofs);
+		return *reg;
+	}
+	return 0;
+}
 
+
+/* write val to offset ofs in OCL bar 
+ * OCL BAR needs to be memory-mapped. 
+ * */
+void ocl_write (uint32_t ofs, uint32_t val) {
+	if (ocl_base) {
+		uint32_t *reg = (uint32_t *) (ocl_base + ofs);
+		*reg = val;
+	}
+}
 
 
 
