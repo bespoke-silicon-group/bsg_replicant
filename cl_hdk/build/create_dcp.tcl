@@ -51,12 +51,19 @@ puts "Shell Version:          $shell_version";
 puts "Vivado Script Name:     $argv0";
 puts "Strategy:               $strategy";
 puts "PCI Device ID           $device_id";
+set ::env(device_id) $device_id
 puts "PCI Vendor ID           $vendor_id";
+set ::env(vendor_id) $vendor_id
 puts "PCI Subsystem ID        $subsystem_id";
+set ::env(subsystem_id) $subsystem_id
 puts "PCI Subsystem Vendor ID $subsystem_vendor_id";
+set ::env(subsystem_vendor_id) $subsystem_vendor_id
 puts "Clock Recipe A:         $clock_recipe_a";
+set ::env(CLOCK_A_RECIPE) [string index $clock_recipe_a end]
 puts "Clock Recipe B:         $clock_recipe_b";
+set ::env(CLOCK_B_RECIPE) [string index $clock_recipe_b end]
 puts "Clock Recipe C:         $clock_recipe_c";
+set ::env(CLOCK_C_RECIPE) [string index $clock_recipe_c end]
 puts "URAM option:            $uram_option";
 puts "Notify when done:       $notify_via_sns";
 
@@ -316,14 +323,17 @@ puts "AWS FPGA: ([clock format [clock seconds] -format %T]) - Compress files for
 # Create manifest file
 set manifest_file [open "$CL_DIR/build/checkpoints/to_aws/${timestamp}.manifest.txt" w]
 set hash [lindex [split [exec sha256sum $CL_DIR/build/checkpoints/to_aws/${timestamp}.SH_CL_routed.dcp] ] 0]
+set vivado_version [string range [version -short] 0 5]
+puts "vivado_version is $vivado_version\n"
 
-puts $manifest_file "manifest_format_version=1\n"
+puts $manifest_file "manifest_format_version=2\n"
 puts $manifest_file "pci_vendor_id=$vendor_id\n"
 puts $manifest_file "pci_device_id=$device_id\n"
 puts $manifest_file "pci_subsystem_id=$subsystem_id\n"
 puts $manifest_file "pci_subsystem_vendor_id=$subsystem_vendor_id\n"
 puts $manifest_file "dcp_hash=$hash\n"
 puts $manifest_file "shell_version=$shell_version\n"
+puts $manifest_file "tool_version=v$vivado_version\n"
 puts $manifest_file "dcp_file_name=${timestamp}.SH_CL_routed.dcp\n"
 puts $manifest_file "hdk_version=$hdk_version\n"
 puts $manifest_file "date=$timestamp\n"
