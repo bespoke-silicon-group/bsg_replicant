@@ -7,7 +7,7 @@ module cl_manycore
 logic rst_main_n_sync;
 
 `include "cl_id_defines.vh"
-`include "cl_manycore_defines.vh"
+`include "cl_defines.vh"
 
 //--------------------------------------------
 // Start with Tie-Off of Unused Interfaces

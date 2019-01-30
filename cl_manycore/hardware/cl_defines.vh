@@ -1,5 +1,5 @@
-`ifndef CL_MANYCORE_DEFINES
-`define CL_MANYCORE_DEFINES
+`ifndef CL_DEFINES
+`define CL_DEFINES
 
 //Put module name of the CL design here.  This is used to instantiate in top.sv
 `define CL_NAME cl_manycore

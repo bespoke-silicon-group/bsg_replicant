@@ -55,6 +55,7 @@ endif
 
 ifdef DEBUG
 XSIM_OPTS +=-gui
+export GUI
 endif
 
 run: make_sim_dir compile sim
