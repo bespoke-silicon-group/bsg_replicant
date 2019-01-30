@@ -13,7 +13,7 @@
 # implied. See the License for the specific language governing permissions and
 # limitations under the License.
 
-PROJECT         = cl_fsb
+PROJECT         = cl_mcl
 SIM_TARGETS     = cosim rtlsim
 RUN_WITH_CHECK ?= 0
 

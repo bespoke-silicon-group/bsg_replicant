@@ -13,11 +13,11 @@
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef CL_FSB_DEFINES
-`define CL_FSB_DEFINES
+`ifndef CL_DEFINES
+`define CL_DEFINES
 
 //Put module name of the CL design here.  This is used to instantiate in top.sv
-`define CL_NAME cl_fsb
+`define CL_NAME cl_mcl
 
 `define FSB_LEGACY
 

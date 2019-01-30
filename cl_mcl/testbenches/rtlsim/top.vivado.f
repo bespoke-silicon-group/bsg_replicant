@@ -27,8 +27,8 @@
 -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/lib
 -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/interfaces
 -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/sh_ddr/sim
--sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/bd_0/hdl
--sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/sim
+# -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/bd_0/hdl
+# -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/sim
 
 # Custom Logic (CL) include directories
 -include ${CL_DIR}/hardware
@@ -46,17 +46,16 @@
 
 # Custom Logic (CL) design files
 # ${CL_DIR}/hdl/bsg_axi_bus_pkg.vh
-${CL_DIR}/hardware/cl_fsb.sv
-${CL_DIR}/hdl/axil_to_mcl.v
-${CL_DIR}/hdl/cl_simple_loopback.v
-${CL_DIR}/hdl/s_axil_m_fsb_adapter.v
+${CL_DIR}/hardware/cl_mcl.sv
+${CL_DIR}/../hdl/axil_to_mcl.v
+${CL_DIR}/hardware/cl_simple_loopback.v
+${CL_DIR}/../hdl/s_axil_m_fsb_adapter.v
 # ${CL_DIR}/hardware/cl_ila_axil.v
 
 # BSG files
 -include ${BSG_IP_DIR}/bsg_misc
 ${BSG_IP_DIR}/bsg_misc/bsg_defines.v
 -include ${BSG_IP_DIR}/bsg_fsb
-${BSG_IP_DIR}/bsg_fsb/bsg_fsb_pkg.v
 
 ${BSG_IP_DIR}/bsg_misc/bsg_circular_ptr.v
 ${BSG_IP_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
