@@ -28,7 +28,7 @@ $(SIM_TARGETS):
 ifndef PROJECT
 $(error "PROJECT undefined. Set PROJECT before running this makefile")
 endif
-	PROJECT=$(PROJECT) make -C $@ $(CHECK_RULE)
+	make -C $@ $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG))
 
 clean:
 	rm -rf sim
