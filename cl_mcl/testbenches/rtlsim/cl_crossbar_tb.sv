@@ -141,7 +141,6 @@ module cl_crossbar_tb();
     // write
     for (int i=0; i<num; i++) 
     begin
-      $display("----- %d th poke -----");
       tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'h0C00_0000));
       $display($time,,,"Enable Transmit and Receive Complete interrupts");
 
