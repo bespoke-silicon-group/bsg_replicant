@@ -3,7 +3,7 @@ $(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
 endif
 
 export CL_DIR ?= $(PWD)
-PROJECT = cl_demo
+PROJECT = cl_manycore
 GUI ?= 
 
 SIM_TARGETS=rtlsim cosim
