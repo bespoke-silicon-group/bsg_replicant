@@ -32,6 +32,7 @@
 
 # Custom Logic (CL) include directories
 -include ${CL_DIR}/hardware
+-include ${CL_DIR}/hdl
 
 # AWS include directories
 -include ${HDK_COMMON_DIR}/verif/include
@@ -44,16 +45,11 @@
 -include ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
 
 # Custom Logic (CL) design files
-${CL_DIR}/hardware/bsg_axi_bus_pkg.vh
-${CL_DIR}/hardware/axi_fsb_adapters.v
-${CL_DIR}/hardware/s_axil_m_fsb_adapter.sv
-${CL_DIR}/hardware/s_axi4_m_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_s_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_s_axis_adapter.sv
-${CL_DIR}/hardware/bsg_axis_gen_master.sv
+# ${CL_DIR}/hdl/bsg_axi_bus_pkg.vh
+${CL_DIR}/hdl/axil_to_mcl.v
 ${CL_DIR}/hardware/cl_fsb.sv
 ${CL_DIR}/hardware/cl_simple_loopback.v
-${CL_DIR}/hardware/cl_ila_axil.v
+# ${CL_DIR}/hardware/cl_ila_axil.v
 
 # BSG files
 -include ${BSG_IP_DIR}/bsg_misc
