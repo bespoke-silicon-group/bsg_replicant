@@ -55,7 +55,7 @@ module bsg_manycore_wrapper
     ,.icache_tag_width_p(icache_tag_width_p)
     ,.num_tiles_x_p(num_tiles_x_p)
     ,.num_tiles_y_p(num_tiles_y_p)
-    ,.extra_io_rows_p(1)
+    //,.extra_io_rows_p(1)
 
     ,.stub_n_p({num_tiles_x_p{1'b0}})
     ,.stub_e_p({num_tiles_y_p{1'b0}})

@@ -48,8 +48,12 @@ parameter [5:0] AXI_ID = 6'h0;
   
    initial begin
 
-      tb.power_up();
-
+      tb.power_up(
+          .clk_recipe_a(ClockRecipe::A1),
+          .clk_recipe_b(ClockRecipe::B0),
+          .clk_recipe_c(ClockRecipe::C0)
+      );
+      poke_ddr_stat();
       tb.set_virtual_dip_switch(.dip(0));
 
       vdip_value = tb.get_virtual_dip_switch();
@@ -76,6 +80,59 @@ parameter [5:0] AXI_ID = 6'h0;
   
       ocl_FSB_poke_test(.CFG_BASE_ADDR(0), .packet(packet));
 
+      packet = 128'b0;
+      packet_cast.addr = (1 << 25) + (1<<9);
+      packet_cast.op = 2'b01;
+      packet_cast.op_ex = 4'b1111;
+      packet_cast.payload = 32'b0;
+      packet_cast.src_y_cord = 3'b111;
+      packet_cast.src_x_cord = 2'b11;    
+      packet_cast.y_cord = 3'b111;
+      packet_cast.x_cord = 2'b00;
+      packet[0+:packet_width_lp] = packet_cast;
+  
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(0), .packet(packet));
+
+      packet = 128'b0;
+      packet_cast.addr = (1 << 25) + (1<<9);
+      packet_cast.op = 2'b01;
+      packet_cast.op_ex = 4'b1111;
+      packet_cast.payload = 32'b0;
+      packet_cast.src_y_cord = 3'b111;
+      packet_cast.src_x_cord = 2'b11;    
+      packet_cast.y_cord = 3'b111;
+      packet_cast.x_cord = 2'b00;
+      packet[0+:packet_width_lp] = packet_cast;
+      
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(0), .packet(packet));
+
+      packet = 128'b0;
+      packet_cast.addr = (1 << 25) + (1<<9);
+      packet_cast.op = 2'b01;
+      packet_cast.op_ex = 4'b1111;
+      packet_cast.payload = 32'b0;
+      packet_cast.src_y_cord = 3'b111;
+      packet_cast.src_x_cord = 2'b11;    
+      packet_cast.y_cord = 3'b111;
+      packet_cast.x_cord = 2'b00;
+      packet[0+:packet_width_lp] = packet_cast;
+      
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(0), .packet(packet));
+
+      packet = 128'b0;
+      packet_cast.addr = 0;
+      packet_cast.op = 2'b01;
+      packet_cast.op_ex = 4'b1111;
+      packet_cast.payload = 32'hdeadbeef;
+      packet_cast.src_y_cord = 3'b111;
+      packet_cast.src_x_cord = 2'b11;    
+      packet_cast.y_cord = 3'b111;
+      packet_cast.x_cord = 2'b00;
+      packet[0+:packet_width_lp] = packet_cast;
+  
+      ocl_FSB_poke_test(.CFG_BASE_ADDR(0), .packet(packet));
+
+      #10000ns;
       tb.kernel_reset();
 
       tb.power_down();
@@ -173,5 +230,15 @@ task ocl_FSB_poke_test(logic [31:0] CFG_BASE_ADDR, logic [127:0] packet);
     end
 
   endtask
+
+  task poke_ddr_stat();
+    $display("[%t] : Start poking ddr stats", $realtime);
+    tb.nsec_delay(100);
+    tb.poke_stat(.addr(8'h0c), .ddr_idx(0), .data(32'h0000_0000));
+    tb.poke_stat(.addr(8'h0c), .ddr_idx(1), .data(32'h0000_0000));
+    tb.poke_stat(.addr(8'h0c), .ddr_idx(2), .data(32'h0000_0000));
+    tb.nsec_delay(27000);
+  endtask
+
 
 endmodule // cl_tb

@@ -638,7 +638,7 @@ bsg_manycore_endpoint_standard #(
   ,.fifo_els_p(4)
   ,.max_out_credits_p(16)
   ,.load_id_width_p(load_id_width_p)
-) dram_endpoint_standard (
+) axil_endpoint_standard (
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
      
@@ -671,8 +671,8 @@ bsg_manycore_endpoint_standard #(
 
   ,.out_credits_o()
 
-  ,.my_x_i(my_x_i)
-  ,.my_y_i(my_y_i)
+  ,.my_x_i(2'b11)
+  ,.my_y_i(3'b111)
 );
 
 assign endpoint_out_v_li = mcl_v_lo;
