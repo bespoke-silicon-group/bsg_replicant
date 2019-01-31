@@ -1,91 +1,90 @@
 /**
- *  axi_fsb_adapters.v
+ *  axil_to_mcl.v
  *
- *   master -> slave
- *  1. axil -> fsb
- *  2. axi4 -> fsb
- *  3. fsb -> axi4
  */
 
 `include "bsg_axi_bus_pkg.vh"
 
-module axi_fsb_adapters #(
-  fsb_width_p = "inv"
-  ,axil_slv_num_p = "inv"
-  ,axi_id_width_p = "inv"
-  ,axi_addr_width_p = "inv"
-  ,axi_data_width_p = "inv"
-
-  ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
-  ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
-
-  ,axi_mosi_bus_width_lp = `bsg_axi_mosi_bus_width(1, axi_id_width_p, axi_addr_width_p, axi_data_width_p)
-  ,axi_miso_bus_width_lp = `bsg_axi_miso_bus_width(1, axi_id_width_p, axi_addr_width_p, axi_data_width_p)
-) (
-  input                                     clk_i
-  ,input                                     reset_i
-
-  // axil -> fsb
-  ,input  [      axil_mosi_bus_width_lp-1:0] s0_axil_bus_i
-  ,output [      axil_miso_bus_width_lp-1:0] s0_axil_bus_o
-  ,input  [      axil_mosi_bus_width_lp-1:0] s1_axil_bus_i
-  ,output [      axil_miso_bus_width_lp-1:0] s1_axil_bus_o
-  ,input  [      axil_mosi_bus_width_lp-1:0] s2_axil_bus_i
-  ,output [      axil_miso_bus_width_lp-1:0] s2_axil_bus_o
-
-  // axi4 pcis -> fsb
-  ,input  [       axi_mosi_bus_width_lp-1:0] s1_axi_bus_i
-  ,output [       axi_miso_bus_width_lp-1:0] s1_axi_bus_o
-
-  // from fsb slave to axil
-  ,input  [              axil_slv_num_p-1:0] m0_fsb_v_i
-  ,input  [(axil_slv_num_p*fsb_width_p)-1:0] m0_fsb_data_i
-  ,output [              axil_slv_num_p-1:0] m0_fsb_yumi_o
-  // to fsb slave
-  ,output [              axil_slv_num_p-1:0] m0_fsb_v_o
-  ,output [(axil_slv_num_p*fsb_width_p)-1:0] m0_fsb_data_o
-  ,input  [              axil_slv_num_p-1:0] m0_fsb_ready_i
-
-  // from fsb slave to axi4
-  ,input                                     m1_fsb_v_i
-  ,input  [                 fsb_width_p-1:0] m1_fsb_data_i
-  ,output                                    m1_fsb_yumi_o
-  // to fsb slave
-  ,output                                    m1_fsb_v_o
-  ,output [                 fsb_width_p-1:0] m1_fsb_data_o
-  ,input                                     m1_fsb_ready_i
-
-
-  // fsb -> axi4 pcim
-  ,input  [       axi_miso_bus_width_lp-1:0] m_axi_bus_i
-  ,output [       axi_mosi_bus_width_lp-1:0] m_axi_bus_o
-
-  // from fsb master
-  ,input                                     s_fsb_v_i
-  ,input  [                 fsb_width_p-1:0] s_fsb_data_i
-  ,output                                    s_fsb_yumi_o
+module axil_to_mcl #(mcl_intf_num_p="inv") (
+  input                                     clk_i         ,
+  input                                     reset_i       ,
+  // axil signals
+  input                                     s_axil_mcl_awvalid,
+  input  [                            31:0] s_axil_mcl_awaddr ,
+  output                                    s_axil_mcl_awready,
+  input                                     s_axil_mcl_wvalid ,
+  input  [                            31:0] s_axil_mcl_wdata  ,
+  input  [                             3:0] s_axil_mcl_wstrb  ,
+  output                                    s_axil_mcl_wready ,
+  output [                             1:0] s_axil_mcl_bresp  ,
+  output                                    s_axil_mcl_bvalid ,
+  input                                     s_axil_mcl_bready ,
+  input  [                            31:0] s_axil_mcl_araddr ,
+  input                                     s_axil_mcl_arvalid,
+  output                                    s_axil_mcl_arready,
+  output [                            31:0] s_axil_mcl_rdata  ,
+  output [                             1:0] s_axil_mcl_rresp  ,
+  output                                    s_axil_mcl_rvalid ,
+  input                                     s_axil_mcl_rready ,
+  // from mcl signals
+  input  [              mcl_intf_num_p-1:0] mcl_v_i
+  ,
+  input  [(mcl_intf_num_p*80)-1:0] mcl_data_i
+  ,
+  output [              mcl_intf_num_p-1:0] mcl_yumi_o
+  // to mcl slave
+  ,
+  output [              mcl_intf_num_p-1:0] mcl_v_o
+  ,
+  output [(mcl_intf_num_p*80)-1:0] mcl_data_o
+  ,
+  input  [              mcl_intf_num_p-1:0] mcl_ready_i
 );
 
-
+parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1);
+parameter axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1);
 
 `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 bsg_axil_mosi_bus_s s0_axil_bus_i_cast;
 bsg_axil_miso_bus_s s0_axil_bus_o_cast;
 
-assign s0_axil_bus_i_cast = s0_axil_bus_i;
-assign s0_axil_bus_o = s0_axil_bus_o_cast;
+assign s0_axil_bus_i_cast.awvalid = s_axil_mcl_awvalid;
+assign s0_axil_bus_i_cast.awaddr  = s_axil_mcl_awaddr;
+assign s_axil_mcl_awready             = s0_axil_bus_o_cast.awready;
 
-`declare_bsg_axil_bus_s(axil_slv_num_p, bsg_axil_mosi_busN_s, bsg_axil_miso_busN_s);
+assign s0_axil_bus_i_cast.wvalid = s_axil_mcl_wvalid;
+assign s0_axil_bus_i_cast.wdata  = s_axil_mcl_wdata;
+assign s0_axil_bus_i_cast.wstrb  = s_axil_mcl_wstrb;
+assign s_axil_mcl_wready             = s0_axil_bus_o_cast.wready;
+
+assign s_axil_mcl_bresp              = s0_axil_bus_o_cast.bresp;
+assign s_axil_mcl_bvalid             = s0_axil_bus_o_cast.bvalid;
+assign s0_axil_bus_i_cast.bready = s_axil_mcl_bready;
+
+assign s0_axil_bus_i_cast.araddr  = s_axil_mcl_araddr;
+assign s0_axil_bus_i_cast.arvalid = s_axil_mcl_arvalid;
+assign s_axil_mcl_arready             = s0_axil_bus_o_cast.arready;
+
+assign s_axil_mcl_rdata              = s0_axil_bus_o_cast.rdata;
+assign s_axil_mcl_rresp              = s0_axil_bus_o_cast.rresp;
+assign s_axil_mcl_rvalid             = s0_axil_bus_o_cast.rvalid;
+assign s0_axil_bus_i_cast.rready = s_axil_mcl_rready;
+
+
+`declare_bsg_axil_bus_s(mcl_intf_num_p, bsg_axil_mosi_busN_s, bsg_axil_miso_busN_s);
 bsg_axil_mosi_busN_s axil_mosi_busN;
 bsg_axil_miso_busN_s axil_miso_busN;
 
-// //-------------------------------------------------
+
+//-------------------------------------------------
+// TODO: find a way to avoid this list
+// crossbar, support 1 to [1:16] now
 localparam BASE_ADDRESS_LIST = {
   64'h00000000_00000F00, 64'h00000000_00000E00, 64'h00000000_00000D00 ,64'h00000000_00000C00,
   64'h00000000_00000B00, 64'h00000000_00000A00, 64'h00000000_00000900 ,64'h00000000_00000800,
   64'h00000000_00000700, 64'h00000000_00000600, 64'h00000000_00000500, 64'h00000000_00000400, 
   64'h00000000_00000300, 64'h00000000_00000200, 64'h00000000_00000100, 64'h00000000_00000000};
-localparam C_NUM_MASTER_SLOTS = axil_slv_num_p;
+localparam C_NUM_MASTER_SLOTS = mcl_intf_num_p;
 localparam C_M_AXI_BASE_ADDR  = BASE_ADDRESS_LIST[64*C_NUM_MASTER_SLOTS-1:0];
 localparam C_M_AXI_ADDR_WIDTH         = {C_NUM_MASTER_SLOTS{32'h0000_0008}};
 localparam C_M_AXI_WRITE_CONNECTIVITY = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
@@ -217,82 +216,56 @@ axi_crossbar_v2_1_18_axi_crossbar #(
   .m_axi_rready  (axil_mosi_busN.rready     )
 );
 
-logic [axil_slv_num_p-1:0][axil_mosi_bus_width_lp-1:0] axil_demux_mosi_bus;
-logic [axil_slv_num_p-1:0][axil_miso_bus_width_lp-1:0] axil_demux_miso_bus;
+
+logic [mcl_intf_num_p-1:0][axil_mosi_bus_width_lp-1:0] axil_demux_mosi_bus;
+logic [mcl_intf_num_p-1:0][axil_miso_bus_width_lp-1:0] axil_demux_miso_bus;
 
 
 genvar i;
 // TODO: find a better way to read field out of the structure
-for (i=0; i<axil_slv_num_p; i=i+1)
+for (i=0; i<mcl_intf_num_p; i=i+1)
 begin
   always_comb
   begin
     axil_demux_mosi_bus[i] = {
-      axil_mosi_busN.awaddr[32*i+:32]
-      ,axil_mosi_busN.awvalid[i]
-      ,axil_mosi_busN.wdata[32*i+:32]
-      ,axil_mosi_busN.wstrb[4*i+:4]
-      ,axil_mosi_busN.wvalid[i]
-      ,axil_mosi_busN.bready[i]
-      ,axil_mosi_busN.araddr[32*i+:32]
-      ,axil_mosi_busN.arvalid[i]
-      ,axil_mosi_busN.rready[i]};
+        axil_mosi_busN.awaddr[32*i+:32]
+        ,axil_mosi_busN.awvalid[i]
+        ,axil_mosi_busN.wdata[32*i+:32]
+        ,axil_mosi_busN.wstrb[4*i+:4]
+        ,axil_mosi_busN.wvalid[i]
+        ,axil_mosi_busN.bready[i]
+        ,axil_mosi_busN.araddr[32*i+:32]
+        ,axil_mosi_busN.arvalid[i]
+        ,axil_mosi_busN.rready[i]
+    };
 
-    {axil_miso_busN.awready[i]
-    ,axil_miso_busN.wready[i]
-    ,axil_miso_busN.bresp[2*i+:2]
-    ,axil_miso_busN.bvalid[i]
-    ,axil_miso_busN.arready[i]
-    ,axil_miso_busN.rdata[32*i+:32]
-    ,axil_miso_busN.rresp[2*i+:2]
-    ,axil_miso_busN.rvalid[i]} = axil_demux_miso_bus[i];
-  end
-end
+    {
+        axil_miso_busN.awready[i]
+        ,axil_miso_busN.wready[i]
+        ,axil_miso_busN.bresp[2*i+:2]
+        ,axil_miso_busN.bvalid[i]
+        ,axil_miso_busN.arready[i]
+        ,axil_miso_busN.rdata[32*i+:32]
+        ,axil_miso_busN.rresp[2*i+:2]
+        ,axil_miso_busN.rvalid[i]
+    } = axil_demux_miso_bus[i];
+    end
+    end
 
-// (DO NOT WRITE LIKE THIS!!!)
-// wire [axil_miso_bus_width_lp*axil_slv_num_p-1:0] miso_bus = s0_axil_bus_o_cast;
-// (WRITE LIKE THIS TO CAST STRUCTURAL SIGNALs)
-// wire [axil_miso_bus_width_lp*axil_slv_num_p-1:0] axil_demux_miso_bus;
-// assign s0_axil_bus_o_cast = axil_demux_miso_bus
-
-for (i=0; i<axil_slv_num_p; i=i+1)
+for (i=0; i<mcl_intf_num_p; i=i+1)
 begin
-  s_axil_m_fsb_adapter #(.fsb_width_p(fsb_width_p)) s_axil_to_m_fsb (
-    .clk_i       (clk_i                                    ),
-    .reset_i     (reset_i                                  ),
-    .sh_ocl_bus_i(axil_demux_mosi_bus[i]                   ),
-    .sh_ocl_bus_o(axil_demux_miso_bus[i]                   ),
-    .m_fsb_v_i   (m0_fsb_v_i[i]                            ),
-    .m_fsb_data_i(m0_fsb_data_i[fsb_width_p*i+:fsb_width_p]),
-    .m_fsb_r_o   (m0_fsb_yumi_o[i]                         ),
-    .m_fsb_v_o   (m0_fsb_v_o[i]                            ),
-    .m_fsb_data_o(m0_fsb_data_o[fsb_width_p*i+:fsb_width_p]),
-    .m_fsb_r_i   (m0_fsb_ready_i[i]                        )
+  s_axil_mcl_adapter #(.mcl_width_p(80)) s_axil_to_mcl (
+    .clk_i          (clk_i                 ),
+    .reset_i        (reset_i               ),
+    .s_axil_mcl_bus_i(axil_demux_mosi_bus[i]),
+    .s_axil_mcl_bus_o(axil_demux_miso_bus[i]),
+    .mcl_v_i        (mcl_v_i[i]            ),
+    .mcl_data_i     (mcl_data_i[80*i+:80]  ),
+    .mcl_r_o        (mcl_yumi_o[i]         ),
+    .mcl_v_o        (mcl_v_o[i]            ),
+    .mcl_data_o     (mcl_data_o[80*i+:80]  ),
+    .mcl_r_i        (mcl_ready_i[i]        )
   );
 end
-
-// Simply loop back 4x128bits without FSB client.
-// TODO: AXI4-512bit bus should be able to write single FSB packet (128bit,80bit).
-  s_axi4_m_fsb_adapter s_axi4_to_m_fsb (
-    .clk_i        (clk_i        ),
-    .reset_i      (reset_i      ),
-    .sh_ocl_bus_i (s1_axil_bus_i),
-    .sh_ocl_bus_o (s1_axil_bus_o),
-    .sh_pcis_bus_i(s1_axi_bus_i ),
-    .sh_pcis_bus_o(s1_axi_bus_o )
-  );
-
-  m_axi4_s_fsb_adapter #(.fsb_width_p(fsb_width_p)) m_axi4_to_s_fsb (
-    .clk_i       (clk_i        ),
-    .reset_i     (reset_i      ),
-    .s_axil_bus_i(s2_axil_bus_i),
-    .s_axil_bus_o(s2_axil_bus_o),
-    .m_axi_bus_i (m_axi_bus_i  ),
-    .m_axi_bus_o (m_axi_bus_o  ),
-    .atg_dst_sel (             ),
-    .fsb_wvalid  (s_fsb_v_i    ),
-    .fsb_wdata   (s_fsb_data_i ),
-    .fsb_yumi    (s_fsb_yumi_o )
-  );
 
 endmodule

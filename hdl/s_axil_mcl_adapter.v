@@ -1,79 +1,79 @@
 /**
- *  s_axil_m_fsb_adapter.sv
+ *  s_axil_mcl_adapter.v
  *
  *  axi-lite (SH) <-> cl_bsg (CL)
  */
 
 `include "bsg_axi_bus_pkg.vh"
 
-module s_axil_m_fsb_adapter #(
-   fsb_width_p = "inv"
+module s_axil_mcl_adapter #(
+   mcl_width_p = "inv"
   ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
 )(
   input clk_i
   ,input reset_i
-  ,input [axil_mosi_bus_width_lp-1:0] sh_ocl_bus_i
-  ,output [axil_miso_bus_width_lp-1:0] sh_ocl_bus_o
-  ,input m_fsb_v_i
-  ,input [fsb_width_p-1:0] m_fsb_data_i
-  ,output m_fsb_r_o
-  ,output m_fsb_v_o
-  ,output [fsb_width_p-1:0] m_fsb_data_o
-  ,input m_fsb_r_i
+  ,input [axil_mosi_bus_width_lp-1:0] s_axil_mcl_bus_i
+  ,output [axil_miso_bus_width_lp-1:0] s_axil_mcl_bus_o
+  ,input mcl_v_i
+  ,input [mcl_width_p-1:0] mcl_data_i
+  ,output mcl_r_o
+  ,output mcl_v_o
+  ,output [mcl_width_p-1:0] mcl_data_o
+  ,input mcl_r_i
 );
 
 parameter fpga_version_p = "virtexuplus";
 
 `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 
-bsg_axil_mosi_bus_s sh_ocl_bus_i_cast, sh_ocl_bus_mosi_r;
-bsg_axil_miso_bus_s sh_ocl_bus_o_cast, sh_ocl_bus_miso_r;
-assign sh_ocl_bus_i_cast = sh_ocl_bus_i;
-assign sh_ocl_bus_o = sh_ocl_bus_o_cast;
+bsg_axil_mosi_bus_s s_axil_mcl_bus_i_cast, s_axil_mcl_mosi_r;
+bsg_axil_miso_bus_s s_axil_mcl_bus_o_cast, s_axil_mcl_miso_r;
+assign s_axil_mcl_bus_i_cast = s_axil_mcl_bus_i;
+assign s_axil_mcl_bus_o = s_axil_mcl_bus_o_cast;
 
 // flop the input OCL bus
 //---------------------------------
 axi_register_slice_light AXIL_OCL_REG_SLC (
   .aclk         (clk_i                    ),
   .aresetn      (~reset_i                 ),
-  .s_axi_awaddr (sh_ocl_bus_i_cast.awaddr ),
+  .s_axi_awaddr (s_axil_mcl_bus_i_cast.awaddr ),
   .s_axi_awprot (3'h0                     ),
-  .s_axi_awvalid(sh_ocl_bus_i_cast.awvalid),
-  .s_axi_awready(sh_ocl_bus_o_cast.awready),
-  .s_axi_wdata  (sh_ocl_bus_i_cast.wdata  ),
-  .s_axi_wstrb  (sh_ocl_bus_i_cast.wstrb  ),
-  .s_axi_wvalid (sh_ocl_bus_i_cast.wvalid ),
-  .s_axi_wready (sh_ocl_bus_o_cast.wready ),
-  .s_axi_bresp  (sh_ocl_bus_o_cast.bresp  ),
-  .s_axi_bvalid (sh_ocl_bus_o_cast.bvalid ),
-  .s_axi_bready (sh_ocl_bus_i_cast.bready ),
-  .s_axi_araddr (sh_ocl_bus_i_cast.araddr ),
-  .s_axi_arvalid(sh_ocl_bus_i_cast.arvalid),
-  .s_axi_arready(sh_ocl_bus_o_cast.arready),
-  .s_axi_rdata  (sh_ocl_bus_o_cast.rdata  ),
-  .s_axi_rresp  (sh_ocl_bus_o_cast.rresp  ),
-  .s_axi_rvalid (sh_ocl_bus_o_cast.rvalid ),
-  .s_axi_rready (sh_ocl_bus_i_cast.rready ),
+  .s_axi_awvalid(s_axil_mcl_bus_i_cast.awvalid),
+  .s_axi_awready(s_axil_mcl_bus_o_cast.awready),
+  .s_axi_wdata  (s_axil_mcl_bus_i_cast.wdata  ),
+  .s_axi_wstrb  (s_axil_mcl_bus_i_cast.wstrb  ),
+  .s_axi_wvalid (s_axil_mcl_bus_i_cast.wvalid ),
+  .s_axi_wready (s_axil_mcl_bus_o_cast.wready ),
+  .s_axi_bresp  (s_axil_mcl_bus_o_cast.bresp  ),
+  .s_axi_bvalid (s_axil_mcl_bus_o_cast.bvalid ),
+  .s_axi_bready (s_axil_mcl_bus_i_cast.bready ),
+  .s_axi_araddr (s_axil_mcl_bus_i_cast.araddr ),
+  .s_axi_arvalid(s_axil_mcl_bus_i_cast.arvalid),
+  .s_axi_arready(s_axil_mcl_bus_o_cast.arready),
+  .s_axi_rdata  (s_axil_mcl_bus_o_cast.rdata  ),
+  .s_axi_rresp  (s_axil_mcl_bus_o_cast.rresp  ),
+  .s_axi_rvalid (s_axil_mcl_bus_o_cast.rvalid ),
+  .s_axi_rready (s_axil_mcl_bus_i_cast.rready ),
   
-  .m_axi_awaddr (sh_ocl_bus_mosi_r.awaddr    ),
+  .m_axi_awaddr (s_axil_mcl_mosi_r.awaddr    ),
   .m_axi_awprot (                         ),
-  .m_axi_awvalid(sh_ocl_bus_mosi_r.awvalid   ),
-  .m_axi_awready(sh_ocl_bus_miso_r.awready   ),
-  .m_axi_wdata  (sh_ocl_bus_mosi_r.wdata     ),
-  .m_axi_wstrb  (sh_ocl_bus_mosi_r.wstrb     ),
-  .m_axi_wvalid (sh_ocl_bus_mosi_r.wvalid    ),
-  .m_axi_wready (sh_ocl_bus_miso_r.wready    ),
-  .m_axi_bresp  (sh_ocl_bus_miso_r.bresp     ),
-  .m_axi_bvalid (sh_ocl_bus_miso_r.bvalid    ),
-  .m_axi_bready (sh_ocl_bus_mosi_r.bready    ),
-  .m_axi_araddr (sh_ocl_bus_mosi_r.araddr    ),
-  .m_axi_arvalid(sh_ocl_bus_mosi_r.arvalid   ),
-  .m_axi_arready(sh_ocl_bus_miso_r.arready   ),
-  .m_axi_rdata  (sh_ocl_bus_miso_r.rdata     ),
-  .m_axi_rresp  (sh_ocl_bus_miso_r.rresp     ),
-  .m_axi_rvalid (sh_ocl_bus_miso_r.rvalid    ),
-  .m_axi_rready (sh_ocl_bus_mosi_r.rready    )
+  .m_axi_awvalid(s_axil_mcl_mosi_r.awvalid   ),
+  .m_axi_awready(s_axil_mcl_miso_r.awready   ),
+  .m_axi_wdata  (s_axil_mcl_mosi_r.wdata     ),
+  .m_axi_wstrb  (s_axil_mcl_mosi_r.wstrb     ),
+  .m_axi_wvalid (s_axil_mcl_mosi_r.wvalid    ),
+  .m_axi_wready (s_axil_mcl_miso_r.wready    ),
+  .m_axi_bresp  (s_axil_mcl_miso_r.bresp     ),
+  .m_axi_bvalid (s_axil_mcl_miso_r.bvalid    ),
+  .m_axi_bready (s_axil_mcl_mosi_r.bready    ),
+  .m_axi_araddr (s_axil_mcl_mosi_r.araddr    ),
+  .m_axi_arvalid(s_axil_mcl_mosi_r.arvalid   ),
+  .m_axi_arready(s_axil_mcl_miso_r.arready   ),
+  .m_axi_rdata  (s_axil_mcl_miso_r.rdata     ),
+  .m_axi_rresp  (s_axil_mcl_miso_r.rresp     ),
+  .m_axi_rvalid (s_axil_mcl_miso_r.rvalid    ),
+  .m_axi_rready (s_axil_mcl_mosi_r.rready    )
 );
 
 
@@ -99,7 +99,7 @@ axi_fifo_mm_s #(
   .C_TX_FIFO_PE_THRESHOLD(2           ),
   .C_RX_FIFO_PF_THRESHOLD(507         ),
   .C_RX_FIFO_PE_THRESHOLD(2           ),
-  .C_USE_TX_CUT_THROUGH  (1           ),
+  .C_USE_TX_CUT_THROUGH  (0           ),
   .C_DATA_INTERFACE_TYPE (0           ),
   .C_BASEADDR            (32'h80000000),
   .C_HIGHADDR            (32'h80000FFF),
@@ -113,7 +113,7 @@ axi_fifo_mm_s #(
   .C_AXIS_TID_WIDTH      (4           ),
   .C_AXIS_TDEST_WIDTH    (4           ),
   .C_AXIS_TUSER_WIDTH    (4           ),
-  .C_USE_RX_CUT_THROUGH  (1           ),
+  .C_USE_RX_CUT_THROUGH  (0           ),
   .C_USE_TX_DATA         (1           ),
   .C_USE_TX_CTRL         (0           ),
   .C_USE_RX_DATA         (1           )
@@ -121,23 +121,23 @@ axi_fifo_mm_s #(
   .interrupt             (                         ), // output wire interrupt
   .s_axi_aclk            (clk_i                    ), // input wire s_axi_aclk
   .s_axi_aresetn         (~reset_i                 ), // input wire s_axi_aresetn
-  .s_axi_awaddr          (sh_ocl_bus_mosi_r.awaddr ), // input wire [31 : 0] s_axi_awaddr
-  .s_axi_awvalid         (sh_ocl_bus_mosi_r.awvalid), // input wire s_axi_awvalid
-  .s_axi_awready         (sh_ocl_bus_miso_r.awready), // output wire s_axi_awready
-  .s_axi_wdata           (sh_ocl_bus_mosi_r.wdata  ), // input wire [31 : 0] s_axi_wdata
-  .s_axi_wstrb           (sh_ocl_bus_mosi_r.wstrb  ), // input wire [3 : 0] s_axi_wstrb
-  .s_axi_wvalid          (sh_ocl_bus_mosi_r.wvalid ), // input wire s_axi_wvalid
-  .s_axi_wready          (sh_ocl_bus_miso_r.wready ), // output wire s_axi_wready
-  .s_axi_bresp           (sh_ocl_bus_miso_r.bresp  ), // output wire [1 : 0] s_axi_bresp
-  .s_axi_bvalid          (sh_ocl_bus_miso_r.bvalid ), // output wire s_axi_bvalid
-  .s_axi_bready          (sh_ocl_bus_mosi_r.bready ), // input wire s_axi_bready
-  .s_axi_araddr          (sh_ocl_bus_mosi_r.araddr ), // input wire [31 : 0] s_axi_araddr
-  .s_axi_arvalid         (sh_ocl_bus_mosi_r.arvalid), // input wire s_axi_arvalid
-  .s_axi_arready         (sh_ocl_bus_miso_r.arready), // output wire s_axi_arready
-  .s_axi_rdata           (sh_ocl_bus_miso_r.rdata  ), // output wire [31 : 0] s_axi_rdata
-  .s_axi_rresp           (sh_ocl_bus_miso_r.rresp  ), // output wire [1 : 0] s_axi_rresp
-  .s_axi_rvalid          (sh_ocl_bus_miso_r.rvalid ), // output wire s_axi_rvalid
-  .s_axi_rready          (sh_ocl_bus_mosi_r.rready ), // input wire s_axi_rready
+  .s_axi_awaddr          (s_axil_mcl_mosi_r.awaddr ), // input wire [31 : 0] s_axi_awaddr
+  .s_axi_awvalid         (s_axil_mcl_mosi_r.awvalid), // input wire s_axi_awvalid
+  .s_axi_awready         (s_axil_mcl_miso_r.awready), // output wire s_axi_awready
+  .s_axi_wdata           (s_axil_mcl_mosi_r.wdata  ), // input wire [31 : 0] s_axi_wdata
+  .s_axi_wstrb           (s_axil_mcl_mosi_r.wstrb  ), // input wire [3 : 0] s_axi_wstrb
+  .s_axi_wvalid          (s_axil_mcl_mosi_r.wvalid ), // input wire s_axi_wvalid
+  .s_axi_wready          (s_axil_mcl_miso_r.wready ), // output wire s_axi_wready
+  .s_axi_bresp           (s_axil_mcl_miso_r.bresp  ), // output wire [1 : 0] s_axi_bresp
+  .s_axi_bvalid          (s_axil_mcl_miso_r.bvalid ), // output wire s_axi_bvalid
+  .s_axi_bready          (s_axil_mcl_mosi_r.bready ), // input wire s_axi_bready
+  .s_axi_araddr          (s_axil_mcl_mosi_r.araddr ), // input wire [31 : 0] s_axi_araddr
+  .s_axi_arvalid         (s_axil_mcl_mosi_r.arvalid), // input wire s_axi_arvalid
+  .s_axi_arready         (s_axil_mcl_miso_r.arready), // output wire s_axi_arready
+  .s_axi_rdata           (s_axil_mcl_miso_r.rdata  ), // output wire [31 : 0] s_axi_rdata
+  .s_axi_rresp           (s_axil_mcl_miso_r.rresp  ), // output wire [1 : 0] s_axi_rresp
+  .s_axi_rvalid          (s_axil_mcl_miso_r.rvalid ), // output wire s_axi_rvalid
+  .s_axi_rready          (s_axil_mcl_mosi_r.rready ), // input wire s_axi_rready
   .s_axi4_awid           (4'h0                     ),
   .s_axi4_awaddr         (32'h0                    ),
   .s_axi4_awlen          (8'h0                     ),
@@ -224,21 +224,22 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .m_axis_tuser()
 );
 
-assign m_fsb_v_o = mosi_axisx128_bus.txd_tvalid;
-assign m_fsb_data_o = mosi_axisx128_bus.txd_tdata[fsb_width_p-1:0];
-assign miso_axisx128_bus.txd_tready = m_fsb_r_i;
+assign mcl_v_o = mosi_axisx128_bus.txd_tvalid;
+assign mcl_data_o = mosi_axisx128_bus.txd_tdata[mcl_width_p-1:0];
+assign miso_axisx128_bus.txd_tready = mcl_r_i;
 
 //  ||
 //  \/
-// FSB MODULE
+// MCL MODULE
 //  ||
 //  \/
 
-assign miso_axisx128_bus.rxd_tvalid = m_fsb_v_i;
-assign miso_axisx128_bus.rxd_tdata = {48'h0000_0000_0000, m_fsb_data_i};
-assign miso_axisx128_bus.rxd_tlast = m_fsb_v_i & mosi_axisx128_bus.rxd_tready;
+assign miso_axisx128_bus.rxd_tvalid = mcl_v_i;
+assign miso_axisx128_bus.rxd_tdata = {48'h0000_0000_0000, mcl_data_i};
 
-assign m_fsb_r_o = mosi_axisx128_bus.rxd_tready & m_fsb_v_i;
+assign miso_axisx128_bus.rxd_tlast = mcl_v_i & mosi_axisx128_bus.rxd_tready;
+
+assign mcl_r_o = mosi_axisx128_bus.rxd_tready & mcl_v_i;
 
 
 axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(

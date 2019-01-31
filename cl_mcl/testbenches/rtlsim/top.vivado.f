@@ -27,11 +27,12 @@
 -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/lib
 -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/interfaces
 -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/sh_ddr/sim
--sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/bd_0/hdl
--sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/sim
+# -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/bd_0/hdl
+# -sourcelibdir ${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/sim
 
 # Custom Logic (CL) include directories
 -include ${CL_DIR}/hardware
+-include ${CL_DIR}/hdl
 
 # AWS include directories
 -include ${HDK_COMMON_DIR}/verif/include
@@ -44,22 +45,17 @@
 -include ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
 
 # Custom Logic (CL) design files
-${CL_DIR}/hardware/bsg_axi_bus_pkg.vh
-${CL_DIR}/hardware/axi_fsb_adapters.v
-${CL_DIR}/hardware/s_axil_m_fsb_adapter.sv
-${CL_DIR}/hardware/s_axi4_m_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_s_fsb_adapter.sv
-${CL_DIR}/hardware/m_axi4_s_axis_adapter.sv
-${CL_DIR}/hardware/bsg_axis_gen_master.sv
-${CL_DIR}/hardware/cl_fsb.sv
+# ${CL_DIR}/hdl/bsg_axi_bus_pkg.vh
+${CL_DIR}/hardware/cl_mcl.sv
+${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/hardware/cl_simple_loopback.v
-${CL_DIR}/hardware/cl_ila_axil.v
+${CL_DIR}/../hdl/s_axil_mcl_adapter.v
+# ${CL_DIR}/hardware/cl_ila_axil.v
 
 # BSG files
 -include ${BSG_IP_DIR}/bsg_misc
 ${BSG_IP_DIR}/bsg_misc/bsg_defines.v
 -include ${BSG_IP_DIR}/bsg_fsb
-${BSG_IP_DIR}/bsg_fsb/bsg_fsb_pkg.v
 
 ${BSG_IP_DIR}/bsg_misc/bsg_circular_ptr.v
 ${BSG_IP_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
@@ -68,9 +64,6 @@ ${BSG_IP_DIR}/bsg_dataflow/bsg_fifo_1r1w_small.v
 ${BSG_IP_DIR}/bsg_dataflow/bsg_fifo_tracker.v
 ${BSG_IP_DIR}/bsg_dataflow/bsg_two_fifo.v
 ${BSG_IP_DIR}/bsg_test/test_bsg_data_gen.v
-
-${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_client.v
-${BSG_DESIGNS_DIR}/modules/bsg_guts/loopback/bsg_test_node_master.v
 
 # Vivado library files
 ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v
@@ -108,6 +101,4 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
 
 # Testbench design files
-${CL_DIR}/testbenches/rtlsim/cl_s_axil_fsb_tb.sv
-${CL_DIR}/testbenches/rtlsim/cl_m_axi4_fsb_tb.sv
 ${CL_DIR}/testbenches/rtlsim/cl_crossbar_tb.sv
