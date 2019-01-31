@@ -6,6 +6,8 @@ module cl_manycore
 // For some silly reason, you need to leave this up here...
 logic rst_main_n_sync;
 
+`include "bsg_defines.v"
+`include "bsg_manycore_packet.vh"
 `include "cl_id_defines.vh"
 `include "cl_defines.vh"
 
@@ -300,7 +302,7 @@ axi_crossbar_v2_1_18_axi_crossbar #(
   .s_axi_awcache (m_axi4_concat_awcache),
   .s_axi_awprot  (m_axi4_concat_awprot ),
   .s_axi_awqos   (m_axi4_concat_awqos  ),
-  .s_axi_awuser  (m_axi4_concat_awuser ),
+  .s_axi_awuser  (2'b0),
   .s_axi_awvalid (m_axi4_concat_awvalid),
   .s_axi_awready (m_axi4_concat_awready),
   .s_axi_wid     (12'H0         ),
@@ -435,6 +437,141 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
    .m_axi_rvalid  (m_axil_ocl_rvalid),
    .m_axi_rready  (m_axil_ocl_rready)
   );
+
+// parameters
+parameter dmem_size_p = 1024;
+parameter icache_entries_p = 1024;
+parameter icache_tag_width_p = 12;
+parameter dram_ch_addr_width_p = 26;
+parameter epa_addr_width_p = 16;
+
+parameter num_tiles_x_p = 4;
+parameter num_tiles_y_p = 4;
+parameter x_cord_width_lp = `BSG_SAFE_CLOG2(num_tiles_x_p);
+parameter y_cord_width_lp = `BSG_SAFE_CLOG2(num_tiles_y_p+1);
+parameter load_id_width_p = 11;
+
+parameter num_cache_p = 2;
+parameter data_width_p = 32;
+parameter addr_width_p = 26;
+parameter block_size_in_words_p = 16;
+parameter sets_p = 32;
+
+parameter axi_id_width_p = 6;
+parameter axi_addr_width_p = 64;
+parameter axi_data_width_p = 512;
+
+`declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_lp, y_cord_width_lp, load_id_width_p);
+bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
+bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
+
+logic [num_cache_p-1:0][x_cord_width_lp-1:0] cache_x_lo;
+logic [num_cache_p-1:0][y_cord_width_lp-1:0] cache_y_lo;
+
+bsg_manycore_link_sif_s loader_link_sif_li;
+bsg_manycore_link_sif_s loader_link_sif_lo;
+
+bsg_manycore_wrapper #(
+  .dmem_size_p(dmem_size_p)
+  ,.icache_entries_p(icache_entries_p)
+  ,.icache_tag_width_p(icache_tag_width_p)
+  ,.num_tiles_x_p(num_tiles_x_p)
+  ,.num_tiles_y_p(num_tiles_y_p)
+  ,.load_id_width_p(load_id_width_p)
+  ,.addr_width_p(addr_width_p)
+  ,.epa_addr_width_p(epa_addr_width_p)
+  ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
+  ,.data_width_p(data_width_p)
+  ,.num_cache_p(num_cache_p)
+) manycore_wrapper (
+  .clk_i(clk_main_a0)
+  ,.reset_i(~rst_main_n_sync)
+
+  ,.cache_link_sif_i(cache_link_sif_li)
+  ,.cache_link_sif_o(cache_link_sif_lo)
+  ,.cache_x_o(cache_x_lo)
+  ,.cache_y_o(cache_y_lo)
+
+  ,.loader_link_sif_i(loader_link_sif_li)
+  ,.loader_link_sif_o(loader_link_sif_lo)
+);
+
+assign loader_link_sif_li = '0;
+
+// cache
+bsg_cache_wrapper #(
+  .num_cache_p(num_cache_p)
+  ,.data_width_p(data_width_p)
+  ,.addr_width_p(addr_width_p+2)
+  ,.block_size_in_words_p(block_size_in_words_p)
+  ,.sets_p(sets_p)
+  ,.lo_addr_width_p(addr_width_p-1)
+
+  ,.axi_id_width_p(axi_id_width_p)
+  ,.axi_addr_width_p(axi_addr_width_p)
+  ,.axi_data_width_p(axi_data_width_p)
+  ,.axi_burst_len_p(1)
+
+  ,.link_addr_width_p(addr_width_p)
+  ,.link_lo_addr_width_p(addr_width_p-1)
+  ,.x_cord_width_p(x_cord_width_lp)
+  ,.y_cord_width_p(y_cord_width_lp)
+  ,.load_id_width_p(load_id_width_p)
+) cw (
+  .clk_i(clk_main_a0)
+  ,.reset_i(~rst_main_n_sync)
+
+  ,.my_x_i(cache_x_lo)
+  ,.my_y_i(cache_y_lo)
+  ,.link_sif_i(cache_link_sif_lo)
+  ,.link_sif_o(cache_link_sif_li)
+
+  ,.axi_awid_o    (m_axi4_manycore_awid)
+  ,.axi_awaddr_o  (m_axi4_manycore_awaddr)
+  ,.axi_awlen_o   (m_axi4_manycore_awlen)
+  ,.axi_awsize_o  (m_axi4_manycore_awsize)
+  ,.axi_awburst_o (m_axi4_manycore_awburst)
+  ,.axi_awcache_o (m_axi4_manycore_awcache)
+  ,.axi_awprot_o  (m_axi4_manycore_awprot)
+  ,.axi_awlock_o  (m_axi4_manycore_awlock)
+  ,.axi_awvalid_o (m_axi4_manycore_awvalid)
+  ,.axi_awready_i (m_axi4_manycore_awready)
+
+  ,.axi_wdata_o   (m_axi4_manycore_wdata)
+  ,.axi_wstrb_o   (m_axi4_manycore_wstrb)
+  ,.axi_wlast_o   (m_axi4_manycore_wlast)
+  ,.axi_wvalid_o  (m_axi4_manycore_wvalid)
+  ,.axi_wready_i  (m_axi4_manycore_wready)
+
+  ,.axi_bid_i     (m_axi4_manycore_bid)
+  ,.axi_bresp_i   (m_axi4_manycore_bresp)
+  ,.axi_bvalid_i  (m_axi4_manycore_bvalid)
+  ,.axi_bready_o  (m_axi4_manycore_bready)
+
+  ,.axi_arid_o    (m_axi4_manycore_arid)
+  ,.axi_araddr_o  (m_axi4_manycore_araddr)
+  ,.axi_arlen_o   (m_axi4_manycore_arlen)
+  ,.axi_arsize_o  (m_axi4_manycore_arsize)
+  ,.axi_arburst_o (m_axi4_manycore_arburst)
+  ,.axi_arcache_o (m_axi4_manycore_arcache)
+  ,.axi_arprot_o  (m_axi4_manycore_arprot)
+  ,.axi_arlock_o  (m_axi4_manycore_arlock)
+  ,.axi_arvalid_o (m_axi4_manycore_arvalid)
+  ,.axi_arready_i (m_axi4_manycore_arready)
+
+  ,.axi_rid_i     (m_axi4_manycore_rid)
+  ,.axi_rdata_i   (m_axi4_manycore_rdata)
+  ,.axi_rresp_i   (m_axi4_manycore_rresp)
+  ,.axi_rlast_i   (m_axi4_manycore_rlast)
+  ,.axi_rvalid_i  (m_axi4_manycore_rvalid)
+  ,.axi_rready_o  (m_axi4_manycore_rready)
+);
+
+assign m_axi4_manycore_awregion = 4'b0;
+assign m_axi4_manycore_awqos = 4'b0;
+
+assign m_axi4_manycore_arregion = 4'b0;
+assign m_axi4_manycore_arqos = 4'b0;
 
 //-----------------------------------------------
 // Debug bridge, used if need Virtual JTAG
