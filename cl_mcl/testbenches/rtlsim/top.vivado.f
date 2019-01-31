@@ -49,7 +49,7 @@
 ${CL_DIR}/hardware/cl_mcl.sv
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/hardware/cl_simple_loopback.v
-${CL_DIR}/../hdl/s_axil_m_fsb_adapter.v
+${CL_DIR}/../hdl/s_axil_mcl_adapter.v
 # ${CL_DIR}/hardware/cl_ila_axil.v
 
 # BSG files

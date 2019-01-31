@@ -26,13 +26,13 @@ module axil_to_mcl #(mcl_intf_num_p="inv") (
   output [                             1:0] s_axil_mcl_rresp  ,
   output                                    s_axil_mcl_rvalid ,
   input                                     s_axil_mcl_rready ,
-  // from fsb signals
+  // from mcl signals
   input  [              mcl_intf_num_p-1:0] mcl_v_i
   ,
   input  [(mcl_intf_num_p*80)-1:0] mcl_data_i
   ,
   output [              mcl_intf_num_p-1:0] mcl_yumi_o
-  // to fsb slave
+  // to mcl slave
   ,
   output [              mcl_intf_num_p-1:0] mcl_v_o
   ,
@@ -254,17 +254,17 @@ begin
 
 for (i=0; i<mcl_intf_num_p; i=i+1)
 begin
-  s_axil_m_fsb_adapter #(.fsb_width_p(80)) s_axil_to_m_fsb (
-    .clk_i       (clk_i                                    ),
-    .reset_i     (reset_i                                  ),
-    .s_axil_mcl_bus_i(axil_demux_mosi_bus[i]                   ),
-    .s_axil_mcl_bus_o(axil_demux_miso_bus[i]                   ),
-    .mcl_v_i   (mcl_v_i[i]                            ),
-    .mcl_data_i(mcl_data_i[80*i+:80]),
-    .mcl_r_o   (mcl_yumi_o[i]                         ),
-    .mcl_v_o   (mcl_v_o[i]                            ),
-    .mcl_data_o(mcl_data_o[80*i+:80]),
-    .mcl_r_i   (mcl_ready_i[i]                        )
+  s_axil_mcl_adapter #(.mcl_width_p(80)) s_axil_to_mcl (
+    .clk_i          (clk_i                 ),
+    .reset_i        (reset_i               ),
+    .s_axil_mcl_bus_i(axil_demux_mosi_bus[i]),
+    .s_axil_mcl_bus_o(axil_demux_miso_bus[i]),
+    .mcl_v_i        (mcl_v_i[i]            ),
+    .mcl_data_i     (mcl_data_i[80*i+:80]  ),
+    .mcl_r_o        (mcl_yumi_o[i]         ),
+    .mcl_v_o        (mcl_v_o[i]            ),
+    .mcl_data_o     (mcl_data_o[80*i+:80]  ),
+    .mcl_r_i        (mcl_ready_i[i]        )
   );
 end
 

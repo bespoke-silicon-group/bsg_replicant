@@ -1,13 +1,13 @@
 /**
- *  s_axil_m_fsb_adapter.v
+ *  s_axil_mcl_adapter.v
  *
  *  axi-lite (SH) <-> cl_bsg (CL)
  */
 
 `include "bsg_axi_bus_pkg.vh"
 
-module s_axil_m_fsb_adapter #(
-   fsb_width_p = "inv"
+module s_axil_mcl_adapter #(
+   mcl_width_p = "inv"
   ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
 )(
@@ -16,10 +16,10 @@ module s_axil_m_fsb_adapter #(
   ,input [axil_mosi_bus_width_lp-1:0] s_axil_mcl_bus_i
   ,output [axil_miso_bus_width_lp-1:0] s_axil_mcl_bus_o
   ,input mcl_v_i
-  ,input [fsb_width_p-1:0] mcl_data_i
+  ,input [mcl_width_p-1:0] mcl_data_i
   ,output mcl_r_o
   ,output mcl_v_o
-  ,output [fsb_width_p-1:0] mcl_data_o
+  ,output [mcl_width_p-1:0] mcl_data_o
   ,input mcl_r_i
 );
 
@@ -225,12 +225,12 @@ axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
 );
 
 assign mcl_v_o = mosi_axisx128_bus.txd_tvalid;
-assign mcl_data_o = mosi_axisx128_bus.txd_tdata[fsb_width_p-1:0];
+assign mcl_data_o = mosi_axisx128_bus.txd_tdata[mcl_width_p-1:0];
 assign miso_axisx128_bus.txd_tready = mcl_r_i;
 
 //  ||
 //  \/
-// FSB MODULE
+// MCL MODULE
 //  ||
 //  \/
 

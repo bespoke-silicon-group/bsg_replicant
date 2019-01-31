@@ -89,20 +89,20 @@ assign cl_sh_status0[31:0] = 32'h0;
 assign cl_sh_status1[31:0] = 32'h0;
 
 
-localparam axil_slv_num_lp = 10;
-localparam fsb_width_lp = 80;
+localparam axil_slv_num_lp = 2;
+localparam mcl_width_lp = 80;
 
 // fsb slave
 //-------------------------------------------------
 logic [axil_slv_num_lp-1:0] mcl_v_i, mcl_v_o;
-logic [(fsb_width_lp*axil_slv_num_lp)-1:0] mcl_data_i, mcl_data_o;
+logic [(mcl_width_lp*axil_slv_num_lp)-1:0] mcl_data_i, mcl_data_o;
 logic [axil_slv_num_lp-1:0] mcl_yumi_o, mcl_ready_i;
 
-(* dont_touch = "true" *) logic axi_fsb_rstn;
-lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_FSB_RST_N (.clk(clk_main_a0), .rst_n(1'b1), .in_bus(rst_main_n_sync), .out_bus(axi_fsb_rstn));
-axil_to_mcl #(.mcl_intf_num_p(10)) DUT (
+(* dont_touch = "true" *) logic axi_mcl_rstn;
+lib_pipe #(.WIDTH(1), .STAGES(4)) AXI_MCL_RST_N (.clk(clk_main_a0), .rst_n(1'b1), .in_bus(rst_main_n_sync), .out_bus(axi_mcl_rstn));
+axil_to_mcl #(.mcl_intf_num_p(axil_slv_num_lp)) DUT (
   .clk_i         (clk_main_a0         ),
-  .reset_i       (~axi_fsb_rstn ),
+  .reset_i       (~axi_mcl_rstn ),
   .s_axil_mcl_awvalid(sh_ocl_awvalid),
   .s_axil_mcl_awaddr (sh_ocl_awaddr ),
   .s_axil_mcl_awready(ocl_sh_awready),
@@ -138,17 +138,17 @@ begin: bsg_test_node_slv
   cl_simple_loopback #(
     .data_width_p(80        ),
     .mask_p      ({80{1'b1}})
-  ) fsb_loopback_node (
+  ) mcl_loopback_node (
     .clk_i  (clk_main_a0                             ),
-    .reset_i(~axi_fsb_rstn                           ),
+    .reset_i(~axi_mcl_rstn                           ),
     .en_i   (1'b1                                    ),
     // input channel
     .v_i    (mcl_v_o[i]                              ),
-    .data_i (mcl_data_o[fsb_width_lp*i+:fsb_width_lp]),
+    .data_i (mcl_data_o[mcl_width_lp*i+:mcl_width_lp]),
     .ready_o(mcl_ready_i[i]                          ),
     // output channel
     .v_o    (mcl_v_i[i]                              ),
-    .data_o (mcl_data_i[fsb_width_lp*i+:fsb_width_lp]),
+    .data_o (mcl_data_i[mcl_width_lp*i+:mcl_width_lp]),
     .yumi_i (mcl_yumi_o[i]                           )
   );
 end
