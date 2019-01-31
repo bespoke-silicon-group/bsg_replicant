@@ -46,9 +46,12 @@
 -include ${BSG_IP_CORES_DIR}/bsg_cache
 -include ${BSG_MANYCORE_DIR}/v/
 -include ${BSG_MANYCORE_DIR}/v/vanilla_bean
+-include ${CL_DIR}/../hdl/
 
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/cl_manycore.sv
+${CL_DIR}/../hdl/axil_to_mcl.v
+${CL_DIR}/../hdl/s_axil_mcl_adapter.v
 
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
@@ -137,6 +140,10 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_mesh_node.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_tile.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
+
+
+# Vivado library files
+#${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v
 
 ${XILINX_VIVADO}/data/ip/xilinx/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v

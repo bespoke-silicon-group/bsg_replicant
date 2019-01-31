@@ -387,15 +387,15 @@ axi_crossbar_v2_1_18_axi_crossbar #(
 //---------------------------------------------
 
 // Tied to 0, for now:
-assign m_axil_ocl_awready = 1'b0;
-assign m_axil_ocl_wready = 1'b0;
-assign m_axil_ocl_bvalid = 1'b0;
-assign m_axil_ocl_bresp = 2'b00;
-assign m_axil_ocl_arready = 1'b0;
+//assign m_axil_ocl_awready = 1'b0;
+//assign m_axil_ocl_wready = 1'b0;
+//assign m_axil_ocl_bvalid = 1'b0;
+//assign m_axil_ocl_bresp = 2'b00;
+//assign m_axil_ocl_arready = 1'b0;
 
 // Read data/response
-assign m_axil_ocl_rvalid = 1'b0;
-assign m_axil_ocl_rresp = 2'b00;
+//assign m_axil_ocl_rvalid = 1'b0;
+//assign m_axil_ocl_rresp = 2'b00;
 
 axi_register_slice_light AXIL_OCL_REG_SLC (
    .aclk          (clk_main_a0),
@@ -496,7 +496,6 @@ bsg_manycore_wrapper #(
   ,.loader_link_sif_o(loader_link_sif_lo)
 );
 
-assign loader_link_sif_li = '0;
 
 // cache
 bsg_cache_wrapper #(
@@ -572,6 +571,119 @@ assign m_axi4_manycore_awqos = 4'b0;
 
 assign m_axi4_manycore_arregion = 4'b0;
 assign m_axi4_manycore_arqos = 4'b0;
+
+
+// axil_to_mcl
+//
+logic mcl_v_li;
+logic [127:0] mcl_data_li;
+logic mcl_yumi_lo;
+
+logic mcl_v_lo;
+logic mcl_ready_li;
+logic [127:0] mcl_data_lo;
+
+axil_to_mcl #(
+  .mcl_intf_num_p(1)
+  ,.fifo_width_p(128)
+) axil_to_mcl_inst (
+  .clk_i(clk_main_a0)
+  ,.reset_i(~rst_main_n_sync)
+
+  ,.s_axil_mcl_awvalid (m_axil_ocl_awvalid)
+  ,.s_axil_mcl_awaddr  (m_axil_ocl_awaddr)
+  ,.s_axil_mcl_awready (m_axil_ocl_awready)
+  ,.s_axil_mcl_wvalid  (m_axil_ocl_wvalid)
+  ,.s_axil_mcl_wdata   (m_axil_ocl_wdata)
+  ,.s_axil_mcl_wstrb   (m_axil_ocl_wstrb)
+  ,.s_axil_mcl_wready  (m_axil_ocl_wready)
+  ,.s_axil_mcl_bresp   (m_axil_ocl_bresp)
+  ,.s_axil_mcl_bvalid  (m_axil_ocl_bvalid)
+  ,.s_axil_mcl_bready  (m_axil_ocl_bready)
+  ,.s_axil_mcl_araddr  (m_axil_ocl_araddr)
+  ,.s_axil_mcl_arvalid (m_axil_ocl_arvalid)
+  ,.s_axil_mcl_arready (m_axil_ocl_arready)
+  ,.s_axil_mcl_rdata   (m_axil_ocl_rdata)
+  ,.s_axil_mcl_rresp   (m_axil_ocl_rresp)
+  ,.s_axil_mcl_rvalid  (m_axil_ocl_rvalid)
+  ,.s_axil_mcl_rready  (m_axil_ocl_rready)
+
+  ,.mcl_v_i(mcl_v_li)
+  ,.mcl_data_i(mcl_data_li)
+  ,.mcl_yumi_o(mcl_yumi_lo)
+
+  ,.mcl_v_o(mcl_v_lo)
+  ,.mcl_ready_i(mcl_ready_li)
+  ,.mcl_data_o(mcl_data_lo)
+);
+
+logic endpoint_v_lo;
+logic endpoint_yumi_li;
+logic [data_width_p-1:0] endpoint_data_lo;
+logic [(data_width_p>>3)-1:0] endpoint_mask_lo;
+logic [addr_width_p-1:0] endpoint_addr_lo;
+logic endpoint_we_lo;
+
+`declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p);
+localparam bsg_manycore_packet_width_lp = `bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p);
+bsg_manycore_packet_s endpoint_out_packet_li;
+logic endpoint_out_v_li;
+logic endpoint_out_ready_lo;
+
+bsg_manycore_endpoint_standard #(
+  .x_cord_width_p(x_cord_width_lp)
+  ,.y_cord_width_p(y_cord_width_lp)
+  ,.data_width_p(data_width_p)
+  ,.addr_width_p(addr_width_p)
+  ,.fifo_els_p(4)
+  ,.max_out_credits_p(16)
+  ,.load_id_width_p(load_id_width_p)
+) dram_endpoint_standard (
+  .clk_i(clk_main_a0)
+  ,.reset_i(~rst_main_n_sync)
+     
+  ,.link_sif_i(loader_link_sif_lo)
+  ,.link_sif_o(loader_link_sif_li)
+
+  // receiving packets from network
+  ,.in_v_o(endpoint_v_lo)
+  ,.in_yumi_i(endpoint_yumi_li)
+  ,.in_data_o(endpoint_data_lo)
+  ,.in_mask_o(endpoint_mask_lo)
+  ,.in_addr_o(endpoint_addr_lo)
+  ,.in_we_o(endpoint_we_lo)
+  ,.in_src_x_cord_o()
+  ,.in_src_y_cord_o()
+
+  // sending packets out to network
+  ,.out_v_i(endpoint_out_v_li)
+  ,.out_packet_i(endpoint_out_packet_li)
+  ,.out_ready_o(endpoint_out_ready_lo)
+  
+  ,.returned_data_r_o()
+  ,.returned_load_id_r_o()
+  ,.returned_v_r_o()
+  ,.returned_fifo_full_o()
+  ,.returned_yumi_i(1'b0)
+
+  ,.returning_data_i('0)
+  ,.returning_v_i(1'b0)
+
+  ,.out_credits_o()
+
+  ,.my_x_i(my_x_i)
+  ,.my_y_i(my_y_i)
+);
+
+assign endpoint_out_v_li = mcl_v_lo;
+assign mcl_ready_li = endpoint_out_ready_lo;
+always_comb begin
+  endpoint_out_packet_li = mcl_data_lo[0+:bsg_manycore_packet_width_lp];
+end
+
+assign mcl_v_li = endpoint_v_lo;
+assign endpoint_yumi_li = endpoint_v_lo & mcl_yumi_lo;
+assign mcl_data_li = {{(128-32){1'b0}}, endpoint_data_lo};
 
 //-----------------------------------------------
 // Debug bridge, used if need Virtual JTAG

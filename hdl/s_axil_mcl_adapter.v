@@ -179,7 +179,7 @@ axi_fifo_mm_s #(
   .axi_str_rxd_tid       (4'h0                     ),
   .axi_str_rxd_tuser     (4'h0                     )
 );
-
+/*
    ila_0 CL_ILA_0 (
                    .clk    (clk_i),
                    .probe0 (mosi_axisx32_bus.txd_tvalid),
@@ -189,7 +189,7 @@ axi_fifo_mm_s #(
                    .probe4 (0),
                    .probe5 (miso_axisx128_bus.txd_tready)
                    );
-
+*/
 
 axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_FAMILY(fpga_version_p),
