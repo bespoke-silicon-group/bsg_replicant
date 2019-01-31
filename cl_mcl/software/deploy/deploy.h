@@ -7,15 +7,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
-#include <stdio.h>
+
 // our software stack
 #include "../host.h"
 #include "../device.h"
 #include "driver/bsg_dma_driver.h"
 #include "fifo.h"
 
-// #define DEBUG
-#define PRINT_BUF
+// define DEBUG
 
 static const uint32_t BUF_SIZE = 4 * 1024 * 1024;
 static const uint32_t ALIGNMENT = 64;
@@ -24,10 +23,6 @@ static const uint32_t POP_SIZE = 64;
 static char *dev_path = "/dev/bsg_dma_driver";
 int dev_fd; 
 char *ocl_base = 0;
-
-static int use_file = 1; /* 0 to use memory and 1 to use file */
-static char *buf_fname = "buf.txt";
-
 
 static uint32_t get_tail (struct Host *host) {
 	int tail = 0;
@@ -96,6 +91,9 @@ static void stop (struct Host *host) {
  * TODO: return read's return value. 
  * */
 static bool pop (struct Host *host, uint32_t pop_size) {
+	
+
+
 	uint32_t tail;
 	ioctl(dev_fd, IOCTL_TAIL, &tail);
 	
@@ -129,7 +127,6 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 	}
 
 	/* print what has just been copied */
-	#ifdef PRINT_BUF
 	for (uint32_t i = 0; i < DMA_BUFFER_SIZE; i++) {
 		printf("0x%2X", 0xFF & host->buf_cpy[i]);
 		if ((i + 1) % 16 == 0)
@@ -137,7 +134,6 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 		else
 			printf(" ");
 	}
-	#endif
 
 	head = (head + num_cpy) % DMA_BUFFER_SIZE;
 	num_cpy = pop_size - num_cpy;  /* data that wraps over the end of system memory buffer */
@@ -147,6 +143,14 @@ static bool pop (struct Host *host, uint32_t pop_size) {
 			printf("host: could not copy %u bytes.\n", pop_size);
 			return false;
 		}
+	//	/* print what has just been copied */
+	//	for (uint32_t i = 0; i < num_cpy; i++) {
+	//		printf("0x%2X", 0xFF & host->buf_cpy[i]);
+	//		if ((i + 1) % 16 == 0)
+	//			printf("\n");
+	//		else
+	//			printf(" ");
+	//	}
 		head = head + num_cpy;	
 	}
 
@@ -188,26 +192,8 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 		host->buf_size = DMA_BUFFER_SIZE; /* global buffer */
 		host->buf = NULL; /* TODO: rename to mmap_buf */
 		ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
-		if (use_file) {
-			char *zeros = (char *) malloc(DMA_BUFFER_SIZE + 64 + 1);
-			FILE *pFile = fopen(buf_fname, "r+");
-			fseek(pFile, 0, SEEK_SET);
-			for (int i = 0; i < DMA_BUFFER_SIZE + 64; i++) {
-				zeros[i] = 0;
-			}
-			zeros[DMA_BUFFER_SIZE + 64] = '\0';
-			fprintf(pFile, zeros);
-			free(zeros);
-			int fd = fileno(pFile);
-			printf("fd is %d\n", fd);
-			host->buf_cpy = mmap(NULL, DMA_BUFFER_SIZE + 64, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-			printf("The buffer file has been mmap'd to %p\n", host->buf_cpy);
-			fclose(pFile);
-		}
-		else { /* allocate on heap */
-			host->buf_cpy = (char *) aligned_alloc(align, buf_size + 64); /* user copy of buffer */
-			memset(host->buf_cpy, 0, buf_size + 64);
-		}
+		host->buf_cpy = (char *) aligned_alloc(align, buf_size + 64); /* user copy of buffer */
+		memset(host->buf_cpy, 0, buf_size + 64);
 		
 		host->head = 0;
 		
@@ -235,13 +221,9 @@ char *deploy_mmap_ocl () {
 	return addr;
 } 
 
-void deploy_close (struct Host *host) {
+void deploy_close () {
 	if (ocl_base)
 		munmap(ocl_base, 0x4000);
-	if (use_file) {
-		munmap(host->buf_cpy, DMA_BUFFER_SIZE + 64);
-	}
-
 	if (dev_fd != -1)
 		close(dev_fd);
 }
@@ -270,9 +252,15 @@ bool deploy_write_fifo (uint8_t n, int *val) {
 	}
 	
 	for (int i = 0; i < 4; i++) {
+		//printf("writing %d to reg %d\n", val[i], fifo[n][FIFO_WRITE]);
 		*((int *) (ocl_base + fifo[n][FIFO_WRITE])) = val[i];
 	}
-	*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
+	uint32_t tries = 0;
+	while (*reg != init_vacancy) {
+		*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
+		tries++;
+		//printf("deploy_write(): fifo: %u, try: %u, initial vacancy: %u, current vacancy: %u.\n", n, tries, init_vacancy, *reg);
+	}
 
 	return true;
 }
@@ -292,7 +280,7 @@ int *deploy_read_fifo (uint8_t n, int *val) {
 	uint32_t num_tries = 0;
 	while (*reg < 1) {
 		num_tries++;
-		printf("deploy_read(): Fifo %u, try %u, Occupancy still 0.\n", n, num_tries);
+		//printf("deploy_read(): Fifo %u, try %u, Occupancy still 0.\n", n, num_tries);
 	}
 //	#ifdef DEBUG
 //	printf("read(): occupancy is %u\n", *reg);	
@@ -302,12 +290,10 @@ int *deploy_read_fifo (uint8_t n, int *val) {
 //		return NULL;
 //	}
 
-	uint32_t *reg32 = ((uint32_t *) (ocl_base + fifo[n][FIFO_RECEIVE_LENGTH]));
-	num_tries = 0;
-	while (*reg32 != 16) {
-		num_tries++;
-		printf("Waiting for receive length register to update. Register value (now) is %u instead of 16.\n", *reg);
-	} /* wait for receive length reg to be nonzero */
+	reg = ((uint16_t *) (ocl_base + fifo[n][FIFO_RECEIVE_LENGTH]));
+	#ifdef DEBUG
+	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], *reg);
+	#endif
 
 	if (!val)
 		val = (int *) calloc(4, sizeof(int));
@@ -329,64 +315,3 @@ void clear_int (uint8_t n) {
 	}
 	*((int *) (ocl_base + fifo[n][FIFO_ISR])) = 0xFFFFFFFF;
 }
-
-/* sets destination id for the nth fifo */
-bool set_dest (uint8_t n) {
-	if (n >= NUM_FIFO) { 
-		printf("Invalid fifo.\n");
-		return false;
-	}
-	*((int *) (ocl_base + fifo[n][FIFO_TDR])) = 0;
-	
-	int id = *((int *) (ocl_base + fifo[n][FIFO_RDR]));
-	if (id != 0) {
-		printf("Setting destination was unsuccessful.\n");
-		return false;
-	}
-	return true;
-
-}
-
-void dump_trace (struct Host *host) {
-	for (int i = 0; i < 15; i++) {
-		bool read_64 = host->pop(host, 64);
-		if (read_64)
-			printf("\n");
-//		bool read_128 = host->pop(host, 128);
-//		if (read_128)
-//			printf("\n");
-		if (!read_64) {
-			printf("Fail. User could not read 64B. The test is stuck. \n.");
-		}
-		#ifdef COSIM
-		sv_pause(1);
-		#else
-		sleep(1);
-		#endif 
-	}
-}
-
-/* read 32b from OCL bar at offset ofs 
- * OCL BAR needs to be memory-mapped; 0 returned otherwise.
- * */
-uint32_t ocl_read (uint32_t ofs) {
-	if (ocl_base) {
-		uint32_t *reg = (uint32_t *) (ocl_base + ofs);
-		return *reg;
-	}
-	return 0;
-}
-
-
-/* write val to offset ofs in OCL bar 
- * OCL BAR needs to be memory-mapped. 
- * */
-void ocl_write (uint32_t ofs, uint32_t val) {
-	if (ocl_base) {
-		uint32_t *reg = (uint32_t *) (ocl_base + ofs);
-		*reg = val;
-	}
-}
-
-
-
