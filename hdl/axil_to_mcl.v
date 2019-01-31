@@ -5,7 +5,9 @@
 
 `include "bsg_axi_bus_pkg.vh"
 
-module axil_to_mcl #(mcl_intf_num_p="inv") (
+module axil_to_mcl #(
+  mcl_intf_num_p="inv"
+  ,fifo_width_p="inv") (
   input                                     clk_i         ,
   input                                     reset_i       ,
   // axil signals
@@ -28,17 +30,12 @@ module axil_to_mcl #(mcl_intf_num_p="inv") (
   input                                     s_axil_mcl_rready ,
   // from mcl signals
   input  [              mcl_intf_num_p-1:0] mcl_v_i
-  ,
-  input  [(mcl_intf_num_p*80)-1:0] mcl_data_i
-  ,
-  output [              mcl_intf_num_p-1:0] mcl_yumi_o
+  ,input  [(mcl_intf_num_p*fifo_width_p)-1:0] mcl_data_i
+  ,output [              mcl_intf_num_p-1:0] mcl_yumi_o
   // to mcl slave
-  ,
-  output [              mcl_intf_num_p-1:0] mcl_v_o
-  ,
-  output [(mcl_intf_num_p*80)-1:0] mcl_data_o
-  ,
-  input  [              mcl_intf_num_p-1:0] mcl_ready_i
+  ,output [              mcl_intf_num_p-1:0] mcl_v_o
+  ,output [(mcl_intf_num_p*fifo_width_p)-1:0] mcl_data_o
+  ,input  [              mcl_intf_num_p-1:0] mcl_ready_i
 );
 
 parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1);
@@ -81,7 +78,7 @@ bsg_axil_miso_busN_s axil_miso_busN;
 // crossbar, support 1 to [1:16] now
 localparam BASE_ADDRESS_LIST = {
   64'h00000000_00000F00, 64'h00000000_00000E00, 64'h00000000_00000D00 ,64'h00000000_00000C00,
-  64'h00000000_00000B00, 64'h00000000_00000A00, 64'h00000000_00000900 ,64'h00000000_00000800,
+  64'h00000000_00000B00, 64'h00000000_00000A00, 64'h00000000_00000900 ,64'h00000000_00000fifo_width_p0,
   64'h00000000_00000700, 64'h00000000_00000600, 64'h00000000_00000500, 64'h00000000_00000400, 
   64'h00000000_00000300, 64'h00000000_00000200, 64'h00000000_00000100, 64'h00000000_00000000};
 localparam C_NUM_MASTER_SLOTS = mcl_intf_num_p;
@@ -254,16 +251,16 @@ begin
 
 for (i=0; i<mcl_intf_num_p; i=i+1)
 begin
-  s_axil_mcl_adapter #(.mcl_width_p(80)) s_axil_to_mcl (
+  s_axil_mcl_adapter #(.mcl_width_p(fifo_width_p)) s_axil_to_mcl (
     .clk_i          (clk_i                 ),
     .reset_i        (reset_i               ),
     .s_axil_mcl_bus_i(axil_demux_mosi_bus[i]),
     .s_axil_mcl_bus_o(axil_demux_miso_bus[i]),
     .mcl_v_i        (mcl_v_i[i]            ),
-    .mcl_data_i     (mcl_data_i[80*i+:80]  ),
+    .mcl_data_i     (mcl_data_i[fifo_width_p*i+:fifo_width_p]  ),
     .mcl_r_o        (mcl_yumi_o[i]         ),
     .mcl_v_o        (mcl_v_o[i]            ),
-    .mcl_data_o     (mcl_data_o[80*i+:80]  ),
+    .mcl_data_o     (mcl_data_o[fifo_width_p*i+:fifo_width_p]  ),
     .mcl_r_i        (mcl_ready_i[i]        )
   );
 end
