@@ -42,10 +42,12 @@ module bsg_manycore_wrapper
   //
   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_lp, y_cord_width_lp, load_id_width_p);
 
-  bsg_manycore_link_sif_s [E:W][num_tiles_y_p-1:0] hor_link_sif_li;
-  bsg_manycore_link_sif_s [E:W][num_tiles_y_p-1:0] hor_link_sif_lo;
+  bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
+  bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
   bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_li;
   bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_lo;
+  bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_li;
+  bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
   
   bsg_manycore #(
     .dmem_size_p(dmem_size_p)
@@ -76,6 +78,9 @@ module bsg_manycore_wrapper
 
     ,.ver_link_sif_i(ver_link_sif_li)
     ,.ver_link_sif_o(ver_link_sif_lo)
+    
+    ,.io_link_sif_i(io_link_sif_li)
+    ,.io_link_sif_o(io_link_sif_lo)
   );
 
   // connecting link_sif to outside
@@ -90,20 +95,20 @@ module bsg_manycore_wrapper
     assign ver_link_sif_li[S][i] = cache_link_sif_i[i];
   end
 
-  assign loader_link_sif_o = ver_link_sif_lo[S][num_tiles_x_p-1];
-  assign ver_link_sif_li[S][num_tiles_x_p-1] = loader_link_sif_i;
+  assign loader_link_sif_o = io_link_sif_lo[num_tiles_x_p-1];
+  assign io_link_sif_li[num_tiles_x_p-1] = loader_link_sif_i;
 
   // x,y for cache
   //
   for (genvar i = 0; i < num_cache_p; i++) begin
     assign cache_x_o[i] = (x_cord_width_lp)'(i);
-    assign cache_y_o[i] = (y_cord_width_lp)'(num_tiles_y_p);
+    assign cache_y_o[i] = {y_cord_width_lp{num_tiles_y_p}};
   end
   
 
   // tie-off
   //
-  for (genvar i = 0; i < num_tiles_y_p; i++) begin
+  for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
     bsg_manycore_link_sif_tieoff #(
       .addr_width_p(addr_width_p)
       ,.data_width_p(data_width_p)
@@ -118,7 +123,7 @@ module bsg_manycore_wrapper
     );
   end
 
-  for (genvar i = 0; i < num_tiles_y_p; i++) begin
+  for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
     bsg_manycore_link_sif_tieoff #(
       .addr_width_p(addr_width_p)
       ,.data_width_p(data_width_p)
@@ -148,7 +153,7 @@ module bsg_manycore_wrapper
     );
   end
 
-  for (genvar i = num_cache_p; i < num_tiles_x_p-1; i++) begin
+  for (genvar i = num_cache_p; i < num_tiles_x_p; i++) begin
     bsg_manycore_link_sif_tieoff #(
       .addr_width_p(addr_width_p)
       ,.data_width_p(data_width_p)
@@ -160,6 +165,21 @@ module bsg_manycore_wrapper
       ,.reset_i(reset_i)
       ,.link_sif_i(ver_link_sif_lo[S][i])
       ,.link_sif_o(ver_link_sif_li[S][i])
+    );
+  end
+
+  for (genvar i = 0; i < num_tiles_x_p-1; i++) begin
+    bsg_manycore_link_sif_tieoff #(
+      .addr_width_p(addr_width_p)
+      ,.data_width_p(data_width_p)
+      ,.x_cord_width_p(x_cord_width_lp)
+      ,.y_cord_width_p(y_cord_width_lp)
+      ,.load_id_width_p(load_id_width_p)
+    ) tieoff_io (
+      .clk_i(clk_i)
+      ,.reset_i(reset_i)
+      ,.link_sif_i(io_link_sif_lo[i])
+      ,.link_sif_o(io_link_sif_li[i])
     );
   end
 
