@@ -13,13 +13,11 @@
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef CL_FSB_DEFINES
-`define CL_FSB_DEFINES
+`ifndef CL_DEFINES
+`define CL_DEFINES
 
 //Put module name of the CL design here.  This is used to instantiate in top.sv
-`define CL_NAME cl_fsb
-
-`define FSB_LEGACY
+`define CL_NAME cl_mcl
 
 //Highly recommeneded.  For lib FIFO block, uses less async reset (take advantage of
 // FPGA flop init capability).  This will help with routing resources.
