@@ -1,18 +1,3 @@
-# Amazon FPGA Hardware Development Kit
-#
-# Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#
-# Licensed under the Amazon Software License (the "License"). You may not use
-# this file except in compliance with the License. A copy of the License is
-# located at
-#
-#    http://aws.amazon.com/asl/
-#
-# or in the "license" file accompanying this file. This file is distributed on
-# an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or
-# implied. See the License for the specific language governing permissions and
-# limitations under the License.
-
 -define VIVADO_SIM
 
 -sourcelibext .v
@@ -43,7 +28,7 @@
 -include ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
 
 # Custom Logic (CL) design files
-${CL_DIR}/hardware/cl_demo.sv
+${CL_DIR}/hardware/cl_app.sv
 
 # AWS design files
 ${HDK_SHELL_DESIGN_DIR}/ip/ila_vio_counter/sim/ila_vio_counter.v

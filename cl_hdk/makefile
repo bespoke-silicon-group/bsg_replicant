@@ -2,9 +2,9 @@ ifndef HDK_DIR
 $(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
 endif
 
-export CL_DIR ?= $(PWD)
-PROJECT = cl_demo
-GUI ?= 
+CL_DIR ?= $(PWD)
+PROJECT = cl_app
+DEBUG ?= 
 
 SIM_TARGETS=rtlsim cosim
 SW_TARGETS=software
@@ -15,15 +15,15 @@ all: $(SIM_TARGETS) $(BUILD_TARGETS)
 .PHONY: build
 
 $(BUILD_TARGETS):
-	PROJECT=$(PROJECT) make -C $@
+	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR)
 
 $(SW_TARGETS):
-	PROJECT=$(PROJECT) make -C $@
+	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 
 $(SIM_TARGETS):
-	PROJECT=$(PROJECT) GUI=$(GUI) make -C testbenches $@
+	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG)
 
 clean:
-	PROJECT=$(PROJECT) make -C testbenches clean
-	PROJECT=$(PROJECT) make -C build clean
-	PROJECT=$(PROJECT) make -C software clean
+	make -C testbenches clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
+	make -C build clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
+	make -C software clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)

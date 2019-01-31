@@ -1,31 +1,11 @@
-// Amazon FPGA Hardware Development Kit
-//
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-//
-// Licensed under the Amazon Software License (the "License"). You may not use
-// this file except in compliance with the License. A copy of the License is
-// located at
-//
-//    http://aws.amazon.com/asl/
-//
-// or in the "license" file accompanying this file. This file is distributed on
-// an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or
-// implied. See the License for the specific language governing permissions and
-// limitations under the License.
+`include "cl_defines.vh"
 
-module cl_demo 
-
+module `CL_NAME
 (
-   `include "cl_ports.vh" // Fixed port definition
-
+   `include "cl_ports.vh"
 );
 
-`include "cl_common_defines.vh"      // CL Defines for all examples
-`include "cl_id_defines.vh"          // Defines for ID0 and ID1 (PCI ID's)
-`include "cl_demo_defines.vh"        // CL Defines for cl_demo
-
 logic rst_main_n_sync;
-
 
 //--------------------------------------------0
 // Start with Tie-Off of Unused Interfaces
@@ -58,7 +38,7 @@ logic rst_main_n_sync;
   logic [31:0] demo_q;
 
 //-------------------------------------------------
-// ID Values (cl_demo_defines.vh)
+// ID Values 
 //-------------------------------------------------
   assign cl_sh_id0[31:0] = `CL_SH_ID0;
   assign cl_sh_id1[31:0] = `CL_SH_ID1;

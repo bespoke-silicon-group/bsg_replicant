@@ -43,7 +43,7 @@
 -include ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
 
 # Custom Logic (CL) design files
-${CL_DIR}/hardware/cl_demo.sv
+${CL_DIR}/hardware/cl_app.sv
 
 # AWS design files
 ${HDK_SHELL_DESIGN_DIR}/ip/ila_vio_counter/sim/ila_vio_counter.v

@@ -4,7 +4,7 @@ The software directory contains the C application for an AWS hardware design.
 
 ## Contents
 
-- `cl_demo.c`: The C application for this AWS hardware design. Drives
+- `cl_app.c`: The C application for this AWS hardware design. Drives
   co-simulation and an FPGA instance on a server.
 - `include`: Include files for this AWS hardware design
 - `makefile`: Makefile for building the C application for AWS. (The cosimulation
@@ -15,9 +15,9 @@ The software directory contains the C application for an AWS hardware design.
 
 If you are porting this project to a new application you must follow three steps:
 
-1. Rename and reuse `cl_demo.c`
-    - If necessary, replace `cl_demo.c` in SRC's definition in `makefile`
-    - If necessary, replace `cl_demo` in BIN's definintion in `makefile`
+1. Rename and reuse `cl_app.c`
+    - If necessary, replace `cl_app.c` in SRC's definition in `makefile`
+    - If necessary, replace `cl_app` in BIN's definintion in `makefile`
 2. Cosimulate your application by running `make cosim` from the parent directory
 3. Upload your application to an AWS instance and run `make` in this directory.
 4. Run the output binary

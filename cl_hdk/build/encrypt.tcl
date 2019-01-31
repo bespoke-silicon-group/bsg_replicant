@@ -32,10 +32,9 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 
 # List your design files below. Include any .inc files, but do NOT include
 # AWS source files.
-file copy -force $CL_DIR/hardware/cl_demo_defines.vh                    $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_id_defines.vh                      $TARGET_DIR
-file copy -force $CL_DIR/hardware/cl_demo.sv                            $TARGET_DIR 
-file copy -force $CL_DIR/hardware/cl_common_defines.vh                  $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_defines.vh                       $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_id_defines.vh                    $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_app.sv                           $TARGET_DIR 
 
 file copy -force $UNUSED_TEMPLATES_DIR/unused_apppf_irq_template.inc  $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_cl_sda_template.inc     $TARGET_DIR

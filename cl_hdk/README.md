@@ -31,7 +31,7 @@ You can start your own AWS project in a few simple steps:
         - Run `make rtlsim CHECK=1` to instantiate the AXI Protocol checker
         - Run `make rtlsim CHECK=1 DEBUG=1` to do both the above
 5. Create and run your C Co-Simulation
-    - Rename, reuse, and modify the C source `software/cl_demo.c`
+    - Rename, reuse, and modify the C source `software/cl_app.c`
     - Change the definition of `C_TB_TOP` in `testbenches/cosim/makefile` to point to your new C file.
     - List your HDL source files in `testbenches/cosim/top.vivado.f` (Do not include the new top-level RTL testbench)
     - Run `make cosim`
@@ -70,6 +70,6 @@ environment
 
 The top-level makefile defines the PROJECT environment variable for the
 sub-makefiles. Likewise, if you run makefiles in the sub-directories you must
-define `PROJECT` from the command line (`PROJECT=cl_demo make <target>`) or in
+define `PROJECT` from the command line (`PROJECT=cl_app make <target>`) or in
 your environment. `PROJECT` must contain the name of the top-level module in
 your top-level design file.
