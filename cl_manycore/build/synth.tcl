@@ -41,7 +41,29 @@ puts "AWS FPGA: ([clock format [clock seconds] -format %T]) Reading developer's 
 # Reading the .sv and .v files, as proper designs would not require
 # reading .v, .vh, nor .inc files
 
-read_verilog -sv [glob $ENC_SRC_DIR/*.?v]
+read_verilog -sv [glob $ENC_SRC_DIR/*.{v,sv,vh}]
+
+read_vhdl -library axi_fifo_mm_s_v4_1_14 $ENC_SRC_DIR/axi_fifo_mm_s_v4_1_rfs.vhd
+read_vhdl -library lib_pkg_v1_0_2 $ENC_SRC_DIR/lib_pkg_v1_0_rfs.vhd
+read_vhdl -library axi_lite_ipif_v3_0_4 $ENC_SRC_DIR/axi_lite_ipif_v3_0_vh_rfs.vhd
+read_vhdl -library fifo_generator_v13_2_2 $ENC_SRC_DIR/fifo_generator_v13_2_vhsyn_rfs.vhd
+read_vhdl -library blk_mem_gen_v8_4_1 $ENC_SRC_DIR/blk_mem_gen_v8_4_vhsyn_rfs.vhd
+read_vhdl -library lib_fifo_v1_0_11 $ENC_SRC_DIR/lib_fifo_v1_0_rfs.vhd
+
+set_param synth.elaboration.rodinMoreOptions "rt::set_parameter var_size_limit 4194304"
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_defines.v]
+set_property is_global_include true [get_files $ENC_SRC_DIR/bsg_defines.v]
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_cache_pkt.vh]
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_cache_dma_pkt.vh]
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_manycore_addr.vh]
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/parameters.v]
+
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/definitions.v]
 
 #---- End of section replaced by User ----
 

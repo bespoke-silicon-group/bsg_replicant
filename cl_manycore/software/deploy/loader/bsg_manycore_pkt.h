@@ -22,8 +22,8 @@ uint8_t OP_EX = 0xF;
 uint8_t OP_EX_BIT = 4;
 uint8_t OP_BIT = 2;
 
-uint8_t TEXT = 0;
-uint8_t DATA = 1;
+uint8_t TEXT = 1;
+uint8_t DATA = 0;
 
 uint32_t NUM_ICACHE = 1024;
 
