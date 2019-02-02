@@ -259,7 +259,7 @@ bool deploy_write_fifo (uint8_t n, int *val) {
 	while (*reg != init_vacancy) {
 		*((uint16_t *) (ocl_base + fifo[n][FIFO_TRANSMIT_LENGTH])) = (uint16_t) (16);
 		tries++;
-		//printf("deploy_write(): fifo: %u, try: %u, initial vacancy: %u, current vacancy: %u.\n", n, tries, init_vacancy, *reg);
+		printf("deploy_write(): fifo: %u, try: %u, initial vacancy: %u, current vacancy: %u.\n", n, tries, init_vacancy, *reg);
 	}
 
 	return true;
