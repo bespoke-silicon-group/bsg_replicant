@@ -13,12 +13,12 @@ uint32_t ADDR_BIT = 26;
 uint32_t DATA_BIT = 32;
 /* -------------------------- */
 // depend on the Manycore dimensions
-uint8_t NUM_X = 12; 
-uint8_t NUM_Y = 12;  
-uint8_t MY_X = 11;
-uint8_t MY_Y = 12;
-uint32_t X_BIT = 4;
-uint32_t Y_BIT = 4;
+uint8_t NUM_X = 4; 
+uint8_t NUM_Y = 4;  
+uint8_t MY_X = 3;
+uint8_t MY_Y = 4;
+uint32_t X_BIT = 2;
+uint32_t Y_BIT = 3;
 /* -------------------------- */
 uint32_t OP_REMOTE_STORE = 1; 
 uint8_t OP_EX = 0xF;

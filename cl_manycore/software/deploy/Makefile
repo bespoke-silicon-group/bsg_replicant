@@ -11,7 +11,7 @@ CC = gcc
 fifo_threads: fifo_threads.o deploy.h 
 	g++ $(CXXFLAGS) fifo_threads.o -o fifo_threads $(INCLUDES)
 
-loopback_test: loopback_test.o deploy.h
+loopback_test: loopback_test.o deploy.h 
 	gcc $(CFLAGS) loopback_test.o -o loopback_test $(INCUDES)
 
 fifo_test: fifo_test.o deploy.h

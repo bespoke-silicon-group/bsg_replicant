@@ -79,6 +79,7 @@ int main () {
 			pass_dram = false;
 			break;
 		}
+		printf("wrote dram packet %d\n", i);
 	}
 	if (pass_dram) 
 		printf("dram init finished.\n");
@@ -95,6 +96,7 @@ int main () {
 			pass_dmem = false;
 			break;
 		}
+		printf("wrote dmem packet %d\n", i);
 	}
 	if (pass_dmem) 
 		printf("dmem init finished.\n");
