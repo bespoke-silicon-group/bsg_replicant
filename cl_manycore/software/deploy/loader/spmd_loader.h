@@ -1,3 +1,8 @@
+/*! \file spmd_loader.h
+ * Helper functions to program the Manycore.
+ */
+
+
 #include "elf.h"
 #include "bsg_manycore_pkt.h"
 
@@ -15,11 +20,24 @@
 /*------------------------------------------------------------------------------*/
 // helper functions 
 /*------------------------------------------------------------------------------*/
+ 
+/*! 
+ * Prints a manycore packet in hex. Bytes are separated by spaces.
+ * @param p array of bytes.
+ * */
 void print_hex (uint8_t *p) {
 	for (int i = 0; i < 16; i++) 
 		printf("%x ", (int) (p[i] & 0xFF));
 	printf("\n");
 }
+
+/*!
+ * Helper function that gets bits of an int.
+ * @param data value to get bits from. 
+ * @param start starting bit. 
+ * @param size number of bits to retrieve.
+ * @return desired bits of data. They are right-shifted to the LSB.
+ * */
 
 int32_t get_bits(uint32_t data, uint8_t start,  uint8_t size) {
 	uint32_t mask = UINT_MAX;
@@ -28,12 +46,24 @@ int32_t get_bits(uint32_t data, uint8_t start,  uint8_t size) {
 	return bits;
 }
 
+/*!
+ * Helper function of self field.
+ * @param data pointer to byte to modify.
+ * @param start bit offset within byte of where field begins.
+ * @param val the value to set the selected bits to.
+ * */
 void set_bits (uint8_t *data, uint8_t start, uint8_t val) {
 	/* bits [start, start + size) to be 1 */
 	*data |= val << start;
 }
 
-
+/*!
+ * Sets a selected number of bits of a Manycore packet to a desired value.
+ * @param packet an array of bytes that form the Manycore packet.
+ * @param bit_start the bit offset within the packet where the field starts.
+ * @param bit_end the bit offset within the packet where the field ends - inclusive.
+ * @param val the value to set the selected bits to.
+ * */
 void set_field (uint8_t *packet, uint8_t bit_start, uint8_t bit_end, uint32_t val) {
 	uint8_t byte_start = bit_start / 8;
 	uint8_t byte_end = bit_end / 8;
@@ -68,8 +98,14 @@ void set_field (uint8_t *packet, uint8_t bit_start, uint8_t bit_end, uint32_t va
 	}
 }
 
-/*
- * assumes all fields are <= 32b 
+/*!
+ * Forms a Manycore packet. Manycore fields are assumed to be less than 32 bits. Supports arbitrary Manycore dimensions.
+ * @param addr address to send packet to.
+ * @param data packet's data
+ * @param x destination tile's x coordinate
+ * @param y destination tile's y coordinate
+ * @return array of bytes that form the Manycore packet.
+ * assumes all fields are <= 32
  * */
 uint8_t *get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y) {
 	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t));
@@ -103,79 +139,12 @@ uint8_t *get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y) {
 	return packet;
 }
 
-
-
-///* assumes dimensions of Manycore are 4x4. 
-// * */
-//uint8_t *get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y) {
-//	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t));
-//	
-//	/* byte 0 = MSB {LSB of src_y, src_x, y, x} LSB */
-//	packet[0] = x + (y << X_BIT) + (MY_X << (X_BIT + Y_BIT)) + (get_bits(MY_Y, 0, 1) << (X_BIT + Y_BIT + X_BIT));
-//
-//	/* byte 1 = MSB {6 LSB of data, 2 MSB of src_y} LSB */
-//	packet[1] = get_bits(MY_Y, 1, 2) + (get_bits(data, 0, 6) << 2);
-//
-//	/* bytes 2-4 = next 24b of data, */
-//	packet[2] = get_bits(data, 6, 8);
-//	packet[3] = get_bits(data, 14, 8);
-//	packet[4] = get_bits(data, 22, 8);
-//	
-////	printf("data packets are: %x %x %x %x\n", packet[2], packet[3], packet[4], packet[5]);
-//	
-//	/* byte 5 = {op, op_ex, 2 MSB of data} */
-//	packet[5] = get_bits(data, 30, 2) + (0xF << 2) + (OP_REMOTE_STORE << (2 + OP_EX_BIT)); 
-//
-//	/* bytes 6-8 are first 24b of address */
-//	packet[6] = get_bits(addr, 0, 8);
-//	packet[7] = get_bits(addr, 8, 8);
-//	packet[8] = get_bits(addr, 16, 8);
-//
-//	/* byte 9 = MSB {0s, 2 MSB of address} LSB */
-//	packet[9] = get_bits(addr, 24, 2);
-//
-//	/* byte 10-15 are 0s */
-//	return packet;
-//}
-//
-/* assumes dimensions of Manycore are 12x12. 
- * */
-
-uint8_t *get_pkt_12x12(uint32_t addr, uint32_t data, uint8_t x, uint8_t y) {
-	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t));
-	
-	/* byte 0 = MSB {y, x} LSB */
-	packet[0] = x + (y << X_BIT);
-
-	/* byte 1 = MSB {src_y, src_x} LSB */
-	packet[1] = MY_X + (MY_Y << X_BIT);
-
-	/* bytes 2-5 = next 4B of data, */
-	packet[2] = get_bits(data, 0, 8);
-	packet[3] = get_bits(data, 8, 8);
-	packet[4] = get_bits(data, 16, 8);
-	packet[5] = get_bits(data, 24 ,8);	
-
-	/* byte 6 = MSB {2 LSB of addr, op, op_ex} LSB */
-	packet[6] = 0xF + (OP_REMOTE_STORE << OP_EX_BIT) + (get_bits(addr, 0, 2) << (OP_EX_BIT + OP_BIT)); 
-
-	/* bytes 7-9 are next 24b of address */
-	packet[7] = get_bits(addr, 2, 8);
-	packet[8] = get_bits(addr, 10, 8);
-	packet[9] = get_bits(addr, 18, 8);
-
-	/* byte 10-15 are 0s */
-	return packet;
-}
-
-
-
 /*------------------------------------------------------------------------------*/
 // ICACHE Initialization 
 /*------------------------------------------------------------------------------*/
-/* returns the array of icache init packets. 
- * only initilizes the top-left tile @ (0, 0)
- * 
+/*!
+ * Returns an array of Manycore packets that should be used to initialize the tiles' instruction caches. At the moment, only the top-left tile at (X, Y) = (0, 0) is initialized.
+ * @return array of Manycore packets.
  * */
 uint8_t **init_icache () {
 	uint8_t **packets = (uint8_t **) calloc(NUM_ICACHE, sizeof(uint8_t *)); 
@@ -189,7 +158,10 @@ uint8_t **init_icache () {
 /*------------------------------------------------------------------------------*/
 // VCACHE Initialization 
 /*------------------------------------------------------------------------------*/
-/* returns the array of vcache init packets. */
+/*!
+ * Returns an array of Manycore packets that should be used to initialize the victim caches.
+ * @return array of Manycore packets.
+ * */
 uint8_t **init_vcache () {
 	uint32_t num_tags = NUM_VCACHE_ENTRY * VCACHE_WAYS;
 	uint8_t **packets = (uint8_t **) calloc(NUM_VCACHE * num_tags, sizeof(uint8_t *)); 
@@ -206,10 +178,11 @@ uint8_t **init_vcache () {
 /*------------------------------------------------------------------------------*/
 // Unfreeze tiles 
 /*------------------------------------------------------------------------------*/
-
-/*
- * only unfreezes (0, 0)
+/*!
+ * Returns an array of Manycore packets that should be used to unfreeze the needed tiles. Currently, on the the tile at (X, Y) = (0, 0) is unfrozen.
+ * @return array of Manycore packets.
  * */
+
 uint8_t **unfreeze_tiles () {
 	uint8_t **packets = (uint8_t **) calloc(1, sizeof(uint8_t *)); 
 	packets[0] = get_pkt((1 << 13), 0, 0, 0);
@@ -220,12 +193,16 @@ uint8_t **unfreeze_tiles () {
 // Get packets for loadable segments of the binary
 // This code is based on https://github.com/riscv/riscv-fesvr/blob/master/fesvr/elfloader.cc
 /*------------------------------------------------------------------------------*/
-uint8_t **text_pkts;
-uint8_t **data_pkts;
+uint8_t **text_pkts; /*! array of Manycore packets that contain the text segment of the binary. */
+uint8_t **data_pkts; /*! array of Manycore packets that contain the data segment of the binary. */
 
 uint32_t num_text_pkts;
 uint32_t num_data_pkts;
 
+/*! 
+ * Creates arrays of Manycore packets that contain the text and data segments of the binary. These arrays are saved in the global variables text_pkts and data_pkts.
+ * @param filename the path to the binary.
+ * */
 void parse_elf (char *filename) { 	
 	int fd = open(filename, O_RDONLY);
 	struct stat s;
@@ -245,11 +222,6 @@ void parse_elf (char *filename) {
  	assert(size >= eh->e_phoff + eh->e_phnum*sizeof(*ph)); 
 	
 	uint32_t num_load = 0;
-	// eh->e_phnum
-//	printf("number of segments: %d\n", eh->e_phnum);
-//	printf("segment 0 file size: %d\n", ph[0].p_memsz);
-//	printf("segment 1 file size: %d\n", ph[1].p_memsz);
-
 	
 	num_text_pkts = 1 * (ph[TEXT].p_memsz / 4);
 	text_pkts = (uint8_t **) calloc(num_text_pkts, sizeof(uint8_t *));
@@ -294,42 +266,3 @@ void parse_elf (char *filename) {
   	}
 	munmap(buf, size);
 } 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
