@@ -672,7 +672,7 @@ bsg_manycore_endpoint_standard #(
   ,.out_credits_o()
 
   ,.my_x_i(2'b11)
-  ,.my_y_i(3'b111)
+  ,.my_y_i(3'b100)
 );
 
 assign endpoint_out_v_li = mcl_v_lo;
@@ -683,7 +683,7 @@ end
 
 assign mcl_v_li = endpoint_v_lo;
 assign endpoint_yumi_li = endpoint_v_lo & mcl_yumi_lo;
-assign mcl_data_li = {{(128-32){1'b0}}, endpoint_data_lo};
+assign mcl_data_li = {{(128-32-26){1'b0}}, endpoint_addr_lo, endpoint_data_lo};
 
 //-----------------------------------------------
 // Debug bridge, used if need Virtual JTAG

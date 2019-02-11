@@ -10,14 +10,15 @@ SIM_TARGETS=rtlsim cosim
 SW_TARGETS=software
 BUILD_TARGETS=build
 
-BSG_IP_CORES_DIR ?= ../../bsg_ip_cores/
+BSG_IP_CORES_DIR ?= $(CL_DIR)/../../bsg_ip_cores/
+BSG_MANYCORE_DIR ?= $(CL_DIR)/../../bsg_manycore
 
 all: $(SIM_TARGETS) $(BUILD_TARGETS)
 
 .PHONY: build
 
-$(BUILD_TARGETS):
-	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR)
+build:
+	make -C $@ $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR) BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)
 
 $(SW_TARGETS):
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
