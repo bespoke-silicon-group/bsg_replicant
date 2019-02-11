@@ -27,7 +27,8 @@ There are also several non-project folders. These are described below:
 To simulate/cosimulate/build these projects you must have: 
 
    1. Vivado 2018.2 on $PATH. (i.e. you must source the `settings64.sh` file.)
-   2. A clone of aws-fpga (v1.4.3) with the exported environment variable `$AWS_FPGA_REPO_DIR=<path to aws-fpga>`
+   2. A clone of aws-fpga (v1.4.3) with the exported environment variable 
+      - Run `export AWS_FPGA_REPO_DIR=<path to aws-fpga>` or add it to your `.bashrc` file
 
 ## Quick-Start Simulate/Cosimulate/Build Instructions
 
