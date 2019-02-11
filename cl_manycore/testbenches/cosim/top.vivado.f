@@ -49,10 +49,12 @@
 -include ${CL_DIR}/../hdl/
 
 # Custom Logic (CL) design files
+${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
-
+${CL_DIR}/../hdl/bsg_manycore_link_to_2fifo.v
+${CL_DIR}/../hdl/axil_to_mem.sv
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v
@@ -141,6 +143,8 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_tile.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
 
+${BSG_MANYCORE_DIR}/v/bladerunner/bsg_manycore_wrapper.v
+${BSG_MANYCORE_DIR}/v/bladerunner/bsg_cache_wrapper_axi.v
 
 # Vivado library files
 #${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v
@@ -176,3 +180,4 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 
 # Testbench design files
 ${CL_DIR}/testbenches/cosim/cosim_wrapper.sv
+${CL_DIR}/testbenches/rtlsim/cl_tb.sv
