@@ -6,5 +6,5 @@ sudo yum -y install autoconf automake libmpc-devel mpfr-devel gmp-devel gawk  bi
 sudo yum -y clean all
 sudo yum -y autoremove
 
-# make -C ~/bsg_manycore/software/riscv-tools checkout-all
-# make -C ~/bsg_manycore/software/riscv-tools build-riscv-tools
+make -C ~/bsg_manycore/software/riscv-tools checkout-all
+make -C ~/bsg_manycore/software/riscv-tools build-riscv-tools
