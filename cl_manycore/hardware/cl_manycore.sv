@@ -1,7 +1,13 @@
+/**
+ *  cl_manycore.v
+ */
+
 module cl_manycore
-(
-   `include "cl_ports.vh"
-);
+  import cl_manycore_pkg::*;
+  (
+    `include "cl_ports.vh"
+  );
+
 
 // For some silly reason, you need to leave this up here...
 logic rst_main_n_sync;
@@ -438,50 +444,30 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
    .m_axi_rready  (m_axil_ocl_rready)
   );
 
-// parameters
-parameter dmem_size_p = 1024;
-parameter icache_entries_p = 1024;
-parameter icache_tag_width_p = 12;
-parameter dram_ch_addr_width_p = 26;
-parameter epa_addr_width_p = 16;
+// manycore wrapper
+//
+`declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p, load_id_width_p);
 
-parameter num_tiles_x_p = 4;
-parameter num_tiles_y_p = 4;
-parameter x_cord_width_lp = `BSG_SAFE_CLOG2(num_tiles_x_p);
-parameter y_cord_width_lp = `BSG_SAFE_CLOG2(num_tiles_y_p+1);
-parameter load_id_width_p = 11;
-
-parameter num_cache_p = 2;
-parameter data_width_p = 32;
-parameter addr_width_p = 26;
-parameter block_size_in_words_p = 16;
-parameter sets_p = 32;
-
-parameter axi_id_width_p = 6;
-parameter axi_addr_width_p = 64;
-parameter axi_data_width_p = 512;
-
-`declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_lp, y_cord_width_lp, load_id_width_p);
 bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
 bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
 
-logic [num_cache_p-1:0][x_cord_width_lp-1:0] cache_x_lo;
-logic [num_cache_p-1:0][y_cord_width_lp-1:0] cache_y_lo;
+logic [num_cache_p-1:0][x_cord_width_p-1:0] cache_x_lo;
+logic [num_cache_p-1:0][y_cord_width_p-1:0] cache_y_lo;
 
 bsg_manycore_link_sif_s loader_link_sif_li;
 bsg_manycore_link_sif_s loader_link_sif_lo;
 
 bsg_manycore_wrapper #(
-  .dmem_size_p(dmem_size_p)
-  ,.icache_entries_p(icache_entries_p)
-  ,.icache_tag_width_p(icache_tag_width_p)
+  .addr_width_p(addr_width_p)
+  ,.data_width_p(data_width_p)
   ,.num_tiles_x_p(num_tiles_x_p)
   ,.num_tiles_y_p(num_tiles_y_p)
-  ,.load_id_width_p(load_id_width_p)
-  ,.addr_width_p(addr_width_p)
+  ,.dmem_size_p(dmem_size_p)
+  ,.icache_entries_p(icache_entries_p)
+  ,.icache_tag_width_p(icache_tag_width_p)
   ,.epa_addr_width_p(epa_addr_width_p)
   ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
-  ,.data_width_p(data_width_p)
+  ,.load_id_width_p(load_id_width_p)
   ,.num_cache_p(num_cache_p)
 ) manycore_wrapper (
   .clk_i(clk_main_a0)
@@ -489,6 +475,7 @@ bsg_manycore_wrapper #(
 
   ,.cache_link_sif_i(cache_link_sif_li)
   ,.cache_link_sif_o(cache_link_sif_lo)
+
   ,.cache_x_o(cache_x_lo)
   ,.cache_y_o(cache_y_lo)
 
@@ -497,31 +484,31 @@ bsg_manycore_wrapper #(
 );
 
 
-// cache
-bsg_cache_wrapper #(
+// cache_wrapper
+//
+bsg_cache_wrapper_axi #(
   .num_cache_p(num_cache_p)
   ,.data_width_p(data_width_p)
-  ,.addr_width_p(addr_width_p+2)
+  ,.addr_width_p(addr_width_p)
   ,.block_size_in_words_p(block_size_in_words_p)
   ,.sets_p(sets_p)
-  ,.lo_addr_width_p(addr_width_p-1)
+  ,.ways_p(ways_p)
 
   ,.axi_id_width_p(axi_id_width_p)
   ,.axi_addr_width_p(axi_addr_width_p)
   ,.axi_data_width_p(axi_data_width_p)
-  ,.axi_burst_len_p(1)
+  ,.axi_burst_len_p(axi_burst_len_p)
 
-  ,.link_addr_width_p(addr_width_p)
-  ,.link_lo_addr_width_p(addr_width_p-1)
-  ,.x_cord_width_p(x_cord_width_lp)
-  ,.y_cord_width_p(y_cord_width_lp)
+  ,.x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
   ,.load_id_width_p(load_id_width_p)
-) cw (
+) cache_wrapper (
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
 
   ,.my_x_i(cache_x_lo)
   ,.my_y_i(cache_y_lo)
+
   ,.link_sif_i(cache_link_sif_lo)
   ,.link_sif_o(cache_link_sif_li)
 
@@ -624,15 +611,15 @@ logic [(data_width_p>>3)-1:0] endpoint_mask_lo;
 logic [addr_width_p-1:0] endpoint_addr_lo;
 logic endpoint_we_lo;
 
-`declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p);
-localparam bsg_manycore_packet_width_lp = `bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p);
+`declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
+localparam bsg_manycore_packet_width_lp = `bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
 bsg_manycore_packet_s endpoint_out_packet_li;
 logic endpoint_out_v_li;
 logic endpoint_out_ready_lo;
 
 bsg_manycore_endpoint_standard #(
-  .x_cord_width_p(x_cord_width_lp)
-  ,.y_cord_width_p(y_cord_width_lp)
+  .x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
   ,.data_width_p(data_width_p)
   ,.addr_width_p(addr_width_p)
   ,.fifo_els_p(4)

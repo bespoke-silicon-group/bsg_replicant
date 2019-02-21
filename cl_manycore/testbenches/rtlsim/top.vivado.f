@@ -49,6 +49,7 @@
 -include ${CL_DIR}/../hdl/
 
 # Custom Logic (CL) design files
+${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
@@ -141,6 +142,8 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_tile.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
 
+${BSG_MANYCORE_DIR}/v/bladerunner/bsg_manycore_wrapper.v
+${BSG_MANYCORE_DIR}/v/bladerunner/bsg_cache_wrapper_axi.v
 
 # Vivado library files
 #${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v
