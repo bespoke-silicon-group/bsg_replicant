@@ -1,3 +1,6 @@
+#ifndef DEPLOY_H
+#define DEPLOY_H
+
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,6 +16,7 @@
 #include "../device.h"
 #include "driver/bsg_dma_driver.h"
 #include "fifo.h"
+#include "loader/bsg_manycore_pkt.h"
 
 // define DEBUG
 
@@ -188,7 +192,7 @@ void deploy_init_host (struct Host *host, uint32_t buf_size, uint32_t align) {
 		printf("Unable to open device.\n");
 		return; 
 	}
-	if (buf_size > 0) {
+	if (buf_size > 0) { /* for DMA capabilities */
 		host->buf_size = DMA_BUFFER_SIZE; /* global buffer */
 		host->buf = NULL; /* TODO: rename to mmap_buf */
 		ioctl(dev_fd, IOCTL_CLEAR_BUFFER);
@@ -228,6 +232,14 @@ void deploy_close () {
 		close(dev_fd);
 }
 
+bool deploy_check_dim () {
+	if (!ocl_base)
+		return false; /* file has not been memory-mapped; can't check device registers. */
+	uint32_t num_x = *((uint32_t *) (ocl_base + MANYCORE_NUM_X));
+	uint32_t num_y = *((uint32_t *) (ocl_base + MANYCORE_NUM_Y));
+	return (NUM_X == num_y) && (NUM_Y == num_y);
+}
+
 /*
  * writes 128B to the nth fifo
  * returns true on success and false on failure.
@@ -261,7 +273,6 @@ bool deploy_write_fifo (uint8_t n, int *val) {
 		tries++;
 		printf("deploy_write(): fifo: %u, try: %u, initial vacancy: %u, current vacancy: %u.\n", n, tries, init_vacancy, *reg);
 	}
-
 	return true;
 }
 
@@ -295,9 +306,9 @@ int *deploy_read_fifo (uint8_t n, int *val) {
 	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], *reg);
 	#endif
 
-	if (!val)
+	if (!val){
 		val = (int *) calloc(4, sizeof(int));
-
+	}
 	for (int i = 0; i < 4; i++) {
 		val[i] = *((int *) (ocl_base + fifo[n][FIFO_READ]));
 	}
@@ -315,3 +326,22 @@ void clear_int (uint8_t n) {
 	}
 	*((int *) (ocl_base + fifo[n][FIFO_ISR])) = 0xFFFFFFFF;
 }
+
+uint32_t get_host_credits () {
+	return *((uint32_t *) (ocl_base + HOST_CREDITS));
+}
+
+bool all_host_req_complete() {
+	return (get_host_credits() == MAX_CREDITS);
+}
+
+uint32_t get_recv_vacancy () {
+	return *((uint32_t *) (ocl_base + HOST_RECV_VACANCY));
+}
+
+bool can_read (uint32_t size) {
+	return (get_recv_vacancy() >= size);
+}
+
+
+#endif

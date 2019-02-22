@@ -39,6 +39,8 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 file copy -force $COMMON_DIR/axil_to_mcl.v                                    $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
 file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $TARGET_DIR
+file copy -force $COMMON_DIR/bsg_manycore_link_to_2fifo.v                     $TARGET_DIR
+file copy -force $COMMON_DIR/axil_to_mem.sv                               $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_defines.vh                               $TARGET_DIR

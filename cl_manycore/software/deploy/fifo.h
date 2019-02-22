@@ -1,7 +1,9 @@
 #ifndef FIFO_H
 #define FIFO_H
 
-const uint8_t NUM_FIFO = 10;
+#include <stdint.h> 
+#include "bits.h"
+const uint8_t NUM_FIFO = 2; /* Make sure to change HOST_RECV_VACANCY, HOST_CREDITS */
 const uint32_t fifo[10][8] = {{0xC, 0x10, 0x14 , 0x1C, 0x20, 0x24, 0x0, 0x4} 
 						, {0xC + 0x100, 0x10 + 0x100, 0x14 + 0x100, 0x1C + 0x100, 0x20 + 0x100, 0x24 + 0x100, 0x0 + 0x100, 0x4 + 0x100} 
 						, {0xC + 0x200, 0x10 + 0x200, 0x14 + 0x200, 0x1C + 0x200, 0x20 + 0x200, 0x24 + 0x200, 0x0 + 0x200, 0x4 + 0x200}
@@ -15,5 +17,22 @@ const uint32_t fifo[10][8] = {{0xC, 0x10, 0x14 , 0x1C, 0x20, 0x24, 0x0, 0x4}
 
  
 static const uint8_t FIFO_VACANCY = 0, FIFO_WRITE = 1, FIFO_TRANSMIT_LENGTH = 2, FIFO_OCCUPANCY = 3, FIFO_READ = 4, FIFO_RECEIVE_LENGTH = 5, FIFO_ISR = 6, FIFO_IER = 7; 
+
+static const uint32_t HOST_RECV_VACANCY = 0x200;
+static const uint32_t HOST_CREDITS = 2 * 0x100 + 0x10;
+static const uint32_t MANYCORE_NUM_X = 0x220;
+static const uint32_t MANYCORE_NUM_Y = 0x224;
+
+
+uint32_t *get_byte (uint32_t *packet, uint8_t ofs) {
+	return (uint32_t *) (((uint8_t *) packet) + ofs);
+}
+
+uint32_t get_data (uint32_t *packet) {
+	return (*get_byte(packet, 5) << 30) + (*get_byte(packet, 1) << 2) + get_bits(packet[0], 0, 2);
+}
+
+uint32_t MAX_CREDITS = 16;
+
 
 #endif
