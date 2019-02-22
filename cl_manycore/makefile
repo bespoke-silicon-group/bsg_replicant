@@ -2,7 +2,7 @@ ifndef HDK_DIR
 $(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
 endif
 
-CL_DIR ?= $(PWD)
+CL_DIR ?= $(CURDIR)
 PROJECT = cl_manycore
 DEBUG ?= 
 
