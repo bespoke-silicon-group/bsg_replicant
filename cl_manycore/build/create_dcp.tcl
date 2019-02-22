@@ -34,7 +34,14 @@ set clock_recipe_b      [lindex $argv  9]
 set clock_recipe_c      [lindex $argv 10]
 set uram_option         [lindex $argv 11]
 set notify_via_sns      [lindex $argv 12]
-
+set design_name         [lindex $argv 13]
+set final_dcp_name      ${timestamp}.SH_CL_routed.dcp
+set manifest_name       ${timestamp}.manifest.txt
+if {[string compare $design_name ""] == 0} {
+    set tar_name ${timestamp}.Developer_CL.tar
+} else {
+    set tar_name ${design_name}.Developer_CL.tar
+}
 ##################################################
 ## Flow control variables 
 ##################################################
@@ -304,7 +311,7 @@ if {$implement} {
    # This is what will deliver to AWS
    puts "AWS FPGA: ([clock format [clock seconds] -format %T]) - Writing final DCP to to_aws directory.";
 
-   write_checkpoint -force $CL_DIR/build/checkpoints/to_aws/${timestamp}.SH_CL_routed.dcp
+   write_checkpoint -force $CL_DIR/build/checkpoints/to_aws/${final_dcp_name}
    
    # Generate debug probes file. Uncomment line below if debugging is enabled 
    write_debug_probes -force -no_partial_ltxfile -file $CL_DIR/build/checkpoints/${timestamp}.debug_probes.ltx
@@ -321,8 +328,8 @@ if {$implement} {
 puts "AWS FPGA: ([clock format [clock seconds] -format %T]) - Compress files for sending to AWS. "
 
 # Create manifest file
-set manifest_file [open "$CL_DIR/build/checkpoints/to_aws/${timestamp}.manifest.txt" w]
-set hash [lindex [split [exec sha256sum $CL_DIR/build/checkpoints/to_aws/${timestamp}.SH_CL_routed.dcp] ] 0]
+set manifest_file [open "$CL_DIR/build/checkpoints/to_aws/${manifest_name}" w]
+set hash [lindex [split [exec sha256sum $CL_DIR/build/checkpoints/to_aws/$final_dcp_name] ] 0]
 set vivado_version [string range [version -short] 0 5]
 puts "vivado_version is $vivado_version\n"
 
@@ -334,7 +341,7 @@ puts $manifest_file "pci_subsystem_vendor_id=$subsystem_vendor_id\n"
 puts $manifest_file "dcp_hash=$hash\n"
 puts $manifest_file "shell_version=$shell_version\n"
 puts $manifest_file "tool_version=v$vivado_version\n"
-puts $manifest_file "dcp_file_name=${timestamp}.SH_CL_routed.dcp\n"
+puts $manifest_file "dcp_file_name=${final_dcp_name}\n"
 puts $manifest_file "hdk_version=$hdk_version\n"
 puts $manifest_file "date=$timestamp\n"
 puts $manifest_file "clock_recipe_a=$clock_recipe_a\n"
@@ -344,14 +351,14 @@ puts $manifest_file "clock_recipe_c=$clock_recipe_c\n"
 close $manifest_file
 
 # Delete old tar file with same name
-if { [file exists $CL_DIR/build/checkpoints/to_aws/${timestamp}.Developer_CL.tar] } {
-        puts "Deleting old tar file with same name.";
-        file delete -force $CL_DIR/build/checkpoints/to_aws/${timestamp}.Developer_CL.tar
+if { [file exists $CL_DIR/build/checkpoints/to_aws/${tar_name}] } {
+    puts "Deleting old tar file with same name.";
+    file delete -force $CL_DIR/build/checkpoints/to_aws/${tar_name}
 }
 
 # Tar checkpoint to aws
-cd $CL_DIR/build/checkpoints
-tar::create to_aws/${timestamp}.Developer_CL.tar [glob to_aws/${timestamp}*]
+cd $CL_DIR/build/checkpoints/to_aws/
+tar::create ${tar_name} [ list ${manifest_name} ${final_dcp_name} ]
 
 puts "AWS FPGA: ([clock format [clock seconds] -format %T]) - Finished creating final tar file in to_aws directory.";
 

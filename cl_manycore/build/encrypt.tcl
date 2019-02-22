@@ -40,11 +40,13 @@ file copy -force $COMMON_DIR/axil_to_mcl.v                                    $T
 file copy -force $COMMON_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
 file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $TARGET_DIR
 
+file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_defines.vh                               $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                            $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore.sv                              $TARGET_DIR
-file copy -force $CL_DIR/hardware/bsg_manycore_wrapper.v                      $TARGET_DIR
-file copy -force $CL_DIR/hardware/bsg_cache_wrapper.v                         $TARGET_DIR
+
+file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_manycore_wrapper.v       $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_cache_wrapper_axi.v      $TARGET_DIR
 
 file copy -force $VIVADO_IP_DIR/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v        $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v        $TARGET_DIR
@@ -152,8 +154,8 @@ file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/icache.v                    $T
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/imul_idiv_iterative.v       $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/load_packer.v               $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hobbit.v                    $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/definitions.v               $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/parameters.v                $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/definitions.vh              $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/parameters.vh               $TARGET_DIR
 
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_endpoint_standard.v         $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_endpoint.v                  $TARGET_DIR
@@ -166,7 +168,7 @@ file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_hetero_socket.v             $T
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_tile.v                      $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore.v                           $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_packet.vh                   $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_addr.vh                    $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_addr.vh                     $TARGET_DIR
 
 # End of design files
 

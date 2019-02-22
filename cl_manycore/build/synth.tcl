@@ -55,16 +55,6 @@ set_param synth.elaboration.rodinMoreOptions "rt::set_parameter var_size_limit 4
 set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_defines.v]
 set_property is_global_include true [get_files $ENC_SRC_DIR/bsg_defines.v]
 
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_cache_pkt.vh]
-
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_cache_dma_pkt.vh]
-
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_manycore_addr.vh]
-
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/parameters.v]
-
-set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/definitions.v]
-
 #---- End of section replaced by User ----
 
 puts "AWS FPGA: Reading AWS Shell design";

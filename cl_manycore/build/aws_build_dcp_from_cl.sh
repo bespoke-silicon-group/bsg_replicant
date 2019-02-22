@@ -18,7 +18,7 @@
 # Usage help
 function usage
 {
-    echo "usage: aws_build_dcp_from_cl.sh [ [-script <vivado_script>] | [-strategy BASIC | DEFAULT | EXPLORE | TIMING | CONGESTION] [-clock_recipe_a A0 | A1 | A2] [-clock_recipe_b B0 | B1 | B2 | B3 | B4 | B5] [-clock_recipe_c C0 | C1 | C2 | C3] [-uram_option 2 | 3 | 4] [-vdefine macro1,macro2,macro3,.....,macrox] -foreground] [-notify] | [-h] | [-H] | [-help] ]"
+    echo "usage: aws_build_dcp_from_cl.sh [ [-script <vivado_script>] | [-strategy BASIC | DEFAULT | EXPLORE | TIMING | CONGESTION] [-clock_recipe_a A0 | A1 | A2] [-clock_recipe_b B0 | B1 | B2 | B3 | B4 | B5] [-clock_recipe_c C0 | C1 | C2 | C3] [-uram_option 2 | 3 | 4] [-vdefine macro1,macro2,macro3,.....,macrox] -foreground] [-notify] | [-h] | [-H] | [-help] | [-design design_name]]"
     echo " "
     echo "By default the build is run in the background using nohup so that the"
     echo "process will not be terminated if the terminal window is closed."
@@ -73,6 +73,9 @@ function get_instance_memory {
 # Parse command-line arguments
 while [ "$1" != "" ]; do
     case $1 in
+        -design )               shift
+                                design_name=$1
+                                ;;
         -script )               shift
                                 vivado_script=$1
                                 ;;
@@ -219,6 +222,10 @@ fi
 # Use timestamp for logs and output files
 timestamp=$(date +"%y_%m_%d-%H%M%S") 
 logname=$timestamp.vivado.log
+if ! [ $design_name ] 
+then 
+    design_name=""
+fi 
 ln -s -f $logname last_log
 
 info_msg "Environment variables and directories are present. Checking for Vivado installation."
@@ -243,7 +250,7 @@ subsystem_id="0x${id1_version:0:4}";
 subsystem_vendor_id="0x${id1_version:4:4}";
 
 # Run vivado
-cmd="vivado -mode batch -nojournal -log $logname -source $vivado_script -tclargs $timestamp $strategy $hdk_version $shell_version $device_id $vendor_id $subsystem_id $subsystem_vendor_id $clock_recipe_a $clock_recipe_b $clock_recipe_c $uram_option $notify $opt_vdefine"
+cmd="vivado -mode batch -nojournal -log $logname -source $vivado_script -tclargs $timestamp $strategy $hdk_version $shell_version $device_id $vendor_id $subsystem_id $subsystem_vendor_id $clock_recipe_a $clock_recipe_b $clock_recipe_c $uram_option $notify $opt_vdefine $design_name"
 if [[ "$foreground" == "0" ]]; then
   nohup $cmd > $timestamp.nohup.out 2>&1 &
   

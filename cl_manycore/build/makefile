@@ -1,15 +1,15 @@
-.PHONY:check
-
-check:
 ifndef PROJECT
-	$(error "PROJECT undefined. Set PROJECT before running this makefile")
-endif
-ifndef CL_DIR
-	$(error "CL_DIR undefined. Set PROJECT before running this makefile")
+$(error "PROJECT undefined. Set PROJECT before running this makefile")
 endif
 
-build: check
-	CL_TOP_MODULE=$(PROJECT) CL_DIR=$(CL_DIR) ./aws_build_dcp_from_cl.sh -foreground 
+ifndef CL_DIR
+$(error "CL_DIR undefined. Set CL_DIR before running this makefile")
+endif
+
+build: checkpoints/to_aws/$(PROJECT).Developer_CL.tar
+
+checkpoints/to_aws/$(PROJECT).Developer_CL.tar:
+	CL_TOP_MODULE=$(PROJECT) CL_DIR=$(CL_DIR) ./aws_build_dcp_from_cl.sh -foreground  -design $(PROJECT)
 
 clean:
 	rm -rf *.log *.jou *.out hd_visual src_post_encryption/ reports/ 
