@@ -5,6 +5,7 @@ endif
 CL_DIR ?= $(CURDIR)
 PROJECT = cl_manycore
 DEBUG ?= 
+AXI_MEMORY_MODEL ?=
 
 SIM_TARGETS=rtlsim cosim
 SW_TARGETS=software
@@ -24,7 +25,7 @@ $(SW_TARGETS):
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 
 $(SIM_TARGETS):
-	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG)
+	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
 clean:
 	make -C testbenches clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
