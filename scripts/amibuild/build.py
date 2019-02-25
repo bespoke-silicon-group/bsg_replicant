@@ -9,23 +9,17 @@ import datetime
 import time
 import argparse 
 import os
+import inspect
 from functools import reduce
-from CommitIDAction import CommitIDAction
-from PathAction import PathAction
-from AwsVerAction import AwsVerAction
+from ReleaseRepoAction import ReleaseRepoAction
 from JsonFileAction import JsonFileAction
 
-# Read Commit ID in the form of " -r bsg_f1@xxxx bsg_manycore@xxxx bsg_ip_cores@xxxx " ==> These IDs get passed to ./bootstrap.sh --> ../amiconfig/setup.sh --> ../amiconfig/clone_repositories.sh
 parser = argparse.ArgumentParser(description='Build an AWS EC2 F1 FPGA Image')
-parser.add_argument("BuildDirectory", action=PathAction, nargs=1,
-                    help='Path to Git Repositories')
-parser.add_argument('AwsVersion', action=AwsVerAction, nargs=1,
-                    help='AWS Repository version, e.g. 1.4.7')
+parser.add_argument('Release', action=ReleaseRepoAction, nargs=1,
+                    help='BSG Release repository for this build as: repo_name@commit_id')
 parser.add_argument('-u', action=JsonFileAction, nargs=1,
                     default={"FpgaImageGlobalId":"Not-Specified-During-AMI-Build"},
                     help='JSON File Path with "FpgaImageId" and "FpgaImageGlobalId" defined')
-parser.add_argument('-r', action=CommitIDAction, nargs='+',
-                    help='A string with a repo name and commit id: git_repo@commit_id')
 parser.add_argument('-d', '--dryrun', action='store_const', const=True,
                     help='Process the arguments but do not launch an instance')
 
@@ -47,19 +41,14 @@ cli = boto3.client('ec2')
 # Create a "waiter" to wait on the "Stopped" state
 waiter = cli.get_waiter('instance_stopped')
 
-# Open Userdata (bootstrap.h) and pass it (change in file) the commit_ids given by Makefile in argparse
-bootstrap_path = os.path.join(args.r["bsg_f1"]["path"], 
-                              "scripts", "amibuild", "bootstrap.sh")
+# Open Userdata (bootstrap.h) and pass it the name of the current release repository
+curscr = os.path.abspath(inspect.getfile(inspect.currentframe()))
+curdir = os.path.dirname(curscr)
+bootstrap_path = os.path.join(curdir, "bootstrap.sh")
 
 UserData = open(bootstrap_path,'r').read()
-UserData = UserData.replace("$bsg_f1_commit_id", args.r["bsg_f1"]["commit"])
-args.r.pop("bsg_f1")
-deps = reduce(lambda d, ds: d + " " + ds, [r + " " + c["commit"] 
-                                           for (r, c) in args.r.items()], "")
-
-UserData = UserData.replace("$agfi", args.u["FpgaImageGlobalId"])
-UserData = UserData.replace("$aws_ver", args.AwsVersion)
-UserData = UserData.replace("$dependencies", deps)
+UserData = UserData.replace("$release_repo", args.Release["name"])
+UserData = UserData.replace("$release_hash", args.Release["commit"])
 
 if(args.dryrun):
     print(UserData)
