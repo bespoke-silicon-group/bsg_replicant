@@ -94,5 +94,6 @@ waiter.wait(
 print('Instance configuration completed')
 
 # Finally, generate the AMI 
-ami = cli.create_image(InstanceId=instance.id, Name=ami_name)
+ami = cli.create_image(InstanceId=instance.id, Name=ami_name, 
+                       Description="BSG AMI with release repository {}@{}".format(args.Release["name"], args.Release["commit"]))
 print('Creating AMI: ' + ami['ImageId'])
