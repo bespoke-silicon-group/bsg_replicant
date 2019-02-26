@@ -87,7 +87,7 @@ waiter.wait(
     ],
     WaiterConfig={
         'Delay': 60,
-        'MaxAttempts': 120
+        'MaxAttempts': 180
     }
 )
 
