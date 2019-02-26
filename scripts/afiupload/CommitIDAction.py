@@ -20,7 +20,7 @@ class CommitIDAction(Action):
         def validate(self, build_dir, repo_at_commit_id):
                 [name, commit] = repo_at_commit_id.split('@')
                 short = os.path.join(build_dir, name)
-                long = os.path.join(build_dir, name) + '@' + commit
+                long = os.path.join(build_dir, name) + '_' + commit
 
                 if os.path.isdir(short):
                         d = short
