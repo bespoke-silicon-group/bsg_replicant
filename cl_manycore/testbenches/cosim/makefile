@@ -38,25 +38,30 @@ SCRIPTS_DIR   = $(CL_DIR)/testbenches/cosim/
 SIM_ROOT      = $(CL_DIR)/testbenches/sim/cosim/ 
 
 # Cosim C-File Variables (Modify C_TB_TOP if the top file is not $(PROJECT).c
-C_INC_DIR = $(CL_DIR)/software/include
+C_INC_DIR = $(CL_DIR)/software/include 
 C_SRC_DIR = $(CL_DIR)/software
 # C_TB_TOP names the software C file that drives cosimulation
 C_TB_TOP  = $(C_SRC_DIR)/$(PROJECT).c
 C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
-		$(C_COMMON_DIR)/src/fpga_pci_sv.c 
+		$(C_COMMON_DIR)/src/fpga_pci_sv.c \
+	 	$(CL_DIR)/libraries/bsg_manycore_driver.c \
+		$(CL_DIR)/libraries/bsg_manycore_loader.c \
+		$(CL_DIR)/libraries/bsg_manycore_print.c \
+		$(CL_DIR)/libraries/bsg_manycore_mem.c
 
 # SV TEST LIST used by included makefiles (Purpose unclear)
 SV_TEST_LIST = $(PROJECT) 
 
 ifdef CHECK
-XVLOG_OPTS +=-d ENABLE_PROTOCOL_CHK
+XVLOG_OPTS +=-d ENABLE_PROTOCOL_CHK 
 XELOG_OPTS +=$(XVLOG_OPTS)
 endif
-
 ifdef DEBUG
-XSIM_OPTS +=-gui
+XSIM_OPTS +=-gui -v
 endif
-
+ifdef AXI_MEMORY_MODEL
+	XVLOG_OPTS +=-d AXI_MEMORY_MODEL=1 -d ECC_DIRECT_EN -d RND_ECC_EN -d ECC_ADDR_LO=0 -d ECC_ADDR_HI=0 -d RND_ECC_WEIGHT=0
+endif
 run: make_sim_dir compile sim
 
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc

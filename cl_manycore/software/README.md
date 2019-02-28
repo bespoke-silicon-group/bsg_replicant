@@ -4,7 +4,7 @@ The software directory contains the C application for an AWS hardware design.
 
 ## Contents
 
-- `cl_demo.c`: The C application for this AWS hardware design. Drives
+- `cl_manycore.c`: The C application for this AWS hardware design. Drives
   co-simulation and an FPGA instance on a server.
 - `include`: Include files for this AWS hardware design
 - `makefile`: Makefile for building the C application for AWS. (The cosimulation

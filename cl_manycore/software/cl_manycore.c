@@ -19,9 +19,9 @@
 #include <assert.h>
 #include <string.h>
 
-#include "deploy/loader/spmd_loader.h"
-#include "deploy/fifo.h"
-#include "cosim.h"
+#include "cosim_read_write_test.h"
+#include "cosim_load_vector_test.h"
+#include "cosim_loopback_test.h"
 
 #ifdef SV_TEST
    #include "fpga_pci_sv.h"
@@ -119,8 +119,7 @@ void usage(char* program_name) {
 #endif
 
     fail_on(rc, out, "AFI not ready");
-    cosim_read_write_test();
-	cosim_test_run_binary(); 	
+    cosim_loopback_test();
 #ifndef SV_TEST
     return rc;
     
