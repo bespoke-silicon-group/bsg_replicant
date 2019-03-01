@@ -25,7 +25,6 @@ clean:
 uninstall: clean
 	sudo rm -f /dev/bsg_manycore_kernel_driver
 	sudo rmmod bsg_manycore_kernel_driver
-endif
 
 .PHONY: build install clean uninstall
 
