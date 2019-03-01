@@ -22,5 +22,20 @@ endif
 	dmesg | grep "major number is:" | awk '{system("mknod /dev/bsg_manycore_kernel_driver c " $$NF " 0")}'
 	chmod 777 /dev/bsg_manycore_kernel_driver
 
+
+
 clean:
-	rm -f *.cmd *.o *.ko modules.order Module.symvers bsg_manycore_kernel_driver.mod.c
+	make -C /lib/modules/$(shell uname -r)/build M=$(shell pwd) clean
+	#rm -f *.cmd *.o *.ko modules.order Module.symvers bsg_manycore_kernel_driver.mod.c
+
+uninstall: clean
+ifeq ($(IS_BSG_MANYCORE_LOADED),)
+	# BSG Manycore Driver has not been loaded. 
+else
+	rm /dev/bsg_manycore_kernel_driver
+	rmmod bsg_manycore_kernel_driver
+endif
+
+.PHONY: build install clean uninstall
+
+
