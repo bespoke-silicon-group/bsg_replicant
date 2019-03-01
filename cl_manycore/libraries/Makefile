@@ -14,9 +14,9 @@ install: build
 	cp -t /usr/include ../../cl_manycore/libraries/bsg_manycore_driver.h ../../cl_manycore/libraries/bsg_manycore_loader.h ../../cl_manycore/libraries/bsg_manycore_mem.h ../../cl_manycore/libraries/bsg_manycore_print.h 
 
 clean:
-	rm *.o
+	rm -f *.o
 
 uninstall: clean
-	rm -rf /usr/lib/bsg_manycore /usr/include/bsg_manycore_*
+	sudo rm -rf /usr/lib/bsg_manycore /usr/include/bsg_manycore_*
 
 .PHONY: build install clean uninstall 
