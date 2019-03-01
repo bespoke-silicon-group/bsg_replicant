@@ -31,59 +31,29 @@ static bool hb_mc_load_packets(uint8_t fd, uint8_t **pkts, uint32_t num_pkts) {
 }
 
 /*!
- * Helper function of self field.
- * @param data pointer to byte to modify.
- * @param start bit offset within byte of where field begins.
- * @param val the value to set the selected bits to.
- * */
-static void hb_mc_set_bits (uint8_t *data, uint8_t start, uint8_t val) {
-	/* bits [start, start + size) to be 1 */
-	*data |= val << start;
-}
-
-/*!
- * Sets a selected number of bits of a Manycore packet to a desired value.
+ * Sets a selected number of bytes of a Manycore packet to a desired value.
  * @param packet an array of bytes that form the Manycore packet.
- * @param bit_start the bit offset within the packet where the field starts.
- * @param bit_end the bit offset within the packet where the field ends - inclusive.
- * @param val the value to set the selected bits to.
+ * @param byte_start the byte offset within the packet where the field starts.
+ * @param size the size in bytes of the field.
+ * @param val the value to set the selected bytes to.
  * */
-static void hb_mc_set_field (uint8_t *packet, uint8_t bit_start, uint8_t bit_end, uint32_t val) {
-	uint8_t byte_start = bit_start / 8;
-	uint8_t byte_end = bit_end / 8;
-	uint8_t byte_start_ofs = bit_start % 8;
-	uint8_t byte_end_ofs = bit_end % 8;
-
-	uint32_t done_bits = 0; 
-	for (int byte = byte_start; byte <= byte_end; byte++) {
-		if (byte == byte_start && byte == byte_end) {
-			hb_mc_set_bits(&packet[byte], byte_start_ofs, val);
-			done_bits += (byte_end_ofs - byte_start_ofs) + 1;
-		}
-
-		else if (byte == byte_start && byte != byte_end) {
-			uint8_t val_ = hb_mc_get_bits(val, 0, 8 - byte_start_ofs);
-			hb_mc_set_bits(&packet[byte], byte_start_ofs, val_);
-			done_bits += (8 - byte_start_ofs);
-		}
-
-		else if (byte == byte_end) {
-			uint8_t val_ = hb_mc_get_bits(val, done_bits, byte_end_ofs + 1);
-			hb_mc_set_bits(&packet[byte], 0, val_);
-			done_bits += byte_end_ofs + 1;
-		}
-			
-		else { /* byte is not byte_start nor is it byte_end */
-			uint8_t val_ = hb_mc_get_bits(val, done_bits, 8);
-			hb_mc_set_bits(&packet[byte], 0, val_);
-			done_bits += 8;
-		}
-
+static void hb_mc_set_field (uint8_t *packet, uint8_t byte_start, uint8_t size, uint32_t val) {
+	if (size == WORD) {
+		uint32_t *field = (uint32_t *) (packet + byte_start);
+		*field = val;
+	}
+	else if (size == SHORT) {
+		uint16_t *field = (uint16_t *) (packet + byte_start);
+		*field = val;
+	}
+	else {
+		uint8_t *field = (uint8_t *) (packet + byte_start);
+		*field = val;
 	}
 }
 
 /*!
- * Forms a Manycore packet. Manycore fields are assumed to be less than 32 bits. Supports arbitrary Manycore dimensions.
+ * Forms a Manycore packet.
  * @param addr address to send packet to.
  * @param data packet's data
  * @param x destination tile's x coordinate
@@ -96,31 +66,31 @@ uint8_t *hb_mc_get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8
 	
 	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t));
 
-	uint32_t bits_start = 0;
+	uint32_t byte_start = 0;
 
-	hb_mc_set_field(packet, bits_start, bits_start + X_BIT-1, x); 
-	bits_start += X_BIT;
+	hb_mc_set_field(packet, byte_start, X_BYTE, x); 
+	byte_start += X_BYTE;
 
-	hb_mc_set_field(packet, bits_start, bits_start + Y_BIT - 1, y);
-	bits_start += Y_BIT;
+	hb_mc_set_field(packet, byte_start, Y_BYTE, y);
+	byte_start += Y_BYTE;
 
-	hb_mc_set_field(packet, bits_start, bits_start + X_BIT - 1, MY_X);
-	bits_start += X_BIT;
+	hb_mc_set_field(packet, byte_start, X_BYTE, MY_X);
+	byte_start += X_BYTE;
 
-	hb_mc_set_field(packet, bits_start, bits_start + Y_BIT - 1, MY_Y);
-	bits_start += Y_BIT;
+	hb_mc_set_field(packet, byte_start, Y_BYTE, MY_Y);
+	byte_start += Y_BYTE;
 
-	hb_mc_set_field(packet, bits_start, bits_start + DATA_BIT - 1, data);
-	bits_start += DATA_BIT;
+	hb_mc_set_field(packet, byte_start, DATA_BYTE, data);
+	byte_start += DATA_BYTE;
 	
-	hb_mc_set_field(packet, bits_start, bits_start + OP_EX_BIT - 1, 0xF);
-	bits_start += OP_EX_BIT;
+	hb_mc_set_field(packet, byte_start, OP_EX_BYTE, 0xF);
+	byte_start += OP_EX_BYTE;
 
-	hb_mc_set_field(packet, bits_start, bits_start + OP_BIT - 1, opcode);
-	bits_start += OP_BIT;
+	hb_mc_set_field(packet, byte_start, OP_BYTE, opcode);
+	byte_start += OP_BYTE;
 	
-	hb_mc_set_field(packet, bits_start, bits_start + ADDR_BIT - 1, addr);
-	bits_start += ADDR_BIT;
+	hb_mc_set_field(packet, byte_start, ADDR_BYTE, addr);
+	byte_start += ADDR_BYTE;
 
 	return packet;
 }
@@ -217,9 +187,40 @@ void hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint
 	}
 }
 
+/*!
+ * Returns an array of Manycore packets that should be used to freeze the needed tiles. Triggers a soft reset on the tile at (X, Y)
+ * @return array of Manycore packets.
+ * */
+
+static uint8_t *hb_mc_get_freeze_pkt (uint8_t x, uint8_t y) {
+	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
+	packet = hb_mc_get_pkt((1 << 13), 1, x, y, OP_REMOTE_STORE);
+	return packet;
+}
 
 /*!
- * Returns an array of Manycore packets that should be used to unfreeze the needed tiles. Currently, on the the tile at (X, Y) = (0, 0) is unfrozen.
+ *  * freezes (x,y).
+ *   * */
+void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
+	if (!hb_mc_check_device(fd)) {
+		printf("freeze(): warning - device was not initialized.\n");
+		return;
+	}
+		
+	printf("Freezing tile (%d, %d).\n", x, y);
+	uint8_t *freeze_pkt = hb_mc_get_freeze_pkt(x, y); 
+	bool pass_freeze = true;
+	if (!hb_mc_write_fifo(fd, 0, (int *) freeze_pkt)) {
+		pass_freeze = false;
+	}
+	if (pass_freeze)
+		printf("freeze finished.\n");
+	else
+		printf("freeze failed.\n");	
+}
+
+/*!
+ * Returns an array of Manycore packets that should be used to unfreeze the needed tiles. Currently, on the tile at (X, Y) = (0, 0) is unfrozen.
  * @return array of Manycore packets.
  * */
 
@@ -250,17 +251,3 @@ void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 		printf("unfreeze failed.\n");	
 }
 
-static uint32_t *hb_mc_get_byte (uint32_t *packet, uint8_t ofs) {
-	return (uint32_t *) (((uint8_t *) packet) + ofs);
-}
-
-static uint32_t hb_mc_get_data (uint32_t *packet) {
-	return (*hb_mc_get_byte(packet, 5) << 30) + (*hb_mc_get_byte(packet, 1) << 2) + hb_mc_get_bits(packet[0], 0, 2);
-}
-
-static uint32_t hb_mc_get_bits(uint32_t data, uint8_t start,  uint8_t size) {
-	uint32_t mask = UINT_MAX;
-	mask = mask << start;
-	uint32_t bits = (data & mask) >> start;
-	return bits;
-}

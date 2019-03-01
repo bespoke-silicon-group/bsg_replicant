@@ -25,7 +25,7 @@ module s_axil_mcl_adapter #(
   ,output logic [$clog2(max_out_credits_p+1)-1:0] rcv_vacancy_o
 );
 
-parameter fpga_version_p = "virtexuplus";
+localparam fpga_version_p = "virtexuplus";
 
 `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 

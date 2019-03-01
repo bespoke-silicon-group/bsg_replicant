@@ -563,42 +563,42 @@ localparam mcl_intf_num_lp = 2;
 localparam max_out_credits_lp = 16;
 
 axil_to_mcl #(
-  .mcl_tile_num_p   (1                 ),
-  .num_tiles_x_p    (num_tiles_x_p     ),
-  .num_tiles_y_p    (num_tiles_y_p     ),
-  .addr_width_p     (addr_width_p      ),
-  .data_width_p     (data_width_p      ),
-  .x_cord_width_p   (x_cord_width_p   ),
-  .y_cord_width_p   (y_cord_width_p   ),
-  .load_id_width_p  (load_id_width_p   ),
-  .fifo_els_p       (4                 ),
-  .max_out_credits_p(max_out_credits_lp)
+  .mcl_tile_num_p   (1                 )
+  ,.num_tiles_x_p    (num_tiles_x_p     )
+  ,.num_tiles_y_p    (num_tiles_y_p     )
+  ,.addr_width_p     (addr_width_p      )
+  ,.data_width_p     (data_width_p      )
+  ,.x_cord_width_p   (x_cord_width_p    )
+  ,.y_cord_width_p   (y_cord_width_p    )
+  ,.load_id_width_p  (load_id_width_p   )
+  ,.fifo_els_p       (4                 )
+  ,.max_out_credits_p(max_out_credits_lp)
 ) axil_to_mcl_inst (
-  .clk_i             (clk_main_a0       ),
-  .reset_i           (~rst_main_n_sync  ),
+  .clk_i             (clk_main_a0       )
+  ,.reset_i           (~rst_main_n_sync  )
   
-  .s_axil_mcl_awvalid(m_axil_ocl_awvalid),
-  .s_axil_mcl_awaddr (m_axil_ocl_awaddr ),
-  .s_axil_mcl_awready(m_axil_ocl_awready),
-  .s_axil_mcl_wvalid (m_axil_ocl_wvalid ),
-  .s_axil_mcl_wdata  (m_axil_ocl_wdata  ),
-  .s_axil_mcl_wstrb  (m_axil_ocl_wstrb  ),
-  .s_axil_mcl_wready (m_axil_ocl_wready ),
-  .s_axil_mcl_bresp  (m_axil_ocl_bresp  ),
-  .s_axil_mcl_bvalid (m_axil_ocl_bvalid ),
-  .s_axil_mcl_bready (m_axil_ocl_bready ),
-  .s_axil_mcl_araddr (m_axil_ocl_araddr ),
-  .s_axil_mcl_arvalid(m_axil_ocl_arvalid),
-  .s_axil_mcl_arready(m_axil_ocl_arready),
-  .s_axil_mcl_rdata  (m_axil_ocl_rdata  ),
-  .s_axil_mcl_rresp  (m_axil_ocl_rresp  ),
-  .s_axil_mcl_rvalid (m_axil_ocl_rvalid ),
-  .s_axil_mcl_rready (m_axil_ocl_rready ),
+  ,.s_axil_mcl_awvalid(m_axil_ocl_awvalid)
+  ,.s_axil_mcl_awaddr (m_axil_ocl_awaddr )
+  ,.s_axil_mcl_awready(m_axil_ocl_awready)
+  ,.s_axil_mcl_wvalid (m_axil_ocl_wvalid )
+  ,.s_axil_mcl_wdata  (m_axil_ocl_wdata  )
+  ,.s_axil_mcl_wstrb  (m_axil_ocl_wstrb  )
+  ,.s_axil_mcl_wready (m_axil_ocl_wready )
+  ,.s_axil_mcl_bresp  (m_axil_ocl_bresp  )
+  ,.s_axil_mcl_bvalid (m_axil_ocl_bvalid )
+  ,.s_axil_mcl_bready (m_axil_ocl_bready )
+  ,.s_axil_mcl_araddr (m_axil_ocl_araddr )
+  ,.s_axil_mcl_arvalid(m_axil_ocl_arvalid)
+  ,.s_axil_mcl_arready(m_axil_ocl_arready)
+  ,.s_axil_mcl_rdata  (m_axil_ocl_rdata  )
+  ,.s_axil_mcl_rresp  (m_axil_ocl_rresp  )
+  ,.s_axil_mcl_rvalid (m_axil_ocl_rvalid )
+  ,.s_axil_mcl_rready (m_axil_ocl_rready )
   
-  .link_sif_i        (loader_link_sif_lo),
-  .link_sif_o        (loader_link_sif_li),
-  .my_x_i            (num_tiles_x_p-1   ),
-  .my_y_i            (num_tiles_y_p     )
+  ,.link_sif_i        (loader_link_sif_lo)
+  ,.link_sif_o        (loader_link_sif_li)
+  ,.my_x_i            (num_tiles_x_p-1   )
+  ,.my_y_i            (num_tiles_y_p     )
 );
 
 //-----------------------------------------------
@@ -619,39 +619,39 @@ always_ff @(posedge clk_main_a0)
 // Integrated Logic Analyzers (ILA)
 ila_0 CL_ILA_0 (
                 .clk    (clk_main_a0),
-                .probe0 (m_axil_ocl_awvalid),
-                .probe1 (m_axil_ocl_awaddr),
-                .probe2 (m_axil_ocl_awready),
-                .probe3 (m_axil_ocl_arvalid),
-                .probe4 (m_axil_ocl_araddr),
-                .probe5 (m_axil_ocl_arready)
+                .probe0 (m_axil_ocl_awvalid)
+                ,.probe1 (m_axil_ocl_awaddr)
+                ,.probe2 (m_axil_ocl_awready)
+                ,.probe3 (m_axil_ocl_arvalid)
+                ,.probe4 (m_axil_ocl_araddr)
+                ,.probe5 (m_axil_ocl_arready)
                 );
 
  ila_0 CL_ILA_1 (
-                .clk    (clk_main_a0),
-                .probe0 (m_axil_ocl_bvalid),
-                .probe1 (sh_cl_glcount0_q),
-                .probe2 (m_axil_ocl_bready),
-                .probe3 (m_axil_ocl_rvalid),
-                .probe4 ({32'b0,m_axil_ocl_rdata[31:0]}),
-                .probe5 (m_axil_ocl_rready)
+                .clk    (clk_main_a0)
+                ,.probe0 (m_axil_ocl_bvalid)
+                ,.probe1 (sh_cl_glcount0_q)
+                ,.probe2 (m_axil_ocl_bready)
+                ,.probe3 (m_axil_ocl_rvalid)
+                ,.probe4 ({32'b0,m_axil_ocl_rdata[31:0]})
+                ,.probe5 (m_axil_ocl_rready)
                  );
 
 // Debug Bridge 
 cl_debug_bridge CL_DEBUG_BRIDGE (
-     .clk(clk_main_a0),
-     .S_BSCAN_drck(drck),
-     .S_BSCAN_shift(shift),
-     .S_BSCAN_tdi(tdi),
-     .S_BSCAN_update(update),
-     .S_BSCAN_sel(sel),
-     .S_BSCAN_tdo(tdo),
-     .S_BSCAN_tms(tms),
-     .S_BSCAN_tck(tck),
-     .S_BSCAN_runtest(runtest),
-     .S_BSCAN_reset(reset),
-     .S_BSCAN_capture(capture),
-     .S_BSCAN_bscanid_en(bscanid_en)
+     .clk(clk_main_a0)
+     ,.S_BSCAN_drck(drck)
+     ,.S_BSCAN_shift(shift)
+     ,.S_BSCAN_tdi(tdi)
+     ,.S_BSCAN_update(update)
+     ,.S_BSCAN_sel(sel)
+     ,.S_BSCAN_tdo(tdo)
+     ,.S_BSCAN_tms(tms)
+     ,.S_BSCAN_tck(tck)
+     ,.S_BSCAN_runtest(runtest)
+     ,.S_BSCAN_reset(reset)
+     ,.S_BSCAN_capture(capture)
+     ,.S_BSCAN_bscanid_en(bscanid_en)
 );
 
 `endif //  `ifndef DISABLE_VJTAG_DEBUG

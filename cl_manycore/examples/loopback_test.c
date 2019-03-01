@@ -30,6 +30,8 @@ int main () {
 //	}
 
 	uint8_t x = 0, y = 0;
+
+        hb_mc_freeze(fd, 0, 0);
 	
 	hb_mc_load_binary(fd, getenv("MAIN_LOOPBACK"), &x, &y, 1);
 

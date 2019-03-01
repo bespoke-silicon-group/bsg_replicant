@@ -57,7 +57,9 @@ ifdef DEBUG
 XSIM_OPTS +=-gui
 export GUI
 endif
-
+ifdef AXI_MEMORY_MODEL
+	XVLOG_OPTS +=-d AXI_MEMORY_MODEL=1 -d ECC_DIRECT_EN -d RND_ECC_EN -d ECC_ADDR_LO=0 -d ECC_ADDR_HI=0 -d RND_ECC_WEIGHT=0
+endif
 run: make_sim_dir compile sim
 
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc

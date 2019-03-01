@@ -27,7 +27,9 @@ void cosim_loopback_test () {
 	uint8_t fd = 0; /* unused */
 
 	uint8_t x = 0, y = 0;
-	
+
+	hb_mc_freeze(fd, 0, 0);
+
 	hb_mc_load_binary(fd, getenv("MAIN_LOOPBACK"), &x, &y, 1);
 
   	hb_mc_unfreeze(fd, 0, 0);

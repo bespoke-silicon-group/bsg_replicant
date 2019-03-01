@@ -3,6 +3,8 @@
  *
  *  all the parameters for the CL.
  */
+`ifndef CL_MANYCORE_PKG
+`define CL_MANYCORE_PKG
 
 package cl_manycore_pkg;
 
@@ -33,3 +35,5 @@ package cl_manycore_pkg;
   parameter axi_burst_len_p = 1;
 
 endpackage
+
+`endif

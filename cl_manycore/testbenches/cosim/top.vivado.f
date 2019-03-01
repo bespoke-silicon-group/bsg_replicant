@@ -51,6 +51,7 @@
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
+${CL_DIR}/../hdl/axil_to_mcl.vh
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
 ${CL_DIR}/../hdl/bsg_manycore_link_to_2fifo.v

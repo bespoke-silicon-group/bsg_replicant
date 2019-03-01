@@ -5,6 +5,8 @@
 
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_defines.v"
+`include "bsg_manycore_packet.vh"
+`include "axil_to_mcl.vh"
 
 module axil_to_mcl #(
   mcl_tile_num_p = "inv"
@@ -50,8 +52,8 @@ module axil_to_mcl #(
   ,input  [   y_cord_width_p*mcl_tile_num_p-1:0] my_y_i
 );
 
-parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1);
-parameter axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1);
+localparam axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1);
+localparam axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1);
 
 `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 bsg_axil_mosi_bus_s s0_axil_bus_i_cast;
@@ -59,24 +61,24 @@ bsg_axil_miso_bus_s s0_axil_bus_o_cast;
 
 assign s0_axil_bus_i_cast.awvalid = s_axil_mcl_awvalid;
 assign s0_axil_bus_i_cast.awaddr  = s_axil_mcl_awaddr;
-assign s_axil_mcl_awready             = s0_axil_bus_o_cast.awready;
+assign s_axil_mcl_awready         = s0_axil_bus_o_cast.awready;
 
 assign s0_axil_bus_i_cast.wvalid = s_axil_mcl_wvalid;
 assign s0_axil_bus_i_cast.wdata  = s_axil_mcl_wdata;
 assign s0_axil_bus_i_cast.wstrb  = s_axil_mcl_wstrb;
-assign s_axil_mcl_wready             = s0_axil_bus_o_cast.wready;
+assign s_axil_mcl_wready         = s0_axil_bus_o_cast.wready;
 
-assign s_axil_mcl_bresp              = s0_axil_bus_o_cast.bresp;
-assign s_axil_mcl_bvalid             = s0_axil_bus_o_cast.bvalid;
+assign s_axil_mcl_bresp          = s0_axil_bus_o_cast.bresp;
+assign s_axil_mcl_bvalid         = s0_axil_bus_o_cast.bvalid;
 assign s0_axil_bus_i_cast.bready = s_axil_mcl_bready;
 
 assign s0_axil_bus_i_cast.araddr  = s_axil_mcl_araddr;
 assign s0_axil_bus_i_cast.arvalid = s_axil_mcl_arvalid;
-assign s_axil_mcl_arready             = s0_axil_bus_o_cast.arready;
+assign s_axil_mcl_arready         = s0_axil_bus_o_cast.arready;
 
-assign s_axil_mcl_rdata              = s0_axil_bus_o_cast.rdata;
-assign s_axil_mcl_rresp              = s0_axil_bus_o_cast.rresp;
-assign s_axil_mcl_rvalid             = s0_axil_bus_o_cast.rvalid;
+assign s_axil_mcl_rdata          = s0_axil_bus_o_cast.rdata;
+assign s_axil_mcl_rresp          = s0_axil_bus_o_cast.rresp;
+assign s_axil_mcl_rvalid         = s0_axil_bus_o_cast.rvalid;
 assign s0_axil_bus_i_cast.rready = s_axil_mcl_rready;
 
 localparam mux_bus_num_lp = (mcl_link_num_lp+1);
@@ -104,126 +106,126 @@ localparam C_M_AXI_READ_ISSUING       = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
 localparam C_M_AXI_SECURE             = {C_NUM_MASTER_SLOTS{32'h0000_0000}};
 
 axi_crossbar_v2_1_18_axi_crossbar #(
-  .C_FAMILY                   ("virtexuplus"             ),
-  .C_NUM_SLAVE_SLOTS          (1                         ),
-  .C_NUM_MASTER_SLOTS         (C_NUM_MASTER_SLOTS        ),
-  .C_AXI_ID_WIDTH             (1                         ),
-  .C_AXI_ADDR_WIDTH           (32                        ),
-  .C_AXI_DATA_WIDTH           (32                        ),
-  .C_AXI_PROTOCOL             (2                         ),
-  .C_NUM_ADDR_RANGES          (1                         ),
-  .C_M_AXI_BASE_ADDR          (C_M_AXI_BASE_ADDR         ),
-  .C_M_AXI_ADDR_WIDTH         (C_M_AXI_ADDR_WIDTH        ),
-  .C_S_AXI_BASE_ID            (32'H00000000              ),
-  .C_S_AXI_THREAD_ID_WIDTH    (32'H00000000              ),
-  .C_AXI_SUPPORTS_USER_SIGNALS(0                         ),
-  .C_AXI_AWUSER_WIDTH         (1                         ),
-  .C_AXI_ARUSER_WIDTH         (1                         ),
-  .C_AXI_WUSER_WIDTH          (1                         ),
-  .C_AXI_RUSER_WIDTH          (1                         ),
-  .C_AXI_BUSER_WIDTH          (1                         ),
-  .C_M_AXI_WRITE_CONNECTIVITY (C_M_AXI_WRITE_CONNECTIVITY),
-  .C_M_AXI_READ_CONNECTIVITY  (C_M_AXI_READ_CONNECTIVITY ),
-  .C_R_REGISTER               (1                         ),
-  .C_S_AXI_SINGLE_THREAD      (32'H00000001              ),
-  .C_S_AXI_WRITE_ACCEPTANCE   (32'H00000001              ),
-  .C_S_AXI_READ_ACCEPTANCE    (32'H00000001              ),
-  .C_M_AXI_WRITE_ISSUING      (C_M_AXI_WRITE_ISSUING     ),
-  .C_M_AXI_READ_ISSUING       (C_M_AXI_READ_ISSUING      ),
-  .C_S_AXI_ARB_PRIORITY       (32'H00000000              ),
-  .C_M_AXI_SECURE             (C_M_AXI_SECURE            ),
-  .C_CONNECTIVITY_MODE        (0                         )
+  .C_FAMILY                   ("virtexuplus"             )
+  ,.C_NUM_SLAVE_SLOTS          (1                         )
+  ,.C_NUM_MASTER_SLOTS         (C_NUM_MASTER_SLOTS        )
+  ,.C_AXI_ID_WIDTH             (1                         )
+  ,.C_AXI_ADDR_WIDTH           (32                        )
+  ,.C_AXI_DATA_WIDTH           (32                        )
+  ,.C_AXI_PROTOCOL             (2                         )
+  ,.C_NUM_ADDR_RANGES          (1                         )
+  ,.C_M_AXI_BASE_ADDR          (C_M_AXI_BASE_ADDR         )
+  ,.C_M_AXI_ADDR_WIDTH         (C_M_AXI_ADDR_WIDTH        )
+  ,.C_S_AXI_BASE_ID            (32'H00000000              )
+  ,.C_S_AXI_THREAD_ID_WIDTH    (32'H00000000              )
+  ,.C_AXI_SUPPORTS_USER_SIGNALS(0                         )
+  ,.C_AXI_AWUSER_WIDTH         (1                         )
+  ,.C_AXI_ARUSER_WIDTH         (1                         )
+  ,.C_AXI_WUSER_WIDTH          (1                         )
+  ,.C_AXI_RUSER_WIDTH          (1                         )
+  ,.C_AXI_BUSER_WIDTH          (1                         )
+  ,.C_M_AXI_WRITE_CONNECTIVITY (C_M_AXI_WRITE_CONNECTIVITY)
+  ,.C_M_AXI_READ_CONNECTIVITY  (C_M_AXI_READ_CONNECTIVITY )
+  ,.C_R_REGISTER               (1                         )
+  ,.C_S_AXI_SINGLE_THREAD      (32'H00000001              )
+  ,.C_S_AXI_WRITE_ACCEPTANCE   (32'H00000001              )
+  ,.C_S_AXI_READ_ACCEPTANCE    (32'H00000001              )
+  ,.C_M_AXI_WRITE_ISSUING      (C_M_AXI_WRITE_ISSUING     )
+  ,.C_M_AXI_READ_ISSUING       (C_M_AXI_READ_ISSUING      )
+  ,.C_S_AXI_ARB_PRIORITY       (32'H00000000              )
+  ,.C_M_AXI_SECURE             (C_M_AXI_SECURE            )
+  ,.C_CONNECTIVITY_MODE        (0                         )
 ) axil_crossbar_mux (
-  .aclk          (clk_i                     ),
-  .aresetn       (~reset_i                  ),
-  .s_axi_awid    (1'H0                      ),
-  .s_axi_awaddr  (s0_axil_bus_i_cast.awaddr ),
-  .s_axi_awlen   (8'H00                     ),
-  .s_axi_awsize  (3'H0                      ),
-  .s_axi_awburst (2'H0                      ),
-  .s_axi_awlock  (1'H0                      ),
-  .s_axi_awcache (4'H0                      ),
-  .s_axi_awprot  (3'H0                      ),
-  .s_axi_awqos   (4'H0                      ),
-  .s_axi_awuser  (1'H0                      ),
-  .s_axi_awvalid (s0_axil_bus_i_cast.awvalid),
-  .s_axi_awready (s0_axil_bus_o_cast.awready),
-  .s_axi_wid     (1'H0                      ),
-  .s_axi_wdata   (s0_axil_bus_i_cast.wdata  ),
-  .s_axi_wstrb   (s0_axil_bus_i_cast.wstrb  ),
-  .s_axi_wlast   (1'H1                      ),
-  .s_axi_wuser   (1'H0                      ),
-  .s_axi_wvalid  (s0_axil_bus_i_cast.wvalid ),
-  .s_axi_wready  (s0_axil_bus_o_cast.wready ),
-  .s_axi_bid     (                          ),
-  .s_axi_bresp   (s0_axil_bus_o_cast.bresp  ),
-  .s_axi_buser   (                          ),
-  .s_axi_bvalid  (s0_axil_bus_o_cast.bvalid ),
-  .s_axi_bready  (s0_axil_bus_i_cast.bready ),
-  .s_axi_arid    (1'H0                      ),
-  .s_axi_araddr  (s0_axil_bus_i_cast.araddr ),
-  .s_axi_arlen   (8'H00                     ),
-  .s_axi_arsize  (3'H0                      ),
-  .s_axi_arburst (2'H0                      ),
-  .s_axi_arlock  (1'H0                      ),
-  .s_axi_arcache (4'H0                      ),
-  .s_axi_arprot  (3'H0                      ),
-  .s_axi_arqos   (4'H0                      ),
-  .s_axi_aruser  (1'H0                      ),
-  .s_axi_arvalid (s0_axil_bus_i_cast.arvalid),
-  .s_axi_arready (s0_axil_bus_o_cast.arready),
-  .s_axi_rid     (                          ),
-  .s_axi_rdata   (s0_axil_bus_o_cast.rdata  ),
-  .s_axi_rresp   (s0_axil_bus_o_cast.rresp  ),
-  .s_axi_rlast   (                          ),
-  .s_axi_ruser   (                          ),
-  .s_axi_rvalid  (s0_axil_bus_o_cast.rvalid ),
-  .s_axi_rready  (s0_axil_bus_i_cast.rready ),
-  .m_axi_awid    (                          ),
-  .m_axi_awaddr  (axil_mosi_busN.awaddr     ),
-  .m_axi_awlen   (                          ),
-  .m_axi_awsize  (                          ),
-  .m_axi_awburst (                          ),
-  .m_axi_awlock  (                          ),
-  .m_axi_awcache (                          ),
-  .m_axi_awprot  (                          ),
-  .m_axi_awregion(                          ),
-  .m_axi_awqos   (                          ),
-  .m_axi_awuser  (                          ),
-  .m_axi_awvalid (axil_mosi_busN.awvalid    ),
-  .m_axi_awready (axil_miso_busN.awready    ),
-  .m_axi_wid     (                          ),
-  .m_axi_wdata   (axil_mosi_busN.wdata      ),
-  .m_axi_wstrb   (axil_mosi_busN.wstrb      ),
-  .m_axi_wlast   (                          ),
-  .m_axi_wuser   (                          ),
-  .m_axi_wvalid  (axil_mosi_busN.wvalid     ),
-  .m_axi_wready  (axil_miso_busN.wready     ),
-  .m_axi_bid     ({C_NUM_MASTER_SLOTS{1'b0}}),
-  .m_axi_bresp   (axil_miso_busN.bresp      ),
-  .m_axi_buser   ({C_NUM_MASTER_SLOTS{1'b0}}),
-  .m_axi_bvalid  (axil_miso_busN.bvalid     ),
-  .m_axi_bready  (axil_mosi_busN.bready     ),
-  .m_axi_arid    (                          ),
-  .m_axi_araddr  (axil_mosi_busN.araddr     ),
-  .m_axi_arlen   (                          ),
-  .m_axi_arsize  (                          ),
-  .m_axi_arburst (                          ),
-  .m_axi_arlock  (                          ),
-  .m_axi_arcache (                          ),
-  .m_axi_arprot  (                          ),
-  .m_axi_arregion(                          ),
-  .m_axi_arqos   (                          ),
-  .m_axi_aruser  (                          ),
-  .m_axi_arvalid (axil_mosi_busN.arvalid    ),
-  .m_axi_arready (axil_miso_busN.arready    ),
-  .m_axi_rid     ({C_NUM_MASTER_SLOTS{1'b0}}),
-  .m_axi_rdata   (axil_miso_busN.rdata      ),
-  .m_axi_rresp   (axil_miso_busN.rresp      ),
-  .m_axi_rlast   ({C_NUM_MASTER_SLOTS{1'b1}}),
-  .m_axi_ruser   ({C_NUM_MASTER_SLOTS{1'b0}}),
-  .m_axi_rvalid  (axil_miso_busN.rvalid     ),
-  .m_axi_rready  (axil_mosi_busN.rready     )
+  .aclk          (clk_i                     )
+  ,.aresetn       (~reset_i                  )
+  ,.s_axi_awid    (1'H0                      )
+  ,.s_axi_awaddr  (s0_axil_bus_i_cast.awaddr )
+  ,.s_axi_awlen   (8'H00                     )
+  ,.s_axi_awsize  (3'H0                      )
+  ,.s_axi_awburst (2'H0                      )
+  ,.s_axi_awlock  (1'H0                      )
+  ,.s_axi_awcache (4'H0                      )
+  ,.s_axi_awprot  (3'H0                      )
+  ,.s_axi_awqos   (4'H0                      )
+  ,.s_axi_awuser  (1'H0                      )
+  ,.s_axi_awvalid (s0_axil_bus_i_cast.awvalid)
+  ,.s_axi_awready (s0_axil_bus_o_cast.awready)
+  ,.s_axi_wid     (1'H0                      )
+  ,.s_axi_wdata   (s0_axil_bus_i_cast.wdata  )
+  ,.s_axi_wstrb   (s0_axil_bus_i_cast.wstrb  )
+  ,.s_axi_wlast   (1'H1                      )
+  ,.s_axi_wuser   (1'H0                      )
+  ,.s_axi_wvalid  (s0_axil_bus_i_cast.wvalid )
+  ,.s_axi_wready  (s0_axil_bus_o_cast.wready )
+  ,.s_axi_bid     (                          )
+  ,.s_axi_bresp   (s0_axil_bus_o_cast.bresp  )
+  ,.s_axi_buser   (                          )
+  ,.s_axi_bvalid  (s0_axil_bus_o_cast.bvalid )
+  ,.s_axi_bready  (s0_axil_bus_i_cast.bready )
+  ,.s_axi_arid    (1'H0                      )
+  ,.s_axi_araddr  (s0_axil_bus_i_cast.araddr )
+  ,.s_axi_arlen   (8'H00                     )
+  ,.s_axi_arsize  (3'H0                      )
+  ,.s_axi_arburst (2'H0                      )
+  ,.s_axi_arlock  (1'H0                      )
+  ,.s_axi_arcache (4'H0                      )
+  ,.s_axi_arprot  (3'H0                      )
+  ,.s_axi_arqos   (4'H0                      )
+  ,.s_axi_aruser  (1'H0                      )
+  ,.s_axi_arvalid (s0_axil_bus_i_cast.arvalid)
+  ,.s_axi_arready (s0_axil_bus_o_cast.arready)
+  ,.s_axi_rid     (                          )
+  ,.s_axi_rdata   (s0_axil_bus_o_cast.rdata  )
+  ,.s_axi_rresp   (s0_axil_bus_o_cast.rresp  )
+  ,.s_axi_rlast   (                          )
+  ,.s_axi_ruser   (                          )
+  ,.s_axi_rvalid  (s0_axil_bus_o_cast.rvalid )
+  ,.s_axi_rready  (s0_axil_bus_i_cast.rready )
+  ,.m_axi_awid    (                          )
+  ,.m_axi_awaddr  (axil_mosi_busN.awaddr     )
+  ,.m_axi_awlen   (                          )
+  ,.m_axi_awsize  (                          )
+  ,.m_axi_awburst (                          )
+  ,.m_axi_awlock  (                          )
+  ,.m_axi_awcache (                          )
+  ,.m_axi_awprot  (                          )
+  ,.m_axi_awregion(                          )
+  ,.m_axi_awqos   (                          )
+  ,.m_axi_awuser  (                          )
+  ,.m_axi_awvalid (axil_mosi_busN.awvalid    )
+  ,.m_axi_awready (axil_miso_busN.awready    )
+  ,.m_axi_wid     (                          )
+  ,.m_axi_wdata   (axil_mosi_busN.wdata      )
+  ,.m_axi_wstrb   (axil_mosi_busN.wstrb      )
+  ,.m_axi_wlast   (                          )
+  ,.m_axi_wuser   (                          )
+  ,.m_axi_wvalid  (axil_mosi_busN.wvalid     )
+  ,.m_axi_wready  (axil_miso_busN.wready     )
+  ,.m_axi_bid     ({C_NUM_MASTER_SLOTS{1'b0}})
+  ,.m_axi_bresp   (axil_miso_busN.bresp      )
+  ,.m_axi_buser   ({C_NUM_MASTER_SLOTS{1'b0}})
+  ,.m_axi_bvalid  (axil_miso_busN.bvalid     )
+  ,.m_axi_bready  (axil_mosi_busN.bready     )
+  ,.m_axi_arid    (                          )
+  ,.m_axi_araddr  (axil_mosi_busN.araddr     )
+  ,.m_axi_arlen   (                          )
+  ,.m_axi_arsize  (                          )
+  ,.m_axi_arburst (                          )
+  ,.m_axi_arlock  (                          )
+  ,.m_axi_arcache (                          )
+  ,.m_axi_arprot  (                          )
+  ,.m_axi_arregion(                          )
+  ,.m_axi_arqos   (                          )
+  ,.m_axi_aruser  (                          )
+  ,.m_axi_arvalid (axil_mosi_busN.arvalid    )
+  ,.m_axi_arready (axil_miso_busN.arready    )
+  ,.m_axi_rid     ({C_NUM_MASTER_SLOTS{1'b0}})
+  ,.m_axi_rdata   (axil_miso_busN.rdata      )
+  ,.m_axi_rresp   (axil_miso_busN.rresp      )
+  ,.m_axi_rlast   ({C_NUM_MASTER_SLOTS{1'b1}})
+  ,.m_axi_ruser   ({C_NUM_MASTER_SLOTS{1'b0}})
+  ,.m_axi_rvalid  (axil_miso_busN.rvalid     )
+  ,.m_axi_rready  (axil_mosi_busN.rready     )
 );
 
 
@@ -265,20 +267,20 @@ begin
 
 
   // from mcl signals
-  logic [mcl_link_num_lp-1:0]                    fifo_v_li    ;
-  logic [mcl_link_num_lp-1:0][fifo_width_lp-1:0] fifo_data_li ;
+  logic [mcl_link_num_lp-1:0]                    fifo_v_li;
+  logic [mcl_link_num_lp-1:0][fifo_width_lp-1:0] fifo_data_li;
   logic [mcl_link_num_lp-1:0]                    fifo_ready_lo;
 
   // to mcl slave
-  logic [mcl_link_num_lp-1:0]                    fifo_v_lo    ;
-  logic [mcl_link_num_lp-1:0][fifo_width_lp-1:0] fifo_data_lo ;
+  logic [mcl_link_num_lp-1:0]                    fifo_v_lo;
+  logic [mcl_link_num_lp-1:0][fifo_width_lp-1:0] fifo_data_lo;
   logic [mcl_link_num_lp-1:0]                    fifo_ready_li;
 
 for (i=0; i<mcl_link_num_lp; i=i+1)
 begin
   s_axil_mcl_adapter #(
-    .mcl_width_p      (fifo_width_lp    ),
-    .max_out_credits_p(max_out_credits_p)
+    .mcl_width_p      (fifo_width_lp    )
+    ,.max_out_credits_p(max_out_credits_p)
   ) s_axil_to_mcl (
     .clk_i           (clk_i                 )
     ,.reset_i         (reset_i               )
@@ -295,27 +297,27 @@ begin
 end
 
 
-logic [mcl_tile_num_p-1:0]                        endpoint_in_v_lo   ;
+logic [mcl_tile_num_p-1:0]                        endpoint_in_v_lo;
 logic [mcl_tile_num_p-1:0]                        endpoint_in_yumi_li;
 logic [mcl_tile_num_p-1:0][     data_width_p-1:0] endpoint_in_data_lo;
 logic [mcl_tile_num_p-1:0][(data_width_p>>3)-1:0] endpoint_in_mask_lo;
 logic [mcl_tile_num_p-1:0][     addr_width_p-1:0] endpoint_in_addr_lo;
-logic [mcl_tile_num_p-1:0]                        endpoint_in_we_lo  ;
+logic [mcl_tile_num_p-1:0]                        endpoint_in_we_lo;
 logic [mcl_tile_num_p-1:0][   x_cord_width_p-1:0] in_src_x_cord_lo;
 logic [mcl_tile_num_p-1:0][   y_cord_width_p-1:0] in_src_y_cord_lo;
 
-logic [mcl_tile_num_p-1:0]                      endpoint_out_v_li     ;
+logic [mcl_tile_num_p-1:0]                      endpoint_out_v_li;
 logic [mcl_tile_num_p-1:0][packet_width_lp-1:0] endpoint_out_packet_li;
-logic [mcl_tile_num_p-1:0]                      endpoint_out_ready_lo ;
+logic [mcl_tile_num_p-1:0]                      endpoint_out_ready_lo;
 
-logic [mcl_tile_num_p-1:0][   data_width_p-1:0] returned_data_r_lo   ;
+logic [mcl_tile_num_p-1:0][   data_width_p-1:0] returned_data_r_lo;
 logic [mcl_tile_num_p-1:0][load_id_width_p-1:0] returned_load_id_r_lo;
-logic [mcl_tile_num_p-1:0]                      returned_v_r_lo      ;
+logic [mcl_tile_num_p-1:0]                      returned_v_r_lo;
 logic [mcl_tile_num_p-1:0]                      returned_fifo_full_lo;
-logic [mcl_tile_num_p-1:0]                      returned_yumi_li     ;
+logic [mcl_tile_num_p-1:0]                      returned_yumi_li;
 
 logic [mcl_tile_num_p-1:0][return_packet_width_lp-1:0] returning_data_li;
-logic [mcl_tile_num_p-1:0]                             returning_v_li   ;
+logic [mcl_tile_num_p-1:0]                             returning_v_li;
 
 logic [mcl_tile_num_p-1:0][$clog2(max_out_credits_p+1)-1:0] out_credits_lo;
 
@@ -325,43 +327,78 @@ logic [mcl_tile_num_p-1:0][y_cord_width_p-1:0] my_y_li;
 assign my_x_li = my_x_i;
 assign my_y_li = my_y_i;
 
-
-for (i=0; i<mcl_tile_num_p; i=i+1)
+logic [mcl_tile_num_p-1:0] returning_wr_v_r;
+always_ff @(posedge clk_i)
 begin
+	if(reset_i)
+		returning_wr_v_r <= '0;
+	else
+		returning_wr_v_r <= endpoint_in_v_lo & endpoint_in_we_lo;
+end
 
-  // fifo to manycore
-  assign {returning_v_li[i], endpoint_out_v_li[i]} = fifo_v_lo[2*i+:2];
-  assign {returning_data_li[i], endpoint_out_packet_li[i]} = {
-    (return_packet_width_lp)'(fifo_data_lo[2*i+1]),
-    (packet_width_lp)'(fifo_data_lo[2*i])
-  };
-
-  assign fifo_ready_li[2*i+:2] = {1'b1, endpoint_out_ready_lo[i]};
+  `declare_bsg_mcl_packet_s;
+  bsg_mcl_packet_s        [mcl_tile_num_p-1:0] fifo_req_cast;
+  bsg_mcl_packet_s        [mcl_tile_num_p-1:0] mc_req_cast;
+  bsg_mcl_return_packet_s [mcl_tile_num_p-1:0] fifo_res_cast;
+  bsg_mcl_return_packet_s [mcl_tile_num_p-1:0] mc_res_cast;
 
 
-  // manycore to fifo
-  assign fifo_data_li[2*i] = (fifo_width_lp)'({
-    returned_fifo_full_lo // additional 1 bit
-    ,`ePacketType_data
-    ,returned_data_r_lo
-    ,returned_load_id_r_lo
-    ,my_y_i
-    ,my_x_i
-  });
+  for (i=0; i<mcl_tile_num_p; i=i+1)
+  begin
+    // fifo request to manycore
+    assign endpoint_out_v_li[i] = fifo_v_lo[2*i];
+    assign fifo_ready_li[2*i] = endpoint_out_ready_lo[i];
+    assign fifo_req_cast[i]          = fifo_data_lo[2*i];
+    assign endpoint_out_packet_li[i] = {
+      (addr_width_p)'(fifo_req_cast[i].addr)
+      ,(2)'(fifo_req_cast[i].op)
+      ,(data_width_p>>3)'(fifo_req_cast[i].op_ex)
+      ,(data_width_p)'(fifo_req_cast[i].payload.data)
+      ,(y_cord_width_p)'(fifo_req_cast[i].src_y_cord)
+      ,(x_cord_width_p)'(fifo_req_cast[i].src_x_cord)
+      ,(y_cord_width_p)'(fifo_req_cast[i].y_cord)
+      ,(x_cord_width_p)'(fifo_req_cast[i].x_cord)
+    };
 
-  assign fifo_data_li[2*i+1] = (fifo_width_lp)'({
-    endpoint_in_addr_lo
-    ,{1'b0, endpoint_in_we_lo} // only support remote load(0)/store(1)
-    ,endpoint_in_mask_lo
-    ,endpoint_in_data_lo
-    ,in_src_y_cord_lo
-    ,in_src_x_cord_lo
-    ,my_y_i
-    ,my_x_i
-  });
+    // manycore response to fifo
+    assign fifo_v_li[2*i]      = returned_v_r_lo[i];
+    assign fifo_data_li[2*i]   = mc_res_cast[i];
+    assign mc_res_cast[i].padding = '0;
+    assign mc_res_cast[i].pkt_type = {7'b0, `ePacketType_data};
+    assign mc_res_cast[i].data = (32)'(returned_data_r_lo[i]);
+    assign mc_res_cast[i].load_id = (32)'(returned_load_id_r_lo[i]);
+    assign mc_res_cast[i].y_cord = (8)'(my_y_li[i]);
+    assign mc_res_cast[i].x_cord = (8)'(my_x_li[i]);
+    assign returned_yumi_li[i] = fifo_ready_lo[2*i] & fifo_v_li[2*i];
 
-  assign fifo_v_li[2*i+:2] = {endpoint_in_v_lo[i], returned_v_r_lo[i]};
-  assign {endpoint_in_yumi_li[i], returned_yumi_li[i]} = fifo_ready_lo[2*i+:2] & fifo_v_li[2*i+:2];
+    // manycore request to fifo
+    assign fifo_v_li[2*i+1]       = endpoint_in_v_lo[i];
+    assign endpoint_in_yumi_li[i] = fifo_ready_lo[2*i+1] & fifo_v_li[2*i+1]; // must always ready
+    assign fifo_data_li[2*i+1]    = mc_req_cast[i];
+    assign mc_req_cast[i].padding = '0;
+    assign mc_req_cast[i].addr = (32)'(endpoint_in_addr_lo[i]);
+    assign mc_req_cast[i].op = (8)'({1'b0, endpoint_in_we_lo[i]});
+    assign mc_req_cast[i].op_ex = (8)'(endpoint_in_mask_lo[i]);
+    assign mc_req_cast[i].payload.data = (32)'(endpoint_in_data_lo[i]);
+    assign mc_req_cast[i].src_y_cord = (8)'(in_src_y_cord_lo[i]);
+    assign mc_req_cast[i].src_x_cord = (8)'(in_src_x_cord_lo[i]);
+    assign mc_req_cast[i].y_cord = (8)'(my_y_li[i]);
+    assign mc_req_cast[i].x_cord = (8)'(my_x_li[i]);
+
+    // fifo response to manycore
+    assign fifo_ready_li[2*i+1] = ~returning_wr_v_r[i];
+    assign fifo_res_cast[i]     = fifo_data_lo[2*i+1];
+    assign returning_data_li[i] = returning_wr_v_r[i]
+      ? '0
+        : {
+          (`return_packet_type_width)'(fifo_res_cast[i].pkt_type)
+          ,(data_width_p)'(fifo_res_cast[i].data)
+          ,(load_id_width_p)'(fifo_res_cast[i].load_id)
+          ,(y_cord_width_p)'(fifo_res_cast[i].y_cord)
+          ,(x_cord_width_p)'(fifo_res_cast[i].x_cord)
+        };
+
+  assign returning_v_li[i] = returning_wr_v_r[i] | (fifo_v_lo[2*i+1] & fifo_ready_li[2*i+1]);
 
 end
 
@@ -369,49 +406,50 @@ end
 for (i=0; i<mcl_tile_num_p; i=i+1)
 begin
   bsg_manycore_endpoint_standard #(
-    .x_cord_width_p   (x_cord_width_p   ),
-    .y_cord_width_p   (y_cord_width_p   ),
-    .fifo_els_p       (fifo_els_p       ),
-    .data_width_p     (data_width_p     ),
-    .addr_width_p     (addr_width_p     ),
-    .max_out_credits_p(max_out_credits_p),
-    .load_id_width_p  (load_id_width_p  )
+    .x_cord_width_p   (x_cord_width_p   )
+    ,.y_cord_width_p   (y_cord_width_p   )
+    ,.fifo_els_p       (fifo_els_p       )
+    ,.data_width_p     (data_width_p     )
+    ,.addr_width_p     (addr_width_p     )
+    ,.max_out_credits_p(max_out_credits_p)
+    ,.load_id_width_p  (load_id_width_p  )
   ) dram_endpoint_standard (
-    .clk_i               (clk_i                    ),
-    .reset_i             (reset_i                  ),
+    .clk_i               (clk_i                    )
+    ,.reset_i             (reset_i                  )
     
-    .link_sif_i          (link_sif_i               ),
-    .link_sif_o          (link_sif_o               ),
+    ,.link_sif_i          (link_sif_i               )
+    ,.link_sif_o          (link_sif_o               )
     
     // manycore packet -> fifo
-    .in_v_o              (endpoint_in_v_lo[i]      ),
-    .in_yumi_i           (endpoint_in_yumi_li[i]   ),
-    .in_data_o           (endpoint_in_data_lo[i]   ),
-    .in_mask_o           (endpoint_in_mask_lo[i]   ),
-    .in_addr_o           (endpoint_in_addr_lo[i]   ),
-    .in_we_o             (endpoint_in_we_lo[i]     ),
-    .in_src_x_cord_o     (in_src_x_cord_lo[i]      ),
-    .in_src_y_cord_o     (in_src_y_cord_lo[i]      ),
+    ,.in_v_o              (endpoint_in_v_lo[i]      )
+    ,.in_yumi_i           (endpoint_in_yumi_li[i]   )
+    ,.in_data_o           (endpoint_in_data_lo[i]   )
+    ,.in_mask_o           (endpoint_in_mask_lo[i]   )
+    ,.in_addr_o           (endpoint_in_addr_lo[i]   )
+    ,.in_we_o             (endpoint_in_we_lo[i]     )
+    ,.in_src_x_cord_o     (in_src_x_cord_lo[i]      )
+    ,.in_src_y_cord_o     (in_src_y_cord_lo[i]      )
     
     // fifo -> manycore packet
-    .out_v_i             (endpoint_out_v_li[i]     ),
-    .out_packet_i        (endpoint_out_packet_li[i]),
-    .out_ready_o         (endpoint_out_ready_lo[i] ),
+    ,.out_v_i             (endpoint_out_v_li[i]     )
+    ,.out_packet_i        (endpoint_out_packet_li[i])
+    ,.out_ready_o         (endpoint_out_ready_lo[i] )
     
     // manycore credit -> fifo
-    .returned_data_r_o   (returned_data_r_lo[i]    ),
-    .returned_load_id_r_o(returned_load_id_r_lo[i] ),
-    .returned_v_r_o      (returned_v_r_lo[i]       ),
-    .returned_fifo_full_o(returned_fifo_full_lo[i] ), // always 1'b1 if returned_fifo_p is not set
-    .returned_yumi_i     (returned_yumi_li[i]      ),
+    ,.returned_data_r_o   (returned_data_r_lo[i]    )
+    ,.returned_load_id_r_o(returned_load_id_r_lo[i] )
+    ,.returned_v_r_o      (returned_v_r_lo[i]       )
+    ,.returned_fifo_full_o(returned_fifo_full_lo[i] )
+     // always 1'b1 if returned_fifo_p is not set
+    ,.returned_yumi_i     (returned_yumi_li[i]      )
     
     // fifo -> manycore credit
-    .returning_data_i    (returning_data_li[i]     ),
-    .returning_v_i       (returning_v_li[i]        ),
+    ,.returning_data_i    (returning_data_li[i]     )
+    ,.returning_v_i       (returning_v_li[i]        )
     
-    .out_credits_o       (out_credits_lo[i]        ),
-    .my_x_i              (my_x_li[i]               ),
-    .my_y_i              (my_y_li[i]               )
+    ,.out_credits_o       (out_credits_lo[i]        )
+    ,.my_x_i              (my_x_li[i]               )
+    ,.my_y_i              (my_y_li[i]               )
   );
 end
 
@@ -422,20 +460,20 @@ wire [7:0] mon_addr_li;
 logic [31:0] mon_data_lo;
 
   axil_to_mem #(
-    .mem_addr_width_p      (8                 ),
-    .axil_base_addr_p      (axil_mon_base_addr),
-    .axil_base_addr_width_p(8                 )
+    .mem_addr_width_p      (8                 )
+    ,.axil_base_addr_p      (axil_mon_base_addr)
+    ,.axil_base_addr_width_p(8                 )
   ) axi_mem_rw (
-    .clk_i       (clk_i                               ),
-    .reset_i     (reset_i                             ),
-    .s_axil_bus_i(axil_demux_mosi_bus[mcl_link_num_lp]),
-    .s_axil_bus_o(axil_demux_miso_bus[mcl_link_num_lp]),
-    .addr_o      (mon_addr_li                         ),
-    .wen_o       (axil_mon_wen_lo                     ),
-    .data_o      (                                    ),
-    .ren_o       (axil_mon_ren_lo                     ),
-    .data_i      (mon_data_lo                         ),
-    .done        (                                    )
+    .clk_i       (clk_i                               )
+    ,.reset_i     (reset_i                             )
+    ,.s_axil_bus_i(axil_demux_mosi_bus[mcl_link_num_lp])
+    ,.s_axil_bus_o(axil_demux_miso_bus[mcl_link_num_lp])
+    ,.addr_o      (mon_addr_li                         )
+    ,.wen_o       (axil_mon_wen_lo                     )
+    ,.data_o      (                                    )
+    ,.ren_o       (axil_mon_ren_lo                     )
+    ,.data_i      (mon_data_lo                         )
+    ,.done        (                                    )
   );
 
 always_comb
