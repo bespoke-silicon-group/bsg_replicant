@@ -7,16 +7,15 @@ build: bsg_manycore_driver.o bsg_manycore_loader.o bsg_manycore_mem.o bsg_manyco
 	$(CC) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0  bsg_manycore_driver.o bsg_manycore_loader.o bsg_manycore_mem.o bsg_manycore_print.o	
 	
 install: build
-	mkdir /usr/lib/bsg_manycore
-	mv libbsg_manycore_runtime.so.1.0 /usr/lib/bsg_manycore/
-	ln -sf /usr/lib/bsg_manycore/libbsg_manycore_runtime.so.1.0 /usr/lib/bsg_manycore/libbsg_manycore_runtime.so.1
-	ln -sf /usr/lib/bsg_manycore/libbsg_manycore_runtime.so.1.0 /usr/lib/bsg_manycore/libbsg_manycore_runtime.so
+	mv libbsg_manycore_runtime.so.1.0 /usr/lib64/
+	ln -sf /usr/lib64/libbsg_manycore_runtime.so.1.0 /usr/lib64/libbsg_manycore_runtime.so.1
+	ln -sf /usr/lib64/libbsg_manycore_runtime.so.1.0 /usr/lib64/libbsg_manycore_runtime.so
 	cp -t /usr/include ../../cl_manycore/libraries/bsg_manycore_driver.h ../../cl_manycore/libraries/bsg_manycore_loader.h ../../cl_manycore/libraries/bsg_manycore_mem.h ../../cl_manycore/libraries/bsg_manycore_print.h 
 
 clean:
 	rm -f *.o
 
 uninstall: clean
-	sudo rm -rf /usr/lib/bsg_manycore /usr/include/bsg_manycore_*
+	sudo rm /usr/lib64/bsg_manycore_* /usr/include/bsg_manycore_*
 
 .PHONY: build install clean uninstall 
