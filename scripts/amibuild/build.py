@@ -32,7 +32,7 @@ ami_name = 'BSG AMI ' + timestamp
 base_ami = 'ami-0d0bd43b0b6c54f6f'
 # The instance type is used to build the image - it does not need to match the
 # final instance type (e.g. an F1 instance type)
-instance_type = 't3.small'
+instance_type = 't2.2xlarge'
 
 # Connect to AWS Servicesn
 ec2 = boto3.resource('ec2')
