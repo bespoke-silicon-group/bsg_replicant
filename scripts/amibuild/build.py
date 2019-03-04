@@ -79,8 +79,8 @@ instance = ec2.create_instances(
 print('Generated Instance: ' + instance.id);
 
 # This is necessary to give the instance some time to be registered
-time.sleep(10)
-
+instance.wait_until_running()
+print("Instance running. Waiting for instance to enter 'Stopped' state.")
 waiter.wait(
     InstanceIds=[
         instance.id,
@@ -90,7 +90,6 @@ waiter.wait(
         'MaxAttempts': 180
     }
 )
-
 print('Instance configuration completed')
 
 # Finally, generate the AMI 
