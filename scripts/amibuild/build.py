@@ -12,12 +12,12 @@ import os
 import inspect
 from functools import reduce
 from ReleaseRepoAction import ReleaseRepoAction
-from JsonFileAction import JsonFileAction
+from AfiAction import AfiAction
 
 parser = argparse.ArgumentParser(description='Build an AWS EC2 F1 FPGA Image')
 parser.add_argument('Release', action=ReleaseRepoAction, nargs=1,
                     help='BSG Release repository for this build as: repo_name@commit_id')
-parser.add_argument('-u', action=JsonFileAction, nargs=1,
+parser.add_argument('AmiId', action=AfiAction, nargs=1,
                     default={"FpgaImageGlobalId":"Not-Specified-During-AMI-Build"},
                     help='JSON File Path with "FpgaImageId" and "FpgaImageGlobalId" defined')
 parser.add_argument('-d', '--dryrun', action='store_const', const=True,
