@@ -3,6 +3,12 @@ CFLAGS = -std=c11
 CXXFLAGS = -std=c++11 -pthread -O0 
 CC = gcc
 
+help: 
+	@echo "How to run a Manycore program </dir/main.riscv> quick start guide"
+	@echo "    1) write a host program <host_program.c> as follows using the skeleton provided in run_manycore_program.c: "
+	@echo "    2) add a target <host_program> to this Makefile."
+	@echo "    3) run program with ./<host_program>"
+
 all: loopback_test read_write_test load_vector_test
 
 loopback_test: 
@@ -17,4 +23,4 @@ load_vector_test:
 clean:
 	rm -f *.o loopback_test read_write_test load_vector_test
 
-.PHONY: all clean
+.PHONY: all clean help
