@@ -464,7 +464,7 @@ bsg_manycore_wrapper #(
   ,.dmem_size_p(dmem_size_p)
   ,.icache_entries_p(icache_entries_p)
   ,.icache_tag_width_p(icache_tag_width_p)
-  ,.epa_addr_width_p(epa_addr_width_p)
+  ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
   ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
   ,.load_id_width_p(load_id_width_p)
   ,.num_cache_p(num_cache_p)
@@ -598,7 +598,7 @@ axil_to_mcl #(
   ,.link_sif_i        (loader_link_sif_lo)
   ,.link_sif_o        (loader_link_sif_li)
   ,.my_x_i            (num_tiles_x_p-1   )
-  ,.my_y_i            (num_tiles_y_p     )
+  ,.my_y_i            ('0)
 );
 
 //-----------------------------------------------

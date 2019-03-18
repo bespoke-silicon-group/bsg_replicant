@@ -161,7 +161,7 @@ file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/parameters.vh               $T
 
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_endpoint_standard.v         $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_endpoint.v                  $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_swap_ctrl.v                 $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_lock_ctrl.v                 $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_1hold.v                              $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_pkt_encode.v                $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_link_sif_tieoff.v           $TARGET_DIR

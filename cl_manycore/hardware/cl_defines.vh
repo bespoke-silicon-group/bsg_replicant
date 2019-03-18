@@ -8,6 +8,8 @@
 // FPGA flop init capability).  This will help with routing resources.
 `define FPGA_LESS_RST
 
+`define _bsg_data_end_addr 32
+
 // Uncomment to disable Virtual JTAG
 //`define DISABLE_VJTAG_DEBUG
 

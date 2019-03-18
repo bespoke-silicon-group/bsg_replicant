@@ -413,7 +413,7 @@ begin
     ,.addr_width_p     (addr_width_p     )
     ,.max_out_credits_p(max_out_credits_p)
     ,.load_id_width_p  (load_id_width_p  )
-  ) dram_endpoint_standard (
+  ) mcl_endpoint_standard (
     .clk_i               (clk_i                    )
     ,.reset_i             (reset_i                  )
     

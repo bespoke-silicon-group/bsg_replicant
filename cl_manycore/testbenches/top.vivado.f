@@ -16,6 +16,7 @@
 -define VIVADO_SIM
 
 -sourcelibext .v
+-sourcelibext .vh
 -sourcelibext .sv
 -sourcelibext .svh
 
@@ -134,7 +135,7 @@ ${BSG_MANYCORE_DIR}/v/vanilla_bean/hobbit.v
 
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint_standard.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint.v
-${BSG_MANYCORE_DIR}/v/bsg_manycore_swap_ctrl.v
+${BSG_MANYCORE_DIR}/v/bsg_manycore_lock_ctrl.v
 ${BSG_MANYCORE_DIR}/v/bsg_1hold.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_pkt_encode.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_link_sif_tieoff.v
@@ -179,4 +180,5 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
 
 # Testbench design files
-${CL_DIR}/testbenches/rtlsim/cl_tb.sv
+# Should be added in separate folder
+

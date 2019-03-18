@@ -35,7 +35,7 @@ void cosim_load_vector_test () {
 	}
 
 	/* store data in tile */
-	bool write = hb_mc_copy_to_epa(fd, 0, 0, DMEM_BASE >> 2, data, n);
+	bool write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, data, n);
 
 	if (!write) {
 		printf("writing data to tile (0, 0)'s DMEM failed.\n");
@@ -44,7 +44,7 @@ void cosim_load_vector_test () {
 
 	/* read back data */
 	uint32_t **buf = (uint32_t **) calloc(n, sizeof(uint32_t *));
-	bool read = hb_mc_copy_from_epa(fd, buf, 0, 0, DMEM_BASE >> 2, n); 
+	bool read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, n); 
 	
 	if (read == 1) {
 		printf("read packet: \n");

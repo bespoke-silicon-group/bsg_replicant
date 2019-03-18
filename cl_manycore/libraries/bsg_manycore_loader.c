@@ -194,7 +194,7 @@ void hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint
 
 static uint8_t *hb_mc_get_freeze_pkt (uint8_t x, uint8_t y) {
 	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
-	packet = hb_mc_get_pkt((1 << 13), 1, x, y, OP_REMOTE_STORE);
+	packet = hb_mc_get_pkt((1 << (EPA_BYTE_ADDR_WIDTH-3)), 1, x, y, OP_REMOTE_STORE);
 	return packet;
 }
 
@@ -215,23 +215,23 @@ void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 	}
 	if (pass_freeze)
 		printf("freeze finished.\n");
-	else
-		printf("freeze failed.\n");	
+else
+printf("freeze failed.\n");	
 }
 
 /*!
- * Returns an array of Manycore packets that should be used to unfreeze the needed tiles. Currently, on the tile at (X, Y) = (0, 0) is unfrozen.
- * @return array of Manycore packets.
- * */
+* Returns an array of Manycore packets that should be used to unfreeze the needed tiles. Currently, on the tile at (X, Y) = (0, 0) is unfrozen.
+* @return array of Manycore packets.
+* */
 
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y) {
-	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
-	packet = hb_mc_get_pkt((1 << 13), 0, x, y, OP_REMOTE_STORE);
-	return packet;
+uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
+packet = hb_mc_get_pkt((1 << (EPA_BYTE_ADDR_WIDTH-3)), 0, x, y, OP_REMOTE_STORE);
+return packet;
 }
 
 /*!
- *  * unfreezes (x,y).
+*  * unfreezes (x,y).
  *   * */
 void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 	if (!hb_mc_check_device(fd)) {
@@ -249,5 +249,99 @@ void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 		printf("unfreeze finished.\n");
 	else
 		printf("unfreeze failed.\n");	
+}
+
+/*!
+ * Returns an array of Manycore configuration packets that should be used to set the tiles' group X coordinate.
+ * @return array of Manycore packets.
+ * */
+static uint8_t *hb_mc_get_tile_group_origin_X_pkt (uint8_t x, uint8_t y, uint8_t x_cord) {
+	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
+	packet = hb_mc_get_pkt((1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_X, x_cord, x, y, OP_REMOTE_STORE);
+	return packet;
+}
+
+/*!
+ * Returns an array of Manycore configuration packets that should be used to set the tiles' group Y coordinate.
+ * @return array of Manycore packets.
+ * */
+static uint8_t *hb_mc_get_tile_group_origin_Y_pkt (uint8_t x, uint8_t y, uint8_t y_cord) {
+	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
+	packet = hb_mc_get_pkt((1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_Y, y_cord, x, y, OP_REMOTE_STORE);
+	return packet;
+}
+
+/*!
+ * Set tile group coordinate (x_cord, y_cord) to tile (x, y)
+ * */
+void hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord) {
+
+	if (!hb_mc_check_device(fd)) {
+    	printf("unfreeze(): warning - device was not initialized.\n");
+    	return;
+    }
+    	
+    printf("Set tile (%d, %d) with group origin (%d, %d).\n", x, y, x_cord, y_cord);
+    uint8_t *tile_group_origin_X_pkt = hb_mc_get_tile_group_origin_X_pkt(x, y, x_cord); 
+    uint8_t *tile_group_origin_Y_pkt = hb_mc_get_tile_group_origin_Y_pkt(x, y, y_cord); 
+    bool pass = true;
+    // set X cord 
+	if (!hb_mc_write_fifo(fd, 0, (int *) tile_group_origin_X_pkt)) {
+    	pass = false;
+    }
+    if (pass)
+    	printf("set tile group origin X finished.\n");
+    else
+    	printf("set tile group origin X failed.\n");
+	// set Y cord	
+	if (!hb_mc_write_fifo(fd, 0, (int *) tile_group_origin_Y_pkt)) {
+    	pass = false;
+    }
+    if (pass)
+    	printf("set tile group origin Y finished.\n");
+    else
+    	printf("set tile group origin Y failed.\n");	
+}
+
+/*!
+ * Returns an array of tag empty packets that should be used to flush the fifo in the mancycore_link_to_cache.
+ * @return array of tag init package.
+ * */
+static uint8_t *hb_mc_get_tag_pkt (uint8_t x, uint8_t y) {
+	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
+	packet = hb_mc_get_pkt((1 << (EPA_TAG_ADDR_WIDTH-3)), 0, x, y, OP_REMOTE_STORE);
+	return packet;
+}
+
+/*!
+ * Store cache tag 4 times, to initalize the fifo value in the manycore_link_to_cache.
+ *
+ * */
+void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
+
+	if (!hb_mc_check_device(fd)) {
+    	printf("init cache tag(): warning - device was not initialized.\n");
+    	return;
+    }
+    	
+    printf("init cache (%d, %d)'s tag.\n", x, y);
+    uint8_t *tag_pkt = hb_mc_get_tag_pkt(x, y); 
+    bool pass_init_tag = true;
+    if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
+    	pass_init_tag= false;
+    }
+	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
+    	pass_init_tag= false;
+    }
+	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
+    	pass_init_tag= false;
+    }
+	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
+    	pass_init_tag= false;
+    }
+    if (pass_init_tag)
+    	printf("init tag finished.\n");
+    else
+    	printf("init tag failed.\n");
 }
 

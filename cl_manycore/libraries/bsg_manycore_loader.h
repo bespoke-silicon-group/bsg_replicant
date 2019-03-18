@@ -27,7 +27,7 @@ static uint32_t DATA_BYTE = 4; /*! Number of bytes for encoding the data. */
 /* -------------------------- */
 // depend on the Manycore dimensions
 static uint8_t MY_X = 3; /*! X coordinate of the host */
-static uint8_t MY_Y = 4; /*! Y coordinate of the host */
+static uint8_t MY_Y = 0; /*! Y coordinate of the host */
 static uint32_t X_BYTE = 1; /*! Number of bytes for encoding x coordinates. */
 static uint32_t Y_BYTE = 1; /* Number of bytes for encoding y coordinates. */
 /* -------------------------- */
@@ -39,6 +39,15 @@ static uint8_t OP_BYTE = 1; /*! Number of bytes for the OP field. */
 
 static uint8_t TEXT = 1; 
 static uint8_t DATA = 0;
+
+static uint32_t EPA_BYTE_ADDR_WIDTH = 18;
+static uint32_t SRC_FREEZE = 0;
+static uint32_t SRC_UNFREEZE = 1;
+static uint32_t CSR_TGO_X = 1;
+static uint32_t CSR_TGO_Y = 2;
+
+static uint32_t EPA_TAG_ADDR_WIDTH = 30;
+static uint32_t NUM_CACHE = 4;
 
 static uint32_t NUM_ICACHE = 1024; /*! Number of icache entries. */
 
@@ -57,6 +66,8 @@ void hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
 void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
 void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
+void hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
+void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
 static uint32_t *hb_mc_get_byte (uint32_t *packet, uint8_t ofs);
 #endif 
 

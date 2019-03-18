@@ -21,7 +21,7 @@ package cl_manycore_pkg;
   parameter icache_entries_p = 1024;
   parameter icache_tag_width_p = 12;
   parameter dram_ch_addr_width_p = 27;
-  parameter epa_addr_width_p = 16;
+  parameter epa_byte_addr_width_p = 18;
 
   parameter num_cache_p = 4;
   parameter sets_p = 64;
