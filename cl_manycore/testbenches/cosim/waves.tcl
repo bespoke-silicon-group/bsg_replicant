@@ -23,7 +23,7 @@ if { [string length $curr_wave] == 0 } {
   }
 }
 
-run 2000 us 
+run 20000 us 
 if {[info exists ::env(DEBUG)] eq 0} {
     quit
 }

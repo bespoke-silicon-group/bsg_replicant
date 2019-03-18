@@ -13,12 +13,12 @@
 #include <stdbool.h>
 #include <limits.h>
 
+#ifndef COSIM
+bool hb_mc_init_host (uint8_t *fd);
 static char *hb_mc_mmap_ocl (uint8_t fd);
+#endif
 static void hb_mc_write (uint8_t fd, uint32_t ofs, uint32_t val, uint8_t reg_size);
 static uint32_t hb_mc_read (uint8_t fd, uint32_t ofs, uint8_t reg_size);
-static bool hb_mc_check_fd (uint8_t fd);
-bool hb_mc_init_host (char *dev_path, uint8_t *fd);
-void hb_mc_close_host (uint8_t fd); 
 bool hb_mc_check_dim (uint8_t fd);      
 bool hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val);
 uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val);
@@ -29,8 +29,6 @@ uint32_t hb_mc_get_recv_vacancy (uint8_t fd);
 bool hb_mc_can_read (uint8_t fd, uint32_t size);
 bool hb_mc_check_device (uint8_t fd);
 
-extern char *MANYCORE_DEVICE_PATH;
- 
 static uint8_t NUM_X = 4; /*! Number of columns of tiles. */
 
 extern uint8_t NUM_Y;  /*! Number of rows of tiles */
@@ -53,7 +51,6 @@ static const uint8_t NUM_FIFO = 2; /* Make sure to change HOST_RECV_VACANCY, HOS
 
 /* fd[i] = [fd][char *ocl_base] of ith device */
 static uint8_t num_dev = 0;
-static uint32_t fd_table[8] = {-1, -1, -1, -1, -1, -1, -1, -1};	
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};	
 
 static const uint32_t fifo[10][8] = {{0xC, 0x10, 0x14 , 0x1C, 0x20, 0x24, 0x0, 0x4} 

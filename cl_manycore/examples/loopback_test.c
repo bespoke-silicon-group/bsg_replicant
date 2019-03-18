@@ -17,7 +17,7 @@ int main () {
 	printf("Running the Manycore-Cache-Loopback test on a 4x4.\n\n");
 
 	uint8_t fd;
-	if (!hb_mc_init_host(MANYCORE_DEVICE_PATH, &fd)) {
+	if (!hb_mc_init_host(&fd)) {
 		printf("failed to initialize host.\n");
 		return 0;
 	}
@@ -32,7 +32,8 @@ int main () {
 	uint8_t x = 0, y = 0;
 
         hb_mc_freeze(fd, 0, 0);
-	
+
+	printf("file to be loaded is %s\n", getenv("MAIN_LOOPBACK"));
 	hb_mc_load_binary(fd, getenv("MAIN_LOOPBACK"), &x, &y, 1);
 
   	hb_mc_unfreeze(fd, 0, 0);

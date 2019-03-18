@@ -11,26 +11,21 @@
 
 #ifndef COSIM
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
+	#include <fpga_pci.h>
+	#include <fpga_mgmt.h>
 #else
 	#include "fpga_pci_sv.h"
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
 #endif
 
-char *MANYCORE_DEVICE_PATH = "/dev/bsg_manycore_kernel_driver";
-
 uint8_t NUM_Y = 4;
-
-
-static bool hb_mc_check_fd (uint8_t fd) {
-	return (fd_table[fd] != -1);
-}
 
 bool hb_mc_check_device (uint8_t fd) {
 	#ifdef COSIM
 		return true;
 	#else
-		return (hb_mc_check_fd(fd) && ocl_table[fd] != NULL);
+		return (ocl_table[fd] != NULL);
 	#endif
 }
 
@@ -64,28 +59,21 @@ static uint32_t hb_mc_read (uint8_t fd, uint32_t ofs, uint8_t reg_size) {
 	#endif
 }
 
+#ifndef COSIM
 /*
  * mmap's the OCL bar of the device.
  * */
 static char *hb_mc_mmap_ocl (uint8_t fd) {
-	char *addr = (char *) mmap(NULL, 0x4000, PROT_READ | PROT_WRITE, MAP_SHARED, fd_table[fd], 0); 
-	if (addr == MAP_FAILED) {
-		printf("mmap_ocl(): mmap failed.\n");
-		return 0;
-	}
-	ocl_table[fd] = addr;
-	return addr;
+	int slot_id = 0, pf_id = FPGA_APP_PF, write_combine = 0, bar_id = APP_PF_BAR0;
+	pci_bar_handle_t handle;
+	fpga_pci_attach(slot_id, pf_id, bar_id, write_combine, &handle);
+	fpga_pci_get_address(handle, 0, 0x4, (void **) &ocl_table[fd]);	
+	printf("map address is %p\n", ocl_table[fd]);
+	return ocl_table[fd];
 } 
 
 /* opens the device file and mmap's it. */
-bool hb_mc_init_host (char *dev_path, uint8_t *fd) {
-	int dev_fd = open(dev_path, O_RDWR);
-	if (dev_fd == -1) {
-		printf("Unable to open device.\n");
-		return false; 
-	}
-
-	fd_table[num_dev] = dev_fd;
+bool hb_mc_init_host (uint8_t *fd) {
 	*fd = num_dev;
 	char *ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
@@ -97,24 +85,14 @@ bool hb_mc_init_host (char *dev_path, uint8_t *fd) {
 	num_dev++;
 	return true; 
 }
-
-/*
- * unmaps the ocl BAR and closes the file. 
- * */
-void hb_mc_close_host (uint8_t fd) {
-	if (!hb_mc_check_device(fd)) {
-		printf("close_host(): warning - device was never initialized.\n");
-	}
-	munmap(ocl_table[fd], 0x4000);
-	close(fd_table[fd]);
-}
+#endif
 
 /*!
  * checks if the dimensions of the Manycore matches with what is expected.
  * */
 bool hb_mc_check_dim (uint8_t fd) {
 	if (!hb_mc_check_device(fd)) {
-		printf("check_dim(): device not initialized.\n");
+		printf("hb_mc_check_dim(): device not initialized.\n");
 		return false;
 	}
 	uint32_t num_x = hb_mc_read(fd, MANYCORE_NUM_X, 32);
@@ -255,5 +233,3 @@ bool hb_mc_can_read (uint8_t fd, uint32_t size) {
 	}	
 	return (hb_mc_get_recv_vacancy(fd) >= size);
 }
-
-

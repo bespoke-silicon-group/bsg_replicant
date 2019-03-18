@@ -18,7 +18,7 @@ int main () {
 	printf("Running the Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
 
 	uint8_t fd;
-	if (!hb_mc_init_host(MANYCORE_DEVICE_PATH, &fd)) {
+	if (!hb_mc_init_host(&fd)) {
 		printf("failed to initialize host.\n");
 		return 0;
 	}
