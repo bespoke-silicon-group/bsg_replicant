@@ -9,4 +9,4 @@ git checkout $release_hash
 
 sudo chown -R centos:centos /home/centos/$release_repo
 
-sudo su - centos -c "make -C /home/centos/$release_repo -j4 install" > amibuild.log
+sudo su - centos -c "make -C /home/centos/$release_repo -f Makefile.amibuild -j4 install" > amibuild.log
