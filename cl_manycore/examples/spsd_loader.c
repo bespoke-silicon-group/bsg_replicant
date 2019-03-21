@@ -34,7 +34,7 @@ static void option_usage(const char *opname, const char *ophelp)
     base_usage(opname, ophelp);
 }
 
-static int x = 0, y = 1;
+static uint8_t x = 0, y = 1;
 static void usage()
 {
     pr_usage("usage: %s [OPTIONS] RISCV-EXECUTABLE\n", execname);
