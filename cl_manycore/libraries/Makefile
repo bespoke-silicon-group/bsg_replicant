@@ -12,7 +12,7 @@ install: build
 	mv libbsg_manycore_runtime.so.1.0 /usr/lib64/
 	ln -sf /usr/lib64/libbsg_manycore_runtime.so.1.0 /usr/lib64/libbsg_manycore_runtime.so.1
 	ln -sf /usr/lib64/libbsg_manycore_runtime.so.1.0 /usr/lib64/libbsg_manycore_runtime.so
-	cp -t /usr/include ../../cl_manycore/libraries/bsg_manycore_driver.h ../../cl_manycore/libraries/bsg_manycore_loader.h ../../cl_manycore/libraries/bsg_manycore_mem.h ../../cl_manycore/libraries/bsg_manycore_print.h 
+	cp -t /usr/include ../../cl_manycore/libraries/bsg_manycore_driver.h ../../cl_manycore/libraries/bsg_manycore_loader.h ../../cl_manycore/libraries/bsg_manycore_mem.h ../../cl_manycore/libraries/bsg_manycore_print.h ../../cl_manycore/libraries/bsg_manycore_packet.h 
 
 clean:
 	rm -f *.o
