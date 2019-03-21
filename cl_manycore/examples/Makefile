@@ -1,7 +1,10 @@
 #INCLUDES = -I../drivers/ -I../libraries/
-CFLAGS = -std=c11
-CXXFLAGS = -std=c++11 -pthread -O0 
-CC = gcc
+CFLAGS  := -std=c11
+CXXFLAGS:= -std=c++11 -pthread -O0
+LDFLAGS := -lbsg_manycore_runtime
+TARGETS := loopback_test read_write_test load_vector_test
+
+all: $(TARGETS)
 
 help: 
 	@echo "How to run a Manycore program </dir/main.riscv> quick start guide"
@@ -9,18 +12,7 @@ help:
 	@echo "    2) add a target <host_program> to this Makefile."
 	@echo "    3) run program with ./<host_program>"
 
-all: loopback_test read_write_test load_vector_test
-
-loopback_test: 
-	$(CC) $(CFLAGS) -L/usr/lib/bsg_manycore -lbsg_manycore_runtime loopback_test.c -o loopback_test 
-
-read_write_test: 
-	$(CC) $(CFLAGS) -L/usr/lib/bsg_manycore -lbsg_manycore_runtime read_write_test.c -o read_write_test
-
-load_vector_test: 
-	$(CC) $(CFLAGS) -L/usr/lib/bsg_manycore -lbsg_manycore_runtime load_vector_test.c -o load_vector_test
-
 clean:
-	rm -f *.o loopback_test read_write_test load_vector_test
+	rm -f *.o $(TARGETS)
 
 .PHONY: all clean help
