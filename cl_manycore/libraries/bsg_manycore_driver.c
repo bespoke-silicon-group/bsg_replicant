@@ -11,21 +11,31 @@
 
 #ifndef COSIM
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
+	#include <bsg_manycore_errno.h> 
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
 	#include "fpga_pci_sv.h"
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
+ 	#include "bsg_manycore_errno.h"
 #endif
 
 uint8_t NUM_Y = 4;
 
-bool hb_mc_check_device (uint8_t fd) {
+/*! 
+ * Checks if corresponding FPGA has been memory mapped. 
+ * @param fd userspace file descriptor
+ * @return HB_MC_SUCCESS if device has been mapped and HB_MC_FAIL otherwise.
+ * */
+int hb_mc_check_device (uint8_t fd) {
 	#ifdef COSIM
-		return true;
+		return HB_MC_SUCCESS;
 	#else
-		return (ocl_table[fd] != NULL);
+		if (ocl_table[fd] != NULL)
+			return HB_MC_SUCCESS;
+		else
+			return HB_MC_FAIL;
 	#endif
 }
 
@@ -72,47 +82,56 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	return ocl_table[fd];
 } 
 
-/* opens the device file and mmap's it. */
-bool hb_mc_init_host (uint8_t *fd) {
+/*! 
+ * Initializes the FPGA at slot 0. 
+ * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
+ * @param fd pointer to which the userspace file descriptor is assigned. 
+ * @return HB_MC_SUCCESS if device has been initialized and HB_MC_FAIL otherwise.
+ * */
+int hb_mc_init_host (uint8_t *fd) {
 	*fd = num_dev;
 	char *ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
 		printf("hb_mc_init_host(): unable to mmap device.\n");
-		return false;
+		return HB_MC_FAIL;
 	}	
 	
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
-	return true; 
+	return HB_MC_SUCCESS; 
 }
 #endif
 
 /*!
- * checks if the dimensions of the Manycore matches with what is expected.
+ * Checks if the dimensions of the Manycore matches with what is expected.
+ * @return HB_MC_SUCCESS if its able to verify that the device has the expected dimensions and HB_MC_FAIL otherwise.
  * */
-bool hb_mc_check_dim (uint8_t fd) {
-	if (!hb_mc_check_device(fd)) {
+int hb_mc_check_dim (uint8_t fd) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("hb_mc_check_dim(): device not initialized.\n");
-		return false;
+		return HB_MC_FAIL;
 	}
 	uint32_t num_x = hb_mc_read(fd, MANYCORE_NUM_X, 32);
 	uint32_t num_y = hb_mc_read(fd, MANYCORE_NUM_Y, 32);
-	return (NUM_X == num_y) && (NUM_Y == num_y);
+	if ((NUM_X == num_y) && (NUM_Y == num_y))
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;
 }
 
 /*
- * writes 128B to the nth fifo
- * returns true on success and false on failure.
+ * Writes 128B to the nth fifo
+ * @return HB_MC_SUCCESS  on success and HB_MC_FAIL on failure.
  * */
-bool hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
+int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 	if (n >= NUM_FIFO) {
 		printf("write_fifo(): invalid fifo.\n");
-		return false;
+		return HB_MC_FAIL;
 	}
 
-	else if (!hb_mc_check_device(fd)) {
+	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("write_fifo(): device not initialized.\n");
-		return false;
+		return HB_MC_FAIL;
 	}	
 	
 	uint16_t init_vacancy = hb_mc_read(fd, fifo[n][FIFO_VACANCY], 16);
@@ -123,7 +142,7 @@ bool hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 
 	if (init_vacancy < 4) {
 		printf("not enough space in fifo.\n");
-		return false;
+		return HB_MC_FAIL;
 	}
 	printf("write_fifo(): init_vacancy = %u\n", init_vacancy);
 	for (int i = 0; i < 4; i++) {
@@ -133,7 +152,7 @@ bool hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 	while (hb_mc_read(fd, fifo[n][FIFO_VACANCY], 16) != init_vacancy) {
 		hb_mc_write(fd, fifo[n][FIFO_TRANSMIT_LENGTH], 16, 16);
 	}
-	return true;
+	return HB_MC_SUCCESS;
 }
 
 /*
@@ -146,7 +165,7 @@ uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 		return NULL;
 	}
 
-	else if (!hb_mc_check_device(fd)) {
+	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("read_fifo(): device not initialized.\n");
 		return NULL;
 	}		
@@ -180,7 +199,7 @@ void hb_mc_clear_int (uint8_t fd, uint8_t n) {
 		return;
 	}
 
-	else if (!hb_mc_check_device(fd)) {
+	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("clear_int(): device not initialized.\n");
 		return;
 	}		
@@ -192,7 +211,7 @@ void hb_mc_clear_int (uint8_t fd, uint8_t n) {
  * returns 0 if device is unitialized
  * */
 uint32_t hb_mc_get_host_credits (uint8_t fd) {
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("get_host_credits(): device not initialized.\n");
 		return 0;
 	}		
@@ -201,22 +220,26 @@ uint32_t hb_mc_get_host_credits (uint8_t fd) {
 }
 
 /*!
- * returns true if device is not initialized.
+ * Checks that all host requests have been completed.
+ * @return HB_MC_SUCCESS if all requests have been completed and HB_MC_FAIL otherwise.
  * */
-bool hb_mc_all_host_req_complete(uint8_t fd) {
-	if (!hb_mc_check_device(fd)) {
+int hb_mc_all_host_req_complete(uint8_t fd) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("get_host_req_complete(): device not initialized.\n");
-		return true;
+		return HB_MC_FAIL;
 	}		
+	if (hb_mc_get_host_credits(fd) == MAX_CREDITS)
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;
 
-	return (hb_mc_get_host_credits(fd) == MAX_CREDITS);
-}
+}		
 
 /*
  * returns 0 if device is unitialized
  * */
 uint32_t hb_mc_get_recv_vacancy (uint8_t fd) {
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("get_recv_vacancy(): device not initialized.\n");
 		return 0;
 	}	
@@ -224,12 +247,15 @@ uint32_t hb_mc_get_recv_vacancy (uint8_t fd) {
 }
 
 /*!
- * returns false if device is not initialized.
+ * @return HB_MC_SUCCESS if the HOST_RECV_VACANCY is at least of value SIZE and HB_MC_FAIL otherwise.
  * */
-bool hb_mc_can_read (uint8_t fd, uint32_t size) {
-	if (!hb_mc_check_device(fd)) {
+int hb_mc_can_read (uint8_t fd, uint32_t size) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("can_read(): device not initialized.\n");
-		return false;
+		return HB_MC_FAIL;
 	}	
-	return (hb_mc_get_recv_vacancy(fd) >= size);
+	if (hb_mc_get_recv_vacancy(fd) >= size)
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;
 }

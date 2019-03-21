@@ -10,24 +10,23 @@
 
 
 #include <stdint.h>
-#include <stdbool.h>
 #include <limits.h>
 
 #ifndef COSIM
-bool hb_mc_init_host (uint8_t *fd);
+int hb_mc_init_host (uint8_t *fd);
 static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
 static void hb_mc_write (uint8_t fd, uint32_t ofs, uint32_t val, uint8_t reg_size);
 static uint32_t hb_mc_read (uint8_t fd, uint32_t ofs, uint8_t reg_size);
-bool hb_mc_check_dim (uint8_t fd);      
-bool hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val);
+int hb_mc_check_dim (uint8_t fd);      
+int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val);
 uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val);
 void hb_mc_clear_int (uint8_t fd, uint8_t n);
 uint32_t hb_mc_get_host_credits (uint8_t fd);
-bool hb_mc_all_host_req_complete(uint8_t fd);
+int hb_mc_all_host_req_complete(uint8_t fd);
 uint32_t hb_mc_get_recv_vacancy (uint8_t fd);
-bool hb_mc_can_read (uint8_t fd, uint32_t size);
-bool hb_mc_check_device (uint8_t fd);
+int hb_mc_can_read (uint8_t fd, uint32_t size);
+int hb_mc_check_device (uint8_t fd);
 
 static uint8_t NUM_X = 4; /*! Number of columns of tiles. */
 
