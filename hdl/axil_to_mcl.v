@@ -87,17 +87,24 @@ localparam mux_bus_num_lp = (mcl_link_num_lp+1);
 bsg_axil_mosi_busN_s axil_mosi_busN;
 bsg_axil_miso_busN_s axil_miso_busN;
 
-
-//-------------------------------------------------
-// TODO: find a way to avoid this list
-// crossbar, support 1 to [1:16] now
-localparam BASE_ADDRESS_LIST = {
+localparam base_address_list_lp = (mux_bus_num_lp*64)'({
   64'h00000000_00000F00, 64'h00000000_00000E00, 64'h00000000_00000D00 ,64'h00000000_00000C00,
   64'h00000000_00000B00, 64'h00000000_00000A00, 64'h00000000_00000900 ,64'h00000000_00000800,
   64'h00000000_00000700, 64'h00000000_00000600, 64'h00000000_00000500, 64'h00000000_00000400, 
-  64'h00000000_00000300, 64'h00000000_00000200, 64'h00000000_00000100, 64'h00000000_00000000};
+  64'h00000000_00000300, 64'h00000000_00000200, 64'h00000000_00000100, 64'h00000000_00000000});
+
+// synopsys translate_off
+ always_ff @(negedge clk_i)
+ begin
+	 assert (mux_bus_num_lp <= 16)
+	 else begin
+		 $error("## axil mux master slot is larger than 16!");
+		 $finish();
+	 end
+ end
+
 localparam C_NUM_MASTER_SLOTS = mux_bus_num_lp;
-localparam C_M_AXI_BASE_ADDR  = BASE_ADDRESS_LIST[64*C_NUM_MASTER_SLOTS-1:0];
+localparam C_M_AXI_BASE_ADDR  = base_address_list_lp;
 localparam C_M_AXI_ADDR_WIDTH         = {C_NUM_MASTER_SLOTS{32'h0000_0008}};
 localparam C_M_AXI_WRITE_CONNECTIVITY = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
 localparam C_M_AXI_READ_CONNECTIVITY  = {C_NUM_MASTER_SLOTS{32'h0000_0001}};
@@ -234,9 +241,7 @@ logic [mux_bus_num_lp-1:0][axil_miso_bus_width_lp-1:0] axil_demux_miso_bus;
 
 logic [mcl_link_num_lp-1:0][$clog2(max_out_credits_p+1)-1:0] rcv_fifo_vacancy_lo;
 
-genvar i;
-// TODO: find a better way to read field out of the structure
-for (i=0; i<mux_bus_num_lp; i=i+1)
+for (genvar i=0; i<mux_bus_num_lp; i=i+1)
 begin
   always_comb
   begin
@@ -276,7 +281,7 @@ begin
   logic [mcl_link_num_lp-1:0][fifo_width_lp-1:0] fifo_data_lo;
   logic [mcl_link_num_lp-1:0]                    fifo_ready_li;
 
-for (i=0; i<mcl_link_num_lp; i=i+1)
+for (genvar i=0; i<mcl_link_num_lp; i=i+1)
 begin
   s_axil_mcl_adapter #(
     .mcl_width_p      (fifo_width_lp    )
@@ -336,14 +341,15 @@ begin
 		returning_wr_v_r <= endpoint_in_v_lo & endpoint_in_we_lo;
 end
 
-  `declare_bsg_mcl_packet_s;
-  bsg_mcl_packet_s        [mcl_tile_num_p-1:0] fifo_req_cast;
-  bsg_mcl_packet_s        [mcl_tile_num_p-1:0] mc_req_cast;
-  bsg_mcl_return_packet_s [mcl_tile_num_p-1:0] fifo_res_cast;
-  bsg_mcl_return_packet_s [mcl_tile_num_p-1:0] mc_res_cast;
+  `declare_bsg_mcl_request_s;
+  `declare_bsg_mcl_response_s;
+  bsg_mcl_request_s [mcl_tile_num_p-1:0] fifo_req_cast;
+  bsg_mcl_request_s [mcl_tile_num_p-1:0] mc_req_cast;
+  bsg_mcl_response_s [mcl_tile_num_p-1:0] fifo_res_cast;
+  bsg_mcl_response_s [mcl_tile_num_p-1:0] mc_res_cast;
 
 
-  for (i=0; i<mcl_tile_num_p; i=i+1)
+  for (genvar i=0; i<mcl_tile_num_p; i=i+1)
   begin
     // fifo request to manycore
     assign endpoint_out_v_li[i] = fifo_v_lo[2*i];
@@ -403,7 +409,7 @@ end
 end
 
 
-for (i=0; i<mcl_tile_num_p; i=i+1)
+for (genvar i=0; i<mcl_tile_num_p; i=i+1)
 begin
   bsg_manycore_endpoint_standard #(
     .x_cord_width_p   (x_cord_width_p   )
@@ -454,7 +460,7 @@ begin
 end
 
 
-localparam axil_mon_base_addr = BASE_ADDRESS_LIST[64*mcl_link_num_lp+:64];
+localparam axil_mon_base_addr = base_address_list_lp[64*mcl_link_num_lp+:64];
 wire axil_mon_wen_lo, axil_mon_ren_lo;
 wire [7:0] mon_addr_li;
 logic [31:0] mon_data_lo;
