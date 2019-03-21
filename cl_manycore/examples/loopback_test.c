@@ -29,14 +29,15 @@ int main () {
 //		return 0;
 //	}
 
-	uint8_t x = 0, y = 0;
+	uint8_t x = 0, y = 1;
 
-        hb_mc_freeze(fd, 0, 0);
+        hb_mc_freeze(fd, 0, 1);
 
+	hb_mc_set_tile_group_origin(fd, 0, 1, 0, 1);
 	printf("file to be loaded is %s\n", getenv("MAIN_LOOPBACK"));
 	hb_mc_load_binary(fd, getenv("MAIN_LOOPBACK"), &x, &y, 1);
 
-  	hb_mc_unfreeze(fd, 0, 0);
+  	hb_mc_unfreeze(fd, 0,1);
 
 	printf("Checking receive packet...\n");
 	usleep(100); /* 100 us */	
