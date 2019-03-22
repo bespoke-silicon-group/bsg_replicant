@@ -30,4 +30,25 @@
        logic [7:0] x_cord;                                  \
   } bsg_mcl_request_s
 
+
+package cl_mcl_pkg;
+
+  // the base addresses of axil crossbar should be aligned to its subspace, whose size is the power of 2
+  parameter axil_m_fifo_base_addr_p = 64'h00000000_00000000;
+  parameter axil_s_fifo_base_addr_p = 64'h00000000_00001000;
+  parameter axil_mon_base_addr_p = 64'h00000000_00002000;
+
+  typedef enum logic [2:0] {
+    HOST_RCV_VACANCY_MC_REQ='h0
+    ,HOST_RCV_VACANCY_MC_RES='h1
+    ,HOST_REQ_CREDITS='h2
+    ,MC_NUM_X='h3
+    ,MC_NUM_Y='h4
+    ,RESERVED5='h5
+    ,RESERVED6='h6
+    ,RESERVED7='h7
+  } mcl_mon_e;
+
+endpackage : cl_mcl_pkg
+
 `endif // AXIL_TO_MCL_VH

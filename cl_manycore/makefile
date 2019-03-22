@@ -18,16 +18,21 @@ all: $(SIM_TARGETS) $(BUILD_TARGETS)
 
 .PHONY: build
 
-build:
+build: rom
+	mv ./software/*.rom ../hdl/
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR) BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)
 
 $(SW_TARGETS):
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 
-$(SIM_TARGETS):
+$(SIM_TARGETS): rom
 	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
+
+rom:
+	cd ./software && $(CXX) rom_gen.h rom_gen.cpp -o rom_gen && ./rom_gen
 
 clean:
 	make -C testbenches clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 	make -C build clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR) BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)
 	make -C software clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG)
+	rm -f ../hdl/*.rom

@@ -6,9 +6,16 @@
 #endif
 
 void hb_mc_print_hex (uint8_t *p) {
-	for (int i = 0; i < 16; i++) { 
+	for (int i = 0; i < 16; i++) {
 		printf("%x ", (p[15-i] & 0xFF));
 	}
 	printf("\n");
+}
+
+void hb_mc_print_data (uint8_t *p) {
+    for (int i = 6; i < 6+4; i++) {
+        printf("%02x ", (p[15-i] & 0xFF));
+    }
+    printf("\n");
 }
 

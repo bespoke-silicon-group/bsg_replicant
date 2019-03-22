@@ -24,5 +24,5 @@ compile: $(SIM_ROOT)
 	cd $(SIM_ROOT) && xelab -m64 $(XELOG_OPTS) --initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini --timescale 1ps/1ps --debug typical --relax --mt 8 -L axis_register_slice_v1_1_17 -L fifo_generator_v13_2_2 -L axis_data_fifo_v1_1_18 -L axis_dwidth_converter_v1_1_16 -L axi_fifo_mm_s_v4_1_14 -L axi_clock_converter_v2_1_11 -L axis_infrastructure_v1_1_0 -L generic_baseblocks_v2_1_0 -L axi_infrastructure_v1_1_0 -L axi_register_slice_v2_1_15 -L axi_register_slice_v2_1_12 -L fifo_generator_v13_2_1 -L fifo_generator_v13_1_4 -L axi_data_fifo_v2_1_11 -L axi_crossbar_v2_1_13 -L xil_defaultlib -L unisims_ver -L unimacro_ver -L secureip -L xpm -sv_lib dpi --snapshot tb xil_defaultlib.tb xil_defaultlib.glbl xil_defaultlib.$(RTL_TB_MODULE) 
 
 sim:
-	cd $(SIM_ROOT) && xsim $(XSIM_OPTS) -R -log $(RTL_TB_MODULE).log -tclbatch $(SCRIPTS_DIR)/waves.tcl tb
+	cd $(SIM_ROOT) && cp $(CL_DIR)/software/*.rom ./ && xsim $(XSIM_OPTS) -R -log $(RTL_TB_MODULE).log -tclbatch $(SCRIPTS_DIR)/waves.tcl tb
 

@@ -36,6 +36,8 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 
 # List your design files below. Include any .inc files, but do NOT include
 # AWS source files.
+file copy -force $COMMON_DIR/bsg_bladerunner.rom                              $TARGET_DIR
+file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
 file copy -force $COMMON_DIR/axil_to_mcl.vh                                   $TARGET_DIR
 file copy -force $COMMON_DIR/axil_to_mcl.v                                    $TARGET_DIR
@@ -78,6 +80,7 @@ file copy -force $UNUSED_TEMPLATES_DIR/unused_pcim_template.inc               $T
 file copy -force $UNUSED_TEMPLATES_DIR/unused_sh_bar1_template.inc            $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_flr_template.inc                $TARGET_DIR
 
+file copy -force $BSG_IP_CORES_DIR/testing/bsg_fpu/common/data_rom.v          $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v                      $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_stitch.v                  $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v         $TARGET_DIR
