@@ -12,13 +12,14 @@
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_print.h>
+#include <bsg_manycore_errno.h>
 
 int main () {
 	
 	printf("Running the Load Vector Test on the Manycore with 4 x 4 dimensions.\n\n");
 
 	uint8_t fd;
-	if (!hb_mc_init_host(&fd)) {
+	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
 		printf("failed to initialize host.\n");
 		return 0;
 	}
@@ -32,18 +33,18 @@ int main () {
 	}
 
 	/* store data in tile */
-	bool write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, data, n);
+	int write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, data, n);
 
-	if (!write) {
+	if (write != HB_MC_SUCCESS) {
 		printf("writing data to tile (0, 1)'s DMEM failed.\n");
 		return 0;
 	}
 
 	/* read back data */
 	uint32_t **buf = (uint32_t **) calloc(n, sizeof(uint32_t *));
-	bool read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, n); 
+	int read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, n); 
 	
-	if (read == 1) {
+	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
 		for (int i = 0; i < n; i++)
 			hb_mc_print_hex((uint8_t *) buf[i]);

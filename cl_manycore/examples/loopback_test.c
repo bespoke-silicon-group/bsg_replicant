@@ -11,13 +11,14 @@
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_print.h>
+#include <bsg_manycore_errno.h>
 
 int main () {
 	
 	printf("Running the Manycore-Cache-Loopback test on a 4x4.\n\n");
 
 	uint8_t fd;
-	if (!hb_mc_init_host(&fd)) {
+	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
 		printf("failed to initialize host.\n");
 		return 0;
 	}

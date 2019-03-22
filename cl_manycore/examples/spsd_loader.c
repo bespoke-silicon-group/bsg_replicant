@@ -13,6 +13,7 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_print.h>
 #include <bsg_manycore_packet.h>
+#include <bsg_manycore_errno.h>
 
 #define pr_usage(fmt, ...)			\
     fprintf(stderr, fmt, ##__VA_ARGS__)
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
     uint8_t fd;
     char *path_to_manycore_program = argv[0]; /* Put path to the riscv file here */
 
-    if (!hb_mc_init_host(&fd)) {
+    if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
 	printf("failed to initialize host.\n");
 	return 0;
     }

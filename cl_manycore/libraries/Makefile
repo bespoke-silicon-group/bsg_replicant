@@ -9,6 +9,7 @@ HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_mem.h
 HEADERS += bsg_manycore_print.h
 HEADERS += bsg_manycore_packet.h
+HEADERS += bsg_manycore_errno.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o

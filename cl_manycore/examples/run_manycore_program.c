@@ -11,13 +11,13 @@
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_print.h>
+#include <bsg_manycore_errno.h>
 
 int main () {
 
-	char *manycore_program = "";
-	
+	char *manycore_program = "";	
 	uint8_t fd;
-	if (!hb_mc_init_host(&fd)) {
+	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
 		printf("failed to initialize host.\n");
 		return 0;
 	}
