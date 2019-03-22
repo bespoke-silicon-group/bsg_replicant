@@ -1,9 +1,11 @@
 #ifndef COSIM
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
 	#include <bsg_manycore_loader.h>
+	#include <bsg_manycore_errno.h>
 #else
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_loader.h"
+	#include "bsg_manycore_errno.h"
 #endif
 
 uint32_t DMEM_BASE = 0x1000;
@@ -11,23 +13,23 @@ uint32_t DMEM_BASE = 0x1000;
 /*!
  *  * writes the binary's instructions into (x,y)'s icache.
  *   * */
-static bool hb_mc_load_packets(uint8_t fd, uint8_t **pkts, uint32_t num_pkts) {
-	bool pass = true;
+static int hb_mc_load_packets(uint8_t fd, uint8_t **pkts, uint32_t num_pkts) {
 
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("load_packets(): warning - device was never initialized.\n");
-		return false;
+		return HB_MC_FAIL;
 	}
 	
+	int status = HB_MC_SUCCESS;
 	for (int i = 0; i < num_pkts; i++) {
-		if (!hb_mc_write_fifo(fd, 0, (uint32_t *) pkts[i])) {
-			pass = false;
+		if (hb_mc_write_fifo(fd, 0, (uint32_t *) pkts[i]) != HB_MC_SUCCESS) {
+			status = HB_MC_FAIL;
 			break;
 		}
 	}
-	if (!pass)
+	if (status != HB_MC_SUCCESS)
 		printf("load_packets(): load failed.\n");
-	return pass;
+	return status;
 }
 
 /*!
@@ -163,7 +165,7 @@ static void hb_mc_parse_elf (char *filename, uint8_t x, uint8_t y, uint32_t *num
 }
 
 void hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size) {
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("hb_mc_load_binary(): warning - device was not initialized.\n");
 		return;
 	}
@@ -202,7 +204,7 @@ static uint8_t *hb_mc_get_freeze_pkt (uint8_t x, uint8_t y) {
  *  * freezes (x,y).
  *   * */
 void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("freeze(): warning - device was not initialized.\n");
 		return;
 	}
@@ -210,13 +212,13 @@ void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 	printf("Freezing tile (%d, %d).\n", x, y);
 	uint8_t *freeze_pkt = hb_mc_get_freeze_pkt(x, y); 
 	bool pass_freeze = true;
-	if (!hb_mc_write_fifo(fd, 0, (int *) freeze_pkt)) {
+	if (hb_mc_write_fifo(fd, 0, (int *) freeze_pkt) != HB_MC_SUCCESS) {
 		pass_freeze = false;
 	}
 	if (pass_freeze)
 		printf("freeze finished.\n");
-else
-printf("freeze failed.\n");	
+	else
+		printf("freeze failed.\n");	
 }
 
 /*!
@@ -225,27 +227,27 @@ printf("freeze failed.\n");
 * */
 
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y) {
-uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
-packet = hb_mc_get_pkt((1 << (EPA_BYTE_ADDR_WIDTH-3)), 0, x, y, OP_REMOTE_STORE);
-return packet;
+	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t)); 
+	packet = hb_mc_get_pkt((1 << (EPA_BYTE_ADDR_WIDTH-3)), 0, x, y, OP_REMOTE_STORE);
+	return packet;
 }
 
 /*!
 *  * unfreezes (x,y).
  *   * */
 void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("unfreeze(): warning - device was not initialized.\n");
 		return;
 	}
 		
 	printf("Unfreezing tile (%d, %d).\n", x, y);
 	uint8_t *unfreeze_pkt = hb_mc_get_unfreeze_pkt(x, y); 
-	bool pass_unfreeze = true;
-	if (!hb_mc_write_fifo(fd, 0, (int *) unfreeze_pkt)) {
-		pass_unfreeze = false;
+	int pass_unfreeze = HB_MC_SUCCESS;
+	if (hb_mc_write_fifo(fd, 0, (int *) unfreeze_pkt) != HB_MC_SUCCESS) {
+		pass_unfreeze = HB_MC_FAIL;
 	}
-	if (pass_unfreeze)
+	if (pass_unfreeze == HB_MC_SUCCESS)
 		printf("unfreeze finished.\n");
 	else
 		printf("unfreeze failed.\n");	
@@ -275,8 +277,7 @@ static uint8_t *hb_mc_get_tile_group_origin_Y_pkt (uint8_t x, uint8_t y, uint8_t
  * Set tile group coordinate (x_cord, y_cord) to tile (x, y)
  * */
 void hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord) {
-
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
     	printf("unfreeze(): warning - device was not initialized.\n");
     	return;
     }
@@ -284,23 +285,18 @@ void hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cor
     printf("Set tile (%d, %d) with group origin (%d, %d).\n", x, y, x_cord, y_cord);
     uint8_t *tile_group_origin_X_pkt = hb_mc_get_tile_group_origin_X_pkt(x, y, x_cord); 
     uint8_t *tile_group_origin_Y_pkt = hb_mc_get_tile_group_origin_Y_pkt(x, y, y_cord); 
-    bool pass = true;
     // set X cord 
-	if (!hb_mc_write_fifo(fd, 0, (int *) tile_group_origin_X_pkt)) {
-    	pass = false;
-    }
-    if (pass)
-    	printf("set tile group origin X finished.\n");
-    else
+	if (hb_mc_write_fifo(fd, 0, (int *) tile_group_origin_X_pkt) != HB_MC_SUCCESS) {
     	printf("set tile group origin X failed.\n");
-	// set Y cord	
-	if (!hb_mc_write_fifo(fd, 0, (int *) tile_group_origin_Y_pkt)) {
-    	pass = false;
+    	return;
     }
-    if (pass)
-    	printf("set tile group origin Y finished.\n");
-    else
+    printf("set tile group origin X finished.\n");
+	// set Y cord	
+	if (hb_mc_write_fifo(fd, 0, (int *) tile_group_origin_Y_pkt) != HB_MC_SUCCESS) {
     	printf("set tile group origin Y failed.\n");	
+		return;
+    }
+    printf("set tile group origin Y finished.\n");
 }
 
 /*!
@@ -319,27 +315,27 @@ static uint8_t *hb_mc_get_tag_pkt (uint8_t x, uint8_t y) {
  * */
 void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 
-	if (!hb_mc_check_device(fd)) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
     	printf("init cache tag(): warning - device was not initialized.\n");
     	return;
     }
     	
     printf("init cache (%d, %d)'s tag.\n", x, y);
     uint8_t *tag_pkt = hb_mc_get_tag_pkt(x, y); 
-    bool pass_init_tag = true;
-    if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
-    	pass_init_tag= false;
+    int  pass_init_tag = HB_MC_SUCCESS;
+    if (hb_mc_write_fifo(fd, 0, (int *) tag_pkt) != HB_MC_SUCCESS) {
+    	pass_init_tag= HB_MC_FAIL;
     }
-	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
-    	pass_init_tag= false;
+	if (hb_mc_write_fifo(fd, 0, (int *) tag_pkt) != HB_MC_SUCCESS) {
+    	pass_init_tag= HB_MC_FAIL;
     }
-	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
-    	pass_init_tag= false;
+	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt) != HB_MC_SUCCESS) {
+    	pass_init_tag= HB_MC_FAIL;
     }
-	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt)) {
-    	pass_init_tag= false;
+	if (!hb_mc_write_fifo(fd, 0, (int *) tag_pkt) != HB_MC_SUCCESS) {
+    	pass_init_tag= HB_MC_FAIL;
     }
-    if (pass_init_tag)
+    if (pass_init_tag == HB_MC_SUCCESS)
     	printf("init tag finished.\n");
     else
     	printf("init tag failed.\n");

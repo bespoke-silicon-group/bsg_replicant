@@ -19,6 +19,7 @@
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_loader.h"
 #include "bsg_manycore_print.h"
+#include "bsg_manycore_errno.h"
 
 void cosim_read_write_test () {
 	
@@ -28,18 +29,18 @@ void cosim_read_write_test () {
 	/* store data in tile */
 	uint32_t data = 0xABCD;
 	printf("write to DMEM\n");
-	bool write = hb_mc_copy_to_epa(0, 0, 1, DMEM_BASE >> 2, &data, 1);
+	int write = hb_mc_copy_to_epa(0, 0, 1, DMEM_BASE >> 2, &data, 1);
 
-	if (!write) {
+	if (write != HB_MC_SUCCESS) {
 		printf("writing data to tile (0, 0)'s DMEM failed.\n");
 		return;
 	}
 	printf("write success\n");
 	/* read back data */
 	uint32_t **buf = (uint32_t **) calloc(1, sizeof(uint32_t *));
-	bool read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, 1); 
+	int read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, 1); 
 	printf("completed read.\n");
-	if (read == 1) {
+	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
 		hb_mc_print_hex((uint8_t *) buf[0]);
 	}
