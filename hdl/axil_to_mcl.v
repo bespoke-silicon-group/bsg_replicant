@@ -336,11 +336,12 @@ begin
 		returning_wr_v_r <= endpoint_in_v_lo & endpoint_in_we_lo;
 end
 
-  `declare_bsg_mcl_packet_s;
-  bsg_mcl_packet_s        [mcl_tile_num_p-1:0] fifo_req_cast;
-  bsg_mcl_packet_s        [mcl_tile_num_p-1:0] mc_req_cast;
-  bsg_mcl_return_packet_s [mcl_tile_num_p-1:0] fifo_res_cast;
-  bsg_mcl_return_packet_s [mcl_tile_num_p-1:0] mc_res_cast;
+  `declare_bsg_mcl_request_s;
+  `declare_bsg_mcl_response_s;
+  bsg_mcl_request_s        [mcl_tile_num_p-1:0] fifo_req_cast;
+  bsg_mcl_request_s        [mcl_tile_num_p-1:0] mc_req_cast;
+  bsg_mcl_response_s [mcl_tile_num_p-1:0] fifo_res_cast;
+  bsg_mcl_response_s [mcl_tile_num_p-1:0] mc_res_cast;
 
 
   for (i=0; i<mcl_tile_num_p; i=i+1)
