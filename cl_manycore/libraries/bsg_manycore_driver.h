@@ -15,8 +15,15 @@
 
 
 #ifndef COSIM
+#include <bsg_manycore_packet.h>
+#else
+#include "bsg_manycore_packet.h"
+#endif
+
+#ifndef COSIM
 static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
+
 int hb_mc_init_host (uint8_t *fd);
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val);

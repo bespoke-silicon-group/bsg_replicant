@@ -30,15 +30,17 @@ int hb_mc_copy_from_epa (uint8_t fd, uint32_t **buf, uint32_t x, uint32_t y, uin
 //		return false;
 //	}
 
-	uint8_t **packets = calloc(size, sizeof(uint8_t *));
+	request_packet_t packets[size]; 	
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
-		packets[i] = hb_mc_get_pkt((base_byte + i * sizeof(uint32_t)) >> 2, 0, x, y, OP_REMOTE_LOAD);
+		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
+		uint32_t data = 0; /* unused */
+		hb_mc_format_packet(&packets[i], addr, data, x, y, OP_REMOTE_LOAD);
 	} 
 	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, (uint32_t *) packets[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, 0, (uint32_t *) &packets[i]) != HB_MC_SUCCESS) {
 			pass_requests = HB_MC_FAIL;
 			break;
 		}

@@ -11,16 +11,16 @@
 
 #ifndef COSIM
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
+	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h> 
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
-	#include <bsg_manycore_pkt.h>
 #else
 	#include "fpga_pci_sv.h"
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore_loader.h"
  	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_pkt.h"
 #endif
 
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
@@ -335,10 +335,10 @@ uint8_t hb_mc_get_num_y () {
  * @return array of bytes that form the Manycore packet.
  * assumes all fields are <= 32
  * */
-void hb_mc_format_packet(request_packet_t *packet, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
+void hb_mc_format_packet(request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
 
 	request_packet_set_x_dst(packet, x);
-	request_packet_set_y_dst(packet, y)	
+	request_packet_set_y_dst(packet, y);	
 	request_packet_set_x_src(packet, MY_X);
 	request_packet_set_y_src(packet, MY_Y);
 	request_packet_set_data(packet, data);
@@ -346,6 +346,5 @@ void hb_mc_format_packet(request_packet_t *packet, uint32_t data, uint8_t x, uin
 	request_packet_set_op(packet, opcode);	
 	request_packet_set_addr(packet, addr);		
 
-	return packet;
 }
 
