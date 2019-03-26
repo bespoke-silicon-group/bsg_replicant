@@ -38,7 +38,7 @@ void cosim_load_vector_test () {
 	hb_mc_init_host(&fd);	
 
 	uint32_t n = 10; 
-	uint32_t *data = (uint32_t *) calloc(n, sizeof(uint32_t));
+	uint32_t data[n];
 	srand(0);
 	for (int i = 0; i < n; i++) {
 		data[i] = rand();
@@ -46,7 +46,7 @@ void cosim_load_vector_test () {
 	}
 
 	/* store data in tile */
-	int write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, data, n);
+	int write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, (uint32_t *) &data[0], n);
 
 	if (write != HB_MC_SUCCESS) {
 		printf("writing data to tile (0, 0)'s DMEM failed.\n");
