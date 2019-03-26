@@ -2,8 +2,11 @@
  *  cl_manycore.v
  */
 
+`include "bsg_bladerunner_rom_pkg.vh"
+
 module cl_manycore
   import cl_manycore_pkg::*;
+  import bsg_bladerunner_rom_pkg::*;
   (
     `include "cl_ports.vh"
   );
@@ -571,21 +574,21 @@ logic [x_cord_width_p-1:0] rom_x_cord_lp = '0;
 logic [y_cord_width_p-1:0] rom_y_cord_lp = '0;
 
 bsg_bladerunner_rom #(
-  .rom_data_width_p(rom_data_width_p)
-  ,.rom_els_p       (rom_els_p       )
-  ,.rom_filename_p  (`ROM_FILE       )
-  ,.x_cord_width_p  (x_cord_width_p  )
-  ,.y_cord_width_p  (y_cord_width_p  )
-  ,.addr_width_p    (addr_width_p    )
-  ,.data_width_p    (data_width_p    )
-  ,.load_id_width_p (load_id_width_p )
+  .rom_width_p    (rom_width_p)
+  ,.rom_els_p      (rom_els_p)
+  ,.rom_filename_p (`BSG_BLADERUNNER_ROM_FILE)
+  ,.x_cord_width_p (x_cord_width_p)
+  ,.y_cord_width_p (y_cord_width_p)
+  ,.addr_width_p   (addr_width_p)
+  ,.data_width_p   (data_width_p)
+  ,.load_id_width_p(load_id_width_p)
 ) bladerunner_rom (
-  .clk_i     (clk_main_a0      )
-  ,.reset_i   (~rst_main_n_sync)
-  ,.my_x_i    (rom_x_cord_lp   )
-  ,.my_y_i    (rom_y_cord_lp   )
-  ,.link_sif_i(rom_link_sif_lo )
-  ,.link_sif_o(rom_link_sif_li )
+  .clk_i     (clk_main_a0),
+  .reset_i   (~rst_main_n_sync),
+  .my_x_i    (rom_x_cord_lp),
+  .my_y_i    (rom_y_cord_lp),
+  .link_sif_i(rom_link_sif_lo),
+  .link_sif_o(rom_link_sif_li)
 );
 
 

@@ -17,7 +17,6 @@
 
 #include "bsg_manycore_driver.h"
 #include "bsg_manycore_mem.h"
-#include "bsg_manycore_print.h"
 #include "bsg_manycore_errno.h"
 
 #include "rom_gen.h"
@@ -28,11 +27,15 @@ void print_rom(uint8_t fd, int idx, int num) {
     if (read == HB_MC_SUCCESS) {
         for (int i=0; i<num; i++) {
             printf("read rom data @ address %d: ", idx + i);
-            hb_mc_print_data((uint8_t *) buf[i]);
+            uint8_t *pkt = buf[i];
+            for (int i=6; i<6+4; i++) {
+              printf("%02x ", (pkt[15-i] & 0xFF));
+            }
+            printf("\n");
         }
     }
     else {
-        printf("read ROM failed.\n");
+        printf("read from ROM failed.\n");
     }
     return;
 }

@@ -6,8 +6,6 @@
 `ifndef CL_MANYCORE_PKG
 `define CL_MANYCORE_PKG
 
-`define ROM_FILE "bsg_bladerunner.rom"
-
 package cl_manycore_pkg;
 
   `include "bsg_defines.v"
@@ -37,8 +35,6 @@ package cl_manycore_pkg;
   parameter axi_burst_len_p = 1;
 
   parameter max_out_credits_p = 16;  // synchronize mcl max credits with the manycore network
-  parameter rom_data_width_p = 32;
-  parameter rom_els_p = 12;
 
 endpackage
 

@@ -4,11 +4,11 @@
   */
 
 `include "bsg_defines.v"
-`include "bsg_manycore_packet.vh"
+`include "bsg_bladerunner_rom_pkg.vh"
 
 module bsg_bladerunner_rom #(
   // rom parameters
-  rom_data_width_p="inv"
+  rom_width_p="inv"
   ,rom_els_p="inv"
   ,rom_filename_p="inv"
   // manycore parameters
@@ -94,7 +94,7 @@ module bsg_bladerunner_rom #(
   logic [data_width_p-1:0] returning_data_r;
   logic [data_mask_width_lp-1:0] in_mask_r;
 
-	for (genvar i=0; i< data_mask_width_lp; i++) begin
+	for (genvar i=0; i<data_mask_width_lp; i++) begin
 		assign returning_data_li[8*i+:8] = {8{in_mask_r[i]}} & returning_data_r[8*i+:8];
 	end
 
@@ -113,16 +113,16 @@ module bsg_bladerunner_rom #(
   end
 
   // rom data path
-  localparam rom_addr_width_lp = `BSG_SAFE_CLOG2(rom_els_p);
+  localparam lg_rom_els_lp = `BSG_SAFE_CLOG2(rom_els_p);
 
-  logic [rom_addr_width_lp-1:0] rom_addr_li;
-  logic [rom_data_width_p-1:0] rom_data_lo;
+  logic [lg_rom_els_lp-1:0] rom_addr_li;
+  logic [rom_width_p-1:0] rom_data_lo;
 
-  assign rom_addr_li = rom_addr_width_lp'(in_addr_lo);
+  assign rom_addr_li = lg_rom_els_lp'(in_addr_lo);
   assign returning_v_li = returning_v_r;
 
   data_rom #(
-    .word_width_p(rom_data_width_p)
+    .word_width_p(rom_width_p)
     ,.word_count_p(rom_els_p)
     ,.filename_p(rom_filename_p)
   ) bladerunner_rom (
@@ -133,17 +133,17 @@ module bsg_bladerunner_rom #(
 // synopsys translate_off
   initial
   begin
-    assert (rom_data_width_p <= data_width_p)
-    else $error("ROM data width %x should not exceed manycore link data width %x (%m)\n", rom_data_width_p, data_width_p);
+    assert (rom_width_p <= data_width_p)
+    else $error("ROM data width %x should not exceed manycore link data width %x (%m)\n", rom_width_p, data_width_p);
 
-    assert (rom_addr_width_lp <= addr_width_p)
-    else $error("ROM addr width %x should not exceed manycore link addr width %x (%m)\n", rom_addr_width_lp, addr_width_p);
+    assert (lg_rom_els_lp <= addr_width_p)
+    else $error("ROM addr width %x should not exceed manycore link addr width %x (%m)\n", lg_rom_els_lp, addr_width_p);
   end
 
   always_ff @(negedge clk_i)
   begin
     if (in_v_lo & in_we_lo) begin
-      $display("## Write request is not supporting: from YX=%d,%d landed at YX=%d,%d (%m)"
+      $display("## Write request is not supported: from YX=%d,%d landed at YX=%d,%d (%m)"
         ,in_src_y_cord_lo ,in_src_x_cord_lo
         ,my_y_i, my_x_i);
       $finish();

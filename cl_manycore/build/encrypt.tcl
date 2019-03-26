@@ -136,6 +136,8 @@ file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_transpose.v                   $T
 file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_arb_fixed.v                   $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v                        $TARGET_DIR
+file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_dlatch.v                        $TARGET_DIR
+file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_clkgate_optional.v                        $TARGET_DIR
 
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_banked_crossbar.v          $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w_synth.v               $TARGET_DIR

@@ -83,6 +83,7 @@ ${BSG_IP_CORES_DIR}/bsg_dataflow/bsg_fifo_1r1w_large.v
 ${BSG_IP_CORES_DIR}/bsg_dataflow/bsg_fifo_1rw_large.v
 ${BSG_IP_CORES_DIR}/bsg_dataflow/bsg_round_robin_2_to_2.v
 
+
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_decode.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_decode_with_v.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_counter_clear_up.v
@@ -108,7 +109,8 @@ ${BSG_IP_CORES_DIR}/bsg_misc/bsg_transpose.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_arb_fixed.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_priority_encode_one_hot_out.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_scan.v
-
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_dlatch.v
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_clkgate_optional.v
 
 ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_banked_crossbar.v
 ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
