@@ -19,7 +19,7 @@
  * @param size number of words to copy
  * @return whether or not transaction was successful
  * */
-int hb_mc_copy_from_epa (uint8_t fd, uint32_t **buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
+int hb_mc_copy_from_epa (uint8_t fd, request_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("hb_mc_copy_from_epa(): device was not initialized.\n");
 		return HB_MC_FAIL;
@@ -30,17 +30,17 @@ int hb_mc_copy_from_epa (uint8_t fd, uint32_t **buf, uint32_t x, uint32_t y, uin
 //		return false;
 //	}
 
-	request_packet_t packets[size]; 	
+	request_packet_t requests[size]; 	
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = 0; /* unused */
-		hb_mc_format_packet(&packets[i], addr, data, x, y, OP_REMOTE_LOAD);
+		hb_mc_format_packet(&requests[i], addr, data, x, y, OP_REMOTE_LOAD);
 	} 
 	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, (uint32_t *) &packets[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, 0, (uint32_t *) &requests[i]) != HB_MC_SUCCESS) {
 			pass_requests = HB_MC_FAIL;
 			break;
 		}
@@ -52,7 +52,7 @@ int hb_mc_copy_from_epa (uint8_t fd, uint32_t **buf, uint32_t x, uint32_t y, uin
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
 	for (int i = 0; i < size; i++) {
-		buf[i] = hb_mc_read_fifo(fd, 0, NULL);
+		hb_mc_read_fifo(fd, 0, &buf[i]);
 	}
 
 	return pass_requests;
