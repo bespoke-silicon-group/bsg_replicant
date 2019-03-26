@@ -13,7 +13,7 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_print.h>
 #include <bsg_manycore_errno.h>
-#incude <bsg_manycore_packet.h>
+#include <bsg_manycore_packet.h>
 
 int main () {
 	
@@ -46,9 +46,9 @@ int main () {
 	int read = hb_mc_copy_from_epa(fd, (request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, n); 
 	
 	if (read == HB_MC_SUCCESS) {
-		printf("read packet: ");
+		printf("read packets: \n");
 		for (int i = 0; i < n; i++)
-			hb_mc_print_hex((uint8_t *) buf[i]);
+			hb_mc_print_hex((uint8_t *) &buf[i]);
 	}
 	
 	else {

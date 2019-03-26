@@ -1,8 +1,13 @@
 #ifndef BSG_MANYCORE_PACKET
 #define BSG_MANYCORE_PACKET
-#include <stdint.h>
-#include <endian.h>
 
+#ifndef __USE_BSD 
+#define __USE_BSD // the little endian functions will be visible only if this flag is set.
+#endif
+
+#define _BSD_SOURCE
+#include <endian.h>
+#include <stdint.h>
 /**
  * The raw request packets that are used to initiate communications between the manycore and the host.
  * You should not read from any of the fields directly, instead use the accessor functions.
