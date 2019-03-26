@@ -208,7 +208,7 @@ uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 
 	while (hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]) < 1) {}
 
-	uint32_t receive_length = hb_mc_read16(fd, fifo[n][FIFO_RECEIVE_LENGTH]);
+	uint16_t receive_length = hb_mc_read16(fd, fifo[n][FIFO_RECEIVE_LENGTH]);
 	if (receive_length != 16) {
 		printf("read_fifo(): receive length of %d instead of 16.\n", receive_length);
 		return NULL;
