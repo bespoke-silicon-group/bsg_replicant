@@ -90,7 +90,10 @@ module cl_tb();
       tb.peek_ocl(.addr(MON_BASE_ADDR + (MC_NUM_Y<<2)), .data(rdata));
       $display($time,,,"Readback the y demension: %10h", rdata);
 
-      // TODO: write and read dmem of a tile
+      // -------------------------------------
+      // TODO: mcl NPA space test
+      // let's move more manycore-related test to cosim
+      // -------------------------------------
       ocl_power_up_init(.FIFO_BASE_ADDR(MST_BASE_ADDR));
       ocl_power_up_init(.FIFO_BASE_ADDR(SLV_BASE_ADDR));
       // ocl_poke_request(.addr(DMEM_BASE>>2), .op(2'b01), .op_ex(4'b1111), .payload(32'hABCD), .src_y_cord(0), .src_x_cord(3), .y_cord(1), .x_cord(0));
