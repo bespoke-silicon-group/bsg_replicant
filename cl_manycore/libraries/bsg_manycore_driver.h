@@ -29,7 +29,7 @@ int hb_mc_can_read (uint8_t fd, uint32_t size);
 int hb_mc_check_device (uint8_t fd);
 uint8_t hb_mc_get_num_x ();
 uint8_t hb_mc_get_num_y (); 
-
+void hb_mc_format_packet(request_packet_t *packet, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)
