@@ -56,7 +56,7 @@ ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
 ${CL_DIR}/../hdl/axil_to_mem.sv
 ${CL_DIR}/../hdl/bsg_bladerunner_rom.v
-${BSG_IP_CORES_DIR}/testing/bsg_fpu/common/data_rom.v
+${CL_DIR}/../hdl/configuration_rom.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v

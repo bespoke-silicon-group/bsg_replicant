@@ -19,8 +19,6 @@
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_errno.h"
 
-#include "rom_gen.h"
-
 void print_rom(uint8_t fd, int idx, int num) {
     uint32_t **buf = (uint32_t **) calloc(num, sizeof(uint32_t *));
     int read = hb_mc_copy_from_epa(fd, buf, 0, 0, idx, num);
@@ -50,7 +48,7 @@ void cosim_rom_test () {
     printf("recv vacancy is: %x\n", recv_vacancy);
 
     printf("Readback ROM from tile (%d, %d)\n", 0, 0);
-    print_rom(fd, 0, ROM_DEPTH);
+    print_rom(fd, 0, 12);
 
     return;
 }

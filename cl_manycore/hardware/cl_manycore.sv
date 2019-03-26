@@ -576,7 +576,6 @@ logic [y_cord_width_p-1:0] rom_y_cord_lp = '0;
 bsg_bladerunner_rom #(
   .rom_width_p    (rom_width_p)
   ,.rom_els_p      (rom_els_p)
-  ,.rom_filename_p (`BSG_BLADERUNNER_ROM_FILE)
   ,.x_cord_width_p (x_cord_width_p)
   ,.y_cord_width_p (y_cord_width_p)
   ,.addr_width_p   (addr_width_p)

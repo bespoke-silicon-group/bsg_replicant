@@ -42,8 +42,8 @@ file copy -force $COMMON_DIR/axil_to_mcl.v                                    $T
 file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $TARGET_DIR
 file copy -force $COMMON_DIR/axil_to_mem.sv                                   $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
-file copy -force $COMMON_DIR/bsg_bladerunner.rom                              $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
+file copy -force $COMMON_DIR/configuration_rom.v                              $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_defines.vh                               $TARGET_DIR
@@ -81,7 +81,6 @@ file copy -force $UNUSED_TEMPLATES_DIR/unused_pcim_template.inc               $T
 file copy -force $UNUSED_TEMPLATES_DIR/unused_sh_bar1_template.inc            $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_flr_template.inc                $TARGET_DIR
 
-file copy -force $BSG_IP_CORES_DIR/testing/bsg_fpu/common/data_rom.v          $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_pkg.v                      $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_stitch.v                  $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_mesh_router_buffered.v         $TARGET_DIR

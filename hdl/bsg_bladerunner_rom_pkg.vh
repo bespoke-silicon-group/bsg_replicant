@@ -1,15 +1,11 @@
 /**
- *  cl_bladerunner_rom_pkg.vh
+ *  bsg_bladerunner_rom_pkg.vh
  *
  *  parameters for bladerunner rom.
  */
 
 `ifndef BSG_BLADERUNNER_ROM_PKG
 `define BSG_BLADERUNNER_ROM_PKG
-
-`include "cl_manycore_pkg.v"
-
-`define BSG_BLADERUNNER_ROM_FILE "bsg_bladerunner.rom"
 
 package bsg_bladerunner_rom_pkg;
 

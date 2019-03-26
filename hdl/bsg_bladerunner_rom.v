@@ -10,7 +10,6 @@ module bsg_bladerunner_rom #(
   // rom parameters
   rom_width_p="inv"
   ,rom_els_p="inv"
-  ,rom_filename_p="inv"
   // manycore parameters
   ,x_cord_width_p="inv"
   ,y_cord_width_p="inv"
@@ -121,11 +120,10 @@ module bsg_bladerunner_rom #(
   assign rom_addr_li = lg_rom_els_lp'(in_addr_lo);
   assign returning_v_li = returning_v_r;
 
-  data_rom #(
-    .word_width_p(rom_width_p)
-    ,.word_count_p(rom_els_p)
-    ,.filename_p(rom_filename_p)
-  ) bladerunner_rom (
+  configuration_rom #(
+    .width_p(rom_width_p)
+    ,.addr_width_p(lg_rom_els_lp)
+  ) configuration_rom (
     .addr_i(rom_addr_li)
     ,.data_o(rom_data_lo)
   );

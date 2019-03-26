@@ -38,7 +38,7 @@ $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
 clean:
-	rm -f *.o $(BIN) rom_gen *.rom
+	rm -f *.o $(BIN)
 
 check_env:
 ifndef SDK_DIR
