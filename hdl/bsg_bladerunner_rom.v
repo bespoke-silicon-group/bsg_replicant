@@ -94,9 +94,9 @@ module bsg_bladerunner_rom #(
   logic [data_width_p-1:0] returning_data_r;
   logic [data_mask_width_lp-1:0] in_mask_r;
 
-	for (genvar i=0; i<data_mask_width_lp; i++) begin
-		assign returning_data_li[8*i+:8] = {8{in_mask_r[i]}} & returning_data_r[8*i+:8];
-	end
+  for (genvar i=0; i<data_mask_width_lp; i++) begin
+    assign returning_data_li[8*i+:8] = {8{in_mask_r[i]}} & returning_data_r[8*i+:8];
+  end
 
   always_ff @(posedge clk_i)
   begin: return_valid_reg
