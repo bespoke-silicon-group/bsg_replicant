@@ -71,15 +71,17 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 		printf("hb_xeon_to_epa_copy(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	uint8_t **packets = calloc(size, sizeof(uint8_t *));
+	request_packet_t packets[size];
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
-		packets[i] = hb_mc_get_pkt((base_byte + i * sizeof(uint32_t)) >> 2, buf[i], x, y, OP_REMOTE_STORE);
+		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
+		uint32_t data = buf[i];
+		hb_mc_format_packet(&packets[i], addr, data, x, y, OP_REMOTE_STORE);
 	} 
 	
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, (uint32_t *) packets[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, 0, (uint32_t *) &packets[i]) != HB_MC_SUCCESS) {
 			pass = HB_MC_FAIL;
 			break;
 		}
