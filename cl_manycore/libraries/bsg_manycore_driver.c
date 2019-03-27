@@ -23,6 +23,69 @@
 
 uint8_t NUM_Y = 4;
 
+/*!
+ * writes to a 16b register in the OCL BAR of the FPGA
+ * @param fd userspace file descriptor
+ * @param ofs offset in OCL BAR to write to
+ * @param val value to write 
+ * caller must verify that fd is correct. */
+static void hb_mc_write16 (uint8_t fd, uint32_t ofs, uint16_t val) {
+	#ifdef COSIM
+		fpga_pci_poke(PCI_BAR_HANDLE_INIT, ofs, val);
+	#else
+		char *ocl_base = ocl_table[fd];
+		*((uint16_t *) (ocl_base + ofs)) = val;
+	#endif
+}
+
+/*!
+ * writes to a 32b register in the OCL BAR of the FPGA
+ * @param fd userspace file descriptor
+ * @param ofs offset in OCL BAR to write to
+ * @param val value to write 
+ * caller must verify that fd is correct. */
+static void hb_mc_write32 (uint8_t fd, uint32_t ofs, uint32_t val) {
+	#ifdef COSIM
+		fpga_pci_poke(PCI_BAR_HANDLE_INIT, ofs, val);
+	#else
+		char *ocl_base = ocl_table[fd];
+		*((uint32_t *) (ocl_base + ofs)) = val;
+	#endif
+}
+
+/*!
+ * reads from a 16b register in the OCL BAR of the FPGA
+ * @param fd userspace file descriptor
+ * @param ofs offset in OCL BAR to write to
+ * @return the value of the register
+ * caller must verify that fd is correct. */
+static uint16_t hb_mc_read16 (uint8_t fd, uint32_t ofs) {
+	#ifdef COSIM
+		uint32_t read;
+		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs, &read);
+		return read;
+	#else
+		char *ocl_base = ocl_table[fd];
+		return *((uint16_t *) (ocl_base + ofs));
+	#endif
+}
+
+/*!
+ * reads from a 32b register in the OCL BAR of the FPGA
+ * @param fd userspace file descriptor
+ * @param ofs offset in OCL BAR to write to
+ * @return the value of the register
+ * caller must verify that fd is correct. */
+static uint32_t hb_mc_read32 (uint8_t fd, uint32_t ofs) {
+	#ifdef COSIM
+		uint32_t read;
+		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs, &read);
+		return read;
+	#else
+		char *ocl_base = ocl_table[fd];
+		return *((uint32_t *) (ocl_base + ofs));
+	#endif
+}
 /*! 
  * Checks if corresponding FPGA has been memory mapped. 
  * @param fd userspace file descriptor
@@ -39,35 +102,8 @@ int hb_mc_check_device (uint8_t fd) {
 	#endif
 }
 
-/*! 
- * caller must verify that fd is correct. */
-static void hb_mc_write (uint8_t fd, uint32_t ofs, uint32_t val, uint8_t reg_size) {
-	#ifdef COSIM
-		fpga_pci_poke(PCI_BAR_HANDLE_INIT, ofs, val);
-	#else
-		char *ocl_base = ocl_table[fd];
-		if (reg_size == 16)
-			*((uint16_t *) (ocl_base + ofs)) = val;
-		else
-			*((uint32_t *) (ocl_base + ofs)) = val;
-	#endif
-}
 
-/*! 
- * caller must verify that fd is correct. */
-static uint32_t hb_mc_read (uint8_t fd, uint32_t ofs, uint8_t reg_size) {
-	#ifdef COSIM
-		uint32_t read;
-		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs, &read);
-		return read;
-	#else
-		char *ocl_base = ocl_table[fd];
-		if (reg_size == 16)
-			return *((uint16_t *) (ocl_base + ofs));
-		else
-			return *((uint32_t *) (ocl_base + ofs));
-	#endif
-}
+
 
 #ifndef COSIM
 /*
@@ -111,8 +147,8 @@ int hb_mc_check_dim (uint8_t fd) {
 		printf("hb_mc_check_dim(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	uint32_t num_x = hb_mc_read(fd, MANYCORE_NUM_X, 32);
-	uint32_t num_y = hb_mc_read(fd, MANYCORE_NUM_Y, 32);
+	uint32_t num_x = hb_mc_read32(fd, MANYCORE_NUM_X);
+	uint32_t num_y = hb_mc_read32(fd, MANYCORE_NUM_Y);
 	if ((NUM_X == num_y) && (NUM_Y == num_y))
 		return HB_MC_SUCCESS;
 	else
@@ -134,7 +170,7 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 		return HB_MC_FAIL;
 	}	
 	
-	uint16_t init_vacancy = hb_mc_read(fd, fifo[n][FIFO_VACANCY], 16);
+	uint16_t init_vacancy = hb_mc_read16(fd, fifo[n][FIFO_VACANCY]);
 
 	#ifdef DEBUG
 	printf("write(): vacancy is %u\n", init_vacancy);	
@@ -146,11 +182,11 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 	}
 	printf("write_fifo(): init_vacancy = %u\n", init_vacancy);
 	for (int i = 0; i < 4; i++) {
-		hb_mc_write(fd, fifo[n][FIFO_WRITE], val[i], 32);
+		hb_mc_write32(fd, fifo[n][FIFO_WRITE], val[i]);
 	}
 
-	while (hb_mc_read(fd, fifo[n][FIFO_VACANCY], 16) != init_vacancy) {
-		hb_mc_write(fd, fifo[n][FIFO_TRANSMIT_LENGTH], 16, 16);
+	while (hb_mc_read16(fd, fifo[n][FIFO_VACANCY]) != init_vacancy) {
+		hb_mc_write16(fd, fifo[n][FIFO_TRANSMIT_LENGTH], 16);
 	}
 	return HB_MC_SUCCESS;
 }
@@ -170,9 +206,9 @@ uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 		return NULL;
 	}		
 
-	while (hb_mc_read(fd, fifo[n][FIFO_OCCUPANCY], 16) < 1) {}
+	while (hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]) < 1) {}
 
-	uint32_t receive_length = hb_mc_read(fd, fifo[n][FIFO_RECEIVE_LENGTH], 16);
+	uint16_t receive_length = hb_mc_read16(fd, fifo[n][FIFO_RECEIVE_LENGTH]);
 	if (receive_length != 16) {
 		printf("read_fifo(): receive length of %d instead of 16.\n", receive_length);
 		return NULL;
@@ -186,7 +222,7 @@ uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 		val = (int *) calloc(4, sizeof(int));
 	}
 	for (int i = 0; i < 4; i++) {
-		val[i] = hb_mc_read(fd, fifo[n][FIFO_READ], 32);
+		val[i] = hb_mc_read32(fd, fifo[n][FIFO_READ]);
 	}
 
 	return val;
@@ -204,7 +240,7 @@ void hb_mc_clear_int (uint8_t fd, uint8_t n) {
 		return;
 	}		
 
-	hb_mc_write(fd, fifo[n][FIFO_ISR], 0xFFFFFFFF, 32);
+	hb_mc_write32(fd, fifo[n][FIFO_ISR], 0xFFFFFFFF);
 }
 
 /*
@@ -216,7 +252,7 @@ uint32_t hb_mc_get_host_credits (uint8_t fd) {
 		return 0;
 	}		
 
-	return hb_mc_read(fd, HOST_CREDITS, 32);
+	return hb_mc_read32(fd, HOST_CREDITS);
 }
 
 /*!
@@ -243,7 +279,7 @@ uint32_t hb_mc_get_recv_vacancy (uint8_t fd) {
 		printf("get_recv_vacancy(): device not initialized.\n");
 		return 0;
 	}	
-	return hb_mc_read(fd, HOST_RECV_VACANCY, 32);
+	return hb_mc_read32(fd, HOST_RECV_VACANCY);
 }
 
 /*!

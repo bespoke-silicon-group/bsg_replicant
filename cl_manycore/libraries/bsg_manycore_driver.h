@@ -16,8 +16,6 @@
 int hb_mc_init_host (uint8_t *fd);
 static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
-static void hb_mc_write (uint8_t fd, uint32_t ofs, uint32_t val, uint8_t reg_size);
-static uint32_t hb_mc_read (uint8_t fd, uint32_t ofs, uint8_t reg_size);
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val);
 uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val);
