@@ -1,4 +1,4 @@
-# `bsg_bladerunner.rom` file format
+# `bsg_bladerunner_configuratoin.rom` file format
 
 | lines                     | Description |
 | ---------------------     | ----------- |
