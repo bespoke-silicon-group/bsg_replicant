@@ -19,6 +19,7 @@
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_errno.h"
 
+
 int print_rom(uint8_t fd, int idx, int num) {
     uint32_t **buf = (uint32_t **) calloc(num, sizeof(uint32_t *));
     int read = hb_mc_copy_from_epa(fd, buf, 0, 0, idx, num);
