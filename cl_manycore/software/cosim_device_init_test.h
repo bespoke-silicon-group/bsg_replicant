@@ -41,15 +41,17 @@ void cosim_device_init_test () {
 	tiles[0].origin_x = 0;
 	tiles[0].origin_y = 1;
 	eva_id_t eva_id = 0;
-	
-	if (hb_mc_init_device(fd, eva_id, getenv("MAIN_LOOPBACK"), &tiles[0], 1) != HB_MC_SUCCESS) {
+	uint32_t num_tiles = 1;
+	if (hb_mc_init_device(fd, eva_id, getenv("MAIN_LOOPBACK"), &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return;
 	}  
 
+	/* make sure memory manager was initialized properly */
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
 	printf("start: 0x%x, size: 0x%x\n", start, size);
+	hb_mc_device_finish(fd, eva_id, tiles, num_tiles);
 	return;
 }
 

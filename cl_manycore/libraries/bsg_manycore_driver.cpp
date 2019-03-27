@@ -439,6 +439,30 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	return HB_MC_SUCCESS;
 }
 
+/*!
+ * Initializes Manycore tiles so that they may run kernels.
+ * @param fd userspace file descriptor
+ * @param eva_id specifies what the EVA-NPA mapping is.
+ * @param tiles an array of tile_t structs to initialize.
+ * @param num_tiles the number of tiles to initialize.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles) {
+	if (eva_id != 0) {
+		return HB_MC_FAIL; /* eva_id not supported */
+	} 
+
+	else if (!mem_manager[eva_id])
+		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */
+	
+	delete(mem_manager[eva_id]);
+	
+	for (int i = 0; i < num_tiles; i++) { /* freeze tiles */
+		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
+	}
+
+	return HB_MC_SUCCESS;
+}
 #ifdef COSIM
 /*!
  * This function is for testing hb_mc_init_device() in cosimulation. 
@@ -451,4 +475,7 @@ void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *siz
 	*start = mem_manager[eva_id]->start();
 	*size =mem_manager[eva_id]->size();
 }
+
+
+
 #endif
