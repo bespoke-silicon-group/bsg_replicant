@@ -52,7 +52,7 @@ void cosim_read_write_test () {
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
-		hb_mc_print_hex((uint8_t *) &buf[0]);
+		print_hex((uint8_t *) &buf[0]);
 	}
 	
 	else {

@@ -60,7 +60,7 @@ void cosim_load_vector_test () {
 	if (read == HB_MC_SUCCESS) {
 		printf("read packets: \n");
 		for (int i = 0; i < n; i++) {
-			hb_mc_print_hex((uint8_t *) &buf[i]);
+			print_hex((uint8_t *) &buf[i]);
 		}
 	}
 	
