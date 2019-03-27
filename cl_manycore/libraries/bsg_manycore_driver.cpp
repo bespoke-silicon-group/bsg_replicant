@@ -14,6 +14,8 @@
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h> 
+	#include <bsg_manycore_memory_manager.h>
+	#include <bsg_manycore_elf.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
@@ -21,7 +23,9 @@
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_loader.h"
- 	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_memory_manager.h"
+	#include "bsg_manycore_elf.h"
 #endif
 
 
@@ -29,6 +33,8 @@
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
 static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
 
+static uint32_t const DRAM_SIZE = 0x80000000;
+static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}; /* This array has an element for every EVA <-> NPA mapping. Currently, only one mapping is supported. */
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
  * @param fd userspace file descriptor
@@ -342,6 +348,23 @@ int hb_mc_can_read (uint8_t fd, uint32_t size) {
 		return HB_MC_FAIL;
 }
 
+/*
+ * creates a awsbwhal::MemoryManager object and stores it in a global table.
+ * @param eva_id which specifies which EVA <-> NPA mapping.
+ * @param elf path to ELF binary
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+static int hb_mc_create_memory_manager (eva_id_t eva_id, char *elf) {
+	eva_t program_end;
+	if (symbol_to_eva(elf, "bsg_dram_end_addr", &program_end) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}	
+	uint32_t alignment = 32;
+	uint32_t size = DRAM_SIZE;
+	mem_manager[eva_id] = new awsbwhal::MemoryManager(DRAM_SIZE, program_end, alignment); 
+	return HB_MC_SUCCESS;	
+} 
+
 /*!
  * @param fd user-level file descriptor.
  * @return the number of columns in the Manycore.
@@ -386,7 +409,7 @@ void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, 
  * @param eva_id specifies what the EVA-NPA mapping is.
  * @param tiles an array of tile_t structs to initialize.
  * @param num_tiles the number of tiles to initialize.
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
 	if (eva_id != 0) {
@@ -401,11 +424,13 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	/* load the elf into each tile */
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
 	hb_mc_get_x(tiles, &x_list[0], num_tiles);
-	hb_mc_get_y(tiles, &y_list[0], num_tiles); /* TODO */
+	hb_mc_get_y(tiles, &y_list[0], num_tiles); 
 	hb_mc_load_binary(fd, elf, &x_list[0], &y_list[0], num_tiles);
 
 	/* create a memory manager object */
-	
+	if (hb_mc_create_memory_manager(eva_id, elf) != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+  	
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
 		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
