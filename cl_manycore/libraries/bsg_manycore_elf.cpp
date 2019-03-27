@@ -139,7 +139,7 @@ int symbol_to_eva(const char *fname, const char *sym_name, eva_t* eva)
         object_symbol_table_init(fname, symbols);
 	symbol_table::iterator it = symbols.find(string(sym_name));
         if (it != symbols.end()) {
-                *eva = (it->second->value) >> 2;
+                *eva = (it->second->value);
                 return HB_MC_SUCCESS;
         } else {
                 return HB_MC_FAIL;

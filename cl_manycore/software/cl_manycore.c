@@ -23,6 +23,7 @@
 #include "cosim_read_write_test.h"
 #include "cosim_load_vector_test.h"
 #include "cosim_loopback_test.h"
+#include "cosim_device_init_test.h"
 
 #ifdef SV_TEST
     #include "fpga_pci_sv.h"
@@ -124,6 +125,7 @@ void usage(char* program_name) {
     cosim_load_vector_test();
     cosim_loopback_test();
     cosim_rom_test();
+    cosim_device_init_test();
 #ifndef SV_TEST
     return rc;
      

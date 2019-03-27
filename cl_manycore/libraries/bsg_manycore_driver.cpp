@@ -356,12 +356,13 @@ int hb_mc_can_read (uint8_t fd, uint32_t size) {
  */
 static int hb_mc_create_memory_manager (eva_id_t eva_id, char *elf) {
 	eva_t program_end;
-	if (symbol_to_eva(elf, "bsg_dram_end_addr", &program_end) != HB_MC_SUCCESS) {
+	if (symbol_to_eva(elf, "_bsg_dram_end_addr", &program_end) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
-	}	
+	}
 	uint32_t alignment = 32;
+	uint32_t start = program_end + alignment - (program_end % alignment); /* start at the next aligned block */
 	uint32_t size = DRAM_SIZE;
-	mem_manager[eva_id] = new awsbwhal::MemoryManager(DRAM_SIZE, program_end, alignment); 
+	mem_manager[eva_id] = new awsbwhal::MemoryManager(DRAM_SIZE, start, alignment); 
 	return HB_MC_SUCCESS;	
 } 
 
@@ -419,14 +420,21 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
 		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
 		hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
+	//	hb_mc_init_cache_tag(fd, 0, 5);
+	//	hb_mc_init_cache_tag(fd, 1, 5);
+	//	hb_mc_init_cache_tag(fd, 2, 5);
+	//	hb_mc_init_cache_tag(fd, 3, 5);
+	//	hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
+	//	hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
+
 	}
-	
+
+
 	/* load the elf into each tile */
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
 	hb_mc_get_x(tiles, &x_list[0], num_tiles);
 	hb_mc_get_y(tiles, &y_list[0], num_tiles); 
 	hb_mc_load_binary(fd, elf, &x_list[0], &y_list[0], num_tiles);
-
 	/* create a memory manager object */
 	if (hb_mc_create_memory_manager(eva_id, elf) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
@@ -435,4 +443,19 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	for (int i = 0; i < num_tiles; i++) {
 		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
 	}
+	return HB_MC_SUCCESS;
 }
+
+#ifdef COSIM
+/*!
+ * This function is for testing hb_mc_init_device() in cosimulation. 
+ */
+void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size) {
+	if (!mem_manager[eva_id]) {
+		printf("_hb_mc_get_mem_manager_info(): mem manager not initialized.\n");
+		return;
+	}
+	*start = mem_manager[eva_id]->start();
+	*size =mem_manager[eva_id]->size();
+}
+#endif
