@@ -420,13 +420,6 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
 		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
 		hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
-	//	hb_mc_init_cache_tag(fd, 0, 5);
-	//	hb_mc_init_cache_tag(fd, 1, 5);
-	//	hb_mc_init_cache_tag(fd, 2, 5);
-	//	hb_mc_init_cache_tag(fd, 3, 5);
-	//	hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
-	//	hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
-
 	}
 
 
