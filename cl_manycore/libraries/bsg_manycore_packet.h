@@ -5,7 +5,9 @@
 #define __USE_BSD // the little endian functions will be visible only if this flag is set.
 #endif
 
+#ifndef _BSD_SOURCE
 #define _BSD_SOURCE
+#endif
 #include <endian.h>
 #include <stdint.h>
 /**
