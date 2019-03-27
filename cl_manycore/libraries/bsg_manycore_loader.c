@@ -324,11 +324,11 @@ void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
     printf("init cache (%d, %d)'s tag.\n", x, y);
     uint8_t *tag_pkt = hb_mc_get_tag_pkt(x, y); 
     int  pass_init_tag = HB_MC_SUCCESS;
-    for (int i=0; i<4; i++) {
+    for (int i = 0; i < 4; i++) {
         sv_pause(1);
         if (hb_mc_write_fifo(fd, 0, (int *) tag_pkt) != HB_MC_SUCCESS) {    
-        printf("fail %d\n", i);
-        pass_init_tag= HB_MC_FAIL;
+          printf("fail %d\n", i);
+          pass_init_tag = HB_MC_FAIL;
         }
     }
     if (pass_init_tag == HB_MC_SUCCESS)
@@ -336,3 +336,4 @@ void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
     else
         printf("init tag failed.\n");
 }
+
