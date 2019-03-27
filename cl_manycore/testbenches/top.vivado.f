@@ -52,11 +52,11 @@
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
+${CL_DIR}/hardware/bsg_bladerunner_configuration.v
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
 ${CL_DIR}/../hdl/axil_to_mem.sv
 ${CL_DIR}/../hdl/bsg_bladerunner_rom.v
-${CL_DIR}/../hdl/configuration_rom.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v

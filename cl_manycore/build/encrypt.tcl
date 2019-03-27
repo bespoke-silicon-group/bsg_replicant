@@ -43,12 +43,12 @@ file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $T
 file copy -force $COMMON_DIR/axil_to_mem.sv                                   $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
-file copy -force $COMMON_DIR/configuration_rom.v                              $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_defines.vh                               $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                            $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore.sv                              $TARGET_DIR
+file copy -force $CL_DIR/hardware/bsg_bladerunner_configuration.v             $TARGET_DIR
 
 file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_manycore_wrapper.v       $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_cache_wrapper_axi.v      $TARGET_DIR

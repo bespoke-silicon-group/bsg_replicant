@@ -120,7 +120,7 @@ module bsg_bladerunner_rom #(
   assign rom_addr_li = lg_rom_els_lp'(in_addr_lo);
   assign returning_v_li = returning_v_r;
 
-  configuration_rom #(
+  bsg_bladerunner_configuration #(
     .width_p(rom_width_p)
     ,.addr_width_p(lg_rom_els_lp)
   ) configuration_rom (
