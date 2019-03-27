@@ -208,23 +208,20 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
  * reads 128B from the nth fifo
  * returns dequeued element on success and INT_MAX on failure.
  * */
-void hb_mc_read_fifo (uint8_t fd, uint8_t n, request_packet_t *buf) {
+int hb_mc_read_fifo (uint8_t fd, uint8_t n, request_packet_t *buf) {
 	if (n >= NUM_FIFO) {
-		printf("Invalid fifo.\n.");
-		return;
+		return HB_MC_FAIL;
 	}
 
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("read_fifo(): device not initialized.\n");
-		return;
+		return HB_MC_FAIL;
 	}		
 
 	while (hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]) < 1) {}
 
 	uint16_t receive_length = hb_mc_read16(fd, fifo[n][FIFO_RECEIVE_LENGTH]);
 	if (receive_length != 16) {
-		printf("read_fifo(): receive length of %d instead of 16.\n", receive_length);
-		return;
+		return HB_MC_FAIL;
 	}
 	
 	#ifdef DEBUG
