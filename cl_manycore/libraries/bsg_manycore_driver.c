@@ -126,9 +126,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	return ocl_table[fd];
 } 
 
-
 #endif
-
 /*! 
  * Initializes the FPGA at slot 0. 
  * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
@@ -156,6 +154,41 @@ int hb_mc_init_host (uint8_t *fd) {
 
 	return HB_MC_SUCCESS; 
 }
+/*!
+ * Gets the x coordinates of a list of tile_t structs.
+ * @param tiles array of tiles. Must be allocated by the caller.
+ * @param x_list array of x coordinates. Must be allocated by the caller.
+ * @param num_tiles array number of tiles.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
+ */
+static int hb_mc_get_x(tile_t *tiles, uint8_t *x_list, uint32_t num_tiles) {
+	if (!tiles || !x_list) {
+		return HB_MC_FAIL;
+	}
+	for (int i = 0; i < num_tiles; i++) {
+		x_list[i] = tiles[i].x;
+	}
+	return HB_MC_SUCCESS;
+}
+
+/*!
+ * Gets the x coordinates of a list of tile_t structs.
+ * @param tiles array of tiles. Must be allocated by the caller.
+ * @param x_list array of x coordinates. Must be allocated by the caller.
+ * @param num_tiles array number of tiles.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
+ */
+static int hb_mc_get_y(tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
+	if (!tiles || !y_list) {
+		return HB_MC_FAIL;
+	}
+	for (int i = 0; i < num_tiles; i++) {
+		y_list[i] = tiles[i].y;
+	}
+	return HB_MC_SUCCESS;
+}
+
+
 /*!
  * Checks if the dimensions of the Manycore matches with what is expected.
  * @return HB_MC_SUCCESS if its able to verify that the device has the expected dimensions and HB_MC_FAIL otherwise.
@@ -347,3 +380,34 @@ void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, 
 
 }
 
+/*
+ * Initializes Manycore tiles so that they may run kernels.
+ * @param fd userspace file descriptor, which must be obtained from hb_mc_init_host.
+ * @param eva_id specifies what the EVA-NPA mapping is.
+ * @param tiles an array of tile_t structs to initialize.
+ * @param num_tiles the number of tiles to initialize.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
+ */
+int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
+	if (eva_id != 0) {
+		return HB_MC_FAIL; /* eva_id not supported */
+	} 
+
+	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
+		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
+		hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
+	}
+	
+	/* load the elf into each tile */
+	uint8_t x_list[num_tiles], y_list[num_tiles];	
+	hb_mc_get_x(tiles, &x_list[0], num_tiles);
+	hb_mc_get_y(tiles, &y_list[0], num_tiles); /* TODO */
+	hb_mc_load_binary(fd, elf, &x_list[0], &y_list[0], num_tiles);
+
+	/* create a memory manager object */
+	
+	/* unfreeze the tile group */
+	for (int i = 0; i < num_tiles; i++) {
+		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
+	}
+}

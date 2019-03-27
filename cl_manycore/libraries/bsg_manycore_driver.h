@@ -25,6 +25,14 @@ static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
 
 int hb_mc_init_host (uint8_t *fd);
+typedef uint32_t eva_id_t;
+typedef struct {
+	uint8_t x;
+	uint8_t y;
+	uint8_t origin_x;
+	uint8_t origin_y;
+} tile_t;
+
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
 int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
@@ -37,6 +45,7 @@ int hb_mc_check_device (uint8_t fd);
 uint8_t hb_mc_get_num_x ();
 uint8_t hb_mc_get_num_y (); 
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
+int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)
