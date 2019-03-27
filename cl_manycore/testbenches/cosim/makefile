@@ -46,7 +46,8 @@ C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
 		$(C_COMMON_DIR)/src/fpga_pci_sv.c \
 	 	$(CL_DIR)/libraries/bsg_manycore_driver.cpp \
 		$(CL_DIR)/libraries/bsg_manycore_loader.cpp \
-		$(CL_DIR)/libraries/bsg_manycore_mem.cpp 
+		$(CL_DIR)/libraries/bsg_manycore_mem.cpp \
+		$(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
 # SV TEST LIST used by included makefiles (Purpose unclear)
 SV_TEST_LIST = $(PROJECT) 
 
