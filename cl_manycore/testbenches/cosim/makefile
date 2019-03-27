@@ -43,10 +43,10 @@ C_SRC_DIR = $(CL_DIR)/software
 # C_TB_TOP names the software C file that drives cosimulation
 C_TB_TOP  = $(C_SRC_DIR)/$(PROJECT).c
 C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
-						$(C_COMMON_DIR)/src/fpga_pci_sv.c \
-						$(CL_DIR)/libraries/bsg_manycore_driver.c \
-						$(CL_DIR)/libraries/bsg_manycore_loader.c \
-						$(CL_DIR)/libraries/bsg_manycore_mem.c 
+			$(C_COMMON_DIR)/src/fpga_pci_sv.c \
+			$(CL_DIR)/libraries/bsg_manycore_driver.c \
+			$(CL_DIR)/libraries/bsg_manycore_loader.c \
+			$(CL_DIR)/libraries/bsg_manycore_mem.c 
 # SV TEST LIST used by included makefiles (Purpose unclear)
 SV_TEST_LIST = $(PROJECT) 
 
