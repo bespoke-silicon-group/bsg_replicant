@@ -32,7 +32,9 @@ void cosim_read_write_test () {
 
 	printf("Running the Cosimulation Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
 
-	uint8_t fd = 0; /* unused */
+	uint8_t fd; 
+	hb_mc_init_host(&fd);	
+
 	/* store data in tile */
 	uint32_t data = 0xABCD;
 	printf("write to DMEM\n");
