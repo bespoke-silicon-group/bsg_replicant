@@ -7,7 +7,7 @@
 | `NETWORK_ADDR_WIDTH`      | manycore network address width |
 | `NETWORK_DATA_WIDTH`      | manycore network data width |
 | `NETWORK_DIMENSION_X`     | manycore network X dimension, number of columns of the mesh node |
-| `NETWORK_DIMENSION_X`     | manycore network Y dimension, number of rows of the mesh node |
+| `NETWORK_DIMENSION_Y`     | manycore network Y dimension, number of rows of the mesh node |
 | `HOST_INTERFACE_COORD_X`  | the X location of the host node in the manycore mesh network |
 | `HOST_INTERFACE_COORD_Y`  | the Y location of the host node in the manycore mesh network |
 | `DESCRIPTION_PTR`         | description pointer, TBD |
