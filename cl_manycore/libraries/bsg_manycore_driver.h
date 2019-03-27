@@ -34,6 +34,8 @@ typedef struct {
 	uint8_t origin_y;
 } tile_t;
 
+typedef uint32_t eva_t;
+
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
 int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);

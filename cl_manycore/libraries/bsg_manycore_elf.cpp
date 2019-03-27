@@ -1,7 +1,9 @@
 #ifndef COSIM
 #include <bsg_manycore_elf.h>
+#include <bsg_manycore_errno.h>
 #else
 #include "bsg_manycore_elf.h"
+#include "bsg_manycore_errno.h"
 #endif
 
 #include <map>
@@ -31,19 +33,9 @@ typedef map<string, SymbolInfoPtr> symbol_table;
 #define pr_err(fmt, ...)                                \
         fprintf(stderr, "error: " fmt, ##__VA_ARGS__);
 
-static symbol_table symbols;
 
-static int symbol_to_epa(const char *sym_name, uint32_t *epa)
-{
-        symbol_table::iterator it = symbols.find(string(sym_name));
-        if (it != symbols.end()) {
-                *epa = (it->second->value) >> 2;
-                return 0;
-        } else {
-                return -1;
-        }
-}
-static int object_symbol_table_import_symbols(unsigned char *object_data, Elf32_Shdr *symtab_shdr, Elf32_Shdr *strtab_shdr)
+
+static int object_symbol_table_import_symbols(symbol_table& symbols, unsigned char *object_data, Elf32_Shdr *symtab_shdr, Elf32_Shdr *strtab_shdr)
 {
         Elf32_Word sym_n = symtab_shdr->sh_size/symtab_shdr->sh_entsize;
         Elf32_Word sym_i;
@@ -68,7 +60,7 @@ static int object_symbol_table_import_symbols(unsigned char *object_data, Elf32_
         return 0;
 }
 
-void object_symbol_table_init(const char *fname)
+static void object_symbol_table_init(const char *fname, symbol_table& symbols)
 {
         FILE *f = fopen(fname, "rb");
         long size;
@@ -125,7 +117,7 @@ void object_symbol_table_init(const char *fname)
                 symtab_shdr = &shdr[section_i];
                 strtab_shdr = &shdr[symtab_shdr->sh_link];
                 /* add all symbols to the symbol table */
-                if (object_symbol_table_import_symbols(object_data, symtab_shdr, strtab_shdr) < 0)
+                if (object_symbol_table_import_symbols(symbols, object_data, symtab_shdr, strtab_shdr) < 0)
                         goto fail_free_object_data;
         }
 
@@ -141,3 +133,15 @@ fail_return:
         exit(1);
 }
 
+int symbol_to_eva(const char *fname, const char *sym_name, eva_t* eva)
+{
+	static symbol_table symbols;
+        object_symbol_table_init(fname, symbols);
+	symbol_table::iterator it = symbols.find(string(sym_name));
+        if (it != symbols.end()) {
+                *eva = (it->second->value) >> 2;
+                return HB_MC_SUCCESS;
+        } else {
+                return HB_MC_FAIL;
+        }
+}

@@ -13,8 +13,12 @@ extern "C" {
 #include <alloca.h>
 #include <inttypes.h>
 #include <elf.h>
-void object_symbol_table_init(const char *fname);
-
+#ifndef COSIM
+#include <bsg_manycore_driver.h>
+#else
+#include "bsg_manycore_driver.h"
+#endif
+int symbol_to_eva(const char *fname, const char *sym_name, eva_t *eva);
 #ifdef __cplusplus
 }
 #endif
