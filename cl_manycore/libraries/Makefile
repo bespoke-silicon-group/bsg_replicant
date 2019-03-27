@@ -1,7 +1,7 @@
 INCLUDES := -I$(SDK_DIR)/userspace/include
 INCLUDES += -I$(HDK_DIR)/common/software/include -I.
 
-CFLAGS  := -std=c11 -fPIC $(INCLUDES)
+CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
 LDLIBS  := -lfpga_mgmt 
 
 HEADERS := bsg_manycore_driver.h
@@ -16,7 +16,7 @@ OBJECTS += bsg_manycore_mem.o
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
-	$(CC) $(CFLAGS) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0 $(OBJECTS) $(LDLIBS)	
+	$(CXX) $(CFLAGS) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0 $(OBJECTS) $(LDLIBS)	
 
 install: build
 	mv libbsg_manycore_runtime.so.1.0 /usr/lib64/

@@ -10,6 +10,10 @@
 #endif
 #include <endian.h>
 #include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * The raw request packets that are used to initiate communications between the manycore and the host.
  * You should not read from any of the fields directly, instead use the accessor functions.
@@ -261,4 +265,7 @@ static inline uint8_t hb_mc_response_packet_get_op(hb_mc_response_packet_t *pack
         return packet->op;
 }
 
+#ifdef __cplusplus
+}
+#endif
 #endif

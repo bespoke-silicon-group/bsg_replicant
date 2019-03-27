@@ -19,6 +19,10 @@
 #include <limits.h>
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static uint8_t WORD = 4;
 static uint8_t SHORT = 2;
 
@@ -63,5 +67,9 @@ int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
 int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
+#ifdef __cplusplus
+}
+#endif
+
 #endif 
 

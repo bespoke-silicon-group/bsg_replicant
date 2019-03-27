@@ -11,13 +11,14 @@
 
 #include <stdint.h>
 #include <limits.h>
-
-
-
 #ifndef COSIM
 #include <bsg_manycore_packet.h>
 #else
 #include "bsg_manycore_packet.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #ifndef COSIM
@@ -88,4 +89,7 @@ static const uint32_t MANYCORE_NUM_Y = 0x2000 + (4<<2);
 
 static const uint32_t MAX_CREDITS = 16;
 
+#ifdef __cplusplus
+}
+#endif
 #endif
