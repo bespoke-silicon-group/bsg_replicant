@@ -13,14 +13,14 @@
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
 
-`include "bsg_manycore_packet.vh"
+`include "axil_to_mcl.vh"
 
 module cl_tb();
 
-import tb_type_defines_pkg::*;
-`define AXI_MEMORY_MODEL
-// AXI ID
-parameter [5:0] AXI_ID = 6'h0;
+  import tb_type_defines_pkg::*;
+  import cl_mcl_pkg::*;
+  // AXI ID
+  parameter [5:0] AXI_ID = 6'h0;
 
   parameter ISR_REG = 32'h0000_0000;
   parameter IER_REG = 32'h0000_0004;
@@ -37,20 +37,22 @@ parameter [5:0] AXI_ID = 6'h0;
   parameter TDFD_REG = 32'h0000_0010;
   parameter RDFD_REG = 32'h0000_0020;
 
+  parameter MST_BASE_ADDR = 32'h0000_0000;
+  parameter SLV_BASE_ADDR = 32'h0000_1000;
+  parameter MON_BASE_ADDR = 32'h0000_2000;
+
+  parameter DMEM_BASE = 16'h1000;
+
   logic [31:0] rdata;
   logic [15:0] vdip_value;
   logic [15:0] vled_value;
   logic [127:0] packet;
 
-  parameter in_addr_width=27;
-  parameter in_data_width=32;
-  parameter in_x_cord_width=2;
-  parameter in_y_cord_width=3;
-  parameter load_id_width_p=11;
+  `declare_bsg_mcl_request_s;
+  `declare_bsg_mcl_response_s;
 
-  `declare_bsg_manycore_packet_s(in_addr_width,in_data_width,in_x_cord_width,in_y_cord_width,load_id_width_p);
-  parameter packet_width_lp = `bsg_manycore_packet_width(in_addr_width,in_data_width,in_x_cord_width,in_y_cord_width,load_id_width_p);
-  bsg_manycore_packet_s packet_cast;
+  bsg_mcl_request_s request_packet;
+  bsg_mcl_response_s response_packet;
   
   
    initial begin
@@ -71,20 +73,30 @@ parameter [5:0] AXI_ID = 6'h0;
 
       $display ("value of vled:%0x", vled_value);
 
-      // begin here
-      ocl_power_up_init(.CFG_BASE_ADDR('0));
-      // ocl_poke_cmd(.fifo_num(0), .addr(1<<22), .op(2'b01), .op_ex(4'b1111), .payload(32'b0), .src_y_cord(3'b100), .src_x_cord(2'b11), .y_cord(3'b101), .x_cord(2'b00));
+      // -------------------------------------
+      // mcl monitor AXI space test:
+      // -------------------------------------
+      $display ($time,,,"AXIL monitor space test");
 
-      tb.peek_ocl(.addr(32'h0000_0200), .data(rdata));
-      $display($time,,,"Readback the Vacancy%h", rdata);
+      tb.peek_ocl(.addr(MON_BASE_ADDR + (HOST_RCV_VACANCY_MC_REQ<<2)), .data(rdata));
+      $display($time,,,"Readback the rcv FIFO vacancy: %10h", rdata);
 
-      tb.peek_ocl(.addr(32'h0000_0210), .data(rdata));
-      $display($time,,,"Readback the Credits%h", rdata);
+      tb.peek_ocl(.addr(MON_BASE_ADDR + (HOST_REQ_CREDITS<<2)), .data(rdata));
+      $display($time,,,"Readback the credits: %10h", rdata);
 
-      tb.peek_ocl(.addr(32'h0000_0220), .data(rdata));
-      $display($time,,,"Readback the x Demension%h", rdata);
-      tb.peek_ocl(.addr(32'h0000_0220), .data(rdata));
-      $display($time,,,"Readback the y Demension%h", rdata);
+      tb.peek_ocl(.addr(MON_BASE_ADDR + (MC_NUM_X<<2)), .data(rdata));
+      $display($time,,,"Readback the x demension: %10h", rdata);
+
+      tb.peek_ocl(.addr(MON_BASE_ADDR + (MC_NUM_Y<<2)), .data(rdata));
+      $display($time,,,"Readback the y demension: %10h", rdata);
+
+      // -------------------------------------
+      // TODO: mcl NPA space test
+      // let's move more manycore-related test to cosim
+      // -------------------------------------
+      ocl_power_up_init(.FIFO_BASE_ADDR(MST_BASE_ADDR));
+      ocl_power_up_init(.FIFO_BASE_ADDR(SLV_BASE_ADDR));
+      // ocl_poke_request(.addr(DMEM_BASE>>2), .op(2'b01), .op_ex(4'b1111), .payload(32'hABCD), .src_y_cord(0), .src_x_cord(3), .y_cord(1), .x_cord(0));
 
       tb.kernel_reset();
 
@@ -94,143 +106,137 @@ parameter [5:0] AXI_ID = 6'h0;
    end
 
 
-  task ocl_power_up_init(logic [31:0] CFG_BASE_ADDR);
+  task ocl_power_up_init(logic [31:0] FIFO_BASE_ADDR);
 
     logic [31:0] rd_reg;
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
     $display($time,,,"Read ISR: %0h", rd_reg);
     compare_dword(rd_reg, 32'h01d0_0000);
 
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
+    tb.poke_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
     $display($time,,,"Clear ISR");
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
     $display($time,,,"Read ISR: %0h", rd_reg);
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+IER_REG), .data(rd_reg));
     $display($time,,,"Read IER: %0h", rd_reg);
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
-    $display($time,,,"Read TDFV: %0h", rd_reg);
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+TDFV_REG), .data(rd_reg));
+    $display($time,,,"Read TDFV: %0d", rd_reg);
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDFO_REG), .data(rd_reg));
     $display($time,,,"Read RDFO: %0h", rd_reg);
-
   endtask
 
-  task ocl_poke_cmd( 
-    int fifo_num,
-    logic [in_addr_width-1:0] addr, logic [1:0] op, logic [in_data_width>>3-1:0] op_ex, logic [in_data_width-1:0] payload,
-    logic [in_y_cord_width-1:0] src_y_cord, y_cord, logic [in_x_cord_width-1:0] src_x_cord, x_cord);
-    bsg_manycore_packet_s packet_cast;
+  task ocl_poke_request(input logic [31:0] addr, input logic [7:0] op, op_ex, input logic [31:0] payload, input logic [7:0] src_y_cord, src_x_cord, y_cord, x_cord);
     logic [127:0] packet;
     packet = 128'b0;
-    packet_cast.addr = addr;
-    packet_cast.op = op;
-    packet_cast.op_ex = op_ex;
-    packet_cast.payload = payload;
-    packet_cast.src_y_cord =src_y_cord;
-    packet_cast.src_x_cord = src_x_cord;    
-    packet_cast.y_cord = y_cord;
-    packet_cast.x_cord = x_cord;
-    packet[0+:packet_width_lp] = packet_cast;
-    if (fifo_num==0) begin
-      ocl_poke_test(.CFG_BASE_ADDR(32'h0000_0000), .packet(packet), .debug_fifo(0));
-    end
-    else if(fifo_num==1) begin
-      ocl_poke_test(.CFG_BASE_ADDR(32'h0000_0100), .packet(packet), .debug_fifo(0));
-    end
+    request_packet.addr = addr;
+    request_packet.op = op;
+    request_packet.op_ex = op_ex;
+    request_packet.payload = payload;
+    request_packet.src_y_cord =src_y_cord;
+    request_packet.src_x_cord = src_x_cord;    
+    request_packet.y_cord = y_cord;
+    request_packet.x_cord = x_cord;
+    packet = request_packet;
+    ocl_poke_fifo(.FIFO_BASE_ADDR(MST_BASE_ADDR), .packet(packet), .debug_fifo(0));
   endtask
 
-  task ocl_poke_test(logic [31:0] CFG_BASE_ADDR, logic [127:0] packet, bit debug_fifo);
+  task ocl_peek_response(output logic [7:0] pkt_type, output logic [31:0] data, load_id, output logic [7:0] y_cord, x_cord);
+    logic [127:0] packet;
+    ocl_poke_fifo(.FIFO_BASE_ADDR(MST_BASE_ADDR), .packet(packet), .debug_fifo(0));
+    pkt_type = response_packet.pkt_type;
+    data = response_packet.data;
+    load_id = response_packet.load_id;
+    y_cord = response_packet.y_cord;
+    x_cord = response_packet.x_cord;
+  endtask
 
+  task ocl_poke_fifo(logic [31:0] FIFO_BASE_ADDR, input logic [127:0] packet, bit debug_fifo);
       logic [31:0] rd_reg;
 
-      // write
       $display($time,,,"Write %h to manycore", packet);
-      tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'h0C00_0000));
+      tb.poke_ocl(.addr(FIFO_BASE_ADDR+IER_REG), .data(32'h0C00_0000));
       if(debug_fifo)
         $display($time,,,"Enable Transmit and Receive Complete interrupts");
-      tb.poke_ocl(.addr(CFG_BASE_ADDR+TDR_REG), .data(32'h0000_0000));
+      tb.poke_ocl(.addr(FIFO_BASE_ADDR+TDR_REG), .data(32'h0000_0000));
       if(debug_fifo)
         $display($time,,,"Transmit Destination Address 0x0");
 
       for (int i = 0; i < 4; i++) begin
-        tb.poke_ocl(.addr(CFG_BASE_ADDR+TDFD_REG), .data(packet[32*i+:32]));
+        tb.poke_ocl(.addr(FIFO_BASE_ADDR+TDFD_REG), .data(packet[32*i+:32]));
       end
 
       // read TDFV in store-and-forward mode
       #500ns
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
+      tb.peek_ocl(.addr(FIFO_BASE_ADDR+TDFV_REG), .data(rd_reg));
       if(debug_fifo)
         compare_dword(rd_reg, 32'd506);
 
-      tb.poke_ocl(.addr(CFG_BASE_ADDR+TLR_REG), .data(32'h00000010));
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+      tb.poke_ocl(.addr(FIFO_BASE_ADDR+TLR_REG), .data(32'h00000010));
+      tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
       if(debug_fifo)
         $display($time,,,"Read ISR: %h", rd_reg);
       // 0800_0000 is for write complete, 0020_0000 is for write FIFO empty
       if(debug_fifo)
         compare_dword(rd_reg, 32'h0820_0000);
-      tb.poke_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
+      tb.poke_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
       if(debug_fifo)
         $display($time,,,"Clear ISR");
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+      tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
       if(debug_fifo)
         $display($time,,,"Read ISR: %h", rd_reg);
-      tb.peek_ocl(.addr(CFG_BASE_ADDR+TDFV_REG), .data(rd_reg));
+      tb.peek_ocl(.addr(FIFO_BASE_ADDR+TDFV_REG), .data(rd_reg));
       if(debug_fifo)
         $display($time,,,"Transmit FIFO Vacancy is: %h", rd_reg);
-
   endtask
 
-  task ocl_peek_test(logic [31:0] CFG_BASE_ADDR, logic [127:0] cmp_pkt, bit debug_fifo);
-
+  task ocl_peek_fifo(logic [31:0] FIFO_BASE_ADDR, output logic [127:0] packet, bit debug_fifo);
     logic [31:0] rd_reg;
     logic [31:0] rev_num;
-    logic [127:0] packet;
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
     if(debug_fifo)
       $display($time,,,"Read ISR: %h", rd_reg);
-    tb.poke_ocl(.addr(CFG_BASE_ADDR+IER_REG), .data(32'hFFFF_FFFF));
+    tb.poke_ocl(.addr(FIFO_BASE_ADDR+IER_REG), .data(32'hFFFF_FFFF));
     if(debug_fifo)
       $display($time,,,"Clear ISR");
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
     if(debug_fifo)
       $display($time,,,"Read ISR: %h", rd_reg);
 
     // read RDFO in store-and-forward mode
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDFO_REG), .data(rd_reg));
     // if(debug_fifo)  
       $display($time,,,"Receive FIFO Occupancy is: %h", rd_reg);
     // compare_dword(rd_reg, 32'h00000004*(1));
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+RLR_REG), .data(rev_num));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+RLR_REG), .data(rev_num));
     // if(debug_fifo)  
       $display($time,,,"Read RLR : %h", rev_num);
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+RDR_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDR_REG), .data(rd_reg));
     if(debug_fifo)  
       $display($time,,,"Read RDR : %h", rev_num);
     for (int k=0; k<rev_num/16; k++) begin
       for (int i=0; i<4; i++) begin
-        tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFD_REG), .data(rd_reg));
+        tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDFD_REG), .data(rd_reg));
         packet[32*i+:32] = rd_reg;
       end
     $display($time,,,"Read %h from manycore", packet);
     end
 
-    // tb.peek_ocl(.addr(CFG_BASE_ADDR+ISR_REG), .data(rd_reg));
+    // tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
     if(debug_fifo)  //  
       $display($time,,,"Read ISR: %h", rd_reg);
       // // 0008_0000 is for write FIFO empty
       // compare_dword(rd_reg, 32'h0408_0000);
 
-    tb.peek_ocl(.addr(CFG_BASE_ADDR+RDFO_REG), .data(rd_reg));
+    tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDFO_REG), .data(rd_reg));
     if(debug_fifo)  
       $display($time,,,"Receive FIFO Occupancy is: %h", rd_reg);
-
   endtask
 
   task compare_dword(logic [32:0] act_data, exp_data);

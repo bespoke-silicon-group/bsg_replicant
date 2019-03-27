@@ -18,11 +18,18 @@
 #include "bsg_manycore_driver.h"
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_loader.h"
-#include "bsg_manycore_print.h"
 #include "bsg_manycore_errno.h"
 
+
 void cosim_load_vector_test () {
-	
+
+  void print_hex (uint8_t *p) {
+  	for (int i = 0; i < 16; i++) {
+  		printf("%x ", (p[15-i] & 0xFF));
+  	}
+  	printf("\n");
+  }
+
 	printf("Running the Cosimulation Load Vector test on the Manycore with 4 x 4 dimensions.\n\n");
 
 	uint8_t fd = 0; /* unused */
@@ -50,7 +57,7 @@ void cosim_load_vector_test () {
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: \n");
 		for (int i = 0; i < n; i++)
-			hb_mc_print_hex((uint8_t *) buf[i]);
+			print_hex((uint8_t *) buf[i]);
 	}
 	
 	else {

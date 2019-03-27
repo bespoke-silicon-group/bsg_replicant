@@ -18,11 +18,18 @@
 #include "bsg_manycore_driver.h"
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_loader.h"
-#include "bsg_manycore_print.h"
 #include "bsg_manycore_errno.h"
 
+
 void cosim_read_write_test () {
-	
+
+  void print_hex (uint8_t *p) {
+  	for (int i = 0; i < 16; i++) {
+  		printf("%x ", (p[15-i] & 0xFF));
+  	}
+  	printf("\n");
+  }
+
 	printf("Running the Cosimulation Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
 
 	uint8_t fd = 0; /* unused */
@@ -42,7 +49,7 @@ void cosim_read_write_test () {
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
-		hb_mc_print_hex((uint8_t *) buf[0]);
+		print_hex((uint8_t *) buf[0]);
 	}
 	
 	else {
