@@ -16,7 +16,7 @@ BSG_MANYCORE_DIR ?= $(CL_DIR)/../../bsg_manycore
 
 all: $(SIM_TARGETS) $(BUILD_TARGETS)
 
-.PHONY: build configuration_rom
+.PHONY: build
 
 build: hardware/bsg_bladerunner_configuration.v
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR) BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)
