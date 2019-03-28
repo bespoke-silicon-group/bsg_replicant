@@ -21,8 +21,8 @@
  	#include "bsg_manycore_errno.h"
 #endif
 
-static uint8_t NUM_X = 0; /*! Number of columns of tiles. */
-uint8_t NUM_Y;
+static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
+static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
@@ -144,8 +144,8 @@ int hb_mc_init_host (uint8_t *fd) {
 	num_dev++;
 
 	/* initialize dimension variables */
-	NUM_X = hb_mc_read(*fd, MANYCORE_NUM_X, 32);
-	NUM_Y = hb_mc_read(*fd, MANYCORE_NUM_Y, 32);	
+	NUM_X = hb_mc_read32(*fd, MANYCORE_NUM_X);
+	NUM_Y = hb_mc_read32(*fd, MANYCORE_NUM_Y);	
 
 	return HB_MC_SUCCESS; 
 }
@@ -305,4 +305,20 @@ int hb_mc_can_read (uint8_t fd, uint32_t size) {
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
+}
+
+/*!
+ * @param fd user-level file descriptor.
+ * @return the number of columns in the Manycore.
+ * */
+uint8_t hb_mc_get_num_x () {
+	return NUM_X;
+} 
+
+/*!
+ * @param fd user-level file descriptor.
+ * @return the number of rows in the Manycore.
+ * */
+uint8_t hb_mc_get_num_y () {
+	return NUM_Y;
 }
