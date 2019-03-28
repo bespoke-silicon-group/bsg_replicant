@@ -13,6 +13,7 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_print.h>
 #include <bsg_manycore_errno.h>
+#include <bsg_manycore_packet.h>
 
 int main () {
 	
@@ -25,7 +26,7 @@ int main () {
 	}
 	
 	uint32_t n = 10; 
-	uint32_t *data = (uint32_t *) calloc(n, sizeof(uint32_t));
+	uint32_t data[n];
 	srand(0);
 	for (int i = 0; i < n; i++) {
 		data[i] = rand();
@@ -33,7 +34,7 @@ int main () {
 	}
 
 	/* store data in tile */
-	int write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, data, n);
+	int write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, (uint32_t *) &data[0], n);
 
 	if (write != HB_MC_SUCCESS) {
 		printf("writing data to tile (0, 1)'s DMEM failed.\n");
@@ -41,13 +42,13 @@ int main () {
 	}
 
 	/* read back data */
-	uint32_t **buf = (uint32_t **) calloc(n, sizeof(uint32_t *));
-	int read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, n); 
+	request_packet_t buf[n];
+	int read = hb_mc_copy_from_epa(fd, (request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, n); 
 	
 	if (read == HB_MC_SUCCESS) {
-		printf("read packet: ");
+		printf("read packets: \n");
 		for (int i = 0; i < n; i++)
-			hb_mc_print_hex((uint8_t *) buf[i]);
+			hb_mc_print_hex((uint8_t *) &buf[i]);
 	}
 	
 	else {

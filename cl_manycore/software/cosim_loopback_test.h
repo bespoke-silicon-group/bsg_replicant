@@ -18,7 +18,7 @@
 #include "bsg_manycore_driver.h"
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_loader.h"
-
+#include "bsg_manycore_packet.h"
 
 void cosim_loopback_test () {
 
@@ -54,10 +54,19 @@ void cosim_loopback_test () {
   	hb_mc_unfreeze(fd, 0, 1);
 
 	printf("Checking receive packet...\n");
-	usleep(100); /* 100 us */	
-	uint32_t *receive_packet = hb_mc_read_fifo(fd, 1, NULL);
-	printf("Receive packet: ");
-	print_hex((uint8_t *) receive_packet);
-}
+	usleep(100); /* 100 us */
+	request_packet_t manycore_finish;
+	hb_mc_read_fifo(fd, 1, &manycore_finish);	
+
+	uint32_t addr = request_packet_get_addr(&manycore_finish);
+	uint32_t data = request_packet_get_data(&manycore_finish);
+	uint32_t op_ex = request_packet_get_op_ex(&manycore_finish);
+	uint32_t x_src = request_packet_get_x_src(&manycore_finish);
+	uint32_t y_src = request_packet_get_y_src(&manycore_finish);
+	uint32_t x_dst = request_packet_get_x_dst(&manycore_finish);
+	uint32_t y_dst = request_packet_get_y_dst(&manycore_finish);
+	uint32_t op = request_packet_get_op(&manycore_finish);
+	printf("Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data & op_ex);
+ }
 
 #endif

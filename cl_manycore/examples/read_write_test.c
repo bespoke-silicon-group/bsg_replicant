@@ -35,12 +35,12 @@ int main () {
 	}
 
 	/* read back data */
-	uint32_t **buf = (uint32_t **) calloc(1, sizeof(uint32_t *));
-	int read = hb_mc_copy_from_epa(fd, buf, 0, 1, DMEM_BASE >> 2, 1); 
+	request_packet_t buf[1];
+	int read = hb_mc_copy_from_epa(fd, (request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
-		hb_mc_print_hex((uint8_t *) buf[0]);
+		hb_mc_print_hex((uint8_t *) &buf[0]);
 	}
 	
 	else {

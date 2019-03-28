@@ -10,6 +10,8 @@
 #endif
 
 uint32_t DMEM_BASE = 0x1000;
+uint8_t MY_X = 3;
+uint8_t MY_Y = 0; 
 
 /*!
  *  * writes the binary's instructions into (x,y)'s icache.
