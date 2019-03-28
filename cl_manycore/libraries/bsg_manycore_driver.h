@@ -36,6 +36,12 @@ typedef struct {
 
 typedef uint32_t eva_t;
 
+typedef struct {
+	uint32_t epa;
+	uint32_t x;
+	uint32_t y; 
+} npa_t;
+
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
 int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
@@ -51,6 +57,7 @@ void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, 
 int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles);
 eva_t hb_mc_device_malloc (eva_id_t eva_id, uint32_t size);
+int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 #ifdef COSIM
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
 #endif
