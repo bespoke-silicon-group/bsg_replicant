@@ -1,5 +1,5 @@
-#ifndef COSIM_DEVICE_INIT_TEST_iH
-#define COSIM_DEVICE_INIT_TEST_H
+#ifndef COSIM_CUDA_TEST_H
+#define COSIM_CUDA_TEST_H
 
 #ifndef _BSD_SOURCE
 	#define _BSD_SOURCE
@@ -28,7 +28,7 @@ void print_hex (uint8_t *p) {
 }
 
 
-void cosim_device_init_test () {
+void cosim_cuda_test () {
 	
 	printf("Cosimulation test of hb_mc_init_device().\n\n");
 	uint8_t fd; 
@@ -51,6 +51,12 @@ void cosim_device_init_test () {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
 	printf("start: 0x%x, size: 0x%x\n", start, size);
+	
+	/* allocate 2 64B buffers */
+	eva_t A = hb_mc_device_malloc(eva_id, 64);
+	eva_t B = hb_mc_device_malloc(eva_id, 64);
+	printf("A's EVA 0x%x, B's EVA: 0x%x\n", A, B);
+	
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles);
 	return;
 }

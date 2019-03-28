@@ -475,7 +475,22 @@ void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *siz
 	*start = mem_manager[eva_id]->start();
 	*size =mem_manager[eva_id]->size();
 }
-
-
-
 #endif
+
+/*!
+ * allocates memory in Manycore
+ *@param eva_id specifies EVA-NPA mapping.
+ *@param size in bytes.
+ *@return an EVA address. On failure, 0 will be returned. 
+ */
+eva_t hb_mc_device_malloc (eva_id_t eva_id, uint32_t size) {
+	if (eva_id != 0) {
+		return 0; /* invalid EVA ID */
+	}
+	else if (!mem_manager[eva_id]) {
+		return 0; /* memory manager has not been initialized */
+	}
+
+	eva_t result = mem_manager[eva_id]->alloc(size);
+	return result;
+}
