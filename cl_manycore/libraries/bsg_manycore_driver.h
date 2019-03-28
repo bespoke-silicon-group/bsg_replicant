@@ -103,6 +103,7 @@ static const uint32_t MANYCORE_NUM_Y = 0x2000 + (4<<2);
 
 static const uint32_t MAX_CREDITS = 16;
 
+enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
 #ifdef __cplusplus
 }
 #endif

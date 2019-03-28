@@ -708,3 +708,60 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 	}
 	return HB_MC_SUCCESS;
 }
+
+/*
+ * caller must ensure eva_id is valid. */
+static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *src) {
+	npa_t npa;	
+	int error = hb_mc_eva_to_npa(eva_id, dst, &npa);
+	if (error != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* could not convert EVA to an NPA */
+	}
+	error = hb_mc_copy_to_epa (fd, npa->x, npa->y, npa->epa, src, 1 /* 1 word */);
+	if (error != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* could not send data to Manycore */
+	}
+	return HB_MC_SUCCESS;
+}
+
+/*
+ * caller must esure eva_id is valid. 
+ * */
+static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, uint32_t *dest, eva_t src) {
+	npa_t npa;	
+	int error = hb_mc_eva_to_npa(eva_id, src, &npa);
+	if (error != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* could not convert EVA to an NPA */
+	}
+	error = hb_mc_copy_from_epa (fd, dest, npa->x, npa->y, npa->epa, 1 /* 1 word */);
+	if (error != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* could not send data to Manycore */
+	}
+	return HB_MC_SUCCESS;
+}
+int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
+	if (eva_id != 0) 
+		return HB_MC_FAIL; /* invalid EVA ID */
+
+	else if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
+		eva_t dst_eva = (eva_t) dst;
+		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
+			int error = hb_mc_cpy_to_eva(fd, eva_id, dst, (uint32_t *) (src + i)); 		
+			if (error != HB_MC_SUCCESS)
+				return HB_MC_FAIL; /* copy failed */
+		}
+		return HB_MC_SUCCESS;	
+	}
+	
+	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
+		eva_t src_eva = (eva_t) src;
+		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
+			int error = hb_mc_cpy_from_eva(fd, eva_id, (uint32_t *) (dst + i), src_eva); 		
+			if (error != HB_MC_SUCCESS)
+				return HB_MC_FAIL; /* copy failed */
+		}
+		return HB_MC_SUCCESS;	
+	}
+	else 
+		return HB_MC_FAIL; /* invalid kind */
+}
