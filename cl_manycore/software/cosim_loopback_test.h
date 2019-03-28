@@ -31,7 +31,8 @@ void cosim_loopback_test () {
 
 	printf("Running the Cosimulation Loopback test on the Manycore with 4 x 4 dimensions.\n\n");
 
-	uint8_t fd = 0; /* unused */
+	uint8_t fd;
+	hb_mc_init_host(&fd);
 
 	uint8_t x = 0, y = 1;
 

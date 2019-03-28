@@ -141,7 +141,7 @@ static void hb_mc_parse_elf (char *filename, uint8_t x, uint8_t y, uint32_t *num
                     int32_t addr = (ofs) >> 2; 
                     uint32_t data = *((uint32_t *) (instructions + ofs));
                     if (init_dram) {
-                        (*dram_pkts)[ofs/4] = hb_mc_get_pkt(addr, data, 0, NUM_Y+1, OP_REMOTE_STORE);
+                        (*dram_pkts)[ofs/4] = hb_mc_get_pkt(addr, data, 0, hb_mc_get_num_y() + 1, OP_REMOTE_STORE);
                     }
                     (*icache_pkts)[ofs/4] = hb_mc_get_pkt(addr | (1 << 22), data, x, y, OP_REMOTE_STORE); /*  send packet to tile (0, 0) */
                 }

@@ -21,7 +21,8 @@
  	#include "bsg_manycore_errno.h"
 #endif
 
-uint8_t NUM_Y = 4;
+static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
+static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
@@ -118,6 +119,9 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	return ocl_table[fd];
 } 
 
+
+#endif
+
 /*! 
  * Initializes the FPGA at slot 0. 
  * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
@@ -126,18 +130,25 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
  * */
 int hb_mc_init_host (uint8_t *fd) {
 	*fd = num_dev;
-	char *ocl_base = hb_mc_mmap_ocl(*fd);
+	char *ocl_base;
+	#ifndef COSIM
+	ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
 		printf("hb_mc_init_host(): unable to mmap device.\n");
 		return HB_MC_FAIL;
 	}	
-	
+	#else
+	ocl_base = 0;
+	#endif
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
+
+	/* initialize dimension variables */
+	NUM_X = hb_mc_read32(*fd, MANYCORE_NUM_X);
+	NUM_Y = hb_mc_read32(*fd, MANYCORE_NUM_Y);	
+
 	return HB_MC_SUCCESS; 
 }
-#endif
-
 /*!
  * Checks if the dimensions of the Manycore matches with what is expected.
  * @return HB_MC_SUCCESS if its able to verify that the device has the expected dimensions and HB_MC_FAIL otherwise.
@@ -294,4 +305,20 @@ int hb_mc_can_read (uint8_t fd, uint32_t size) {
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
+}
+
+/*!
+ * @param fd user-level file descriptor.
+ * @return the number of columns in the Manycore.
+ * */
+uint8_t hb_mc_get_num_x () {
+	return NUM_X;
+} 
+
+/*!
+ * @param fd user-level file descriptor.
+ * @return the number of rows in the Manycore.
+ * */
+uint8_t hb_mc_get_num_y () {
+	return NUM_Y;
 }

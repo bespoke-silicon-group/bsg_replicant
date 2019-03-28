@@ -31,8 +31,10 @@ void cosim_load_vector_test () {
   }
 
 	printf("Running the Cosimulation Load Vector test on the Manycore with 4 x 4 dimensions.\n\n");
-
-	uint8_t fd = 0; /* unused */
+	
+	
+	uint8_t fd = 0; 
+	hb_mc_init_host(&fd);	
 
 	uint32_t n = 10; 
 	uint32_t *data = (uint32_t *) calloc(n, sizeof(uint32_t));

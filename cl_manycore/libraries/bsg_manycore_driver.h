@@ -12,10 +12,12 @@
 #include <stdint.h>
 #include <limits.h>
 
+
+
 #ifndef COSIM
-int hb_mc_init_host (uint8_t *fd);
 static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
+int hb_mc_init_host (uint8_t *fd);
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val);
 uint32_t *hb_mc_read_fifo (uint8_t fd, uint8_t n, uint32_t *val);
@@ -25,10 +27,9 @@ int hb_mc_all_host_req_complete(uint8_t fd);
 uint32_t hb_mc_get_recv_vacancy (uint8_t fd);
 int hb_mc_can_read (uint8_t fd, uint32_t size);
 int hb_mc_check_device (uint8_t fd);
+uint8_t hb_mc_get_num_x ();
+uint8_t hb_mc_get_num_y (); 
 
-static uint8_t NUM_X = 4; /*! Number of columns of tiles. */
-
-extern uint8_t NUM_Y;  /*! Number of rows of tiles */
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)
