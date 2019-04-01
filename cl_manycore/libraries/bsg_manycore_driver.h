@@ -37,9 +37,9 @@ typedef struct {
 typedef uint32_t eva_t;
 
 typedef struct {
-	uint32_t epa;
 	uint32_t x;
 	uint32_t y; 
+	uint32_t epa;
 } npa_t;
 
 int hb_mc_check_dim (uint8_t fd);      
@@ -104,6 +104,8 @@ static const uint32_t MANYCORE_NUM_Y = 0x2000 + (4<<2);
 static const uint32_t MAX_CREDITS = 16;
 
 enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
+int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
+
 #ifdef __cplusplus
 }
 #endif

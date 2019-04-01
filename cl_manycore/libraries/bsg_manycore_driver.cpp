@@ -741,6 +741,7 @@ static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, request_packet_t *de
 	}
 	return HB_MC_SUCCESS;
 }
+
 int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
 	if (eva_id != 0) 
 		return HB_MC_FAIL; /* invalid EVA ID */
@@ -759,8 +760,8 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
 		eva_t src_eva = (eva_t) reinterpret_cast<uintptr_t>(src);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			request_packet_t *dst_packet = (request_packet_t *) dst + i;
-			int error = hb_mc_cpy_from_eva(fd, eva_id, dst_packet, src_eva); 		
+			request_packet_t *dst_packet = (request_packet_t *) dst + (i / sizeof(uint32_t));
+			int error = hb_mc_cpy_from_eva(fd, eva_id, dst_packet, src_eva + i); 		
 			if (error != HB_MC_SUCCESS)
 				return HB_MC_FAIL; /* copy failed */
 		}

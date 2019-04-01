@@ -52,11 +52,64 @@ void cosim_cuda_test () {
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
 	printf("start: 0x%x, size: 0x%x\n", start, size);
 	
-	/* allocate 2 64B buffers */
-	eva_t A = hb_mc_device_malloc(eva_id, 64);
-	eva_t B = hb_mc_device_malloc(eva_id, 64);
-	printf("A's EVA 0x%x, B's EVA: 0x%x\n", A, B);
+	/* allocate A and B on the device */
+	uint32_t size_buffer = 16; 
+	eva_t A_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t));
+	eva_t B_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t));
+	printf("A's EVA 0x%x, B's EVA: 0x%x\n", A_device, B_device);
+
+	/* allocate A and B on the device */
+	uint32_t A_host[size_buffer];
+	uint32_t B_host[size_buffer];
+
+	/* fill A and B */
+	for (int i = 0; i < size_buffer; i++) {
+		A_host[i] = i;
+		B_host[i] = size_buffer - i - 1;
+	}
 	
+	/* Copy A and B to host */	
+	void *dst = (void *) A_device;
+	void *src = (void *) &A_host[0];
+	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device);
+	if (error != HB_MC_SUCCESS) {
+		printf("cosim_cuda_test(): could not copy buffer A to device.\n");
+	}
+	//dst = reinterpret_cast<void *>(B);
+	dst = (void *) B_device;
+	src = (void *) &B_host[0];
+	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device);
+	if (error != HB_MC_SUCCESS) {
+		printf("cosim_cuda_test(): could not copy buffer B to device.\n");
+	}
+
+	// read back A and B from the device
+	request_packet_t A_loads[size_buffer];
+	request_packet_t B_loads[size_buffer];
+	src = (void *) A_device;
+	dst = (void *) &A_loads[0];
+	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host);
+	if (error != HB_MC_SUCCESS) {
+		printf("cosim_cuda_test(): Unable to copy A from device.\n");
+	}
+	src = (void *) B_device;
+	dst = (void *) &B_loads[0];
+	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host);
+	if (error != HB_MC_SUCCESS) {
+		printf("cosim_cuda_test(): Unable to copy B from device.\n");
+	}
+	printf("A loads: \n");
+	for (int i = 0; i < size_buffer; i++) {
+		print_hex((uint8_t *) &A_loads[i]);
+	}	
+	printf("B loads: \n");
+	for (int i = 0; i < size_buffer; i++) {
+		print_hex((uint8_t *) &B_loads[i]);
+	}		
+
+	/* free A and B on device */
+	/* TODO */
+
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles);
 	return;
 }
