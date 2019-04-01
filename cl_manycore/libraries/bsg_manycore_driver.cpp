@@ -16,6 +16,7 @@
 	#include <bsg_manycore_errno.h> 
 	#include <bsg_manycore_memory_manager.h>
 	#include <bsg_manycore_elf.h>
+	#include <bsg_manycore_mem.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
@@ -26,6 +27,7 @@
 	#include "bsg_manycore_errno.h"
 	#include "bsg_manycore_memory_manager.h"
 	#include "bsg_manycore_elf.h"
+	#include "bsg_manycore_mem.h"
 #endif
 
 
@@ -717,7 +719,7 @@ static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *s
 	if (error != HB_MC_SUCCESS) {
 		return HB_MC_FAIL; /* could not convert EVA to an NPA */
 	}
-	error = hb_mc_copy_to_epa (fd, npa->x, npa->y, npa->epa, src, 1 /* 1 word */);
+	error = hb_mc_copy_to_epa (fd, npa.x, npa.y, npa.epa, src, 1 /* 1 word */);
 	if (error != HB_MC_SUCCESS) {
 		return HB_MC_FAIL; /* could not send data to Manycore */
 	}
@@ -727,13 +729,13 @@ static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *s
 /*
  * caller must esure eva_id is valid. 
  * */
-static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, uint32_t *dest, eva_t src) {
+static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, request_packet_t *dest, eva_t src) {
 	npa_t npa;	
 	int error = hb_mc_eva_to_npa(eva_id, src, &npa);
 	if (error != HB_MC_SUCCESS) {
 		return HB_MC_FAIL; /* could not convert EVA to an NPA */
 	}
-	error = hb_mc_copy_from_epa (fd, dest, npa->x, npa->y, npa->epa, 1 /* 1 word */);
+	error = hb_mc_copy_from_epa (fd, dest, npa.x, npa.y, npa.epa, 1 /* 1 word */);
 	if (error != HB_MC_SUCCESS) {
 		return HB_MC_FAIL; /* could not send data to Manycore */
 	}
@@ -744,9 +746,10 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 		return HB_MC_FAIL; /* invalid EVA ID */
 
 	else if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
-		eva_t dst_eva = (eva_t) dst;
+		eva_t dst_eva = (eva_t) reinterpret_cast<uintptr_t>(dst);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			int error = hb_mc_cpy_to_eva(fd, eva_id, dst, (uint32_t *) (src + i)); 		
+			char *src_word = (char *) src + i;
+			int error = hb_mc_cpy_to_eva(fd, eva_id, dst_eva + i, (uint32_t *) (src_word)); 		
 			if (error != HB_MC_SUCCESS)
 				return HB_MC_FAIL; /* copy failed */
 		}
@@ -754,9 +757,10 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 	}
 	
 	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
-		eva_t src_eva = (eva_t) src;
+		eva_t src_eva = (eva_t) reinterpret_cast<uintptr_t>(src);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			int error = hb_mc_cpy_from_eva(fd, eva_id, (uint32_t *) (dst + i), src_eva); 		
+			request_packet_t *dst_packet = (request_packet_t *) dst + i;
+			int error = hb_mc_cpy_from_eva(fd, eva_id, dst_packet, src_eva); 		
 			if (error != HB_MC_SUCCESS)
 				return HB_MC_FAIL; /* copy failed */
 		}
