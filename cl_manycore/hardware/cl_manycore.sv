@@ -18,7 +18,7 @@ logic rst_main_n_sync;
 `include "bsg_defines.v"
 `include "bsg_manycore_packet.vh"
 `include "cl_id_defines.vh"
-`include "cl_defines.vh"
+`include "cl_manycore_defines.vh"
 
 //--------------------------------------------
 // Start with Tie-Off of Unused Interfaces
@@ -174,49 +174,49 @@ logic m_axi4_manycore_rready;
 //--------------------------------------------
 // Concatenated Signals
 //---------------------------------------------
-logic [2*6-1:0] m_axi4_concat_awid;
-logic [2*64-1:0] m_axi4_concat_awaddr;
-logic [2*8-1:0] m_axi4_concat_awlen;
-logic [2*3-1:0] m_axi4_concat_awsize;
-logic [2*2-1:0] m_axi4_concat_awburst;
-logic [2*1-1:0] m_axi4_concat_awlock;
-logic [2*4-1:0] m_axi4_concat_awcache;
-logic [2*3-1:0] m_axi4_concat_awprot;
-logic [2*3-1:0] m_axi4_concat_awregion;
-logic [2*4-1:0] m_axi4_concat_awqos;
-logic [2*1-1:0] m_axi4_concat_awvalid;
-logic [2*1-1:0] m_axi4_concat_awready;
+logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_awid;
+logic [`axi4_to_sh_ddr_num*64-1:0] m_axi4_concat_awaddr;
+logic [`axi4_to_sh_ddr_num*8-1:0] m_axi4_concat_awlen;
+logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_awsize;
+logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_awburst;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_awlock;
+logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_awcache;
+logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_awprot;
+logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_awregion;
+logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_awqos;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_awvalid;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_awready;
 
-logic [2*512-1:0] m_axi4_concat_wdata;
-logic [2*64-1:0] m_axi4_concat_wstrb;
-logic [2*1-1:0] m_axi4_concat_wlast;
-logic [2*1-1:0] m_axi4_concat_wvalid;
-logic [2*1-1:0] m_axi4_concat_wready;
+logic [`axi4_to_sh_ddr_num*512-1:0] m_axi4_concat_wdata;
+logic [`axi4_to_sh_ddr_num*64-1:0] m_axi4_concat_wstrb;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_wlast;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_wvalid;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_wready;
 
-logic [2*6-1:0] m_axi4_concat_bid;
-logic [2*2-1:0] m_axi4_concat_bresp;
-logic [2*1-1:0] m_axi4_concat_bvalid;
-logic [2*1-1:0] m_axi4_concat_bready;
+logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_bid;
+logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_bresp;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_bvalid;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_bready;
 
-logic [2*6-1:0] m_axi4_concat_arid;
-logic [2*64-1:0] m_axi4_concat_araddr;
-logic [2*8-1:0] m_axi4_concat_arlen;
-logic [2*3-1:0] m_axi4_concat_arsize;
-logic [2*2-1:0] m_axi4_concat_arburst;
-logic [2*1-1:0] m_axi4_concat_arlock;
-logic [2*4-1:0] m_axi4_concat_arcache;
-logic [2*3-1:0] m_axi4_concat_arprot;
-logic [2*3-1:0] m_axi4_concat_arregion;
-logic [2*4-1:0] m_axi4_concat_arqos;
-logic [2*1-1:0] m_axi4_concat_arvalid;
-logic [2*1-1:0] m_axi4_concat_arready;
+logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_arid;
+logic [`axi4_to_sh_ddr_num*64-1:0] m_axi4_concat_araddr;
+logic [`axi4_to_sh_ddr_num*8-1:0] m_axi4_concat_arlen;
+logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_arsize;
+logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_arburst;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_arlock;
+logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_arcache;
+logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_arprot;
+logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_arregion;
+logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_arqos;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_arvalid;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_arready;
 
-logic [2*6-1:0] m_axi4_concat_rid;
-logic [2*512-1:0] m_axi4_concat_rdata;
-logic [2*2-1:0] m_axi4_concat_rresp;
-logic [2*1-1:0] m_axi4_concat_rlast;
-logic [2*1-1:0] m_axi4_concat_rvalid;
-logic [2*1-1:0] m_axi4_concat_rready;
+logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_rid;
+logic [`axi4_to_sh_ddr_num*512-1:0] m_axi4_concat_rdata;
+logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_rresp;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_rlast;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_rvalid;
+logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_rready;
 
 //--------------------------------------------
 // AXI4 DMA/Manycore System
