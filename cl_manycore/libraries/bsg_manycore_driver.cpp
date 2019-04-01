@@ -497,6 +497,23 @@ eva_t hb_mc_device_malloc (eva_id_t eva_id, uint32_t size) {
 	return result;
 }
 
+/*!
+ * frees Hammerblade Manycore memory.
+ *@param eva_id specifies EVA-NPA mapping.
+ *@param eva address to free.
+ *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
+ */
+int hb_mc_device_free (eva_id_t eva_id, eva_t eva) {
+	if (eva_id != 0) {
+		return HB_MC_FAIL; /* invalid EVA ID */
+	}
+	else if (!mem_manager[eva_id]) {
+		return HB_MC_FAIL; /* memory manager has not been initialized */
+	}
+
+	mem_manager[eva_id]->free(eva);
+	return HB_MC_SUCCESS;
+}
 
 /* returns desired bits aligned to the LSB.
  * */

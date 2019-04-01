@@ -21,7 +21,6 @@
 #include "bsg_manycore_errno.h"
 
 void cosim_cuda_test () {
-	
 	printf("Cosimulation test of hb_mc_init_device().\n\n");
 	uint8_t fd; 
 	hb_mc_init_host(&fd);
@@ -99,7 +98,8 @@ void cosim_cuda_test () {
 	}		
 
 	/* free A and B on device */
-	/* TODO */
+	hb_mc_device_free(eva_id, A_device);
+	hb_mc_device_free(eva_id, B_device);
 
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles);
 	return;

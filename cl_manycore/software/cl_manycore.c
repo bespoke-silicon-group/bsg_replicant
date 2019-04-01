@@ -24,7 +24,6 @@
 #include "cosim_load_vector_test.h"
 #include "cosim_loopback_test.h"
 #include "cosim_cuda_test.h"
-
 #ifdef SV_TEST
     #include "fpga_pci_sv.h"
 #else
