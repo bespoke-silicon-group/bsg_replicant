@@ -7,14 +7,12 @@ LDLIBS  := -lfpga_mgmt
 HEADERS := bsg_manycore_driver.h
 HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_mem.h
-HEADERS += bsg_manycore_print.h
 HEADERS += bsg_manycore_packet.h
 HEADERS += bsg_manycore_errno.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
 OBJECTS += bsg_manycore_mem.o
-OBJECTS += bsg_manycore_print.o
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)

@@ -10,7 +10,6 @@
 
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_loader.h>
-#include <bsg_manycore_print.h>
 #include <bsg_manycore_errno.h>
 
 int main () {

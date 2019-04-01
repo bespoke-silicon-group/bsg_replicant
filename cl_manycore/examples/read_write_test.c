@@ -11,8 +11,9 @@
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_loader.h>
-#include <bsg_manycore_print.h>
 #include <bsg_manycore_errno.h>
+
+#include "hb_mc_print_hex.h"
 
 int main () {
 	
@@ -40,7 +41,7 @@ int main () {
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
-		hb_mc_print_hex((uint8_t *) &buf[0]);
+		hb_mc_print_hex((uint8_t*)buf);
 	}
 	
 	else {

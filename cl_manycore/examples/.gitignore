@@ -1,0 +1,5 @@
+load_vector_test
+loopback_test
+read_write_test
+spsd_loader
+*.o
