@@ -59,7 +59,7 @@ def upload_tar(args):
 
     bucket = args.BucketName
     ymd = timestamp = datetime.datetime.now().strftime('%Y%m%d')
-    tar_key = os.path.join(args.ImageName, ymd, str(args.ImageVersion[0]), tar_file)
+    tar_key = os.path.join(args.ImageName, ymd, str(args.ImageVersion), tar_file)
 
     print("Uploading {} to s3://{}/{}".format(tar_file, bucket.name, tar_key))
     s3.upload_file(tar_path, bucket.name, tar_key)
@@ -73,7 +73,7 @@ def process_tar(args):
     (bucket, tar_key) = upload_tar(args)
     log_key = tar_key + '.log'
 
-    name = construct_name(args.ImageName, args.ImageVersion[0], args.configuration[0])
+    name = construct_name(args.ImageName, args.ImageVersion, args.configuration[0])
     desc = construct_description(args.Description[0], args.r)
 
     print("Processing {}".format(tar_key))
