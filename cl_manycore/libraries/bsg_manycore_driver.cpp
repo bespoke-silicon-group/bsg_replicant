@@ -35,6 +35,12 @@
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
 static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
 
+static const uint32_t KERNEL_REG = 0x1000 >> 2; //!< EPA of kernel. 
+static const uint32_t ARGC_REG = 0x1004 >> 2; //!< EPA of number of arguments kernel will use. 
+static const uint32_t ARGV_REG = 0x1008 >> 2; //!< EPA of arguments for kernel. 
+static const uint32_t FINISH_ADDRESS = 0xC0DA; //!< EVA to which tile group sends a finish packet once it finishes executing a kernel  
+static const request_packet_t REQUEST_PACKET_FINISH = {3, 0, 0, 1, 0, 0xF, 0x1, FINISH_ADDRESS, {0, 0}};
+
 static uint32_t const DRAM_SIZE = 0x80000000;
 static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}; /* This array has an element for every EVA <-> NPA mapping. Currently, only one mapping is supported. */
 /*!
@@ -791,21 +797,41 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	}	
 }
 
-typedef struct {
-	uint32_t argc;
-	uint32_t argv[];
-} kernel_args_t;
+static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t epa, uint32_t val) {
+	npa_t reg_npa = {tile->x, tile->y, epa};
+	eva_t reg_eva = hb_mc_npa_to_eva(eva_id, &reg_npa, &reg_eva);	
+	int error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(reg_eva), (void *) &val, sizeof(uint32_t), hb_mc_memcpy_to_device);
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL; /* could not memcpy */
+	return HB_MC_SUCCESS;	
+}
 
-int hb_mc_device_launch (eva_id_t eva_id, kernel_args_t *args, char *elf, tile_t *tile) {
-	/* transfer the arguments to dram */
-	size_t args_size = sizeof(args);
-	eva_t args_p = hb_mc_device_malloc (eva_id, args_size); 
+int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t *tile) {
+	int error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGC_REG, argc); /* write argc to tile group */
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL; 
 	
-	/* write location of args to tile group */
+	int args_eva = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t)); /* allocate device memory for arguments */
+	error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
 
-	/* write return address */
+	error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGV_REG, args_eva); /* write EVA of arguments to tile group */
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL; 
 	
-	/* write kernel address */
+	eva_t kernel_eva; 
+	error = symbol_to_eva(elf, kernel, &kernel_eva); /* get EVA of kernel */
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+
+	error = hb_mc_write_tile_reg(fd, eva_id, tile, KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL; 
 	
+	error = hb_mc_write_tile_reg(fd, eva_id, tile, KERNEL_REG, FINISH_ADDRESS); /* tell tile group to write finish packet to FINISH_ADDRESS */
+	if (error != HB_MC_SUCCESS)
+		return HB_MC_FAIL; 
 	
+	return HB_MC_SUCCESS;
 }
