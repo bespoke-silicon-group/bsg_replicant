@@ -3,7 +3,7 @@
 # UserData script that gets sent to AWS EC2 instance to start the build process
 
 cd /home/centos/
-git clone https://bitbucket.org/taylor-bsg/$release_repo.git 
+git clone https://github.com/bespoke-silicon-group/$release_repo.git 
 cd $release_repo
 git checkout $release_hash
 

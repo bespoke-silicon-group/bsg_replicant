@@ -13,7 +13,7 @@ class ReleaseRepoAction(Action):
         
         def validate(self, repo_at_commit_id):
                 [name, commit] = repo_at_commit_id.split('@')
-                url = "https://bitbucket.org/taylor-bsg/{}.git".format(name)
+                url = "git@github.com:bespoke-silicon-group/{}.git".format(name)
                 with tempfile.TemporaryDirectory(dir="/tmp/") as d:
                         r = git.Repo.clone_from(url, d)
                         try:
