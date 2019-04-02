@@ -12,5 +12,5 @@ checkpoints/to_aws/$(PROJECT).Developer_CL.tar:
 	CL_TOP_MODULE=$(PROJECT) CL_DIR=$(CL_DIR) ./aws_build_dcp_from_cl.sh -foreground  -design $(PROJECT)
 
 clean:
-	rm -rf *.log *.jou *.out hd_visual src_post_encryption/ reports/ 
+	rm -rf *.log *.jou *.out hd_visual *.tmp src_post_encryption/ reports/ 
 	rm -rf checkpoints last_log .Xil .cache
