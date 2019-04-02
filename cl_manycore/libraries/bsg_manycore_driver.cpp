@@ -790,3 +790,22 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 			break; /* finish packet received from Hammerblade Manycore */
 	}	
 }
+
+typedef struct {
+	uint32_t argc;
+	uint32_t argv[];
+} kernel_args_t;
+
+int hb_mc_device_launch (eva_id_t eva_id, kernel_args_t *args, char *elf, tile_t *tile) {
+	/* transfer the arguments to dram */
+	size_t args_size = sizeof(args);
+	eva_t args_p = hb_mc_device_malloc (eva_id, args_size); 
+	
+	/* write location of args to tile group */
+
+	/* write return address */
+	
+	/* write kernel address */
+	
+	
+}
