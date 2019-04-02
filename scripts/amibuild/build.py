@@ -29,7 +29,7 @@ args = parser.parse_args()
 timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 instance_name = timestamp + '_image_build'
 ami_name = 'BSG AMI ' + timestamp
-base_ami = 'ami-0d0bd43b0b6c54f6f'
+base_ami = 'ami-093cf634bf32a0b7e'
 # The instance type is used to build the image - it does not need to match the
 # final instance type (e.g. an F1 instance type)
 instance_type = 't2.2xlarge'
@@ -41,10 +41,10 @@ cli = boto3.client('ec2')
 # Create a "waiter" to wait on the "Stopped" state
 waiter = cli.get_waiter('instance_stopped')
 
-# Open Userdata (bootstrap.h) and pass it the name of the current release repository
+# Open Userdata (bootstrap.init) and pass it the name of the current release repository
 curscr = os.path.abspath(inspect.getfile(inspect.currentframe()))
 curdir = os.path.dirname(curscr)
-bootstrap_path = os.path.join(curdir, "bootstrap.sh")
+bootstrap_path = os.path.join(curdir, "bootstrap.init")
 
 UserData = open(bootstrap_path,'r').read()
 UserData = UserData.replace("$release_repo", args.Release["name"])
