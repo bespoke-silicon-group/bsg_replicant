@@ -227,7 +227,7 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
  * @param[in] b a request packet
  * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the fields of a and b must be identical. 
  */
-int request_packet_equals(request_packet_t *a, request_packet_t *b) {
+static int request_packet_equals(request_packet_t *a, request_packet_t *b) {
 	if (!a || !b)
 		return HB_MC_FAIL;
 	else if (request_packet_get_x_dst(a) != request_packet_get_x_dst(b))
