@@ -515,12 +515,7 @@ int hb_mc_device_free (eva_id_t eva_id, eva_t eva) {
 	return HB_MC_SUCCESS;
 }
 
-/* returns desired bits aligned to the LSB.
- * */
-static uint32_t hb_mc_get_bits (uint32_t val, uint32_t start, uint32_t size) {
-	uint32_t mask = ((1 << size) - 1) << start;
-	return ((val & mask) >> start); 
-}
+
 
 /*
  * returns HB_MC_SUCCESS if eva is a global network address and HB_MC_FAIL if not.
@@ -783,4 +778,15 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 	}
 	else 
 		return HB_MC_FAIL; /* invalid kind */
+}
+
+
+void hb_mc_device_sync (uint8_t fd, request_packet_t *expected) {
+	while (1) {
+		request_packet_t finish;
+		hb_mc_read_fifo(fd, 1, &finish); /* wait for Manycore to send a signal */
+		
+		if (request_packet_equals(&finish, expected) == HB_MC_SUCCESS) 
+			break; /* expected packet received from Hammerblade Manycore */
+	}	
 }

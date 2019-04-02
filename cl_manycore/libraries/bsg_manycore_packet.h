@@ -10,6 +10,15 @@
 #endif
 #include <endian.h>
 #include <stdint.h>
+
+#ifndef COSIM
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_bits.h>
+#else
+#include "bsg_manycore_errno.h"
+#include "bsg_manycore_bits.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -113,9 +122,25 @@ static inline uint32_t hb_mc_request_packet_get_addr(hb_mc_request_packet_t *pac
  */
 static inline uint32_t hb_mc_request_packet_get_data(hb_mc_request_packet_t *packet)
 {
-        return le32toh(packet->data); // should this do byte masking according to opex?
+        return le32toh(packet->data); 
 }
 
+
+/**
+ * Get the valid data of a request packet
+ * @param[in] packet a request packet
+ * @return the valid data field of packet
+ */
+static inline uint32_t request_packet_get_data_valid(request_packet_t *packet)
+{
+	uint32_t valid = 0;
+	for (int i = 0; i < 4; i++) { /* TODO: hardcoded */		
+		if (hb_mc_get_bits(packet->op_ex, i, 1) == 1)
+			valid |=  hb_mc_get_bits(packet->data, i*8, 8);
+	}
+        return le32toh(valid); 
+	
+}
 /**
  * Set the X coordinate of the requester in a request packet
  * @param[in] packet a request packet
@@ -197,7 +222,30 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
 }
 
 /**
- * The raw response packets that are used to respond to requests.  You should not read from any of the fields directly, instead use the accessor functions.
+ * Checks if 2 request packets are the same.
+ * @param[in] a a request packet
+ * @param[in] b a request packet
+ * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the fields of a and b must be identical. 
+ */
+int request_packet_equals(request_packet_t *a, request_packet_t *b) {
+	if (!a || !b)
+		return HB_MC_FAIL;
+	else if (request_packet_get_x_dst(a) != request_packet_get_x_dst(b))
+		return HB_MC_FAIL;	
+	else if (request_packet_get_y_dst(a) != request_packet_get_y_dst(b))
+		return HB_MC_FAIL;	
+	else if (request_packet_get_x_src(a) != request_packet_get_x_src(b))
+		return HB_MC_FAIL;	
+	else if (request_packet_get_y_src(a) != request_packet_get_y_src(b))
+		return HB_MC_FAIL;	
+	else if (request_packet_get_data_valid(a) != request_packet_get_data_valid(b))
+		return HB_MC_FAIL;	
+	else if (request_packet_get_addr(a) != request_packet_get_addr(b))
+		return HB_MC_FAIL;
+	return HB_MC_SUCCESS;
+}
+/* 
+ * * The raw response packets that are used to respond to requests.  You should not read from any of the fields directly, instead use the accessor functions.
  */
 typedef struct response_packet {
         uint8_t  x_dst; //!< x coordinate of the requester
