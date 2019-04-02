@@ -121,10 +121,10 @@ void usage(char* program_name) {
 #endif
 
     fail_on(rc, out, "AFI not ready");
-    //cosim_read_write_test();
-    //cosim_load_vector_test();
-    //cosim_loopback_test();
-    //cosim_rom_test();
+    cosim_read_write_test();
+    cosim_load_vector_test();
+    cosim_loopback_test();
+    cosim_rom_test();
     cosim_cuda_test();
 #ifndef SV_TEST
     return rc;

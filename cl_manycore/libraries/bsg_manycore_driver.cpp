@@ -662,29 +662,26 @@ static int hb_mc_npa_is_valid (npa_t *npa) {
 		return HB_MC_FAIL;
 }
 
-/*! creates a DRAM EVA.
- * @param x DRAM bank. Caller should ensure that this is valid. 
- * @param epa Caller should ensure that this is valid.
+/*! creates a NPA to DRAM EVA.
+ * @param[in] npa Caller should ensure that this is valid.
  */
-static eva_t hb_mc_make_dram_eva(uint32_t x, uint32_t epa) {
+static eva_t hb_mc_npa_to_eva_dram(const npa_t *npa) {
 	eva_t eva = 0;
-	eva |= (epa << 2);
-	eva |= (x << (2 + 27)); /* TODO: hardcoded */
+	eva |= (npa->epa << 2);
+	eva |= (npa->x << (2 + 27)); /* TODO: hardcoded */
 	eva |= (1 << 31); /* TODO: hardcoded */
 	return eva;
 }
 
-/*! creates a Global Remote EVA.
- * @param x x coordinate of endpoint. Caller should ensure that this is valid.
- * @param y y coordinate of endpoint. Caller should ensure that this is valid. 
- * @param epa Caller should ensure that this is valid.
+/*! converts NPA to Global Remote EVA.
+ * @param[in] npa Caller should ensure that this is valid.
  */
-static eva_t hb_mc_make_global_remote_eva(uint32_t x, uint32_t y, uint32_t epa) {
+static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
 	eva_t eva = 0;
-	eva |= (epa << 2);
-	eva |= (x << 18); /* TODO: hardcoded */
-	eva |= (y << 24); /* TODO: hardcoded */
-	eva |= (x << (2 + 27)); /* TODO: hardcoded */
+	eva |= (npa->epa << 2);
+	eva |= (npa->x << 18); /* TODO: hardcoded */
+	eva |= (npa->y << 24); /* TODO: hardcoded */
+	eva |= (npa->x << (2 + 27)); /* TODO: hardcoded */
 	return eva;
 }
 
@@ -703,10 +700,10 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 		return HB_MC_FAIL; /* invalid NPA address*/
 	}
 	else if (hb_mc_npa_is_dram(npa)) {
-		*eva = hb_mc_make_dram_eva(npa->x, npa->epa);
+		*eva = hb_mc_npa_to_eva_dram(npa);
 	}
 	else { /* tile */
-		*eva = hb_mc_make_global_remote_eva(npa->x, npa->y, npa->epa);
+		*eva = hb_mc_npa_to_eva_global_remote(npa);
 	}
 	return HB_MC_SUCCESS;
 }
