@@ -328,13 +328,13 @@ void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
     int  pass_init_tag = HB_MC_SUCCESS;
     for (int i = 0; i < 4; i++) {
 #ifndef COSIM
-	usleep(1);
+      usleep(1);
 #else
-        sv_pause(1);
+      sv_pause(1);
 #endif
         if (hb_mc_write_fifo(fd, 0, (int *) tag_pkt) != HB_MC_SUCCESS) {    
-          printf("fail %d\n", i);
-          pass_init_tag = HB_MC_FAIL;
+            printf("fail %d\n", i);
+            pass_init_tag = HB_MC_FAIL;
         }
     }
     if (pass_init_tag == HB_MC_SUCCESS)
