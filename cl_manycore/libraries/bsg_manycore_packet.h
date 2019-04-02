@@ -10,7 +10,6 @@
 #endif
 #include <endian.h>
 #include <stdint.h>
-
 #ifndef COSIM
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_bits.h>
@@ -39,6 +38,7 @@ typedef struct request_packet {
         uint8_t  reserved[2];
 }  __attribute__((packed)) hb_mc_request_packet_t;
 
+static request_packet_t REQUEST_PACKET_FINISH = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}};
 /**
  * Legal opcode values for request packets
  */
@@ -225,23 +225,30 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
  * Checks if 2 request packets are the same.
  * @param[in] a a request packet
  * @param[in] b a request packet
- * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the fields of a and b must be identical. 
+ * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the non-data fields of a an b must be the same and the valid data must be the same. 
  */
 static int request_packet_equals(request_packet_t *a, request_packet_t *b) {
-	if (!a || !b)
+	if (!a || !b) {
 		return HB_MC_FAIL;
-	else if (request_packet_get_x_dst(a) != request_packet_get_x_dst(b))
+	}
+	else if (request_packet_get_x_dst(a) != request_packet_get_x_dst(b)) {
 		return HB_MC_FAIL;	
-	else if (request_packet_get_y_dst(a) != request_packet_get_y_dst(b))
+	}
+	else if (request_packet_get_y_dst(a) != request_packet_get_y_dst(b)) {
 		return HB_MC_FAIL;	
-	else if (request_packet_get_x_src(a) != request_packet_get_x_src(b))
+	}
+	else if (request_packet_get_x_src(a) != request_packet_get_x_src(b)) {
 		return HB_MC_FAIL;	
-	else if (request_packet_get_y_src(a) != request_packet_get_y_src(b))
+	}
+	else if (request_packet_get_y_src(a) != request_packet_get_y_src(b)) {
 		return HB_MC_FAIL;	
-	else if (request_packet_get_data_valid(a) != request_packet_get_data_valid(b))
+	}
+	else if (request_packet_get_data_valid(a) != request_packet_get_data_valid(b)) {
 		return HB_MC_FAIL;	
-	else if (request_packet_get_addr(a) != request_packet_get_addr(b))
+	}
+	else if (request_packet_get_addr(a) != request_packet_get_addr(b)) {
 		return HB_MC_FAIL;
+	}
 	return HB_MC_SUCCESS;
 }
 /* 
