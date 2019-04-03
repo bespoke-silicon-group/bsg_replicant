@@ -11,7 +11,6 @@
 
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_loader.h>
-#include <bsg_manycore_print.h>
 #include <bsg_manycore_packet.h>
 #include <bsg_manycore_errno.h>
 
@@ -105,7 +104,8 @@ int main(int argc, char *argv[])
     int r;
     
     while (1) {
-	hb_mc_read_fifo(fd, 1, (uint32_t*)&rqst);
+	request_packet_t rqst;
+	hb_mc_read_fifo(fd, 1, &rqst);
 	if (request_packet_get_addr(&rqst) == (0xEADC >> 2)) {
 	    putchar(request_packet_get_data(&rqst));
 	} else if (request_packet_get_addr(&rqst) == (0xEAD0 >> 2)) {

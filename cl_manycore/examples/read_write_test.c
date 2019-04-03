@@ -13,7 +13,12 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_errno.h>
 
-#include "hb_mc_print_hex.h"
+static void print_hex (uint8_t *p) {
+	for (int i = 0; i < 16; i++) {
+		printf("%x ", (p[15-i] & 0xFF));
+	}
+	printf("\n");
+}
 
 int main () {
 	
@@ -41,7 +46,7 @@ int main () {
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
-		hb_mc_print_hex((uint8_t*)buf);
+		print_hex((uint8_t*)buf);
 	}
 	
 	else {
