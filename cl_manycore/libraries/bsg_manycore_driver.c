@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <stdio.h>
+#include <string.h>
 
 #ifndef COSIM
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
@@ -232,7 +233,6 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	for (int i = 0; i < 4; i++) {
 		packet->words[i] = hb_mc_read32(fd, fifo[n][FIFO_READ]);
 	}
-	
 }
 
 /* clears interrupts for the nth fifo */
