@@ -19,7 +19,7 @@
  * @param size number of words to copy
  * @return whether or not transaction was successful
  * */
-int hb_mc_copy_from_epa (uint8_t fd, request_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
+int hb_mc_copy_from_epa (uint8_t fd, response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("hb_mc_copy_from_epa(): device was not initialized.\n");
 		return HB_MC_FAIL;
@@ -52,7 +52,7 @@ int hb_mc_copy_from_epa (uint8_t fd, request_packet_t *buf, uint32_t x, uint32_t
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
 	for (int i = 0; i < size; i++) {
-		hb_mc_read_fifo(fd, 0, &buf[i]);
+		hb_mc_read_fifo(fd, 0, (void *) &buf[i]);
 	}
 
 	return pass_requests;
