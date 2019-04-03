@@ -41,9 +41,8 @@ int main () {
 	}
 
 	/* read back data */
-	hb_mc_request_packet_t buf[1];
-	int read = hb_mc_copy_from_epa(fd, (hb_mc_request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
-	printf("completed read.\n");
+	hb_mc_response_packet_t buf[1];
+	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");
 		print_hex((uint8_t*)buf);
