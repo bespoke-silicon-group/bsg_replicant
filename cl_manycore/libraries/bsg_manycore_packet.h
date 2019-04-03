@@ -15,10 +15,10 @@
  * You should not read from any of the fields directly, instead use the accessor functions.
  */
 typedef struct request_packet {
-        uint8_t  x_dst; //!< x coordinate of the requester
-        uint8_t  y_dst; //!< y coordinate of the requester
-        uint8_t  x_src; //!< x coordinate of the responder
-        uint8_t  y_src; //!< y coordinate of the responder
+        uint8_t  x_dst; //!< x coordinate of the responder
+        uint8_t  y_dst; //!< y coordinate of the responder
+        uint8_t  x_src; //!< x coordinate of the requester
+        uint8_t  y_src; //!< y coordinate of the requester
         uint32_t data;  //!< packet's payload data
         uint8_t  op_ex; //!< 4-bit byte mask
         uint8_t  op;    //!< opcode
@@ -192,8 +192,16 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
         packet->data = htole32(data); // byte mask?
 }
 
+/**
+ * The raw response packets that are used to respond to requests.  You should not read from any of the fields directly, instead use the accessor functions.
+ */
 typedef struct response_packet {
-        // fill this in when I know it
+        uint8_t  x_dst; //!< x coordinate of the requester
+        uint8_t  y_dst; //!< y coordinate of the requester
+        uint32_t  load_id; //!< unused 
+        uint32_t data; //!< packet's payload data
+        uint8_t  op;    //!< opcode
+        uint8_t  reserved[5];
 } __attribute__((packed)) hb_mc_response_packet_t;
 
 
@@ -202,5 +210,55 @@ typedef union packet {
 	hb_mc_response_packet_t response; /* from the Hammerblade Manycore */
 	uint32_t words[4];
 } hb_mc_packet_t;
+
+/**
+ * Get the X coordinate of the requester from a response packet
+ * @param[in] packet a response packet
+ * @return the X coordinate of the requester for packet
+ */
+static inline uint8_t response_packet_get_x_dst(response_packet_t *packet)
+{
+        return packet->x_dst;
+}
+
+/**
+ * Get the Y coordinate of the requester from a response packet
+ * @param[in] packet a response packet
+ * @return the Y coordinate of the requester for packet
+ */
+static inline uint8_t response_packet_get_y_dst(response_packet_t *packet)
+{
+        return packet->y_dst;
+}
+
+/**
+ * Get the load ID of the requester from a response packet
+ * @param[in] packet a response packet
+ * @return the load ID of the packet
+ */
+static inline uint32_t response_packet_get_load_id(response_packet_t *packet)
+{
+        return packet->load_id;
+}
+
+/**
+ * Get the payload data of the requester from a response packet
+ * @param[in] packet a response packet
+ * @return the packet's payload data
+ */
+static inline uint32_t response_packet_get_data(response_packet_t *packet)
+{
+        return packet->data;
+}
+
+/**
+ * Get the opcode of the requester from a response packet
+ * @param[in] packet a response packet
+ * @return the packet's opcode
+ */
+static inline uint8_t response_packet_get_op(response_packet_t *packet)
+{
+        return packet->op;
+}
 
 #endif
