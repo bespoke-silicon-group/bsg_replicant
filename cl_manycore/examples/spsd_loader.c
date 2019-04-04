@@ -100,20 +100,20 @@ int main(int argc, char *argv[])
     printf("Checking receive packet...\n");
     usleep(100); /* 100 us */
 
-    request_packet_t rqst;
+    hb_mc_request_packet_t rqst;
     int r;
     
     while (1) {
-	request_packet_t rqst;
+	hb_mc_request_packet_t rqst;
 	hb_mc_read_fifo(fd, 1, &rqst);
-	if (request_packet_get_addr(&rqst) == (0xEADC >> 2)) {
-	    putchar(request_packet_get_data(&rqst));
-	} else if (request_packet_get_addr(&rqst) == (0xEAD0 >> 2)) {
+	if (hb_mc_request_packet_get_addr(&rqst) == (0xEADC >> 2)) {
+	    putchar(hb_mc_request_packet_get_data(&rqst));
+	} else if (hb_mc_request_packet_get_addr(&rqst) == (0xEAD0 >> 2)) {
 	    r = 0;
 	    break;
-	} else if (request_packet_get_addr(&rqst) == (0xEAD4 >> 2)) {
+	} else if (hb_mc_request_packet_get_addr(&rqst) == (0xEAD4 >> 2)) {
 	    // I guess print the time?
-	} else if (request_packet_get_addr(&rqst) == (0xEAD8 >> 2)) {
+	} else if (hb_mc_request_packet_get_addr(&rqst) == (0xEAD8 >> 2)) {
 	    r = 1;
 	    break;
 	}
