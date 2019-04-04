@@ -103,6 +103,30 @@ uint8_t *hb_mc_get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8
 	return packet;
 }
 
+static int hb_mc_get_elf_segment_size (char *filename, uint32_t *result_p, int segment) {
+	int fd = open(filename, O_RDONLY);
+	struct stat s;
+	assert(fd != -1);
+	if (fstat(fd, &s) < 0)
+		return HB_MC_FAIL;	
+	size_t elf_size = s.st_size;
+	uint8_t* buf = (uint8_t*) mmap(NULL, elf_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	close(fd);
+	
+	if (buf == MAP_FAILED)
+		return HB_MC_FAIL;
+	else if (elf_size < sizeof(Elf64_Ehdr))
+		return HB_MC_FAIL;
+	
+	Elf32_Ehdr* eh = (Elf32_Ehdr *) buf;						 
+	Elf32_Phdr* ph = (Elf32_Phdr *) (buf + eh->e_phoff); 
+	if (elf_size < (eh->e_phoff + eh->e_phnum*sizeof(*ph)))	
+		return HB_MC_FAIL; 
+	
+	*result_p = ph[segment].p_memsz / sizeof(uint32_t);
+	return HB_MC_SUCCESS;
+}
+
 /*! 
  * Creates arrays of Manycore packets that contain the text and data segments of the binary. These arrays are saved in the global variables text_pkts and data_pkts.
  * @param filename the path to the binary.
