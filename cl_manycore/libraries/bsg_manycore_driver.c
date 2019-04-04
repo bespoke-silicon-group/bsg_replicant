@@ -23,6 +23,8 @@
  	#include "bsg_manycore_errno.h"
 #endif
 
+
+
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
 static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
 
@@ -193,9 +195,6 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, packet_t *packet) {
 		printf("not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
-	printf("write_fifo(): init_vacancy = %u\n", init_vacancy);
-
-	
 	for (int i = 0; i < 4; i++) {
 		hb_mc_write32(fd, fifo[n][FIFO_WRITE], packet->words[i]);
 	}

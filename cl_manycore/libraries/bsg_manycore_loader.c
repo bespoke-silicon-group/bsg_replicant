@@ -27,8 +27,8 @@ static int hb_mc_load_packets(uint8_t fd, uint8_t **pkts, uint32_t num_pkts) {
     int status = HB_MC_SUCCESS;
     for (int i = 0; i < num_pkts; i++) {
 	packet_t packet;
-	memcpy(&packet, pkts[i], sizeof(packet_t));
-        if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
+	memcpy(&packet.request, (request_packet_t *) pkts[i], sizeof(packet_t));
+	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
             status = HB_MC_FAIL;
             break;
         }
@@ -218,9 +218,9 @@ void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
         
     printf("Freezing tile (%d, %d).\n", x, y);
     uint8_t *freeze_pkt = hb_mc_get_freeze_pkt(x, y); 
-    bool pass_freeze = true;
+	bool pass_freeze = true;
 	packet_t packet;
-	memcpy(&packet, &freeze_pkt, sizeof(packet_t));
+	memcpy(&packet.request, (request_packet_t *) freeze_pkt, sizeof(packet_t));
 	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
 		pass_freeze = false;
 	}
@@ -254,7 +254,7 @@ void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
     uint8_t *unfreeze_pkt = hb_mc_get_unfreeze_pkt(x, y); 
     int pass_unfreeze = HB_MC_SUCCESS;
 	packet_t packet;	
-	memcpy(&packet, &unfreeze_pkt, sizeof(packet_t));
+	memcpy(&packet.request, (request_packet_t *) unfreeze_pkt, sizeof(packet_t));
 	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
         pass_unfreeze = HB_MC_FAIL;
     }
@@ -298,15 +298,15 @@ void hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cor
     uint8_t *tile_group_origin_Y_pkt = hb_mc_get_tile_group_origin_Y_pkt(x, y, y_cord); 
     // set X cord 
 	packet_t packet;	
-	memcpy(&packet, &tile_group_origin_X_pkt, sizeof(packet_t));
+	memcpy(&packet.request, (request_packet_t *) tile_group_origin_X_pkt, sizeof(packet_t));
 	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
         printf("set tile group origin X failed.\n");
         return;
     }
     printf("set tile group origin X finished.\n");
     // set Y cord   
-	memcpy(&packet, &tile_group_origin_Y_pkt, sizeof(packet_t));
-    if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
+	memcpy(&packet.request, (request_packet_t *) tile_group_origin_Y_pkt, sizeof(packet_t));
+	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
         printf("set tile group origin Y failed.\n");    
         return;
     }
@@ -337,15 +337,17 @@ void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
     printf("init cache (%d, %d)'s tag.\n", x, y);
     uint8_t *tag_pkt = hb_mc_get_tag_pkt(x, y); 
     int  pass_init_tag = HB_MC_SUCCESS;
-    for (int i = 0; i < 4; i++) {
+    packet_t packet;
+	memcpy(&packet.request, (request_packet_t *) tag_pkt, sizeof(packet_t));
+        
+
+	for (int i = 0; i < 4; i++) {
 #ifndef COSIM
       usleep(1);
 #else
       sv_pause(1);
 #endif
-	packet_t packet;
-	memcpy(&packet, tag_pkt, sizeof(packet_t));
-        if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {    
+	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {    
             printf("fail %d\n", i);
             pass_init_tag = HB_MC_FAIL;
         }
