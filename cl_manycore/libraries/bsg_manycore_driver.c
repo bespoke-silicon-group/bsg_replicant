@@ -321,7 +321,7 @@ uint8_t hb_mc_get_num_y () {
 	return NUM_Y;
 }
 /*
- * Forms a Manycore packet.
+ * Formatss a Manycore request packet.
  * @param packet packet struct that this function will populate. caller must allocate. 
  * @param addr address to send packet to.
  * @param data packet's data
@@ -331,7 +331,7 @@ uint8_t hb_mc_get_num_y () {
  * @return array of bytes that form the Manycore packet.
  * assumes all fields are <= 32
  * */
-void hb_mc_format_packet(request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
+void hb_mc_format_request_packet(request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
 
 	request_packet_set_x_dst(packet, x);
 	request_packet_set_y_dst(packet, y);	
