@@ -30,17 +30,17 @@ int hb_mc_copy_from_epa (uint8_t fd, request_packet_t *buf, uint32_t x, uint32_t
 //		return false;
 //	}
 
-	request_packet_t requests[size]; 	
+	packet_t requests[size]; 	
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = 0; /* unused */
-		hb_mc_format_packet(&requests[i], addr, data, x, y, OP_REMOTE_LOAD);
+		hb_mc_format_packet(&requests[i].request, addr, data, x, y, OP_REMOTE_LOAD);
 	} 
 	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, (uint32_t *) &requests[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, 0, &requests[i]) != HB_MC_SUCCESS) {
 			pass_requests = HB_MC_FAIL;
 			break;
 		}
@@ -71,22 +71,21 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 		printf("hb_xeon_to_epa_copy(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	request_packet_t packets[size];
+	packet_t packets[size];
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = buf[i];
-		hb_mc_format_packet(&packets[i], addr, data, x, y, OP_REMOTE_STORE);
+		hb_mc_format_packet(&packets[i].request, addr, data, x, y, OP_REMOTE_STORE);
 	} 
-	
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, (uint32_t *) &packets[i]) != HB_MC_SUCCESS) {
+		//printf("hb_mc_copy_to_epa(): ");	
+		if (hb_mc_write_fifo(fd, 0, &packets[i]) != HB_MC_SUCCESS) {
 			pass = HB_MC_FAIL;
 			break;
 		}
 	}
-
 	if (pass != HB_MC_SUCCESS)
 		printf("hb_copy_to_epa(): error when writing to Manycore.\n");
 

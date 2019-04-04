@@ -172,7 +172,7 @@ int hb_mc_check_dim (uint8_t fd) {
  * Writes 128B to the nth fifo
  * @return HB_MC_SUCCESS  on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
+int hb_mc_write_fifo (uint8_t fd, uint8_t n, packet_t *packet) {
 	if (n >= NUM_FIFO) {
 		printf("write_fifo(): invalid fifo.\n");
 		return HB_MC_FAIL;
@@ -194,8 +194,10 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, uint32_t *val) {
 		return HB_MC_FAIL;
 	}
 	printf("write_fifo(): init_vacancy = %u\n", init_vacancy);
+
+	
 	for (int i = 0; i < 4; i++) {
-		hb_mc_write32(fd, fifo[n][FIFO_WRITE], val[i]);
+		hb_mc_write32(fd, fifo[n][FIFO_WRITE], packet->words[i]);
 	}
 
 	while (hb_mc_read16(fd, fifo[n][FIFO_VACANCY]) != init_vacancy) {

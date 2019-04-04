@@ -196,4 +196,11 @@ typedef struct response_packet {
         // fill this in when I know it
 } __attribute__((packed)) response_packet_t;
 
+
+typedef union packet {
+	request_packet_t request; /**/
+	response_packet_t response; /* from the Hammerblade Manycore */
+	uint32_t words[4];
+} packet_t;
+
 #endif
