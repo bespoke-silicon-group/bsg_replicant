@@ -14,20 +14,6 @@ uint32_t DMEM_BASE = 0x1000;
 uint8_t MY_X = 3;
 uint8_t MY_Y = 0; 
 
-
-static void print_packet (request_packet_t *packet) {
-	uint32_t addr = request_packet_get_addr(packet);
-	uint32_t data = request_packet_get_data(packet);
-	uint32_t op_ex = request_packet_get_op_ex(packet);
-	uint32_t x_src = request_packet_get_x_src(packet);
-	uint32_t y_src = request_packet_get_y_src(packet);
-	uint32_t x_dst = request_packet_get_x_dst(packet);
-	uint32_t y_dst = request_packet_get_y_dst(packet);
-	uint32_t op = request_packet_get_op(packet);
-	printf("to address: 0x%x of coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data & op_ex);
-
-
-}
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
  *	 * */
@@ -37,7 +23,6 @@ static int hb_mc_load_packets(uint8_t fd, packet_t *packets, uint32_t num_packet
 	}
 	
 	for (int i = 0; i < num_packets; i++) {
-		print_packet(&packets[i].request);
 		if (hb_mc_write_fifo(fd, 0, &packets[i]) != HB_MC_SUCCESS) {
 			return HB_MC_FAIL;
 		}
@@ -104,7 +89,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, packet_t packet
 				}			
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
 					uint32_t addr = (ofs) >> 2; 
-					uint32_t data = text_segment[ofs];
+					uint32_t data = text_segment[ofs/4];
 					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | (1 << 22), data, x, y, OP_REMOTE_STORE);
 					if (init_dram == HB_MC_SUCCESS) {
 						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_num_y() + 1, OP_REMOTE_STORE);
@@ -120,7 +105,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, packet_t packet
 				}		
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
 					uint32_t addr = (4096 + ofs) >> 2;
-					uint32_t data = data_segment[ofs];
+					uint32_t data = data_segment[ofs/4];
 					hb_mc_format_request_packet(&packets_data[ofs/4].request, addr, data, x, y, OP_REMOTE_STORE);
 				}
 			}
@@ -149,14 +134,11 @@ int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8
 	for (int i = 0; i < size; i++) {
 		int init_dram = (i == 0) ? HB_MC_SUCCESS : HB_MC_FAIL; /* only load DRAM when loading the first tile */
 		hb_mc_parse_elf(filename, x[i], y[i], packets_icache, packets_dram, text_size, packets_data, data_size, init_dram);
-		printf("<1>\n");
 		hb_mc_load_packets(fd, packets_icache, text_size);
-		printf("<2>\n");
 		if (init_dram == HB_MC_SUCCESS) {
 			hb_mc_load_packets(fd, packets_dram, text_size);
 		}
 		hb_mc_load_packets(fd, packets_data, data_size);
-		printf("<3>\n");
 	}
 	return HB_MC_SUCCESS;
 }
