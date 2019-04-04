@@ -14,96 +14,38 @@ uint32_t DMEM_BASE = 0x1000;
 uint8_t MY_X = 3;
 uint8_t MY_Y = 0; 
 
+
+static void print_packet (request_packet_t *packet) {
+	uint32_t addr = request_packet_get_addr(packet);
+	uint32_t data = request_packet_get_data(packet);
+	uint32_t op_ex = request_packet_get_op_ex(packet);
+	uint32_t x_src = request_packet_get_x_src(packet);
+	uint32_t y_src = request_packet_get_y_src(packet);
+	uint32_t x_dst = request_packet_get_x_dst(packet);
+	uint32_t y_dst = request_packet_get_y_dst(packet);
+	uint32_t op = request_packet_get_op(packet);
+	printf("to address: 0x%x of coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data & op_ex);
+
+
+}
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
  *	 * */
-static int hb_mc_load_packets(uint8_t fd, uint8_t **pkts, uint32_t num_pkts) {
-
+static int hb_mc_load_packets(uint8_t fd, packet_t *packets, uint32_t num_packets) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("load_packets(): warning - device was never initialized.\n");
 		return HB_MC_FAIL;
 	}
 	
-	int status = HB_MC_SUCCESS;
-	for (int i = 0; i < num_pkts; i++) {
-	packet_t packet;
-	memcpy(&packet.request, (request_packet_t *) pkts[i], sizeof(packet_t));
-	if (hb_mc_write_fifo(fd, 0, &packet) != HB_MC_SUCCESS) {
-			status = HB_MC_FAIL;
-			break;
+	for (int i = 0; i < num_packets; i++) {
+		print_packet(&packets[i].request);
+		if (hb_mc_write_fifo(fd, 0, &packets[i]) != HB_MC_SUCCESS) {
+			return HB_MC_FAIL;
 		}
 	}
-	if (status != HB_MC_SUCCESS)
-		printf("load_packets(): load failed.\n");
-	return status;
+	return HB_MC_SUCCESS;
 }
 
-/*!
- * Sets a selected number of bytes of a Manycore packet to a desired value.
- * @param packet an array of bytes that form the Manycore packet.
- * @param byte_start the byte offset within the packet where the field starts.
- * @param size the size in bytes of the field.
- * @param val the value to set the selected bytes to.
- * */
-static void hb_mc_set_field (uint8_t *packet, uint8_t byte_start, uint8_t size, uint32_t val) {
-	if (size == WORD) {
-		uint32_t *field = (uint32_t *) (packet + byte_start);
-		*field = val;
-	}
-	else if (size == SHORT) {
-		uint16_t *field = (uint16_t *) (packet + byte_start);
-		*field = val;
-	}
-	else {
-		uint8_t *field = (uint8_t *) (packet + byte_start);
-		*field = val;
-	}
-}
-
-/*!
- * Forms a Manycore packet.
- * @param addr address to send packet to.
- * @param data packet's data
- * @param x destination tile's x coordinate
- * @param y destination tile's y coordinate
- * @param opcode operation type (e.g load, store, etc.)
- * @return array of bytes that form the Manycore packet.
- * assumes all fields are <= 32
- * */
-uint8_t *hb_mc_get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
-	
-	uint8_t *packet = (uint8_t *) calloc(16, sizeof(uint8_t));
-
-	uint32_t byte_start = 0;
-
-	hb_mc_set_field(packet, byte_start, X_BYTE, x); 
-	byte_start += X_BYTE;
-
-	hb_mc_set_field(packet, byte_start, Y_BYTE, y);
-	byte_start += Y_BYTE;
-
-	hb_mc_set_field(packet, byte_start, X_BYTE, MY_X);
-	byte_start += X_BYTE;
-
-	hb_mc_set_field(packet, byte_start, Y_BYTE, MY_Y);
-	byte_start += Y_BYTE;
-
-	hb_mc_set_field(packet, byte_start, DATA_BYTE, data);
-	byte_start += DATA_BYTE;
-	
-	hb_mc_set_field(packet, byte_start, OP_EX_BYTE, 0xF);
-	byte_start += OP_EX_BYTE;
-
-	hb_mc_set_field(packet, byte_start, OP_BYTE, opcode);
-	byte_start += OP_BYTE;
-	
-	hb_mc_set_field(packet, byte_start, ADDR_BYTE, addr);
-	byte_start += ADDR_BYTE;
-
-	return packet;
-}
-
-static int hb_mc_get_elf_segment_size (char *filename, uint32_t *result_p, int segment) {
+static int hb_mc_get_elf_segment_size (char *filename, int segment, uint32_t *result_p) {
 	int fd = open(filename, O_RDONLY);
 	struct stat s;
 	assert(fd != -1);
@@ -131,7 +73,9 @@ static int hb_mc_get_elf_segment_size (char *filename, uint32_t *result_p, int s
  * Creates arrays of Manycore packets that contain the text and data segments of the binary. These arrays are saved in the global variables text_pkts and data_pkts.
  * @param filename the path to the binary.
  * */
-static void hb_mc_parse_elf (char *filename, uint8_t x, uint8_t y, uint32_t *num_instr, uint32_t *data_size, uint8_t ***icache_pkts, uint8_t ***dram_pkts, uint8_t ***dmem_pkts, bool init_dram) {	
+
+
+static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, packet_t packets_icache[], packet_t packets_dram[], uint32_t text_size, packet_t packets_data[], uint32_t data_size, int init_dram) {
 	int fd = open(filename, O_RDONLY);
 	struct stat s;
 	assert(fd != -1);
@@ -149,75 +93,72 @@ static void hb_mc_parse_elf (char *filename, uint8_t x, uint8_t y, uint32_t *num
 	Elf32_Phdr* ph = (Elf32_Phdr *) (buf + eh->e_phoff); 
 	assert(size >= eh->e_phoff + eh->e_phnum*sizeof(*ph)); 
 	
-	*num_instr = 1 * (ph[TEXT].p_memsz / 4);
-	if (init_dram)
-		*dram_pkts = (uint8_t **) calloc(*num_instr, sizeof(uint8_t *));
-	*icache_pkts = (uint8_t **) calloc(*num_instr, sizeof(uint8_t *));
-
-	*data_size = (ph[DATA].p_memsz / 4); 
-	*dmem_pkts = (uint8_t **) calloc(*data_size, sizeof(uint8_t *));
-	
 	for (unsigned i = 0; i < eh->e_phnum; i++) { 
 		if(ph[i].p_type == PT_LOAD && ph[i].p_memsz) { 
 			if (i == TEXT) {
-				uint8_t *instructions = (uint8_t *) calloc(ph[i].p_memsz, sizeof(uint8_t));
+				uint32_t text_segment[ph[i].p_memsz / sizeof(uint32_t)];
 				if (ph[i].p_filesz) { 
-						assert(size >= ph[i].p_offset + ph[i].p_filesz);  
-					for (int byte = 0; byte < ph[i].p_filesz; byte++)
-						instructions[byte] = buf[ph[i].p_offset + byte];
+					if (size < ph[i].p_offset + ph[i].p_filesz)
+						return HB_MC_FAIL;  
+					memcpy(&text_segment[0], &buf[ph[i].p_offset], ph[i].p_filesz);
 				}			
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
-					int32_t addr = (ofs) >> 2; 
-					uint32_t data = *((uint32_t *) (instructions + ofs));
-					if (init_dram) {
-						(*dram_pkts)[ofs/4] = hb_mc_get_pkt(addr, data, 0, hb_mc_get_num_y() + 1, OP_REMOTE_STORE);
+					uint32_t addr = (ofs) >> 2; 
+					uint32_t data = text_segment[ofs];
+					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | (1 << 22), data, x, y, OP_REMOTE_STORE);
+					if (init_dram == HB_MC_SUCCESS) {
+						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_num_y() + 1, OP_REMOTE_STORE);
 					}
-					(*icache_pkts)[ofs/4] = hb_mc_get_pkt(addr | (1 << 22), data, x, y, OP_REMOTE_STORE); /*  send packet to tile (0, 0) */
 				}
 			}
-			
-			else if (i == DATA) { /* load to tile (0, 0) */
-				uint8_t *data_dmem = (uint8_t *) calloc(ph[i].p_memsz, sizeof(uint8_t));
+			else if (i == DATA) { 
+				uint32_t data_segment[ph[i].p_memsz / sizeof(uint32_t)];
 				if (ph[i].p_filesz) { 
-						assert(size >= ph[i].p_offset + ph[i].p_filesz);  
-					for (int byte = 0; byte < ph[i].p_filesz; byte++)
-						data_dmem[byte] = buf[ph[i].p_offset + byte];
+					if (size < ph[i].p_offset + ph[i].p_filesz)
+						return HB_MC_FAIL;
+					memcpy(&data_segment[0], &buf[ph[i].p_offset], ph[i].p_filesz);	
 				}		
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
 					uint32_t addr = (4096 + ofs) >> 2;
-					uint32_t data = *((uint32_t *) (data_dmem + ofs));
-					(*dmem_pkts)[ofs/4] = hb_mc_get_pkt(addr, data, x, y, OP_REMOTE_STORE);
+					uint32_t data = data_segment[ofs];
+					hb_mc_format_request_packet(&packets_data[ofs/4].request, addr, data, x, y, OP_REMOTE_STORE);
 				}
 			}
 		}
 	}
 	munmap(buf, size);
+	return HB_MC_SUCCESS;
 }
 
-void hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size) {
-	printf("size of packet_t is 0x%x\n", sizeof(packet_t));
+int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("hb_mc_load_binary(): warning - device was not initialized.\n");
-		return;
+		return HB_MC_FAIL;
 	}
+	else if (!size)
+		return HB_MC_FAIL; /* 0 tiles */ 
 	
-	if (!size)
-		return; 
+	uint32_t text_size, data_size;
+	if (hb_mc_get_elf_segment_size(filename, TEXT, &text_size) != HB_MC_SUCCESS)	
+		return HB_MC_FAIL;
+	else if (hb_mc_get_elf_segment_size(filename, DATA, &data_size) != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
 	
+	packet_t packets_icache[text_size];
+	packet_t packets_dram[text_size];
+	packet_t packets_data[data_size];
 	for (int i = 0; i < size; i++) {
-		uint8_t **icache_pkts, **dram_pkts, **dmem_pkts;
-		uint32_t num_instr, data_size;
-		bool init_dram = (i == 0) ? true : false;
-		hb_mc_parse_elf(filename, x[i], y[i], &num_instr, &data_size, &icache_pkts, &dram_pkts, &dmem_pkts, init_dram);
-		printf("Loading icache of tile (%d, %d)\n", x[i], y[i]);
-		hb_mc_load_packets(fd, icache_pkts, num_instr);
-		if (init_dram) {
-			printf("Loading dram.\n");
-			hb_mc_load_packets(fd, dram_pkts, num_instr);
+		int init_dram = (i == 0) ? HB_MC_SUCCESS : HB_MC_FAIL; /* only load DRAM when loading the first tile */
+		hb_mc_parse_elf(filename, x[i], y[i], packets_icache, packets_dram, text_size, packets_data, data_size, init_dram);
+		printf("<1>\n");
+		hb_mc_load_packets(fd, packets_icache, text_size);
+		printf("<2>\n");
+		if (init_dram == HB_MC_SUCCESS) {
+			hb_mc_load_packets(fd, packets_dram, text_size);
 		}
-		printf("Loading dmem of tile (%d, %d)\n", x[i], y[i]);
-		hb_mc_load_packets(fd, dmem_pkts, data_size);
+		hb_mc_load_packets(fd, packets_data, data_size);
+		printf("<3>\n");
 	}
+	return HB_MC_SUCCESS;
 }
 
 /*!
