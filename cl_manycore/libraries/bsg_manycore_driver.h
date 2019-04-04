@@ -27,7 +27,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd);
 int hb_mc_init_host (uint8_t *fd);
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
-int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_request_packet_t *buf);
+int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
 void hb_mc_clear_int (uint8_t fd, uint8_t n);
 uint32_t hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);

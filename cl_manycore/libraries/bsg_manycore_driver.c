@@ -209,7 +209,7 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
  * reads 128B from the nth fifo
  * returns dequeued element on success and INT_MAX on failure.
  * */
-int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_request_packet_t *buf) {
+int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	if (n >= NUM_FIFO) {
 		return HB_MC_FAIL;
 	}
@@ -229,12 +229,10 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_request_packet_t *buf) {
 	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], receive_length);
 	#endif
 
-	uint32_t buf_words[4]; /* 4 32b words make up a 128b Manycore packet */
 	for (int i = 0; i < 4; i++) {
-		buf_words[i] = hb_mc_read32(fd, fifo[n][FIFO_READ]);
+		packet->words[i] = hb_mc_read32(fd, fifo[n][FIFO_READ]);
 	}
 	
-	*buf = *((hb_mc_request_packet_t *) (&buf_words[0]));  
 }
 
 /* clears interrupts for the nth fifo */

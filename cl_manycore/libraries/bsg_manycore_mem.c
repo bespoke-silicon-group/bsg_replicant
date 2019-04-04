@@ -52,7 +52,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_request_packet_t *buf, uint32_t x, ui
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
 	for (int i = 0; i < size; i++) {
-		hb_mc_read_fifo(fd, 0, &buf[i]);
+		hb_mc_read_fifo(fd, 0, (hb_mc_packet_t *) &buf[i]);
 	}
 
 	return pass_requests;

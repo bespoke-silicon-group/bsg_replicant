@@ -56,7 +56,7 @@ void cosim_loopback_test () {
 	printf("Checking receive packet...\n");
 	usleep(100); /* 100 us */
 	hb_mc_request_packet_t manycore_finish;
-	hb_mc_read_fifo(fd, 1, &manycore_finish);	
+	hb_mc_read_fifo(fd, 1, (hb_mc_packet_t *) &manycore_finish);	
 
 	uint32_t addr = hb_mc_request_packet_get_addr(&manycore_finish);
 	uint32_t data = hb_mc_request_packet_get_data(&manycore_finish);
