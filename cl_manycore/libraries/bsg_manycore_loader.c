@@ -17,7 +17,7 @@ uint8_t MY_Y = 0;
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
  *	 * */
-static int hb_mc_load_packets(uint8_t fd, packet_t *packets, uint32_t num_packets) {
+static int hb_mc_load_packets(uint8_t fd, hb_mc_packet_t *packets, uint32_t num_packets) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
@@ -60,7 +60,7 @@ static int hb_mc_get_elf_segment_size (char *filename, int segment, uint32_t *re
  * */
 
 
-static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, packet_t packets_icache[], packet_t packets_dram[], uint32_t text_size, packet_t packets_data[], uint32_t data_size, int init_dram) {
+static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t packets_icache[], hb_mc_packet_t packets_dram[], uint32_t text_size, hb_mc_packet_t packets_data[], uint32_t data_size, int init_dram) {
 	int fd = open(filename, O_RDONLY);
 	struct stat s;
 	assert(fd != -1);
@@ -128,9 +128,9 @@ int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8
 	else if (hb_mc_get_elf_segment_size(filename, DATA, &data_size) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	
-	packet_t packets_icache[text_size];
-	packet_t packets_dram[text_size];
-	packet_t packets_data[data_size];
+	hb_mc_packet_t packets_icache[text_size];
+	hb_mc_packet_t packets_dram[text_size];
+	hb_mc_packet_t packets_data[data_size];
 	for (int i = 0; i < size; i++) {
 		int init_dram = (i == 0) ? HB_MC_SUCCESS : HB_MC_FAIL; /* only load DRAM when loading the first tile */
 		hb_mc_parse_elf(filename, x[i], y[i], packets_icache, packets_dram, text_size, packets_data, data_size, init_dram);
@@ -155,7 +155,7 @@ int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 		return HB_MC_FAIL;
 	}
 		
-	packet_t freeze; 
+	hb_mc_packet_t freeze; 
 	hb_mc_format_request_packet(&freeze.request, 1 << (EPA_BYTE_ADDR_WIDTH-3), 1, x, y, OP_REMOTE_STORE);
 	if (hb_mc_write_fifo(fd, 0, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
@@ -176,7 +176,7 @@ int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 		return HB_MC_FAIL;
 	}
 		
-	packet_t unfreeze; 
+	hb_mc_packet_t unfreeze; 
 	hb_mc_format_request_packet(&unfreeze.request, 1 << (EPA_BYTE_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
 	if (hb_mc_write_fifo(fd, 0, &unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
@@ -198,7 +198,7 @@ int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 		return HB_MC_FAIL;
 	}
 	
-	packet_t packet_origin_x, packet_origin_y;		
+	hb_mc_packet_t packet_origin_x, packet_origin_y;		
 	hb_mc_format_request_packet(&packet_origin_x.request, (1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_X, origin_x, x, y, OP_REMOTE_STORE);
 	hb_mc_format_request_packet(&packet_origin_y.request, (1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_Y, origin_y, x, y, OP_REMOTE_STORE);
 	if (hb_mc_write_fifo(fd, 0, &packet_origin_x) != HB_MC_SUCCESS) {
@@ -221,7 +221,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
-	packet_t tag;	
+	hb_mc_packet_t tag;	
 	hb_mc_format_request_packet(&tag.request, 1 << (EPA_TAG_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {

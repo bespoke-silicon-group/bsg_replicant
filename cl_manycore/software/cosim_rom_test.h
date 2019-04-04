@@ -21,7 +21,7 @@
 #include "bsg_manycore_packet.h"
 
 int print_rom(uint8_t fd, int idx, int num) {
-    request_packet_t buf[num];
+    hb_mc_request_packet_t buf[num];
     int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 0, idx, num);
     if (read == HB_MC_SUCCESS) {
         for (int i=0; i<num; i++) {

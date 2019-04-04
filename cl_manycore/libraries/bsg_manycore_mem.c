@@ -19,7 +19,7 @@
  * @param size number of words to copy
  * @return whether or not transaction was successful
  * */
-int hb_mc_copy_from_epa (uint8_t fd, request_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
+int hb_mc_copy_from_epa (uint8_t fd, hb_mc_request_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		printf("hb_mc_copy_from_epa(): device was not initialized.\n");
 		return HB_MC_FAIL;
@@ -30,7 +30,7 @@ int hb_mc_copy_from_epa (uint8_t fd, request_packet_t *buf, uint32_t x, uint32_t
 //		return false;
 //	}
 
-	packet_t requests[size]; 	
+	hb_mc_packet_t requests[size]; 	
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
@@ -71,7 +71,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 		printf("hb_xeon_to_epa_copy(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	packet_t packets[size];
+	hb_mc_packet_t packets[size];
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;

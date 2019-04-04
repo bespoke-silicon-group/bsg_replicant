@@ -47,8 +47,8 @@ void cosim_read_write_test () {
 	}
 	printf("write success\n");
 	/* read back data */
-	request_packet_t buf[1];
-	int read = hb_mc_copy_from_epa(fd, (request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
+	hb_mc_request_packet_t buf[1];
+	int read = hb_mc_copy_from_epa(fd, (hb_mc_request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
 		printf("read packet: ");

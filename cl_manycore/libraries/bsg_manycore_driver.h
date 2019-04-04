@@ -26,8 +26,8 @@ static char *hb_mc_mmap_ocl (uint8_t fd);
 
 int hb_mc_init_host (uint8_t *fd);
 int hb_mc_check_dim (uint8_t fd);      
-int hb_mc_write_fifo (uint8_t fd, uint8_t n, packet_t *packet);
-int hb_mc_read_fifo (uint8_t fd, uint8_t n, request_packet_t *buf);
+int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
+int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_request_packet_t *buf);
 void hb_mc_clear_int (uint8_t fd, uint8_t n);
 uint32_t hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);
@@ -36,7 +36,7 @@ int hb_mc_can_read (uint8_t fd, uint32_t size);
 int hb_mc_check_device (uint8_t fd);
 uint8_t hb_mc_get_num_x ();
 uint8_t hb_mc_get_num_y (); 
-void hb_mc_format_request_packet(request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
+void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)

@@ -174,7 +174,7 @@ int hb_mc_check_dim (uint8_t fd) {
  * Writes 128B to the nth fifo
  * @return HB_MC_SUCCESS  on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_write_fifo (uint8_t fd, uint8_t n, packet_t *packet) {
+int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	if (n >= NUM_FIFO) {
 		printf("write_fifo(): invalid fifo.\n");
 		return HB_MC_FAIL;
@@ -209,7 +209,7 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, packet_t *packet) {
  * reads 128B from the nth fifo
  * returns dequeued element on success and INT_MAX on failure.
  * */
-int hb_mc_read_fifo (uint8_t fd, uint8_t n, request_packet_t *buf) {
+int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_request_packet_t *buf) {
 	if (n >= NUM_FIFO) {
 		return HB_MC_FAIL;
 	}
@@ -234,7 +234,7 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, request_packet_t *buf) {
 		buf_words[i] = hb_mc_read32(fd, fifo[n][FIFO_READ]);
 	}
 	
-	*buf = *((request_packet_t *) (&buf_words[0]));  
+	*buf = *((hb_mc_request_packet_t *) (&buf_words[0]));  
 }
 
 /* clears interrupts for the nth fifo */
@@ -331,16 +331,15 @@ uint8_t hb_mc_get_num_y () {
  * @return array of bytes that form the Manycore packet.
  * assumes all fields are <= 32
  * */
-void hb_mc_format_request_packet(request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
-
-	request_packet_set_x_dst(packet, x);
-	request_packet_set_y_dst(packet, y);	
-	request_packet_set_x_src(packet, MY_X);
-	request_packet_set_y_src(packet, MY_Y);
-	request_packet_set_data(packet, data);
-	request_packet_set_op_ex(packet, 0xF);
-	request_packet_set_op(packet, opcode);	
-	request_packet_set_addr(packet, addr);		
+void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
+	hb_mc_request_packet_set_x_dst(packet, x);
+	hb_mc_request_packet_set_y_dst(packet, y);	
+	hb_mc_request_packet_set_x_src(packet, MY_X);
+	hb_mc_request_packet_set_y_src(packet, MY_Y);
+	hb_mc_request_packet_set_data(packet, data);
+	hb_mc_request_packet_set_op_ex(packet, 0xF);
+	hb_mc_request_packet_set_op(packet, opcode);	
+	hb_mc_request_packet_set_addr(packet, addr);		
 
 }
 
