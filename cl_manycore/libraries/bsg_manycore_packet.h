@@ -216,7 +216,7 @@ typedef union packet {
  * @param[in] packet a response packet
  * @return the X coordinate of the requester for packet
  */
-static inline uint8_t response_packet_get_x_dst(response_packet_t *packet)
+static inline uint8_t hb_mc_response_packet_get_x_dst(hb_mc_response_packet_t *packet)
 {
         return packet->x_dst;
 }
@@ -226,7 +226,7 @@ static inline uint8_t response_packet_get_x_dst(response_packet_t *packet)
  * @param[in] packet a response packet
  * @return the Y coordinate of the requester for packet
  */
-static inline uint8_t response_packet_get_y_dst(response_packet_t *packet)
+static inline uint8_t hb_mc_response_packet_get_y_dst(hb_mc_response_packet_t *packet)
 {
         return packet->y_dst;
 }
@@ -236,7 +236,7 @@ static inline uint8_t response_packet_get_y_dst(response_packet_t *packet)
  * @param[in] packet a response packet
  * @return the load ID of the packet
  */
-static inline uint32_t response_packet_get_load_id(response_packet_t *packet)
+static inline uint32_t hb_mc_response_packet_get_load_id(hb_mc_response_packet_t *packet)
 {
         return packet->load_id;
 }
@@ -246,7 +246,7 @@ static inline uint32_t response_packet_get_load_id(response_packet_t *packet)
  * @param[in] packet a response packet
  * @return the packet's payload data
  */
-static inline uint32_t response_packet_get_data(response_packet_t *packet)
+static inline uint32_t hb_mc_response_packet_get_data(hb_mc_response_packet_t *packet)
 {
         return packet->data;
 }
@@ -256,7 +256,7 @@ static inline uint32_t response_packet_get_data(response_packet_t *packet)
  * @param[in] packet a response packet
  * @return the packet's opcode
  */
-static inline uint8_t response_packet_get_op(response_packet_t *packet)
+static inline uint8_t hb_mc_response_packet_get_op(hb_mc_response_packet_t *packet)
 {
         return packet->op;
 }
