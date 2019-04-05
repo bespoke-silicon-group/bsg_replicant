@@ -24,7 +24,7 @@ typedef struct request_packet {
         uint8_t  op;    //!< opcode
         uint32_t addr;  //!< address field (EPA)       
         uint8_t  reserved[2];
-}  __attribute__((packed)) request_packet_t;
+}  __attribute__((packed)) hb_mc_request_packet_t;
 
 /**
  * Legal opcode values for request packets
@@ -37,7 +37,7 @@ typedef struct request_packet {
  * @param[in] packet a request packet
  * @return the X coordinate of the requester for packet
  */
-static inline uint8_t request_packet_get_x_dst(request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_x_dst(hb_mc_request_packet_t *packet)
 {
         return packet->x_dst;
 }
@@ -47,7 +47,7 @@ static inline uint8_t request_packet_get_x_dst(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the Y coordinate of the requester for packet
  */
-static inline uint8_t request_packet_get_y_dst(request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_y_dst(hb_mc_request_packet_t *packet)
 {
         return packet->y_dst;
 }
@@ -57,7 +57,7 @@ static inline uint8_t request_packet_get_y_dst(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the X coordinate of the responder for packet
  */
-static inline uint8_t request_packet_get_x_src(request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_x_src(hb_mc_request_packet_t *packet)
 {
         return packet->x_src;
 }
@@ -67,7 +67,7 @@ static inline uint8_t request_packet_get_x_src(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the X coordinate of the responder for packet
  */
-static inline uint8_t request_packet_get_y_src(request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_y_src(hb_mc_request_packet_t *packet)
 {
         return packet->y_src;
 }
@@ -77,7 +77,7 @@ static inline uint8_t request_packet_get_y_src(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the extended opcode of packet
  */
-static inline uint8_t request_packet_get_op_ex(request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_op_ex(hb_mc_request_packet_t *packet)
 {
         return packet->op_ex;
 }
@@ -87,7 +87,7 @@ static inline uint8_t request_packet_get_op_ex(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the opcode of packet
  */
-static inline uint8_t request_packet_get_op(request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_op(hb_mc_request_packet_t *packet)
 {
         return packet->op;
 }
@@ -97,7 +97,7 @@ static inline uint8_t request_packet_get_op(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the address field of packet
  */
-static inline uint32_t request_packet_get_addr(request_packet_t *packet)
+static inline uint32_t hb_mc_request_packet_get_addr(hb_mc_request_packet_t *packet)
 {
         return le32toh(packet->addr);
 }
@@ -107,7 +107,7 @@ static inline uint32_t request_packet_get_addr(request_packet_t *packet)
  * @param[in] packet a request packet
  * @return the data field of packet
  */
-static inline uint32_t request_packet_get_data(request_packet_t *packet)
+static inline uint32_t hb_mc_request_packet_get_data(hb_mc_request_packet_t *packet)
 {
         return le32toh(packet->data); // should this do byte masking according to opex?
 }
@@ -117,7 +117,7 @@ static inline uint32_t request_packet_get_data(request_packet_t *packet)
  * @param[in] packet a request packet
  * @param[in] x an X coordinate
  */
-static inline void request_packet_set_x_dst(request_packet_t *packet, uint8_t x)
+static inline void hb_mc_request_packet_set_x_dst(hb_mc_request_packet_t *packet, uint8_t x)
 {
         packet->x_dst = x;
 }
@@ -127,7 +127,7 @@ static inline void request_packet_set_x_dst(request_packet_t *packet, uint8_t x)
  * @param[in] packet a request packet
  * @param[in] y an Y coordinate
  */
-static inline void request_packet_set_y_dst(request_packet_t *packet, uint8_t y)
+static inline void hb_mc_request_packet_set_y_dst(hb_mc_request_packet_t *packet, uint8_t y)
 {
         packet->y_dst = y;
 }
@@ -137,7 +137,7 @@ static inline void request_packet_set_y_dst(request_packet_t *packet, uint8_t y)
  * @param[in] packet a request packet
  * @param[in] x an X coordinate
  */
-static inline void request_packet_set_x_src(request_packet_t *packet, uint8_t x)
+static inline void hb_mc_request_packet_set_x_src(hb_mc_request_packet_t *packet, uint8_t x)
 {
         packet->x_src = x;
 }
@@ -147,7 +147,7 @@ static inline void request_packet_set_x_src(request_packet_t *packet, uint8_t x)
  * @param[in] packet a request packet
  * @param[in] y a Y coordinate
  */
-static inline void request_packet_set_y_src(request_packet_t *packet, uint8_t y)
+static inline void hb_mc_request_packet_set_y_src(hb_mc_request_packet_t *packet, uint8_t y)
 {
         packet->y_src = y;
 }
@@ -157,7 +157,7 @@ static inline void request_packet_set_y_src(request_packet_t *packet, uint8_t y)
  * @param[in] packet a request packet
  * @param[in] op_ex an extend opcode
  */
-static inline void request_packet_set_op_ex(request_packet_t *packet, uint8_t op_ex)
+static inline void hb_mc_request_packet_set_op_ex(hb_mc_request_packet_t *packet, uint8_t op_ex)
 {
         packet->op_ex = op_ex;
 }
@@ -167,7 +167,7 @@ static inline void request_packet_set_op_ex(request_packet_t *packet, uint8_t op
  * @param[in] packet a request packet
  * @param[in] op an opcode
  */
-static inline void request_packet_set_op(request_packet_t *packet, uint8_t op)
+static inline void hb_mc_request_packet_set_op(hb_mc_request_packet_t *packet, uint8_t op)
 {
         packet->op = op;
 }
@@ -177,7 +177,7 @@ static inline void request_packet_set_op(request_packet_t *packet, uint8_t op)
  * @param[in] packet a request packet
  * @param[in] addr a valid manycore end point address (EPA)
  */
-static inline void request_packet_set_addr(request_packet_t *packet, uint32_t addr)
+static inline void hb_mc_request_packet_set_addr(hb_mc_request_packet_t *packet, uint32_t addr)
 {
         packet->addr = htole32(addr);
 }
@@ -187,13 +187,20 @@ static inline void request_packet_set_addr(request_packet_t *packet, uint32_t ad
  * @param[in] packet a request packet
  * @param[in] data packet data
  */
-static inline void request_packet_set_data(request_packet_t *packet, uint32_t data)
+static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet, uint32_t data)
 {
         packet->data = htole32(data); // byte mask?
 }
 
 typedef struct response_packet {
         // fill this in when I know it
-} __attribute__((packed)) response_packet_t;
+} __attribute__((packed)) hb_mc_response_packet_t;
+
+
+typedef union packet {
+	hb_mc_request_packet_t request; /**/
+	hb_mc_response_packet_t response; /* from the Hammerblade Manycore */
+	uint32_t words[4];
+} hb_mc_packet_t;
 
 #endif

@@ -57,16 +57,11 @@ static uint8_t VCACHE_WAYS = 2; /* The set-associativity of the victim caches. *
 
 extern uint32_t DMEM_BASE;
 
-static int hb_mc_load_packets(uint8_t fd, uint8_t **pkts, uint32_t num_pkts);
-static void hb_mc_set_field (uint8_t *packet, uint8_t byte_start, uint8_t size, uint32_t val);
-static void hb_mc_parse_elf (char *filename, uint8_t x, uint8_t y, uint32_t *num_instr, uint32_t *data_size, uint8_t ***icache_pkts, uint8_t ***dram_pkts, uint8_t ***dmem_pkts, bool init_dram);	
-uint8_t *hb_mc_get_pkt(uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
-void hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
+int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
-void hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
-void hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
-void hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
-void hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
-static uint32_t *hb_mc_get_byte (uint32_t *packet, uint8_t ofs);
+int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
+int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
 #endif 
 
