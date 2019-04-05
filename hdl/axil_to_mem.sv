@@ -57,10 +57,10 @@ logic [31:0] cfg_waddr;
 logic [ mem_addr_width_p-1:0] cfg_addr_q ;
 logic [31:0] cfg_wdata_q;
 
-
-
 logic cfg_wen, cfg_ren;
 logic cfg_2cp_wen, cfg_2cp_ren;
+
+logic cfg_data_done;
 
 assign done = cfg_data_done;
 assign data_o = cfg_wdata_q;
@@ -124,6 +124,8 @@ axil_state_e axil_state_r, axil_state_n;
 // -------------
 // DATA PATH
 // -------------
+logic [31:0] cfg_wdata;
+
 // write AND read address
 always_ff @(posedge clk_i)
   if (reset_i) begin
@@ -237,7 +239,6 @@ always_comb
 // data path
 // -------------
 logic [ mem_addr_width_p-1:0] cfg_addr;
-logic [31:0] cfg_wdata  ;
 wire [31:0] cfg_sel_addr = cfg_wr_sel ? cfg_waddr : cfg_raddr;
 
 always_ff @(posedge clk_i)
@@ -290,7 +291,6 @@ always_ff @(posedge clk_i)
     cfg_in_process <= 1;
   end
 
-logic cfg_data_done;
 always @(posedge clk_i)
    if (reset_i) begin
       cfg_2cp_wen <= 0;

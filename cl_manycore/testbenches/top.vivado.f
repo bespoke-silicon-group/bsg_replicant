@@ -16,6 +16,7 @@
 -define VIVADO_SIM
 
 -sourcelibext .v
+-sourcelibext .vh
 -sourcelibext .sv
 -sourcelibext .svh
 
@@ -51,10 +52,11 @@
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
+${CL_DIR}/hardware/bsg_bladerunner_configuration.v
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
-${CL_DIR}/../hdl/bsg_manycore_link_to_2fifo.v
 ${CL_DIR}/../hdl/axil_to_mem.sv
+${CL_DIR}/../hdl/bsg_bladerunner_rom.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v
@@ -81,6 +83,7 @@ ${BSG_IP_CORES_DIR}/bsg_dataflow/bsg_fifo_1r1w_large.v
 ${BSG_IP_CORES_DIR}/bsg_dataflow/bsg_fifo_1rw_large.v
 ${BSG_IP_CORES_DIR}/bsg_dataflow/bsg_round_robin_2_to_2.v
 
+
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_decode.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_decode_with_v.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_counter_clear_up.v
@@ -106,7 +109,8 @@ ${BSG_IP_CORES_DIR}/bsg_misc/bsg_transpose.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_arb_fixed.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_priority_encode_one_hot_out.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_scan.v
-
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_dlatch.v
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_clkgate_optional.v
 
 ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_banked_crossbar.v
 ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
@@ -134,7 +138,7 @@ ${BSG_MANYCORE_DIR}/v/vanilla_bean/hobbit.v
 
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint_standard.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint.v
-${BSG_MANYCORE_DIR}/v/bsg_manycore_swap_ctrl.v
+${BSG_MANYCORE_DIR}/v/bsg_manycore_lock_ctrl.v
 ${BSG_MANYCORE_DIR}/v/bsg_1hold.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_pkt_encode.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_link_sif_tieoff.v
@@ -179,4 +183,5 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f
 
 # Testbench design files
-${CL_DIR}/testbenches/rtlsim/cl_tb.sv
+# Should be added in separate folder
+

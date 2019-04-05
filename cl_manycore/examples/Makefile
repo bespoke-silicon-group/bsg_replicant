@@ -1,26 +1,34 @@
 #INCLUDES = -I../drivers/ -I../libraries/
-CFLAGS = -std=c11
-CXXFLAGS = -std=c++11 -pthread -O0 
-CC = gcc
+CFLAGS  := -std=c11
+CXXFLAGS:= -std=c++11 -pthread -O0
+LDFLAGS := -lbsg_manycore_runtime
 
-help: 
-	@echo "How to run a Manycore program </dir/main.riscv> quick start guide"
-	@echo "    1) write a host program <host_program.c> as follows using the skeleton provided in run_manycore_program.c: "
-	@echo "    2) add a target <host_program> to this Makefile."
-	@echo "    3) run program with ./<host_program>"
 
-all: loopback_test read_write_test load_vector_test
+# if you have written a program such as <my-program>.c or <my-program>.cpp
+# add <my-program> in the appropriate list of targets below
+C_TARGETS   := loopback_test read_write_test load_vector_test
+CXX_TARGETS := 
 
-loopback_test: 
-	$(CC) $(CFLAGS) -L/usr/lib/bsg_manycore -lbsg_manycore_runtime loopback_test.c -o loopback_test 
+TARGETS := $(C_TARGETS) $(CXX_TARGETS)
+HEADERS := hb_mc_print_hex.h
 
-read_write_test: 
-	$(CC) $(CFLAGS) -L/usr/lib/bsg_manycore -lbsg_manycore_runtime read_write_test.c -o read_write_test
+all: $(TARGETS)
 
-load_vector_test: 
-	$(CC) $(CFLAGS) -L/usr/lib/bsg_manycore -lbsg_manycore_runtime load_vector_test.c -o load_vector_test
+# all objects depend on all headers
+$(wilcard *.o): $(HEADERS)
+
+# each target 't' in TARGETS relies on an object file 't.o'
+$(TARGETS): %: %.o
+
+# ensure correct linking by using C/C++ linker frontend
+$(C_TARGETS):   LD:=$(CC)
+$(CXX_TARGETS): LD:=$(CXX)
+
+# linking rule for all targets
+$(TARGETS):
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
 clean:
-	rm -f *.o loopback_test read_write_test load_vector_test
+	rm -f *.o $(TARGETS)
 
-.PHONY: all clean help
+.PHONY: all clean 

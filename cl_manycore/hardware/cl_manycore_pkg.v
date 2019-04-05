@@ -21,7 +21,7 @@ package cl_manycore_pkg;
   parameter icache_entries_p = 1024;
   parameter icache_tag_width_p = 12;
   parameter dram_ch_addr_width_p = 27;
-  parameter epa_addr_width_p = 16;
+  parameter epa_byte_addr_width_p = 18;
 
   parameter num_cache_p = 4;
   parameter sets_p = 64;
@@ -33,6 +33,9 @@ package cl_manycore_pkg;
   parameter axi_data_width_p = 512;
   parameter axi_strb_width_p = (axi_data_width_p>>3);
   parameter axi_burst_len_p = 1;
+
+  // the max number of outstanding requests from the host endpoint to the manycore
+  parameter max_out_credits_p = 16;
 
 endpackage
 

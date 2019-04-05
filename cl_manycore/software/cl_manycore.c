@@ -19,16 +19,17 @@
 #include <assert.h>
 #include <string.h>
 
+#include "cosim_rom_test.h"
 #include "cosim_read_write_test.h"
 #include "cosim_load_vector_test.h"
 #include "cosim_loopback_test.h"
 
 #ifdef SV_TEST
-   #include "fpga_pci_sv.h"
+    #include "fpga_pci_sv.h"
 #else
-   #include <fpga_pci.h>
-   #include <fpga_mgmt.h>
-   #include <utils/lcd.h>
+    #include <fpga_pci.h>
+    #include <fpga_mgmt.h>
+    #include <utils/lcd.h>
 #endif
 
 #include <utils/sh_dpi_tasks.h>
@@ -39,7 +40,7 @@
  * addresses in the verilog headers 
  */
 #define HELLO_WORLD_REG_ADDR UINT64_C(0x500)
-#define VLED_REG_ADDR	UINT64_C(0x504)
+#define VLED_REG_ADDR   UINT64_C(0x504)
 
 /* SV_TEST macro should be set if SW/HW co-simulation is enabled */
 #ifndef SV_TEST
@@ -66,48 +67,48 @@ void usage(char* program_name) {
 #ifdef SV_TEST
 //For cadence and questa simulators the main has to return some value
 #ifdef INT_MAIN
-   int test_main(uint32_t *exit_code) {
+    int test_main(uint32_t *exit_code) {
 #else 
-   void test_main(uint32_t *exit_code) {
+    void test_main(uint32_t *exit_code) {
 #endif 
 #else 
-    int main(int argc, char **argv) {
+     int main(int argc, char **argv) {
 #endif
     //The statements within SCOPE ifdef below are needed for HW/SW co-simulation with VCS
     #ifdef SCOPE
-      svScope scope;
-      scope = svGetScopeFromName("tb");
-      svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
     #endif
 
     uint32_t value = 0xefbeadde;
     int slot_id = 0;
     int rc;
-    
+     
 #ifndef SV_TEST
-    // Process command line args
-    {
-        int i;
-        int value_set = 0;
-        for (i = 1; i < argc; i++) {
-            if (!strcmp(argv[i], "--slot")) {
-                i++;
-                if (i >= argc) {
-                    printf("error: missing slot-id\n");
-                    usage(argv[0]);
-                    return 1;
-                }
-                sscanf(argv[i], "%d", &slot_id);
-            } else if (!value_set) {
-                sscanf(argv[i], "%x", &value);
-                value_set = 1;
-            } else {
-                printf("error: Invalid arg: %s", argv[i]);
+// Process command line args
+{
+    int i;
+    int value_set = 0;
+    for (i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "--slot")) {
+            i++;
+            if (i >= argc) {
+                printf("error: missing slot-id\n");
                 usage(argv[0]);
                 return 1;
             }
+            sscanf(argv[i], "%d", &slot_id);
+        } else if (!value_set) {
+            sscanf(argv[i], "%x", &value);
+            value_set = 1;
+        } else {
+            printf("error: Invalid arg: %s", argv[i]);
+            usage(argv[0]);
+            return 1;
         }
     }
+}
 #endif
 
     /* initialize the fpga_pci library so we could have access to FPGA PCIe from this applications */
@@ -119,24 +120,24 @@ void usage(char* program_name) {
 #endif
 
     fail_on(rc, out, "AFI not ready");
-    cosim_loopback_test();
-    cosim_loopback_test();
     cosim_read_write_test();
     cosim_load_vector_test();
+    cosim_loopback_test();
+    cosim_rom_test();
 #ifndef SV_TEST
     return rc;
-    
+     
 out:
     return 1;
 #else
 
 out:
-   #ifdef INT_MAIN
-   *exit_code = 0;
-   return 0;
-   #else 
-   *exit_code = 0;
-   #endif
+    #ifdef INT_MAIN
+    *exit_code = 0;
+    return 0;
+    #else 
+    *exit_code = 0;
+    #endif
 #endif
 }
 
@@ -144,52 +145,52 @@ out:
 #ifndef SV_TEST
 
  int check_afi_ready(int slot_id) {
-   struct fpga_mgmt_image_info info = {0}; 
-   int rc;
+    struct fpga_mgmt_image_info info = {0}; 
+    int rc;
 
-   /* get local image description, contains status, vendor id, and device id. */
-   rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
-   fail_on(rc, out, "Unable to get AFI information from slot %d. Are you running as root?",slot_id);
+    /* get local image description, contains status, vendor id, and device id. */
+    rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
+    fail_on(rc, out, "Unable to get AFI information from slot %d. Are you running as root?",slot_id);
 
-   /* check to see if the slot is ready */
-   if (info.status != FPGA_STATUS_LOADED) {
-     rc = 1;
-     fail_on(rc, out, "AFI in Slot %d is not in READY state !", slot_id);
-   }
+    /* check to see if the slot is ready */
+    if (info.status != FPGA_STATUS_LOADED) {
+        rc = 1;
+        fail_on(rc, out, "AFI in Slot %d is not in READY state !", slot_id);
+    }
 
-   printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
-          info.spec.map[FPGA_APP_PF].vendor_id,
-          info.spec.map[FPGA_APP_PF].device_id);
-
-   /* confirm that the AFI that we expect is in fact loaded */
-   if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
-       info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
-     printf("AFI does not show expected PCI vendor id and device ID. If the AFI "
-            "was just loaded, it might need a rescan. Rescanning now.\n");
-
-     rc = fpga_pci_rescan_slot_app_pfs(slot_id);
-     fail_on(rc, out, "Unable to update PF for slot %d",slot_id);
-     /* get local image description, contains status, vendor id, and device id. */
-     rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
-     fail_on(rc, out, "Unable to get AFI information from slot %d",slot_id);
-
-     printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
+    printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
             info.spec.map[FPGA_APP_PF].vendor_id,
             info.spec.map[FPGA_APP_PF].device_id);
 
-     /* confirm that the AFI that we expect is in fact loaded after rescan */
-     if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
-         info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
-       rc = 1;
-       fail_on(rc, out, "The PCI vendor id and device of the loaded AFI are not "
-               "the expected values.");
-     }
-   }
-    
-   return rc;
- out:
-   return 1;
- }
+    /* confirm that the AFI that we expect is in fact loaded */
+    if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
+        info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
+        printf("AFI does not show expected PCI vendor id and device ID. If the AFI "
+                "was just loaded, it might need a rescan. Rescanning now.\n");
+
+        rc = fpga_pci_rescan_slot_app_pfs(slot_id);
+        fail_on(rc, out, "Unable to update PF for slot %d",slot_id);
+        /* get local image description, contains status, vendor id, and device id. */
+        rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
+        fail_on(rc, out, "Unable to get AFI information from slot %d",slot_id);
+
+        printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
+        info.spec.map[FPGA_APP_PF].vendor_id,
+        info.spec.map[FPGA_APP_PF].device_id);
+
+      /* confirm that the AFI that we expect is in fact loaded after rescan */
+    if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
+        info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
+        rc = 1;
+        fail_on(rc, out, "The PCI vendor id and device of the loaded AFI are not "
+            "the expected values.");
+      }
+    }
+     
+    return rc;
+out:
+    return 1;
+}
 
 #endif
 
@@ -200,7 +201,7 @@ out:
   This function currently returns 0 but can be used to update a buffer on the 'C' side.*/
 int send_rdbuf_to_c(char* rd_buf)
 {
-   return 0;
+    return 0;
 }
 
 #endif
