@@ -319,7 +319,7 @@ uint8_t hb_mc_get_num_y () {
 	return NUM_Y;
 }
 /*
- * Formatss a Manycore request packet.
+ * Formats a Manycore request packet.
  * @param packet packet struct that this function will populate. caller must allocate. 
  * @param addr address to send packet to.
  * @param data packet's data
