@@ -21,15 +21,24 @@
 #include "bsg_manycore_errno.h"
 #include "bsg_manycore_packet.h"
 
-
-void cosim_read_write_test () {
-
   void print_hex (uint8_t *p) {
   	for (int i = 0; i < 16; i++) {
   		printf("%x ", (p[15-i] & 0xFF));
   	}
   	printf("\n");
   }
+
+
+
+
+void cosim_read_write_test () {
+
+
+
+
+
+
+
 
 	printf("Running the Cosimulation Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
 
