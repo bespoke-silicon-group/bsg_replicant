@@ -13,13 +13,6 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_errno.h>
 
-static void print_hex (uint8_t *p) {
-	for (int i = 0; i < 16; i++) {
-		printf("%x ", (p[15-i] & 0xFF));
-	}
-	printf("\n");
-}
-
 int main () {
 	
 	printf("Running the Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
@@ -33,6 +26,7 @@ int main () {
 	
 	/* store data in tile */
 	uint32_t data = 0xABCD;
+	printf("write packet data: 0x%x\n", data);
 	int write = hb_mc_copy_to_epa(fd, 0, 1, DMEM_BASE >> 2, &data, 1);
 
 	if (write != HB_MC_SUCCESS) {
@@ -44,8 +38,7 @@ int main () {
 	hb_mc_response_packet_t buf[1];
 	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
 	if (read == HB_MC_SUCCESS) {
-		printf("read packet: ");
-		print_hex((uint8_t*)buf);
+		printf("read packet data: 0x%x\n", hb_mc_response_packet_get_data(&buf[0]));
 	}
 	
 	else {
