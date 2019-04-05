@@ -235,30 +235,35 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	return HB_MC_SUCCESS;
 }
 
-/* clears interrupts for the nth fifo */
-void hb_mc_clear_int (uint8_t fd, uint8_t n) {
+/* Clears interrupts for an AXI4-Lite FIFO.
+ * @param fd userspace file descriptor
+ * @param n fifo ID
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_clear_int (uint8_t fd, uint8_t n) {
 	if (n >= NUM_FIFO) { 
 		fprintf(stderr, "hb_mc_clear_int(): Invalid fifo.\n");
-		return;
+		return HB_MC_FAIL;
 	}
 
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_clear_int(): device not initialized.\n");
-		return;
+		return HB_MC_FAIL;
 	}		
 
 	hb_mc_write32(fd, fifo[n][FIFO_ISR], 0xFFFFFFFF);
+	return HB_MC_SUCCESS;
 }
 
 /*
- * returns 0 if device is unitialized
- * */
-uint32_t hb_mc_get_host_credits (uint8_t fd) {
+ * @param fd userspace file descriptor
+ * @return number of host credits on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_get_host_credits (uint8_t fd) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
-		return 0;
+		return HB_MC_FAIL;
 	}		
-
 	return hb_mc_read32(fd, HOST_CREDITS);
 }
 
@@ -279,12 +284,13 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
 }		
 
 /*
- * returns 0 if device is unitialized
- * */
-uint32_t hb_mc_get_recv_vacancy (uint8_t fd) {
+ * @param fd userspace file descriptor
+ * @return the receive vacancy of the FIFO on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_get_recv_vacancy (uint8_t fd) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
-		return 0;
+		return HB_MC_FAIL;
 	}	
 	return hb_mc_read32(fd, HOST_RECV_VACANCY);
 }
