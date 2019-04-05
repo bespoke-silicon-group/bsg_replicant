@@ -27,6 +27,9 @@
 	#include <bsg_manycore_errno.h>
 #endif
 
+#include "../libraries/bsg_manycore_errno.h"
+
+
 #define return_code(CONDITION, LABEL, ...) \
 	do {                        \
 		if (CONDITION) {          \

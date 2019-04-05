@@ -1,4 +1,4 @@
-#include "read_write_test.h"
+#include "cl_manycore_test.h"
 
 int read_write_test() {
 	
@@ -14,7 +14,7 @@ int read_write_test() {
 	
 	if (write != HB_MC_SUCCESS) {
 		printf("writing data to tile (0, 0)'s DMEM failed.\n");
-		return -1;
+		return HB_MC_FAIL;
 	}
 	printf("write success\n");
 	/* read back data */
@@ -25,7 +25,7 @@ int read_write_test() {
 		uint32_t rdata = hb_mc_response_packet_get_data(&buf[0]);
 		if (rdata == data) {
 			printf("read packet data: 0x%x\n", hb_mc_response_packet_get_data(&buf[0]));
-			return 0;
+			return HB_MC_SUCCESS;
 		}
 		else {
 			printf("packet data mismatch!");
@@ -33,17 +33,17 @@ int read_write_test() {
 	}	
 	else {
 		printf("read from tile failed.\n");
-		return -1;
+		return HB_MC_FAIL;
 	}
 }
 
 
 #ifdef COSIM
 	void test_main(uint32_t *exit_code) {	
-		printf("Regression Test on cosim:\n\n");
+		printf("Regression Test on COSIMULATION:\n\n");
 		int rc = read_write_test();
 		*exit_code = rc;
-		if (rc == 0)
+		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
 		else
 			printf("TEST FAILED!!!\n");
@@ -53,7 +53,7 @@ int read_write_test() {
 	int main() {
 		printf("Regression Test on F1:\n\n");
 		int rc = read_write_test();
-		if (rc == 0)
+		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
 		else
 			printf("TEST FAILED!!!\n");
