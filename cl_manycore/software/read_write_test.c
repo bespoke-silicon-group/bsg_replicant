@@ -1,19 +1,9 @@
 #include "read_write_test.h"
 
 int read_write_test() {
-		
-	int rc; // return code
-	rc = fpga_pci_init();
-	if (rc != 0)
-		return -1;
 	
-	void print_hex(uint8_t  *p) {
-		for (int i = 0; i < 16; i++) {
-			printf("%x ", (p[15-i] & 0xFF));
-		}
-		printf("\n");
-	}
-
+	printf("Running the Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
+		
 	uint8_t fd; 
 	hb_mc_init_host(&fd);	
 	
@@ -32,9 +22,14 @@ int read_write_test() {
 	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
 	printf("completed read.\n");
 	if (read == HB_MC_SUCCESS) {
-		printf("read packet: ");
-		print_hex((uint8_t *) &buf[0]);
-		return 0;
+		uint32_t rdata = hb_mc_response_packet_get_data(&buf[0]);
+		if (rdata == data) {
+			printf("read packet data: 0x%x\n", hb_mc_response_packet_get_data(&buf[0]));
+			return 0;
+		}
+		else {
+			printf("packet data mismatch!");
+		}	
 	}	
 	else {
 		printf("read from tile failed.\n");
@@ -44,14 +39,24 @@ int read_write_test() {
 
 
 #ifdef COSIM
-	void test_main(uint32_t *exit_code) {
-		int rc;
-		rc = read_write_test();
+	void test_main(uint32_t *exit_code) {	
+		printf("Regression Test on cosim:\n\n");
+		int rc = read_write_test();
 		*exit_code = rc;
+		if (rc == 0)
+			printf("TEST PASSED~~~\n");
+		else
+			printf("TEST FAILED!!!\n");
 		return;
 	}
 #else
 	int main() {
-		return read_write_test();
+		printf("Regression Test on F1:\n\n");
+		int rc = read_write_test();
+		if (rc == 0)
+			printf("TEST PASSED~~~\n");
+		else
+			printf("TEST FAILED!!!\n");
+		return rc;
 	}
 #endif
