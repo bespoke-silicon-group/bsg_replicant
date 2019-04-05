@@ -1,46 +1,34 @@
-# Amazon FPGA Hardware Development Kit
-#
-# Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-#
-# Licensed under the Amazon Software License (the "License"). You may not use
-# this file except in compliance with the License. A copy of the License is
-# located at
-#
-#    http://aws.amazon.com/asl/
-#
-# or in the "license" file accompanying this file. This file is distributed on
-# an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or
-# implied. See the License for the specific language governing permissions and
-# limitations under the License.
+#INCLUDES = -I../drivers/ -I../libraries/
+CFLAGS  := -std=c11
+CXXFLAGS:= -std=c++11 -pthread -O0
+LDFLAGS := -lbsg_manycore_runtime
 
-ifndef PROJECT
-$(error "PROJECT undefined. Set PROJECT before running this makefile")
-endif
 
-VPATH = src:include:$(HDK_DIR)/common/software/src:$(HDK_DIR)/common/software/include
+# if you have written a program such as <my-program>.c or <my-program>.cpp
+# add <my-program> in the appropriate list of targets below
+C_TARGETS   := read_write_test
+CXX_TARGETS := 
 
-INCLUDES = -I$(SDK_DIR)/userspace/include
-INCLUDES += -I $(HDK_DIR)/common/software/include
-INCLUDES += -I ./include
+TARGETS := $(C_TARGETS) $(CXX_TARGETS)
+HEADERS := hb_mc_print_hex.h
 
-CC = gcc
-CFLAGS = -DCONFIG_LOGLEVEL=4 -g -Wall $(INCLUDES) -DCOSIM=1
+all: $(TARGETS)
 
-LDLIBS = -lfpga_mgmt -lrt -lpthread
+# all objects depend on all headers
+$(wilcard *.o): $(HEADERS)
 
-SRC = ${SDK_DIR}/userspace/utils/sh_dpi_tasks.c $(PROJECT).c
-OBJ = $(SRC:.c=.o)
-BIN = $(PROJECT)
+# each target 't' in TARGETS relies on an object file 't.o'
+$(TARGETS): %: %.o
 
-all: $(BIN) check_env
+# ensure correct linking by using C/C++ linker frontend
+$(C_TARGETS):   LD:=$(CC)
+$(CXX_TARGETS): LD:=$(CXX)
 
-$(BIN): $(OBJ)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+# linking rule for all targets
+$(TARGETS):
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
 clean:
-	rm -f *.o $(BIN)
+	rm -f *.o $(TARGETS)
 
-check_env:
-ifndef SDK_DIR
-    $(error SDK_DIR is undefined. Try "source sdk_setup.sh" to set the software environment)
-endif
+.PHONY: all clean 
