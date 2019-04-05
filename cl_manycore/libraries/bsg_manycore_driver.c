@@ -120,7 +120,9 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	pci_bar_handle_t handle;
 	fpga_pci_attach(slot_id, pf_id, bar_id, write_combine, &handle);
 	fpga_pci_get_address(handle, 0, 0x4, (void **) &ocl_table[fd]);	
-	printf("map address is %p\n", ocl_table[fd]);
+	#ifdef DEBUG
+	fprintf(stderr, "hb_mc_mmap_ocl(): map address is %p\n", ocl_table[fd]);
+	#endif
 	return ocl_table[fd];
 } 
 
@@ -139,7 +141,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	#ifndef COSIM
 	ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
-		printf("hb_mc_init_host(): unable to mmap device.\n");
+		fprintf(stderr, "hb_mc_init_host(): unable to mmap device.\n");
 		return HB_MC_FAIL;
 	}	
 	#else
@@ -160,7 +162,7 @@ int hb_mc_init_host (uint8_t *fd) {
  * */
 int hb_mc_check_dim (uint8_t fd) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("hb_mc_check_dim(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_check_dim(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
 	uint32_t num_x = hb_mc_read32(fd, MANYCORE_NUM_X);
@@ -177,23 +179,19 @@ int hb_mc_check_dim (uint8_t fd) {
  * */
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	if (n >= NUM_FIFO) {
-		printf("write_fifo(): invalid fifo.\n");
+		fprintf(stderr, "hb_mc_write_fifo(): invalid fifo.\n");
 		return HB_MC_FAIL;
 	}
 
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("write_fifo(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_write_fifo(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
 	
 	uint16_t init_vacancy = hb_mc_read16(fd, fifo[n][FIFO_VACANCY]);
 
-	#ifdef DEBUG
-	printf("write(): vacancy is %u\n", init_vacancy);	
-	#endif
-
 	if (init_vacancy < 4) {
-		printf("not enough space in fifo.\n");
+		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
 	for (int i = 0; i < 4; i++) {
@@ -227,7 +225,7 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	}
 	
 	#ifdef DEBUG
-	printf("read(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], receive_length);
+	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], receive_length);
 	#endif
 
 	for (int i = 0; i < 4; i++) {
@@ -240,12 +238,12 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 /* clears interrupts for the nth fifo */
 void hb_mc_clear_int (uint8_t fd, uint8_t n) {
 	if (n >= NUM_FIFO) { 
-		printf("Invalid fifo.\n");
+		fprintf(stderr, "hb_mc_clear_int(): Invalid fifo.\n");
 		return;
 	}
 
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("clear_int(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_clear_int(): device not initialized.\n");
 		return;
 	}		
 
@@ -257,7 +255,7 @@ void hb_mc_clear_int (uint8_t fd, uint8_t n) {
  * */
 uint32_t hb_mc_get_host_credits (uint8_t fd) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("get_host_credits(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
 		return 0;
 	}		
 
@@ -270,7 +268,7 @@ uint32_t hb_mc_get_host_credits (uint8_t fd) {
  * */
 int hb_mc_all_host_req_complete(uint8_t fd) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("get_host_req_complete(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_get_host_req_complete(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}		
 	if (hb_mc_get_host_credits(fd) == MAX_CREDITS)
@@ -285,7 +283,7 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
  * */
 uint32_t hb_mc_get_recv_vacancy (uint8_t fd) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("get_recv_vacancy(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
 		return 0;
 	}	
 	return hb_mc_read32(fd, HOST_RECV_VACANCY);
@@ -296,7 +294,7 @@ uint32_t hb_mc_get_recv_vacancy (uint8_t fd) {
  * */
 int hb_mc_can_read (uint8_t fd, uint32_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("can_read(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_can_read(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
 	if (hb_mc_get_recv_vacancy(fd) >= size)
