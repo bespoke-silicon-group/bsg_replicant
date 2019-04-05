@@ -14,13 +14,6 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_packet.h>
 
-static void print_hex (uint8_t *p) {
-	for (int i = 0; i < 16; i++) {
-		printf("%x ", (p[15-i] & 0xFF));
-	}
-	printf("\n");
-}
-
 int main () {
 	
 	printf("Running the Load Vector Test on the Manycore with 4 x 4 dimensions.\n\n");
@@ -36,7 +29,7 @@ int main () {
 	srand(0);
 	for (int i = 0; i < n; i++) {
 		data[i] = rand();
-		printf("random number %d: 0x%x\n", i, data[i]);
+		printf("write random number %d: 0x%x\n", i, data[i]);
 	}
 
 	/* store data in tile */
@@ -48,15 +41,14 @@ int main () {
 	}
 
 	/* read back data */
-	hb_mc_request_packet_t buf[n];
-	int read = hb_mc_copy_from_epa(fd, (hb_mc_request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, n); 
+	hb_mc_response_packet_t buf[n];
+	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, n); 
 	
 	if (read == HB_MC_SUCCESS) {
-		printf("read packets: \n");
+		printf("\n");
 		for (int i = 0; i < n; i++)
-			print_hex((uint8_t *) &buf[i]);
+			printf("read random number %d: 0x%x\n", i, hb_mc_response_packet_get_data(&buf[i]));
 	}
-	
 	else {
 		printf("read from tile failed.\n");
 	}

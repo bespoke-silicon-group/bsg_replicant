@@ -54,9 +54,9 @@ void cosim_load_vector_test () {
 	}
 
 	/* read back data */
-	hb_mc_request_packet_t buf[n];
-	int read = hb_mc_copy_from_epa(fd, (hb_mc_request_packet_t *) &buf[0], 0, 1, DMEM_BASE >> 2, n); 
-	
+	hb_mc_response_packet_t buf[n];
+	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, n); 
+
 	if (read == HB_MC_SUCCESS) {
 		printf("read packets: \n");
 		for (int i = 0; i < n; i++) {

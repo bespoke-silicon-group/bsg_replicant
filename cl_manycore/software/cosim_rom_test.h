@@ -21,8 +21,9 @@
 #include "bsg_manycore_packet.h"
 
 int print_rom(uint8_t fd, int idx, int num) {
-    hb_mc_request_packet_t buf[num];
+    hb_mc_response_packet_t buf[num];
     int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 0, idx, num);
+
     if (read == HB_MC_SUCCESS) {
         for (int i=0; i<num; i++) {
             printf("read rom data @ address %d: ", idx + i);
@@ -40,7 +41,6 @@ int print_rom(uint8_t fd, int idx, int num) {
     }
 }
 
-
 int cosim_rom_test () {
     printf("Runing the Cosimulation: rom test\n");
     uint8_t fd = 0;
@@ -56,4 +56,3 @@ int cosim_rom_test () {
 }
 
 #endif
-
