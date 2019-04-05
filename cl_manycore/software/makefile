@@ -6,7 +6,7 @@ LDFLAGS := -lbsg_manycore_runtime
 
 # if you have written a program such as <my-program>.c or <my-program>.cpp
 # add <my-program> in the appropriate list of targets below
-C_TARGETS   := read_write_test
+C_TARGETS   := read_write_test loopback_test
 CXX_TARGETS := 
 
 TARGETS := $(C_TARGETS) $(CXX_TARGETS)
@@ -28,7 +28,20 @@ $(CXX_TARGETS): LD:=$(CXX)
 $(TARGETS):
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
-clean:
-	rm -f *.o $(TARGETS)
+%.regression: %
+	sudo -E ./$(subst .regression,,$@)
 
-.PHONY: all clean 
+
+regression: $(TARGETS)
+	@for testcase in $(TARGETS); do \
+	sudo -E ./$$testcase &> run.log; \
+	echo ""; \
+	echo "====================================================================="; \
+	grep "PASSED \| FAILED \|" run.log; \
+	echo "====================================================================="; \
+	done;
+
+clean:
+	rm -f *.o $(TARGETS) run.log
+
+.PHONY: all clean %.regression
