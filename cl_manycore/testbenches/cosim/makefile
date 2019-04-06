@@ -42,7 +42,7 @@ C_INC_DIR = $(CL_DIR)/software
 C_SRC_DIR = $(CL_DIR)/software
 # C_TB_TOP names the software C file that drives cosimulation
 # C_TB_TOP  = $(C_SRC_DIR)/$(PROJECT).c
-C_TB_TOP  = $(C_SRC_DIR)/read_write_test.c
+# C_TB_TOP  = $(C_SRC_DIR)/read_write_test.c
 C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
 			$(C_COMMON_DIR)/src/fpga_pci_sv.c \
 			$(CL_DIR)/libraries/bsg_manycore_driver.c \

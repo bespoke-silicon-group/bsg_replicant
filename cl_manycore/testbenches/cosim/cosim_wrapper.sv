@@ -20,7 +20,7 @@ module cosim_wrapper();
       
       tb.power_up();
 
-       $display("Hello\n");
+      $display("Hello\n");
        
       tb.test_main(exit_code);
       
