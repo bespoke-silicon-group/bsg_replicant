@@ -225,11 +225,6 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_format_request_packet(&tag.request, 1 << (EPA_TAG_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
-		#ifndef COSIM
-		usleep(1);
-		#else
-		sv_pause(1);
-		#endif
 		if (hb_mc_write_fifo(fd, 0, &tag) != HB_MC_SUCCESS) {	
 			return HB_MC_FAIL;
 		}
