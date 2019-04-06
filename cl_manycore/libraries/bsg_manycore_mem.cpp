@@ -45,7 +45,6 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 			break;
 		}
 	}
-
 	if (pass_requests != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_copy_from_epa(): error when sending load request to Manycore.\n");
 	}
@@ -54,7 +53,6 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	for (int i = 0; i < size; i++) {
 		hb_mc_read_fifo(fd, 0, (hb_mc_packet_t *) &buf[i]);
 	}
-
 	return pass_requests;
 }
 

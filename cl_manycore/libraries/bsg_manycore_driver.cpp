@@ -545,7 +545,7 @@ static uint32_t hb_mc_global_network_get_x (eva_t eva) {
  * returns y coordinate of a global network address.
  * */
 static uint32_t hb_mc_global_network_get_y (eva_t eva) {
-	return hb_mc_get_bits(eva, 24, 4); /* TODO: hardcoded */
+	return hb_mc_get_bits(eva, 24, 6); /* TODO: hardcoded */
 }
 
 /*
@@ -567,7 +567,7 @@ static uint32_t hb_mc_dram_get_y (eva_t eva) {
  * returns EPA of a global network address.
  * */
 static uint32_t hb_mc_global_network_get_epa (eva_t eva) {
-	return hb_mc_get_bits(eva, 0, 18); /* TODO: hardcoded */ 
+	return hb_mc_get_bits(eva, 0, 18) >> 2; /* TODO: hardcoded */ 
 }
 
 /*
@@ -654,7 +654,7 @@ static int hb_mc_npa_is_valid (npa_t *npa) {
 	
 	if (!(x_valid == HB_MC_SUCCESS && y_valid == HB_MC_SUCCESS)) 
 		return HB_MC_FAIL; /* invalid (x,y) */
-	else if (hb_mc_npa_is_dram(npa) != HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
+	else if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid DRAM NPA */
 	else if (hb_mc_npa_is_dram(npa) != HB_MC_SUCCESS && hb_mc_valid_epa_vanilla(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid Vanilla Core NPA */
@@ -681,7 +681,7 @@ static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
 	eva |= (npa->epa << 2);
 	eva |= (npa->x << 18); /* TODO: hardcoded */
 	eva |= (npa->y << 24); /* TODO: hardcoded */
-	eva |= (npa->x << (2 + 27)); /* TODO: hardcoded */
+	eva |= (1 << 30); /* TODO: hardcoded */
 	return eva;
 }
 
@@ -696,10 +696,10 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* invalid eva_id */
 	}
-	else if (!hb_mc_npa_is_valid(npa)) {
+	else if (hb_mc_npa_is_valid(npa) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL; /* invalid NPA address*/
 	}
-	else if (hb_mc_npa_is_dram(npa)) {
+	else if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS) {
 		*eva = hb_mc_npa_to_eva_dram(npa);
 	}
 	else { /* tile */
@@ -726,7 +726,7 @@ static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *s
 /*
  * caller must esure eva_id is valid. 
  * */
-static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, request_packet_t *dest, eva_t src) {
+static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, hb_mc_response_packet_t *dest, eva_t src) {
 	npa_t npa;	
 	int error = hb_mc_eva_to_npa(eva_id, src, &npa);
 	if (error != HB_MC_SUCCESS) {
@@ -757,7 +757,7 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
 		eva_t src_eva = (eva_t) reinterpret_cast<uintptr_t>(src);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			request_packet_t *dst_packet = (request_packet_t *) dst + (i / sizeof(uint32_t));
+			hb_mc_response_packet_t *dst_packet = (hb_mc_response_packet_t *) dst + (i / sizeof(uint32_t));
 			int error = hb_mc_cpy_from_eva(fd, eva_id, dst_packet, src_eva + i); 		
 			if (error != HB_MC_SUCCESS)
 				return HB_MC_FAIL; /* copy failed */

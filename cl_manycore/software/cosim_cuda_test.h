@@ -20,14 +20,6 @@
 #include "bsg_manycore_loader.h"
 #include "bsg_manycore_errno.h"
 
-void print_hex (uint8_t *p) {
-	for (int i = 0; i < 16; i++) {
-		printf("%x ", (p[15-i] & 0xFF));
-	}
-	printf("\n");
-}
-
-
 void cosim_cuda_test () {
 	
 	printf("Cosimulation test of hb_mc_init_device().\n\n");
@@ -68,14 +60,13 @@ void cosim_cuda_test () {
 		B_host[i] = size_buffer - i - 1;
 	}
 	
-	/* Copy A and B to host */	
+	/* Copy A and B to device */	
 	void *dst = (void *) A_device;
 	void *src = (void *) &A_host[0];
 	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device);
 	if (error != HB_MC_SUCCESS) {
 		printf("cosim_cuda_test(): could not copy buffer A to device.\n");
 	}
-	//dst = reinterpret_cast<void *>(B);
 	dst = (void *) B_device;
 	src = (void *) &B_host[0];
 	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device);
@@ -84,8 +75,8 @@ void cosim_cuda_test () {
 	}
 
 	// read back A and B from the device
-	request_packet_t A_loads[size_buffer];
-	request_packet_t B_loads[size_buffer];
+	hb_mc_response_packet_t A_loads[size_buffer];
+	hb_mc_response_packet_t B_loads[size_buffer];
 	src = (void *) A_device;
 	dst = (void *) &A_loads[0];
 	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host);
@@ -98,13 +89,13 @@ void cosim_cuda_test () {
 	if (error != HB_MC_SUCCESS) {
 		printf("cosim_cuda_test(): Unable to copy B from device.\n");
 	}
-	printf("A loads: \n");
+	/* print results */
 	for (int i = 0; i < size_buffer; i++) {
-		print_hex((uint8_t *) &A_loads[i]);
+		printf("A[%d]: write = 0x%x, read = 0x%x\n", i, A_host[i], hb_mc_response_packet_get_data(&A_loads[i]));
 	}	
-	printf("B loads: \n");
+	printf("\n");
 	for (int i = 0; i < size_buffer; i++) {
-		print_hex((uint8_t *) &B_loads[i]);
+		printf("B[%d]: write = 0x%x, read = 0x%x\n", i, B_host[i], hb_mc_response_packet_get_data(&B_loads[i]));
 	}		
 
 	/* free A and B on device */
