@@ -20,7 +20,20 @@
 #include "bsg_manycore_loader.h"
 #include "bsg_manycore_errno.h"
 
+
+/**
+ *  This tests uses the software/spmd/bsg_cuda_lite_runtime/ Manycore binary. Compile the program and save its path in an environment variable called "elf_cuda_add" before running this test. The enviornment variable should include the binary name "main.riscv."
+ *
+ */
+
 void cosim_cuda_test () {
+	void print_hex (uint8_t *p) {
+		for (int i = 0; i < 16; i++) {
+			printf("%x ", (p[15-i] & 0xFF));
+		}
+		printf("\n");
+	}
+
 	printf("Cosimulation test of hb_mc_init_device().\n\n");
 	uint8_t fd; 
 	hb_mc_init_host(&fd);
@@ -33,75 +46,71 @@ void cosim_cuda_test () {
 	tiles[0].origin_y = 1;
 	eva_id_t eva_id = 0;
 	uint32_t num_tiles = 1;
-	if (hb_mc_init_device(fd, eva_id, getenv("MAIN_LOOPBACK"), &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+	if (hb_mc_init_device(fd, eva_id, getenv("elf_cuda_add"), &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return;
 	}  
 
-	/* make sure memory manager was initialized properly */
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
-	printf("start: 0x%x, size: 0x%x\n", start, size);
+	printf("start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
 	
-	/* allocate A and B on the device */
 	uint32_t size_buffer = 16; 
-	eva_t A_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t));
-	eva_t B_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t));
-	printf("A's EVA 0x%x, B's EVA: 0x%x\n", A_device, B_device);
+	eva_t A_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t)); /* allocate A on the device */
+	eva_t B_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t)); /* allocate B on the device */
+	eva_t C_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t)); /* allocate C on the device */
+	printf("A's EVA 0x%x, B's EVA: 0x%x, C's EVA: 0x%x\n", A_device, B_device, C_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO, C should be TODO */
+ 
 
-	/* allocate A and B on the device */
-	uint32_t A_host[size_buffer];
-	uint32_t B_host[size_buffer];
-
-	/* fill A and B */
-	for (int i = 0; i < size_buffer; i++) {
-		A_host[i] = i;
-		B_host[i] = size_buffer - i - 1;
+	uint32_t A_host[size_buffer]; /* allocate A on the host */ 
+	uint32_t B_host[size_buffer]; /* allocate B on the host */
+	srand(0);
+	for (int i = 0; i < size_buffer; i++) { /* fill A and B with arbitrary data */
+		A_host[i] = rand() % ((1 << 16) - 1); /* avoid overflow */
+		B_host[i] = rand() % ((1 << 16) - 1); 
 	}
-	
-	/* Copy A and B to device */	
+
 	void *dst = (void *) A_device;
 	void *src = (void *) &A_host[0];
-	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device);
+	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	if (error != HB_MC_SUCCESS) {
 		printf("cosim_cuda_test(): could not copy buffer A to device.\n");
 	}
 	dst = (void *) B_device;
 	src = (void *) &B_host[0];
-	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device);
+	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
 	if (error != HB_MC_SUCCESS) {
 		printf("cosim_cuda_test(): could not copy buffer B to device.\n");
 	}
 
-	// read back A and B from the device
-	hb_mc_response_packet_t A_loads[size_buffer];
-	hb_mc_response_packet_t B_loads[size_buffer];
-	src = (void *) A_device;
-	dst = (void *) &A_loads[0];
-	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host);
+	int argv[4] = {A_device, B_device, C_device, size_buffer};
+	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, getenv("elf_cuda_add"), &tiles[0]); /* launch the kernel */
+
+
+
+	request_packet_t finish = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}}; /* The runtime is incomplete in that it doesn't send a host-specified finish packet. Instead, we program the tile to send this finish packet. */
+	hb_mc_device_sync (fd, &finish); /* if CUDA sync is correct, this program won't hang here. */
+
+
+	response_packet_t C_host[size_buffer];
+	src = (void *) C_device;
+	dst = (void *) &C_host[0];
+	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
 	if (error != HB_MC_SUCCESS) {
 		printf("cosim_cuda_test(): Unable to copy A from device.\n");
 	}
-	src = (void *) B_device;
-	dst = (void *) &B_loads[0];
-	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host);
-	if (error != HB_MC_SUCCESS) {
-		printf("cosim_cuda_test(): Unable to copy B from device.\n");
-	}
-	/* print results */
+	
+	printf("Finished vector addition: \n");
 	for (int i = 0; i < size_buffer; i++) {
-		printf("A[%d]: write = 0x%x, read = 0x%x\n", i, A_host[i], hb_mc_response_packet_get_data(&A_loads[i]));
+		printf("A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], response_packet_get_data(&C_host[i])); 
 	}	
-	printf("\n");
-	for (int i = 0; i < size_buffer; i++) {
-		printf("B[%d]: write = 0x%x, read = 0x%x\n", i, B_host[i], hb_mc_response_packet_get_data(&B_loads[i]));
-	}		
 
-	/* free A and B on device */
-	hb_mc_device_free(eva_id, A_device);
-	hb_mc_device_free(eva_id, B_device);
+	hb_mc_device_free(eva_id, A_device); /* free A on device */
+	hb_mc_device_free(eva_id, B_device); /* free B on device */
+	hb_mc_device_free(eva_id, C_device); /* free C on device */
 
-	hb_mc_device_finish(fd, eva_id, tiles, num_tiles);
+
+	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
 	return;
 }
 
