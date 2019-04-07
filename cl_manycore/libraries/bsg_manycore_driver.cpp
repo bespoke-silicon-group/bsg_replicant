@@ -781,12 +781,12 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 }
 
 
-void hb_mc_device_sync (uint8_t fd, request_packet_t *finish) {
+void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	while (1) {
-		request_packet_t recv;
-		hb_mc_read_fifo(fd, 1, &recv); /* wait for Manycore to send packet */
+		hb_mc_request_packet_t recv;
+		hb_mc_read_fifo(fd, 1, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
 		
-		if (request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
+		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
 			break; /* finish packet received from Hammerblade Manycore */
 	}	
 }

@@ -55,7 +55,8 @@ void cosim_loopback_test () {
 
 	printf("Checking receive packet...\n");
 	usleep(100); /* 100 us */
-	hb_mc_device_sync (fd, &REQUEST_PACKET_FINISH);
+	hb_mc_request_packet_t manycore_finish = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}};
+	hb_mc_device_sync (fd, &manycore_finish);
 	printf("Manycore finish packet received.\n");
  }
 

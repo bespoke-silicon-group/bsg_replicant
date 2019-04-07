@@ -38,7 +38,6 @@ typedef struct request_packet {
         uint8_t  reserved[2];
 }  __attribute__((packed)) hb_mc_request_packet_t;
 
-static request_packet_t REQUEST_PACKET_FINISH = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}};
 /**
  * Legal opcode values for request packets
  */
@@ -131,7 +130,7 @@ static inline uint32_t hb_mc_request_packet_get_data(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the valid data field of packet
  */
-static inline uint32_t request_packet_get_data_valid(request_packet_t *packet)
+static inline uint32_t hb_mc_request_packet_get_data_valid(hb_mc_request_packet_t *packet)
 {
 	uint32_t valid = 0;
 	for (int i = 0; i < 4; i++) { /* TODO: hardcoded */		
@@ -227,26 +226,26 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
  * @param[in] b a request packet
  * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the non-data fields of a an b must be the same and the valid data must be the same. 
  */
-static int request_packet_equals(request_packet_t *a, request_packet_t *b) {
+static int hb_mc_request_packet_equals(hb_mc_request_packet_t *a, hb_mc_request_packet_t *b) {
 	if (!a || !b) {
 		return HB_MC_FAIL;
 	}
-	else if (request_packet_get_x_dst(a) != request_packet_get_x_dst(b)) {
+	else if (hb_mc_request_packet_get_x_dst(a) != hb_mc_request_packet_get_x_dst(b)) {
 		return HB_MC_FAIL;	
 	}
-	else if (request_packet_get_y_dst(a) != request_packet_get_y_dst(b)) {
+	else if (hb_mc_request_packet_get_y_dst(a) != hb_mc_request_packet_get_y_dst(b)) {
 		return HB_MC_FAIL;	
 	}
-	else if (request_packet_get_x_src(a) != request_packet_get_x_src(b)) {
+	else if (hb_mc_request_packet_get_x_src(a) != hb_mc_request_packet_get_x_src(b)) {
 		return HB_MC_FAIL;	
 	}
-	else if (request_packet_get_y_src(a) != request_packet_get_y_src(b)) {
+	else if (hb_mc_request_packet_get_y_src(a) != hb_mc_request_packet_get_y_src(b)) {
 		return HB_MC_FAIL;	
 	}
-	else if (request_packet_get_data_valid(a) != request_packet_get_data_valid(b)) {
+	else if (hb_mc_request_packet_get_data_valid(a) != hb_mc_request_packet_get_data_valid(b)) {
 		return HB_MC_FAIL;	
 	}
-	else if (request_packet_get_addr(a) != request_packet_get_addr(b)) {
+	else if (hb_mc_request_packet_get_addr(a) != hb_mc_request_packet_get_addr(b)) {
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
