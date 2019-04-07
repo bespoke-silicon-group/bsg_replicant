@@ -6,7 +6,7 @@ LDFLAGS := -lbsg_manycore_runtime
 
 # if you have written a program such as <my-program>.c or <my-program>.cpp
 # add <my-program> in the appropriate list of targets below
-C_TARGETS   := loopback_test read_write_test load_vector_test
+C_TARGETS   := loopback_test read_write_test load_vector_test run_kernel_add
 CXX_TARGETS := 
 
 TARGETS := $(C_TARGETS) $(CXX_TARGETS)

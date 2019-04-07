@@ -481,9 +481,9 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 
 	return HB_MC_SUCCESS;
 }
-#ifdef COSIM
+
 /*!
- * This function is for testing hb_mc_init_device() in cosimulation. 
+ * This function is for testing hb_mc_init_device() only. 
  */
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size) {
 	if (!mem_manager[eva_id]) {
@@ -493,7 +493,6 @@ void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *siz
 	*start = mem_manager[eva_id]->start();
 	*size =mem_manager[eva_id]->size();
 }
-#endif
 
 /*!
  * allocates memory in Manycore

@@ -61,9 +61,7 @@ int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
 int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t *tile);
-#ifdef COSIM
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
-#endif
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)
