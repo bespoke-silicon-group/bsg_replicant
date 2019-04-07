@@ -34,7 +34,7 @@ void cosim_cuda_test () {
 		printf("\n");
 	}
 
-	printf("Cosimulation test of hb_mc_init_device().\n\n");
+	printf("Cosimulation test of addition kernel.\n\n");
 	uint8_t fd; 
 	hb_mc_init_host(&fd);
 	
@@ -88,11 +88,11 @@ void cosim_cuda_test () {
 
 
 
-	request_packet_t finish = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}}; /* The runtime is incomplete in that it doesn't send a host-specified finish packet. Instead, we program the tile to send this finish packet. */
+	hb_mc_request_packet_t finish = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}}; /* The runtime is incomplete in that it doesn't send a host-specified finish packet. Instead, we program the tile to send this finish packet. */
 	hb_mc_device_sync (fd, &finish); /* if CUDA sync is correct, this program won't hang here. */
 
 
-	response_packet_t C_host[size_buffer];
+	hb_mc_response_packet_t C_host[size_buffer];
 	src = (void *) C_device;
 	dst = (void *) &C_host[0];
 	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
@@ -102,7 +102,7 @@ void cosim_cuda_test () {
 	
 	printf("Finished vector addition: \n");
 	for (int i = 0; i < size_buffer; i++) {
-		printf("A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], response_packet_get_data(&C_host[i])); 
+		printf("A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], hb_mc_response_packet_get_data(&C_host[i])); 
 	}	
 
 	hb_mc_device_free(eva_id, A_device); /* free A on device */
