@@ -39,11 +39,11 @@ static const uint32_t KERNEL_REG = 0x1000 >> 2; //!< EPA of kernel.
 static const uint32_t ARGC_REG = 0x1004 >> 2; //!< EPA of number of arguments kernel will use. 
 static const uint32_t ARGV_REG = 0x1008 >> 2; //!< EPA of arguments for kernel. 
 static const uint32_t SIGNAL_REG = 0x100c >> 2; //!< EPA of register that holds signal address. Tile will write to this address once it completes the kernel.   
-static const uint32_t FINISH_ADDRESS = 0xC0DA; //!< EVA to which tile group sends a finish packet once it finishes executing a kernel  
-static const hb_mc_request_packet_t REQUEST_PACKET_FINISH = {3, 0, 0, 1, 0, 0xF, 0x1, FINISH_ADDRESS, {0, 0}};
-
+static const uint32_t FINISH_ADDRESS = 0xC0DA; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
 static uint32_t const DRAM_SIZE = 0x80000000;
 static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}; /* This array has an element for every EVA <-> NPA mapping. Currently, only one mapping is supported. */
+
+int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva); 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
  * @param fd userspace file descriptor
@@ -452,6 +452,14 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
 		hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
+		npa_t host_npa = {(uint32_t) NUM_X - 1, 0, FINISH_ADDRESS};
+		eva_t host_eva;
+		int error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL;
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], SIGNAL_REG, host_eva); 
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL;
 		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
 	}
 	return HB_MC_SUCCESS;
@@ -561,6 +569,27 @@ static int hb_mc_npa_is_dram (npa_t *npa) {
 	else
 		return HB_MC_FAIL;	
 }
+
+/*!
+ * checks if NPA is in host endpoint.
+ * */
+static int hb_mc_npa_is_host (npa_t *npa) {
+	if (npa->y == 0 && npa->x == (NUM_X - 1))
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;	
+}
+
+/*!
+ * checks if NPA is a tile.
+ * */
+static int hb_mc_npa_is_tile (npa_t *npa) {
+	if ((npa->y >= 1 && npa->y < NUM_Y) && (npa->x >= 0 && npa->x < NUM_X))
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;	
+}
+
 /*
  * returns x coordinate of a global network address.
  * */
@@ -642,7 +671,7 @@ int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa) {
  * @param epa.
  * @return HB_MC_SUCCESS if the EPA is valid and HB_MC_FAIL if the EPA is invalid.
  * */
-static int hb_mc_valid_epa_vanilla (uint32_t epa) {
+static int hb_mc_valid_epa_tile (uint32_t epa) {
 	if (epa >= 0x1000 && epa <= 0x1FFF) /* TODO: hardcoded */
 		return HB_MC_SUCCESS; /* data memory */
 	else if (epa >= 0x1000000 && epa <= 0x1FFEFFF)	/* TODO: hardcoded */
@@ -670,20 +699,15 @@ static int hb_mc_valid_epa_dram (uint32_t epa) {
 
 }
 
-
-
 /*!
  * checks if NPA has valid (x,y) coordinates. 
  * */
 static int hb_mc_npa_is_valid (npa_t *npa) {
-	int x_valid = (npa->x < NUM_X) ? HB_MC_SUCCESS : HB_MC_FAIL;
-	int y_valid = (npa->y < NUM_Y || (npa->y == NUM_Y + 1)) ? HB_MC_SUCCESS : HB_MC_FAIL;
-	
-	if (!(x_valid == HB_MC_SUCCESS && y_valid == HB_MC_SUCCESS)) 
-		return HB_MC_FAIL; /* invalid (x,y) */
-	else if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
+	if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid DRAM NPA */
-	else if (hb_mc_npa_is_dram(npa) != HB_MC_SUCCESS && hb_mc_valid_epa_vanilla(npa->epa) == HB_MC_SUCCESS)
+	else if (hb_mc_npa_is_host(npa))
+		return HB_MC_SUCCESS; /* for now, we assume any EPA is valid for the host */
+	else if (hb_mc_npa_is_tile(npa) != HB_MC_SUCCESS && hb_mc_valid_epa_tile(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid Vanilla Core NPA */
 	else 
 		return HB_MC_FAIL;
@@ -729,7 +753,7 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 	else if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS) {
 		*eva = hb_mc_npa_to_eva_dram(npa);
 	}
-	else { /* tile */
+	else { /* tile or host endpoint */
 		*eva = hb_mc_npa_to_eva_global_remote(npa);
 	}
 	return HB_MC_SUCCESS;
@@ -806,6 +830,11 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	}	
 }
 
+void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
+	hb_mc_request_packet_t finish = {NUM_X - 1 /* x coordinate of host endpoint */, 0 /* y coordinate of host endpoint */, tile->x, tile->y, 0x1 /* data */, 0xF /* op_x */, 0x1 /* op */, FINISH_ADDRESS, {0, 0}};
+	hb_mc_device_sync(fd, &finish);
+} 
+
 int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t *tile) {
 	int error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGC_REG, argc); /* write argc to tile group */
 	if (error != HB_MC_SUCCESS)
@@ -819,11 +848,7 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 	error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGV_REG, args_eva); /* write EVA of arguments to tile group */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL; 
-	
-	error = hb_mc_write_tile_reg(fd, eva_id, tile, SIGNAL_REG, FINISH_ADDRESS); /* tell tile group to write finish packet to FINISH_ADDRESS */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL;
- 
+
 	eva_t kernel_eva; 
 	error = symbol_to_eva(elf, kernel, &kernel_eva); /* get EVA of kernel */
 	if (error != HB_MC_SUCCESS)

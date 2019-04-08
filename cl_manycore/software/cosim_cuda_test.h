@@ -86,12 +86,8 @@ void cosim_cuda_test () {
 	int argv[4] = {A_device, B_device, C_device, size_buffer};
 	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, getenv("elf_cuda_add"), &tiles[0]); /* launch the kernel */
 
-
-
-	hb_mc_request_packet_t finish = {3, 0, 0, 1, 0, 0xF, 0x1, 0x3ab4, {0, 0}}; /* The runtime is incomplete in that it doesn't send a host-specified finish packet. Instead, we program the tile to send this finish packet. */
-	hb_mc_device_sync (fd, &finish); /* if CUDA sync is correct, this program won't hang here. */
-
-
+	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
+	
 	hb_mc_response_packet_t C_host[size_buffer];
 	src = (void *) C_device;
 	dst = (void *) &C_host[0];
@@ -108,7 +104,6 @@ void cosim_cuda_test () {
 	hb_mc_device_free(eva_id, A_device); /* free A on device */
 	hb_mc_device_free(eva_id, B_device); /* free B on device */
 	hb_mc_device_free(eva_id, C_device); /* free C on device */
-
 
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
 	return;
