@@ -831,7 +831,9 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 }
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
-	hb_mc_request_packet_t finish = {NUM_X - 1 /* x coordinate of host endpoint */, 0 /* y coordinate of host endpoint */, tile->x, tile->y, 0x1 /* data */, 0xF /* op_x */, 0x1 /* op */, FINISH_ADDRESS, {0, 0}};
+	uint8_t host_x = NUM_X -1;
+	uint8_t host_y = 0;
+	hb_mc_request_packet_t finish = {host_x, host_y, tile->x, tile->y, 0x1 /* data */, 0xF /* op_x */, 0x1 /* op */, FINISH_ADDRESS, {0, 0}};
 	hb_mc_device_sync(fd, &finish);
 } 
 
