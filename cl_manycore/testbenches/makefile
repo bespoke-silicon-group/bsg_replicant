@@ -26,11 +26,14 @@ TEST_TARGETS := $(CL_DIR)/software/read_write_test.c $(CL_DIR)/software/rom_test
 
 .PHONY:cosim rtlsim
 
-$(SIM_TARGETS):	
+$(SIM_TARGETS):
 	@for testcase in $(TEST_TARGETS); do \
 	echo "========================================="; \
-	make -C $@ $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$$testcase &> sim.log; \
-	grep "PASSES \| FAILED" sim.log; \
+	echo "start running [ $$testcase ]."; \
+	rm -rf sim sim.log; \
+	make -C $@ $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$$testcase &> run.log; \
+	grep "PASSED" run.log; \
+	grep "FAILED" run.log; \
 	done;
 	
 ifndef PROJECT
