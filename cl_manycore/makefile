@@ -13,6 +13,10 @@ BUILD_TARGETS=build
 
 BSG_IP_CORES_DIR ?= $(CL_DIR)/../../bsg_ip_cores/
 BSG_MANYCORE_DIR ?= $(CL_DIR)/../../bsg_manycore
+bsg_tiles_X ?= 4
+bsg_tiles_Y ?= 4
+
+
 
 all: $(SIM_TARGETS) $(BUILD_TARGETS)
 
@@ -25,7 +29,7 @@ regression:
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 
 $(SIM_TARGETS): hardware/bsg_bladerunner_configuration.v
-	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
+	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) bsg_tiles_X=$(bsg_tiles_X) bsg_tiles_Y=$(bsg_tiles_Y)
 
 hardware/bsg_bladerunner_configuration.v:
 	python hardware/create_bladerunner_rom.py >> $(subst v,rom,$@)
@@ -34,5 +38,5 @@ hardware/bsg_bladerunner_configuration.v:
 clean:
 	make -C testbenches clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 	make -C build clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR) BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)
-	make -C software clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG)	
+	make -C regression clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG)	
 	rm -f hardware/bsg_bladerunner_configuration.rom hardware/bsg_bladerunner_configuration.v

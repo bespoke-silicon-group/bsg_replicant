@@ -1,5 +1,5 @@
 #include "manycore_tests.h"
-#include "test_loopback.h"
+#include "test_bsg_dram_loopback_cache.h"
 
 int test_loopback () {
 
@@ -57,7 +57,7 @@ int test_loopback () {
 
 
 #ifdef COSIM
-	void test_main(int *exit_code) {	
+	void test_main(uint32_t *exit_code) {	
 		printf("Regression Test on COSIMULATION:\n\n");
 		int rc = test_loopback();
 		*exit_code = rc;
