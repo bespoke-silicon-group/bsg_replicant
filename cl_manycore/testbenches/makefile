@@ -22,24 +22,33 @@ else
   CHECK_RULE =
 endif
 
-TEST_TARGETS := $(CL_DIR)/software/read_write_test.c $(CL_DIR)/software/rom_test.c
+TEST_TARGETS := $(CL_DIR)/software/read_write_test.c $(CL_DIR)/software/rom_test.c $(CL_DIR)/software/loopback_test.c
 
-.PHONY:cosim rtlsim
+.PHONY:cosim rtlsim REGRESSION_TARGETS
 
-$(SIM_TARGETS):
-	@for testcase in $(TEST_TARGETS); do \
-	echo "========================================="; \
-	echo "start running [ $$testcase ]."; \
-	rm -rf sim sim.log; \
-	make -C $@ $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$$testcase &> run.log; \
-	grep "PASSED" run.log; \
-	grep "FAILED" run.log; \
-	done;
-	
+NOISY ?= 1
+
+REGRESSION_TARGETS := $(foreach target, $(TEST_TARGETS), $(target).regression)
+
+$(SIM_TARGETS): $(REGRESSION_TARGETS)
 ifndef PROJECT
 $(error "PROJECT undefined. Set PROJECT before running this makefile")
 endif
-#done;
 
+ifeq ($(NOISY), 1)
+%.regression:
+	@echo "========================================="
+	@echo "start running $@:"
+	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(subst .regression,,$@)
+else
+%.regression:
+	@echo "========================================="
+	@echo "start running $@:"
+	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(subst .regression,,$@) > tmp.log
+	@grep "PASSED\|FAILED" tmp.log
+	@echo "========================================="
+	@echo ""
+endif
+	
 clean:
-	rm -rf sim sim.log
+	rm -rf sim tmp.log

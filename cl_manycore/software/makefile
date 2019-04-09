@@ -6,7 +6,7 @@ LDFLAGS := -lbsg_manycore_runtime
 
 # if you have written a program such as <my-program>.c or <my-program>.cpp
 # add <my-program> in the appropriate list of targets below
-C_TARGETS   := read_write_test loopback_test rom_test
+C_TARGETS   := read_write_test rom_test loopback_test 
 CXX_TARGETS := 
 
 TARGETS := $(C_TARGETS) $(CXX_TARGETS)
@@ -28,20 +28,30 @@ $(CXX_TARGETS): LD:=$(CXX)
 $(TARGETS):
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
+NOISY ?= 1
+
+REGRESSION_TARGETS := $(foreach target, $(TARGETS), $(target).regression)
+
+regression: $(REGRESSION_TARGETS)
+
+ifeq ($(NOISY), 1)
 %.regression: %
-	sudo -E ./$(subst .regression,,$@)
-
-
-regression: $(TARGETS)
-	@for testcase in $(TARGETS); do \
-	sudo -E ./$$testcase &> run.log; \
-	echo ""; \
-	echo "====================================================================="; \
-	grep "PASSED \| FAILED \|" run.log; \
-	echo "====================================================================="; \
-	done;
+	@echo "=========================================================="
+	@echo "start running $<: "
+	@echo "=========================================================="
+	@sudo -E ./$<
+	@echo ""
+else
+%.regression: %
+	@echo "=========================================================="
+	@echo "start running $<: "
+	@sudo -E ./$< > tmp.log
+	@grep "PASSED\|FAILED" tmp.log
+	@echo "=========================================================="
+	@echo ""	
+endif
 
 clean:
-	rm -f *.o $(TARGETS) run.log
+	rm -f *.o $(TARGETS) tmp.log
 
 .PHONY: all clean %.regression
