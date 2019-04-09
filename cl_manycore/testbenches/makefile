@@ -22,33 +22,44 @@ else
   CHECK_RULE =
 endif
 
-TEST_TARGETS := $(CL_DIR)/software/read_write_test.c $(CL_DIR)/software/rom_test.c $(CL_DIR)/software/loopback_test.c
+#TEST_TARGETS := read_write_test rom_test
+TEST_TARGETS :=
+BINARY_TEST_TARGETS := test_bsg_dram_loopback_cache
 
-.PHONY:cosim rtlsim REGRESSION_TARGETS
+.PHONY:cosim rtlsim %.binary_clean
 
 NOISY ?= 1
 
-REGRESSION_TARGETS := $(foreach target, $(TEST_TARGETS), $(target).regression)
+REGRESSION_TARGETS := $(foreach target, $(TEST_TARGETS) $(BINARY_TEST_TARGETS), $(target).regression)
+REGRESSION_BINARY := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary)
+REGRESSION_BINARY_CLEAN := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary_clean)
 
-$(SIM_TARGETS): $(REGRESSION_TARGETS)
+$(SIM_TARGETS): $(REGRESSION_BINARY) $(REGRESSION_TARGETS)
 ifndef PROJECT
 $(error "PROJECT undefined. Set PROJECT before running this makefile")
 endif
+
+%.binary:
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) clean
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) main.riscv bsg_tiles_X=$(bsg_tiles_X) bsg_tiles_Y=$(bsg_tiles_Y)
+
+%.binary_clean:
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary_clean,,$@) clean
 
 ifeq ($(NOISY), 1)
 %.regression:
 	@echo "========================================="
 	@echo "start running $@:"
-	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(subst .regression,,$@)
+	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(CL_DIR)/regression/$(subst .regression,.c,$@)
 else
 %.regression:
 	@echo "========================================="
 	@echo "start running $@:"
-	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(subst .regression,,$@) > tmp.log
+	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(CL_DIR)/software/$(subst .regression,.c,$@) > tmp.log
 	@grep "PASSED\|FAILED" tmp.log
 	@echo "========================================="
 	@echo ""
 endif
-	
-clean:
+
+clean: %.binary_clean
 	rm -rf sim tmp.log

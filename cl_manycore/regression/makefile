@@ -6,11 +6,12 @@ LDFLAGS := -lbsg_manycore_runtime
 
 # if you have written a program such as <my-program>.c or <my-program>.cpp
 # add <my-program> in the appropriate list of targets below
-C_TARGETS   := test_dmem_read_write test_rom test_loopback
+C_TARGETS   := test_dmem_read_write test_rom
+C_BINARY_TARGETS := test_bsg_dram_loopback_cache
 CXX_TARGETS := 
 
-TARGETS := $(C_TARGETS) $(CXX_TARGETS)
-HEADERS := 
+TARGETS := $(C_TARGETS) $(CXX_TARGETS) $(C_BINARY_TARGETS)
+HEADERS := hb_mc_print_hex.h
 
 all: $(TARGETS)
 
@@ -23,6 +24,10 @@ $(TARGETS): %: %.o
 # ensure correct linking by using C/C++ linker frontend
 $(C_TARGETS):   LD:=$(CC)
 $(CXX_TARGETS): LD:=$(CXX)
+
+bsg_tiles_X ?= 4
+bsg_tiles_Y ?= 4
+
 
 # linking rule for all targets
 $(TARGETS):
