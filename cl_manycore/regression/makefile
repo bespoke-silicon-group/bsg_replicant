@@ -37,7 +37,6 @@ NOISY ?= 1
 
 REGRESSION_TARGETS := $(foreach target, $(C_TARGETS) $(C_BINARY_TARGETS), $(target).regression)
 REGRESSION_BINARY := $(foreach target, $(C_BINARY_TARGETS), $(subst test_,,$(target)).binary)
-REGRESSION_BINARY_CLEAN := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary_clean)
 
 regression: $(REGRESSION_BINARY) $(REGRESSION_TARGETS)
 
