@@ -75,7 +75,7 @@ int test_loopback () {
 			printf("TEST PASSED~~~\n");
 		else
 			printf("TEST FAILED!!!\n");
-		return rc;
+		return 0;
 	}
 #endif
 
