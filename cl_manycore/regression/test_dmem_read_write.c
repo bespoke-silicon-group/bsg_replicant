@@ -1,6 +1,7 @@
-#include "cl_manycore_test.h"
+#include "manycore_tests.h"
+#include "test_dmem_read_write.h"
 
-int read_write_test() {
+int test_dmem_read_write() {
 	
 	printf("Running the Read/Write test on the Manycore with 4 x 4 dimensions.\n\n");
 		
@@ -41,7 +42,7 @@ int read_write_test() {
 #ifdef COSIM
 	void test_main(uint32_t *exit_code) {	
 		printf("Regression Test on COSIMULATION:\n\n");
-		int rc = read_write_test();
+		int rc = test_dmem_read_write();
 		*exit_code = rc;
 		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
@@ -52,7 +53,7 @@ int read_write_test() {
 #else
 	int main() {
 		printf("Regression Test on F1:\n\n");
-		int rc = read_write_test();
+		int rc = test_dmem_read_write();
 		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
 		else

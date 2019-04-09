@@ -6,11 +6,11 @@ LDFLAGS := -lbsg_manycore_runtime
 
 # if you have written a program such as <my-program>.c or <my-program>.cpp
 # add <my-program> in the appropriate list of targets below
-C_TARGETS   := read_write_test rom_test loopback_test 
+C_TARGETS   := test_dmem_read_write test_rom test_loopback
 CXX_TARGETS := 
 
 TARGETS := $(C_TARGETS) $(CXX_TARGETS)
-HEADERS := hb_mc_print_hex.h
+HEADERS := 
 
 all: $(TARGETS)
 
