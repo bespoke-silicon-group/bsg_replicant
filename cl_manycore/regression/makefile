@@ -35,9 +35,18 @@ $(TARGETS):
 
 NOISY ?= 1
 
-REGRESSION_TARGETS := $(foreach target, $(TARGETS), $(target).regression)
+REGRESSION_TARGETS := $(foreach target, $(C_TARGETS), $(target).regression)
+REGRESSION_BINARY := $(foreach target, $(C_BINARY_TARGETS), $(subst test_,,$(target)).binary)
+REGRESSION_BINARY_CLEAN := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary_clean)
 
-regression: $(REGRESSION_TARGETS)
+regression: $(REGRESSION_BINARY) $(REGRESSION_TARGETS)
+
+%.binary:
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) clean
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) main.riscv bsg_tiles_X=$(bsg_tiles_X) bsg_tiles_Y=$(bsg_tiles_Y)
+
+%.binary_clean:
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary_clean,,$@) clean
 
 ifeq ($(NOISY), 1)
 %.regression: %
@@ -56,7 +65,7 @@ else
 	@echo ""	
 endif
 
-clean:
+clean: %.binary_clean
 	rm -f *.o $(TARGETS) tmp.log
 
 .PHONY: all clean %.regression
