@@ -54,7 +54,7 @@ else
 %.regression:
 	@echo "========================================="
 	@echo "start running $@:"
-	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(CL_DIR)/software/$(subst .regression,.c,$@) > tmp.log
+	make -C cosim $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG)) C_TB_TOP=$(CL_DIR)/regression/$(subst .regression,.c,$@) > tmp.log
 	@grep "PASSED\|FAILED" tmp.log
 	@echo "========================================="
 	@echo ""
