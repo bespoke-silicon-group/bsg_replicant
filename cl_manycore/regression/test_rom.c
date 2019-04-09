@@ -1,4 +1,5 @@
-#include "cl_manycore_test.h"
+#include "manycore_tests.h"
+#include "test_rom.h"
 
 int print_rom(uint8_t fd, int idx, int num) {
 	hb_mc_response_packet_t buf[num];
@@ -17,7 +18,7 @@ int print_rom(uint8_t fd, int idx, int num) {
 }
 
 
-int rom_test () {
+int test_rom () {
 	printf("Runing the Bladerunner ROM test on the Manycore with 4 x 4 dimensions.\n\n");
 
 	uint8_t fd = 0;
@@ -31,9 +32,9 @@ int rom_test () {
 }
 
 #ifdef COSIM
-	void test_main(uint32_t *exit_code) {	
+	void test_main(int *exit_code) {	
 		printf("Regression Test on COSIMULATION:\n\n");
-		int rc = rom_test();
+		int rc = test_rom();
 		*exit_code = rc;
 		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
@@ -44,7 +45,7 @@ int rom_test () {
 #else
 	int main() {
 		printf("Regression Test on F1:\n\n");
-		int rc = rom_test();
+		int rc = test_rom();
 		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
 		else

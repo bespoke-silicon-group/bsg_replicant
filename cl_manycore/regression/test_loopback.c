@@ -1,6 +1,7 @@
-#include "cl_manycore_test.h"
+#include "manycore_tests.h"
+#include "test_loopback.h"
 
-int loopback_test () {
+int test_loopback () {
 
 	printf("Running the Manycore-Cache-Loopback test on a 4x4.\n\n");
 
@@ -56,9 +57,9 @@ int loopback_test () {
 
 
 #ifdef COSIM
-	void test_main(uint32_t *exit_code) {	
+	void test_main(int *exit_code) {	
 		printf("Regression Test on COSIMULATION:\n\n");
-		int rc = loopback_test();
+		int rc = test_loopback();
 		*exit_code = rc;
 		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
@@ -69,7 +70,7 @@ int loopback_test () {
 #else
 	int main() {
 		printf("Regression Test on F1:\n\n");
-		int rc = loopback_test();
+		int rc = test_loopback();
 		if (rc == HB_MC_SUCCESS)
 			printf("TEST PASSED~~~\n");
 		else
