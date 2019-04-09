@@ -22,7 +22,7 @@ $(wilcard *.o): $(HEADERS)
 $(TARGETS): %: %.o
 
 # ensure correct linking by using C/C++ linker frontend
-$(C_TARGETS):   LD:=$(CC)
+$(C_TARGETS) $(C_BINARY_TARGETS):   LD:=$(CC)
 $(CXX_TARGETS): LD:=$(CXX)
 
 bsg_tiles_X ?= 4
@@ -31,11 +31,11 @@ bsg_tiles_Y ?= 4
 
 # linking rule for all targets
 $(TARGETS):
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS) 
 
 NOISY ?= 1
 
-REGRESSION_TARGETS := $(foreach target, $(C_TARGETS), $(target).regression)
+REGRESSION_TARGETS := $(foreach target, $(C_TARGETS) $(C_BINARY_TARGETS), $(target).regression)
 REGRESSION_BINARY := $(foreach target, $(C_BINARY_TARGETS), $(subst test_,,$(target)).binary)
 REGRESSION_BINARY_CLEAN := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary_clean)
 
@@ -46,7 +46,7 @@ regression: $(REGRESSION_BINARY) $(REGRESSION_TARGETS)
 	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) main.riscv bsg_tiles_X=$(bsg_tiles_X) bsg_tiles_Y=$(bsg_tiles_Y)
 
 %.binary_clean:
-	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary_clean,,$@) clean
+	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst test_,,$(subst .binary_clean,,$@)) clean
 
 ifeq ($(NOISY), 1)
 %.regression: %
@@ -65,7 +65,7 @@ else
 	@echo ""	
 endif
 
-clean: %.binary_clean
+clean: $(foreach target, $(C_BINARY_TARGETS), $(target).binary_clean)
 	rm -f *.o $(TARGETS) tmp.log
 
 .PHONY: all clean %.regression
