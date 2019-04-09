@@ -705,9 +705,9 @@ static int hb_mc_valid_epa_dram (uint32_t epa) {
 static int hb_mc_npa_is_valid (npa_t *npa) {
 	if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid DRAM NPA */
-	else if (hb_mc_npa_is_host(npa))
+	else if (hb_mc_npa_is_host(npa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* for now, we assume any EPA is valid for the host */
-	else if (hb_mc_npa_is_tile(npa) != HB_MC_SUCCESS && hb_mc_valid_epa_tile(npa->epa) == HB_MC_SUCCESS)
+	else if (hb_mc_npa_is_tile(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_tile(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid Vanilla Core NPA */
 	else 
 		return HB_MC_FAIL;

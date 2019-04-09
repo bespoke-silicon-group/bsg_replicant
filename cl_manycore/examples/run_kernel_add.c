@@ -7,6 +7,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #include <bsg_manycore_driver.h>
 #include "bsg_manycore_mem.h"
@@ -17,9 +18,62 @@
  *  This tests uses the software/spmd/bsg_cuda_lite_runtime/ Manycore binary. Compile the program and save its path in an environment variable called "elf_cuda_add" before running this test. The enviornment variable should include the binary name "main.riscv."
  *
  */
-int main () {
+#define pr_usage(fmt, ...)			\
+    fprintf(stderr, fmt, ##__VA_ARGS__)
+
+static const char *execname = "";
+
+static void base_usage(const char *name, const char *help)
+{
+    pr_usage("\t%s\t%s\n", name, help);
+}
+
+static void argument_usage(const char *argname, const char *arghelp)
+{
+    base_usage(argname, arghelp);
+}
+
+static void option_usage(const char *opname, const char *ophelp)
+{
+    base_usage(opname, ophelp);
+}
+
+static void usage() {
+    pr_usage("usage: %s [OPTIONS] ARG1\n", execname);
+
+    pr_usage("arguments:\n");
+    argument_usage("ARG1", "Path to Manycore Vector Addition binary.");
+
+    pr_usage("options:\n");
+    option_usage("-h,--help", "Print this help message");    
+}
+
+int main (int argc, char *argv[]) {
+	static struct option options [] = {
+		{ "help" , no_argument, 0, 'h' },
+		{ /* sentinel */ }
+	};
+
+	static const char * opstring = "h";
+	int ch;
 	
-	printf("Running a vector addition kernel on the Manycore.\n\n");
+	execname = argv[0];
+
+	// process options
+	while ((ch = getopt_long(argc, argv, opstring, options, NULL)) != -1) {
+	switch (ch) {
+		case 'h':
+			usage();
+			exit(0);
+		default:
+			usage();
+			exit(1);
+		}
+	}
+
+	argc -= optind;
+	argv += optind;
+
 	uint8_t fd; 
 	hb_mc_init_host(&fd);
 	
@@ -31,7 +85,8 @@ int main () {
 	tiles[0].origin_y = 1;
 	eva_id_t eva_id = 0;
 	uint32_t num_tiles = 1;
-	if (hb_mc_init_device(fd, eva_id, getenv("elf_cuda_add"), &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+	printf("%s\n",*argv);
+	if (hb_mc_init_device(fd, eva_id, argv[0], &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return 0;
 	}  
@@ -67,10 +122,8 @@ int main () {
 	if (error != HB_MC_SUCCESS) {
 		printf("cosim_cuda_test(): could not copy buffer B to device.\n");
 	}
-
-	int argv[4] = {A_device, B_device, C_device, size_buffer};
-	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, getenv("elf_cuda_add"), &tiles[0]); /* launch the kernel */
-
+	int argv_kernel[4] = {A_device, B_device, C_device, size_buffer};
+	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv_kernel, argv[0], &tiles[0]); /* launch the kernel */
 	hb_mc_cuda_sync (fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 
 
