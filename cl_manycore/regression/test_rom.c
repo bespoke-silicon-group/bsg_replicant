@@ -32,7 +32,7 @@ int test_rom () {
 }
 
 #ifdef COSIM
-	void test_main(int *exit_code) {	
+	void test_main(uint32_t *exit_code) {	
 		printf("Regression Test on COSIMULATION:\n\n");
 		int rc = test_rom();
 		*exit_code = rc;

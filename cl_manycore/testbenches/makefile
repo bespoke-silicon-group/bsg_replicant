@@ -22,8 +22,7 @@ else
   CHECK_RULE =
 endif
 
-#TEST_TARGETS := read_write_test rom_test
-TEST_TARGETS :=
+TEST_TARGETS := test_dmem_read_write test_rom
 BINARY_TEST_TARGETS := test_bsg_dram_loopback_cache
 
 .PHONY:cosim rtlsim %.binary_clean
