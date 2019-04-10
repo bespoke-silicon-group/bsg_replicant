@@ -58,6 +58,6 @@ int test_dmem_read_write() {
 			printf("TEST PASSED~~~\n");
 		else
 			printf("TEST FAILED!!!\n");
-		return 0;
+		return rc;
 	}
 #endif
