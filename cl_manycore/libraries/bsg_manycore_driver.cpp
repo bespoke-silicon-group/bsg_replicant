@@ -517,6 +517,8 @@ eva_t hb_mc_device_malloc (eva_id_t eva_id, uint32_t size) {
 	}
 
 	eva_t result = mem_manager[eva_id]->alloc(size);
+	if (result == awsbwhal::MemoryManager::mNull)
+		return 0; /* could not allocate */
 	return result;
 }
 
