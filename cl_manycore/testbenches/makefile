@@ -29,14 +29,21 @@ BINARY_TEST_TARGETS := test_bsg_dram_loopback_cache
 
 NOISY ?= 1
 
-REGRESSION_TARGETS := $(foreach target, $(TEST_TARGETS) $(BINARY_TEST_TARGETS), $(target).regression)
 REGRESSION_BINARY := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary)
-REGRESSION_BINARY_CLEAN := $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary_clean)
 
-$(SIM_TARGETS): $(REGRESSION_BINARY) $(REGRESSION_TARGETS)
+$(SIM_TARGETS): $(REGRESSION_BINARY)
+	for target in $(TEST_TARGETS) $(BINARY_TEST_TARGETS); do \
+		if make $$target.regression; then \
+			let "pass+=1"; \
+		fi; \
+		let "total+=1"; \
+	done; \
+	echo $$pass out of $$total tests pass.;
+
 ifndef PROJECT
 $(error "PROJECT undefined. Set PROJECT before running this makefile")
 endif
+
 
 %.binary:
 	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) clean
@@ -60,5 +67,5 @@ else
 	@echo ""
 endif
 
-clean: %.binary_clean
+clean: $(foreach target, $(BINARY_TEST_TARGETS), $(subst test_,,$(target)).binary_clean)
 	rm -rf sim tmp.log
