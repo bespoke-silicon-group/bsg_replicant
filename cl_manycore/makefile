@@ -26,7 +26,7 @@ build: hardware/bsg_bladerunner_configuration.v
 	make -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR) BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)
 
 regression:
-	make -C regression/ $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
+	make -C regression/ $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) bsg_tiles_X=$(bsg_tiles_X) bsg_tiles_Y=$(bsg_tiles_Y)
 
 $(SIM_TARGETS): hardware/bsg_bladerunner_configuration.v
 	make -C testbenches $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) bsg_tiles_X=$(bsg_tiles_X) bsg_tiles_Y=$(bsg_tiles_Y)
