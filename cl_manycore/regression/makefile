@@ -35,10 +35,18 @@ $(TARGETS):
 
 NOISY ?= 1
 
-REGRESSION_TARGETS := $(foreach target, $(C_TARGETS) $(C_BINARY_TARGETS), $(target).regression)
 REGRESSION_BINARY := $(foreach target, $(C_BINARY_TARGETS), $(subst test_,,$(target)).binary)
 
-regression: $(REGRESSION_BINARY) $(REGRESSION_TARGETS)
+regression: $(REGRESSION_BINARY)
+	@pass=0;  total=0; \
+	for target in $(C_TARGETS) $(C_BINARY_TARGETS); do \
+		if make $$target.regression; then \
+			let "pass+=1"; \
+		fi; \
+		let "total+=1"; \
+	done; \
+	echo $$pass out of $$total tests pass.;
+
 
 %.binary:
 	make -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .binary,,$@) clean
