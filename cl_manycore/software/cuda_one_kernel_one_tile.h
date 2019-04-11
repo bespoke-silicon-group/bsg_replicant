@@ -1,5 +1,5 @@
-#ifndef COSIM_CUDA_TEST_H
-#define COSIM_CUDA_TEST_H
+#ifndef CUDA_ONE_KERNEL_ONE_TILE_H
+#define CUDA_ONE_KERNEL_ONE_TILE_H
 
 #ifndef _BSD_SOURCE
 	#define _BSD_SOURCE
@@ -21,20 +21,14 @@
 #include "bsg_manycore_errno.h"
 
 
-/**
- *  This tests uses the software/spmd/bsg_cuda_lite_runtime/ Manycore binary. Compile the program and save its path in an environment variable called "elf_cuda_add" before running this test. The enviornment variable should include the binary name "main.riscv."
- *
+/*!
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/ Manycore binary in the bladerunner_v030_cuda branch of the BSG Manycore bitbucket repository. 
+ * Compile the program and save its path in an environment variable called "elf_cuda_add" before running this test. 
+ * The enviornment variable should include the binary name "main.riscv."
  */
 
-void cosim_cuda_test () {
-	void print_hex (uint8_t *p) {
-		for (int i = 0; i < 16; i++) {
-			printf("%x ", (p[15-i] & 0xFF));
-		}
-		printf("\n");
-	}
-
-	printf("Cosimulation test of addition kernel.\n\n");
+void cuda_one_kernel_one_tile () {
+	printf("Running the addition kernel on a tile group of size one.\n\n");
 	uint8_t fd; 
 	hb_mc_init_host(&fd);
 	
@@ -84,7 +78,7 @@ void cosim_cuda_test () {
 	}
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer};
-	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, getenv("elf_cuda_add"), &tiles[0]); /* launch the kernel */
+	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, getenv("elf_cuda_add"), tiles, 1); /* launch the kernel */
 
 	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 	

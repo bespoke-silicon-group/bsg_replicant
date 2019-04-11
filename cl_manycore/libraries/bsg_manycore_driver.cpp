@@ -844,28 +844,30 @@ void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
 	hb_mc_device_sync(fd, &finish);
 } 
 
-int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t *tile) {
-	int error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGC_REG, argc); /* write argc to tile group */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; 
-	
+int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
 	int args_eva = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t)); /* allocate device memory for arguments */
-	error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	int error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
-
-	error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGV_REG, args_eva); /* write EVA of arguments to tile group */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; 
-
+	
 	eva_t kernel_eva; 
 	error = symbol_to_eva(elf, kernel, &kernel_eva); /* get EVA of kernel */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
-
-	error = hb_mc_write_tile_reg(fd, eva_id, tile, KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; 
 	
+	for (int i = 0; i < num_tiles; i++) {
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGC_REG, argc); /* write argc to tile */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL; 
+		
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGV_REG, args_eva); /* write EVA of arguments to tile group */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL; 
+	
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL; 
+	} 
+
 	return HB_MC_SUCCESS;
 }

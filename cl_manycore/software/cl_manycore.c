@@ -23,7 +23,7 @@
 #include "cosim_read_write_test.h"
 #include "cosim_load_vector_test.h"
 #include "cosim_loopback_test.h"
-#include "cosim_cuda_test.h"
+#include "cuda_one_kernel_one_tile.h"
 #ifdef SV_TEST
     #include "fpga_pci_sv.h"
 #else
@@ -120,11 +120,11 @@ void usage(char* program_name) {
 #endif
 
     fail_on(rc, out, "AFI not ready");
-    cosim_read_write_test();
-    cosim_load_vector_test();
-    cosim_loopback_test();
-    cosim_rom_test();
-    cosim_cuda_test();
+    //cosim_read_write_test();
+    //cosim_load_vector_test();
+    //cosim_loopback_test();
+    //cosim_rom_test();
+    cuda_one_kernel_one_tile();
 #ifndef SV_TEST
     return rc;
      
