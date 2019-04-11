@@ -1,6 +1,6 @@
 #include <string.h>
-#ifndef COSIM
-	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
+#ifndef SV_TEST
+	#include <bsg_manycore_driver.h> 
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h>
 #else
@@ -225,7 +225,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_format_request_packet(&tag.request, 1 << (EPA_TAG_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
-		#ifndef COSIM
+		#ifndef SV_TEST
 		usleep(1);
 		#else
 		sv_pause(1);

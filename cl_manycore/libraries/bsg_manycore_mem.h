@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#ifndef COSIM
+#ifndef SV_TEST
 #include <bsg_manycore_packet.h>
 #else
 #include "bsg_manycore_packet.h"

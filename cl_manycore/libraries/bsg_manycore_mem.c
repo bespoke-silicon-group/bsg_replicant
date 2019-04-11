@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#ifndef COSIM
+#ifndef SV_TEST
 	#include <bsg_manycore_mem.h>
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_driver.h>

@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifndef COSIM
+#ifndef SV_TEST
 	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h> 
@@ -36,7 +36,7 @@ static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
  * @param val value to write 
  * caller must verify that fd is correct. */
 static void hb_mc_write16 (uint8_t fd, uint32_t ofs, uint16_t val) {
-	#ifdef COSIM
+	#ifdef SV_TEST
 		fpga_pci_poke(PCI_BAR_HANDLE_INIT, ofs, val);
 	#else
 		char *ocl_base = ocl_table[fd];
@@ -51,7 +51,7 @@ static void hb_mc_write16 (uint8_t fd, uint32_t ofs, uint16_t val) {
  * @param val value to write 
  * caller must verify that fd is correct. */
 static void hb_mc_write32 (uint8_t fd, uint32_t ofs, uint32_t val) {
-	#ifdef COSIM
+	#ifdef SV_TEST
 		fpga_pci_poke(PCI_BAR_HANDLE_INIT, ofs, val);
 	#else
 		char *ocl_base = ocl_table[fd];
@@ -66,7 +66,7 @@ static void hb_mc_write32 (uint8_t fd, uint32_t ofs, uint32_t val) {
  * @return the value of the register
  * caller must verify that fd is correct. */
 static uint16_t hb_mc_read16 (uint8_t fd, uint32_t ofs) {
-	#ifdef COSIM
+	#ifdef SV_TEST
 		uint32_t read;
 		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs, &read);
 		return read;
@@ -83,7 +83,7 @@ static uint16_t hb_mc_read16 (uint8_t fd, uint32_t ofs) {
  * @return the value of the register
  * caller must verify that fd is correct. */
 static uint32_t hb_mc_read32 (uint8_t fd, uint32_t ofs) {
-	#ifdef COSIM
+	#ifdef SV_TEST
 		uint32_t read;
 		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs, &read);
 		return read;
@@ -98,7 +98,7 @@ static uint32_t hb_mc_read32 (uint8_t fd, uint32_t ofs) {
  * @return HB_MC_SUCCESS if device has been mapped and HB_MC_FAIL otherwise.
  * */
 int hb_mc_check_device (uint8_t fd) {
-	#ifdef COSIM
+	#ifdef SV_TEST
 		return HB_MC_SUCCESS;
 	#else
 		if (ocl_table[fd] != NULL)
@@ -111,7 +111,7 @@ int hb_mc_check_device (uint8_t fd) {
 
 
 
-#ifndef COSIM
+#ifndef SV_TEST
 /*
  * mmap's the OCL bar of the device.
  * */
@@ -138,7 +138,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 int hb_mc_init_host (uint8_t *fd) {
 	*fd = num_dev;
 	char *ocl_base;
-	#ifndef COSIM
+	#ifndef SV_TEST
 	ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
 		fprintf(stderr, "hb_mc_init_host(): unable to mmap device.\n");

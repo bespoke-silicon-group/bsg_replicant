@@ -24,7 +24,7 @@ INCLUDES += -I $(HDK_DIR)/common/software/include
 INCLUDES += -I ./include
 
 CC = gcc
-CFLAGS = -DCONFIG_LOGLEVEL=4 -g -Wall $(INCLUDES) -DCOSIM=1
+CFLAGS = -DCONFIG_LOGLEVEL=4 -g -Wall $(INCLUDES)
 
 LDLIBS = -lfpga_mgmt -lrt -lpthread
 

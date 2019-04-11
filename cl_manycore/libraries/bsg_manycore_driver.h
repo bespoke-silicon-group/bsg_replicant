@@ -14,13 +14,13 @@
 
 
 
-#ifndef COSIM
+#ifndef SV_TEST
 #include <bsg_manycore_packet.h>
 #else
 #include "bsg_manycore_packet.h"
 #endif
 
-#ifndef COSIM
+#ifndef SV_TEST
 static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
 
