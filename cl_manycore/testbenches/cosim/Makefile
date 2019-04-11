@@ -1,0 +1,96 @@
+include ../../Makefile.environment
+include $(CL_DIR)/regression/Makefile.tests
+include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
+.DEFAULT_GOAL := cosim
+# AWS Paths (Don't modify)
+export XILINX_IP    = $(HDK_SHELL_DESIGN_DIR)/ip
+SDK_DIR             = $(AWS_FPGA_REPO_DIR)/sdk
+C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
+C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
+C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
+
+RTL_TB_WORKLIB = cosimulation
+RTL_TB_TOP     = cosim_wrapper
+RTL_TB_LIBS    = axis_register_slice_v1_1_17 fifo_generator_v13_2_2 \
+		axis_data_fifo_v1_1_18 axis_dwidth_converter_v1_1_16 \
+		axi_fifo_mm_s_v4_1_14 axi_clock_converter_v2_1_11 \
+		axis_infrastructure_v1_1_0 generic_baseblocks_v2_1_0 \
+		axi_infrastructure_v1_1_0 axi_register_slice_v2_1_15 \
+		axi_register_slice_v2_1_12 fifo_generator_v13_2_1 \
+		fifo_generator_v13_1_4 axi_data_fifo_v2_1_11 \
+		axi_crossbar_v2_1_13 xil_defaultlib unisims_ver \
+		unimacro_ver secureip xpm 
+
+ifdef CHECK
+XVLOG_OPTS +=-d ENABLE_PROTOCOL_CHK 
+XELOG_OPTS +=-d ENABLE_PROTOCOL_CHK
+endif
+ifdef DEBUG
+XSIM_OPTS +=-gui
+endif
+ifdef AXI_MEMORY_MODEL
+XVLOG_OPTS +=-d AXI_MEMORY_MODEL=1 -d ECC_DIRECT_EN -d RND_ECC_EN \
+		-d ECC_ADDR_LO=0 -d ECC_ADDR_HI=0 -d RND_ECC_WEIGHT=0
+endif
+
+C_SRC_PATH = $(CL_DIR)/regression/
+
+C_DPI_FILES = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
+		$(C_COMMON_DIR)/src/fpga_pci_sv.c
+
+C_LIB_FILES = $(CL_DIR)/libraries/bsg_manycore_driver.c \
+		 $(CL_DIR)/libraries/bsg_manycore_loader.c \
+		 $(CL_DIR)/libraries/bsg_manycore_mem.c 
+
+C_INCLUDE_PATHS = $(C_SDK_USR_INC_DIR) $(C_SDK_USR_UTILS_DIR) \
+	$(C_COMMON_DIR)/include $(C_SRC_PATH) $(CL_DIR)/libraries
+
+C_INCLUDES = $(foreach inc,$(C_INCLUDE_PATHS),--additional_option "-I$(inc)")
+C_DEFINES  = -DVIVADO_SIM -DSV_TEST -DCOSIM=1
+C_FLAGS    = $(foreach def,$(C_DEFINES),--additional_option "$(def)")
+
+SIM_TARGETS = $(foreach test,$(REGRESSION_TESTS),$(test).cosim.log)
+
+.PHONY: cosim regression clean
+cosim: $(SIM_TARGETS)
+
+%.so: $(C_LIB_FILES) $(C_DPI_FILES) $(C_SRC_PATH)/%.c
+	xsc $? $(C_FLAGS) $(C_INCLUDES) -o $@
+
+xsim.dir/$(RTL_TB_WORKLIB): cosim_wrapper.sv ../top.vivado.f 
+	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
+		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
+		-f ../top.vivado.f $<
+
+xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB) 
+	xelab -m64 $(XELOG_OPTS) --timescale 1ps/1ps --debug typical --relax \
+		--mt 8 --initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini \
+		$(foreach lib,$(RTL_TB_LIBS), -L $(lib)) $(RTL_TB_WORKLIB).tb \
+		$(RTL_TB_WORKLIB).glbl $(RTL_TB_WORKLIB).$(RTL_TB_TOP) \
+		--snapshot $(notdir $@) -sv_lib $(notdir $@)
+
+%.cosim.log: xsim.dir/%
+	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
+
+regression: $(SIM_TARGETS)
+	@pass=0;  total=0; \
+	for target in $(basename $(basename $?)); do \
+		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
+			echo "FAIL: Regression Test $$target failed!"; \
+		else \
+			let "pass+=1"; \
+		fi; \
+		let "total+=1"; \
+	done; \
+	if [ ! $$pass == $$total ]; then \
+		echo "FAIL! $$pass out of $$total regression tests passed"; \
+		exit 1; \
+	fi; \
+	echo "Success! $$pass out of $$total tests passed";
+
+.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
+
+clean:
+	rm -rf .Xil xsim.dir
+	rm -rf *.log *.jou *.pb *.dat *.wdb *.so
+
