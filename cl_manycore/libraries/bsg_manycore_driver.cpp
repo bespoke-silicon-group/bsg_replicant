@@ -252,6 +252,24 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	return HB_MC_SUCCESS;
 }
 
+/*!
+ * gets the occupancy of a PCIe FIFO.
+ * @param[in] fd userspace file descriptor
+ * @param[in] n which FIFO
+ * @param[out] occupancy_p will be set to the occupancy of the fifo
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
+ * */
+int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p) {
+	if (n >= NUM_FIFO)
+		return HB_MC_FAIL;
+	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}		
+	*occupancy_p = hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]);
+	return HB_MC_SUCCESS;
+}
+
+
 /*
  * reads 128B from the nth fifo
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
@@ -451,13 +469,7 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
   	
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
-		hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
-		npa_t host_npa = {(uint32_t) NUM_X - 1, 0, FINISH_ADDRESS};
-		eva_t host_eva;
-		int error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
-		if (error != HB_MC_SUCCESS)
-			return HB_MC_FAIL;
-		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], SIGNAL_REG, host_eva); 
+		int error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
 		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
@@ -863,7 +875,17 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGV_REG, args_eva); /* write EVA of arguments to tile group */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL; 
-	
+
+
+		npa_t host_npa = {(uint32_t) NUM_X - 1, 0, FINISH_ADDRESS};
+		eva_t host_eva;
+		error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL;
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], SIGNAL_REG, host_eva); 
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL;
+
 		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL; 

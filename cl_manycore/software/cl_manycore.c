@@ -23,7 +23,13 @@
 #include "cosim_read_write_test.h"
 #include "cosim_load_vector_test.h"
 #include "cosim_loopback_test.h"
-#include "cuda_one_kernel_one_tile.h"
+#include "cuda_add_kernel_one_tile_0_1.h"
+#include "cuda_add_kernel_one_tile_2_2.h"
+#include "cuda_add_kernel_one_tile_0_1_twice.h"
+#include "cuda_add_kernel_four_tiles_0_1.h"
+#include "cuda_add_kernel_four_tiles_2_2.h"
+#include "cuda_add_kernel_four_tiles_2_2_twice.h"
+
 #ifdef SV_TEST
     #include "fpga_pci_sv.h"
 #else
@@ -120,11 +126,17 @@ void usage(char* program_name) {
 #endif
 
     fail_on(rc, out, "AFI not ready");
+
     //cosim_read_write_test();
     //cosim_load_vector_test();
     //cosim_loopback_test();
     //cosim_rom_test();
-    cuda_one_kernel_one_tile();
+    cuda_add_kernel_one_tile_0_1(getenv("elf_cuda_add"));
+    cuda_add_kernel_one_tile_2_2(getenv("elf_cuda_add"));
+    cuda_add_kernel_one_tile_0_1_twice(getenv("elf_cuda_add"));
+    cuda_add_kernel_four_tiles_0_1(getenv("elf_cuda_add"));
+    cuda_add_kernel_four_tiles_2_2(getenv("elf_cuda_add"));
+    cuda_add_kernel_four_tiles_2_2_twice(getenv("elf_cuda_add"));
 #ifndef SV_TEST
     return rc;
      
