@@ -88,7 +88,7 @@ void cosim_cuda_test () {
 
 	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 	
-	hb_mc_response_packet_t C_host[size_buffer];
+	uint32_t C_host[size_buffer];
 	src = (void *) C_device;
 	dst = (void *) &C_host[0];
 	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
@@ -98,7 +98,7 @@ void cosim_cuda_test () {
 	
 	printf("Finished vector addition: \n");
 	for (int i = 0; i < size_buffer; i++) {
-		printf("A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], hb_mc_response_packet_get_data(&C_host[i])); 
+		printf("A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
 	}	
 
 	hb_mc_device_free(eva_id, A_device); /* free A on device */
