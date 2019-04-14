@@ -810,10 +810,15 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
 		eva_t src_eva = (eva_t) reinterpret_cast<uintptr_t>(src);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			hb_mc_response_packet_t *dst_packet = (hb_mc_response_packet_t *) dst + (i / sizeof(uint32_t));
-			int error = hb_mc_cpy_from_eva(fd, eva_id, dst_packet, src_eva + i); 		
+                        // read in a packet
+                        hb_mc_response_packet_t dst_packet;
+			int error = hb_mc_cpy_from_eva(fd, eva_id, &dst_packet, src_eva + i);
 			if (error != HB_MC_SUCCESS)
 				return HB_MC_FAIL; /* copy failed */
+
+                        // copy the word into caller dst buffer
+                        uint32_t *dst_w = (uint32_t*)dst;
+                        dst_w[i/sizeof(uint32_t)] = hb_mc_response_packet_get_data(&dst_packet);
 		}
 		return HB_MC_SUCCESS;	
 	}
