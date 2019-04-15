@@ -20,15 +20,11 @@
 #include "bsg_manycore_loader.h"
 #include "bsg_manycore_packet.h"
 
-void cosim_loopback_test () {
-
-  void print_hex (uint8_t *p) {
-  	for (int i = 0; i < 16; i++) {
-  		printf("%x ", (p[15-i] & 0xFF));
-  	}
-  	printf("\n");
-  }
-
+/*!
+ * Runs the DRAM Loopback Cache test.
+ * @param[in] elf path to the Manycore binary.
+ * */
+void cosim_loopback_test (char *elf) {
 	printf("Running the Cosimulation Loopback test on the Manycore with 4 x 4 dimensions.\n\n");
 
 	uint8_t fd;
@@ -49,7 +45,7 @@ void cosim_loopback_test () {
 	
 	hb_mc_set_tile_group_origin(fd, 0, 1, 0, 1);
 
-	hb_mc_load_binary(fd, getenv("MAIN_LOOPBACK"), &x, &y, 1);
+	hb_mc_load_binary(fd, elf, &x, &y, 1);
 
   	hb_mc_unfreeze(fd, 0, 1);
 

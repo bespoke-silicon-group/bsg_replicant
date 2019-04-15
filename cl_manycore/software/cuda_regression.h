@@ -17,29 +17,6 @@ static void print_hex (uint8_t *p) {
 }
 
 /*!
- * creates a tile group with a specified origin
- * @param[out] tiles an array of tiles that will be set in row-order. This should be allocated by the caller
- * @param[out] the number of tiles in the tile group
- * @param[in] num_tiles_x the number of columns in the tile group
- * @param[in] num_tiles_y the number of rows in the tile group
- * @param[in] origin_x the x coordinate of the tile group's origin
- * @param[in] origin_y the y coordinate of the tile group's origin 
- * */
-static void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y) {
-	/* create the tile group */
-	for (int i = 0; i < num_tiles_y; i++) {
-		for (int j = 0; j < num_tiles_x; j++) {
-			int index = i * num_tiles_x + j;
-			tiles[index].x = j + origin_x; 
-			tiles[index].y = i + origin_y;
-			tiles[index].origin_x = origin_x;
-			tiles[index].origin_y = origin_y;
-		}
-	}
-}
-
-
-/*!
  * Runs the vector addition kernel on tiles that have been initialized with hb_mc_device_init(). 
  * @param[in] fd userspace file descriptor
  * @param[in] eva_id EVA to NPA mapping

@@ -127,16 +127,29 @@ void usage(char* program_name) {
 
     fail_on(rc, out, "AFI not ready");
 
-    //cosim_read_write_test();
-    //cosim_load_vector_test();
-    //cosim_loopback_test();
-    //cosim_rom_test();
-    cuda_add_kernel_one_tile_0_1(getenv("elf_cuda_add"));
-    cuda_add_kernel_one_tile_2_2(getenv("elf_cuda_add"));
-    cuda_add_kernel_one_tile_0_1_twice(getenv("elf_cuda_add"));
-    cuda_add_kernel_four_tiles_0_1(getenv("elf_cuda_add"));
-    cuda_add_kernel_four_tiles_2_2(getenv("elf_cuda_add"));
-    cuda_add_kernel_four_tiles_2_2_twice(getenv("elf_cuda_add"));
+    cosim_read_write_test();
+    cosim_load_vector_test();
+    char *elf_loopback = getenv("MAIN_LOOPBACK");
+    if (elf_loopback != NULL) {
+        cosim_loopback_test(elf_loopback);
+    }
+    else {
+        printf("Could not run the Loopback regression test. 'MAIN_LOOPBACK' environment variable has not not been set.\n");
+    }
+    cosim_rom_test();
+    char *elf_cuda = getenv("elf_cuda_add");
+    if (elf_cuda != NULL) {
+        cuda_add_kernel_one_tile_0_1(elf_cuda);
+        cuda_add_kernel_one_tile_2_2(elf_cuda);
+        cuda_add_kernel_one_tile_0_1_twice(elf_cuda);
+        cuda_add_kernel_four_tiles_0_1(elf_cuda);
+        cuda_add_kernel_four_tiles_2_2(elf_cuda);
+        cuda_add_kernel_four_tiles_2_2_twice(elf_cuda);
+    }
+    else {
+        printf("Could not run CUDA regression tests. 'elf_cuda_add' environment variable not set.\n");
+    }
+
 #ifndef SV_TEST
     return rc;
      
