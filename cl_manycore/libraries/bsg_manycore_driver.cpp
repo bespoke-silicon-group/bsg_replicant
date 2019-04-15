@@ -518,20 +518,23 @@ void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *siz
  * allocates memory in Manycore
  *@param eva_id specifies EVA-NPA mapping.
  *@param size in bytes.
- *@return an EVA address. On failure, 0 will be returned. 
+ *@param eva returned EVA address. Set to 0 on failure.
+ *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
  */
-eva_t hb_mc_device_malloc (eva_id_t eva_id, uint32_t size) {
+int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva) {
+        *eva = 0;
 	if (eva_id != 0) {
-		return 0; /* invalid EVA ID */
+		return HB_MC_FAIL; /* invalid EVA ID */
 	}
 	else if (!mem_manager[eva_id]) {
-		return 0; /* memory manager has not been initialized */
+		return HB_MC_FAIL; /* memory manager has not been initialized */
 	}
 
 	eva_t result = mem_manager[eva_id]->alloc(size);
 	if (result == awsbwhal::MemoryManager::mNull)
-		return 0; /* could not allocate */
-	return result;
+		return HB_MC_FAIL; /* could not allocate */
+        *eva = result;
+	return HB_MC_SUCCESS;
 }
 
 /*!
@@ -857,8 +860,11 @@ void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
 } 
 
 int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
-	int args_eva = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t)); /* allocate device memory for arguments */
-	int error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	eva_t args_eva;
+        int error = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
+        if (error != HB_MC_SUCCESS)
+            return HB_MC_FAIL;
+	error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	
