@@ -30,9 +30,19 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 	printf("run_kernel_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
 	
 	uint32_t size_buffer = 16; 
-	eva_t A_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t)); /* allocate A on the device */
-	eva_t B_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t)); /* allocate B on the device */
-	eva_t C_device = hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t)); /* allocate C on the device */
+	eva_t A_device, B_device, C_device; 
+	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &A_device) != HB_MC_SUCCESS) {/* allocate A on the device */
+		printf("Failed to allocate A on device\n");
+		return;
+	}
+	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &B_device) != HB_MC_SUCCESS) { /* allocate B on the device */
+		printf("Failed to allocate B on device\n");
+		return;
+	}
+	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &C_device) != HB_MC_SUCCESS) { /* allocate C on the device */
+		printf("Failed to allocate C on device\n");
+		return;
+	}
 	printf("run_kernel_add(): A's EVA 0x%x, B's EVA: 0x%x, C's EVA: 0x%x\n", A_device, B_device, C_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO, C should be TODO */
  
 	uint32_t A_host[size_buffer]; /* allocate A on the host */ 
@@ -43,13 +53,13 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 		B_host[i] = rand() % ((1 << 16) - 1); 
 	}
 
-	void *dst = (void *) A_device;
+	void *dst = (void *) ((intptr_t) A_device);
 	void *src = (void *) &A_host[0];
 	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	if (error != HB_MC_SUCCESS) {
 		printf("run_kernel_add(): could not copy buffer A to device.\n");
 	}
-	dst = (void *) B_device;
+	dst = (void *) ((intptr_t) B_device);
 	src = (void *) &B_host[0];
 	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
 	if (error != HB_MC_SUCCESS) {
@@ -62,7 +72,7 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 	
 	uint32_t C_host[size_buffer];
-	src = (void *) C_device;
+	src = (void *) ((intptr_t) C_device);
 	dst = (void *) &C_host[0];
 	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
 	if (error != HB_MC_SUCCESS) {

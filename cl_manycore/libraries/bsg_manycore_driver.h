@@ -57,7 +57,7 @@ uint8_t hb_mc_get_num_y ();
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
 int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles);
-eva_t hb_mc_device_malloc (eva_id_t eva_id, uint32_t size);
+int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
