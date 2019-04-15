@@ -146,11 +146,7 @@ void cosim_cuda_graph_degree_test ()
         goto free_device_resources;
     }
 
-    /* print results to the stdout */
-    int i;
-    printf("printing results from degree count\n");
-    for (i = 0; i < array_size(results); i++)
-            printf("%d %" PRIu32 "\n", i, results[i]);
+    printf("%s: Test PASSED!\n", __func__);
 
 
 free_device_resources:
