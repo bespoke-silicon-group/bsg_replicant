@@ -1,0 +1,17 @@
+regression: $(TARGETS)
+	@pass=0;  total=0; \
+	for target in $?; do \
+		if ./$$target > target.regression.log; then \
+			echo "FAIL: Regression Test $$target failed!"; \
+		else \
+			let "pass+=1"; \
+		fi; \
+		let "total+=1"; \
+	done; \
+	if [ ! $$pass == $$total ]; then \
+		echo "FAIL! $$pass out of $$total regression tests passed"; \
+		exit 1; \
+	fi; \
+	echo "SUCCESS! $$pass out of $$total tests passed";
+
+.PHONY: regression

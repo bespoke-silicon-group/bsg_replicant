@@ -1,4 +1,4 @@
-#include "manycore_tests.h"
+#include "spmd_tests.h"
 #include "test_bsg_dram_loopback_cache.h"
 
 int test_loopback () {
@@ -25,11 +25,9 @@ int test_loopback () {
 	hb_mc_set_tile_group_origin(fd, 0, 1, 0, 1);
 
 	char test_file[100]; 
-	char* bsg_maycore_dir;
-	bsg_maycore_dir = getenv("BSG_MANYCORE_DIR");
-	strcpy(test_file, bsg_maycore_dir);
-	strcat(test_file, "/software/spmd/bsg_dram_loopback_cache/main.riscv");
-	printf("%s\n", test_file);
+	const char* bsg_maycore_dir = __BSG_STRINGIFY(BSG_MANYCORE_DIR) 
+		"/software/spmd/"  
+		"bsg_dram_loopback_cache/main.riscv";
 	
 	hb_mc_load_binary(fd, test_file, &x, &y, 1);
 

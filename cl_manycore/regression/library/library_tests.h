@@ -1,5 +1,5 @@
-#ifndef __MANYCORE_TESTS_H
-#define __MANYCORE_TESTS_H
+#ifndef __LIBRARY_TESTS_H
+#define __LIBRARY_TESTS_H
 
 #ifdef COSIM
 
@@ -19,4 +19,6 @@
 
 #endif // #ifdef COSIM
 
-#endif // __MANYCORE_TESTS_H
+#define __BSG_STRINGIFY(arg) #arg
+
+#endif // __LIBRARY_TESTS_H

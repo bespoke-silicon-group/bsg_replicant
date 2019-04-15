@@ -1,4 +1,3 @@
-#include "manycore_tests.h"
 #include "test_dmem_read_write.h"
 
 int test_dmem_read_write() {

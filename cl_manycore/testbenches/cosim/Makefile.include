@@ -1,13 +1,12 @@
-include ../../Makefile.environment
-include $(CL_DIR)/regression/Makefile.tests
-include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
-.DEFAULT_GOAL := cosim
 # AWS Paths (Don't modify)
 export XILINX_IP    = $(HDK_SHELL_DESIGN_DIR)/ip
 SDK_DIR             = $(AWS_FPGA_REPO_DIR)/sdk
 C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
 C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
+
+.PHONY: cosim regression clean
+.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
 
 RTL_TB_WORKLIB = cosimulation
 RTL_TB_TOP     = cosim_wrapper
@@ -33,8 +32,6 @@ XVLOG_OPTS +=-d AXI_MEMORY_MODEL=1 -d ECC_DIRECT_EN -d RND_ECC_EN \
 		-d ECC_ADDR_LO=0 -d ECC_ADDR_HI=0 -d RND_ECC_WEIGHT=0
 endif
 
-C_SRC_PATH = $(CL_DIR)/regression/
-
 C_DPI_FILES = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
 		$(C_COMMON_DIR)/src/fpga_pci_sv.c
 
@@ -43,24 +40,22 @@ C_LIB_FILES = $(CL_DIR)/libraries/bsg_manycore_driver.c \
 		 $(CL_DIR)/libraries/bsg_manycore_mem.c 
 
 C_INCLUDE_PATHS = $(C_SDK_USR_INC_DIR) $(C_SDK_USR_UTILS_DIR) \
-	$(C_COMMON_DIR)/include $(C_SRC_PATH) $(CL_DIR)/libraries
+	$(C_COMMON_DIR)/include $(TESTS_PATH) $(CL_DIR)/libraries
 
-C_INCLUDES = $(foreach inc,$(C_INCLUDE_PATHS),--additional_option "-I$(inc)")
-C_DEFINES  = -DVIVADO_SIM -DSV_TEST -DCOSIM=1
-C_FLAGS    = $(foreach def,$(C_DEFINES),--additional_option "$(def)")
+C_DEFINES   = -DVIVADO_SIM -DSV_TEST -DCOSIM=1 $(REGRESSION_DEFINES)
+C_INCLUDES  = $(foreach inc,$(C_INCLUDE_PATHS),--additional_option "-I$(inc)")
+C_FLAGS     = $(foreach def,$(C_DEFINES),--additional_option "$(def)")
+SIM_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
 
-SIM_TARGETS = $(foreach test,$(REGRESSION_TESTS),$(test).cosim.log)
-
-.PHONY: cosim regression clean
 cosim: $(SIM_TARGETS)
 
-%.so: $(C_LIB_FILES) $(C_DPI_FILES) $(C_SRC_PATH)/%.c
+%.so: $(C_LIB_FILES) $(C_DPI_FILES) $(TESTS_PATH)/%.c
 	xsc $? $(C_FLAGS) $(C_INCLUDES) -o $@
 
-xsim.dir/$(RTL_TB_WORKLIB): cosim_wrapper.sv ../top.vivado.f 
+xsim.dir/$(RTL_TB_WORKLIB): ../cosim_wrapper.sv $(CL_DIR)/testbenches/top.vivado.f
 	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
 		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
-		-f ../top.vivado.f $<
+		-f $(CL_DIR)/testbenches/top.vivado.f $<
 
 xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB) 
 	xelab -m64 $(XELOG_OPTS) --timescale 1ps/1ps --debug typical --relax \
@@ -71,6 +66,11 @@ xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB)
 
 %.cosim.log: xsim.dir/%
 	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
+
+
+clean:
+	rm -rf .Xil xsim.dir
+	rm -rf *.log *.jou *.pb *.dat *.wdb *.so
 
 regression: $(SIM_TARGETS)
 	@pass=0;  total=0; \
@@ -86,11 +86,5 @@ regression: $(SIM_TARGETS)
 		echo "FAIL! $$pass out of $$total regression tests passed"; \
 		exit 1; \
 	fi; \
-	echo "Success! $$pass out of $$total tests passed";
-
-.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
-
-clean:
-	rm -rf .Xil xsim.dir
-	rm -rf *.log *.jou *.pb *.dat *.wdb *.so
+	echo "SUCCESS! $$pass out of $$total tests passed";
 

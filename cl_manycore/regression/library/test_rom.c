@@ -1,4 +1,3 @@
-#include "manycore_tests.h"
 #include "test_rom.h"
 
 int print_rom(uint8_t fd, int idx, int num) {
