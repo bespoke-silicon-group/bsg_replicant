@@ -7,5 +7,6 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include "library_tests.h"
 
 #endif // __TEST_ROM_H
