@@ -44,6 +44,7 @@ typedef struct {
 
 int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
+int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p);
 int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
 int hb_mc_clear_int (uint8_t fd, uint8_t n);
 int hb_mc_get_host_credits (uint8_t fd);
@@ -61,8 +62,9 @@ int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);
-int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t *tile);
+int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles);
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
+void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)

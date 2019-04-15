@@ -6,7 +6,8 @@ LDFLAGS := -lbsg_manycore_runtime
 
 # if you have written a program such as <my-program>.c or <my-program>.cpp
 # add <my-program> in the appropriate list of targets below
-C_TARGETS   := loopback_test read_write_test load_vector_test run_kernel_add
+CUDA_TARGETS := cuda_add_kernel_one_tile_0_1 cuda_add_kernel_one_tile_2_2 cuda_add_kernel_one_tile_0_1_twice cuda_add_kernel_four_tiles_0_1 cuda_add_kernel_four_tiles_2_2 cuda_add_kernel_four_tiles_2_2_twice cuda_stack_arguments 
+C_TARGETS   := loopback_test read_write_test load_vector_test $(CUDA_TARGETS)
 CXX_TARGETS := 
 
 TARGETS := $(C_TARGETS) $(CXX_TARGETS)

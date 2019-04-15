@@ -252,6 +252,24 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	return HB_MC_SUCCESS;
 }
 
+/*!
+ * gets the occupancy of a PCIe FIFO.
+ * @param[in] fd userspace file descriptor
+ * @param[in] n which FIFO
+ * @param[out] occupancy_p will be set to the occupancy of the fifo
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
+ * */
+int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p) {
+	if (n >= NUM_FIFO)
+		return HB_MC_FAIL;
+	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}		
+	*occupancy_p = hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]);
+	return HB_MC_SUCCESS;
+}
+
+
 /*
  * reads 128B from the nth fifo
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
@@ -451,13 +469,7 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
   	
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
-		hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
-		npa_t host_npa = {(uint32_t) NUM_X - 1, 0, FINISH_ADDRESS};
-		eva_t host_eva;
-		int error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
-		if (error != HB_MC_SUCCESS)
-			return HB_MC_FAIL;
-		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], SIGNAL_REG, host_eva); 
+		int error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
 		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
@@ -810,10 +822,15 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
 		eva_t src_eva = (eva_t) reinterpret_cast<uintptr_t>(src);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			hb_mc_response_packet_t *dst_packet = (hb_mc_response_packet_t *) dst + (i / sizeof(uint32_t));
-			int error = hb_mc_cpy_from_eva(fd, eva_id, dst_packet, src_eva + i); 		
+                        // read in a packet
+                        hb_mc_response_packet_t dst_packet;
+			int error = hb_mc_cpy_from_eva(fd, eva_id, &dst_packet, src_eva + i);
 			if (error != HB_MC_SUCCESS)
 				return HB_MC_FAIL; /* copy failed */
+
+                        // copy the word into caller dst buffer
+                        uint32_t *dst_w = (uint32_t*)dst;
+                        dst_w[i/sizeof(uint32_t)] = hb_mc_response_packet_get_data(&dst_packet);
 		}
 		return HB_MC_SUCCESS;	
 	}
@@ -839,28 +856,63 @@ void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
 	hb_mc_device_sync(fd, &finish);
 } 
 
-int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t *tile) {
-	int error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGC_REG, argc); /* write argc to tile group */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; 
-	
+int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
 	int args_eva = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t)); /* allocate device memory for arguments */
-	error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	int error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
-
-	error = hb_mc_write_tile_reg(fd, eva_id, tile, ARGV_REG, args_eva); /* write EVA of arguments to tile group */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; 
-
+	
 	eva_t kernel_eva; 
 	error = symbol_to_eva(elf, kernel, &kernel_eva); /* get EVA of kernel */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
-
-	error = hb_mc_write_tile_reg(fd, eva_id, tile, KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; 
 	
+	for (int i = 0; i < num_tiles; i++) {
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGC_REG, argc); /* write argc to tile */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL; 
+		
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGV_REG, args_eva); /* write EVA of arguments to tile group */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL; 
+
+
+		npa_t host_npa = {(uint32_t) NUM_X - 1, 0, FINISH_ADDRESS};
+		eva_t host_eva;
+		error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL;
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], SIGNAL_REG, host_eva); 
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL;
+
+		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
+		if (error != HB_MC_SUCCESS)
+			return HB_MC_FAIL; 
+	} 
+
 	return HB_MC_SUCCESS;
 }
+
+/*!
+ * creates a tile group with a specified origin
+ * @param[out] tiles an array of tiles that will be set in row-order. This should be allocated by the caller
+ * @param[out] the number of tiles in the tile group
+ * @param[in] num_tiles_x the number of columns in the tile group
+ * @param[in] num_tiles_y the number of rows in the tile group
+ * @param[in] origin_x the x coordinate of the tile group's origin
+ * @param[in] origin_y the y coordinate of the tile group's origin 
+ * */
+void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y) {
+	/* create the tile group */
+	for (int i = 0; i < num_tiles_y; i++) {
+		for (int j = 0; j < num_tiles_x; j++) {
+			int index = i * num_tiles_x + j;
+			tiles[index].x = j + origin_x; 
+			tiles[index].y = i + origin_y;
+			tiles[index].origin_x = origin_x;
+			tiles[index].origin_y = origin_y;
+		}
+	}
+}
+
