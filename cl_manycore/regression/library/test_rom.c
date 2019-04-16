@@ -32,10 +32,7 @@ void test_main(uint32_t *exit_code) {
 	bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
 	int rc = test_rom();
 	*exit_code = rc;
-	if (rc == HB_MC_SUCCESS)
-		printf("BSG REGRESSION TEST PASSED\n");
-	else
-		printf("BSG REGERSSION TEST FAILED\n");
+	bsg_pr_test_status(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
