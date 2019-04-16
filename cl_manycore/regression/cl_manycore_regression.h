@@ -5,13 +5,13 @@
  * bsg_pr_test_info() a version of printf. All regression tests should prefer this function over direct stdio calls.
  */
 #define bsg_pr_test_info(fmt, ...)					\
-    printf("BSG INFO: " __FILE__ ": "fmt, ##__VA_ARGS__)
+    printf("BSG INFO: " fmt, ##__VA_ARGS__)
 
 /**
  * bsg_pr_test_pass_fail() prints a success/fail message depending on a test condition
  * @param[in] success_condition a condition which, if true, indicates that the test has passed
  */
 #define bsg_pr_test_pass_fail(success_condition)			\
-    printf("BSG RERGRESSION TEST %s: " __FILE__ "\n", ((success_condition) ? "PASSED" : "FAILED"))
+    printf("BSG RERGRESSION TEST %s\n", ((success_condition) ? "PASSED" : "FAILED"))
 
 #endif
