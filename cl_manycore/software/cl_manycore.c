@@ -29,6 +29,7 @@
 #include "cuda_add_kernel_four_tiles_0_1.h"
 #include "cuda_add_kernel_four_tiles_2_2.h"
 #include "cuda_add_kernel_four_tiles_2_2_twice.h"
+#include "cosim_cuda_graph_degree_test.h"
 
 #ifdef SV_TEST
     #include "fpga_pci_sv.h"
@@ -150,6 +151,7 @@ void usage(char* program_name) {
         printf("Could not run CUDA regression tests. 'elf_cuda_add' environment variable not set.\n");
     }
 
+    cosim_cuda_graph_degree_test();
 #ifndef SV_TEST
     return rc;
      
