@@ -12,7 +12,7 @@
 // an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
-
+    
 module cosim_wrapper();
 
    initial begin
@@ -20,13 +20,16 @@ module cosim_wrapper();
       
       tb.power_up();
 
-       $display("Hello\n");
-       
       tb.test_main(exit_code);
       
       #50ns;
 
       tb.power_down();
+      if(exit_code < 0) 
+          $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
+      else 
+          $display("BSG COSIM PASS: Test passed!");
+          
       
       $finish;
    end

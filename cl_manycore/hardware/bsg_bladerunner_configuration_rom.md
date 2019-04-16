@@ -3,7 +3,7 @@
 | lines                     | Description |
 | ---------------------     | ----------- |
 | `MC_VERSION_ID`           | manycore version ID used in the bladerunner project |
-| `COMPILATION_DATA`        | compilation date|
+| `COMPILATION_DATE`        | compilation date|
 | `NETWORK_ADDR_WIDTH`      | manycore network address width |
 | `NETWORK_DATA_WIDTH`      | manycore network data width |
 | `NETWORK_DIMENSION_X`     | manycore network X dimension, number of columns of the mesh node |
