@@ -42,6 +42,7 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.c
 CFLAGS   = -DVIVADO_SIM -DSV_TEST -DCOSIM=1 $(REGRESSION_DEFINES)
 INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
 INCLUDES += -I$(C_COMMON_DIR)/include -I$(TESTS_PATH) -I$(CL_DIR)/libraries
+INCLUDES += -I$(CL_DIR)/regression
 
 XSC_INCLUDES = $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
 XSC_FLAGS    = $(foreach def,$(CFLAGS),--additional_option "$(def)")
