@@ -20,5 +20,6 @@
 #endif // #ifdef COSIM
 
 #define __BSG_STRINGIFY(arg) #arg
+#define BSG_STRINGIFY(arg) __BSG_STRINGIFY(arg)
 
 #endif // __spmd_TESTS_H

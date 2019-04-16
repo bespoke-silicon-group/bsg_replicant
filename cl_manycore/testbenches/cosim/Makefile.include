@@ -1,12 +1,11 @@
+include $(HARDWARE_PATH)/Makefile.hardware
+
 # AWS Paths (Don't modify)
 export XILINX_IP    = $(HDK_SHELL_DESIGN_DIR)/ip
 SDK_DIR             = $(AWS_FPGA_REPO_DIR)/sdk
 C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
 C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
-
-.PHONY: cosim regression clean
-.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
 
 RTL_TB_WORKLIB = cosimulation
 RTL_TB_TOP     = cosim_wrapper
@@ -52,7 +51,8 @@ cosim: $(SIM_TARGETS)
 %.so: $(C_LIB_FILES) $(C_DPI_FILES) $(TESTS_PATH)/%.c
 	xsc $? $(C_FLAGS) $(C_INCLUDES) -o $@
 
-xsim.dir/$(RTL_TB_WORKLIB): ../cosim_wrapper.sv $(CL_DIR)/testbenches/top.vivado.f
+xsim.dir/$(RTL_TB_WORKLIB): ../cosim_wrapper.sv $(HARDWARE_TARGETS) \
+			    $(CL_DIR)/testbenches/top.vivado.f 
 	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
 		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
 		-f $(CL_DIR)/testbenches/top.vivado.f $<
@@ -67,12 +67,7 @@ xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB)
 %.cosim.log: xsim.dir/%
 	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
 
-
-clean:
-	rm -rf .Xil xsim.dir
-	rm -rf *.log *.jou *.pb *.dat *.wdb *.so
-
-regression: $(SIM_TARGETS)
+regression: cosim
 	@pass=0;  total=0; \
 	for target in $(basename $(basename $?)); do \
 		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
@@ -88,3 +83,10 @@ regression: $(SIM_TARGETS)
 	fi; \
 	echo "SUCCESS! $$pass out of $$total tests passed";
 
+.PHONY: cosim regression clean
+.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
+.DEFAULT_RULE=cosim
+
+clean: clean.hardware
+	rm -rf .Xil xsim.dir
+	rm -rf *.log *.jou *.pb *.dat *.wdb *.so

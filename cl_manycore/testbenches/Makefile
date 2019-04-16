@@ -1,20 +1,13 @@
-SIM_TARGETS     = cosim rtlsim
-RUN_WITH_CHECK ?= 0
-
-ifeq ($(RUN_WITH_CHECK),1)
-  CHECK_RULE = check
-else
-  CHECK_RULE =
-endif
-
-.PHONY: $(SIM_TARGETS)
-
-$(SIM_TARGETS): envcheck
-	make -C $@ $(CHECK_RULE) PROJECT=$(PROJECT) $(if $(DEBUG),DEBUG=$(DEBUG))
-
-clean:
-	rm -rf sim
-	make -C cosim clean
-	make -C rtlsim clean
-
 include ../Makefile.environment
+.DEFAULT_TARGET=cosim
+TARGETS=cosim
+
+.PHONY: $(TARGETS) clean $(CLEAN_TARGETS)
+
+$(TARGETS):
+	make -C $@ $(if $(DEBUG),DEBUG=$(DEBUG))
+
+CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
+clean: $(CLEAN_TARGETS)
+$(CLEAN_TARGETS):
+	$(MAKE) -C $(basename $@) clean

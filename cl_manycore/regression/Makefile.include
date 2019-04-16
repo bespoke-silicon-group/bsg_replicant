@@ -1,7 +1,23 @@
+CFLAGS   = -std=c11 $(REGRESSION_DEFINES)
+CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
+LDFLAGS  = -lbsg_manycore_runtime
+
+.PHONY: regression all clean 
+
+all: $(TARGETS)
+
+C_TARGETS   := $(C_REGRESSION_TESTS)
+CXX_TARGETS := $(CXX_REGRESSION_TESTS)
+TARGETS := $(C_TARGETS) $(CXX_TARGETS)
+
+$(C_TARGETS): %: %.h
+$(CXX_TARGETS): %: %.hpp
+
 regression: $(TARGETS)
 	@pass=0;  total=0; \
 	for target in $?; do \
-		if ./$$target > target.regression.log; then \
+		sudo ./$$target | tee $$target.regression.log ; \
+		if [ $${PIPESTATUS[0]} -ne 0 ] ; then \
 			echo "FAIL: Regression Test $$target failed!"; \
 		else \
 			let "pass+=1"; \
@@ -14,4 +30,17 @@ regression: $(TARGETS)
 	fi; \
 	echo "SUCCESS! $$pass out of $$total tests passed";
 
-.PHONY: regression
+# ensure correct linking by using C/C++ linker frontend
+$(C_TARGETS): LD:=$(CC)
+$(CXX_TARGETS): LD:=$(CXX)
+
+# each target 't' in TARGETS relies on an object file 't.o'
+$(TARGETS): %: %.o
+# linking rule for all targets
+$(TARGETS):
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS) 
+
+
+clean:
+	rm -f *.o $(TARGETS) *.regression.log
+
