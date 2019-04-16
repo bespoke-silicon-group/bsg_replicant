@@ -4,7 +4,7 @@ HARDWARE_TARGETS = $(HARDWARE_PATH)/bsg_bladerunner_configuration.v \
 	$(HARDWARE_PATH)/cl_manycore_pkg.v
 
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.dimensions # TODO: Pass as parameters
-	python create_bladerunner_rom.py >> $(subst v,rom,$@)
+	python $(HARDWARE_PATH)/create_bladerunner_rom.py >> $(subst v,rom,$@)
 
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.v: $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py \
