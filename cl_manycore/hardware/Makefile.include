@@ -12,7 +12,6 @@ CL_MANYCORE_HOST_COORD_X       := $(shell expr $(CL_MANYCORE_DIM_X) - 1)
 CL_MANYCORE_HOST_COORD_Y       := 0
 CL_MANYCORE_RELEASE_VERSION    ?= 00ffddee
 CL_MANYCORE_COMPILATION_DATE   ?= $(shell date +%m%d%Y)
-
 HARDWARE_TARGETS = $(HARDWARE_PATH)/bsg_bladerunner_configuration.v \
 	$(HARDWARE_PATH)/cl_manycore_pkg.v
 
