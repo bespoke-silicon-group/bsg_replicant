@@ -1,0 +1,23 @@
+include $(CL_DIR)/Makefile.dimensions
+
+HARDWARE_TARGETS = $(HARDWARE_PATH)/bsg_bladerunner_configuration.v \
+	$(HARDWARE_PATH)/cl_manycore_pkg.v
+
+$(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.dimensions # TODO: Pass as parameters
+	python create_bladerunner_rom.py >> $(subst v,rom,$@)
+
+$(HARDWARE_PATH)/bsg_bladerunner_configuration.v: $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom
+	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py \
+		$(subst v,rom,$@) bsg_bladerunner_configuration >> $@
+
+$(HARDWARE_PATH)/cl_manycore_pkg.v: $(CL_DIR)/Makefile.dimensions
+	sed "s/CL_MANYCORE_DIM_X/$(CL_MANYCORE_DIM_X)/ ;\
+		s/CL_MANYCORE_DIM_Y/$(CL_MANYCORE_DIM_Y)/" \
+		$(subst v,template,$@) > $@
+
+clean.hardware:
+	rm -f $(HARDWARE_PATH)/bsg_bladerunner_configuration.{rom,v}
+	rm -f $(HARDWARE_PATH)/cl_manycore_pkg.v
+
+.PHONY: clean.hardware
+

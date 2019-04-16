@@ -14,3 +14,5 @@ ifndef BSG_MANYCORE_DIR
 $(error "BSG_MANYCORE_DIR environment variable undefined.")
 endif
 
+HARDWARE_PATH = $(CL_DIR)/hardware/
+REGRESSION_PATH = $(CL_DIR)/regression/

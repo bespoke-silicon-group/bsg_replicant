@@ -13,9 +13,6 @@ all: $(SIM_TARGETS) $(BUILD_TARGETS)
 build: 
 	$(MAKE) -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 
-hardware: 
-	$(MAKE) -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
-
 regression:
 	$(MAKE) -C regression $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 
@@ -26,4 +23,4 @@ clean:
 	$(MAKE) -C testbenches clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
 	$(MAKE) -C build clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) 
 	$(MAKE) -C regression clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
-	$(MAKE) -C hardware clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
+	$(MAKE) -C hardware -f Makefile.hardware clean.hardware CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)

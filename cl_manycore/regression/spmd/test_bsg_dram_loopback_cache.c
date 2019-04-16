@@ -24,12 +24,11 @@ int test_loopback () {
 	
 	hb_mc_set_tile_group_origin(fd, 0, 1, 0, 1);
 
-	char test_file[100]; 
-	const char* bsg_maycore_dir = __BSG_STRINGIFY(BSG_MANYCORE_DIR) 
-		"/software/spmd/"  
+	char* bsg_manycore_dir = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/"
 		"bsg_dram_loopback_cache/main.riscv";
-	
-	hb_mc_load_binary(fd, test_file, &x, &y, 1);
+
+	printf("%s\n", bsg_manycore_dir);
+	hb_mc_load_binary(fd, bsg_manycore_dir, &x, &y, 1);
 
   	hb_mc_unfreeze(fd, 0, 1);
 
@@ -60,7 +59,7 @@ int test_loopback () {
 		int rc = test_loopback();
 		*exit_code = rc;
 		if (rc == HB_MC_SUCCESS)
-			printf("TEST PASSED~~~\n");
+			printf("TEST PASSED\n");
 		else
 			printf("TEST FAILED!!!\n");
 		return;
@@ -70,7 +69,7 @@ int test_loopback () {
 		printf("Regression Test on F1:\n\n");
 		int rc = test_loopback();
 		if (rc == HB_MC_SUCCESS)
-			printf("TEST PASSED~~~\n");
+			printf("TEST PASSED\n");
 		else
 			printf("TEST FAILED!!!\n");
 		return rc;
