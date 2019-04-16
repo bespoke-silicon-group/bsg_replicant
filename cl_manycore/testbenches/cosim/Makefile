@@ -3,7 +3,7 @@ TARGETS = library spmd
 COSIMULATION_TARGETS := $(addsuffix .cosim,$(TARGETS))
 cosim: $(COSIMULATION_TARGETS)
 $(COSIMULATION_TARGETS):
-	$(MAKE) -C $(basename $@) cosim
+	$(MAKE) -C $(basename $@) cosim DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) AXI_PROT_CHECK=$(AXI_PROT_CHECK)
 
 REGRESSION_TARGETS := $(addsuffix .regression,$(TARGETS))
 regression: $(COSIMULATION_TARGETS) $(REGRESSION_TARGETS)
