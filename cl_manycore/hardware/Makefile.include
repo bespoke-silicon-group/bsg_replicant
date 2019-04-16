@@ -3,17 +3,30 @@ BSG_IP_CORES_COMMIT_ID ?= deadbeef
 BSG_MANYCORE_COMMIT_ID ?= feedcafe
 BSG_F1_COMMIT_ID       ?= 42c0ffee
 
+TEMPLATE_FILE=$(HARDWARE_PATH)/cl_manycore_pkg.template
+CL_MANYCORE_NETWORK_ADDR_WIDTH := $(shell sed -n "s/ *parameter addr_width_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
+CL_MANYCORE_NETWORK_DATA_WIDTH := $(shell sed -n "s/ *parameter data_width_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
+CL_MANYCORE_HOST_COORD_X       := $(shell expr $(CL_MANYCORE_DIM_X) - 1)
+CL_MANYCORE_HOST_COORD_Y       := 0
+CL_MANYCORE_RELEASE_VERSION    ?= 00ffddee
+CL_MANYCORE_COMPILATION_DATE   ?= $(shell date +%m%d%Y)
 HARDWARE_TARGETS = $(HARDWARE_PATH)/bsg_bladerunner_configuration.v \
 	$(HARDWARE_PATH)/cl_manycore_pkg.v
 
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.dimensions
 	python $(HARDWARE_PATH)/create_bladerunner_rom.py \
-	       --network-x=$(CL_MANYCORE_DIM_X) \
-	       --network-y=$(CL_MANYCORE_DIM_Y) \
-	       bsg_ip_cores@$(BSG_IP_CORES_COMMIT_ID) \
-	       bsg_manycore@$(BSG_MANYCORE_COMMIT_ID) \
-	       bsg_f1@$(BSG_F1_COMMIT_ID) \
-	       >> $(subst v,rom,$@)
+		--comp-date=$(CL_MANYCORE_COMPILATION_DATE) \
+		--network-addr-width=$(CL_MANYCORE_NETWORK_ADDR_WIDTH) \
+		--network-data-width=$(CL_MANYCORE_NETWORK_DATA_WIDTH) \
+		--network-x=$(CL_MANYCORE_DIM_X) \
+		--network-y=$(CL_MANYCORE_DIM_Y) \
+		--host-coord-x=$(CL_MANYCORE_HOST_COORD_X) \
+		--host-coord-y=$(CL_MANYCORE_HOST_COORD_Y) \
+		--mc-version=$(CL_MANYCORE_RELEASE_VERSION) \
+		bsg_ip_cores@$(BSG_IP_CORES_COMMIT_ID) \
+		bsg_manycore@$(BSG_MANYCORE_COMMIT_ID) \
+		bsg_f1@$(BSG_F1_COMMIT_ID) \
+		>> $(subst v,rom,$@)
 
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.v: $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom
 	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py \
