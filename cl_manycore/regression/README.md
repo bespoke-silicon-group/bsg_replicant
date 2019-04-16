@@ -31,3 +31,4 @@ All tests in the subdirectories must:
    - Return 0 on success or non-zero on failure
    - Use `bsg_pr_test_info()` defined in `cl_manycore_regression.h` instead of direct stdio calls.
    - Use `bsg_pr_test_status()` when repoting if the test passed or failed.
+   

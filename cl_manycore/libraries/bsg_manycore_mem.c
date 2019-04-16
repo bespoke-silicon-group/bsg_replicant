@@ -21,7 +21,7 @@
  * */
 int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("hb_mc_copy_from_epa(): device was not initialized.\n");
+		fprintf(stderr, "hb_mc_copy_from_epa(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}
 
@@ -47,7 +47,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	}
 
 	if (pass_requests != HB_MC_SUCCESS) {
-		printf("hb_mc_copy_from_epa(): error when sending load request to Manycore.\n");
+		fprintf(stderr, "hb_mc_copy_from_epa(): error when sending load request to Manycore.\n");
 	}
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
@@ -68,7 +68,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
  * */
 int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_t *buf, uint32_t size) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		printf("hb_xeon_to_epa_copy(): device was not initialized.\n");
+		fprintf(stderr, "hb_xeon_to_epa_copy(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}
 	hb_mc_packet_t packets[size];
@@ -80,14 +80,13 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 	} 
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {
-		//printf("hb_mc_copy_to_epa(): ");	
 		if (hb_mc_write_fifo(fd, 0, &packets[i]) != HB_MC_SUCCESS) {
 			pass = HB_MC_FAIL;
 			break;
 		}
 	}
 	if (pass != HB_MC_SUCCESS)
-		printf("hb_copy_to_epa(): error when writing to Manycore.\n");
+		fprintf(stderr, "hb_copy_to_epa(): error when writing to Manycore.\n");
 
 	return pass;
 }

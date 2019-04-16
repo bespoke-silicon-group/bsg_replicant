@@ -6,6 +6,7 @@ int test_dmem_read_write() {
 	
 	/* store data in tile */
 	uint32_t data = 0xABCD;
+
 	bsg_pr_test_info("Writing to DMEM\n");
 	int write = hb_mc_copy_to_epa(0, 0, 1, DMEM_BASE >> 2, &data, 1);
 	
