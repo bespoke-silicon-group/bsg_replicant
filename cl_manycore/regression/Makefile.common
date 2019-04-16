@@ -35,7 +35,7 @@ regression: $(TARGETS)
 		echo "FAIL! $$pass out of $$total regression tests passed"; \
 		exit 1; \
 	fi; \
-	echo "PASS! All $$total tests passed for $REGRESSION_TESTS_TYPE";
+	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)";
 
 .PHONY: regression all clean 
 
