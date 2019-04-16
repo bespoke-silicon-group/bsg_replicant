@@ -1,3 +1,4 @@
+REGRESSION_TESTS_TYPE = spmd
 C_REGRESSION_TESTS = test_bsg_dram_loopback_cache
 CXX_REGRESSION_TESTS = 
 

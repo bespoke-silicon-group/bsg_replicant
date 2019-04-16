@@ -1,5 +1,5 @@
 include ../Makefile.environment
-.DEFAULT_TARGET=cosim
+.DEFAULT_GOAL=cosim
 TARGETS=cosim
 
 .PHONY: $(TARGETS) clean $(CLEAN_TARGETS)

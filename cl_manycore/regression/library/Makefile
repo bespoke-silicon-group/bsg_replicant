@@ -1,3 +1,3 @@
 include Makefile.tests
 include ../../Makefile.dimensions
-include ../Makefile.include
+include ../Makefile.common

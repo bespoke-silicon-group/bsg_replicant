@@ -1,4 +1,3 @@
-.DEFAULT_TARGET=cosim
 TARGETS = library spmd
 
 COSIMULATION_TARGETS := $(addsuffix .regression,$(TARGETS))

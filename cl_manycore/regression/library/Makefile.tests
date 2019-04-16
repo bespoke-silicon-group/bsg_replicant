@@ -1,3 +1,4 @@
+REGRESSION_TESTS_TYPE = library
 C_REGRESSION_TESTS = test_dmem_read_write test_rom
 CXX_REGRESSION_TESTS = 
 

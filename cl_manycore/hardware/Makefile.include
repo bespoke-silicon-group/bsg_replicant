@@ -15,9 +15,10 @@ $(HARDWARE_PATH)/cl_manycore_pkg.v: $(CL_DIR)/Makefile.dimensions
 		s/CL_MANYCORE_DIM_Y/$(CL_MANYCORE_DIM_Y)/" \
 		$(subst v,template,$@) > $@
 
-clean.hardware:
+.PHONY: hardware.clean
+
+hardware.clean:
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_configuration.{rom,v}
 	rm -f $(HARDWARE_PATH)/cl_manycore_pkg.v
 
-.PHONY: clean.hardware
 
