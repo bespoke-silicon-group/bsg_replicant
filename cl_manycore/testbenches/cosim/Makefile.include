@@ -46,7 +46,25 @@ C_INCLUDES  = $(foreach inc,$(C_INCLUDE_PATHS),--additional_option "-I$(inc)")
 C_FLAGS     = $(foreach def,$(C_DEFINES),--additional_option "$(def)")
 SIM_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
 
+$(C_REGRESSION_TESTS): %: %.cosim.log
+
 cosim: $(SIM_TARGETS)
+
+regression: cosim
+	@pass=0;  total=0; \
+	for target in $(basename $(basename $?)); do \
+		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
+			echo "FAIL: Regression Test $$target failed!"; \
+		else \
+			let "pass+=1"; \
+		fi; \
+		let "total+=1"; \
+	done; \
+	if [ ! $$pass == $$total ]; then \
+		echo "FAIL! $$pass out of $$total regression tests passed"; \
+		exit 1; \
+	fi; \
+	echo "SUCCESS! $$pass out of $$total tests passed";
 
 %.so: $(C_LIB_FILES) $(C_DPI_FILES) $(TESTS_PATH)/%.c
 	xsc $? $(C_FLAGS) $(C_INCLUDES) -o $@
@@ -67,21 +85,6 @@ xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB)
 %.cosim.log: xsim.dir/%
 	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
 
-regression: cosim
-	@pass=0;  total=0; \
-	for target in $(basename $(basename $?)); do \
-		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
-			echo "FAIL: Regression Test $$target failed!"; \
-		else \
-			let "pass+=1"; \
-		fi; \
-		let "total+=1"; \
-	done; \
-	if [ ! $$pass == $$total ]; then \
-		echo "FAIL! $$pass out of $$total regression tests passed"; \
-		exit 1; \
-	fi; \
-	echo "SUCCESS! $$pass out of $$total tests passed";
 
 .PHONY: cosim regression clean
 .PRECIOUS: %.log xsim.dir %.so xsim.dir/%
