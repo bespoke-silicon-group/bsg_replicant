@@ -19,4 +19,6 @@
 
 #endif // #ifdef COSIM
 
+#include "../cl_manycore_regression.h"
+
 #endif // __LIBRARY_TESTS_H

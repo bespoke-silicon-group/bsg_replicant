@@ -29,3 +29,4 @@ All tests in the subdirectories must:
    - The names of the `.c`/`.h` OR `.cpp`/`.hpp` must match
    - The names must art with `test_`
    - Return 0 on success or non-zero on failure
+   - Use `bsg_pr_test_info` and `bsg_pr_test_pass_fail` defined in `cl_manycore_regression.h` instead of stdio calls.
