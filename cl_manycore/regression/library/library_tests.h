@@ -19,6 +19,4 @@
 
 #endif // #ifdef COSIM
 
-#define __BSG_STRINGIFY(arg) #arg
-
 #endif // __LIBRARY_TESTS_H
