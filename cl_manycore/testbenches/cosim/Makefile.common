@@ -39,7 +39,7 @@ C_LIB_SRC  = $(CL_DIR)/libraries/bsg_manycore_driver.c
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.c
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.c 
 
-CFLAGS   = -DVIVADO_SIM -DSV_TEST -DCOSIM=1 $(REGRESSION_DEFINES)
+CFLAGS   = -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES)
 INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
 INCLUDES += -I$(C_COMMON_DIR)/include -I$(TESTS_PATH) -I$(CL_DIR)/libraries
 
