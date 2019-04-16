@@ -1,5 +1,5 @@
-CFLAGS   = -std=c11 $(REGRESSION_DEFINES)
-CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
+CFLAGS   = -std=c11 $(REGRESSION_DEFINES) -I$(CL_DIR)/regression
+CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES) -I$(CL_DIR)/regression
 LDFLAGS  = -lbsg_manycore_runtime
 
 C_TARGETS   := $(C_REGRESSION_TESTS)

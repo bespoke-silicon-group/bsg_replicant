@@ -6,12 +6,12 @@ int print_rom(uint8_t fd, int idx, int num) {
 	if (read == HB_MC_SUCCESS) {
 		for (int i=0; i<num; i++) {
 			uint32_t data = hb_mc_response_packet_get_data(&buf[i]);
-			printf("BSG INFO: Read rom data from address 0x%x: 0x%x\n", idx + i, data); 
+			bsg_pr_test_info("Read rom data from address 0x%x: 0x%x\n", idx + i, data); 
 		}
 		return HB_MC_SUCCESS;
 	}
 	else {
-		printf("BSG INFO: Read from ROM failed.\n");
+		bsg_pr_test_info("Read from ROM failed.\n");
 		return HB_MC_FAIL;
 	}
 }
@@ -20,16 +20,16 @@ int test_rom () {
 	uint8_t fd = 0;
 	hb_mc_init_host(&fd);
 
-	printf("BSG INFO: Readback manycore link monitor register\n");
+	bsg_pr_test_info("Readback manycore link monitor register\n");
 	uint32_t recv_vacancy = hb_mc_get_recv_vacancy(fd);
-	printf("BSG INFO: Recv vacancy is: %x\n", recv_vacancy);
-	printf("BSG INFO: Readback ROM from tile (%d, %d)\n", 0, 0);
+	bsg_pr_test_info("Recv vacancy is: %x\n", recv_vacancy);
+	bsg_pr_test_info("Readback ROM from tile (%d, %d)\n", 0, 0);
 	return print_rom(fd, 0, 12);
 }
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
-	printf("BSG INFO: test_rom Regression Test (COSIMULATION)\n");
+	bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
 	int rc = test_rom();
 	*exit_code = rc;
 	if (rc == HB_MC_SUCCESS)
@@ -40,12 +40,9 @@ void test_main(uint32_t *exit_code) {
 }
 #else
 int main() {
-	printf("BSG INFO: test_rom Regression Test (F1)\n");
+	bsg_pr_test_info("test_rom Regression Test (F1)\n");
 	int rc = test_rom();
-	if (rc == HB_MC_SUCCESS)
-		printf("BSG REGRESSION TEST PASSED\n");
-	else
-		printf("BSG REGERSSION TEST FAILED\n");
+	bsg_pr_test_status(rc == HB_MC_SUCCESS);
 	return rc;
 }
 #endif

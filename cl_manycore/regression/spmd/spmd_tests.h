@@ -9,6 +9,7 @@
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_loader.h"
 #include "bsg_manycore_errno.h"	
+#include "cl_manycore_regression.h"
 
 #else // !COSIM
 
@@ -16,6 +17,7 @@
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_errno.h>
+#include <cl_manycore_regression.h>
 
 #endif // #ifdef COSIM
 
