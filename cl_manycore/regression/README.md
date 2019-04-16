@@ -25,7 +25,7 @@ To add a test, see the instructions in the relevant subdirectories.
 
 All tests in the subdirectories must:
 
-   - have a `.c` and `.h` file OR `.cpp` and `.hpp` file. 
+   - Have a `.c` and `.h` file OR `.cpp` and `.hpp` file. 
    - The names of the `.c`/`.h` OR `.cpp`/`.hpp` must match
    - The names must art with `test_`
-   - Tests must return 0 on success or non-zero on failure
+   - Return 0 on success or non-zero on failure
