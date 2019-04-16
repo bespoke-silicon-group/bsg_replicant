@@ -1,33 +1,31 @@
-# Software
+# Regression
 
-The software directory contains the C application for an AWS hardware design.
+The regression directory contains the C/C++ Regression Tests for the Manycore
+application. 
+
+To add a test, see the instructions in the relevant subdirectories.
 
 ## Contents
 
-- `cl_manycore.c`: The C application for this AWS hardware design. Drives
-  co-simulation and an FPGA instance on a server.
-- `include`: Include files for this AWS hardware design
-- `makefile`: Makefile for building the C application for AWS. (The cosimulation
-  binary is built by the Vivado tools, separately)
-- `README.md`: This file
+   - `library`: These programs test the F1 library. These programs cannot
+     require a binary running on the manycore.
 
-## Writing your C application
+   - `spmd`: These programs test the Manycore functionality. These programs
+     expect a matching binary in the `software/spmd` directory of
+     `bsg_manycore`
 
-If you are porting this project to a new application you must follow three steps:
+   - `Makefile`: This is a simple makefile for running all of the regression tests
+     in the sub-directories. If a new directory is added, simply add it to the
+     `TARGETS` variable and it should be added to `make regression`
 
-1. Rename and reuse `cl_demo.c`
-    - If necessary, replace `cl_demo.c` in SRC's definition in `makefile`
-    - If necessary, replace `cl_demo` in BIN's definintion in `makefile`
-2. Cosimulate your application by running `make cosim` from the parent directory
-3. Upload your application to an AWS instance and run `make` in this directory.
-4. Run the output binary
+   - `Makefile.include`: This Makefile snippet is included by the Makefiles in the
+     subdirectories.
 
 ## Notes
 
-The C Macro `SV_TEST` is used to block includes and definitions used by the
-cosimulation framework. **In particular** it replcaes `int main` with the
-function `int test_main`, which is called from
-`testbenches/cosim/cosim_wrapper.sv` (using `main` will cause linker errors,
-because the co-simulator already has a `main` method). Therefore, **do not remove
-`test_main`** if you intend to use this C application for co-simulation.
+All tests in the subdirectories must:
 
+   - have a `.c` and `.h` file OR `.cpp` and `.hpp` file. 
+   - The names of the `.c`/`.h` OR `.cpp`/`.hpp` must match
+   - The names must art with `test_`
+   - Tests must return 0 on success or non-zero on failure

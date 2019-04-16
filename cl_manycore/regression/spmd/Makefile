@@ -1,6 +1,6 @@
 include Makefile.tests
 include ../../Makefile.dimensions
-include ../Makefile.include
+include ../Makefile.common
 
 $(TARGETS): test_%: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
