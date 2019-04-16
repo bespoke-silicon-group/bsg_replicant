@@ -1,0 +1,18 @@
+ifndef HDK_DIR
+$(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
+endif
+
+ifndef CL_DIR
+$(error "CL_DIR undefined. Set CL_DIR before running this makefile")
+endif
+
+ifndef BSG_IP_CORES_DIR
+$(error "BSG_IP_CORES_DIR environment variable undefined.")
+endif
+
+ifndef BSG_MANYCORE_DIR
+$(error "BSG_MANYCORE_DIR environment variable undefined.")
+endif
+
+HARDWARE_PATH = $(CL_DIR)/hardware/
+REGRESSION_PATH = $(CL_DIR)/regression/

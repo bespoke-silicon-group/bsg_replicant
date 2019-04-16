@@ -1,0 +1,99 @@
+# HARDWARE_PATH, TESTS_PATH, CL_DIR, C_REGRESSION_TESTS, and
+# REGRESSION_TESTS_TYPE must be set by the including makefile
+
+# AWS Paths (Don't modify - variables are set by hdk_setup.sh in aws-fpga)
+export XILINX_IP    = $(HDK_SHELL_DESIGN_DIR)/ip
+SDK_DIR             = $(AWS_FPGA_REPO_DIR)/sdk
+C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
+C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
+C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
+
+RTL_TB_WORKLIB = cosimulation
+RTL_TB_TOP     = cosim_wrapper
+RTL_TB_LIBS    = axis_register_slice_v1_1_17 fifo_generator_v13_2_2
+RTL_TB_LIBS    += axis_data_fifo_v1_1_18 axis_dwidth_converter_v1_1_16
+RTL_TB_LIBS    += axi_fifo_mm_s_v4_1_14 axi_clock_converter_v2_1_11
+RTL_TB_LIBS    += axis_infrastructure_v1_1_0 generic_baseblocks_v2_1_0
+RTL_TB_LIBS    += axi_infrastructure_v1_1_0 axi_register_slice_v2_1_15
+RTL_TB_LIBS    += axi_register_slice_v2_1_12 fifo_generator_v13_2_1
+RTL_TB_LIBS    += fifo_generator_v13_1_4 axi_data_fifo_v2_1_11
+RTL_TB_LIBS    += axi_crossbar_v2_1_13 xil_defaultlib unisims_ver
+RTL_TB_LIBS    += unimacro_ver secureip xpm 
+
+XVLOG_OPTS += $(if $(AXI_PROT_CHECK),-d ENABLE_PROTOCOL_CHK,)
+XELOG_OPTS += $(if $(AXI_PROT_CHECK),-d ENABLE_PROTOCOL_CHK,)
+
+XSIM_OPTS += $(if $(DEBUG),-gui,)
+
+XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d AXI_MEMORY_MODEL=1,)
+XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d ECC_DIRECT_EN,)
+XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d RND_ECC_EN,)
+XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d ECC_ADDR_LO=0,)
+XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d ECC_ADDR_HI=0,)
+XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d RND_ECC_WEIGHT=0,)
+
+C_DPI_SRC  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
+C_DPI_SRC += $(C_COMMON_DIR)/src/fpga_pci_sv.c
+
+C_LIB_SRC  = $(CL_DIR)/libraries/bsg_manycore_driver.c
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.c
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.c 
+
+CFLAGS   = -DVIVADO_SIM -DSV_TEST -DCOSIM=1 $(REGRESSION_DEFINES)
+INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
+INCLUDES += -I$(C_COMMON_DIR)/include -I$(TESTS_PATH) -I$(CL_DIR)/libraries
+
+XSC_INCLUDES = $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
+XSC_FLAGS    = $(foreach def,$(CFLAGS),--additional_option "$(def)")
+
+SIM_LOG_TARGETS  = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+
+cosim: $(SIM_LOG_TARGETS)
+
+%.so: $(TESTS_PATH)/%.c $(C_LIB_SRC) $(C_DPI_SRC) 
+	xsc $? $(XSC_FLAGS) $(XSC_INCLUDES) -o $@
+
+# HARDWARE_PATH must be set by including makefile
+include $(HARDWARE_PATH)/Makefile.include
+# HARDWARE_TARGETS is set by $(HARDWARE_PATH)/Makefile.include
+xsim.dir/$(RTL_TB_WORKLIB): $(CL_DIR)/testbenches/top.vivado.f 
+xsim.dir/$(RTL_TB_WORKLIB): ../cosim_wrapper.sv $(HARDWARE_TARGETS)
+	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
+		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
+		-f $(CL_DIR)/testbenches/top.vivado.f $<
+
+xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB) 
+	xelab -m64 $(XELOG_OPTS) --timescale 1ps/1ps --debug typical --relax \
+		--mt 8 --initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini \
+		$(foreach lib,$(RTL_TB_LIBS), -L $(lib)) $(RTL_TB_WORKLIB).tb \
+		$(RTL_TB_WORKLIB).glbl $(RTL_TB_WORKLIB).$(RTL_TB_TOP) \
+		--snapshot $(notdir $@) -sv_lib $(notdir $@)
+
+%.cosim.log: xsim.dir/%
+	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
+
+$(C_REGRESSION_TESTS): %: %.cosim.log
+
+regression: $(SIM_LOG_TARGETS)
+	@pass=0;  total=0; \
+	for target in $(basename $(basename $?)); do \
+		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
+			echo "FAIL: Regression Test $$target failed!"; \
+		else \
+			echo "PASS: Regression Test $$target passed!"; \
+			let "pass+=1"; \
+		fi; \
+		let "total+=1"; \
+	done; \
+	if [ ! $$pass == $$total ]; then \
+		echo "FAIL! $$pass out of $$total regression tests passed"; \
+		exit 1; \
+	fi; \
+	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)";
+
+.PHONY: cosim regression clean
+.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
+
+clean: hardware.clean
+	rm -rf .Xil xsim.dir
+	rm -rf *.log *.jou *.pb *.dat *.wdb *.so

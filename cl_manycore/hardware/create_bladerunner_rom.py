@@ -3,10 +3,10 @@
 import argparse
 
 MC_VERSION_ID = 0x00200200
-COMPILATION_DATA = 0x03272019
+COMPILATION_DATE = 0x03272019
 DESCRIPTION_PTR = 0
-NETWORK_ADDR_WIDTH = 0x28
-NETWORK_DATA_WIDTH = 0x32
+NETWORK_ADDR_WIDTH = 28
+NETWORK_DATA_WIDTH = 32
 HOST_INTERFACE_COORD_X = 3
 HOST_INTERFACE_COORD_Y = 0
 NETWORK_DIMENSION_X = 4
@@ -35,12 +35,12 @@ def parse_args():
                         help="X dimension of the network")
     parser.add_argument("--network-y", default=NETWORK_DIMENSION_Y, type=int,
                         help="X dimension of the network")
-    parser.add_argument("--mc-version", default=MC_VERSION_ID, type=int,
+    parser.add_argument("--mc-version", default=MC_VERSION_ID, type=lambda x: int(x,16),
                         help="MC version")
-    parser.add_argument("--desc-ptr", default=DESCRIPTION_PTR, type=int,
+    parser.add_argument("--desc-ptr", default=DESCRIPTION_PTR, type=lambda x: int(x,16),
                         help="Description Pointer")
-    parser.add_argument("--comp-data", default=COMPILATION_DATA, type=int,
-                        help="Compilation data")
+    parser.add_argument("--comp-date", default=COMPILATION_DATE, type=lambda x: int(x,16),
+                        help="Compilation date")
     parser.add_argument("release", nargs=3, action=ReleaseRepoAction,
                         help='Repositories that this release is based on as repo_name@commit_id')
 
@@ -53,9 +53,11 @@ def print_item(item):
 def main():
     args = parse_args()
     print_item(args.mc_version)
-    print_item(args.comp_data)
+    print_item(args.comp_date)
     print_item(args.network_addr_width)
     print_item(args.network_data_width)
+    print_item(args.network_x)
+    print_item(args.network_y)
     print_item(args.host_coord_x)
     print_item(args.host_coord_y)
     print_item(args.desc_ptr)
