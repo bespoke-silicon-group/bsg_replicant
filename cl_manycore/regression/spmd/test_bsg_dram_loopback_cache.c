@@ -1,4 +1,3 @@
-#include "spmd_tests.h"
 #include "test_bsg_dram_loopback_cache.h"
 
 int test_loopback () {
