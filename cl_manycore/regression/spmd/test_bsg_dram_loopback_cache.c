@@ -27,7 +27,7 @@ int test_loopback () {
 
   	hb_mc_unfreeze(fd, 0, 1);
 
-	printf("BSG INFO: Checking receive packet...\n");
+	bsg_pr_test_info("Checking receive packet...\n");
 	usleep(100); /* 100 us */
 	hb_mc_packet_t manycore_finish;
 	hb_mc_read_fifo(fd, 1, &manycore_finish);	
@@ -40,7 +40,7 @@ int test_loopback () {
 	uint32_t x_dst = hb_mc_request_packet_get_x_dst(&manycore_finish.request);
 	uint32_t y_dst = hb_mc_request_packet_get_y_dst(&manycore_finish.request);
 	uint32_t op = hb_mc_request_packet_get_op(&manycore_finish.request);
-	printf("BSG INFO: Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data & op_ex);
+	bsg_pr_test_info("Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data & op_ex);
 	if (addr == 0x3ab4)
 		return HB_MC_SUCCESS;
 	else
@@ -50,7 +50,7 @@ int test_loopback () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
-	printf("BSG INFO: test_bsg_dram_loopback_cache Regression Test (COSIMULATION)\n");
+	bsg_pr_test_info("test_bsg_dram_loopback_cache Regression Test (COSIMULATION)\n");
 	int rc = test_loopback();
 	*exit_code = rc;
 	if (rc == HB_MC_SUCCESS)
@@ -61,7 +61,7 @@ void test_main(uint32_t *exit_code) {
 }
 #else
 int main() {
-	printf("BSG INFO: test_bsg_dram_loopback_cache Regression Test (F1)\n");
+	bsg_pr_test_info("test_bsg_dram_loopback_cache Regression Test (F1)\n");
 	int rc = test_loopback();
 	if (rc == HB_MC_SUCCESS)
 		printf("BSG REGRESSION TEST PASSED\n");
