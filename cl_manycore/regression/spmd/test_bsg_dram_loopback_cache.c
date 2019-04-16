@@ -53,20 +53,14 @@ void test_main(uint32_t *exit_code) {
 	bsg_pr_test_info("test_bsg_dram_loopback_cache Regression Test (COSIMULATION)\n");
 	int rc = test_loopback();
 	*exit_code = rc;
-	if (rc == HB_MC_SUCCESS)
-		printf("BSG REGRESSION TEST PASSED\n");
-	else
-		printf("BSG REGRESSION TEST FAILED\n");
+	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main() {
 	bsg_pr_test_info("test_bsg_dram_loopback_cache Regression Test (F1)\n");
 	int rc = test_loopback();
-	if (rc == HB_MC_SUCCESS)
-		printf("BSG REGRESSION TEST PASSED\n");
-	else
-		printf("BSG REGRESSION TEST FAILED\n");
+	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
 #endif
