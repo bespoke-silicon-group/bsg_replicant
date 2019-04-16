@@ -74,7 +74,7 @@ xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB)
 
 $(C_REGRESSION_TESTS): %: %.cosim.log
 
-regression: cosim
+regression: $(SIM_LOG_TARGETS)
 	@pass=0;  total=0; \
 	for target in $(basename $(basename $?)); do \
 		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
@@ -89,7 +89,7 @@ regression: cosim
 		echo "FAIL! $$pass out of $$total regression tests passed"; \
 		exit 1; \
 	fi; \
-	echo "PASS! All $$total tests passed for $REGRESSION_TESTS_TYPE";
+	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)";
 
 .PHONY: cosim regression clean
 .PRECIOUS: %.log xsim.dir %.so xsim.dir/%
