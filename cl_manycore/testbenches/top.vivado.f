@@ -35,6 +35,7 @@
 
 # AWS include directories
 -include ${HDK_COMMON_DIR}/verif/include
+-include ${HDK_SHELL_DIR}/hlx/verif
 -include ${HDK_SHELL_DESIGN_DIR}/lib
 -include ${HDK_SHELL_DESIGN_DIR}/interfaces
 -include ${HDK_SHELL_DESIGN_DIR}/sh_ddr/sim

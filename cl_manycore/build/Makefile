@@ -6,7 +6,7 @@ include $(HARDWARE_PATH)/Makefile.include
 
 build: checkpoints/to_aws/$(PROJECT).Developer_CL.tar
 
-checkpoints/to_aws/$(PROJECT).Developer_CL.tar: envcheck $(HARDWARE_TARGETS)
+checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(HARDWARE_TARGETS)
 	CL_TOP_MODULE=$(PROJECT) CL_DIR=$(CL_DIR) ./aws_build_dcp_from_cl.sh \
 		-foreground -design $(PROJECT)
 
