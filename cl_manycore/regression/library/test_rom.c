@@ -22,7 +22,7 @@ int read_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
 	if (read == HB_MC_SUCCESS) {
 		for (int i=0; i<num; i++) {
 			result[i] = hb_mc_response_packet_get_data(&buf[i]);
-			bsg_pr_test_info("Read rom data from address 0x%x: 0x%x\n", idx + i, data); 
+			bsg_pr_test_info("Read rom data from address 0x%x: 0x%x\n", idx + i, result); 
 		}
 		return HB_MC_SUCCESS;
 	}
@@ -52,10 +52,10 @@ int test_rom () {
         for(int i = 0; i < 4; i++) {
             bsg_pr_test_info("%s: Expected = %d, Actual = %d", desc[i], expected[i], actual[i]);
             if(expected[i] != actual[i]) {
-                bsg_pr_test_info("\033[31m Failed \033[0m\n");
+                printf("\033[31m Failed \033[0m\n");
                 return HB_MC_FAIL;
             }
-            bsg_pr_test_info("\033[033m Succeeded \033[0m\n");
+            printf("\033[033m Succeeded \033[0m\n");
         }
         return HB_MC_SUCCESS;
 }
