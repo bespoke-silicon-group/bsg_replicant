@@ -12,10 +12,6 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include <bsg_manycore_driver.h>
-#include <bsg_manycore_mem.h>
-#include <bsg_manycore_loader.h>
-#include <bsg_manycore_errno.h>
 #include "cuda_regression.h"
 
 /*!
