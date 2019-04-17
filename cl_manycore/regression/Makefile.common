@@ -21,6 +21,11 @@ all: $(TARGETS)
 
 regression: $(TARGETS)
 	@pass=0;  total=0; \
+	echo ""; \
+	echo ""; \
+	echo "Running $(REGRESSION_TESTS_TYPE) Regression Tests..."; \
+	echo ""; \
+	echo ""; \
 	for target in $?; do \
 		sudo ./$$target | tee $$target.regression.log ; \
 		if [ $${PIPESTATUS[0]} -ne 0 ] ; then \
@@ -32,10 +37,18 @@ regression: $(TARGETS)
 		let "total+=1"; \
 	done; \
 	if [ ! $$pass == $$total ]; then \
-		echo "FAIL! $$pass out of $$total regression tests passed"; \
+		echo "==================================================="; \
+		echo "" ; \
+		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"; \
+		echo "" ; \
+		echo "==================================================="; \
 		exit 1; \
 	fi; \
-	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)";
+	echo "==========================================================="; \
+	echo ""; \
+	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"; \
+	echo ""; \
+	echo "===========================================================";
 
 .PHONY: regression all clean 
 
