@@ -1,4 +1,4 @@
- #include "test_rom.h"
+#include "test_rom.h"
 
 int print_rom(uint8_t fd, int idx, int num) {
 	hb_mc_response_packet_t buf[num];
@@ -45,17 +45,17 @@ int test_rom () {
         uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, 0, CL_MANYCORE_DIM_Y - 1 };
         uint32_t actual[4] = {};
         
-        if(read_rom(fd, 0, 4, actual) == HB_MC_FAIL) {
-            return HB_MC_FAIL;
+        if(read_rom(fd, 4, 4, actual) == HB_MC_FAIL) {
+		return HB_MC_FAIL;
         }
         bsg_pr_test_info("Comparing results:\n");
         for(int i = 0; i < 4; i++) {
-            bsg_pr_test_info("%s: Expected = %d, Actual = %d", desc[i], expected[i], actual[i]);
-            if(expected[i] != actual[i]) {
-                printf("\033[31m Failed \033[0m\n");
-                return HB_MC_FAIL;
-            }
-            printf("\033[033m Succeeded \033[0m\n");
+		bsg_pr_test_info("%s: Expected = %d, Actual = %d", desc[i], expected[i], actual[i]);
+		if(expected[i] != actual[i]) {
+			printf("\033[31m Failed \033[0m\n");
+			return HB_MC_FAIL;
+		}
+		printf("\033[033m Succeeded \033[0m\n");
         }
         return HB_MC_SUCCESS;
 }
