@@ -12,7 +12,7 @@ include $(TESTS_PATH)/Makefile.tests
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include ../Makefile.common
 
-$(SIM_TARGETS): test_%.cosim.log: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
+$(SIM_LOG_TARGETS): test_%.cosim.log: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary:
 	$(MAKE) -C $(TESTS_PATH) $@ 
