@@ -38,12 +38,9 @@ uint8_t hb_mc_get_num_x ();
 uint8_t hb_mc_get_num_y (); 
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
 
-
-
-
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};
 
-static const uint32_t MAX_CREDITS = 16;
+#define MAX_CREDITS 16
 
 #endif

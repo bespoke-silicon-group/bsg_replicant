@@ -12,7 +12,8 @@
 #define MMIO_FIFO_ISR_REG 0x0 
 #define MMIO_FIFO_IER_REG 0x4
 
-#define hb_mc_mmio_get_fifo_reg(n, reg) (n * 0x1000 + reg)
+#define MMIO_FIFO_ADDRESS_WIDTH 0x1000
+#define hb_mc_mmio_get_fifo_reg(n, reg) (n * MMIO_FIFO_ADDRESS_WIDTH + reg)
 
 #define MMIO_ROM_BASE 0x2000
 #define MMIO_RECV_VACANCY_REG 0

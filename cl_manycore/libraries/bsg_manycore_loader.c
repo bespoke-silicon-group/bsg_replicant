@@ -13,7 +13,7 @@
 uint32_t DMEM_BASE = 0x1000;
 uint8_t MY_X = 3;
 uint8_t MY_Y = 0; 
-static uint32_t ICACHE_BASE_EPA = 1 < 22;
+#define  ICACHE_BASE_EPA 1 << 22 /* The EPA of a tile's icache entries */
 
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.

@@ -30,7 +30,8 @@
 
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
 static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
-static uint32_t NUM_FIFO = 2; /*! Number of FIFOs connected to the device */
+
+#define NUM_FIFO 2 /*! Number of FIFOs connected to the device */
 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
@@ -202,7 +203,7 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	}
 
 	while (hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_VACANCY_REG)) != init_vacancy) {
-		hb_mc_write16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_TRANSMIT_LENGTH_REG), 16);
+		hb_mc_write16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_TRANSMIT_LENGTH_REG), sizeof(hb_mc_packet_t));
 	}
 	return HB_MC_SUCCESS;
 }
