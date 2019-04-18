@@ -33,9 +33,15 @@ static int hb_mc_load_packets(uint8_t fd, hb_mc_packet_t *packets, uint32_t num_
 static int hb_mc_get_elf_segment_size (char *filename, int segment, uint32_t *result_p) {
 	int fd = open(filename, O_RDONLY);
 	struct stat s;
-	assert(fd != -1);
-	if (fstat(fd, &s) < 0)
-		return HB_MC_FAIL;	
+	if (fd == -1) {
+		fprintf(stderr, "hb_mc_get_elf_segment_size(): could not open the elf file.\n");
+		return HB_MC_FAIL;
+	}
+	
+	if (fstat(fd, &s) < 0) {
+		close(fd);
+		return HB_MC_FAIL;
+	}	
 	size_t elf_size = s.st_size;
 	uint8_t* buf = (uint8_t*) mmap(NULL, elf_size, PROT_READ, MAP_PRIVATE, fd, 0);
 	close(fd);
