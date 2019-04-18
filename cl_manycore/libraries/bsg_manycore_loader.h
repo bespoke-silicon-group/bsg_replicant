@@ -30,8 +30,6 @@ static uint32_t ADDR_BYTE = 4; /*! Number of bytes for encoding the address. */
 static uint32_t DATA_BYTE = 4; /*! Number of bytes for encoding the data. */
 /* -------------------------- */
 // depend on the Manycore dimensions
-extern uint8_t MY_X; /*! X coordinate of the host */
-extern uint8_t MY_Y; /*! Y coordinate of the host */
 static uint32_t X_BYTE = 1; /*! Number of bytes for encoding x coordinates. */
 static uint32_t Y_BYTE = 1; /* Number of bytes for encoding y coordinates. */
 /* -------------------------- */

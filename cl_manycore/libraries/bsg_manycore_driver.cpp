@@ -34,6 +34,9 @@
 
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
 static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
+static uint8_t MY_X = 0; /*! X coordinate of the host - set at runtime. */
+static uint8_t MY_Y = 0; /*! Y coordinate of the host */
+
 
 #define NUM_FIFO 2 /*! Number of FIFOs connected to the device */
 
@@ -141,7 +144,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
  * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
  * @param fd pointer to which the userspace file descriptor is assigned. 
  * @return HB_MC_SUCCESS if device has been initialized and HB_MC_FAIL otherwise.
- * */
+ */
 int hb_mc_init_host (uint8_t *fd) {
 	*fd = num_dev;
 	char *ocl_base;
@@ -160,7 +163,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	/* initialize dimension variables */
 	NUM_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
 	NUM_Y = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);	
-
+	MY_X = NUM_X - 1;
 
 	return HB_MC_SUCCESS; 
 }
