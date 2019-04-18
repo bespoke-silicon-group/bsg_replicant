@@ -23,7 +23,8 @@ int test_loopback () {
 	char* bsg_manycore_dir = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/"
 		"bsg_dram_loopback_cache/main.riscv";
 
-	hb_mc_load_binary(fd, bsg_manycore_dir, &x, &y, 1);
+	if (hb_mc_load_binary(fd, bsg_manycore_dir, &x, &y, 1) != HB_MC_SUCCESS) 
+		return HB_MC_FAIL; /* could not load binary */
 
   	hb_mc_unfreeze(fd, 0, 1);
 
