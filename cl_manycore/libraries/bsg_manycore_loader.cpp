@@ -11,7 +11,6 @@
 #endif
 
 #define ICACHE_BASE_EPA 1 << 22 /* The EPA of a tile's icache entries */
-uint32_t DMEM_BASE = 0x1000;
 
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
