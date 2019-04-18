@@ -3,7 +3,7 @@
 
 
 #include <getopt.h>
-#include "bsg_manycore_driver.h"
+#include <bsg_manycore_cuda.h>
 
 /*! 
  * prints a Manycore packet's raw data.

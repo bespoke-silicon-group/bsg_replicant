@@ -49,7 +49,9 @@ C_FILES   = $(C_TB_TOP) $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
 		$(CL_DIR)/libraries/bsg_manycore_loader.cpp \
 		$(CL_DIR)/libraries/bsg_manycore_mem.cpp \
 		$(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp \
-		$(CL_DIR)/libraries/bsg_manycore_elf.cpp 
+		$(CL_DIR)/libraries/bsg_manycore_elf.cpp \
+		$(CL_DIR)/libraries/bsg_manycore_cuda.cpp
+ 
 # SV TEST LIST used by included makefiles (Purpose unclear)
 SV_TEST_LIST = $(PROJECT) 
 

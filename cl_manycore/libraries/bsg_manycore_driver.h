@@ -55,16 +55,10 @@ int hb_mc_check_device (uint8_t fd);
 uint8_t hb_mc_get_num_x ();
 uint8_t hb_mc_get_num_y (); 
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
-int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
-int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles);
-int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva);
-int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
-void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);
-int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles);
-void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
 void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);
+int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
 
 /*
  * packet format: {addr, op, op_ex, data, src_y_cord, src_x_cord, y_cord, x_cord)
@@ -106,9 +100,6 @@ static const uint32_t MANYCORE_NUM_X = 0x2000 + (3<<2);
 static const uint32_t MANYCORE_NUM_Y = 0x2000 + (4<<2);
 
 static const uint32_t MAX_CREDITS = 16;
-
-enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
-int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
 #ifdef __cplusplus
 }
