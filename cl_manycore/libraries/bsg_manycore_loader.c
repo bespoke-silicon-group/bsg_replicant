@@ -104,7 +104,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 					memcpy(&data_segment[0], &buf[ph[i].p_offset], ph[i].p_filesz);	
 				}		
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
-					uint32_t addr = (4096 + ofs) >> 2;
+					uint32_t addr = (DMEM_BASE + ofs) >> 2;
 					uint32_t data = data_segment[ofs/4];
 					hb_mc_format_request_packet(&packets_data[ofs/4].request, addr, data, x, y, OP_REMOTE_STORE);
 				}
