@@ -143,7 +143,16 @@ void cosim_cuda_graph_degree_test ()
         goto free_device_resources;
     }
 
-    printf("%s: Test PASSED!\n", __func__);
+    /* print results */
+    vertex_t i;
+    for (i = 0; i < array_size(results); i++) {
+	fprintf(stderr, "INFO: %s: degree[%" PRIu32 "] = %" PRIu32 "\n",
+		__func__,
+		i,
+		results[i]);
+    }
+
+    printf("INFO: %s: Test PASSED!\n", __func__);
 
 
 free_device_resources:
