@@ -91,7 +91,6 @@ module cl_tb();
       $display($time,,,"Readback the y demension: %10h", rdata);
 
       // -------------------------------------
-      // TODO: mcl NPA space test
       // let's move more manycore-related test to cosim
       // -------------------------------------
       ocl_power_up_init(.FIFO_BASE_ADDR(MST_BASE_ADDR));

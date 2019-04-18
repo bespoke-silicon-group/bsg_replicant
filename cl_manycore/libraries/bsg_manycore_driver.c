@@ -11,7 +11,7 @@
 #include <string.h>
 
 #ifndef COSIM
-	#include <bsg_manycore_driver.h> /* TODO: should be angle brackets */ 
+	#include <bsg_manycore_driver.h>
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h> 
 	#include <fpga_pci.h>
