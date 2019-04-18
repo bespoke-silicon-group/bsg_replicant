@@ -15,10 +15,7 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_mem.h"
-#include "bsg_manycore_loader.h"
-#include "bsg_manycore_errno.h"
+#include "bsg_manycore_cuda.h"
 
 #include "graph.inc" // defines columns and row_ptrs
 
