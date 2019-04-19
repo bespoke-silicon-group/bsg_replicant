@@ -96,7 +96,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 					uint32_t data = text_segment[ofs/4];
 					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | ICACHE_BASE_EPA, data, x, y, OP_REMOTE_STORE);
 					if (init_dram == HB_MC_SUCCESS) {
-						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_num_y() + 1, OP_REMOTE_STORE);
+						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_network_dimension_y() + 1, OP_REMOTE_STORE);
 					}
 				}
 			}

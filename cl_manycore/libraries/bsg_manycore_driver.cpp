@@ -17,6 +17,7 @@
 	#include <bsg_manycore_elf.h>
 	#include <bsg_manycore_mem.h>
 	#include <bsg_manycore_regs.h>
+	#include <bsg_manycore_packet.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
@@ -28,15 +29,20 @@
 	#include "bsg_manycore_elf.h"
 	#include "bsg_manycore_mem.h"
 	#include "bsg_manycore_regs.h"
+	#include "bsg_manycore_packet.h"
 #endif
 
+#define HOST_INTF_EPA_NETWORK_DIMENSION_X 4 /*! manycore network X dimension, number of columns of the mesh node */
+#define HOST_INTF_EPA_NETWORK_DIMENSION_Y 5 /*! manycore network Y dimension, number of rows of the mesh node */
+#define HOST_INTF_EPA_COORD_X 6 /*! the X location of the host node in the manycore mesh network */
+#define HOST_INTF_EPA_COORD_Y 7 /*! the Y location of the host node in the manycore mesh network */
+#define ROM_X 0 /*! the X location of the ROM */
+#define ROM_Y 0 /*! the Y location of the ROM */
 
-
-static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
-static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
-static uint8_t MY_X = 0; /*! X coordinate of the host - set at runtime. */
-static uint8_t MY_Y = 0; /*! Y coordinate of the host */
-
+static uint8_t NETWORK_DIMENSION_X = 0; /*! Number of rows in the Manycore. */
+static uint8_t NETWORK_DIMENSION_Y = 0; /*! Number of columns in the Manycore. */
+static uint8_t HOST_INTF_COORD_X = 0; /*! X coordinate of the host - set at runtime. */
+static uint8_t HOST_INTF_COORD_Y = 0; /*! Y coordinate of the host */
 
 #define NUM_FIFO 2 /*! Number of FIFOs connected to the device */
 
@@ -160,10 +166,20 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
-	/* initialize dimension variables */
-	NUM_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
-	NUM_Y = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);	
-	MY_X = NUM_X - 1;
+	HOST_INTF_COORD_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG) - 1; /* get host inferface location */
+	/* TODO: add registers for HOST_INTF_COORD_X, HOST_INTF_COORD_Y in AXI space */
+
+	hb_mc_response_packet_t packets[2];
+	int error =  hb_mc_copy_from_epa(*fd, &packets[0], ROM_X, ROM_Y, HOST_INTF_EPA_NETWORK_DIMENSION_X, 1 /* size */); 
+	if (error != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* unable to read X dimension */
+	}
+	error =  hb_mc_copy_from_epa(*fd, &packets[1], ROM_X, ROM_Y, HOST_INTF_EPA_NETWORK_DIMENSION_Y, 1 /* size */); 
+	if (error != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* unable to read Y dimension */
+	}
+	NETWORK_DIMENSION_X = hb_mc_response_packet_get_data(&packets[0]);	
+	NETWORK_DIMENSION_Y = hb_mc_response_packet_get_data(&packets[1]);	
 
 	return HB_MC_SUCCESS; 
 }
@@ -177,9 +193,9 @@ int hb_mc_check_dim (uint8_t fd) {
 		fprintf(stderr, "hb_mc_check_dim(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	uint32_t num_x = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
-	uint32_t num_y = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);
-	if ((NUM_X == num_y) && (NUM_Y == num_y))
+	uint32_t network_dimension_x = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
+	uint32_t network_dimension_y = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);
+	if ((NETWORK_DIMENSION_X == network_dimension_x) && (NETWORK_DIMENSION_Y == network_dimension_y))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
@@ -344,16 +360,16 @@ int hb_mc_can_read (uint8_t fd, uint32_t size) {
  * @param fd user-level file descriptor.
  * @return the number of columns in the Manycore.
  * */
-uint8_t hb_mc_get_num_x () {
-	return NUM_X;
+uint8_t hb_mc_get_network_dimension_x () {
+	return NETWORK_DIMENSION_X;
 } 
 
 /*!
  * @param fd user-level file descriptor.
  * @return the number of rows in the Manycore.
  * */
-uint8_t hb_mc_get_num_y () {
-	return NUM_Y;
+uint8_t hb_mc_get_network_dimension_y () {
+	return NETWORK_DIMENSION_Y;
 }
 /*
  * Formats a Manycore request packet.
@@ -369,8 +385,8 @@ uint8_t hb_mc_get_num_y () {
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
 	hb_mc_request_packet_set_x_dst(packet, x);
 	hb_mc_request_packet_set_y_dst(packet, y);	
-	hb_mc_request_packet_set_x_src(packet, MY_X);
-	hb_mc_request_packet_set_y_src(packet, MY_Y);
+	hb_mc_request_packet_set_x_src(packet, HOST_INTF_COORD_X);
+	hb_mc_request_packet_set_y_src(packet, HOST_INTF_COORD_Y);
 	hb_mc_request_packet_set_data(packet, data);
 	hb_mc_request_packet_set_op_ex(packet, 0xF);
 	hb_mc_request_packet_set_op(packet, opcode);	
@@ -402,7 +418,7 @@ static int hb_mc_eva_is_dram (eva_t eva) {
  * checks if NPA is in DRAM.
  */
 static int hb_mc_npa_is_dram (npa_t *npa) {
-	if (npa->y == (NUM_Y + 1))
+	if (npa->y == (NETWORK_DIMENSION_Y + 1))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	
@@ -412,7 +428,7 @@ static int hb_mc_npa_is_dram (npa_t *npa) {
  * checks if NPA is in host endpoint.
  */
 static int hb_mc_npa_is_host (npa_t *npa) {
-	if (npa->y == 0 && npa->x == (NUM_X - 1))
+	if (npa->y == 0 && npa->x == (NETWORK_DIMENSION_X - 1))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	
@@ -422,7 +438,7 @@ static int hb_mc_npa_is_host (npa_t *npa) {
  * checks if NPA is a tile.
  */
 static int hb_mc_npa_is_tile (npa_t *npa) {
-	if ((npa->y >= 1 && npa->y < NUM_Y) && (npa->x >= 0 && npa->x < NUM_X))
+	if ((npa->y >= 1 && npa->y < NETWORK_DIMENSION_Y) && (npa->x >= 0 && npa->x < NETWORK_DIMENSION_X))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	
@@ -453,7 +469,7 @@ static uint32_t hb_mc_dram_get_x (eva_t eva) {
  * returns y coordinate of a DRAM address.
  */
 static uint32_t hb_mc_dram_get_y (eva_t eva) {
-	return NUM_Y + 1;
+	return NETWORK_DIMENSION_Y + 1;
 }
 
 
