@@ -10,9 +10,9 @@
 	#include "bsg_manycore_errno.h"
 #endif
 
-uint32_t DMEM_BASE = 0x1000;
 uint8_t MY_X = 3;
 uint8_t MY_Y = 0; 
+#define  ICACHE_BASE_EPA 1 << 22 /* The EPA of a tile's icache entries */
 
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
@@ -96,7 +96,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
 					uint32_t addr = (ofs) >> 2; 
 					uint32_t data = text_segment[ofs/4];
-					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | (1 << 22), data, x, y, OP_REMOTE_STORE);
+					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | ICACHE_BASE_EPA, data, x, y, OP_REMOTE_STORE);
 					if (init_dram == HB_MC_SUCCESS) {
 						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_num_y() + 1, OP_REMOTE_STORE);
 					}
@@ -110,7 +110,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 					memcpy(&data_segment[0], &buf[ph[i].p_offset], ph[i].p_filesz);	
 				}		
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
-					uint32_t addr = (4096 + ofs) >> 2;
+					uint32_t addr = (DMEM_BASE + ofs) >> 2;
 					uint32_t data = data_segment[ofs/4];
 					hb_mc_format_request_packet(&packets_data[ofs/4].request, addr, data, x, y, OP_REMOTE_STORE);
 				}

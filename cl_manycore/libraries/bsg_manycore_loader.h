@@ -55,7 +55,7 @@ static uint8_t NUM_VCACHE = 2; /*! Number of victim caches. */
 static uint8_t NUM_VCACHE_ENTRY = 32; /*! Number of victim cache entries per cache. */
 static uint8_t VCACHE_WAYS = 2; /* The set-associativity of the victim caches. */
 
-extern uint32_t DMEM_BASE;
+#define  DMEM_BASE 0x1000
 
 int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
