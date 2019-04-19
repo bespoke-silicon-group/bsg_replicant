@@ -8,10 +8,18 @@ int test_loopback () {
 	}
 
 	uint8_t x = 0, y = 1;
-	hb_mc_freeze(fd, 0, 1);	
 	hb_mc_set_tile_group_origin(fd, 0, 1, 0, 1);
 	bsg_pr_test_info("file to be loaded is %s\n", getenv("MAIN_LOOPBACK"));	
 	
+//  The following functions are used to flush the fifos inside the bsg_link_to_cache, to avoid that the undefined cache_pkt_o causes potential issue in bsg_cache.
+//  from basejump_stl commit 00f04eae, this issue is fixed, you no longer need to call these.
+//
+//	hb_mc_init_cache_tag(fd, 0, 5);
+//	hb_mc_init_cache_tag(fd, 1, 5);
+//	hb_mc_init_cache_tag(fd, 2, 5);
+//	hb_mc_init_cache_tag(fd, 3, 5);
+
+	hb_mc_freeze(fd, 0, 1);
 	
 	char* bsg_manycore_dir = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/"
 		"bsg_dram_loopback_cache/main.riscv";
