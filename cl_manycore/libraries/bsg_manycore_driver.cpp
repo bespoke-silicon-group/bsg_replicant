@@ -11,9 +11,11 @@
 #include <string.h>
 
 #ifndef COSIM
-	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore_driver.h>  
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h> 
+	#include <bsg_manycore_elf.h>
+	#include <bsg_manycore_mem.h>
 	#include <bsg_manycore_regs.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
@@ -22,7 +24,9 @@
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_loader.h"
- 	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_elf.h"
+	#include "bsg_manycore_mem.h"
 	#include "bsg_manycore_regs.h"
 #endif
 
@@ -33,6 +37,7 @@ static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
 
 #define NUM_FIFO 2 /*! Number of FIFOs connected to the device */
 
+int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva); 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
  * @param fd userspace file descriptor
@@ -130,9 +135,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	return ocl_table[fd];
 } 
 
-
 #endif
-
 /*! 
  * Initializes the FPGA at slot 0. 
  * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
@@ -158,8 +161,10 @@ int hb_mc_init_host (uint8_t *fd) {
 	NUM_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
 	NUM_Y = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);	
 
+
 	return HB_MC_SUCCESS; 
 }
+
 /*!
  * Checks if the dimensions of the Manycore matches with what is expected.
  * @return HB_MC_SUCCESS if its able to verify that the device has the expected dimensions and HB_MC_FAIL otherwise.
@@ -193,20 +198,39 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 	}	
 	
 	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_VACANCY_REG));
-
+	
 	if (init_vacancy < 4) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
 	for (int i = 0; i < 4; i++) {
-		hb_mc_write32(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_WRITE_REG), packet->words[i]);
+ 		hb_mc_write32(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_WRITE_REG), packet->words[i]);
 	}
 
 	while (hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_VACANCY_REG)) != init_vacancy) {
 		hb_mc_write16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_TRANSMIT_LENGTH_REG), sizeof(hb_mc_packet_t));
-	}
+        }
+
 	return HB_MC_SUCCESS;
 }
+
+/*!
+ * gets the occupancy of a PCIe FIFO.
+ * @param[in] fd userspace file descriptor
+ * @param[in] n which FIFO
+ * @param[out] occupancy_p will be set to the occupancy of the fifo
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
+ * */
+int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p) {
+	if (n >= NUM_FIFO)
+		return HB_MC_FAIL;
+	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}		
+	*occupancy_p = hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_OCCUPANCY_REG));
+	return HB_MC_SUCCESS;
+}
+
 
 /*
  * reads 128B from the nth fifo
@@ -349,5 +373,256 @@ void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, 
 	hb_mc_request_packet_set_op(packet, opcode);	
 	hb_mc_request_packet_set_addr(packet, addr);		
 
+}
+
+/*!
+ * returns HB_MC_SUCCESS if eva is a global network address and HB_MC_FAIL if not.
+ */
+static int hb_mc_is_global_network (eva_t eva) {
+	if (hb_mc_get_bits(eva, 30, 2) == 0x1) 
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;
+}
+
+/*!
+ * returns HB_MC_SUCCESS if eva is a DRAM address and HB_MC_FAIL if not.
+ */
+static int hb_mc_eva_is_dram (eva_t eva) {
+	if (hb_mc_get_bits(eva, 31, 1) == 0x1) 
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;
+}
+
+/*!
+ * checks if NPA is in DRAM.
+ */
+static int hb_mc_npa_is_dram (npa_t *npa) {
+	if (npa->y == (NUM_Y + 1))
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;	
+}
+
+/*!
+ * checks if NPA is in host endpoint.
+ */
+static int hb_mc_npa_is_host (npa_t *npa) {
+	if (npa->y == 0 && npa->x == (NUM_X - 1))
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;	
+}
+
+/*!
+ * checks if NPA is a tile.
+ */
+static int hb_mc_npa_is_tile (npa_t *npa) {
+	if ((npa->y >= 1 && npa->y < NUM_Y) && (npa->x >= 0 && npa->x < NUM_X))
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;	
+}
+
+/*
+ * returns x coordinate of a global network address.
+ */
+static uint32_t hb_mc_global_network_get_x (eva_t eva) {
+	return hb_mc_get_bits(eva, 18, 6); /* TODO: hardcoded */	
+}
+
+/*
+ * returns y coordinate of a global network address.
+ */
+static uint32_t hb_mc_global_network_get_y (eva_t eva) {
+	return hb_mc_get_bits(eva, 24, 6); /* TODO: hardcoded */
+}
+
+/*
+ * returns x coordinate of a DRAM address.
+ */
+static uint32_t hb_mc_dram_get_x (eva_t eva) {
+	return hb_mc_get_bits(eva, 29, 2); /* TODO: hardcoded */
+}
+
+/*
+ * returns y coordinate of a DRAM address.
+ */
+static uint32_t hb_mc_dram_get_y (eva_t eva) {
+	return NUM_Y + 1;
+}
+
+
+/*
+ * returns EPA of a global network address.
+ */
+static uint32_t hb_mc_global_network_get_epa (eva_t eva) {
+	return hb_mc_get_bits(eva, 0, 18) >> 2; /* TODO: hardcoded */ 
+}
+
+/*
+ * returns EPA of a DRAM address.
+ */
+static uint32_t hb_mc_dram_get_epa (eva_t eva) {
+	return hb_mc_get_bits(eva, 2, 27); /* TODO: hardcoded */ 
+}
+
+
+
+/*!
+ * Converts an EVA address to an NPA address.
+ * @param eva_id specifies EVA-NPA mapping.
+ * @param eva EVA address
+ * @param npa pointer to npa_t object where NPA address should be stored.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * This function only supports DRAM and Global Network Address EVAs.
+ */
+int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa) {
+	if (eva_id != 0) {
+		return HB_MC_FAIL; /* invalid eva_id */
+	}
+	else if (hb_mc_is_global_network(eva) == HB_MC_SUCCESS) {
+		uint32_t x = hb_mc_global_network_get_x(eva);
+		uint32_t y = hb_mc_global_network_get_y(eva);
+		uint32_t epa = hb_mc_global_network_get_epa(eva);
+		*npa = {x, y, epa};
+	}
+	else if (hb_mc_eva_is_dram(eva) == HB_MC_SUCCESS) {
+		uint32_t x = hb_mc_dram_get_x(eva);	
+		uint32_t y = hb_mc_dram_get_y(eva);
+		uint32_t epa = hb_mc_dram_get_epa(eva);
+		*npa = {x, y, epa};
+	}
+	else {
+		return HB_MC_FAIL; /* invalid EVA */
+	}
+	return HB_MC_SUCCESS;
+}
+
+
+/*!
+ * Checks if a Vanilla Core EPA is valid.
+ * @param epa.
+ * @return HB_MC_SUCCESS if the EPA is valid and HB_MC_FAIL if the EPA is invalid.
+ * */
+static int hb_mc_valid_epa_tile (uint32_t epa) {
+	if (epa >= 0x1000 && epa <= 0x1FFF) /* TODO: hardcoded */
+		return HB_MC_SUCCESS; /* data memory */
+	else if (epa >= 0x1000000 && epa <= 0x1FFEFFF)	/* TODO: hardcoded */
+		return HB_MC_SUCCESS; /* instruction cache */
+	else if (epa == 0x20000) /* TODO: hardcoded */
+		return HB_MC_SUCCESS; /* FREEZE CSR */
+	else if (epa == 0x20004) /* TODO: hardcoded */
+		return HB_MC_SUCCESS; /* Tile Group Origin X Cord CSR */
+	else if (epa == 0x20008) /* TODO: hardcoded */
+		return HB_MC_FAIL; /* Tile Group Origin Y Cord CSR */
+} 
+
+/*!
+ * Checks if a DRAM EPA is valid.
+ * @param epa.
+ * @return HB_MC_SUCCESS if the EPA is valid and HB_MC_FAIL if the EPA is invalid.
+ * */
+static int hb_mc_valid_epa_dram (uint32_t epa) {
+	uint32_t dram_size = (1 << 27) - 1; /* TODO: hardcoded */
+	uint32_t dram_size_words = dram_size >> 2;
+	if (epa <= dram_size_words)
+		return HB_MC_SUCCESS;
+	else
+		return HB_MC_FAIL;
+
+}
+
+/*!
+ * checks if NPA has valid (x,y) coordinates. 
+ */
+static int hb_mc_npa_is_valid (npa_t *npa) {
+	if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
+		return HB_MC_SUCCESS; /* valid DRAM NPA */
+	else if (hb_mc_npa_is_host(npa) == HB_MC_SUCCESS)
+		return HB_MC_SUCCESS; /* for now, we assume any EPA is valid for the host */
+	else if (hb_mc_npa_is_tile(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_tile(npa->epa) == HB_MC_SUCCESS)
+		return HB_MC_SUCCESS; /* valid Vanilla Core NPA */
+	else 
+		return HB_MC_FAIL;
+}
+
+/*! creates a NPA to DRAM EVA.
+ * @param[in] npa Caller should ensure that this is valid.
+ */
+static eva_t hb_mc_npa_to_eva_dram(const npa_t *npa) {
+	eva_t eva = 0;
+	eva |= (npa->epa << 2);
+	eva |= (npa->x << (2 + 27)); /* TODO: hardcoded */
+	eva |= (1 << 31); /* TODO: hardcoded */
+	return eva;
+}
+
+/*! converts NPA to Global Remote EVA.
+ * @param[in] npa Caller should ensure that this is valid.
+ */
+static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
+	eva_t eva = 0;
+	eva |= (npa->epa << 2);
+	eva |= (npa->x << 18); /* TODO: hardcoded */
+	eva |= (npa->y << 24); /* TODO: hardcoded */
+	eva |= (1 << 30); /* TODO: hardcoded */
+	return eva;
+}
+
+/*!
+ * Converts an NPA to an EVA. 
+ * @param eva_id specified EVA-NPA mapping.
+ * @param npa pointer to npa_t struct to convert.
+ * @param eva pointer to an eva_t that this function should set.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function will fail if the NPA is invalid.
+ */
+int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
+	if (eva_id != 0) {
+		return HB_MC_FAIL; /* invalid eva_id */
+	}
+	else if (hb_mc_npa_is_valid(npa) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL; /* invalid NPA address*/
+	}
+	else if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS) {
+		*eva = hb_mc_npa_to_eva_dram(npa);
+	}
+	else { /* tile or host endpoint */
+		*eva = hb_mc_npa_to_eva_global_remote(npa);
+	}
+	return HB_MC_SUCCESS;
+}
+
+void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
+	while (1) {
+		hb_mc_request_packet_t recv;
+		hb_mc_read_fifo(fd, 1, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
+		
+		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
+			break; /* finish packet received from Hammerblade Manycore */
+	}	
+}
+
+/*!
+ * creates a tile group with a specified origin
+ * @param[out] tiles an array of tiles that will be set in row-order. This should be allocated by the caller
+ * @param[out] the number of tiles in the tile group
+ * @param[in] num_tiles_x the number of columns in the tile group
+ * @param[in] num_tiles_y the number of rows in the tile group
+ * @param[in] origin_x the x coordinate of the tile group's origin
+ * @param[in] origin_y the y coordinate of the tile group's origin 
+ * */
+void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y) {
+	/* create the tile group */
+	for (int i = 0; i < num_tiles_y; i++) {
+		for (int j = 0; j < num_tiles_x; j++) {
+			int index = i * num_tiles_x + j;
+			tiles[index].x = j + origin_x; 
+			tiles[index].y = i + origin_y;
+			tiles[index].origin_x = origin_x;
+			tiles[index].origin_y = origin_y;
+		}
+	}
 }
 

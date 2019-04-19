@@ -1,7 +1,7 @@
 INCLUDES := -I$(SDK_DIR)/userspace/include
-INCLUDES += -I$(HDK_DIR)/common/software/include -I.
+INCLUDES += -I$(HDK_DIR)/common/software/include -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include -I.
 
-CFLAGS  := -std=c11 -fPIC $(INCLUDES)
+CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
 LDLIBS  := -lfpga_mgmt 
 
 HEADERS := bsg_manycore_driver.h
@@ -9,14 +9,22 @@ HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_mem.h
 HEADERS += bsg_manycore_packet.h
 HEADERS += bsg_manycore_errno.h
+HEADERS += bsg_manycore_bits.h
+HEADERS += bsg_manycore_elf.h
+HEADERS += bsg_manycore_memory_manager.h
+HEADERS += bsg_manycore_cuda.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
 OBJECTS += bsg_manycore_mem.o
+OBJECTS += bsg_manycore_bits.o
+OBJECTS += bsg_manycore_elf.o
+OBJECTS += bsg_manycore_memory_manager.o
+OBJECTS += bsg_manycore_cuda.o
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
-	$(CC) $(CFLAGS) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0 $(OBJECTS) $(LDLIBS)	
+	$(CXX) $(CFLAGS) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0 $(OBJECTS) $(LDLIBS)	
 
 install: build
 	mv libbsg_manycore_runtime.so.1.0 /usr/lib64/

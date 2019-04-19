@@ -16,7 +16,15 @@
 #include "bsg_manycore_packet.h"
 #endif 
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size); 
 int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_t *buf, uint32_t size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

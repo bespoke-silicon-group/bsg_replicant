@@ -3,7 +3,12 @@
 int test_dmem_read_write() {
 	uint8_t fd; 
 	hb_mc_init_host(&fd);	
-	
+
+	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
+		printf("failed to initialize host.\n");
+		return HB_MC_FAIL;
+	}
+		
 	/* store data in tile */
 	uint32_t data = 0xABCD;
 	bsg_pr_test_info("Writing to DMEM\n");
@@ -14,6 +19,7 @@ int test_dmem_read_write() {
 		return HB_MC_FAIL;
 	}
 	bsg_pr_test_info("Write successful\n");
+
 	/* read back data */
 	hb_mc_response_packet_t buf[1];
 	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
