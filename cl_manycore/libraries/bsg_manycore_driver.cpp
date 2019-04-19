@@ -16,6 +16,7 @@
 	#include <bsg_manycore_errno.h> 
 	#include <bsg_manycore_elf.h>
 	#include <bsg_manycore_mem.h>
+	#include <bsg_manycore_regs.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
@@ -26,12 +27,15 @@
 	#include "bsg_manycore_errno.h"
 	#include "bsg_manycore_elf.h"
 	#include "bsg_manycore_mem.h"
+	#include "bsg_manycore_regs.h"
 #endif
 
 
 
 static uint8_t NUM_Y = 0; /*! Number of rows in the Manycore. */
 static uint8_t NUM_X = 0; /*! Number of columns in the Manycore. */
+
+#define NUM_FIFO 2 /*! Number of FIFOs connected to the device */
 
 int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva); 
 /*!
@@ -154,8 +158,9 @@ int hb_mc_init_host (uint8_t *fd) {
 	num_dev++;
 
 	/* initialize dimension variables */
-	NUM_X = hb_mc_read32(*fd, MANYCORE_NUM_X);
-	NUM_Y = hb_mc_read32(*fd, MANYCORE_NUM_Y);	
+	NUM_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
+	NUM_Y = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);	
+
 
 	return HB_MC_SUCCESS; 
 }
@@ -169,8 +174,8 @@ int hb_mc_check_dim (uint8_t fd) {
 		fprintf(stderr, "hb_mc_check_dim(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	uint32_t num_x = hb_mc_read32(fd, MANYCORE_NUM_X);
-	uint32_t num_y = hb_mc_read32(fd, MANYCORE_NUM_Y);
+	uint32_t num_x = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG);
+	uint32_t num_y = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_Y_REG);
 	if ((NUM_X == num_y) && (NUM_Y == num_y))
 		return HB_MC_SUCCESS;
 	else
@@ -192,19 +197,20 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 		return HB_MC_FAIL;
 	}	
 	
-	uint16_t init_vacancy = hb_mc_read16(fd, fifo[n][FIFO_VACANCY]);
-
+	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_VACANCY_REG));
+	
 	if (init_vacancy < 4) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
 	for (int i = 0; i < 4; i++) {
-		hb_mc_write32(fd, fifo[n][FIFO_WRITE], packet->words[i]);
+ 		hb_mc_write32(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_WRITE_REG), packet->words[i]);
 	}
 
-	while (hb_mc_read16(fd, fifo[n][FIFO_VACANCY]) != init_vacancy) {
-		hb_mc_write16(fd, fifo[n][FIFO_TRANSMIT_LENGTH], 16);
-	}
+	while (hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_VACANCY_REG)) != init_vacancy) {
+		hb_mc_write16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_TRANSMIT_LENGTH_REG), sizeof(hb_mc_packet_t));
+        }
+
 	return HB_MC_SUCCESS;
 }
 
@@ -221,7 +227,7 @@ int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p) {
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}		
-	*occupancy_p = hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]);
+	*occupancy_p = hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_OCCUPANCY_REG));
 	return HB_MC_SUCCESS;
 }
 
@@ -239,19 +245,19 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 		return HB_MC_FAIL;
 	}		
 
-	while (hb_mc_read16(fd, fifo[n][FIFO_OCCUPANCY]) < 1) {}
+	while (hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_OCCUPANCY_REG)) < 1) {}
 
-	uint16_t receive_length = hb_mc_read16(fd, fifo[n][FIFO_RECEIVE_LENGTH]);
+	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_RECEIVE_LENGTH_REG));
 	if (receive_length != 16) {
 		return HB_MC_FAIL;
 	}
 	
 	#ifdef DEBUG
-	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", fifo[n][FIFO_RECEIVE_LENGTH], receive_length);
+	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_RECEIVE_LENGTH_REG), receive_length);
 	#endif
 
 	for (int i = 0; i < 4; i++) {
-		packet->words[i] = hb_mc_read32(fd, fifo[n][FIFO_READ]);
+		packet->words[i] = hb_mc_read32(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_READ_REG));
 	}
 
 	return HB_MC_SUCCESS;
@@ -273,7 +279,7 @@ int hb_mc_clear_int (uint8_t fd, uint8_t n) {
 		return HB_MC_FAIL;
 	}		
 
-	hb_mc_write32(fd, fifo[n][FIFO_ISR], 0xFFFFFFFF);
+	hb_mc_write32(fd, hb_mc_mmio_get_fifo_reg(n, MMIO_FIFO_ISR_REG), 0xFFFFFFFF);
 	return HB_MC_SUCCESS;
 }
 
@@ -286,7 +292,7 @@ int hb_mc_get_host_credits (uint8_t fd) {
 		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}		
-	return hb_mc_read32(fd, HOST_CREDITS);
+	return hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_HOST_CREDITS_REG);
 }
 
 /*!
@@ -314,7 +320,7 @@ int hb_mc_get_recv_vacancy (uint8_t fd) {
 		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
-	return hb_mc_read32(fd, HOST_RECV_VACANCY);
+	return hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_RECV_VACANCY_REG);
 }
 
 /*!
