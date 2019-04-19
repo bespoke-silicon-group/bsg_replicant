@@ -1,5 +1,5 @@
 #ifndef COSIM
-	#include <bsg_manycore_cuda.h> /* TODO: should be angle brackets */ 
+	#include <bsg_manycore_cuda.h>  
 	#include <bsg_manycore_memory_manager.h>
 	#include <bsg_manycore_elf.h>
 	#include <bsg_manycore_mem.h>
