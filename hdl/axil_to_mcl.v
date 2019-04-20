@@ -504,12 +504,13 @@ module axil_to_mcl
     .width_p     (rom_width_p  ),
     .addr_width_p(lg_rom_els_lp)
   ) configuration_rom (
-    .addr_i(axil_mem_addr_lo[lg_rom_els_lp-1:0]),
+    .addr_i(axil_mem_addr_lo[2+:lg_rom_els_lp]),
     .data_o(rom_data_lo                        )
   );
 
   wire is_accessing_rcv_res_fifo = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_RCV_VACANCY_MC_RES));
   wire is_accessing_rcv_req_fifo = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ));
+  wire is_accessing_host_req_credits = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_REQ_CREDITS));
 
   always_comb begin
     if (is_accessing_rcv_res_fifo) begin
@@ -517,6 +518,9 @@ module axil_to_mcl
     end
     else if (is_accessing_rcv_req_fifo) begin
       axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[1]);
+    end
+    else if (is_accessing_host_req_credits) begin
+      axil_mem_data_li = (32)'(out_credits_lo[0]);
     end
     else begin
       axil_mem_data_li = (32)'(rom_data_lo);

@@ -49,6 +49,7 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
 int hb_mc_clear_int (uint8_t fd, uint8_t n);
 int hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);
+int hb_mc_get_axi_rom (uint8_t fd, uint32_t addr);
 int hb_mc_get_recv_vacancy (uint8_t fd);
 int hb_mc_can_read (uint8_t fd, uint32_t size);
 int hb_mc_check_device (uint8_t fd);

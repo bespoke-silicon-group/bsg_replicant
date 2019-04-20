@@ -40,6 +40,7 @@ package cl_mcl_pkg;
 
   parameter HOST_RCV_VACANCY_MC_REQ = 32'h100;
   parameter HOST_RCV_VACANCY_MC_RES = 32'h200;
+  parameter HOST_REQ_CREDITS = 32'h300;
 
 endpackage : cl_mcl_pkg
 
