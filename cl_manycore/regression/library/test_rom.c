@@ -7,8 +7,9 @@ int compare_word(int size, char *desc[], uint32_t *expected, uint32_t *actual) {
     if(expected[i] != actual[i]) {
       printf("\033[31m Failed \033[0m\n");
       rc = 1;
-    }
-    printf("\033[033m Succeeded \033[0m\n");
+    } 
+    else
+      printf("\033[033m Succeeded \033[0m\n");
   }
   if(rc)
     return HB_MC_FAIL;
