@@ -30,6 +30,16 @@ int read_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
         return HB_MC_FAIL;
 }
 
+int read_axi_rom(uint8_t fd, int idx) {
+	for (int i=0; i<12; i++) {
+		printf("0x%x\n", hb_mc_read32(fd, 0x2000 + i));
+	}
+	printf("0x%x\n", hb_mc_read32(fd, 0x2000 + 0x100));
+	printf("0x%x\n", hb_mc_read32(fd, 0x2000 + 0x200));
+  return HB_MC_SUCCESS;
+}
+
+
 int test_rom () {
 	uint8_t fd = 0;
 	hb_mc_init_host(&fd);
@@ -44,7 +54,7 @@ int test_rom () {
         const char *desc[4] = { "Network X Dimension", "Network Y Dimension", "Host X Coordinate", "Host Y Coordinate" };
         uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, 0, CL_MANYCORE_DIM_Y - 1 };
         uint32_t actual[4] = {};
-        
+       	read_axi_rom(fd, 0x2000); 
         if(read_rom(fd, 4, 4, actual) == HB_MC_FAIL) {
 		return HB_MC_FAIL;
         }

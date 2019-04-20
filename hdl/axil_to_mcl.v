@@ -511,15 +511,15 @@ module axil_to_mcl
   wire is_accessing_rcv_res_fifo = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_RCV_VACANCY_MC_RES));
   wire is_accessing_rcv_req_fifo = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ));
 
-  always_comb
+  always_comb begin
     if (is_accessing_rcv_res_fifo) begin
-      axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[0];
+      axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[0]);
     end
     else if (is_accessing_rcv_req_fifo) begin
-      axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[1];
+      axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[1]);
     end
     else begin
-      axil_mem_data_li = (32)'rom_data_lo;
+      axil_mem_data_li = (32)'(rom_data_lo);
     end
   end
 
