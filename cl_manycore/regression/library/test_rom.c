@@ -46,7 +46,7 @@ int test_rom () {
   // In order, at offset 4, the elements of the array are:
   // NETWORK_DIM_X, NETWORK_DIM_Y, HOST_INTERFACE_COORD_X, HOST_INTERFACE_COORD_Y
   const char *desc[4] = { "Network X Dimension", "Network Y Dimension", "Host X Coordinate", "Host Y Coordinate" };
-  uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, 0, CL_MANYCORE_DIM_Y - 1 };
+  uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, CL_MANYCORE_DIM_X - 1, 0 };
   uint32_t actual[4] = {};
   read_axi_rom(fd, 4, 4, actual); 
   printf("get host credits: 0x%x\n", hb_mc_get_host_credits(fd));

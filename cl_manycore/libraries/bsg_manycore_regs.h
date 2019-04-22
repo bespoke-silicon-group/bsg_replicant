@@ -1,9 +1,12 @@
-#ifndef BSG_MANYCORE_REGS
-#define BSG_MANYCORE_REGS
+#ifndef BSG_MANYCORE_MMIO
+#define BSG_MANYCORE_MMIO
+
+/* TODO: rename file and add hb_mc prefix */
 
 /* PCIe FIFOs */
-#define MMIO_FIFO_HOST 0x0
-#define MMIO_FIFO_DEVICE 0x1
+#define MMIO_FIFO_HOST_IDX 0x0
+#define MMIO_FIFO_DEVICE_IDX 0x1
+
 #define MMIO_FIFO_VACANCY_OFFSET 0xC
 #define MMIO_FIFO_WRITE_OFFSET 0x10
 #define MMIO_FIFO_TRANSMIT_LENGTH_OFFSET 0x14
@@ -12,15 +15,17 @@
 #define MMIO_FIFO_RECEIVE_LENGTH_OFFSET 0x24
 #define MMIO_FIFO_ISR_OFFSET 0x0 
 #define MMIO_FIFO_IER_OFFSET 0x4
+
 #define MMIO_FIFO_ADDRESS_WIDTH 0x1000
-#define hb_mc_mmio_get_fifo_reg(n, reg) (n * MMIO_FIFO_ADDRESS_WIDTH + reg)
+
+#define hb_mc_mmio_fifo_get_reg_addr(n, reg) (n * MMIO_FIFO_ADDRESS_WIDTH + reg)
 
 /* Hammerblade-Manycore ROM */
 #define MMIO_ROM_BASE 0x2000
 #define MMIO_ROM_MANYCORE_DIMENSION_X_OFFSET 0x10
 #define MMIO_ROM_MANYCORE_DIMENSION_Y_OFFSET 0x14
-#define MMIO_ROM_MANYCORE_HOST_INTF_COORD_X_OFFSET 0x18 
-#define MMIO_ROM_MANYCORE_HOST_INTF_COORD_Y_OFFSET 0x1C
+#define MMIO_ROM_HOST_INTF_COORD_X_OFFSET 0x18 
+#define MMIO_ROM_HOST_INTF_COORD_Y_OFFSET 0x1C
 
 /* Flow control */ 
 #define MMIO_CREDITS_BASE 0x2100
