@@ -28,6 +28,24 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 		return;
 	}
 	printf("run_kernel_add(): A's EVA 0x%x, B's EVA: 0x%x, C's EVA: 0x%x\n", A_device, B_device, C_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO, C should be TODO */
+
+	/* zero out the vectors */
+	uint32_t zeros[16] = {};
+	
+	if (hb_mc_device_memcpy (fd, eva_id, (void *) A_device, &zeros[0], size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device) != HB_MC_SUCCESS) { 
+		printf("Could not zero out A.\n");
+		return;
+	}
+	if (hb_mc_device_memcpy (fd, eva_id, (void *) B_device, &zeros[0], size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device) != HB_MC_SUCCESS) { 
+		printf("Could not zero out B.\n");
+		return;
+	}
+	if (hb_mc_device_memcpy (fd, eva_id, (void *) C_device, &zeros[0], size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device) != HB_MC_SUCCESS) { 
+		printf("Could not zero out C.\n");
+		return;
+	}
+
+
  
 	uint32_t A_host[size_buffer]; /* allocate A on the host */ 
 	uint32_t B_host[size_buffer]; /* allocate B on the host */
