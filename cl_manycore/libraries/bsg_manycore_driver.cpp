@@ -166,7 +166,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
-	HOST_INTF_COORD_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_MANYCORE_NUM_X_REG) - 1; /* get host inferface location */
+	HOST_INTF_COORD_X = hb_mc_read32(*fd, MMIO_ROM_BASE + (MMIO_MANYCORE_NUM_X_REG<<2)) - 1; /* get host inferface location */
 	/* TODO: add registers for HOST_INTF_COORD_X, HOST_INTF_COORD_Y in AXI space */
 
 	hb_mc_response_packet_t packets[2];
@@ -332,6 +332,18 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
 
 /*
  * @param fd userspace file descriptor
+ * @return the rom item at idx in axi address space on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_get_axi_rom (uint8_t fd, uint32_t addr) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_get_axi_rom(): device not initialized.\n");
+		return HB_MC_FAIL;
+	}	
+	return hb_mc_read32(fd, MMIO_ROM_BASE + addr);
+}
+
+/*
+ * @param fd userspace file descriptor
  * @return the receive vacancy of the FIFO on success and HB_MC_FAIL on failure.
  */
 int hb_mc_get_recv_vacancy (uint8_t fd) {
@@ -339,7 +351,7 @@ int hb_mc_get_recv_vacancy (uint8_t fd) {
 		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
-	return hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_RECV_VACANCY_REG);
+	return hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_RECV_FIFO_VACANCY_MC_RES_REG);
 }
 
 /*!

@@ -16,9 +16,11 @@
 #define hb_mc_mmio_get_fifo_reg(n, reg) (n * MMIO_FIFO_ADDRESS_WIDTH + reg)
 
 #define MMIO_ROM_BASE 0x2000
-#define MMIO_RECV_VACANCY_REG 0
-#define MMIO_HOST_CREDITS_REG 8
-#define MMIO_MANYCORE_NUM_X_REG 12
-#define MMIO_MANYCORE_NUM_Y_REG 16
+#define MMIO_RECV_FIFO_VACANCY_MC_RES_REG 0x100
+#define MMIO_RECV_FIFO_VACANCY_MC_REQ_REG 0x200
+#define MMIO_HOST_CREDITS_REG 0x300
+// Note: this is the word index, left shift 2 for axi address space
+#define MMIO_MANYCORE_NUM_X_REG 4
+#define MMIO_MANYCORE_NUM_Y_REG 5
 
 #endif
