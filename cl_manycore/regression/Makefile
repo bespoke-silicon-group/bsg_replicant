@@ -1,4 +1,4 @@
-TARGETS = library spmd
+TARGETS = spmd
 
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
 clean: $(CLEAN_TARGETS)
