@@ -33,10 +33,10 @@
 #endif
 
 /* The following values are cached by the API during initialization */
-static uint8_t MANYCORE_DIMENSION_X = 0; 
-static uint8_t MANYCORE_DIMENSION_Y = 0; 
-static uint8_t HOST_INTF_COORD_X = 0; /*! network X coordinate of the host  */
-static uint8_t HOST_INTF_COORD_Y = 0; /*! network Y coordinate of the host */
+static uint8_t hb_mc_manycore_dim_x = 0; 
+static uint8_t hb_mc_manycore_dim_y = 0; 
+static uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
+static uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
 
 int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva); 
 /*!
@@ -159,11 +159,11 @@ int hb_mc_init_host (uint8_t *fd) {
 	num_dev++;
 
 	/* get device information from ROM */
-	HOST_INTF_COORD_X = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
-	HOST_INTF_COORD_Y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
-	MANYCORE_DIMENSION_X = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
-	MANYCORE_DIMENSION_Y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
-	printf("hb_mc_init_host(): host is at (0x%x, 0x%x). Manycore array is 0x%x x 0x%x.\n", HOST_INTF_COORD_X, HOST_INTF_COORD_Y, MANYCORE_DIMENSION_X, MANYCORE_DIMENSION_Y);
+	hb_mc_host_intf_coord_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
+	hb_mc_host_intf_coord_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
+	hb_mc_manycore_dim_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
+	hb_mc_manycore_dim_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
+	printf("hb_mc_init_host(): host is at (0x%x, 0x%x). Manycore array is 0x%x x 0x%x.\n", hb_mc_host_intf_coord_x, hb_mc_host_intf_coord_y, hb_mc_manycore_dim_x, hb_mc_manycore_dim_y);
 
 	return HB_MC_SUCCESS; 
 }
@@ -179,7 +179,7 @@ int hb_mc_check_dim (uint8_t fd) {
 	}
 	uint32_t dimx = hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
 	uint32_t dimy = hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
-	if ((MANYCORE_DIMENSION_X == dimx) && (MANYCORE_DIMENSION_Y == dimy))
+	if ((hb_mc_manycore_dim_x == dimx) && (hb_mc_manycore_dim_y == dimy))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
@@ -205,11 +205,11 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 	
 	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_VACANCY_OFFSET));
 	
-	if (init_vacancy < 4) {
+	if (init_vacancy < sizeof(hb_mc_packet_t)/sizeof(uint32_t)) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < sizeof(hb_mc_packet_t)/sizeof(uint32_t); i++) {
  		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_WRITE_OFFSET), packet->words[i]);
 	}
 
@@ -227,7 +227,7 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
  * @param[out] occupancy_p will be set to the occupancy of the fifo
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
  * */
-int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p) {
+int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint16_t *occupancy_p) {
 	if (dir >= HB_MC_MMIO_FIFO_MAX)
 		return HB_MC_FAIL;
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
@@ -257,7 +257,7 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
 	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_OCCUPANCY_OFFSET)) < 1) {}
 
 	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RECEIVE_LENGTH_OFFSET));
-	if (receive_length != 16) {
+	if (receive_length != sizeof(hb_mc_packet_t)) {
 		return HB_MC_FAIL;
 	}
 	
@@ -265,7 +265,7 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
 	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RECEIVE_LENGTH_OFFSET), receive_length);
 	#endif
 
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < sizeof(hb_mc_packet_t)/sizeof(uint32_t); i++) {
 		packet->words[i] = hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_READ_OFFSET));
 	}
 
@@ -365,7 +365,7 @@ int hb_mc_can_read (uint8_t fd, uint32_t size) {
  * @return the number of columns in the Manycore.
  * */
 uint8_t hb_mc_get_manycore_dimension_x () {
-	return MANYCORE_DIMENSION_X;
+	return hb_mc_manycore_dim_x;
 } 
 
 /*!
@@ -373,7 +373,7 @@ uint8_t hb_mc_get_manycore_dimension_x () {
  * @return the number of rows in the Manycore.
  * */
 uint8_t hb_mc_get_manycore_dimension_y () {
-	return MANYCORE_DIMENSION_Y;
+	return hb_mc_manycore_dim_y;
 }
 /*
  * Formats a Manycore request packet.
@@ -388,14 +388,13 @@ uint8_t hb_mc_get_manycore_dimension_y () {
  * */
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
 	hb_mc_request_packet_set_x_dst(packet, x);
-	hb_mc_request_packet_set_y_dst(packet, y);	
-	hb_mc_request_packet_set_x_src(packet, HOST_INTF_COORD_X);
-	hb_mc_request_packet_set_y_src(packet, HOST_INTF_COORD_Y);
+	hb_mc_request_packet_set_y_dst(packet, y);
+	hb_mc_request_packet_set_x_src(packet, hb_mc_host_intf_coord_x);
+	hb_mc_request_packet_set_y_src(packet, hb_mc_host_intf_coord_y);
 	hb_mc_request_packet_set_data(packet, data);
 	hb_mc_request_packet_set_op_ex(packet, 0xF);
-	hb_mc_request_packet_set_op(packet, opcode);	
-	hb_mc_request_packet_set_addr(packet, addr);		
-
+	hb_mc_request_packet_set_op(packet, opcode);
+	hb_mc_request_packet_set_addr(packet, addr);
 }
 
 /*!
@@ -422,7 +421,7 @@ static int hb_mc_eva_is_dram (eva_t eva) {
  * checks if NPA is in DRAM.
  */
 static int hb_mc_npa_is_dram (npa_t *npa) {
-	if (npa->y == (MANYCORE_DIMENSION_Y + 1))
+	if (npa->y == (hb_mc_manycore_dim_y + 1))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	
@@ -432,7 +431,7 @@ static int hb_mc_npa_is_dram (npa_t *npa) {
  * checks if NPA is in host endpoint.
  */
 static int hb_mc_npa_is_host (npa_t *npa) {
-	if (npa->y == 0 && npa->x == (MANYCORE_DIMENSION_X - 1))
+	if (npa->y == 0 && npa->x == (hb_mc_manycore_dim_x - 1))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	
@@ -442,7 +441,7 @@ static int hb_mc_npa_is_host (npa_t *npa) {
  * checks if NPA is a tile.
  */
 static int hb_mc_npa_is_tile (npa_t *npa) {
-	if ((npa->y >= 1 && npa->y < MANYCORE_DIMENSION_Y) && (npa->x >= 0 && npa->x < MANYCORE_DIMENSION_X))
+	if ((npa->y >= 1 && npa->y < hb_mc_manycore_dim_y) && (npa->x >= 0 && npa->x < hb_mc_manycore_dim_x))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	
@@ -473,7 +472,7 @@ static uint32_t hb_mc_dram_get_x (eva_t eva) {
  * returns y coordinate of a DRAM address.
  */
 static uint32_t hb_mc_dram_get_y (eva_t eva) {
-	return MANYCORE_DIMENSION_Y + 1;
+	return hb_mc_manycore_dim_y + 1;
 }
 
 
@@ -635,11 +634,11 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
  * @param[in] origin_x the x coordinate of the tile group's origin
  * @param[in] origin_y the y coordinate of the tile group's origin 
  * */
-void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y) {
+void create_tile_group(tile_t tiles[], uint8_t num_tiles_x, uint8_t num_tiles_y, uint8_t origin_x, uint8_t origin_y) {
 	/* create the tile group */
-	for (int i = 0; i < num_tiles_y; i++) {
-		for (int j = 0; j < num_tiles_x; j++) {
-			int index = i * num_tiles_x + j;
+	for (uint8_t i = 0; i < num_tiles_y; i++) {
+		for (uint8_t j = 0; j < num_tiles_x; j++) {
+			uint32_t index = i * num_tiles_x + j;
 			tiles[index].x = j + origin_x; 
 			tiles[index].y = i + origin_y;
 			tiles[index].origin_x = origin_x;
