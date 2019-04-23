@@ -16,7 +16,7 @@
 	#include <bsg_manycore_errno.h> 
 	#include <bsg_manycore_elf.h>
 	#include <bsg_manycore_mem.h>
-	#include <bsg_manycore_regs.h>
+	#include <bsg_manycore_mmio.h>
 	#include <bsg_manycore_packet.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
@@ -28,22 +28,15 @@
 	#include "bsg_manycore_errno.h"
 	#include "bsg_manycore_elf.h"
 	#include "bsg_manycore_mem.h"
-	#include "bsg_manycore_regs.h"
+	#include "bsg_manycore_mmio.h"
 	#include "bsg_manycore_packet.h"
 #endif
-
-#define ROM_X 0 /*! the X location of the ROM */
-#define ROM_Y 0 /*! the Y location of the ROM */
-#define ROM_EPA_MANYCORE_DIMENSION_X 4 /*! manycore network X dimension, number of columns of the mesh node */
-#define ROM_EPA_MANYCORE_DIMENSION_Y 5 /*! manycore network Y dimension, number of rows of the mesh node */
 
 /* The following values are cached by the API during initialization */
 static uint8_t MANYCORE_DIMENSION_X = 0; 
 static uint8_t MANYCORE_DIMENSION_Y = 0; 
 static uint8_t HOST_INTF_COORD_X = 0; /*! network X coordinate of the host  */
 static uint8_t HOST_INTF_COORD_Y = 0; /*! network Y coordinate of the host */
-
-#define NUM_FIFO 2 /*! Number of FIFOs connected to the device */
 
 int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva); 
 /*!
@@ -166,10 +159,10 @@ int hb_mc_init_host (uint8_t *fd) {
 	num_dev++;
 
 	/* get device information from ROM */
-	HOST_INTF_COORD_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_ROM_HOST_INTF_COORD_X_OFFSET); 
-	HOST_INTF_COORD_Y = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_ROM_HOST_INTF_COORD_Y_OFFSET);
-	MANYCORE_DIMENSION_X = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_ROM_MANYCORE_DIMENSION_X_OFFSET);	
-	MANYCORE_DIMENSION_Y = hb_mc_read32(*fd, MMIO_ROM_BASE + MMIO_ROM_MANYCORE_DIMENSION_Y_OFFSET);	
+	HOST_INTF_COORD_X = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
+	HOST_INTF_COORD_Y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
+	MANYCORE_DIMENSION_X = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
+	MANYCORE_DIMENSION_Y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
 	printf("hb_mc_init_host(): host is at (0x%x, 0x%x). Manycore array is 0x%x x 0x%x.\n", HOST_INTF_COORD_X, HOST_INTF_COORD_Y, MANYCORE_DIMENSION_X, MANYCORE_DIMENSION_Y);
 
 	return HB_MC_SUCCESS; 
@@ -184,9 +177,9 @@ int hb_mc_check_dim (uint8_t fd) {
 		fprintf(stderr, "hb_mc_check_dim(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
-	uint32_t manycore_dimension_x = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_ROM_MANYCORE_DIMENSION_X_OFFSET);
-	uint32_t manycore_dimension_y = hb_mc_read32(fd, MMIO_ROM_BASE + MMIO_ROM_MANYCORE_DIMENSION_Y_OFFSET);
-	if ((MANYCORE_DIMENSION_X == manycore_dimension_x) && (MANYCORE_DIMENSION_Y == manycore_dimension_y))
+	uint32_t dimx = hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
+	uint32_t dimy = hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
+	if ((MANYCORE_DIMENSION_X == dimx) && (MANYCORE_DIMENSION_Y == dimy))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
@@ -194,10 +187,13 @@ int hb_mc_check_dim (uint8_t fd) {
 
 /*
  * Writes 128B to the nth fifo
- * @return HB_MC_SUCCESS  on success and HB_MC_FAIL on failure.
+ * @param[in] fd userspace file descriptor
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_HOST, or HB_MC_FIFO_TO_DEVICE)
+ * @param[out] packet Manycore packet to write
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
-	if (n >= NUM_FIFO) {
+int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) {
+	if (dir >= HB_MC_MMIO_FIFO_MAX) {
 		fprintf(stderr, "hb_mc_write_fifo(): invalid fifo.\n");
 		return HB_MC_FAIL;
 	}
@@ -207,18 +203,18 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 		return HB_MC_FAIL;
 	}	
 	
-	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_VACANCY_OFFSET));
+	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_VACANCY_OFFSET));
 	
 	if (init_vacancy < 4) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
 	for (int i = 0; i < 4; i++) {
- 		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_WRITE_OFFSET), packet->words[i]);
+ 		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_WRITE_OFFSET), packet->words[i]);
 	}
 
-	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_VACANCY_OFFSET)) != init_vacancy) {
-		hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_TRANSMIT_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
+	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_VACANCY_OFFSET)) != init_vacancy) {
+		hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TRANSMIT_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
         }
 
 	return HB_MC_SUCCESS;
@@ -227,27 +223,30 @@ int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 /*!
  * gets the occupancy of a PCIe FIFO.
  * @param[in] fd userspace file descriptor
- * @param[in] n which FIFO
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_HOST, or HB_MC_FIFO_TO_DEVICE)
  * @param[out] occupancy_p will be set to the occupancy of the fifo
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
  * */
-int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p) {
-	if (n >= NUM_FIFO)
+int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p) {
+	if (dir >= HB_MC_MMIO_FIFO_MAX)
 		return HB_MC_FAIL;
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}		
-	*occupancy_p = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_OCCUPANCY_OFFSET));
+	*occupancy_p = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_OCCUPANCY_OFFSET));
 	return HB_MC_SUCCESS;
 }
 
 
 /*
  * reads 128B from the nth fifo
+ * @param[in] fd userspace file descriptor
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_HOST, or HB_MC_FIFO_TO_DEVICE)
+ * @param[out] packet a hammerblade manycore packet pointer
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
-	if (n >= NUM_FIFO) {
+int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) {
+	if (dir >= HB_MC_MMIO_FIFO_MAX) {
 		return HB_MC_FAIL;
 	}
 
@@ -255,19 +254,19 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 		return HB_MC_FAIL;
 	}		
 
-	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_OCCUPANCY_OFFSET)) < 1) {}
+	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_OCCUPANCY_OFFSET)) < 1) {}
 
-	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_RECEIVE_LENGTH_OFFSET));
+	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RECEIVE_LENGTH_OFFSET));
 	if (receive_length != 16) {
 		return HB_MC_FAIL;
 	}
 	
 	#ifdef DEBUG
-	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_RECEIVE_LENGTH_OFFSET), receive_length);
+	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RECEIVE_LENGTH_OFFSET), receive_length);
 	#endif
 
 	for (int i = 0; i < 4; i++) {
-		packet->words[i] = hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_READ_OFFSET));
+		packet->words[i] = hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_READ_OFFSET));
 	}
 
 	return HB_MC_SUCCESS;
@@ -275,11 +274,11 @@ int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet) {
 
 /* Clears interrupts for an AXI4-Lite FIFO.
  * @param fd userspace file descriptor
- * @param n fifo ID
+ * @param dir fifo direction 
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_clear_int (uint8_t fd, uint8_t n) {
-	if (n >= NUM_FIFO) { 
+int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir) {
+	if (dir >= HB_MC_MMIO_FIFO_MAX) { 
 		fprintf(stderr, "hb_mc_clear_int(): Invalid fifo.\n");
 		return HB_MC_FAIL;
 	}
@@ -289,7 +288,7 @@ int hb_mc_clear_int (uint8_t fd, uint8_t n) {
 		return HB_MC_FAIL;
 	}		
 
-	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(n, MMIO_FIFO_ISR_OFFSET), 0xFFFFFFFF);
+	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), 0xFFFFFFFF);
 	return HB_MC_SUCCESS;
 }
 
@@ -302,7 +301,7 @@ int hb_mc_get_host_credits (uint8_t fd) {
 		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}		
-	return hb_mc_read32(fd, MMIO_CREDITS_BASE + MMIO_CREDITS_HOST_OFFSET);
+	return hb_mc_read32(fd, hb_mc_mmio_credits_get_reg_addr(HB_MC_MMIO_CREDITS_HOST_OFFSET));
 }
 
 /*!
@@ -314,11 +313,10 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
 		fprintf(stderr, "hb_mc_get_host_req_complete(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}		
-	if (hb_mc_get_host_credits(fd) == MAX_CREDITS)
+	if (hb_mc_get_host_credits(fd) == HB_MC_MMIO_MAX_CREDITS)
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
-
 }		
 
 /*!
@@ -332,7 +330,7 @@ int hb_mc_get_axi_rom (uint8_t fd, uint32_t addr) {
 		fprintf(stderr, "hb_mc_get_axi_rom(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
-	return hb_mc_read32(fd, MMIO_ROM_BASE + addr);
+	return hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(addr));
 }
 
 /*!
@@ -345,7 +343,7 @@ int hb_mc_get_recv_vacancy (uint8_t fd) {
 		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
-	return hb_mc_read32(fd, MMIO_CREDITS_BASE + MMIO_CREDITS_FIFO_HOST_VACANCY_OFFSET);
+	return hb_mc_read32(fd, hb_mc_mmio_credits_get_reg_addr(HB_MC_MMIO_CREDITS_FIFO_HOST_VACANCY_OFFSET));
 }
 
 /*!
@@ -494,7 +492,6 @@ static uint32_t hb_mc_dram_get_epa (eva_t eva) {
 }
 
 
-
 /*!
  * Converts an EVA address to an NPA address.
  * @param eva_id specifies EVA-NPA mapping.
@@ -622,7 +619,7 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	while (1) {
 		hb_mc_request_packet_t recv;
-		hb_mc_read_fifo(fd, 1, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
+		hb_mc_read_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
 		
 		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
 			break; /* finish packet received from Hammerblade Manycore */

@@ -42,11 +42,17 @@ typedef struct {
 	uint32_t epa;
 } npa_t;
 
+typedef enum HB_MC_MMIO_FIFO_IDX {
+	HB_MC_MMIO_FIFO_TO_HOST = 0,
+	HB_MC_MMIO_FIFO_TO_DEVICE = 1,
+	HB_MC_MMIO_FIFO_MAX = 2
+} hb_mc_direction_t;
+
 int hb_mc_check_dim (uint8_t fd);      
-int hb_mc_write_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
-int hb_mc_get_fifo_occupancy (uint8_t fd, uint8_t n, uint32_t *occupancy_p);
-int hb_mc_read_fifo (uint8_t fd, uint8_t n, hb_mc_packet_t *packet);
-int hb_mc_clear_int (uint8_t fd, uint8_t n);
+int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet);
+int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p);
+int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet);
+int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir);
 int hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);
 int hb_mc_get_axi_rom (uint8_t fd, uint32_t addr);
@@ -64,7 +70,6 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};
 
-#define MAX_CREDITS 16
 
 #ifdef __cplusplus
 }

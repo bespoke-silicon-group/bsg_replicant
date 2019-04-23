@@ -21,7 +21,8 @@ static int hb_mc_load_packets(uint8_t fd, hb_mc_packet_t *packets, uint32_t num_
 	}
 	
 	for (int i = 0; i < num_packets; i++) {
-		if (hb_mc_write_fifo(fd, 0, &packets[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, 
+					&packets[i]) != HB_MC_SUCCESS) {
 			return HB_MC_FAIL;
 		}
 	}
@@ -161,7 +162,7 @@ int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 		
 	hb_mc_packet_t freeze; 
 	hb_mc_format_request_packet(&freeze.request, 1 << (EPA_BYTE_ADDR_WIDTH-3), 1, x, y, OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, 0, &freeze) != HB_MC_SUCCESS)
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
 		return HB_MC_SUCCESS;
@@ -182,7 +183,8 @@ int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 		
 	hb_mc_packet_t unfreeze; 
 	hb_mc_format_request_packet(&unfreeze.request, 1 << (EPA_BYTE_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, 0, &unfreeze) != HB_MC_SUCCESS)
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST,
+				&unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
 		return HB_MC_SUCCESS;
@@ -205,10 +207,10 @@ int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 	hb_mc_packet_t packet_origin_x, packet_origin_y;		
 	hb_mc_format_request_packet(&packet_origin_x.request, (1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_X, origin_x, x, y, OP_REMOTE_STORE);
 	hb_mc_format_request_packet(&packet_origin_y.request, (1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_Y, origin_y, x, y, OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, 0, &packet_origin_x) != HB_MC_SUCCESS) {
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_x) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
-	if (hb_mc_write_fifo(fd, 0, &packet_origin_y) != HB_MC_SUCCESS) {
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_y) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -229,7 +231,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_format_request_packet(&tag.request, 1 << (EPA_TAG_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
-		if (hb_mc_write_fifo(fd, 0, &tag) != HB_MC_SUCCESS) {	
+		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &tag) != HB_MC_SUCCESS) {	
 			return HB_MC_FAIL;
 		}
 	}
