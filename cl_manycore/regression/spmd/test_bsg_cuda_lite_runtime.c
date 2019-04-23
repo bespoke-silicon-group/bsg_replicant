@@ -69,7 +69,7 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 	}
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / num_tiles};
-	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, getenv("ELF_CUDA_ADD"), tiles, num_tiles); /* launch the kernel */
+	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
 
 	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 	uint32_t C_host[size_buffer];
@@ -105,12 +105,16 @@ int test_add_kernel () {
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 1 x 1 tile group at (0, 1) */
 	eva_id_t eva_id = 0;
 	
-	if (hb_mc_init_device(fd, eva_id, getenv("ELF_CUDA_ADD"), &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+
+	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/" "bsg_cuda_lite_runtime/main.riscv";
+
+
+	if (hb_mc_init_device(fd, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return HB_MC_FAIL;
 	}  
 
-	run_kernel_add(fd, eva_id, getenv("ELF_CUDA_ADD"), tiles, num_tiles);
+	run_kernel_add(fd, eva_id, ELF_CUDA_ADD, tiles, num_tiles);
 	
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
 	return HB_MC_SUCCESS; 
