@@ -42,7 +42,7 @@ typedef struct {
 	uint32_t epa;
 } npa_t;
 
-typedef enum HB_MC_MMIO_FIFO_IDX {
+typedef enum __hb_mc_direction_t {
 	HB_MC_MMIO_FIFO_TO_HOST = 0,
 	HB_MC_MMIO_FIFO_TO_DEVICE = 1,
 	HB_MC_MMIO_FIFO_MAX = 2
@@ -61,7 +61,7 @@ int hb_mc_can_read (uint8_t fd, uint32_t size);
 int hb_mc_check_device (uint8_t fd);
 uint8_t hb_mc_get_manycore_dimension_x ();
 uint8_t hb_mc_get_manycore_dimension_y (); 
-void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode);
+void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
 void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);

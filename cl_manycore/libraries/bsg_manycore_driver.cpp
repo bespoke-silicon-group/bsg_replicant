@@ -386,13 +386,13 @@ uint8_t hb_mc_get_manycore_dimension_y () {
  * @return array of bytes that form the Manycore packet.
  * assumes all fields are <= 32
  * */
-void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, uint8_t opcode) {
+void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode) {
 	hb_mc_request_packet_set_x_dst(packet, x);
 	hb_mc_request_packet_set_y_dst(packet, y);
 	hb_mc_request_packet_set_x_src(packet, hb_mc_host_intf_coord_x);
 	hb_mc_request_packet_set_y_src(packet, hb_mc_host_intf_coord_y);
 	hb_mc_request_packet_set_data(packet, data);
-	hb_mc_request_packet_set_op_ex(packet, 0xF);
+	hb_mc_request_packet_set_mask(packet, HB_MC_PACKET_REQUEST_MASK_WORD);
 	hb_mc_request_packet_set_op(packet, opcode);
 	hb_mc_request_packet_set_addr(packet, addr);
 }

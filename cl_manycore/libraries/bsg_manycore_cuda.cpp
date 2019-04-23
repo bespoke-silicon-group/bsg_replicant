@@ -295,7 +295,7 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 			return HB_MC_FAIL; 
 
 
-		npa_t host_npa = {(uint32_t) hb_mc_get_manycoree_dimension_x() - 1, 0, FINISH_ADDRESS};
+		npa_t host_npa = {(uint32_t) hb_mc_get_manycore_dimension_x() - 1, 0, FINISH_ADDRESS};
 		eva_t host_eva;
 		error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
 		if (error != HB_MC_SUCCESS)

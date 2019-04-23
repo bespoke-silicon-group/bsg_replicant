@@ -3,12 +3,32 @@
 	#include <bsg_manycore_driver.h>
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_errno.h>
+	#include <bsg_manycore_packet.h>
 #else
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_loader.h"
 	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_packet.h"
 #endif
+
+static uint32_t EPA_BYTE_ADDR_WIDTH = 18;
+static uint32_t CSR_TGO_X = 1;
+static uint32_t CSR_TGO_Y = 2;
+
+static uint32_t EPA_TAG_ADDR_WIDTH = 30;
+
+#define  DMEM_BASE 0x1000
+
+typedef enum __hb_mc_loader_elf_field_t{
+	HB_MC_LOADER_ELF_DATA_ID = 0,
+	HB_MC_LOADER_ELF_TEXT_ID = 1
+} hb_mc_loader_elf_field_t;
+
+typedef enum __hb_mc_csr_freeze_t{
+        HB_MC_CSR_FREEZE = 0,
+        HB_MC_CSR_UNFREEZE = 1
+} hb_mc_csr_freeze_t;
 
 #define ICACHE_BASE_EPA 1 << 22 /* The EPA of a tile's icache entries */
 
@@ -85,7 +105,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 	
 	for (unsigned i = 0; i < eh->e_phnum; i++) { 
 		if(ph[i].p_type == PT_LOAD && ph[i].p_memsz) { 
-			if (i == TEXT) {
+			if (i == HB_MC_LOADER_ELF_TEXT_ID) {
 				uint32_t text_segment[ph[i].p_memsz / sizeof(uint32_t)];
 				if (ph[i].p_filesz) { 
 					if (size < ph[i].p_offset + ph[i].p_filesz)
@@ -95,13 +115,13 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
 					uint32_t addr = (ofs) >> 2; 
 					uint32_t data = text_segment[ofs/4];
-					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | ICACHE_BASE_EPA, data, x, y, OP_REMOTE_STORE);
+					hb_mc_format_request_packet(&packets_icache[ofs/4].request, addr | ICACHE_BASE_EPA, data, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 					if (init_dram == HB_MC_SUCCESS) {
-						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_manycore_dimension_y() + 1, OP_REMOTE_STORE);
+						hb_mc_format_request_packet(&packets_dram[ofs/4].request, addr, data, 0, hb_mc_get_manycore_dimension_y() + 1, HB_MC_PACKET_OP_REMOTE_STORE);
 					}
 				}
 			}
-			else if (i == DATA) { 
+			else if (i == HB_MC_LOADER_ELF_DATA_ID) { 
 				uint32_t data_segment[ph[i].p_memsz / sizeof(uint32_t)];
 				if (ph[i].p_filesz) { 
 					if (size < ph[i].p_offset + ph[i].p_filesz)
@@ -111,7 +131,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += 4) {
 					uint32_t addr = (DMEM_BASE + ofs) >> 2;
 					uint32_t data = data_segment[ofs/4];
-					hb_mc_format_request_packet(&packets_data[ofs/4].request, addr, data, x, y, OP_REMOTE_STORE);
+					hb_mc_format_request_packet(&packets_data[ofs/4].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 				}
 			}
 		}
@@ -128,9 +148,9 @@ int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8
 		return HB_MC_FAIL; /* 0 tiles */ 
 	
 	uint32_t text_size, data_size;
-	if (hb_mc_get_elf_segment_size(filename, TEXT, &text_size) != HB_MC_SUCCESS)	
+	if (hb_mc_get_elf_segment_size(filename, HB_MC_LOADER_ELF_TEXT_ID, &text_size) != HB_MC_SUCCESS)	
 		return HB_MC_FAIL;
-	else if (hb_mc_get_elf_segment_size(filename, DATA, &data_size) != HB_MC_SUCCESS)
+	else if (hb_mc_get_elf_segment_size(filename, HB_MC_LOADER_ELF_DATA_ID, &data_size) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	
 	hb_mc_packet_t packets_icache[text_size];
@@ -161,7 +181,10 @@ int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 	}
 		
 	hb_mc_packet_t freeze; 
-	hb_mc_format_request_packet(&freeze.request, 1 << (EPA_BYTE_ADDR_WIDTH-3), 1, x, y, OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&freeze.request, 
+				1 << (EPA_BYTE_ADDR_WIDTH-3),
+				HB_MC_CSR_FREEZE,
+				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
@@ -182,7 +205,10 @@ int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 	}
 		
 	hb_mc_packet_t unfreeze; 
-	hb_mc_format_request_packet(&unfreeze.request, 1 << (EPA_BYTE_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&unfreeze.request, 
+				1 << (EPA_BYTE_ADDR_WIDTH-3),
+				HB_MC_CSR_UNFREEZE, 
+				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST,
 				&unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
@@ -205,8 +231,14 @@ int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 	}
 	
 	hb_mc_packet_t packet_origin_x, packet_origin_y;		
-	hb_mc_format_request_packet(&packet_origin_x.request, (1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_X, origin_x, x, y, OP_REMOTE_STORE);
-	hb_mc_format_request_packet(&packet_origin_y.request, (1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_Y, origin_y, x, y, OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&packet_origin_x.request, 
+				(1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_X,
+				origin_x, x, y,
+				HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&packet_origin_y.request,
+				(1 << (EPA_BYTE_ADDR_WIDTH-3)) + CSR_TGO_Y, 
+				origin_y, x, y, 
+				HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_x) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
@@ -228,7 +260,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 		return HB_MC_FAIL;
 	}
 	hb_mc_packet_t tag;	
-	hb_mc_format_request_packet(&tag.request, 1 << (EPA_TAG_ADDR_WIDTH-3), 0, x, y, OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&tag.request, 1 << (EPA_TAG_ADDR_WIDTH-3), 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
 		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &tag) != HB_MC_SUCCESS) {	

@@ -1,5 +1,5 @@
 REGRESSION_TESTS_TYPE = library
-C_REGRESSION_TESTS = test_dmem_read_write test_rom
+C_REGRESSION_TESTS = test_struct_size test_dmem_read_write test_rom 
 CXX_REGRESSION_TESTS = 
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \

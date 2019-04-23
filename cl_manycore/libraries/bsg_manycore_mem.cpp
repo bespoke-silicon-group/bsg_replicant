@@ -30,7 +30,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = 0; /* unused */
-		hb_mc_format_request_packet(&requests[i].request, addr, data, x, y, OP_REMOTE_LOAD);
+		hb_mc_format_request_packet(&requests[i].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_LOAD);
 	} 
 	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
@@ -69,7 +69,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = buf[i];
-		hb_mc_format_request_packet(&packets[i].request, addr, data, x, y, OP_REMOTE_STORE);
+		hb_mc_format_request_packet(&packets[i].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	} 
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {

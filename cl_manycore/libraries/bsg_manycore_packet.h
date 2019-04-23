@@ -26,23 +26,29 @@ extern "C" {
  * The raw request packets that are used to initiate communications between the manycore and the host.
  * You should not read from any of the fields directly, instead use the accessor functions.
  */
+
+typedef enum __hb_mc_packet_op_t {
+	HB_MC_PACKET_OP_REMOTE_LOAD = 0,
+	HB_MC_PACKET_OP_REMOTE_STORE = 1
+} hb_mc_packet_op_t;
+
+typedef enum __hb_mc_packet_mask_t {
+	HB_MC_PACKET_REQUEST_MASK_BYTE = 0x1,
+	HB_MC_PACKET_REQUEST_MASK_SHORT = 0x3,
+	HB_MC_PACKET_REQUEST_MASK_WORD = 0xF
+} hb_mc_packet_mask_t;
+
 typedef struct request_packet {
         uint8_t  x_dst; //!< x coordinate of the responder
         uint8_t  y_dst; //!< y coordinate of the responder
         uint8_t  x_src; //!< x coordinate of the requester
         uint8_t  y_src; //!< y coordinate of the requester
         uint32_t data;  //!< packet's payload data
-        uint8_t  op_ex; //!< 4-bit byte mask
-        uint8_t  op;    //!< opcode
+        hb_mc_packet_mask_t mask:8; //!< 4-bit byte mask (8 bits in struct)
+        hb_mc_packet_op_t  op:8;    //!< opcode (8 bits in struct)
         uint32_t addr;  //!< address field (EPA)       
         uint8_t  reserved[2];
 }  __attribute__((packed)) hb_mc_request_packet_t;
-
-/**
- * Legal opcode values for request packets
- */
-#define RQST_OP_REMOTE_LOAD  0
-#define RQST_OP_REMOTE_STORE 1
 
 /**
  * Get the X coordinate of the requester from a request packet
@@ -89,9 +95,9 @@ static inline uint8_t hb_mc_request_packet_get_y_src(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the extended opcode of packet
  */
-static inline uint8_t hb_mc_request_packet_get_op_ex(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_mask(hb_mc_request_packet_t *packet)
 {
-        return packet->op_ex;
+        return packet->mask;
 }
 
 /**
@@ -134,7 +140,7 @@ static inline uint32_t hb_mc_request_packet_get_data_valid(hb_mc_request_packet_
 {
 	uint32_t valid = 0;
 	for (int i = 0; i < 4; i++) { /* TODO: hardcoded */		
-		if (hb_mc_get_bits(packet->op_ex, i, 1) == 1)
+		if (hb_mc_get_bits(packet->mask, i, 1) == 1)
 			valid |=  hb_mc_get_bits(packet->data, i*8, 8);
 	}
         return le32toh(valid); 
@@ -181,13 +187,13 @@ static inline void hb_mc_request_packet_set_y_src(hb_mc_request_packet_t *packet
 }
 
 /**
- * Set the extended opcode in a request packet
+ * Set the data mask in a request packet
  * @param[in] packet a request packet
- * @param[in] op_ex an extend opcode
+ * @param[in] mask a byte-mask value
  */
-static inline void hb_mc_request_packet_set_op_ex(hb_mc_request_packet_t *packet, uint8_t op_ex)
+static inline void hb_mc_request_packet_set_mask(hb_mc_request_packet_t *packet, hb_mc_packet_mask_t mask)
 {
-        packet->op_ex = op_ex;
+        packet->mask = mask;
 }
 
 /**
@@ -195,13 +201,13 @@ static inline void hb_mc_request_packet_set_op_ex(hb_mc_request_packet_t *packet
  * @param[in] packet a request packet
  * @param[in] op an opcode
  */
-static inline void hb_mc_request_packet_set_op(hb_mc_request_packet_t *packet, uint8_t op)
+static inline void hb_mc_request_packet_set_op(hb_mc_request_packet_t *packet, hb_mc_packet_op_t op)
 {
         packet->op = op;
 }
 
 /**
- * Set the opcode in a request packet
+ * Set the addess in a request packet
  * @param[in] packet a request packet
  * @param[in] addr a valid manycore end point address (EPA)
  */
@@ -211,13 +217,13 @@ static inline void hb_mc_request_packet_set_addr(hb_mc_request_packet_t *packet,
 }
 
 /**
- * Set the opcode in a request packet
+ * Set the data in a request packet
  * @param[in] packet a request packet
  * @param[in] data packet data
  */
 static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet, uint32_t data)
 {
-        packet->data = htole32(data); // byte mask?
+        packet->data = htole32(data); // TODO: byte mask?
 }
 
 /**
