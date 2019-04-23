@@ -34,13 +34,14 @@ static void run_kernel_packet (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 	uint8_t host_x = hb_mc_get_num_x()-1;
 	uint8_t host_y = 0; 
 
-
+	fprintf(stderr, "Waiting for packets ... \n");
 	while( array_reduce(packets, num_tiles) != 1){
 		hb_mc_read_fifo(fd, 1, (hb_mc_packet_t *) &recv); // Wait for manycore to send a packet 
 		printf ("Received Packet: src (%d,%d), dst (%d,%d), data: 0x%x, addr: 0x%x.\n", recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.data, recv.addr); 
 		if (recv.x_dst == host_x && recv.y_dst == host_y && recv.data < num_tiles && recv.addr == 0x2000) /* arbitrary address used in bsg_cuda_lite_runtime_packet/main.riscv */
 			packets[recv.data] = 1;
 	}
+	fprintf(stderr, "Waiting for finish packet...\n");
 
 	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 
@@ -56,10 +57,12 @@ int test_packet_kernel () {
 
 	uint8_t fd; 
 	hb_mc_init_host(&fd);
+	fprintf(stderr, "ran hb_mc_init_host().\n");
 	/* run on a 2 x 2 grid of tiles starting at (0, 1) */
 	tile_t tiles[4];
 	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 2 x 2 tile group at (0, 1) */
+	fprintf(stderr, "ran create_tile_group().\n");
 	eva_id_t eva_id = 0;
 	
 	char* ELF_CUDA_PACKET = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/" "bsg_cuda_lite_runtime_packet/main.riscv";
@@ -68,9 +71,9 @@ int test_packet_kernel () {
 		printf("could not initialize device.\n");
 		return HB_MC_FAIL;
 	}  
-
+	fprintf(stderr, "ran hb_mc_init_device().\n");
 	run_kernel_packet(fd, eva_id, ELF_CUDA_PACKET, tiles, num_tiles);
-	
+	fprintf(stderr, "ran run_kernel_packet().\n");
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
 	return HB_MC_SUCCESS; 
 }

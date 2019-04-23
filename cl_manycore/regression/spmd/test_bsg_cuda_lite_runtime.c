@@ -82,7 +82,10 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 	
 	printf("Finished vector addition: \n");
 	for (int i = 0; i < size_buffer; i++) {
-		printf("A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
+		if (A_host[i] + B_host[i] == C_host[i])
+			printf("Match -- A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
+		else
+			printf("Mismatch -- A[%d] + B[%d] =  0x%x + 0x%x != 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
 	}	
 
 	hb_mc_device_free(eva_id, A_device); /* free A on device */
