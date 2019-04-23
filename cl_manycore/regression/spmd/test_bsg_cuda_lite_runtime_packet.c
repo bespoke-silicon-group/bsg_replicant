@@ -24,7 +24,7 @@ static void run_kernel_packet (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 	
 
 	int argv = 0;
-	int error = hb_mc_device_launch(fd, eva_id, "kernel_packet", 0, argv, getenv("ELF_CUDA_PACKET"), tiles, num_tiles); /* launch the kernel */
+	int error = hb_mc_device_launch(fd, eva_id, "kernel_packet", 0, argv, elf, tiles, num_tiles); /* launch the kernel */
 
 	
 	uint8_t packets[16] = {}; /* 16 is the maximum number of tiles */
@@ -62,12 +62,14 @@ int test_packet_kernel () {
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 2 x 2 tile group at (0, 1) */
 	eva_id_t eva_id = 0;
 	
-	if (hb_mc_init_device(fd, eva_id, getenv("ELF_CUDA_PACKET"), &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+	char* ELF_CUDA_PACKET = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/" "bsg_cuda_lite_runtime_packet/main.riscv";
+
+	if (hb_mc_init_device(fd, eva_id, ELF_CUDA_PACKET, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return HB_MC_FAIL;
 	}  
 
-	run_kernel_packet(fd, eva_id, getenv("ELF_CUDA_PACKET"), tiles, num_tiles);
+	run_kernel_packet(fd, eva_id, ELF_CUDA_PACKET, tiles, num_tiles);
 	
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
 	return HB_MC_SUCCESS; 
