@@ -131,6 +131,7 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles) {
+
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* eva_id not supported */
 	} 
