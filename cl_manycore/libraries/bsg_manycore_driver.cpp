@@ -560,3 +560,4 @@ uint8_t hb_mc_get_manycore_dimension_x () {
 uint8_t hb_mc_get_manycore_dimension_y () {
 	return hb_mc_manycore_dim_y;
 }
+
