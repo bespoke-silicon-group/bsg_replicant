@@ -26,8 +26,8 @@ typedef enum __hb_mc_loader_elf_field_t{
 } hb_mc_loader_elf_field_t;
 
 typedef enum __hb_mc_csr_freeze_t{
-        HB_MC_CSR_FREEZE = 0,
-        HB_MC_CSR_UNFREEZE = 1
+        HB_MC_CSR_FREEZE = 1,
+        HB_MC_CSR_UNFREEZE = 0
 } hb_mc_csr_freeze_t;
 
 #define ICACHE_BASE_EPA 1 << 22 /* The EPA of a tile's icache entries */
