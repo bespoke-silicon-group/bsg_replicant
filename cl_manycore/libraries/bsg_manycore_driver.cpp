@@ -227,6 +227,7 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 
 	// DR: I Suspect the bug here is multiple packet vacancy
 	//while (hb_mc_fifo_vacancy(fd, dir) != init_vacancy) {
+	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
 	hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
 	while(!(hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET)) & (1<<27)));
 	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), (1<<27));
