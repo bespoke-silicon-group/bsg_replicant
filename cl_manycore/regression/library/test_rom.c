@@ -43,6 +43,8 @@ int read_axi_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
 int test_rom () {
   uint8_t fd = 0;
 
+  hb_mc_init_host(&fd);
+
   // In order, at offset 4, the elements of the array are:
   // NETWORK_DIM_X, NETWORK_DIM_Y, HOST_INTERFACE_COORD_X, HOST_INTERFACE_COORD_Y
   const char *desc[4] = { "Network X Dimension", "Network Y Dimension", "Host X Coordinate", "Host Y Coordinate" };
@@ -53,8 +55,6 @@ int test_rom () {
   bsg_pr_test_info("Comparing AXI space results:\n");
   compare_word(4, desc, expected, actual);
   printf("Read RCV_FIFO_MC_RES: %x\n", hb_mc_get_recv_vacancy(fd));
-  
-  hb_mc_init_host(&fd);
 
   bsg_pr_test_info("Readback manycore link monitor register\n");
   uint32_t recv_vacancy = hb_mc_get_recv_vacancy(fd);
