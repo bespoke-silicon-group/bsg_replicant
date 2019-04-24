@@ -41,6 +41,7 @@ int read_axi_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
 
 
 int test_rom () {
+  int rc = 0;
   uint8_t fd = 0;
 
   hb_mc_init_host(&fd);
@@ -53,7 +54,11 @@ int test_rom () {
   read_axi_rom(fd, 4, 4, actual); 
   printf("get host credits: 0x%x\n", hb_mc_get_host_credits(fd));
   bsg_pr_test_info("Comparing AXI space results:\n");
-  compare_word(4, desc, expected, actual);
+  rc = compare_word(4, desc, expected, actual);
+  if(rc != HB_MC_SUCCESS){
+    return HB_MC_FAIL;
+  }
+ 
   printf("Read RCV_FIFO_MC_RES: %x\n", hb_mc_get_recv_vacancy(fd));
 
   bsg_pr_test_info("Readback manycore link monitor register\n");
@@ -65,7 +70,10 @@ int test_rom () {
     return HB_MC_FAIL;
   }
   bsg_pr_test_info("Comparing NPA space results:\n");
-  compare_word(4, desc, expected, actual);
+  rc = compare_word(4, desc, expected, actual);
+  if(rc != HB_MC_SUCCESS){
+    return HB_MC_FAIL;
+  }
 
   return HB_MC_SUCCESS;
 }

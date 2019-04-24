@@ -131,7 +131,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	int slot_id = 0, pf_id = FPGA_APP_PF, write_combine = 0, bar_id = APP_PF_BAR0;
 	pci_bar_handle_t handle;
 	fpga_pci_attach(slot_id, pf_id, bar_id, write_combine, &handle);
-	fpga_pci_get_address(handle, 0, 0x4, (void **) &ocl_table[fd]);	
+	fpga_pci_get_address(handle, 0, 0x4000, (void **) &ocl_table[fd]);	
 	#ifdef DEBUG
 	fprintf(stderr, "hb_mc_mmap_ocl(): map address is %p\n", ocl_table[fd]);
 	#endif
@@ -160,11 +160,22 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
+	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
+	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
 	/* get device information from ROM */
-	hb_mc_host_intf_coord_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
-	hb_mc_host_intf_coord_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
-	hb_mc_manycore_dim_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
-	hb_mc_manycore_dim_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
+	hb_mc_host_intf_coord_x = 3;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
+	hb_mc_host_intf_coord_y = 0;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
+	hb_mc_manycore_dim_x = 4;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
+	if((hb_mc_manycore_dim_x <= 0) || (hb_mc_manycore_dim_x > 32)){
+		fprintf(stderr, "hb_mc_init_host(): Questionable manycore X dimension: %d.\n", hb_mc_manycore_dim_x);
+		return HB_MC_FAIL;
+	}
+
+	hb_mc_manycore_dim_y = 4;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
+	if((hb_mc_manycore_dim_y <= 0) || (hb_mc_manycore_dim_y > 32)){
+		fprintf(stderr, "hb_mc_init_host(): Questionable manycore Y dimension: %d.\n", hb_mc_manycore_dim_y);
+		return HB_MC_FAIL;
+	}
 
 	return HB_MC_SUCCESS; 
 }
@@ -187,16 +198,6 @@ int hb_mc_check_dim (uint8_t fd) {
 }
 
 /*
- * Gets the vacancy of the nth fifo
- * @param[in] fd userspace file descriptor
- * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
- * @return vacancy (in 32-bit words)
- * */
-uint16_t hb_mc_fifo_write_vacancy (uint8_t fd, hb_mc_direction_t dir) {
-	return hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET));
-}
-
-/*
  * Writes 128B to the nth fifo
  * @param[in] fd userspace file descriptor
  * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
@@ -214,24 +215,24 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 		return HB_MC_FAIL;
 	}	
 	
-	uint16_t init_vacancy = hb_mc_fifo_write_vacancy(fd, dir);
+	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET));
 	
 	if (init_vacancy < (sizeof(hb_mc_packet_t)/sizeof(uint32_t))) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
 
+	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), (1<<27));
+
 	for (int i = 0; i < (sizeof(hb_mc_packet_t)/sizeof(uint32_t)); i++) {
  		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_DATA_OFFSET), packet->words[i]);
 	}
 
-	// DR: I Suspect the bug here is multiple packet vacancy
-	//while (hb_mc_fifo_vacancy(fd, dir) != init_vacancy) {
-	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
-	hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
-	while(!(hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET)) & (1<<27)));
+	while(!(hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET)) & (1<<27))){
+		hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
+	}
+
 	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), (1<<27));
-	//}
 
 	return HB_MC_SUCCESS;
 }
@@ -253,7 +254,6 @@ int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint16_t *occup
 	return HB_MC_SUCCESS;
 }
 
-
 /*
  * reads 128B from the nth fifo
  * @param[in] fd userspace file descriptor
@@ -269,8 +269,8 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}		
-
-	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET)) < 1) {}
+	
+	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET)) < 1); 
 
 	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET));
 	if (receive_length != sizeof(hb_mc_packet_t)) {
