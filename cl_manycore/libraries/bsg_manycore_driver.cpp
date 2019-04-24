@@ -18,6 +18,7 @@
 	#include <bsg_manycore_mem.h>
 	#include <bsg_manycore_mmio.h>
 	#include <bsg_manycore_packet.h>
+	#include <bsg_manycore_epa.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
@@ -30,6 +31,7 @@
 	#include "bsg_manycore_mem.h"
 	#include "bsg_manycore_mmio.h"
 	#include "bsg_manycore_packet.h"
+	#include "bsg_manycore_epa.h"
 #endif
 
 /* The following values are cached by the API during initialization */
@@ -163,7 +165,6 @@ int hb_mc_init_host (uint8_t *fd) {
 	hb_mc_host_intf_coord_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
 	hb_mc_manycore_dim_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
 	hb_mc_manycore_dim_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
-	printf("hb_mc_init_host(): host is at (0x%x, 0x%x). Manycore array is 0x%x x 0x%x.\n", hb_mc_host_intf_coord_x, hb_mc_host_intf_coord_y, hb_mc_manycore_dim_x, hb_mc_manycore_dim_y);
 
 	return HB_MC_SUCCESS; 
 }
@@ -647,3 +648,110 @@ void create_tile_group(tile_t tiles[], uint8_t num_tiles_x, uint8_t num_tiles_y,
 	}
 }
 
+
+/*!
+ * Freezes a Vanilla Core Endpoint.
+ * @param[in] fd userspace file descriptor.
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+		
+	hb_mc_packet_t freeze; 
+	hb_mc_format_request_packet(&freeze.request, 
+				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, 
+								HB_MC_TILE_EPA_CSR_FREEZE_OFFSET),
+				HB_MC_CSR_FREEZE,
+				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &freeze) != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+	else
+		return HB_MC_SUCCESS;
+
+}
+
+/*!
+ * Unfreezes a Vanilla Core Endpoint.
+ * @param[in] fd userspace file descriptor.
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+		
+	hb_mc_packet_t unfreeze; 
+	hb_mc_format_request_packet(&unfreeze.request, 
+				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, 
+								HB_MC_TILE_EPA_CSR_FREEZE_OFFSET),
+				HB_MC_CSR_UNFREEZE, 
+				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST,
+				&unfreeze) != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+	else
+		return HB_MC_SUCCESS;
+}
+
+/*!
+ * Sets a Vanilla Core Endpoint's tile group's origin.
+ * @param[in] fd userspace file descriptor.
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @param[in] origin_x x coordinate of tile group's origin
+ * @param[in] origin_y y coordinate of tile groups origin
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+	
+	hb_mc_packet_t packet_origin_x, packet_origin_y;		
+	hb_mc_format_request_packet(&packet_origin_x.request, 
+				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
+								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET),
+				origin_x, x, y,
+				HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&packet_origin_y.request,
+				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
+								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET),
+				origin_y, x, y, 
+				HB_MC_PACKET_OP_REMOTE_STORE);
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_x) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_y) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+	return HB_MC_SUCCESS;
+}
+
+/*!
+ * Initializes a Vanilla Core Endpoint's victim cache tag.
+ * @param[in] fd userspace file descriptor.
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+	hb_mc_packet_t tag;	
+	uint32_t vcache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_TAG_OFFSET);
+	hb_mc_format_request_packet(&tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+		
+	for (int i = 0; i < 4; i++) {
+		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &tag) != HB_MC_SUCCESS) {	
+			return HB_MC_FAIL;
+		}
+	}
+	return HB_MC_SUCCESS;
+}

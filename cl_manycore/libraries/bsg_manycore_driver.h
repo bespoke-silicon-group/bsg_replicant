@@ -64,8 +64,12 @@ uint8_t hb_mc_get_manycore_dimension_y ();
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
+int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
 void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);
 int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
+int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
 
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};

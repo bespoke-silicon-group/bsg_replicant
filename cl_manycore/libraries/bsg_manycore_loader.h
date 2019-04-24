@@ -25,10 +25,6 @@ extern "C" {
 
 int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
-int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
-int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
 #ifdef __cplusplus
 }
 #endif
