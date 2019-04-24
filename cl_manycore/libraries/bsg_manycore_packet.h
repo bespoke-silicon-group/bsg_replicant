@@ -44,8 +44,8 @@ typedef struct request_packet {
         uint8_t  x_src; //!< x coordinate of the requester
         uint8_t  y_src; //!< y coordinate of the requester
         uint32_t data;  //!< packet's payload data
-        hb_mc_packet_mask_t mask:8; //!< 4-bit byte mask (8 bits in struct)
-        hb_mc_packet_op_t  op:8;    //!< opcode (8 bits in struct)
+        uint8_t  mask;  //!< 4-bit byte mask 
+        uint8_t  op;    //!< opcode 
         uint32_t addr;  //!< address field (EPA)       
         uint8_t  reserved[2];
 }  __attribute__((packed)) hb_mc_request_packet_t;
@@ -129,7 +129,6 @@ static inline uint32_t hb_mc_request_packet_get_data(hb_mc_request_packet_t *pac
 {
         return le32toh(packet->data); 
 }
-
 
 /**
  * Get the valid data of a request packet
