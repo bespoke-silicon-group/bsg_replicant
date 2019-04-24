@@ -187,6 +187,16 @@ int hb_mc_check_dim (uint8_t fd) {
 }
 
 /*
+ * Gets the vacancy of the nth fifo
+ * @param[in] fd userspace file descriptor
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
+ * @return vacancy (in 32-bit words)
+ * */
+uint16_t hb_mc_fifo_write_vacancy (uint8_t fd, hb_mc_direction_t dir) {
+	return hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET));
+}
+
+/*
  * Writes 128B to the nth fifo
  * @param[in] fd userspace file descriptor
  * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
@@ -204,19 +214,23 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 		return HB_MC_FAIL;
 	}	
 	
-	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_VACANCY_OFFSET));
+	uint16_t init_vacancy = hb_mc_fifo_write_vacancy(fd, dir);
 	
 	if (init_vacancy < (sizeof(hb_mc_packet_t)/sizeof(uint32_t))) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
+
 	for (int i = 0; i < (sizeof(hb_mc_packet_t)/sizeof(uint32_t)); i++) {
- 		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_WRITE_OFFSET), packet->words[i]);
+ 		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_DATA_OFFSET), packet->words[i]);
 	}
 
-	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_VACANCY_OFFSET)) != init_vacancy) {
-		hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TRANSMIT_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
-        }
+	// DR: I Suspect the bug here is multiple packet vacancy
+	//while (hb_mc_fifo_vacancy(fd, dir) != init_vacancy) {
+	hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
+	while(!(hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET)) & (1<<27)));
+	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), (1<<27));
+	//}
 
 	return HB_MC_SUCCESS;
 }
@@ -234,7 +248,7 @@ int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint16_t *occup
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}		
-	*occupancy_p = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_OCCUPANCY_OFFSET));
+	*occupancy_p = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET));
 	return HB_MC_SUCCESS;
 }
 
@@ -255,19 +269,19 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
 		return HB_MC_FAIL;
 	}		
 
-	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_OCCUPANCY_OFFSET)) < 1) {}
+	while (hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET)) < 1) {}
 
-	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RECEIVE_LENGTH_OFFSET));
+	uint16_t receive_length = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET));
 	if (receive_length != sizeof(hb_mc_packet_t)) {
 		return HB_MC_FAIL;
 	}
 	
 	#ifdef DEBUG
-	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RECEIVE_LENGTH_OFFSET), receive_length);
+	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET), receive_length);
 	#endif
 
 	for (int i = 0; i < sizeof(hb_mc_packet_t)/sizeof(uint32_t); i++) {
-		packet->words[i] = hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_READ_OFFSET));
+		packet->words[i] = hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_DATA_OFFSET));
 	}
 
 	return HB_MC_SUCCESS;
