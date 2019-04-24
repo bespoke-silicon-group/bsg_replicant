@@ -43,8 +43,8 @@ typedef struct {
 } npa_t;
 
 typedef enum __hb_mc_direction_t {
-	HB_MC_MMIO_FIFO_TO_HOST = 0,
-	HB_MC_MMIO_FIFO_TO_DEVICE = 1,
+	HB_MC_MMIO_FIFO_TO_DEVICE = 0,
+	HB_MC_MMIO_FIFO_TO_HOST = 1,
 	HB_MC_MMIO_FIFO_MAX = 2
 } hb_mc_direction_t;
 

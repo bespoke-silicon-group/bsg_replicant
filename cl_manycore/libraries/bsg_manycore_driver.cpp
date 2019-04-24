@@ -189,7 +189,7 @@ int hb_mc_check_dim (uint8_t fd) {
 /*
  * Writes 128B to the nth fifo
  * @param[in] fd userspace file descriptor
- * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_HOST, or HB_MC_FIFO_TO_DEVICE)
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
  * @param[out] packet Manycore packet to write
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
@@ -206,11 +206,11 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 	
 	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_VACANCY_OFFSET));
 	
-	if (init_vacancy < sizeof(hb_mc_packet_t)/sizeof(uint32_t)) {
+	if (init_vacancy < (sizeof(hb_mc_packet_t)/sizeof(uint32_t))) {
 		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
-	for (int i = 0; i < sizeof(hb_mc_packet_t)/sizeof(uint32_t); i++) {
+	for (int i = 0; i < (sizeof(hb_mc_packet_t)/sizeof(uint32_t)); i++) {
  		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_WRITE_OFFSET), packet->words[i]);
 	}
 
@@ -224,7 +224,7 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 /*!
  * gets the occupancy of a PCIe FIFO.
  * @param[in] fd userspace file descriptor
- * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_HOST, or HB_MC_FIFO_TO_DEVICE)
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
  * @param[out] occupancy_p will be set to the occupancy of the fifo
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
  * */
@@ -242,7 +242,7 @@ int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint16_t *occup
 /*
  * reads 128B from the nth fifo
  * @param[in] fd userspace file descriptor
- * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_HOST, or HB_MC_FIFO_TO_DEVICE)
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
  * @param[out] packet a hammerblade manycore packet pointer
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
@@ -619,7 +619,7 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	while (1) {
 		hb_mc_request_packet_t recv;
-		hb_mc_read_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
+		hb_mc_read_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
 		
 		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
 			break; /* finish packet received from Hammerblade Manycore */
@@ -667,7 +667,7 @@ int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 								HB_MC_TILE_EPA_CSR_FREEZE_OFFSET),
 				HB_MC_CSR_FREEZE,
 				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &freeze) != HB_MC_SUCCESS)
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
 		return HB_MC_SUCCESS;
@@ -692,7 +692,7 @@ int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 								HB_MC_TILE_EPA_CSR_FREEZE_OFFSET),
 				HB_MC_CSR_UNFREEZE, 
 				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST,
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE,
 				&unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
@@ -724,10 +724,10 @@ int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET),
 				origin_y, x, y, 
 				HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_x) != HB_MC_SUCCESS) {
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &packet_origin_y) != HB_MC_SUCCESS) {
+	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -749,7 +749,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_format_request_packet(&tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
-		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, &tag) != HB_MC_SUCCESS) {	
+		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &tag) != HB_MC_SUCCESS) {	
 			return HB_MC_FAIL;
 		}
 	}
