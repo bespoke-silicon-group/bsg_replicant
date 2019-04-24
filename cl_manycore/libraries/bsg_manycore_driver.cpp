@@ -163,15 +163,15 @@ int hb_mc_init_host (uint8_t *fd) {
 	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
 	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
 	/* get device information from ROM */
-	hb_mc_host_intf_coord_x = 3;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
-	hb_mc_host_intf_coord_y = 0;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
-	hb_mc_manycore_dim_x = 4;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
+	hb_mc_host_intf_coord_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
+	hb_mc_host_intf_coord_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
+	hb_mc_manycore_dim_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
 	if((hb_mc_manycore_dim_x <= 0) || (hb_mc_manycore_dim_x > 32)){
 		fprintf(stderr, "hb_mc_init_host(): Questionable manycore X dimension: %d.\n", hb_mc_manycore_dim_x);
 		return HB_MC_FAIL;
 	}
 
-	hb_mc_manycore_dim_y = 4;//hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
+	hb_mc_manycore_dim_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
 	if((hb_mc_manycore_dim_y <= 0) || (hb_mc_manycore_dim_y > 32)){
 		fprintf(stderr, "hb_mc_init_host(): Questionable manycore Y dimension: %d.\n", hb_mc_manycore_dim_y);
 		return HB_MC_FAIL;
