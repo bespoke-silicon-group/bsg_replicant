@@ -174,7 +174,14 @@ int hb_mc_init_host (uint8_t *fd) {
 
 	hb_mc_enable_fifo(*fd);
 
-	hb_mc_drain_all_fifos(*fd); 
+	/* drain all fifos */
+	for (hb_mc_direction_t dir = HB_MC_MMIO_FIFO_MIN; dir < HB_MC_MMIO_FIFO_MAX; dir = hb_mc_direction_t (dir + 1)) {
+		int error = hb_mc_drain_fifo(*fd, dir); 
+		if (error != HB_MC_SUCCESS) {
+			fprintf(stderr, "hb_mc_init_host() --> hb_mc_drain_fifo(): failed to drain fifo %d.\n", dir); 
+			return HB_MC_FAIL;
+		}
+	}	
 
 	/* get device information */
 	rc = hb_mc_get_config(*fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &cfg);
@@ -353,40 +360,27 @@ int hb_mc_drain_fifo (uint8_t fd, hb_mc_direction_t dir) {
 		fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", dir); 
 		return HB_MC_FAIL;
 	}
-	while (occupancy > 0){
+	for (int i = 0; i < occupancy; i++){
 		error = hb_mc_read_fifo(fd, dir, (hb_mc_packet_t *) &recv); /* read a stale packet from fifo */
 		if (error != HB_MC_SUCCESS) {
 			fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_read_fifo(): failed to read packet from fifo %d.\n", dir); 
 			return HB_MC_FAIL;
 		}
+		#ifdef DEBUG
 		fprintf(stderr, "Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", dir, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);  
-		error = hb_mc_get_fifo_occupancy(fd, dir, &occupancy); 
-		if (error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", dir); 
-			return HB_MC_FAIL;
-		}
+		#endif
 	}
-	return HB_MC_SUCCESS;
-}
 
-/*
- * Drains all fifos from all stale packets. 
- * @param[in] fd userspace file descriptor
-  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
- * */
-int hb_mc_drain_all_fifos (uint8_t fd) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_drain_all_fifos(): userspace file descriptor %d not valid.\n", fd);
+	/* recheck occupancy to make sure all packets are drained. */
+	error = hb_mc_get_fifo_occupancy(fd, dir, &occupancy); 
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", dir); 
 		return HB_MC_FAIL;
 	}
-	int error;
-	for (hb_mc_direction_t dir = HB_MC_MMIO_FIFO_MIN; dir < HB_MC_MMIO_FIFO_MAX; dir = hb_mc_direction_t (dir + 1)) {
-		error = hb_mc_drain_fifo(fd, dir); 
-		if (error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_drain_all_fifos() --> hb_mc_drain_fifo(): failed to drain fifo %d.\n", dir); 
-			return HB_MC_FAIL;
-		}
-	}	
+	if (occupancy > 0){
+		fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to drain fifo %d even after reading all stale packets.\n", dir); 
+		return HB_MC_FAIL;
+	}
 	return HB_MC_SUCCESS;
 }
 
