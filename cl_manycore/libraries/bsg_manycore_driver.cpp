@@ -873,3 +873,26 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	}
 	return HB_MC_SUCCESS;
 }
+
+/*
+ * Drains all fifos and terminates the host. 
+ * @param [in] fd userspace file descriptor.
+ * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_host_finish(uint8_t fd) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		return HB_MC_FAIL;
+	}
+
+	/* drain all fifos */
+	for (hb_mc_direction_t dir = HB_MC_MMIO_FIFO_MIN; dir < HB_MC_MMIO_FIFO_MAX; dir = hb_mc_direction_t (dir + 1)) {
+		int error = hb_mc_drain_fifo(fd, dir); 
+		if (error != HB_MC_SUCCESS) {
+			fprintf(stderr, "hb_mc_host_finish() --> hb_mc_drain_fifo(): failed to drain fifo %d.\n", dir); 
+			return HB_MC_FAIL;
+		}
+	}	
+	
+	return HB_MC_SUCCESS;
+}
+

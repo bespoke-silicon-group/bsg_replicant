@@ -88,6 +88,7 @@ int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord
 void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);
 int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
 int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_host_finish(uint8_t fd);
 
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};
