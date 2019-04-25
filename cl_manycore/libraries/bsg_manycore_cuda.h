@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
+int hb_mc_device_init (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (eva_id_t eva_id, eva_t eva);

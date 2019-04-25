@@ -52,9 +52,9 @@ int test_rom () {
 	int rc = 0;
 	uint8_t fd = 0;
 
-	rc = hb_mc_init_host(&fd);
-	if(rc != HB_MC_SUCCESS){
-		fprintf(stderr, "ERROR: Device init failed\n");
+	if(hb_mc_init_host(&fd) != HB_MC_SUCCESS){
+		fprintf(stderr, "test_rom(): failed to initialize host.\n");
+		return HB_MC_FAIL;
 	}
 
 	// In order, at offset 4, the elements of the array are:
@@ -91,6 +91,11 @@ int test_rom () {
 	bsg_pr_test_info("Comparing NPA space results:\n");
 	rc = compare_word(4, desc, expected, result);
 	if(rc != HB_MC_SUCCESS){
+		return HB_MC_FAIL;
+	}
+
+	if(hb_mc_host_finish(fd) != HB_MC_SUCCESS){
+		fprintf(stderr, "test_rom(): failed to terminate host.\n");
 		return HB_MC_FAIL;
 	}
 
