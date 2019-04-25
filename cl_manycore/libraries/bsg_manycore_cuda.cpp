@@ -96,11 +96,12 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 		return HB_MC_FAIL; /* eva_id not supported */
 	} 
 
+	hb_mc_drain_all_fifos(fd);
+
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
 		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
 		hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
 	}
-
 
 	/* load the elf into each tile */
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
@@ -142,6 +143,8 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 	for (int i = 0; i < num_tiles; i++) { /* freeze tiles */
 		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
 	}
+
+	hb_mc_drain_all_fifos(fd);
 
 	return HB_MC_SUCCESS;
 }

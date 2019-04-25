@@ -160,6 +160,8 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
+	hb_mc_drain_all_fifos(*fd);
+
 	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
 	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
 	/* get device information from ROM */
@@ -244,7 +246,7 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
  * @param[out] occupancy_p will be set to the occupancy of the fifo
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
  * */
-int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint16_t *occupancy_p) {
+int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p) {
 	if (dir >= HB_MC_MMIO_FIFO_MAX)
 		return HB_MC_FAIL;
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
@@ -287,7 +289,35 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
 
 	return HB_MC_SUCCESS;
 }
-
+/*
+ * drains all fifos from all possible left-over packets. 
+ * @param [in] fd userspace file descriptor
+ * */
+int hb_mc_drain_all_fifos(uint8_t fd) {
+	uint32_t occupancy;
+	hb_mc_request_packet_t recv;
+	int error; 
+	for (__hb_mc_direction_t fifo_dir = HB_MC_MMIO_FIFO_MIN; fifo_dir < HB_MC_MMIO_FIFO_MAX; fifo_dir = __hb_mc_direction_t (fifo_dir + 1)  ) {
+		error = hb_mc_get_fifo_occupancy(fd, fifo_dir, &occupancy);
+		if (error != HB_MC_SUCCESS) {
+			fprintf(stderr, "hb_mc_drain_all_fifos() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", fifo_dir); 
+			return HB_MC_FAIL;
+		}
+		while (occupancy > 0) {
+			error = hb_mc_read_fifo(fd, fifo_dir, (hb_mc_packet_t *) &recv); /* read a packet out of fifo */
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_drain_all_fifos() --> hb_mc_read_fifo(): failed to read from fifo %d.\n", fifo_dir);
+				return HB_MC_FAIL;
+			}
+			fprintf(stderr, "Packet drained from fifo %d: src: (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", fifo_dir, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data); 
+			error = hb_mc_get_fifo_occupancy(fd, fifo_dir, &occupancy);
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_drain_all_fifos() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", fifo_dir); 
+				return HB_MC_FAIL;
+			}
+		}
+	}
+}
 /* Clears interrupts for an AXI4-Lite FIFO.
  * @param fd userspace file descriptor
  * @param dir fifo direction 
