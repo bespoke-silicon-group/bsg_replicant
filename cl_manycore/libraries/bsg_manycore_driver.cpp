@@ -160,8 +160,9 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
-	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
-	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<27));
+	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET), 
+		(1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
+	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
 	/* get device information from ROM */
 	hb_mc_host_intf_coord_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
 	hb_mc_host_intf_coord_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
@@ -198,6 +199,31 @@ int hb_mc_check_dim (uint8_t fd) {
 }
 
 /*
+ * Set a bit in the IER/IXR register. Due to Xilinx implementaation, only
+ * 1-valued bits take effect (so no pre-read and or is necessary)
+ * @param[in] fd userspace file descriptor
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
+ * @param[out] packet Manycore packet to write
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * */
+void hb_mc_fifo_set_ixr_bit(uint8_t fd, hb_mc_direction_t dir, uint32_t reg, uint32_t bit){
+	uint64_t addr = hb_mc_mmio_fifo_get_reg_addr(dir, reg);
+	hb_mc_write32(fd, addr, (1<<bit));
+}
+
+/*
+ * Get a bit in the IER/IXR register. 
+ * @param[in] fd userspace file descriptor
+ * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
+ * @param[out] packet Manycore packet to write
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * */
+uint32_t hb_mc_fifo_get_ixr_bit(uint8_t fd, hb_mc_direction_t dir, uint32_t reg, uint32_t bit){
+	uint64_t addr = hb_mc_mmio_fifo_get_reg_addr(dir, reg);
+	return (hb_mc_read32(fd, addr) & (1<<bit)) != 0;
+}
+
+/*
  * Writes 128B to the nth fifo
  * @param[in] fd userspace file descriptor
  * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
@@ -222,17 +248,21 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
 		return HB_MC_FAIL;
 	}
 
-	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), (1<<27));
+	// Write 1 to the Transmit Complete bit to clear it
+	hb_mc_fifo_set_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, 
+			HB_MC_MMIO_FIFO_IXR_TC_BIT);
 
 	for (int i = 0; i < (sizeof(hb_mc_packet_t)/sizeof(uint32_t)); i++) {
  		hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_DATA_OFFSET), packet->words[i]);
 	}
-
-	while(!(hb_mc_read32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET)) & (1<<27))){
+	
+	// Wait for the Transmit Complete bit to get set, while repeatedly writing the size of the packet
+	while(!hb_mc_fifo_get_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT)){
 		hb_mc_write16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET), sizeof(hb_mc_packet_t));
 	}
 
-	hb_mc_write32(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET), (1<<27));
+	// Write 1 to the Transmit Complete bit to clear it
+	hb_mc_fifo_set_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT);
 
 	return HB_MC_SUCCESS;
 }

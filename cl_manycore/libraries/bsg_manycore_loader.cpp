@@ -102,6 +102,11 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 					memcpy(&text_segment[0], &buf[ph[i].p_offset], ph[i].p_filesz);
 				}			
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += sizeof(uint32_t)) {
+					// For the TEXT segment, we initialize
+					// both DRAM and the icache. The DRAM is
+					// abstracted by the VCACHE so we use
+					// the address macros for VCACHE to
+					// write into the DRAM
 					uint32_t icache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_ICACHE_BASE, ofs);
 					uint32_t dram_word_addr = hb_mc_tile_epa_get_word_addr(
 						hb_mc_tile_epa_get_byte_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_DRAM_OFFSET), ofs);						
