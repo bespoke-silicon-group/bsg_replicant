@@ -34,8 +34,16 @@ int test_packets() {
 
         srand(time(0));
         
-        uint32_t host_x = CL_MANYCORE_DIM_X - 1;
-        uint32_t host_y = 0;
+        uint32_t host_x, host_y;
+        if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &host_x) == HB_MC_FAIL) {
+                bsg_pr_test_info("\033[031m Failed to read host X coordinate from rom. \033[0m\n");
+                return HB_MC_FAIL;
+        }
+        if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &host_y) == HB_MC_FAIL) {
+                bsg_pr_test_info("\033[031m Failed to read host Y coordinate from rom. \033[0m\n");
+                return HB_MC_FAIL;
+        }
+
         uint8_t target_x = 0;
         uint8_t target_y = 1;
         uint32_t addr = DMEM_BASE >> 2;
