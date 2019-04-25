@@ -4,7 +4,7 @@ PROJECT = cl_manycore
 include $(CL_DIR)/Makefile.environment
 
 DEBUG ?= 
-AXI_MEMORY_MODEL ?=
+AXI_MEMORY_MODEL ?= 1
 AXI_PROT_CHECK ?=
 
 all: $(SIM_TARGETS) $(BUILD_TARGETS)
