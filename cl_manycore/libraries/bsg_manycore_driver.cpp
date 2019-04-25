@@ -176,9 +176,9 @@ int hb_mc_init_host (uint8_t *fd) {
 
 	/* drain all fifos */
 	for (hb_mc_direction_t dir = HB_MC_MMIO_FIFO_MIN; dir < HB_MC_MMIO_FIFO_MAX; dir = hb_mc_direction_t (dir + 1)) {
-		int error = hb_mc_drain_fifo(*fd, dir); 
+		int error = hb_mc_fifo_drain(*fd, dir); 
 		if (error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_init_host() --> hb_mc_drain_fifo(): failed to drain fifo %d.\n", dir); 
+			fprintf(stderr, "hb_mc_init_host() --> hb_mc_fifo_drain(): failed to drain fifo %d.\n", dir); 
 			return HB_MC_FAIL;
 		}
 	}	
@@ -249,21 +249,21 @@ uint32_t hb_mc_fifo_get_ixr_bit(uint8_t fd, hb_mc_direction_t dir, uint32_t reg,
  * @param[out] packet Manycore packet to write
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) {
+int hb_mc_fifo_transmit (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) {
 	if (dir >= HB_MC_MMIO_FIFO_MAX) {
-		fprintf(stderr, "hb_mc_write_fifo(): invalid fifo.\n");
+		fprintf(stderr, "hb_mc_fifo_transmit(): invalid fifo.\n");
 		return HB_MC_FAIL;
 	}
 
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_write_fifo(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_fifo_transmit(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
 	
 	uint16_t init_vacancy = hb_mc_read16(fd, hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET));
 	
 	if (init_vacancy < (sizeof(hb_mc_packet_t)/sizeof(uint32_t))) {
-		fprintf(stderr, "hb_mc_write_fifo(): not enough space in fifo.\n");
+		fprintf(stderr, "hb_mc_fifo_transmit(): not enough space in fifo.\n");
 		return HB_MC_FAIL;
 	}
 
@@ -293,7 +293,7 @@ int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet)
  * @param[out] occupancy_p will be set to the occupancy of the fifo
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure
  * */
-int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p) {
+int hb_mc_fifo_get_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p) {
 	if (dir >= HB_MC_MMIO_FIFO_MAX)
 		return HB_MC_FAIL;
 	else if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
@@ -310,7 +310,7 @@ int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occup
  * @param[out] packet a hammerblade manycore packet pointer
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) {
+int hb_mc_fifo_receive (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) {
 	if (dir >= HB_MC_MMIO_FIFO_MAX) {
 		return HB_MC_FAIL;
 	}
@@ -327,7 +327,7 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
 	}
 	
 	#ifdef DEBUG
-	fprintf(stderr, "hb_mc_read_fifo(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET), receive_length);
+	fprintf(stderr, "hb_mc_fifo_receive(): read the receive length register @ %u to be %u\n", hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET), receive_length);
 	#endif
 
 	for (int i = 0; i < sizeof(hb_mc_packet_t)/sizeof(uint32_t); i++) {
@@ -343,27 +343,27 @@ int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet) 
  * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
   * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_drain_fifo (uint8_t fd, hb_mc_direction_t dir) {
+int hb_mc_fifo_drain (uint8_t fd, hb_mc_direction_t dir) {
 	if (dir >= HB_MC_MMIO_FIFO_MAX) {
-		fprintf(stderr, "hb_mc_drain_fifo(): fifo direction %d not valid.\n", dir);
+		fprintf(stderr, "hb_mc_fifo_drain(): fifo direction %d not valid.\n", dir);
 		return HB_MC_FAIL;
 	}
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_drain_fifo(): userspace file descriptor %d not valid.\n", fd);
+		fprintf(stderr, "hb_mc_fifo_drain(): userspace file descriptor %d not valid.\n", fd);
 		return HB_MC_FAIL;
 	}
 	
 	uint32_t occupancy; 
 	hb_mc_request_packet_t recv;
-	int error = hb_mc_get_fifo_occupancy(fd, dir, &occupancy); 
+	int error = hb_mc_fifo_get_occupancy(fd, dir, &occupancy); 
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", dir); 
+		fprintf(stderr, "hb_mc_fifo_drain() --> hb_mc_fifo_get_occupancy(): failed to get fifo %d occupancy.\n", dir); 
 		return HB_MC_FAIL;
 	}
 	for (int i = 0; i < occupancy; i++){
-		error = hb_mc_read_fifo(fd, dir, (hb_mc_packet_t *) &recv); /* read a stale packet from fifo */
+		error = hb_mc_fifo_receive(fd, dir, (hb_mc_packet_t *) &recv); /* read a stale packet from fifo */
 		if (error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_read_fifo(): failed to read packet from fifo %d.\n", dir); 
+			fprintf(stderr, "hb_mc_fifo_drain() --> hb_mc_fifo_receive(): failed to read packet from fifo %d.\n", dir); 
 			return HB_MC_FAIL;
 		}
 		#ifdef DEBUG
@@ -372,13 +372,13 @@ int hb_mc_drain_fifo (uint8_t fd, hb_mc_direction_t dir) {
 	}
 
 	/* recheck occupancy to make sure all packets are drained. */
-	error = hb_mc_get_fifo_occupancy(fd, dir, &occupancy); 
+	error = hb_mc_fifo_get_occupancy(fd, dir, &occupancy); 
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to get fifo %d occupancy.\n", dir); 
+		fprintf(stderr, "hb_mc_fifo_drain() --> hb_mc_fifo_get_occupancy(): failed to get fifo %d occupancy.\n", dir); 
 		return HB_MC_FAIL;
 	}
 	if (occupancy > 0){
-		fprintf(stderr, "hb_mc_drain_fifo() --> hb_mc_get_fifo_occupancy(): failed to drain fifo %d even after reading all stale packets.\n", dir); 
+		fprintf(stderr, "hb_mc_fifo_drain() --> hb_mc_fifo_get_occupancy(): failed to drain fifo %d even after reading all stale packets.\n", dir); 
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -737,7 +737,7 @@ int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	while (1) {
 		hb_mc_request_packet_t recv;
-		hb_mc_read_fifo(fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
+		hb_mc_fifo_receive(fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv); /* wait for Manycore to send packet */
 		
 		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
 			break; /* finish packet received from Hammerblade Manycore */
@@ -785,7 +785,7 @@ int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 								HB_MC_TILE_EPA_CSR_FREEZE_OFFSET),
 				HB_MC_CSR_FREEZE,
 				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &freeze) != HB_MC_SUCCESS)
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
 		return HB_MC_SUCCESS;
@@ -810,7 +810,7 @@ int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 								HB_MC_TILE_EPA_CSR_FREEZE_OFFSET),
 				HB_MC_CSR_UNFREEZE, 
 				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE,
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE,
 				&unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
@@ -842,10 +842,10 @@ int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET),
 				origin_y, x, y, 
 				HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
-	if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -867,7 +867,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_format_request_packet(&tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
-		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &tag) != HB_MC_SUCCESS) {	
+		if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &tag) != HB_MC_SUCCESS) {	
 			return HB_MC_FAIL;
 		}
 	}
@@ -886,9 +886,9 @@ int hb_mc_host_finish(uint8_t fd) {
 
 	/* drain all fifos */
 	for (hb_mc_direction_t dir = HB_MC_MMIO_FIFO_MIN; dir < HB_MC_MMIO_FIFO_MAX; dir = hb_mc_direction_t (dir + 1)) {
-		int error = hb_mc_drain_fifo(fd, dir); 
+		int error = hb_mc_fifo_drain(fd, dir); 
 		if (error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_host_finish() --> hb_mc_drain_fifo(): failed to drain fifo %d.\n", dir); 
+			fprintf(stderr, "hb_mc_host_finish() --> hb_mc_fifo_drain(): failed to drain fifo %d.\n", dir); 
 			return HB_MC_FAIL;
 		}
 	}	

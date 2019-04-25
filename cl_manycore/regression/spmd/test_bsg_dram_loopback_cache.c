@@ -24,7 +24,7 @@ int test_loopback () {
 	bsg_pr_test_info("Checking receive packet...\n");
 	usleep(100); /* 100 us */
 	hb_mc_request_packet_t manycore_finish;
-	hb_mc_read_fifo(fd, 1, &manycore_finish);	
+	hb_mc_fifo_receive(fd, 1, &manycore_finish);	
 
 	uint32_t addr = hb_mc_request_packet_get_addr(&manycore_finish);
 	uint32_t data = hb_mc_request_packet_get_data(&manycore_finish);

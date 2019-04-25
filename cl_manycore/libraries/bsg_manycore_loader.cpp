@@ -30,7 +30,7 @@ static int hb_mc_load_packets(uint8_t fd, hb_mc_packet_t *packets, uint32_t num_
 	}
 	
 	for (int i = 0; i < num_packets; i++) {
-		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, 
+		if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, 
 					&packets[i]) != HB_MC_SUCCESS) {
 			return HB_MC_FAIL;
 		}
