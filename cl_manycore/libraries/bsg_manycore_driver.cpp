@@ -139,6 +139,16 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 } 
 
 #endif
+int hb_mc_enable_fifo(uint8_t fd){
+	uint32_t ier_addr_byte;
+	ier_addr_byte = hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET);
+	hb_mc_write32(fd, ier_addr_byte, (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
+		
+	ier_addr_byte = hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET);
+	hb_mc_write32(fd, ier_addr_byte, (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
+
+	return HB_MC_SUCCESS;
+}
 /*! 
  * Initializes the FPGA at slot 0. 
  * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
@@ -146,8 +156,10 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
  * @return HB_MC_SUCCESS if device has been initialized and HB_MC_FAIL otherwise.
  */
 int hb_mc_init_host (uint8_t *fd) {
-	*fd = num_dev;
+	int rc;
+	uint32_t cfg;
 	char *ocl_base;
+	*fd = num_dev;
 	#ifndef COSIM
 	ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
@@ -160,42 +172,40 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
-	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET), 
-		(1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
-	hb_mc_write32(*fd, hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET), (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
-	/* get device information from ROM */
-	hb_mc_host_intf_coord_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_X_OFFSET));
-	hb_mc_host_intf_coord_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_HOST_INTF_COORD_Y_OFFSET));
-	hb_mc_manycore_dim_x = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
+	hb_mc_enable_fifo(*fd);
+
+	/* get device information */
+	rc = hb_mc_get_config(*fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &cfg);
+	if(rc != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+	hb_mc_host_intf_coord_x = cfg;
+
+	rc = hb_mc_get_config(*fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &cfg);
+	if(rc != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+	hb_mc_host_intf_coord_y = cfg;
+
+	rc = hb_mc_get_config(*fd, HB_MC_CONFIG_DEVICE_DIM_X, &cfg);
+	if(rc != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+	hb_mc_manycore_dim_x = cfg;
+
 	if((hb_mc_manycore_dim_x <= 0) || (hb_mc_manycore_dim_x > 32)){
 		fprintf(stderr, "hb_mc_init_host(): Questionable manycore X dimension: %d.\n", hb_mc_manycore_dim_x);
 		return HB_MC_FAIL;
 	}
 
-	hb_mc_manycore_dim_y = hb_mc_read32(*fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
+	rc = hb_mc_get_config(*fd, HB_MC_CONFIG_DEVICE_DIM_Y, &cfg);
+	if(rc != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+	hb_mc_manycore_dim_y = cfg;
+
 	if((hb_mc_manycore_dim_y <= 0) || (hb_mc_manycore_dim_y > 32)){
 		fprintf(stderr, "hb_mc_init_host(): Questionable manycore Y dimension: %d.\n", hb_mc_manycore_dim_y);
 		return HB_MC_FAIL;
 	}
 
 	return HB_MC_SUCCESS; 
-}
-
-/*!
- * Checks if the dimensions of the Manycore matches with what is expected.
- * @return HB_MC_SUCCESS if its able to verify that the device has the expected dimensions and HB_MC_FAIL otherwise.
- * */
-int hb_mc_check_dim (uint8_t fd) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_check_dim(): device not initialized.\n");
-		return HB_MC_FAIL;
-	}
-	uint32_t dimx = hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_X_OFFSET));
-	uint32_t dimy = hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(HB_MC_MMIO_ROM_DIMENSION_Y_OFFSET));
-	if ((hb_mc_manycore_dim_x == dimx) && (hb_mc_manycore_dim_y == dimy))
-		return HB_MC_SUCCESS;
-	else
-		return HB_MC_FAIL;
 }
 
 /*
@@ -366,17 +376,24 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
 }		
 
 /*!
- * Gets a word from the ROM in AXI space.
- * @param fd userspace file descriptor
- * @param addr a byte offset into the ROM
- * @return data on success and HB_MC_FAIL on failure.
+ * Gets a word from the Manycore ROM
+ * @param[in] fd userspace file descriptor
+ * @param[in] id a configuration register ID
+ * @param[out] cfg configuration value pointer to store data in
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_get_axi_rom (uint8_t fd, uint32_t addr) {
+int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_get_axi_rom(): device not initialized.\n");
+		fprintf(stderr, "hb_mc_get_config(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
-	return hb_mc_read32(fd, hb_mc_mmio_rom_get_reg_addr(addr));
+	if ((id < 0) || (id > HB_MC_CONFIG_MAX)) {
+		fprintf(stderr, "hb_mc_get_config(): invalid configuration ID.\n");
+		return HB_MC_FAIL;
+	}
+	uint32_t rom_addr_byte = HB_MC_MMIO_ROM_BASE + (id << 2);
+	*cfg = hb_mc_read32(fd, rom_addr_byte);
+	return HB_MC_SUCCESS;
 }
 
 /*!

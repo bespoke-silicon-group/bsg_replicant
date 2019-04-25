@@ -48,14 +48,30 @@ typedef enum __hb_mc_direction_t {
 	HB_MC_MMIO_FIFO_MAX = 2
 } hb_mc_direction_t;
 
-int hb_mc_check_dim (uint8_t fd);      
 int hb_mc_write_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet);
 int hb_mc_get_fifo_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p);
 int hb_mc_read_fifo (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet);
 int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir);
 int hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);
-int hb_mc_get_axi_rom (uint8_t fd, uint32_t addr);
+
+typedef enum __hb_mc_config_id_t {
+	HB_MC_CONFIG_VERSION = 0,
+	HB_MC_CONFIG_COMPLIATION_DATE = 1,
+	HB_MC_CONFIG_NETWORK_ADDR_WIDTH = 2,
+	HB_MC_CONFIG_NETWORK_DATA_WIDTH = 3,
+	HB_MC_CONFIG_DEVICE_DIM_X = 4,
+	HB_MC_CONFIG_DEVICE_DIM_Y = 5,
+	HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X = 6,
+	HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y = 7,
+	HB_MC_CONFIG_NOT_IMPLEMENTED = 8,
+	HB_MC_CONFIG_REPO_STL_HASH = 9,
+	HB_MC_CONFIG_REPO_MANYCORE_HASH = 10,
+	HB_MC_CONFIG_REPO_F1_HASH = 11,
+	HB_MC_CONFIG_MAX = 12
+} hb_mc_config_id_t;
+
+int hb_mc_get_config (uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
 int hb_mc_get_recv_vacancy (uint8_t fd);
 int hb_mc_can_read (uint8_t fd, uint32_t size);
 int hb_mc_check_device (uint8_t fd);
