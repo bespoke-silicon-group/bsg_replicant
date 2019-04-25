@@ -91,11 +91,11 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
  * @param num_tiles the number of tiles to initialize.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_init_device (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
+int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
 	
 	int error = hb_mc_init_host(fd); 
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_init_device() --> hb_mc_init_host(): failed to initialize host.\n");
+		fprintf(stderr, "hb_mc_device_init() --> hb_mc_init_host(): failed to initialize host.\n");
 		return HB_MC_FAIL;
 	}
 	
@@ -160,7 +160,7 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 }
 
 /*!
- * This function is for testing hb_mc_init_device() only. 
+ * This function is for testing hb_mc_device_init() only. 
  */
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size) {
 	if (!mem_manager[eva_id]) {
