@@ -91,14 +91,21 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
  * @param num_tiles the number of tiles to initialize.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
+int hb_mc_init_device (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
+	
+	int error = hb_mc_init_host(fd); 
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_init_device() --> hb_mc_init_host(): failed to initialize host.\n");
+		return HB_MC_FAIL;
+	}
+	
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* eva_id not supported */
 	} 
 	
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
-		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
-		hb_mc_set_tile_group_origin(fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
+		hb_mc_freeze(*fd, tiles[i].x, tiles[i].y);
+		hb_mc_set_tile_group_origin(*fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
 	}
 
 
@@ -106,17 +113,17 @@ int hb_mc_init_device (uint8_t fd, eva_id_t eva_id, char *elf, tile_t *tiles, ui
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
 	hb_mc_get_x(tiles, &x_list[0], num_tiles);
 	hb_mc_get_y(tiles, &y_list[0], num_tiles); 
-	hb_mc_load_binary(fd, elf, &x_list[0], &y_list[0], num_tiles);
+	hb_mc_load_binary(*fd, elf, &x_list[0], &y_list[0], num_tiles);
 	/* create a memory manager object */
 	if (hb_mc_create_memory_manager(eva_id, elf) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
   	
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
-		int error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
+		error = hb_mc_write_tile_reg(*fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_unfreeze(fd, tiles[i].x, tiles[i].y);
+		hb_mc_unfreeze(*fd, tiles[i].x, tiles[i].y);
 	}
 	return HB_MC_SUCCESS;
 }
@@ -141,6 +148,12 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 	
 	for (int i = 0; i < num_tiles; i++) { /* freeze tiles */
 		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
+	}
+
+	int error = hb_mc_host_finish(fd);
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_finish() --> hb_mc_host_finish(): failed to terminate host.\n");
+		return HB_MC_FAIL;
 	}
 
 	return HB_MC_SUCCESS;
