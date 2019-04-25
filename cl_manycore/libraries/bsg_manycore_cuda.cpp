@@ -1,5 +1,5 @@
 #ifndef COSIM
-	#include <bsg_manycore_cuda.h> /* TODO: should be angle brackets */ 
+	#include <bsg_manycore_cuda.h>  
 	#include <bsg_manycore_memory_manager.h>
 	#include <bsg_manycore_elf.h>
 	#include <bsg_manycore_mem.h>
@@ -265,9 +265,11 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 }
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
-	uint8_t host_x = hb_mc_get_num_x() -1;
+	uint8_t host_x = hb_mc_get_manycore_dimension_x() -1;
 	uint8_t host_y = 0;
-	hb_mc_request_packet_t finish = {host_x, host_y, tile->x, tile->y, 0x1 /* data */, 0xF /* op_x */, 0x1 /* op */, FINISH_ADDRESS, {0, 0}};
+	hb_mc_packet_op_t op = HB_MC_PACKET_OP_REMOTE_STORE;
+	hb_mc_packet_mask_t mask = HB_MC_PACKET_REQUEST_MASK_WORD; 
+	hb_mc_request_packet_t finish = {host_x, host_y, tile->x, tile->y, 0x1 /* data */, mask, op, FINISH_ADDRESS, {0, 0}};
 	hb_mc_device_sync(fd, &finish);
 } 
 
@@ -295,7 +297,7 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 			return HB_MC_FAIL; 
 
 
-		npa_t host_npa = {(uint32_t) hb_mc_get_num_x() - 1, 0, FINISH_ADDRESS};
+		npa_t host_npa = {(uint32_t) hb_mc_get_manycore_dimension_x() - 1, 0, FINISH_ADDRESS};
 		eva_t host_eva;
 		error = hb_mc_npa_to_eva(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
 		if (error != HB_MC_SUCCESS)

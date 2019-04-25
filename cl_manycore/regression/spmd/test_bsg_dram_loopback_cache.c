@@ -28,13 +28,13 @@ int test_loopback () {
 
 	uint32_t addr = hb_mc_request_packet_get_addr(&manycore_finish);
 	uint32_t data = hb_mc_request_packet_get_data(&manycore_finish);
-	uint32_t op_ex = hb_mc_request_packet_get_op_ex(&manycore_finish);
+	uint32_t mask = hb_mc_request_packet_get_mask(&manycore_finish);
 	uint32_t x_src = hb_mc_request_packet_get_x_src(&manycore_finish);
 	uint32_t y_src = hb_mc_request_packet_get_y_src(&manycore_finish);
 	uint32_t x_dst = hb_mc_request_packet_get_x_dst(&manycore_finish);
 	uint32_t y_dst = hb_mc_request_packet_get_y_dst(&manycore_finish);
 	uint32_t op = hb_mc_request_packet_get_op(&manycore_finish);
-	bsg_pr_test_info("Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data & op_ex);
+	bsg_pr_test_info("Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data);
 	if (addr == 0x3ab4)
 		return HB_MC_SUCCESS;
 	else

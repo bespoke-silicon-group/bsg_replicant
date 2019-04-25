@@ -25,22 +25,17 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 		return HB_MC_FAIL;
 	}
 
-//	if (!can_read(size)) {
-//		printf("hb_xeon_to_copy(): not enough space to read.\n");
-//		return false;
-//	}
-
 	hb_mc_packet_t requests[size]; 	
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = 0; /* unused */
-		hb_mc_format_request_packet(&requests[i].request, addr, data, x, y, OP_REMOTE_LOAD);
+		hb_mc_format_request_packet(&requests[i].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_LOAD);
 	} 
 	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, &requests[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &requests[i]) != HB_MC_SUCCESS) {
 			pass_requests = HB_MC_FAIL;
 			break;
 		}
@@ -51,7 +46,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
 	for (int i = 0; i < size; i++) {
-		hb_mc_read_fifo(fd, 0, (hb_mc_packet_t *) &buf[i]);
+		hb_mc_read_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *) &buf[i]);
 	}
 	return pass_requests;
 }
@@ -74,11 +69,11 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = buf[i];
-		hb_mc_format_request_packet(&packets[i].request, addr, data, x, y, OP_REMOTE_STORE);
+		hb_mc_format_request_packet(&packets[i].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	} 
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_write_fifo(fd, 0, &packets[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_write_fifo(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packets[i]) != HB_MC_SUCCESS) {
 			pass = HB_MC_FAIL;
 			break;
 		}
