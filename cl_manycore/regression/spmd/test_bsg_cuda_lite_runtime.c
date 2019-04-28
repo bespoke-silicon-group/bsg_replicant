@@ -101,7 +101,7 @@ int test_add_kernel () {
 	printf("Running the CUDA Addition Kernel on a tile group of size 4.\n\n");
 
 	uint8_t fd; 
-	hb_mc_init_host(&fd);
+	hb_mc_host_init(&fd);
 	/* run on a 1 x 1 grid of tiles starting at (0, 1) */
 	tile_t tiles[1];
 	uint32_t num_tiles = 1, num_tiles_x = 1, num_tiles_y = 1, origin_x = 0, origin_y = 1;

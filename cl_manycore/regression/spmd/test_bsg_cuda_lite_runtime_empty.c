@@ -117,7 +117,7 @@ int test_empty_kernel () {
 	printf("Running the DRAM read write test on a tile group of size 2x2.\n\n");
 
 	uint8_t fd; 
-	hb_mc_init_host(&fd);
+	hb_mc_host_init(&fd);
 	/* run on a 2 x 2 grid of tiles starting at (0, 1) */
 	tile_t tiles[4];
 	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
