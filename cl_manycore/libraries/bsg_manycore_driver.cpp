@@ -252,7 +252,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
  * @param fd pointer to which the userspace file descriptor is assigned. 
  * @return HB_MC_SUCCESS if device has been initialized and HB_MC_FAIL otherwise.
  */
-int hb_mc_fifo_init (uint8_t *fd) {
+	int hb_mc_fifo_init (uint8_t *fd) {
 	int rc;
 	uint32_t cfg;
 	char *ocl_base;

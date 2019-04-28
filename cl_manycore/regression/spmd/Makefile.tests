@@ -1,5 +1,5 @@
 REGRESSION_TESTS_TYPE = spmd
-C_REGRESSION_TESTS = test_bsg_cuda_lite_runtime test_bsg_cuda_lite_runtime_packet test_bsg_cuda_lite_runtime_empty test_bsg_dram_loopback_cache
+C_REGRESSION_TESTS = test_bsg_dram_loopback_cache
 CXX_REGRESSION_TESTS = 
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \

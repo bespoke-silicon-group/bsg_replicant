@@ -89,7 +89,7 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
 
 /*
  * Initializes Manycore tiles so that they may run kernels.
- * @param fd userspace file descriptor, which must be obtained from hb_mc_init_host.
+ * @param fd userspace file descriptor, which must be obtained from hb_mc_host_init.
  * @param eva_id specifies what the EVA-NPA mapping is.
  * @param tiles an array of tile_t structs to initialize.
  * @param num_tiles the number of tiles to initialize.
@@ -99,7 +99,7 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
 	
 	int error = hb_mc_fifo_init(fd); 
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_init() --> hb_mc_init_host(): failed to initialize host.\n");
+		fprintf(stderr, "hb_mc_device_init() --> hb_mc_host_init(): failed to initialize host.\n");
 		return HB_MC_FAIL;
 	}
 	
