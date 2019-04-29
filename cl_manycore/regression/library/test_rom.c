@@ -56,7 +56,7 @@ int test_rom () {
 	read_rom(fd, 4, result); 
 	bsg_pr_test_info("Comparing AXI space results:\n");
 	fflush(stderr);
-	rc = compare_word(4, desc, expected, result);
+	rc = compare_results(4, desc, expected, result);
 	if(rc != HB_MC_SUCCESS){
 		return HB_MC_FAIL;
 	}
@@ -72,7 +72,7 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
 	bsg_pr_test_info("Comparing NPA space results:\n");
-	rc = compare_word(4, desc, expected, result);
+	rc = compare_results(4, desc, expected, result);
 	if(rc != HB_MC_SUCCESS){
 		return HB_MC_FAIL;
 	}

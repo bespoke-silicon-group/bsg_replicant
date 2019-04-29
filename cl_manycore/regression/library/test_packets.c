@@ -28,19 +28,19 @@ int test_packets() {
 	uint8_t fd; 
 	hb_mc_init_host(&fd);	
       	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
-		bsg_pr_test_info("\033[031m Failed to initialize host. \033[0m\n");
+		bsg_pr_test_info(BSG_RED("Failed to initialize host.\n"));
 		return HB_MC_FAIL;
 	}
-
+ 
         srand(time(0));
         
         uint32_t host_x, host_y;
         if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &host_x) == HB_MC_FAIL) {
-                bsg_pr_test_info("\033[031m Failed to read host X coordinate from rom. \033[0m\n");
+                bsg_pr_test_info(BSG_RED("Failed to read host X coordinate from rom.\n"));
                 return HB_MC_FAIL;
         }
         if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &host_y) == HB_MC_FAIL) {
-                bsg_pr_test_info("\033[031m Failed to read host Y coordinate from rom. \033[0m\n");
+                bsg_pr_test_info(BSG_RED("Failed to read host Y coordinate from rom.\n"));
                 return HB_MC_FAIL;
         }
 
@@ -90,43 +90,43 @@ int test_packets() {
         hb_mc_request_packet_set_addr (&req1, addr);
         
         request_packet_to_array(&req1, actual);
-        if(compare_word(8, req_desc, req_expected, actual) == HB_MC_FAIL)
+        if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
         
         bsg_pr_test_info("Testing hb_mc_format_request_packet\n");
         hb_mc_format_request_packet(&req2, addr, data, target_x, target_y, HB_MC_PACKET_OP_REMOTE_STORE);
         request_packet_to_array(&req2, actual);
-        if(compare_word(8, req_desc, req_expected, actual) == HB_MC_FAIL)
+        if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
 
         bsg_pr_test_info("The two packets should be equal now:");
         if(hb_mc_request_packet_equals(&req1, &req2) == HB_MC_FAIL) {
-                printf("\033[31m hb_mc_request_packet_equals says they are not \033[0m\n");
+                printf(BSG_RED("hb_mc_request_packet_equals says they are not\n"));
                 return HB_MC_FAIL;
         }
-        printf("\033[32m Success \033[0m\n");
+        printf(BSG_GREEN("Success\n"));
 
         bsg_pr_test_info("Sending packet to tile (%d, %d)\n", target_x, target_y);
-        if(hb_mc_write_fifo(fd, 0, (hb_mc_packet_t *)(&req1)) != HB_MC_SUCCESS) {
-                bsg_pr_test_info("\033]31m Failed to write to FIFO \033[0m \n");
+        if(hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&req1)) != HB_MC_SUCCESS) {
+                bsg_pr_test_info(BSG_RED("Failed to write to FIFO\n"));
                 return HB_MC_FAIL;
         }
-        bsg_pr_test_info("\033]32m Written successfully \033[0m \n");
+        bsg_pr_test_info(BSG_GREEN("Written successfully\n"));
         
         hb_mc_request_packet_set_op(&req1, HB_MC_PACKET_OP_REMOTE_LOAD);
         bsg_pr_test_info("Testing reading packet\n");
-        if(hb_mc_write_fifo(fd, 0, (hb_mc_packet_t *)(&req1)) != HB_MC_SUCCESS) {
-                bsg_pr_test_info("\033]31m Failed to write to FIFO \033[0m \n");
+        if(hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&req1)) != HB_MC_SUCCESS) {
+                bsg_pr_test_info(BSG_RED("Failed to write to FIFO\n"));
                 return HB_MC_FAIL;
         }
         bsg_pr_test_info("Reading\n");
-        if(hb_mc_read_fifo(fd, 0, (hb_mc_packet_t *)(&res)) != HB_MC_SUCCESS) {
-                bsg_pr_test_info("\033]31m Failed to read from FIFO \033[0m\n");
+        if(hb_mc_fifo_receive(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&res)) != HB_MC_SUCCESS) {
+                bsg_pr_test_info(BSG_RED("Failed to read from FIFO\n"));
                 return HB_MC_FAIL;
         }
         bsg_pr_test_info("Comparing to expected read packet:\n");
         response_packet_to_array(&res, actual);
-        if(compare_word(4, res_desc, res_expected, actual) == HB_MC_FAIL)
+        if(compare_results(4, res_desc, res_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
         return HB_MC_SUCCESS;
 }
