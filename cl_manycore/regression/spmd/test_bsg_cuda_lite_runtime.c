@@ -117,7 +117,7 @@ int test_add_kernel () {
 	//hb_mc_host_init(&fd);
 
 	/* run on a 1 x 1 grid of tiles starting at (0, 1) */
-	tile_t tiles[1];
+	tile_t tiles[4];
 	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 1 x 1 tile group at (0, 1) */
 	eva_id_t eva_id = 0;
