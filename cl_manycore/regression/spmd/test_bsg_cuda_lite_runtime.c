@@ -101,7 +101,8 @@ int test_add_kernel () {
 	printf("Running the CUDA Addition Kernel on a tile group of size 4.\n\n");
 
 	uint8_t fd; 
-	hb_mc_host_init(&fd);
+	//hb_mc_host_init(&fd);
+
 	/* run on a 1 x 1 grid of tiles starting at (0, 1) */
 	tile_t tiles[1];
 	uint32_t num_tiles = 1, num_tiles_x = 1, num_tiles_y = 1, origin_x = 0, origin_y = 1;
@@ -112,7 +113,7 @@ int test_add_kernel () {
 	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/" "bsg_cuda_lite_runtime/main.riscv";
 
 
-	if (hb_mc_init_device(fd, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+	if (hb_mc_device_init(&fd, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return HB_MC_FAIL;
 	}  
