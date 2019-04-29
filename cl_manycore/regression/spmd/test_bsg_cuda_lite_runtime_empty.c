@@ -12,7 +12,7 @@
 static int run_kernel_empty (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles[], uint32_t num_tiles) {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
-	printf("run_kernel_empty(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
+	fprintf(stderr, "run_kernel_empty(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
 	
 	uint32_t size_buffer = 1024; 
 	eva_t A_device, B_device; 
@@ -24,7 +24,7 @@ static int run_kernel_empty (uint8_t fd, uint32_t eva_id, char *elf, tile_t tile
 		printf("Failed to allocate B on device\n");
 		return;
 	}
-	printf("run_kernel_empty(): A's EVA 0x%x, B's EVA: 0x%x\n", A_device, B_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO */
+	fprintf(stderr, "run_kernel_empty(): A's EVA 0x%x, B's EVA: 0x%x\n", A_device, B_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO */
 
 	/* zero out the vectors */
 /*
@@ -117,7 +117,6 @@ int test_empty_kernel () {
 	printf("Running the DRAM read write test on a tile group of size 2x2.\n\n");
 
 	uint8_t fd; 
-	hb_mc_host_init(&fd);
 	/* run on a 2 x 2 grid of tiles starting at (0, 1) */
 	tile_t tiles[4];
 	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
@@ -126,7 +125,7 @@ int test_empty_kernel () {
 	
 	char* ELF_CUDA_EMPTY = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/" "bsg_cuda_lite_runtime_empty/main.riscv";
 
-	if (hb_mc_init_device(fd, eva_id, ELF_CUDA_EMPTY, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+	if (hb_mc_device_init(&fd, eva_id, ELF_CUDA_EMPTY, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		printf("could not initialize device.\n");
 		return HB_MC_FAIL;
 	}  
