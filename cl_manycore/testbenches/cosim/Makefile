@@ -1,4 +1,4 @@
-TARGETS = library spmd
+TARGETS = library spmd cuda
 
 COSIMULATION_TARGETS := $(addsuffix .cosim,$(TARGETS))
 cosim: $(COSIMULATION_TARGETS)
