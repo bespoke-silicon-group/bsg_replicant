@@ -14,7 +14,7 @@ static int run_kernel_empty (uint8_t fd, uint32_t eva_id, char *elf, tile_t tile
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
 	fprintf(stderr, "run_kernel_empty(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
 	
-	uint32_t size_buffer = 1024; 
+	uint32_t size_buffer = 16; 
 	eva_t A_device, B_device; 
 	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &A_device) != HB_MC_SUCCESS) { /* allocate A on the device */
 		printf("Failed to allocate A on device\n");
