@@ -8,7 +8,7 @@
  * @param[in] tiles tile group to run on
  * @param[in] num_tiles number of tiles in the tile group
  * */
-static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles[], uint32_t num_tiles) {
+static int run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles[], uint32_t num_tiles) {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
 	fprintf(stderr, "run_kernel_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
@@ -85,16 +85,25 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 	}
 	
 	printf("Finished vector addition: \n");
+
+	int mismatch = 0; 
 	for (int i = 0; i < size_buffer; i++) {
-		if (A_host[i] + B_host[i] == C_host[i])
+		if (A_host[i] + B_host[i] == C_host[i]) {
 			printf("Match -- A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
-		else
+		}
+		else {
 			printf("Mismatch -- A[%d] + B[%d] =  0x%x + 0x%x != 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
+			mismatch = 1;
+		}
 	}	
 
 	hb_mc_device_free(eva_id, A_device); /* free A on device */
 	hb_mc_device_free(eva_id, B_device); /* free B on device */
 	hb_mc_device_free(eva_id, C_device); /* free C on device */
+
+	if (mismatch)
+		return HB_MC_FAIL;
+	return HB_MC_SUCCESS;
 }
 
 /*!
@@ -122,10 +131,10 @@ int test_add_kernel () {
 		return HB_MC_FAIL;
 	}  
 
-	run_kernel_add(fd, eva_id, ELF_CUDA_ADD, tiles, num_tiles);
+	int error = run_kernel_add(fd, eva_id, ELF_CUDA_ADD, tiles, num_tiles);
 	
 	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
-	return HB_MC_SUCCESS; 
+	return error; 
 }
 
 #ifdef COSIM
