@@ -9,7 +9,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include "spmd_tests.h"
+#include "cuda_tests.h"
 
 
 #endif
