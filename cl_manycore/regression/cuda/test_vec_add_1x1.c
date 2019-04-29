@@ -1,4 +1,4 @@
-#include "test_bsg_cuda_lite_runtime_vec_add.h"
+#include "test_vec_add_1x1.h"
 
 /*!
  * Runs the vector addition kernel on tiles that have been initialized with hb_mc_device_init(). 
@@ -11,7 +11,7 @@
 static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles[], uint32_t num_tiles) {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
-	fprintf(stderr, "run_kernel_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
+	fprintf(stderr, "run_kernel_vec_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
 
 	uint32_t size_buffer = 16; 
 	eva_t A_device, B_device, C_device; 
@@ -105,7 +105,7 @@ int kernel_vec_add () {
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 1 x 1 tile group at (0, 1) */
 	eva_id_t eva_id = 0;
 
-	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/" "bsg_cuda_lite_runtime_vec_add/main.riscv";
+	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_1x1/main.riscv";
 
 	if (hb_mc_device_init(&fd, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init(): failed to  initialize device.\n");

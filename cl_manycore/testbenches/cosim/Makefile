@@ -1,4 +1,4 @@
-TARGETS = spmd
+TARGETS = library spmd
 
 COSIMULATION_TARGETS := $(addsuffix .cosim,$(TARGETS))
 cosim: $(COSIMULATION_TARGETS)
