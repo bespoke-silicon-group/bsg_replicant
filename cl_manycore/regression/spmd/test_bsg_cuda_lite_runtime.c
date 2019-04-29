@@ -11,7 +11,8 @@
 static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles[], uint32_t num_tiles) {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
-	printf("run_kernel_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
+	fprintf(stderr, "run_kernel_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
+
 	
 	uint32_t size_buffer = 16; 
 	eva_t A_device, B_device, C_device; 
@@ -27,9 +28,10 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 		printf("Failed to allocate C on device\n");
 		return;
 	}
-	printf("run_kernel_add(): A's EVA 0x%x, B's EVA: 0x%x, C's EVA: 0x%x\n", A_device, B_device, C_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO, C should be TODO */
+	fprintf(stderr, "run_kernel_add(): A's EVA 0x%x, B's EVA: 0x%x, C's EVA: 0x%x\n", A_device, B_device, C_device); /* if CUDA malloc is correct, A should be TODO, B should be TODO, C should be TODO */
 
 	/* zero out the vectors */
+/*
 	uint32_t zeros[16] = {};
 	
 	if (hb_mc_device_memcpy (fd, eva_id, (void *) A_device, &zeros[0], size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device) != HB_MC_SUCCESS) { 
@@ -44,7 +46,7 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 		printf("Could not zero out C.\n");
 		return;
 	}
-
+*/
 
  
 	uint32_t A_host[size_buffer]; /* allocate A on the host */ 
@@ -59,8 +61,9 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 	void *src = (void *) &A_host[0];
 	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	if (error != HB_MC_SUCCESS) {
-		printf("run_kernel_add(): could not copy buffer A to device.\n");
+		fprintf(stderr, "run_kernel_add(): could not copy buffer A to device.\n");
 	}
+
 	dst = (void *) ((intptr_t) B_device);
 	src = (void *) &B_host[0];
 	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
@@ -70,6 +73,7 @@ static void run_kernel_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / num_tiles};
 	error = hb_mc_device_launch(fd, eva_id, "kernel_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
+
 
 	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 	uint32_t C_host[size_buffer];
@@ -105,7 +109,7 @@ int test_add_kernel () {
 
 	/* run on a 1 x 1 grid of tiles starting at (0, 1) */
 	tile_t tiles[1];
-	uint32_t num_tiles = 1, num_tiles_x = 1, num_tiles_y = 1, origin_x = 0, origin_y = 1;
+	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 1 x 1 tile group at (0, 1) */
 	eva_id_t eva_id = 0;
 	
