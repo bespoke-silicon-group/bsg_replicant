@@ -151,6 +151,9 @@ int hb_mc_fifo_check(uint8_t fd);
 
 int hb_mc_get_recv_vacancy (uint8_t fd);
 
+int hb_mc_tile_set_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y);
+int hb_mc_tile_set_cord(uint8_t fd, eva_id_t eva_id, char* elf, uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y);
+
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};
 
