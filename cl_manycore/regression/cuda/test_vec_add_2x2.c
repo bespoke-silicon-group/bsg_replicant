@@ -8,7 +8,7 @@
  * @param[in] tiles tile group to run on
  * @param[in] num_tiles number of tiles in the tile group
  * */
-static int run_kernel_vec_add (device_t *device, char *elf, tile_t tiles[], uint32_t num_tiles) {
+static int run_kernel_vec_add (device_t *device, tile_group_t *tg, tile_t tiles[], uint32_t num_tiles) {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(device->eva_id, &start, &size); 
 	fprintf(stderr, "run_kernel_vec_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
@@ -53,13 +53,27 @@ static int run_kernel_vec_add (device_t *device, char *elf, tile_t tiles[], uint
 	}
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / num_tiles};
-	error = hb_mc_device_launch(device, "kernel_vec_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
+	uint32_t finish_signal_addr = 0xC0DA;
+
+	error = hb_mc_tile_group_init (device, tg, "kernel_vec_add", 4, argv, finish_signal_addr);
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_launch(): failed to launch device.\n"); 
+		fprintf(stderr, "hb_mc_tile_group_init(): failed to initialize tilegroup %d.\n", tg->id); 
 		return HB_MC_FAIL;
 	}
+	
+//	error = hb_mc_tile_group_launch(device, tg); 
 
-	hb_mc_cuda_sync(device->fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
+
+//	error = hb_mc_device_launch(device, "kernel_vec_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
+//	
+//
+//	if (error != HB_MC_SUCCESS) {
+//		fprintf(stderr, "hb_mc_device_launch(): failed to launch device.\n"); 
+//		return HB_MC_FAIL;
+//	}
+//
+//	hb_mc_cuda_sync(device->fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
+
 
 	uint32_t C_host[size_buffer];
 	src = (void *) ((intptr_t) C_device);
@@ -104,9 +118,9 @@ int kernel_vec_add () {
 	uint8_t dim_x = 2, dim_y = 2, origin_x = 0, origin_y = 1;
 	eva_id_t eva_id = 0;
 
-	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_2x2/main.riscv";
+	char* ELF_PATH = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_2x2/main.riscv";
 
-	if (hb_mc_device_init(&device, eva_id, ELF_CUDA_ADD, dim_x, dim_y, origin_x, origin_y) != HB_MC_SUCCESS) {
+	if (hb_mc_device_init(&device, eva_id, ELF_PATH, dim_x, dim_y, origin_x, origin_y) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init(): failed to  initialize device.\n");
 		return HB_MC_FAIL;
 	} 
@@ -121,7 +135,7 @@ int kernel_vec_add () {
 		return HB_MC_FAIL;
 	}
 
-	error = run_kernel_vec_add(&device, ELF_CUDA_ADD, device.grid->tiles, 4);
+	error = run_kernel_vec_add(&device, &tg, device.grid->tiles, 4);
 	
 	hb_mc_device_finish(&device); /* freeze the tile and memory manager cleanup */
 	return error; 
