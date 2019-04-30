@@ -179,7 +179,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
-		hb_mc_freeze(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
+		hb_mc_freeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 		hb_mc_set_tile_group_origin(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y, device->grid->tiles[i].origin_x, device->grid->tiles[i].origin_y);
 	}
 
@@ -198,7 +198,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[i]), KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_unfreeze(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
+		hb_mc_unfreeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
 	return HB_MC_SUCCESS;
 }
@@ -251,42 +251,48 @@ void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *siz
 
 /*!
  * allocates memory in Manycore
- *@param eva_id specifies EVA-NPA mapping.
+ *@param device pointer to the device.
  *@param size in bytes.
  *@param eva returned EVA address. Set to 0 on failure.
  *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
  */
-int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva) {
+int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva) {
         *eva = 0;
-	if (eva_id != 0) {
-		return HB_MC_FAIL; /* invalid EVA ID */
+	if (device->eva_id != 0) {
+		fprintf(stderr, "hb_mc_device_malloc(): invalid EVA ID %d.\n", device->eva_id);
+		return HB_MC_FAIL; 
 	}
-	else if (!mem_manager[eva_id]) {
-		return HB_MC_FAIL; /* memory manager has not been initialized */
+	else if (!mem_manager[device->eva_id]) {
+		fprintf(stderr, "hb_mc_device_malloc(): error: memory manager not initialized.\n");
+		return HB_MC_FAIL; 
 	}
 
-	eva_t result = mem_manager[eva_id]->alloc(size);
-	if (result == awsbwhal::MemoryManager::mNull)
-		return HB_MC_FAIL; /* could not allocate */
+	eva_t result = mem_manager[device->eva_id]->alloc(size);
+	if (result == awsbwhal::MemoryManager::mNull) {
+		fprintf(stderr, "hb_mc_device_malloc(): failed to allocated memory.\n");	
+		return HB_MC_FAIL; 
+	}
         *eva = result;
 	return HB_MC_SUCCESS;
 }
 
 /*!
  * frees Hammerblade Manycore memory.
- *@param eva_id specifies EVA-NPA mapping.
+ *@param device pointer to the device.
  *@param eva address to free.
  *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
  */
-int hb_mc_device_free (eva_id_t eva_id, eva_t eva) {
-	if (eva_id != 0) {
-		return HB_MC_FAIL; /* invalid EVA ID */
+int hb_mc_device_free (device_t *device, eva_t eva) {
+	if (device->eva_id != 0) {
+		fprintf(stderr, "hb_mc_device_free(): invalid EVA ID %d.\n", device->eva_id); 
+		return HB_MC_FAIL; 
 	}
-	else if (!mem_manager[eva_id]) {
-		return HB_MC_FAIL; /* memory manager has not been initialized */
+	else if (!mem_manager[device->eva_id]) {
+		fprintf(stderr, "hb_mc_device_free(): error: memory manager not initialized.\n");
+		return HB_MC_FAIL; 
 	}
 
-	mem_manager[eva_id]->free(eva);
+	mem_manager[device->eva_id]->free(eva);
 	return HB_MC_SUCCESS;
 }
 
@@ -321,17 +327,21 @@ static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, hb_mc_response_packe
 	return HB_MC_SUCCESS;
 }
 
-int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
-	if (eva_id != 0) 
-		return HB_MC_FAIL; /* invalid EVA ID */
+int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
+	if (device->eva_id != 0) {
+		fprintf(stderr, "hb_mc_device_memcpy(): invalid EVA ID %d.\n", device->eva_id);
+		return HB_MC_FAIL; 
+	}
 
 	else if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
 		eva_t dst_eva = (eva_t) reinterpret_cast<uintptr_t>(dst);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
 			char *src_word = (char *) src + i;
-			int error = hb_mc_cpy_to_eva(fd, eva_id, dst_eva + i, (uint32_t *) (src_word)); 		
-			if (error != HB_MC_SUCCESS)
-				return HB_MC_FAIL; /* copy failed */
+			int error = hb_mc_cpy_to_eva(device->fd, device->eva_id, dst_eva + i, (uint32_t *) (src_word)); 		
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_device_memcpy() --> hb_mc_cpy_to_eva(): failed to copy to device.\n");
+				return HB_MC_FAIL; 
+			}
 		}
 		return HB_MC_SUCCESS;	
 	}
@@ -341,9 +351,11 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
                         // read in a packet
                         hb_mc_response_packet_t dst_packet;
-			int error = hb_mc_cpy_from_eva(fd, eva_id, &dst_packet, src_eva + i);
-			if (error != HB_MC_SUCCESS)
-				return HB_MC_FAIL; /* copy failed */
+			int error = hb_mc_cpy_from_eva(device->fd, device->eva_id, &dst_packet, src_eva + i);
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_device_memcpy() --> hb_mc_cpy_from_eva(): failed to copy to host.\n");
+				return HB_MC_FAIL; 
+			}
 
                         // copy the word into caller dst buffer
                         uint32_t *dst_w = (uint32_t*)dst;
@@ -351,8 +363,10 @@ int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src
 		}
 		return HB_MC_SUCCESS;	
 	}
-	else 
-		return HB_MC_FAIL; /* invalid kind */
+	else {
+		fprintf(stderr, "hb_mc_device_memcpy(): invalid copy type. Copy type can be one of hb_mc_memcpy_to_device or hb_mc_memcpy_to_host.\n");
+		return HB_MC_FAIL; 
+		}
 }
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
@@ -364,24 +378,12 @@ void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
 	hb_mc_device_sync(fd, &finish);
 } 
 
-void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
-	hb_mc_request_packet_t recv;
-	/* wait for Manycore to send packet */
-	while (1) {
-		hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
-		
-		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
-			break; /* finish packet received from Hammerblade Manycore */
-	}	
-}
-
-
-int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
+int hb_mc_device_launch (device_t *device, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
 	eva_t args_eva;
-        int error = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
+        int error = hb_mc_device_malloc (device, argc * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
         if (error != HB_MC_SUCCESS)
             return HB_MC_FAIL;
-	error = hb_mc_device_memcpy(fd, eva_id, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	error = hb_mc_device_memcpy(device, reinterpret_cast<void *>(args_eva), (void *) &argv[0], argc * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	
@@ -391,25 +393,25 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 		return HB_MC_FAIL;
 	
 	for (int i = 0; i < num_tiles; i++) {
-		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGC_REG, argc); /* write argc to tile */
+		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &tiles[i], ARGC_REG, argc); /* write argc to tile */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL; 
 		
-		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], ARGV_REG, args_eva); /* write EVA of arguments to tile group */
+		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &tiles[i], ARGV_REG, args_eva); /* write EVA of arguments to tile group */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL; 
 
 
 		npa_t host_npa = {(uint32_t) hb_mc_get_manycore_dimension_x() - 1, 0, FINISH_ADDRESS};
 		eva_t host_eva;
-		error = hb_mc_npa_to_eva_deprecated(eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
+		error = hb_mc_npa_to_eva_deprecated(device->eva_id, &host_npa, &host_eva); /* tile will write to this address when it finishes executing the kernel */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], SIGNAL_REG, host_eva); 
+		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &tiles[i], SIGNAL_REG, host_eva); 
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
 
-		error = hb_mc_write_tile_reg(fd, eva_id, &tiles[i], KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
+		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &tiles[i], KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL; 
 	} 

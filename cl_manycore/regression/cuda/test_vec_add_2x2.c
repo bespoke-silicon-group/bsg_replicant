@@ -8,22 +8,22 @@
  * @param[in] tiles tile group to run on
  * @param[in] num_tiles number of tiles in the tile group
  * */
-static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t tiles[], uint32_t num_tiles) {
+static int run_kernel_vec_add (device_t *device, char *elf, tile_t tiles[], uint32_t num_tiles) {
 	uint32_t start, size;
-	_hb_mc_get_mem_manager_info(eva_id, &start, &size); 
+	_hb_mc_get_mem_manager_info(device->eva_id, &start, &size); 
 	fprintf(stderr, "run_kernel_vec_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
 
 	uint32_t size_buffer = 16; 
 	eva_t A_device, B_device, C_device; 
-	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &A_device) != HB_MC_SUCCESS) { /* allocate A on the device */
+	if(hb_mc_device_malloc(device, size_buffer * sizeof(uint32_t), &A_device) != HB_MC_SUCCESS) { /* allocate A on the device */
 		fprintf(stderr, "hb_mc_device_malloc(): failed to allocate A on device\n");
 		return HB_MC_FAIL;
 	}
-	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &B_device) != HB_MC_SUCCESS) { /* allocate B on the device */
+	if(hb_mc_device_malloc(device, size_buffer * sizeof(uint32_t), &B_device) != HB_MC_SUCCESS) { /* allocate B on the device */
 		fprintf(stderr, "hb_mc_device_malloc(): failed to allocate B on device\n");
 		return HB_MC_FAIL;
 	}
-	if(hb_mc_device_malloc(eva_id, size_buffer * sizeof(uint32_t), &C_device) != HB_MC_SUCCESS) { /* allocate C on the device */
+	if(hb_mc_device_malloc(device, size_buffer * sizeof(uint32_t), &C_device) != HB_MC_SUCCESS) { /* allocate C on the device */
 		fprintf(stderr, "hb_mcdevice_malloc(): failed to allocate C on device\n");
 		return HB_MC_FAIL;
 	}
@@ -39,7 +39,7 @@ static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 
 	void *dst = (void *) ((intptr_t) A_device);
 	void *src = (void *) &A_host[0];
-	int error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
+	int error = hb_mc_device_memcpy (device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_memcpy(): failed to copy buffer A to device.\n");
 		return HB_MC_FAIL;
@@ -47,24 +47,24 @@ static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 
 	dst = (void *) ((intptr_t) B_device);
 	src = (void *) &B_host[0];
-	error = hb_mc_device_memcpy (fd, eva_id, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
+	error = hb_mc_device_memcpy (device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_memcpy(): failed to copy buffer B to device.\n");
 	}
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / num_tiles};
-	error = hb_mc_device_launch(fd, eva_id, "kernel_vec_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
+	error = hb_mc_device_launch(device, "kernel_vec_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_launch(): failed to launch device.\n"); 
 		return HB_MC_FAIL;
 	}
 
-	hb_mc_cuda_sync(fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
+	hb_mc_cuda_sync(device->fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
 
 	uint32_t C_host[size_buffer];
 	src = (void *) ((intptr_t) C_device);
 	dst = (void *) &C_host[0];
-	error = hb_mc_device_memcpy (fd, eva_id, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
+	error = hb_mc_device_memcpy (device, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_memcpy(): failed copy C from device.\n");
 		return HB_MC_FAIL;
@@ -83,9 +83,9 @@ static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 		}
 	}	
 
-	hb_mc_device_free(eva_id, A_device); /* free A on device */
-	hb_mc_device_free(eva_id, B_device); /* free B on device */
-	hb_mc_device_free(eva_id, C_device); /* free C on device */
+	hb_mc_device_free(device, A_device); /* free A on device */
+	hb_mc_device_free(device, B_device); /* free B on device */
+	hb_mc_device_free(device, C_device); /* free C on device */
 
 	if (mismatch)
 		return HB_MC_FAIL;
@@ -114,7 +114,7 @@ int kernel_vec_add () {
 		return HB_MC_FAIL;
 	}  
 
-	int error = run_kernel_vec_add(device.fd, eva_id, ELF_CUDA_ADD, device.grid->tiles, 4);
+	int error = run_kernel_vec_add(&device, ELF_CUDA_ADD, device.grid->tiles, 4);
 	
 	hb_mc_device_finish(&device); /* freeze the tile and memory manager cleanup */
 	return error; 
