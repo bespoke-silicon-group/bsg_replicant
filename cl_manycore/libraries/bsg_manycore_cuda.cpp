@@ -211,14 +211,16 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
  * @param num_tiles the number of tiles to initialize.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles) {
+int hb_mc_device_finish (device_t *device) {
 
-	if (eva_id != 0) {
-		return HB_MC_FAIL; /* eva_id not supported */
+	if (device->eva_id != 0) {
+		fprintf(stderr, "hb_mc_device_finish(): error: eva_id not supported.\n"); 
+		return HB_MC_FAIL;
 	} 
 
-	else if (!mem_manager[eva_id])
-		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */
+	if (!mem_manager[device->eva_id])
+		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */	
+	delete(mem_manager[device->eva_id]);
 	
 	delete(mem_manager[eva_id]);
 	

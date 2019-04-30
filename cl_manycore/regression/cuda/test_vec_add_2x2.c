@@ -116,7 +116,7 @@ int kernel_vec_add () {
 
 	int error = run_kernel_vec_add(device.fd, eva_id, ELF_CUDA_ADD, device.grid->tiles, 4);
 	
-	hb_mc_device_finish(device.fd, eva_id, device.grid->tiles, 4); /* freeze the tile and memory manager cleanup */
+	hb_mc_device_finish(&device); /* freeze the tile and memory manager cleanup */
 	return error; 
 }
 
