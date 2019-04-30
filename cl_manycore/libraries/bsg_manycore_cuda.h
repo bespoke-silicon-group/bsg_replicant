@@ -49,18 +49,17 @@ typedef struct {
 
 int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y);
 int hb_mc_device_finish (device_t *device);
-int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva);
-int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
+int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva);
+int hb_mc_device_free (device_t *device, eva_t eva);
 
 int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);
-void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
-int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles);
+int hb_mc_device_launch (device_t *device, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles);
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
 
 enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
-int hb_mc_device_memcpy (uint8_t fd, eva_id_t eva_id, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
+int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
 void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);
 #ifdef __cplusplus
