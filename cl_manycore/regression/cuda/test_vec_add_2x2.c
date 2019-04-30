@@ -99,7 +99,8 @@ static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 int kernel_vec_add () {
 	fprintf(stderr, "Running the CUDA Addition Kernel on a tile group of size 2x2.\n\n");
 
-	uint8_t fd; 
+//	uint8_t fd; 
+	device_t device;
 	tile_t tiles[2];
 	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
 	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 2x2 tile group at (0, 1) */
@@ -107,14 +108,14 @@ int kernel_vec_add () {
 
 	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_2x2/main.riscv";
 
-	if (hb_mc_device_init(&fd, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
+	if (hb_mc_device_init(&device, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init(): failed to  initialize device.\n");
 		return HB_MC_FAIL;
 	}  
 
-	int error = run_kernel_vec_add(fd, eva_id, ELF_CUDA_ADD, tiles, num_tiles);
+	int error = run_kernel_vec_add(device.fd, eva_id, ELF_CUDA_ADD, tiles, num_tiles);
 	
-	hb_mc_device_finish(fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
+	hb_mc_device_finish(device.fd, eva_id, tiles, num_tiles); /* freeze the tile and memory manager cleanup */
 	return error; 
 }
 

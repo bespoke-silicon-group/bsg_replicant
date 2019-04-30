@@ -85,7 +85,7 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
  * @param num_tiles the number of tiles to initialize.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
+int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
 	
 	int error = hb_mc_fifo_init(fd); 
 	if (error != HB_MC_SUCCESS) {
@@ -107,17 +107,21 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
 	hb_mc_get_x(tiles, &x_list[0], num_tiles);
 	hb_mc_get_y(tiles, &y_list[0], num_tiles); 
-	hb_mc_load_binary(*fd, elf, &x_list[0], &y_list[0], num_tiles);
+	hb_mc_load_binary(device->fd, elf, &x_list[0], &y_list[0], num_tiles);
 	/* create a memory manager object */
 	if (hb_mc_create_memory_manager(eva_id, elf) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
   	
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
-		error = hb_mc_write_tile_reg(*fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
+		error = hb_mc_write_tile_reg(device->fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
+<<<<<<< HEAD
 		hb_mc_tile_unfreeze_dep(*fd, tiles[i].x, tiles[i].y);
+=======
+		hb_mc_unfreeze(device->fd, tiles[i].x, tiles[i].y);
+>>>>>>> 1833ac4... 1. Added grid_t struct that includes a list of tiles, grid dimensions and origin.
 	}
 	return HB_MC_SUCCESS;
 }
