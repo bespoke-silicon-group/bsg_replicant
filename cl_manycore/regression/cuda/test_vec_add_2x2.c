@@ -1,4 +1,4 @@
-#include "test_vec_add_1x1.h"
+#include "test_vec_add_2x2.h"
 
 /*!
  * Runs the vector addition kernel on tiles that have been initialized with hb_mc_device_init(). 
@@ -93,19 +93,19 @@ static int run_kernel_vec_add (uint8_t fd, uint32_t eva_id, char *elf, tile_t ti
 }
 
 /*!
- * Runs the addition kernel on a 1 x 1 tile group at (0, 1). 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/ Manycore binary in the bladerunner_v030_cuda branch of the BSG Manycore bitbucket repository. This test assumes there is an environment variable `ELF_CUDA_ADD` that points to this binary. 
+ * Runs the addition kernel on a 2x2 tile group at (0, 1). 
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_2x2/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore bitbucket repository.  
 */
 int kernel_vec_add () {
-	fprintf(stderr, "Running the CUDA Addition Kernel on a tile group of size 1.\n\n");
+	fprintf(stderr, "Running the CUDA Addition Kernel on a tile group of size 2x2.\n\n");
 
 	uint8_t fd; 
-	tile_t tiles[1];
-	uint32_t num_tiles = 1, num_tiles_x = 1, num_tiles_y = 1, origin_x = 0, origin_y = 1;
-	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 1 x 1 tile group at (0, 1) */
+	tile_t tiles[2];
+	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
+	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 2x2 tile group at (0, 1) */
 	eva_id_t eva_id = 0;
 
-	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_1x1/main.riscv";
+	char* ELF_CUDA_ADD = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_2x2/main.riscv";
 
 	if (hb_mc_device_init(&fd, eva_id, ELF_CUDA_ADD, &tiles[0], num_tiles) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init(): failed to  initialize device.\n");
