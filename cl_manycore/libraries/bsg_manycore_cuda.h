@@ -47,10 +47,12 @@ typedef struct {
 
 
 
-int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
+int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y);
 int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
+
+int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);
 void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);

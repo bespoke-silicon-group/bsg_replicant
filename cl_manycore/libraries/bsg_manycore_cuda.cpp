@@ -88,6 +88,76 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
 }
 
 /*
+ * Takes in a device_t struct and initializes a grid of tile in the Manycore device.
+ * @param[in] device points to the device. 
+ * @param[in] dim_x/y determines the dimensions of grid. 
+ * @param[in] origin_x/y determines the origin tile in the grid.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y){ 
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+	
+	uint32_t device_dim_x, device_dim_y;
+	int error;
+
+	error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_DIM_X, &device_dim_x); 
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_get_config(): failed to get device X dimension.\n");
+		return HB_MC_FAIL;
+	}
+
+	error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_DIM_Y, &device_dim_y); 
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_get_config(): failed to get device Y dimension.\n");
+		return HB_MC_FAIL;
+	}
+
+	if (dim_x <= 0){
+		fprintf (stderr, "hb_mc_init_grid(): Grid X dimension (%d) not valid.\n", dim_x); 
+		return HB_MC_FAIL;
+	}
+	if (dim_y <= 0){
+		fprintf (stderr, "hb_mc_init_grid(): Grid Y dimension (%d) not valid.\n", dim_y);
+		return HB_MC_FAIL;
+	}
+	if (dim_x > device_dim_x){
+		fprintf (stderr, "hb_mc_init_grid(): Grid X dimension (%d) larger than device X dimension.\n", dim_x, device_dim_x); 
+		return HB_MC_FAIL;
+	}
+	if (dim_y > device_dim_y){
+		fprintf (stderr, "hb_mc_inti_grid(): Grid Y dimension (%d) larger than device Y dimension.\n", dim_y, device_dim_y);
+		return HB_MC_FAIL;
+	}
+
+	tile_t* tiles = new tile_t [dim_x * dim_y];
+	for (int x = origin_x; x < origin_x + dim_x; x++){
+		for (int y = origin_y; y < origin_y + dim_y; y++){
+			int tile_id = (y - origin_y) * dim_x + (x - origin_x);
+			tiles[tile_id].x = x;
+			tiles[tile_id].y = y;
+			tiles[tile_id].origin_x = origin_x;
+			tiles[tile_id].origin_y = origin_y;
+			tiles[tile_id].tile_group_id = -1;
+			tiles[tile_id].free = 1;
+		}
+	}
+
+	grid_t *grid = new grid_t; 
+	grid->dim_x = dim_x;
+	grid->dim_y = dim_y;
+	grid->origin_x = origin_x;
+	grid->origin_y = origin_y;
+	grid->tiles= (tile_t*)tiles;
+
+	device->grid = grid;
+
+	return HB_MC_SUCCESS;	
+}
+
+/*
  * Initializes Manycore tiles so that they may run kernels.
  * @param fd userspace file descriptor, which must be obtained from hb_mc_host_init.
  * @param eva_id specifies what the EVA-NPA mapping is.
@@ -95,7 +165,7 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
  * @param num_tiles the number of tiles to initialize.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
+int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y) {
 	
 	int error = hb_mc_fifo_init(fd); 
 	if (error != HB_MC_SUCCESS) {
@@ -106,28 +176,39 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, tile_t *til
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* eva_id not supported */
 	} 
-	
+	device->eva_id = eva_id;
+	device->elf = elf; 
+
+	error = hb_mc_grid_init(device, dim_x, dim_y, origin_x, origin_y);
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_init() --> hb_mc_grid_init(): failed to initialize grid.\n");
+		return HB_MC_FAIL;
+	}
+
+	uint32_t num_tiles = device->grid->dim_x * device->grid->dim_y; 	
+
+
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
-		hb_mc_freeze(device->fd, tiles[i].x, tiles[i].y);
-		hb_mc_set_tile_group_origin(device->fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
+		hb_mc_freeze(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
+		hb_mc_set_tile_group_origin(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y, device->grid->tiles[i].origin_x, device->grid->tiles[i].origin_y);
 	}
 
 
 	/* load the elf into each tile */
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
-	hb_mc_get_x(tiles, &x_list[0], num_tiles);
-	hb_mc_get_y(tiles, &y_list[0], num_tiles); 
-	hb_mc_load_binary(device->fd, elf, &x_list[0], &y_list[0], num_tiles);
+	hb_mc_get_x(device->grid->tiles, &x_list[0], num_tiles);
+	hb_mc_get_y(device->grid->tiles, &y_list[0], num_tiles); 
+	hb_mc_load_binary(device->fd, device->elf, &x_list[0], &y_list[0], num_tiles);
 	/* create a memory manager object */
-	if (hb_mc_create_memory_manager(eva_id, elf) != HB_MC_SUCCESS)
+	if (hb_mc_create_memory_manager(device->eva_id, device->elf) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
   	
 	/* unfreeze the tile group */
 	for (int i = 0; i < num_tiles; i++) {
-		error = hb_mc_write_tile_reg(device->fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
+		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[i]), KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_unfreeze(device->fd, tiles[i].x, tiles[i].y);
+		hb_mc_unfreeze(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
 	return HB_MC_SUCCESS;
 }
