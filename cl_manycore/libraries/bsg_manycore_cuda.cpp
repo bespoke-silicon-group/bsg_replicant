@@ -227,7 +227,12 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, tile_group_id
  * @param[in] finish_signal_addr is the address that the tilegroup will writes its finish signal into. 
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_tile_group_init (device_t* devicn, tile_group_t* tg, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
+int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_init() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
 	kernel_t *kernel = new kernel_t;
 	kernel->name = name;
 	kernel->argc = argc;
@@ -236,6 +241,93 @@ int hb_mc_tile_group_init (device_t* devicn, tile_group_t* tg, char* name, uint3
 	tg->kernel = kernel; 
 	return HB_MC_SUCCESS;
 }
+
+
+int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	eva_t args_eva;
+	int error = hb_mc_device_malloc (device, (tg->kernel->argc) * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_malloc(): failed to allocate space on device of tile group %d arguments.\n", tg->id);
+		return HB_MC_FAIL;
+	}
+
+	error = hb_mc_device_memcpy(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_memcpy(): failed to copy tile group %d arguments to device.\n", tg->id); 
+		return HB_MC_FAIL;
+	}
+	
+	eva_t kernel_eva; 
+	error = symbol_to_eva(device->elf, tg->kernel->name, &kernel_eva); /* get EVA of kernel */
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_symbol_to_eva(): invalid kernel name %s for tile group %d.\n", tg->kernel->name, tg->id); 
+		return HB_MC_FAIL;
+	}
+
+	int tile_id;
+	for (int y = tg->origin_y; y < tg->origin_y + tg->dim_y; y++){
+		for (int x = tg->origin_x; x < tg->origin_x + tg->dim_x; x++){
+			tile_id = (y - device->grid->origin_y) * device->grid->dim_x + (x - device->grid->origin_x);
+
+
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), ARGC_REG, tg->kernel->argc); /* write argc to tile */
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argc %d to device for tile group %d.\n", tg->kernel->argc, tg->id); 
+				return HB_MC_FAIL; 
+			}
+		
+
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), ARGV_REG, args_eva); /* write EVA of arguments to tile group */
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argv to device for tile group %d.\n", tg->id);
+				return HB_MC_FAIL; 
+			}
+
+			uint32_t host_coord_x, host_coord_y;
+			error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &host_coord_x);
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_get_config(): failed to get device-host interface X coordiante.\n");
+				return HB_MC_FAIL;
+			}
+
+			error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &host_coord_y);
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_get_config(): failed to get device-host interface Y coordiante.\n");
+				return HB_MC_FAIL;
+			}
+
+
+
+			npa_t finish_signal_host_npa = {host_coord_x, host_coord_y, tg->kernel->finish_signal_addr};
+			eva_t finish_signal_host_eva;
+			error = hb_mc_npa_to_eva(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva); /* tile will write to this address when it finishes executing the kernel */
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_npa_to_eva(): failed to get finish_signal_host_eva from finish_signal_host_npa.\n");
+				return HB_MC_FAIL;
+			}
+
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), SIGNAL_REG, finish_signal_host_eva); 
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_allocate_tile_group() --> hb_mc_write_tile_reg(): failed to write finish_signal_addr %d to device for tile group %d.\n", finish_signal_host_eva, tg->id);
+				return HB_MC_FAIL;
+			}
+
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write kernel eva %d to device for tile group %d.\n", kernel_eva, tg->id);
+				return HB_MC_FAIL; 
+			}
+		}
+	} 
+
+	return HB_MC_SUCCESS;
+}
+
 
 
 /*
