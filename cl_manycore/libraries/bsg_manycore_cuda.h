@@ -24,9 +24,30 @@ typedef struct {
 	uint8_t y;
 	uint8_t origin_x;
 	uint8_t origin_y;
+	uint8_t tile_group_id;
+	uint8_t free;
 } tile_t;
 
-int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
+
+typedef struct {
+	uint8_t dim_x;
+	uint8_t dim_y;
+	uint8_t origin_x;
+	uint8_t origin_y;
+	tile_t* tiles;
+} grid_t;
+
+
+typedef struct {
+	uint8_t fd;
+	eva_id_t eva_id; 
+	grid_t *grid;
+	char* elf;
+} device_t; 
+
+
+
+int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t num_tiles);
 int hb_mc_device_malloc (eva_id_t eva_id, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (eva_id_t eva_id, eva_t eva);
