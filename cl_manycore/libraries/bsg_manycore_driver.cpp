@@ -809,6 +809,93 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	}	
 }
 
+/*
+ * Sets a Vanilla Core Endpoint's tile group's origin.
+ * @param[in] fd userspace file descriptor
+ * @param[in] eva_id eva-to-npa mapping
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @param[in] origin_x x coordinate of tile group's origin
+ * @param[in] origin_y y coordinate of tile groups origin
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_tile_set_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y) {
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin(): invalid device %d.\n", fd);
+		return HB_MC_FAIL;
+	}
+	
+	hb_mc_packet_t packet_origin_x, packet_origin_y;		
+	hb_mc_format_request_packet(&packet_origin_x.request, 
+				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
+								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET),
+				origin_x, x, y,
+				HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(&packet_origin_y.request,
+				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
+								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET),
+				origin_y, x, y, 
+				HB_MC_PACKET_OP_REMOTE_STORE);
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin() --> hb_mc_fifo_transmit(): failed to set tile X origin.\n");
+		return HB_MC_FAIL;
+	}
+	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", x, y, origin_x);
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin() --> hb_mc_fifo_transmit(): failed to set tile Y origin.\n");
+		return HB_MC_FAIL;
+	}
+	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", x, y, origin_y);
+
+	return HB_MC_SUCCESS;
+}
+
+/*! 
+ * Sets a Vanilla Core Endpoint's tile's X,Y coordinates.
+ * @param[in] fd userspace file descriptor
+ * @param[in] eva_id eva-to-npa mapping
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_cord (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y){
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_cord(): invalid device %d.\n", fd);
+		return HB_MC_FAIL;
+	}
+
+	eva_t bsg_x_eva, bsg_y_eva;
+	if (symbol_to_eva(elf, "__bsg_x", &bsg_x_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_cord() --> symbol_to_eva(): failed to aquire __bsg_x eva.\n");
+		return HB_MC_FAIL;
+	}
+	if (symbol_to_eva(elf, "__bsg_y", &bsg_y_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_cord() --> symbol_to_eva(): failed to aquire __bsg_y eva.\n");
+		return HB_MC_FAIL;
+	}
+
+
+	hb_mc_packet_t packet_cord_x, packet_cord_y;
+	hb_mc_format_request_packet (&packet_cord_x.request, (bsg_x_eva >> 2), cord_x, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet (&packet_cord_y.request, (bsg_y_eva >> 2), cord_y, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	
+	
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_x) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_cord() --> hb_mc_fifo_transmit(): failed to set tile X.\n");
+		return HB_MC_FAIL;
+	}
+	fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva %d) to %d.\n", x, y, bsg_x_eva, cord_x);
+
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_y) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_cord() --> hb_mc_fifo_transmit(): failed to set tile Y.\n");
+		return HB_MC_FAIL;
+	}
+	fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva %d) to %d.\n", x, y, bsg_y_eva, cord_y);
+
+	return HB_MC_SUCCESS;
+}
+
+
 /*!
  * creates a tile group with a specified origin
  * @param[out] tiles an array of tiles that will be set in row-order. This should be allocated by the caller
@@ -880,40 +967,6 @@ int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 		return HB_MC_FAIL;
 	else
 		return HB_MC_SUCCESS;
-}
-
-/*!
- * Sets a Vanilla Core Endpoint's tile group's origin.
- * @param[in] fd userspace file descriptor.
- * @param[in] x x coordinate of tile
- * @param[in] y y coordinate of tile
- * @param[in] origin_x x coordinate of tile group's origin
- * @param[in] origin_y y coordinate of tile groups origin
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
- */
-int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		return HB_MC_FAIL;
-	}
-	
-	hb_mc_packet_t packet_origin_x, packet_origin_y;		
-	hb_mc_format_request_packet(&packet_origin_x.request, 
-				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
-								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET),
-				origin_x, x, y,
-				HB_MC_PACKET_OP_REMOTE_STORE);
-	hb_mc_format_request_packet(&packet_origin_y.request,
-				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
-								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET),
-				origin_y, x, y, 
-				HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
-		return HB_MC_FAIL;
-	}
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
-		return HB_MC_FAIL;
-	}
-	return HB_MC_SUCCESS;
 }
 
 /*!

@@ -157,8 +157,6 @@ int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 	return HB_MC_SUCCESS;	
 }
 
-
-
 /*
  * Searches for a free tile group inside the device grid and allocoates it, and sets the dimensions, origin, and id of tile group.
  * @params[in] device and tg point to the device and tile group structures.
@@ -168,50 +166,53 @@ int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
  * */	
 int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, tile_group_id_t id, uint8_t dim_x, uint8_t dim_y){
 	if (dim_x > device->grid->dim_x){
-		fprintf(stderr, "hb_mc_init_tile_group(): tile group X dimension (%d) larger than grid X dimension (%d).\n", dim_x, device->grid->dim_x);
+		fprintf(stderr, "hb_mc_tile_group_allocate(): tile group X dimension (%d) larger than grid X dimension (%d).\n", dim_x, device->grid->dim_x);
 		return HB_MC_FAIL;
 	}
 	if (dim_y > device->grid->dim_y){
-		fprintf(stderr, "hb_mc_init_tile_group(): tile group Y dimension (%d) larger than grid Y dimension (%d).\n", dim_y, device->grid->dim_y);
+		fprintf(stderr, "hb_mc_tile_group_allocate(): tile group Y dimension (%d) larger than grid Y dimension (%d).\n", dim_y, device->grid->dim_y);
 		return HB_MC_FAIL;
 	}
-
-	int org_x = device->grid->origin_x;
-	int org_y = device->grid->origin_y;
-	while ( (org_x <= (device->grid->origin_x + device->grid->dim_x - dim_x)) && (org_y <= (device->grid->origin_y + device->grid->dim_y - dim_y))){
-		int free = 1;
-		int tile_id;
-		for (int x = org_x; x < org_x + dim_x; x++){
-			for (int y = org_y; y < org_y + dim_y; y++){
-				tile_id = (y - device->grid->origin_y) * device->grid->dim_x + (x - device->grid->origin_x);
-				free = free & device->grid->tiles[tile_id].free;
-			}
-		}
-		if (free){
+	for (int org_y = device->grid->origin_y; org_y <= (device->grid->origin_y + device->grid->dim_y - dim_y); org_y++){
+		for (int org_x = device->grid->origin_x; org_x <= (device->grid->origin_x + device->grid->dim_x - dim_x); org_x++){
+			int free = 1;
+			int tile_id;
 			for (int x = org_x; x < org_x + dim_x; x++){
 				for (int y = org_y; y < org_y + dim_y; y++){
 					tile_id = (y - device->grid->origin_y) * device->grid->dim_x + (x - device->grid->origin_x);
-					device->grid->tiles[tile_id].origin_x = org_x;
-					device->grid->tiles[tile_id].origin_y = org_y;
-					device->grid->tiles[tile_id].tile_group_id = id;
-					device->grid->tiles[tile_id].free = 0;
-					hb_mc_set_tile_group_origin(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y);
+					free = free & device->grid->tiles[tile_id].free;
 				}
 			}
+			if (free){
+				for (int x = org_x; x < org_x + dim_x; x++){
+					for (int y = org_y; y < org_y + dim_y; y++){
+						tile_id = (y - device->grid->origin_y) * device->grid->dim_x + (x - device->grid->origin_x);
+						device->grid->tiles[tile_id].origin_x = org_x;
+						device->grid->tiles[tile_id].origin_y = org_y;
+						device->grid->tiles[tile_id].tile_group_id = id;
+						device->grid->tiles[tile_id].free = 0;
 
-			tg->id = id;
-			tg->origin_x = org_x;
-			tg->origin_y = org_y;
-			tg->dim_x = dim_x;
-			tg->dim_y = dim_y;
+						if (hb_mc_tile_set_origin(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y) != HB_MC_SUCCESS){
+							fprintf (stderr, "hb_mc_tile_group_allocate() --> hb_mc_tile_set_origin(): failed to set tile group origin.\n");
+							return HB_MC_FAIL;
+						}
+						if (hb_mc_tile_set_cord(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, (x - org_x), (y - org_y)) != HB_MC_SUCCESS){
+							fprintf(stderr, "hb_mc_tile_group_allocate() --> hb_mc_tile_set_cord(): failed to set tile coordinates.\n");
+							return HB_MC_FAIL;
+						}
+					}
+				}
+		
+				tg->id = id;
+				tg->origin_x = org_x;
+				tg->origin_y = org_y;
+				tg->dim_x = dim_x;
+				tg->dim_y = dim_y;
 
-			#ifdef DEBUG
-			fprintf("%dx%d tilegroup %d allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
-			#endif
-			return HB_MC_SUCCESS;
+				fprintf(stderr, "%dx%d tile group %d allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
+				return HB_MC_SUCCESS;
+			}
 		}
-		org_x ++;
-		org_y ++;		
 	}
 	return HB_MC_FAIL;
 }
@@ -253,7 +254,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
 		hb_mc_freeze(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
-		hb_mc_set_tile_group_origin(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y, device->grid->tiles[i].origin_x, device->grid->tiles[i].origin_y);
+		hb_mc_tile_set_origin(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y, device->grid->tiles[i].origin_x, device->grid->tiles[i].origin_y);
 	}
 
 
