@@ -207,8 +207,25 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, tile_group_id
 	return HB_MC_FAIL;
 }
 
-
-
+/*
+ * Takes the kernel name, argc, argv* and the finish signal address, and initializes a kernel and passes it to tilegroup.
+ * @param[in] *device device pointer.
+ * @param[in] *tg points to the tile group structure.
+ * @param[in] name pointers to the name of the kernel.
+ * @param[in] argc number of input arguments for the kernel.
+ * @param[in] *argv pointer to the arguments in memory.
+ * @param[in] finish_signal_addr is the address that the tilegroup will writes its finish signal into. 
+ * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
+ * */	
+int hb_mc_tile_group_init (device_t* devicn, tile_group_t* tg, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
+	kernel_t *kernel = new kernel_t;
+	kernel->name = name;
+	kernel->argc = argc;
+	kernel->argv = argv;
+	kernel->finish_signal_addr = finish_signal_addr;
+	tg->kernel = kernel; 
+	return HB_MC_SUCCESS;
+}
 
 
 /*
