@@ -30,6 +30,12 @@ typedef struct {
 	uint8_t free;
 } tile_t;
 
+typedef struct {
+	char *name;
+	uint32_t argc;
+	uint32_t *argv;
+	uint32_t finish_signal_addr;
+} kernel_t;
 
 typedef struct {
 	tile_group_id_t id;
@@ -37,9 +43,7 @@ typedef struct {
 	uint8_t origin_y;
 	uint8_t dim_x;
 	uint8_t dim_y;
-	uint32_t argc;
-	uint32_t *argv;
-	char *kernel;
+	kernel_t *kernel;
 } tile_group_t;
 
 
@@ -72,6 +76,7 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
 int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg, tile_group_id_t id, uint8_t dim_x, uint8_t dim_y);  
+int hb_mc_tile_group_init(device_t *device, tile_group_t *tg, char *name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr);
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
