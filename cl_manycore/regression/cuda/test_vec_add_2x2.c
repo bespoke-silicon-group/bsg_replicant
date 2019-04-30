@@ -97,13 +97,10 @@ static int run_kernel_vec_add (device_t *device, char *elf, tile_t tiles[], uint
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_2x2/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore bitbucket repository.  
 */
 int kernel_vec_add () {
+	int error;
 	fprintf(stderr, "Running the CUDA Addition Kernel on a tile group of size 2x2.\n\n");
 
-//	uint8_t fd; 
 	device_t device;
-//	tile_t tiles[4];
-//	uint32_t num_tiles = 4, num_tiles_x = 2, num_tiles_y = 2, origin_x = 0, origin_y = 1;
-//	create_tile_group(tiles, num_tiles_x, num_tiles_y, origin_x, origin_y); /* 2x2 tile group at (0, 1) */
 	uint8_t dim_x = 2, dim_y = 2, origin_x = 0, origin_y = 1;
 	eva_id_t eva_id = 0;
 
@@ -112,9 +109,19 @@ int kernel_vec_add () {
 	if (hb_mc_device_init(&device, eva_id, ELF_CUDA_ADD, dim_x, dim_y, origin_x, origin_y) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init(): failed to  initialize device.\n");
 		return HB_MC_FAIL;
-	}  
+	} 
 
-	int error = run_kernel_vec_add(&device, ELF_CUDA_ADD, device.grid->tiles, 4);
+	tile_group_t tg; 
+	tile_group_id_t tg_id = 0;
+	uint8_t tg_dim_x = 1;
+	uint8_t tg_dim_y = 1;
+	error = hb_mc_tile_group_allocate(&device, &tg, tg_id, tg_dim_x, tg_dim_y); 
+	if (error != HB_MC_SUCCESS) { 
+		fprintf(stderr, "hb_mc_tile_group_allocate(): failed to allocate tile group.\n");
+		return HB_MC_FAIL;
+	}
+
+	error = run_kernel_vec_add(&device, ELF_CUDA_ADD, device.grid->tiles, 4);
 	
 	hb_mc_device_finish(&device); /* freeze the tile and memory manager cleanup */
 	return error; 
