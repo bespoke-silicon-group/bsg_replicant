@@ -68,17 +68,16 @@ static int run_kernel_vec_add (device_t *device, tile_group_t *tg, tile_t tiles[
 	}
 	
 //	error = hb_mc_tile_group_launch(device, tg); 
+//	error = hb_mc_tile_group_sync(device, tg);
 
 
-//	error = hb_mc_device_launch(device, "kernel_vec_add", 4, argv, elf, tiles, num_tiles); /* launch the kernel */
-//	
-//
+
+//	error = hb_mc_device_launch(device, "kernel_vec_add", 4, argv, device->elf, device->grid->tiles, 4); /* launch the kernel */
 //	if (error != HB_MC_SUCCESS) {
 //		fprintf(stderr, "hb_mc_device_launch(): failed to launch device.\n"); 
 //		return HB_MC_FAIL;
 //	}
-//
-	hb_mc_cuda_sync(device->fd, &tiles[0]); /* if CUDA sync is correct, this program won't hang here. */
+//	hb_mc_cuda_sync(device->fd, &(device->grid->tiles[0])); /* if CUDA sync is correct, this program won't hang here. */
 
 
 	uint32_t C_host[size_buffer];
