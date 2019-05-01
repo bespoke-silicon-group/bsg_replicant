@@ -75,6 +75,7 @@ int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg, tile_group_id_
 int hb_mc_tile_group_init(device_t *device, tile_group_t *tg, char *name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
 int hb_mc_tile_group_sync(device_t *device, tile_group_t *tg); 
+int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg);
 int hb_mc_wait_for_packet(device_t *device, hb_mc_request_packet_t *packet);
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);

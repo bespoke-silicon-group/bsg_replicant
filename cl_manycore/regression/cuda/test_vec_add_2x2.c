@@ -8,7 +8,7 @@
  * @param[in] tiles tile group to run on
  * @param[in] num_tiles number of tiles in the tile group
  * */
-static int run_kernel_vec_add (device_t *device, tile_group_t *tg, tile_t tiles[], uint32_t num_tiles) {
+static int run_kernel_vec_add (device_t *device, tile_group_t *tg) {
 	uint32_t start, size;
 	_hb_mc_get_mem_manager_info(device->eva_id, &start, &size); 
 	fprintf(stderr, "run_kernel_vec_add(): start: 0x%x, size: 0x%x\n", start, size); /* if CUDA init is correct, start should be TODO and size should be TODO */
@@ -52,7 +52,7 @@ static int run_kernel_vec_add (device_t *device, tile_group_t *tg, tile_t tiles[
 		fprintf(stderr, "hb_mc_device_memcpy(): failed to copy buffer B to device.\n");
 	}
 
-	int argv[4] = {A_device, B_device, C_device, size_buffer / num_tiles};
+	int argv[4] = {A_device, B_device, C_device, size_buffer / (tg->dim_x * tg->dim_y)};
 	uint32_t finish_signal_addr = 0xC0DA;
 
 	error = hb_mc_tile_group_init (device, tg, "kernel_vec_add", 4, argv, finish_signal_addr);
@@ -69,7 +69,13 @@ static int run_kernel_vec_add (device_t *device, tile_group_t *tg, tile_t tiles[
 	
 	error = hb_mc_tile_group_sync(device, tg);
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_sync(): failed to sync tile group.\n");
+		fprintf(stderr, "hb_mc_tile_group_sync(): failed to sync tile group %d.\n", tg->id);
+		return HB_MC_FAIL;
+	}
+
+	error = hb_mc_tile_group_deallocate(device, tg); 
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_deallocate(): failed to deallocate tile group %d.\n", tg->id);
 		return HB_MC_FAIL;
 	}
 
@@ -113,9 +119,8 @@ int kernel_vec_add () {
 	fprintf(stderr, "Running the CUDA Addition Kernel on a tile group of size 2x2.\n\n");
 
 	device_t device;
-	uint8_t dim_x = 2, dim_y = 2, origin_x = 0, origin_y = 1;
+	uint8_t dim_x = 4, dim_y = 4, origin_x = 0, origin_y = 1;
 	eva_id_t eva_id = 0;
-
 	char* ELF_PATH = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_2x2/main.riscv";
 
 	if (hb_mc_device_init(&device, eva_id, ELF_PATH, dim_x, dim_y, origin_x, origin_y) != HB_MC_SUCCESS) {
@@ -133,9 +138,9 @@ int kernel_vec_add () {
 		return HB_MC_FAIL;
 	}
 
-	error = run_kernel_vec_add(&device, &tg, device.grid->tiles, 4);
+	error = run_kernel_vec_add(&device, &tg);
 	
-	hb_mc_device_finish(&device); /* freeze the tile and memory manager cleanup */
+	hb_mc_device_finish(&device); /* freeze the tiles and memory manager cleanup */
 	return error; 
 }
 
