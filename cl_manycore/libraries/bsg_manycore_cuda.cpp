@@ -242,7 +242,12 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, char* name, uint3
 	return HB_MC_SUCCESS;
 }
 
-
+/* 
+ * Launches a tile group by sending packets to each tile in the tile group setting the argc, argv, finish_addr and kernel pointer.
+ * @param[in] device device pointer.
+ * @parma[in] tg tile group pointer.
+ * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
+ * */
 int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_check_device(): failed to verify device.\n"); 
@@ -327,6 +332,39 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 	return HB_MC_SUCCESS;
 }
+
+
+
+int hb_mc_wait_for_packet(device_t *device, hb_mc_request_packet_t *packet) {
+
+	while (1) {	
+		hb_mc_request_packet_t recv;
+		hb_mc_fifo_receive(device->fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv); 
+		fprintf(stderr, "Received Packet: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data); 
+		if (hb_mc_request_packet_equals(&recv, packet) == HB_MC_SUCCESS)
+			break; 
+	}
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+int hb_mc_tile_group_sync (device_t *device, tile_group_t *tg) { 
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_sync) --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	hb_mc_request_packet_t finish;
+	hb_mc_format_request_packet (&finish, tg->kernel->finish_signal_addr, 0x1 /* TODO: magic number */, tg->origin_x, tg->origin_y, HB_MC_PACKET_OP_REMOTE_STORE);	
+	fprintf(stderr, "Requested Packet: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", finish.x_src, finish.y_src, finish.x_dst, finish.y_dst, finish.addr, finish.data); 
+	hb_mc_wait_for_packet(device, &finish); 
+	return HB_MC_SUCCESS;	
+}	
+
+
+
 
 
 

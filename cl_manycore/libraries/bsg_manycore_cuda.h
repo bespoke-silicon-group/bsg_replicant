@@ -78,6 +78,8 @@ int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg, tile_group_id_t id, uint8_t dim_x, uint8_t dim_y);  
 int hb_mc_tile_group_init(device_t *device, tile_group_t *tg, char *name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
+int hb_mc_tile_group_sync(device_t *device, tile_group_t *tg); 
+int hb_mc_wait_for_packet(device_t *device, hb_mc_request_packet_t *packet);
 
 void hb_mc_cuda_sync (uint8_t fd, tile_t *tile);
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
