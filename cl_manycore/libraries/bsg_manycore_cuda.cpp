@@ -363,6 +363,33 @@ int hb_mc_tile_group_sync (device_t *device, tile_group_t *tg) {
 	return HB_MC_SUCCESS;	
 }	
 
+/* 
+ * @param[in] De-allocates all tiles in tile group, and resets their tile-group id and origin in the device book keeping.
+ * @param[in] device device pointer.
+ * @parma[in] tg tile group pointer.
+ * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
+ * */
+int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg) {
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	int tile_id;
+	for (int x = tg->origin_x; x < tg->origin_x + tg->dim_x; x++){
+		for (int y = tg->origin_y; y < tg->origin_y + tg->dim_y; y++){
+			tile_id = (y - device->grid->origin_y) * device->grid->dim_x + (x - device->grid->origin_x);
+			device->grid->tiles[tile_id].origin_x = device->grid->origin_x;
+			device->grid->tiles[tile_id].origin_y = device->grid->origin_y;
+			device->grid->tiles[tile_id].tile_group_id = -1;
+			device->grid->tiles[tile_id].free = 1;
+		}
+	}
+	// TODO delete tile group.
+	printf("%dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+
+	return HB_MC_SUCCESS;
+}
 
 
 
