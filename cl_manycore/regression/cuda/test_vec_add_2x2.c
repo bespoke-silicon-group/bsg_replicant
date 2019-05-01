@@ -67,18 +67,11 @@ static int run_kernel_vec_add (device_t *device, tile_group_t *tg, tile_t tiles[
 		return HB_MC_FAIL;
 	}
 	
-//	error = hb_mc_tile_group_launch(device, tg); 
-//	error = hb_mc_tile_group_sync(device, tg);
-
-
-
-//	error = hb_mc_device_launch(device, "kernel_vec_add", 4, argv, device->elf, device->grid->tiles, 4); /* launch the kernel */
-//	if (error != HB_MC_SUCCESS) {
-//		fprintf(stderr, "hb_mc_device_launch(): failed to launch device.\n"); 
-//		return HB_MC_FAIL;
-//	}
-//	hb_mc_cuda_sync(device->fd, &(device->grid->tiles[0])); /* if CUDA sync is correct, this program won't hang here. */
-
+	error = hb_mc_tile_group_sync(device, tg);
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_sync(): failed to sync tile group.\n");
+		return HB_MC_FAIL;
+	}
 
 	uint32_t C_host[size_buffer];
 	src = (void *) ((intptr_t) C_device);
@@ -132,8 +125,8 @@ int kernel_vec_add () {
 
 	tile_group_t tg; 
 	tile_group_id_t tg_id = 0;
-	uint8_t tg_dim_x = 1;
-	uint8_t tg_dim_y = 1;
+	uint8_t tg_dim_x = 2;
+	uint8_t tg_dim_y = 2;
 	error = hb_mc_tile_group_allocate(&device, &tg, tg_id, tg_dim_x, tg_dim_y); 
 	if (error != HB_MC_SUCCESS) { 
 		fprintf(stderr, "hb_mc_tile_group_allocate(): failed to allocate tile group.\n");
