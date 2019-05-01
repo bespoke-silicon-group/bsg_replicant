@@ -24,15 +24,16 @@ int kernel_vec_add () {
 	uint8_t tg_dim_y_1 = 2;
 	hb_mc_tile_group_allocate(&device, &tg_1, tg_id_1, tg_dim_x_1, tg_dim_y_1); 
 
+
 	tile_group_t tg_2; 
-	tile_group_id_t tg_id_2 = 0;
+	tile_group_id_t tg_id_2 = 1;
 	uint8_t tg_dim_x_2 = 2;
 	uint8_t tg_dim_y_2 = 2;
 	hb_mc_tile_group_allocate(&device, &tg_2, tg_id_2, tg_dim_x_2, tg_dim_y_2); 
 
 
 
-	uint32_t size_buffer = 16; 
+	uint32_t size_buffer = 8; 
 	eva_t A_device_1, B_device_1, C_device_1; 
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &A_device_1); /* allocate A on the device */
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &B_device_1); /* allocate B on the device */
@@ -48,10 +49,10 @@ int kernel_vec_add () {
 
 	void *dst = (void *) ((intptr_t) A_device_1);
 	void *src = (void *) &A_host_1[0];
-	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
+	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A1 to the device  */	
 	dst = (void *) ((intptr_t) B_device_1);
 	src = (void *) &B_host_1[0];
-	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
+	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
 
 
 
@@ -128,6 +129,8 @@ int kernel_vec_add () {
 			mismatch = 1;
 		}
 	}	
+
+
 
 	for (int i = 0; i < size_buffer; i++) {
 		if (A_host_2[i] + B_host_2[i] == C_host_2[i]) {
