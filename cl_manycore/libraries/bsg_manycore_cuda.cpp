@@ -347,7 +347,7 @@ int hb_mc_tile_group_sync (device_t *device, tile_group_t *tg) {
 	}
 
 	hb_mc_request_packet_t finish;
-	hb_mc_format_request_packet (&finish, tg->kernel->finish_signal_addr, 0x1 /* TODO: magic number */, tg->origin_x, tg->origin_y, HB_MC_PACKET_OP_REMOTE_STORE);	
+	hb_mc_format_response_packet (&finish, tg->kernel->finish_signal_addr, 0x1 /* TODO: magic number */, tg->origin_x, tg->origin_y, HB_MC_PACKET_OP_REMOTE_STORE);	
 	fprintf(stderr, "Requested Packet: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", finish.x_src, finish.y_src, finish.x_dst, finish.y_dst, finish.addr, finish.data); 
 	hb_mc_wait_for_packet(device, &finish); 
 	return HB_MC_SUCCESS;	

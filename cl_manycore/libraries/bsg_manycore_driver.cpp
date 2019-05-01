@@ -561,7 +561,7 @@ uint8_t hb_mc_get_manycore_dimension_y () {
 	return hb_mc_manycore_dim_y;
 }
 
-/*
+/*!
  * Formats a Manycore request packet.
  * @param packet packet struct that this function will populate. caller must allocate. 
  * @param addr address to send packet to.
@@ -577,6 +577,28 @@ void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, 
 	hb_mc_request_packet_set_y_dst(packet, y);
 	hb_mc_request_packet_set_x_src(packet, hb_mc_host_intf_coord_x);
 	hb_mc_request_packet_set_y_src(packet, hb_mc_host_intf_coord_y);
+	hb_mc_request_packet_set_data(packet, data);
+	hb_mc_request_packet_set_mask(packet, HB_MC_PACKET_REQUEST_MASK_WORD);
+	hb_mc_request_packet_set_op(packet, opcode);
+	hb_mc_request_packet_set_addr(packet, addr);
+}
+
+/* !
+ * Formats a Manycore response packet. TODO: Uses request packet --> fix this 
+ * @param packet packet struct that this function will populate. caller must allocate. 
+ * @param addr address to send packet to.
+ * @param data packet's data
+ * @param x destination tile's x coordinate
+ * @param y destination tile's y coordinate
+ * @param opcode operation type (e.g load, store, etc.)
+ * @return array of bytes that form the Manycore packet.
+ * assumes all fields are <= 32
+ * */
+void hb_mc_format_response_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode) {
+	hb_mc_request_packet_set_x_dst(packet, hb_mc_host_intf_coord_x);
+	hb_mc_request_packet_set_y_dst(packet, hb_mc_host_intf_coord_y);
+	hb_mc_request_packet_set_x_src(packet, x);
+	hb_mc_request_packet_set_y_src(packet, y);
 	hb_mc_request_packet_set_data(packet, data);
 	hb_mc_request_packet_set_mask(packet, HB_MC_PACKET_REQUEST_MASK_WORD);
 	hb_mc_request_packet_set_op(packet, opcode);
