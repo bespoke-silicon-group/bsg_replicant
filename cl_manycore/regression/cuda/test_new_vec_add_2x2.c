@@ -52,13 +52,6 @@ int kernel_vec_add () {
 
 	hb_mc_device_launch(&device);
 	
-	hb_mc_tile_group_sync(&device, &(device.tile_groups[0]));
-
-	hb_mc_tile_group_deallocate(&device, &tg); 
-	
-
-
-
 
 	uint32_t C_host[size_buffer];
 	src = (void *) ((intptr_t) C_device);

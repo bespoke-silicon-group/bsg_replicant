@@ -479,6 +479,64 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 	return HB_MC_SUCCESS;
 }
 
+
+/*
+ * Checks to see if all tile groups in a device are finished.
+ * @param[in] device device pointer
+ * returns HB_MC_SUCCESS if all tile groups are finished, and HB_MC_FAIL otherwise.
+ * */
+int hb_mc_device_all_tile_groups_finished(device_t *device) {
+	
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_all_tile_groups_finished() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) {
+		if (device->tile_groups[tg_num].status != HB_MC_TILE_GROUP_STATUS_FINISHED )
+			return HB_MC_FAIL; 
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+/*
+ * Waits for a tile group to send a finish packet to device.
+ * @param[in] device device pointer.
+ * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite look if no tile group finishes.
+ * */
+int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
+
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_wait_for_tile_group_finish() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	
+	int tile_group_finished = 0;
+	hb_mc_request_packet_t recv, finish;
+ 
+	while (!tile_group_finished) {
+		hb_mc_fifo_receive(device->fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv);
+		
+		/* Check all tile groups to see if the received packet is the finish packet from one of them */
+		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) {
+			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
+				hb_mc_format_response_packet(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1 /* TODO: magic number */, device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, HB_MC_PACKET_OP_REMOTE_STORE);
+				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {	/* finished packet received */
+					hb_mc_tile_group_deallocate(device, &(device->tile_groups[tg_num]));
+					tile_group_finished = 1; 
+					break;
+				}				
+			}
+		} 	
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+
+
 /*
  * Iterates over all tile groups inside device, allocates those that fit in grid and launches them. 
  * API remains in this function until all tile groups have successfully finished execution.
@@ -492,9 +550,9 @@ int hb_mc_device_launch (device_t *device) {
 		return HB_MC_FAIL;
 	}
 
-
 	int error ;
-	while(1) {
+	/* loop untill all tile groups have been allocated, launched and finished. */
+	while(hb_mc_device_all_tile_groups_finished(device) != HB_MC_SUCCESS) {
 		/* loop over all tile groups and try to launch as many as possible */
 		fprintf(stderr, "num tgs: %d.\n", device->num_tile_groups);
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) { 
@@ -512,12 +570,8 @@ int hb_mc_device_launch (device_t *device) {
 		}
 
 		/* wait for a tile group to finish */
-		break;
-
-
+		hb_mc_device_wait_for_tile_group_finish(device);
 	}
-
-	
 
 	return HB_MC_SUCCESS;
 }

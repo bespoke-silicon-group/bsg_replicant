@@ -18,11 +18,10 @@ extern "C" {
 typedef uint8_t tile_group_id_t;
 
 typedef enum {
-	HB_MC_TILE_GROUP_STATUS_DEALLOCATED=0,
-	HB_MC_TILE_GROUP_STATUS_INITIALIZED=1,
-	HB_MC_TILE_GROUP_STATUS_ALLOCATED=2,
-	HB_MC_TILE_GROUP_STATUS_LAUNCHED=3,
-	HB_MC_TILE_GROUP_STATUS_FINISHED=4,
+	HB_MC_TILE_GROUP_STATUS_INITIALIZED=0,
+	HB_MC_TILE_GROUP_STATUS_ALLOCATED=1,
+	HB_MC_TILE_GROUP_STATUS_LAUNCHED=2,
+	HB_MC_TILE_GROUP_STATUS_FINISHED=3,
 } tile_group_status_t ;
 
 
@@ -79,6 +78,8 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (device_t *device, eva_t eva);
 int hb_mc_device_launch (device_t *device);
 int hb_mc_device_add_tile_group (device_t *device, tile_group_t *tg);
+int hb_mc_device_all_tile_groups_finished(device_t *device);
+int hb_mc_device_wait_for_tile_group_finish(device_t *device);
 
 enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
 int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
