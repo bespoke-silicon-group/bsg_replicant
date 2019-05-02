@@ -150,11 +150,10 @@ int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 /*
  * Searches for a free tile group inside the device grid and allocoates it, and sets the dimensions, origin, and id of tile group.
  * @params[in] device and tg point to the device and tile group structures.
- * @param[in] id is the tile group id.
  * @paramsi[in] dim_x,y determine the dimensions of requested tile group.
  * returns HB_MC_SUCCESS on successful allocation and HB_MC_FAIL on fail.
  * */	
-int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, tile_group_id_t id, uint8_t dim_x, uint8_t dim_y){
+int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y){
 	if (dim_x > device->grid->dim_x){
 		fprintf(stderr, "hb_mc_tile_group_allocate(): tile group X dimension (%d) larger than grid X dimension (%d).\n", dim_x, device->grid->dim_x);
 		return HB_MC_FAIL;
@@ -179,7 +178,7 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, tile_group_id
 						tile_id = (y - device->grid->origin_y) * device->grid->dim_x + (x - device->grid->origin_x);
 						device->grid->tiles[tile_id].origin_x = org_x;
 						device->grid->tiles[tile_id].origin_y = org_y;
-						device->grid->tiles[tile_id].tile_group_id = id;
+						device->grid->tiles[tile_id].tile_group_id = tg->id;
 						device->grid->tiles[tile_id].free = 0;
 
 						if (hb_mc_tile_set_origin(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y) != HB_MC_SUCCESS){
@@ -193,7 +192,6 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, tile_group_id
 					}
 				}
 		
-				tg->id = id;
 				tg->origin_x = org_x;
 				tg->origin_y = org_y;
 				tg->dim_x = dim_x;
@@ -228,7 +226,13 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, char* name, uint3
 	kernel->argc = argc;
 	kernel->argv = argv;
 	kernel->finish_signal_addr = finish_signal_addr;
+
 	tg->kernel = kernel; 
+	tg->id = device->num_tile_groups;
+	tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
+
+	device->num_tile_groups += 1;
+
 	return HB_MC_SUCCESS;
 }
 
