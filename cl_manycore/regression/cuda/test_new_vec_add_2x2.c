@@ -48,13 +48,11 @@ int kernel_vec_add () {
 	uint32_t finish_signal_addr = 0xC0DA;
 
 
-	hb_mc_tile_group_init (&device, &tg, "kernel_vec_add", 4, argv, finish_signal_addr);
+	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv, finish_signal_addr);
 
-	hb_mc_tile_group_allocate(&device, &tg, tg_dim_x, tg_dim_y); 
-
-	hb_mc_tile_group_launch(&device, &tg); 
+	hb_mc_device_launch(&device);
 	
-	hb_mc_tile_group_sync(&device, &tg);
+	hb_mc_tile_group_sync(&device, &(device.tile_groups[0]));
 
 	hb_mc_tile_group_deallocate(&device, &tg); 
 	
