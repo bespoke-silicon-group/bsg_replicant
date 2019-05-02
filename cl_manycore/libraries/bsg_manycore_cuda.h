@@ -17,6 +17,15 @@ extern "C" {
 
 typedef uint8_t tile_group_id_t;
 
+typedef enum {
+	HB_MC_TILE_GROUP_STATUS_DEALLOCATED=0,
+	HB_MC_TILE_GROUP_STATUS_INITIALIZED=1,
+	HB_MC_TILE_GROUP_STATUS_ALLOCATED=2,
+	HB_MC_TILE_GROUP_STATUS_LAUNCHED=3,
+	HB_MC_TILE_GROUP_STATUS_FINISHED=4,
+} tile_group_status_t ;
+
+
 typedef struct {
 	uint8_t x;
 	uint8_t y;
@@ -35,6 +44,7 @@ typedef struct {
 
 typedef struct {
 	tile_group_id_t id;
+	tile_group_status_t status;
 	uint8_t origin_x;
 	uint8_t origin_y;
 	uint8_t dim_x;
@@ -57,6 +67,8 @@ typedef struct {
 	eva_id_t eva_id; 
 	grid_t *grid;
 	char* elf;
+	tile_group_t *tile_groups;
+	uint32_t num_tile_groups;
 } device_t; 
 
 
@@ -71,7 +83,7 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 
 int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
-int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg, tile_group_id_t id, uint8_t dim_x, uint8_t dim_y);  
+int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y);  
 int hb_mc_tile_group_init(device_t *device, tile_group_t *tg, char *name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
 int hb_mc_tile_group_sync(device_t *device, tile_group_t *tg); 
