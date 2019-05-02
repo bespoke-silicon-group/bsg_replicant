@@ -1,6 +1,6 @@
 #include "test_dram_read_write.h"
 
-#define ARRAY_SIZE 1024
+#define ARRAY_SIZE 2048
 #define BASE_ADDR 0x1000
 
 int test_dram_read_write() {
@@ -30,47 +30,51 @@ int test_dram_read_write() {
 
  	uint32_t dram_coord_x = 0;
 	uint32_t dram_coord_y = manycore_dim_y + 1;
+	int mismatch = 0; 
 
 
 
+	/* To check all dram banks change 1 to manycore_dim_x */
+	for (dram_coord_x = 0; dram_coord_x < 1; dram_coord_x ++) {
 
-	uint32_t A_host[ARRAY_SIZE];
-	uint32_t A_device[ARRAY_SIZE];
+		uint32_t A_host[ARRAY_SIZE];
+		uint32_t A_device[ARRAY_SIZE];
 
-	for (int i = 0; i < ARRAY_SIZE; i ++) {
-		A_host[i] = rand() % ((1 << 16) - 1); 
-	}
+		for (int i = 0; i < ARRAY_SIZE; i ++) {
+			A_host[i] = rand() % ((1 << 16) - 1); 
+		}
 	
-	for (int i = 0; i < ARRAY_SIZE; i ++) { 
-		error = hb_mc_copy_to_epa(fd, dram_coord_x, dram_coord_y, BASE_ADDR + i, &A_host[i], 1); 
-		if (error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_copy_to_epa: failed to write A[%d] = %d to DRAM coord(%d,%d) addr %d.\n", i, A_host[i], dram_coord_x, dram_coord_y, BASE_ADDR + i);
-			return HB_MC_FAIL;
+		for (int i = 0; i < ARRAY_SIZE; i ++) { 
+			error = hb_mc_copy_to_epa(fd, dram_coord_x, dram_coord_y, BASE_ADDR + i, &A_host[i], 1); 
+			if (error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_copy_to_epa: failed to write A[%d] = %d to DRAM coord(%d,%d) addr %d.\n", i, A_host[i], dram_coord_x, dram_coord_y, BASE_ADDR + i);
+				return HB_MC_FAIL;
+			}
+		} 
+
+
+		hb_mc_response_packet_t buf[1]; 
+		for (int i = 0; i < ARRAY_SIZE; i ++) {
+			error = hb_mc_copy_from_epa(fd, &buf[0], dram_coord_x, dram_coord_y, BASE_ADDR + i, 1); 
+			if ( error != HB_MC_SUCCESS) {
+				fprintf(stderr, "hb_mc_copy_from_epa: failed to read A[%d] from DRAM coord (%d,%d) addr %d.\n", i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
+				return HB_MC_FAIL;
+			}
+			A_device[i] = hb_mc_response_packet_get_data(&buf[0]);
 		}
-	} 
 
-
-
-	hb_mc_response_packet_t buf[1]; 
-	for (int i = 0; i < ARRAY_SIZE; i ++) {
-		error = hb_mc_copy_from_epa(fd, &buf[0], dram_coord_x, dram_coord_y, BASE_ADDR + i, 1); 
-		if ( error != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_copy_from_epa: failed to read A[%d] from DRAM coord (%d,%d) addr %d.\n", i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
-			return HB_MC_FAIL;
+		fprintf(stderr, "Checking DRAM bank %d at (%d,%d):\n", dram_coord_x, dram_coord_x, dram_coord_y); 
+		for (int i = 0; i < ARRAY_SIZE; i ++) { 
+			if (A_host[i] == A_device[i]) {
+				fprintf(stderr, "Success -- A_host[%d] = %d   ==   A_device[%d] = %d -- EPA: %d.\n", i, A_host[i], i, A_device[i], BASE_ADDR + i); 
+			}
+			else { 
+				fprintf(stderr, "Failed -- A_host[%d] = %d   !=   A_device[%d] = %d -- EPA: %d.\n", i, A_host[i], i, A_device[i], BASE_ADDR + i);
+				mismatch = 1;
+			}
 		}
-		A_device[i] = hb_mc_response_packet_get_data(&buf[0]);
 	}
 
-	int mismatch = 0 ;
-	for (int i = 0; i < ARRAY_SIZE; i ++) { 
-		if (A_host[i] == A_device[i]) {
-			fprintf(stderr, "Success -- A_host[%d] = %d   ==   A_device[%d] = %d.\n", i, A_host[i], i, A_device[i]); 
-		}
-		else { 
-			fprintf(stderr, "Failed -- A_host[%d] = %d   !=   A_device[%d] = %d.\n", i, A_host[i], i, A_device[i]);
-			mismatch = 1;
-		}
-	}
 
 	if (mismatch) 
 		return HB_MC_FAIL;
