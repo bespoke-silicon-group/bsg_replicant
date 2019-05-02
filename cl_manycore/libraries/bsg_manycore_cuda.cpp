@@ -206,6 +206,32 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg, uint8_t dim_x
 }
 
 /*
+ * Adds a tile group to the list of device tile groups.
+ * @param[in] device device pointer.
+ * @param[in] tg tile group pointer.
+ * return HB_MC_SUCCESS of success and HB_MC_FAIL otherwise.
+ * */
+int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) { 
+
+	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_add_tile_group() --> hb_mc_check_device(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	tile_group_t *tile_groups = (tile_group_t *) malloc ( (device->num_tile_groups + 1) * sizeof(tile_group_t));
+	if (tile_groups == NULL) {
+		fprintf(stderr, "hb_mc_device_add_tile_group(): failed to allocate space for tile group list.\n");
+		return HB_MC_FAIL;
+	}
+	memcpy (tile_groups, device->tile_groups, device->num_tile_groups * sizeof(tile_group_t)) ;
+	memcpy (tile_groups + device->num_tile_groups * sizeof(tile_group_t), tg, sizeof(tile_group_t));
+	free (device->tile_groups); 
+	device->tile_groups = tile_groups; 
+	device->num_tile_groups += 1;
+	return HB_MC_SUCCESS;
+}
+
+/*
  * Takes the kernel name, argc, argv* and the finish signal address, and initializes a kernel and passes it to tilegroup.
  * @param[in] *device device pointer.
  * @param[in] *tg points to the tile group structure.
@@ -231,7 +257,7 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, char* name, uint3
 	tg->id = device->num_tile_groups;
 	tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
 
-	device->num_tile_groups += 1;
+	hb_mc_device_add_tile_group(device, tg); 
 
 	return HB_MC_SUCCESS;
 }
@@ -442,6 +468,10 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 			return HB_MC_FAIL;
 		hb_mc_unfreeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
+
+	device->tile_groups = NULL;
+	device->num_tile_groups = 0;
+
 	return HB_MC_SUCCESS;
 }
 
