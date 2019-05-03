@@ -1,5 +1,5 @@
-TARGETS = library spmd cuda 
- 
+TARGETS = library spmd cuda
+
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
 clean: $(CLEAN_TARGETS)
 $(CLEAN_TARGETS):
