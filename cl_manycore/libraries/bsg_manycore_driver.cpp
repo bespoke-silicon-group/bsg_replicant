@@ -933,3 +933,14 @@ int hb_mc_host_finish(uint8_t fd) {
 	
 	return HB_MC_SUCCESS;
 }
+
+void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
+	hb_mc_request_packet_t recv;
+	/* wait for Manycore to send packet */
+	while (1) {
+		hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
+		
+		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
+			break; /* finish packet received from Hammerblade Manycore */
+	}	
+}
