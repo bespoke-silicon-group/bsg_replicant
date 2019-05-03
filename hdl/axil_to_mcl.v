@@ -1,6 +1,18 @@
-/**
+/*
  *  axil_to_mcl.v
- *
+ *  
+ *  This module converts the AXIL memory-mapped interface to the manycore network interface.
+ *  It also reads from the ROM in the AXIL addres space. 
+ *  TODO: factor a single link out using basejump_stl.
+ *          ______________     _______________                 __________
+ *         | axi crossbar |==>|axi mcl adapter|--> fifo_o --> | manycore |
+ *  AXIL==>|              |   |___to device___|<-- fifo_i <-- | endpoint | --> link_sif_o
+ *         |              |    _______________                |          | <-- link_sif_i
+ *         |              |==>|axi mcl adapter|--> fifo_o --> |          |
+ *         |              |   |___to host_____|<-- fifo_i <-- |__________|
+ *         |              |    ...............
+ *         |______________|==>|F1 config rom  |
+ *                             ```````````````
  */
 
 `include "bsg_axi_bus_pkg.vh"
