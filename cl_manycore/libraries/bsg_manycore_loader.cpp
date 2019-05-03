@@ -1,19 +1,7 @@
-#include <string.h>
 #ifndef COSIM
-	#include <bsg_manycore_driver.h>
 	#include <bsg_manycore_loader.h>
-	#include <bsg_manycore_errno.h>
-	#include <bsg_manycore_packet.h>
-	#include <bsg_manycore_mmio.h>
-	#include <bsg_manycore_epa.h>
 #else
-	#include <utils/sh_dpi_tasks.h>
-	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_loader.h"
-	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_packet.h"
-	#include "bsg_manycore_mmio.h"
-	#include "bsg_manycore_epa.h"
 #endif
 
 typedef enum __hb_mc_loader_elf_field_t{

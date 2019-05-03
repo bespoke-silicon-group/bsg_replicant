@@ -43,6 +43,7 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_elf.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp 
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_tile.cpp
 
 CFLAGS   = -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES)
 INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)

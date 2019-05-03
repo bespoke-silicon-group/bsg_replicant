@@ -1,5 +1,27 @@
-#ifndef __BSG_MANYCORE_EPA
-#define __BSG_MANYCORE_EPA
+#ifndef BSG_MANYCORE_TILE_H
+#define BSG_MANYCORE_TILE_H
+
+#ifndef _BSD_SOURCE
+	#define _BSD_SOURCE
+#endif
+#ifndef _XOPEN_SOURCE
+	#define _XOPEN_SOURCE 500
+#endif
+
+#include <stdint.h>
+#ifndef COSIM
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore_mem.h>
+#else
+#include "bsg_manycore_driver.h"
+#include "bsg_manycore_mem.h"
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef uint32_t epa_t;
 
 typedef enum __hb_mc_csr_freeze_t{
         HB_MC_CSR_FREEZE = 1,
@@ -18,8 +40,16 @@ typedef enum __hb_mc_csr_freeze_t{
 #define HB_MC_VCACHE_EPA_TAG_OFFSET 0x20000000
 
 #define hb_mc_tile_epa_get_byte_addr(base, offset) (base + offset)
-	
+
 #define hb_mc_tile_epa_get_word_addr(base, offset) \
 	(hb_mc_tile_epa_get_byte_addr(base, offset) >> 2)
+
+int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
+int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -1,15 +1,19 @@
 #ifndef COSIM
-	#include <bsg_manycore_cuda.h>  
-	#include <bsg_manycore_memory_manager.h>
-	#include <bsg_manycore_elf.h>
-	#include <bsg_manycore_mem.h>
-	#include <bsg_manycore_loader.h>
+#include <bsg_manycore_cuda.h>  
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_memory_manager.h>
+#include <bsg_manycore_elf.h>
+#include <bsg_manycore_mem.h>
+#include <bsg_manycore_loader.h>
 #else
-	#include "bsg_manycore_cuda.h"
-	#include "bsg_manycore_memory_manager.h"
-	#include "bsg_manycore_elf.h"
-	#include "bsg_manycore_mem.h"
-	#include "bsg_manycore_loader.h"
+#include "bsg_manycore_cuda.h"
+#include "bsg_manycore_driver.h"
+#include "bsg_manycore_tile.h"
+#include "bsg_manycore_memory_manager.h"
+#include "bsg_manycore_elf.h"
+#include "bsg_manycore_mem.h"
+#include "bsg_manycore_loader.h"
 #endif
 
 static const uint32_t KERNEL_REG = 0x1000 >> 2; //!< EPA of kernel. 
@@ -104,8 +108,8 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
 	} 
 	
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
-		hb_mc_freeze(*fd, tiles[i].x, tiles[i].y);
-		hb_mc_set_tile_group_origin(*fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
+		hb_mc_tile_freeze(*fd, tiles[i].x, tiles[i].y);
+		hb_mc_tile_set_group_origin(*fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
 	}
 
 
@@ -123,7 +127,7 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
 		error = hb_mc_write_tile_reg(*fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_unfreeze(*fd, tiles[i].x, tiles[i].y);
+		hb_mc_tile_unfreeze(*fd, tiles[i].x, tiles[i].y);
 	}
 	return HB_MC_SUCCESS;
 }
@@ -147,7 +151,7 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 	delete(mem_manager[eva_id]);
 	
 	for (int i = 0; i < num_tiles; i++) { /* freeze tiles */
-		hb_mc_freeze(fd, tiles[i].x, tiles[i].y);
+		hb_mc_tile_freeze(fd, tiles[i].x, tiles[i].y);
 	}
 
 	int error = hb_mc_host_finish(fd);
@@ -286,6 +290,18 @@ void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
 	hb_mc_device_sync(fd, &finish);
 } 
 
+void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
+	hb_mc_request_packet_t recv;
+	/* wait for Manycore to send packet */
+	while (1) {
+		hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
+		
+		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
+			break; /* finish packet received from Hammerblade Manycore */
+	}	
+}
+
+
 int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
 	eva_t args_eva;
         int error = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
@@ -326,3 +342,27 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 
 	return HB_MC_SUCCESS;
 }
+
+
+/*!
+ * creates a tile group with a specified origin
+ * @param[out] tiles an array of tiles that will be set in row-order. This should be allocated by the caller
+ * @param[out] the number of tiles in the tile group
+ * @param[in] num_tiles_x the number of columns in the tile group
+ * @param[in] num_tiles_y the number of rows in the tile group
+ * @param[in] origin_x the x coordinate of the tile group's origin
+ * @param[in] origin_y the y coordinate of the tile group's origin 
+ * */
+void create_tile_group(tile_t tiles[], uint8_t num_tiles_x, uint8_t num_tiles_y, uint8_t origin_x, uint8_t origin_y) {
+	/* create the tile group */
+	for (uint8_t i = 0; i < num_tiles_y; i++) {
+		for (uint8_t j = 0; j < num_tiles_x; j++) {
+			uint32_t index = i * num_tiles_x + j;
+			tiles[index].x = j + origin_x; 
+			tiles[index].y = i + origin_y;
+			tiles[index].origin_x = origin_x;
+			tiles[index].origin_y = origin_y;
+		}
+	}
+}
+
