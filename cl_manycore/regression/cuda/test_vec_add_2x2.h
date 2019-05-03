@@ -1,5 +1,5 @@
-#ifndef TEST_BSG_CUDA_LITE_RUNTIME
-#define TEST_BSG_CUDA_LITE_RUNTIME
+#ifndef TEST_VEC_ADD_2x2_H
+#define TEST_VEC_ADD_2x2_H
 
 
 #include <stdio.h>

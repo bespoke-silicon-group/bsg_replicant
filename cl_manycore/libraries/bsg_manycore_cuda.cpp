@@ -206,7 +206,9 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg){
 				tg->origin_y = org_y;
 				tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
 
-				fprintf(stderr, "%dx%d tile group %d allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
+				#ifdef DEBUG
+					fprintf(stderr, "%dx%d tile group %d allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
+				#endif
 				return HB_MC_SUCCESS;
 			}
 		}
@@ -418,7 +420,9 @@ int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg) {
 			device->grid->tiles[tile_id].free = 1;
 		}
 	}
-	printf("%dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+	#ifdef DEBUG
+		printf("%dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+	#endif
 	
 	tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
 
@@ -534,7 +538,9 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
 				hb_mc_format_response_packet(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1 /* TODO: magic number */, device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, HB_MC_PACKET_OP_REMOTE_STORE);
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {	/* finished packet received */
-					fprintf(stderr, "Tile group %d finished and deallocated.\n", device->tile_groups[tg_num].id);
+					#ifdef DEBUG
+						fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
+					#endif
 					hb_mc_tile_group_deallocate(device, &(device->tile_groups[tg_num]));
 					tile_group_finished = 1; 
 					break;
@@ -565,13 +571,14 @@ int hb_mc_device_launch (device_t *device) {
 	/* loop untill all tile groups have been allocated, launched and finished. */
 	while(hb_mc_device_all_tile_groups_finished(device) != HB_MC_SUCCESS) {
 		/* loop over all tile groups and try to launch as many as possible */
-		fprintf(stderr, "num tgs: %d.\n", device->num_tile_groups);
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) { 
 			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_INITIALIZED) {
 				error = hb_mc_tile_group_allocate(device, &(device->tile_groups[tg_num])) ;
 				if (error == HB_MC_SUCCESS) {
 					error = hb_mc_tile_group_launch(device, &(device->tile_groups[tg_num]));
-					fprintf(stderr, "Tile group  %d launched.\n", tg_num);
+					#ifdef DEBUG
+						fprintf(stderr, "Tile group  %d launched.\n", tg_num);
+					#endif
 					if (error != HB_MC_SUCCESS) {
 						fprintf(stderr, "hb_mc_device_launch(): failed to launch tile group %d.\n", tg_num);
 						return HB_MC_FAIL;

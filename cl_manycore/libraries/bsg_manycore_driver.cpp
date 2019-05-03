@@ -862,12 +862,16 @@ int hb_mc_tile_set_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, ui
 		fprintf(stderr, "hb_mc_tile_set_origin() --> hb_mc_fifo_transmit(): failed to set tile X origin.\n");
 		return HB_MC_FAIL;
 	}
-	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", x, y, origin_x);
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", x, y, origin_x);
+	#endif
 	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_origin() --> hb_mc_fifo_transmit(): failed to set tile Y origin.\n");
 		return HB_MC_FAIL;
 	}
+	#ifdef DEBUG
 	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", x, y, origin_y);
+	#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -906,13 +910,17 @@ int hb_mc_tile_set_cord (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uin
 		fprintf(stderr, "hb_mc_tile_set_cord() --> hb_mc_fifo_transmit(): failed to set tile X.\n");
 		return HB_MC_FAIL;
 	}
-	fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva %d) to %d.\n", x, y, bsg_x_eva, cord_x);
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva %d) to %d.\n", x, y, bsg_x_eva, cord_x);
+	#endif
 
 	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_y) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_cord() --> hb_mc_fifo_transmit(): failed to set tile Y.\n");
 		return HB_MC_FAIL;
 	}
-	fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva %d) to %d.\n", x, y, bsg_y_eva, cord_y);
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva %d) to %d.\n", x, y, bsg_y_eva, cord_y);
+	#endif
 
 	return HB_MC_SUCCESS;
 }
