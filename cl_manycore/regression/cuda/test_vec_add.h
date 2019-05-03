@@ -1,5 +1,5 @@
-#ifndef TEST_VEC_ADD_2x2_H
-#define TEST_VEC_ADD_2x2_H
+#ifndef TEST_VEC_ADD_H
+#define TEST_VEC_ADD_H
 
 
 #include <stdio.h>
