@@ -8,41 +8,11 @@
 	#define _XOPEN_SOURCE 500
 #endif
 
-
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <sys/mman.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
-#include <stdio.h>
-#include <string.h>
-
+#include <stdint.h>
 #ifndef COSIM
-	#include <bsg_manycore_driver.h>  
-	#include <bsg_manycore_loader.h>
-	#include <bsg_manycore_errno.h> 
-	#include <bsg_manycore_elf.h>
-	#include <bsg_manycore_mem.h>
-	#include <bsg_manycore_mmio.h>
 	#include <bsg_manycore_packet.h>
-	#include <bsg_manycore_tile.h>
-	#include <fpga_pci.h>
-	#include <fpga_mgmt.h>
 #else
-	#include "fpga_pci_sv.h"
-	#include <utils/sh_dpi_tasks.h>
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore_loader.h"
-	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_elf.h"
-	#include "bsg_manycore_mem.h"
-	#include "bsg_manycore_mmio.h"
 	#include "bsg_manycore_packet.h"
-	#include "bsg_manycore_tile.h"
 #endif
 
 #ifdef __cplusplus

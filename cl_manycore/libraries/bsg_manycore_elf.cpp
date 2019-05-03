@@ -1,8 +1,22 @@
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdint.h>
+#include <unistd.h>
+#include <inttypes.h>
+#include <elf.h>
 #ifndef COSIM
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_mem.h>
 #include <bsg_manycore_elf.h>
 #else
+#include "bsg_manycore_driver.h"
+#include "bsg_manycore_errno.h"
+#include "bsg_manycore_mem.h"
 #include "bsg_manycore_elf.h"
 #endif
+
 
 #include <map>
 #include <string>

@@ -1,7 +1,23 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
 #ifndef COSIM
-	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore_errno.h> 
+	#include <bsg_manycore_driver.h>  
+	#include <bsg_manycore_tile.h>
+	#include <bsg_manycore_mmio.h>
+	#include <bsg_manycore_packet.h>
+	#include <fpga_pci.h>
+	#include <fpga_mgmt.h>
 #else
+	#include "bsg_manycore_errno.h"
 	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore_tile.h"
+	#include "bsg_manycore_mmio.h"
+	#include "bsg_manycore_packet.h"
+	#include "fpga_pci_sv.h"
+	#include <utils/sh_dpi_tasks.h>
 #endif
 
 /* The following values are cached by the API during initialization */
