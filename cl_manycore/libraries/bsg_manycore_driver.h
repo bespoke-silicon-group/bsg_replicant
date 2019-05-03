@@ -42,18 +42,44 @@ typedef struct {
 	uint32_t epa;
 } npa_t;
 
-typedef enum __hb_mc_direction_t {  /* MIN & MAX are not fifo directions, they are used for iteration over fifos. Update MAX if you add a fifo direction. */
+
+/* hb_mc_fifo_rx_t identifies the type of a packet receive operation*/
+typedef enum __hb_mc_direction_t {  /*  */
 	HB_MC_MMIO_FIFO_MIN = 0,
 	HB_MC_MMIO_FIFO_TO_DEVICE = 0,
 	HB_MC_MMIO_FIFO_TO_HOST = 1,
-	HB_MC_MMIO_FIFO_MAX = 2
+	HB_MC_MMIO_FIFO_MAX = 1
 } hb_mc_direction_t;
 
-int hb_mc_fifo_transmit (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet);
-int hb_mc_fifo_get_occupancy (uint8_t fd, hb_mc_direction_t dir, uint32_t *occupancy_p);
-int hb_mc_fifo_receive (uint8_t fd, hb_mc_direction_t dir, hb_mc_packet_t *packet);
-int hb_mc_fifo_drain (uint8_t fd, hb_mc_direction_t dir); 
-int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir);
+/* 
+ * hb_mc_fifo_rx_t identifies the type of a packet receive operation. MIN & MAX
+ * are not fifo directions, they are used for iteration over fifos. 
+ */
+typedef enum __hb_mc_fifo_rx_t {  
+	HB_MC_FIFO_RX_RSP = HB_MC_MMIO_FIFO_TO_DEVICE,
+	HB_MC_FIFO_RX_REQ = HB_MC_MMIO_FIFO_TO_HOST
+} hb_mc_fifo_rx_t;
+
+/* 
+ * hb_mc_fifo_tx_t identifies the type of a packet transmit operation. MIN & MAX
+ * are not fifo directions, they are used for iteration over fifos. 
+ */
+typedef enum __hb_mc_fifo_tx_t {  /*  */
+	HB_MC_FIFO_TX_REQ = HB_MC_MMIO_FIFO_TO_DEVICE,
+	HB_MC_FIFO_TX_RSP = HB_MC_MMIO_FIFO_TO_HOST
+} hb_mc_fifo_tx_t;
+
+inline hb_mc_direction_t hb_mc_get_rx_direction(hb_mc_fifo_rx_t d){
+	return (hb_mc_direction_t)d;
+}
+
+inline hb_mc_direction_t hb_mc_get_tx_direction(hb_mc_fifo_tx_t d){
+	return (hb_mc_direction_t)d;
+}
+
+int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, hb_mc_packet_t *packet);
+int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet);
+int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type); 
 int hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);
 
@@ -81,7 +107,6 @@ uint8_t hb_mc_get_manycore_dimension_x ();
 uint8_t hb_mc_get_manycore_dimension_y (); 
 void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode);
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
-void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
 int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
@@ -89,6 +114,7 @@ void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_
 int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
 int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_host_finish(uint8_t fd);
+void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
 
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};

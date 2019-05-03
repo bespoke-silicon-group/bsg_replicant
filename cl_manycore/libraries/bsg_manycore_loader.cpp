@@ -25,13 +25,15 @@ typedef enum __hb_mc_loader_elf_field_t{
  *	* writes the binary's instructions into (x,y)'s icache.
  *	 * */
 static int hb_mc_load_packets(uint8_t fd, hb_mc_packet_t *packets, uint32_t num_packets) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	int rc;
+	rc = hb_mc_check_device(fd);
+	if (rc != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	
 	for (int i = 0; i < num_packets; i++) {
-		if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, 
-					&packets[i]) != HB_MC_SUCCESS) {
+		rc = hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &packets[i]);
+		if (rc != HB_MC_SUCCESS) {
 			return HB_MC_FAIL;
 		}
 	}

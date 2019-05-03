@@ -286,6 +286,17 @@ void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
 	hb_mc_device_sync(fd, &finish);
 } 
 
+void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
+	hb_mc_request_packet_t recv;
+	/* wait for Manycore to send packet */
+	while (1) {
+		hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
+		
+		if (hb_mc_request_packet_equals(&recv, finish) == HB_MC_SUCCESS) 
+			break; /* finish packet received from Hammerblade Manycore */
+	}	
+}
+
 int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t argc, uint32_t argv[], char *elf, tile_t tiles[], uint32_t num_tiles) {
 	eva_t args_eva;
         int error = hb_mc_device_malloc (eva_id, argc * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
@@ -326,4 +337,3 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 
 	return HB_MC_SUCCESS;
 }
-

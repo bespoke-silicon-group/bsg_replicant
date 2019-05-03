@@ -35,7 +35,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &requests[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &requests[i]) != HB_MC_SUCCESS) {
 			pass_requests = HB_MC_FAIL;
 			break;
 		}
@@ -46,7 +46,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
 	for (int i = 0; i < size; i++) {
-		hb_mc_fifo_receive(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *) &buf[i]);
+		hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_RSP, (hb_mc_packet_t *) &buf[i]);
 	}
 	return pass_requests;
 }
@@ -73,7 +73,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 	} 
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {
-		if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packets[i]) != HB_MC_SUCCESS) {
+		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &packets[i]) != HB_MC_SUCCESS) {
 			pass = HB_MC_FAIL;
 			break;
 		}
