@@ -6,11 +6,7 @@ $(TARGETS): test_%: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary:
 	$(MAKE) -C $(dir $@) clean main.riscv \
-		bsg_tiles_X=2 \
-		bsg_tiles_Y=2 \
-		bsg_global_X=4 \
-		bsg_global_Y=4 \
-		bsg_tiles_org_X=0 \
-		bsg_tiles_org_Y=1
+		bsg_tiles_X=$(CL_MANYCORE_DIM_X) \
+		bsg_tiles_Y=$(CL_MANYCORE_DIM_Y)
 
 
