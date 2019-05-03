@@ -8,20 +8,14 @@
 	#define _XOPEN_SOURCE 500
 #endif
 
+#include <stdint.h>
+
 #ifndef COSIM
-#include <bsg_manycore_driver.h>
-#include <bsg_manycore_tile.h>
-#include <bsg_manycore_memory_manager.h>
-#include <bsg_manycore_elf.h>
 #include <bsg_manycore_mem.h>
-#include <bsg_manycore_loader.h>
+#include <bsg_manycore_packet.h>
 #else
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_tile.h"
-#include "bsg_manycore_memory_manager.h"
-#include "bsg_manycore_elf.h"
 #include "bsg_manycore_mem.h"
-#include "bsg_manycore_loader.h"
+#include "bsg_manycore_packet.h"
 #endif
 
 #ifdef __cplusplus
