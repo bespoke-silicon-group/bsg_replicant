@@ -6,6 +6,7 @@ LDLIBS  := -lfpga_mgmt
 
 HEADERS := bsg_manycore_driver.h
 HEADERS += bsg_manycore_loader.h
+HEADERS += bsg_manycore_tile.h
 HEADERS += bsg_manycore_mem.h
 HEADERS += bsg_manycore_packet.h
 HEADERS += bsg_manycore_errno.h
@@ -17,6 +18,7 @@ HEADERS += bsg_manycore_cuda.h
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
 OBJECTS += bsg_manycore_mem.o
+OBJECTS += bsg_manycore_tile.o
 OBJECTS += bsg_manycore_bits.o
 OBJECTS += bsg_manycore_elf.o
 OBJECTS += bsg_manycore_memory_manager.o

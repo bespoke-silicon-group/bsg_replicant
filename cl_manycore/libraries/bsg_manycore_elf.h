@@ -15,8 +15,12 @@ extern "C" {
 #include <elf.h>
 #ifndef COSIM
 #include <bsg_manycore_driver.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_mem.h>
 #else
 #include "bsg_manycore_driver.h"
+#include "bsg_manycore_errno.h"
+#include "bsg_manycore_mem.h"
 #endif
 int symbol_to_eva(const char *fname, const char *sym_name, eva_t *eva);
 #ifdef __cplusplus

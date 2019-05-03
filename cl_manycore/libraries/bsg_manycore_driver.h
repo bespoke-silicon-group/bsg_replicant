@@ -9,12 +9,40 @@
 #endif
 
 
-#include <stdint.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <limits.h>
+#include <stdio.h>
+#include <string.h>
+
 #ifndef COSIM
-#include <bsg_manycore_packet.h>
+	#include <bsg_manycore_driver.h>  
+	#include <bsg_manycore_loader.h>
+	#include <bsg_manycore_errno.h> 
+	#include <bsg_manycore_elf.h>
+	#include <bsg_manycore_mem.h>
+	#include <bsg_manycore_mmio.h>
+	#include <bsg_manycore_packet.h>
+	#include <bsg_manycore_tile.h>
+	#include <fpga_pci.h>
+	#include <fpga_mgmt.h>
 #else
-#include "bsg_manycore_packet.h"
+	#include "fpga_pci_sv.h"
+	#include <utils/sh_dpi_tasks.h>
+	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore_loader.h"
+	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_elf.h"
+	#include "bsg_manycore_mem.h"
+	#include "bsg_manycore_mmio.h"
+	#include "bsg_manycore_packet.h"
+	#include "bsg_manycore_tile.h"
 #endif
 
 #ifdef __cplusplus
@@ -24,24 +52,6 @@ extern "C" {
 #ifndef COSIM
 static char *hb_mc_mmap_ocl (uint8_t fd);
 #endif
-
-int hb_mc_init_host (uint8_t *fd);
-typedef uint32_t eva_id_t;
-typedef struct {
-	uint8_t x;
-	uint8_t y;
-	uint8_t origin_x;
-	uint8_t origin_y;
-} tile_t;
-
-typedef uint32_t eva_t;
-
-typedef struct {
-	uint32_t x;
-	uint32_t y; 
-	uint32_t epa;
-} npa_t;
-
 
 /* hb_mc_fifo_rx_t identifies the type of a packet receive operation*/
 typedef enum __hb_mc_direction_t {  /*  */
@@ -79,7 +89,12 @@ inline hb_mc_direction_t hb_mc_get_tx_direction(hb_mc_fifo_tx_t d){
 
 int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, hb_mc_packet_t *packet);
 int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet);
-int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type); 
+
+void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, 
+				uint32_t addr, uint32_t data, 
+				uint8_t x, uint8_t y, 
+				hb_mc_packet_op_t opcode);
+
 int hb_mc_get_host_credits (uint8_t fd);
 int hb_mc_all_host_req_complete(uint8_t fd);
 
@@ -98,23 +113,15 @@ typedef enum __hb_mc_config_id_t {
 	HB_MC_CONFIG_REPO_F1_HASH = 11,
 	HB_MC_CONFIG_MAX = 12
 } hb_mc_config_id_t;
+int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
+uint8_t hb_mc_get_manycore_dimension_x();
+uint8_t hb_mc_get_manycore_dimension_y(); 
 
-int hb_mc_get_config (uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
-int hb_mc_get_recv_vacancy (uint8_t fd);
-int hb_mc_can_read (uint8_t fd, uint32_t size);
-int hb_mc_check_device (uint8_t fd);
-uint8_t hb_mc_get_manycore_dimension_x ();
-uint8_t hb_mc_get_manycore_dimension_y (); 
-void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode);
-int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
-int hb_mc_freeze (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_set_tile_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
-void create_tile_group(tile_t tiles[], uint32_t num_tiles_x, uint32_t num_tiles_y, uint32_t origin_x, uint32_t origin_y);
-int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
-int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_host_finish(uint8_t fd);
-void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish);
+int hb_mc_init_host(uint8_t *fd);
+int hb_mc_check_device(uint8_t fd);
+
+int hb_mc_get_recv_vacancy (uint8_t fd);
 
 static uint8_t num_dev = 0;
 static char *ocl_table[8] = {(char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0, (char *) 0};

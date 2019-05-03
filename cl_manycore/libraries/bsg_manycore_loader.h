@@ -15,9 +15,26 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
+#ifndef COSIM
+	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore_tile.h>
+	#include <bsg_manycore_errno.h>
+	#include <bsg_manycore_packet.h>
+	#include <bsg_manycore_mmio.h>
+	#include <bsg_manycore_mem.h>
+#else
+	#include <utils/sh_dpi_tasks.h>
+	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore_tile.h"
+	#include "bsg_manycore_packet.h"
+	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_mmio.h"
+	#include "bsg_manycore_mem.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

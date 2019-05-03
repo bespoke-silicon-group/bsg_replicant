@@ -1,16 +1,12 @@
 #ifndef COSIM
 #include <bsg_manycore_elf.h>
-#include <bsg_manycore_errno.h>
 #else
 #include "bsg_manycore_elf.h"
-#include "bsg_manycore_errno.h"
 #endif
 
 #include <map>
 #include <string>
 #include <memory>
-
-
 
 using std::string;
 using std::map;
