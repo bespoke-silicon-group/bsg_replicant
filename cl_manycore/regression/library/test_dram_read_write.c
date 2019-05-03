@@ -7,9 +7,9 @@ int test_dram_read_write() {
 	srand(0);
 	int error;
 	uint8_t fd; 
-	hb_mc_init_host(&fd);	
+	hb_mc_fifo_init(&fd);	
 
-	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_init(&fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "test_dram_read_write(): failed to initialize host.\n");
 		return HB_MC_FAIL;
 	}
