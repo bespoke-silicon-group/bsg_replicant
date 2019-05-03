@@ -326,4 +326,3 @@ int hb_mc_device_launch (uint8_t fd, eva_id_t eva_id, char *kernel, uint32_t arg
 
 	return HB_MC_SUCCESS;
 }
-
