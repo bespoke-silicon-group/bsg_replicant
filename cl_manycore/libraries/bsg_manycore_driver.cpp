@@ -308,7 +308,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, hb_mc_packet_t *packe
 	isr_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_DATA_OFFSET);
 	len_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET);
 
-	//dir = hb_mc_get_tx_direction(type);
+	dir = hb_mc_get_tx_direction(type);
 	hb_mc_fifo_get_vacancy(fd, type, &vacancy);
 	if (vacancy < (sizeof(hb_mc_packet_t)/sizeof(uint32_t))) {
 		fprintf(stderr, "hb_mc_fifo_transmit(): not enough space in fifo.\n");
@@ -369,7 +369,6 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 	uint32_t data_addr;
 	uint32_t occupancy;
 	uint16_t length;
-	//hb_mc_direction_t dir;
 
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
@@ -377,7 +376,6 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 
 	length_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET);
 	data_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_RX_DATA_OFFSET);
-	// dir = hb_mc_get_rx_direction(type);
 
 	do {
 		hb_mc_fifo_get_occupancy(fd, type, &occupancy);
