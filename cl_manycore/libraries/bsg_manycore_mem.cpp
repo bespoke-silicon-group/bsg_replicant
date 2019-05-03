@@ -20,7 +20,7 @@
  * @return whether or not transaction was successful
  * */
 int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_copy_from_epa(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}
@@ -60,7 +60,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
  * @return whether or not transaction was successful
  * */
 int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_t *buf, uint32_t size) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_xeon_to_epa_copy(): device was not initialized.\n");
 		return HB_MC_FAIL;
 	}

@@ -14,7 +14,7 @@ typedef enum __hb_mc_loader_elf_field_t{
  *	 * */
 static int hb_mc_load_packets(uint8_t fd, hb_mc_packet_t *packets, uint32_t num_packets) {
 	int rc;
-	rc = hb_mc_check_device(fd);
+	rc = hb_mc_fifo_check(fd);
 	if (rc != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
@@ -133,7 +133,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 }
 
 int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	else if (!size)

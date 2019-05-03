@@ -2,7 +2,7 @@
 
 int test_loopback () {
 	uint8_t fd;
-	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_init(&fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "test_bsg_dram_loopback_cache(): failed to initialize host.\n");
 		return HB_MC_FAIL;
 	}
@@ -36,7 +36,7 @@ int test_loopback () {
 	uint32_t op = hb_mc_request_packet_get_op(&manycore_finish);
 	bsg_pr_test_info("Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data);
 
-	if (hb_mc_host_finish(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_finish(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "test_bsg_dram_loopback_cache(): failed to terminate host.\n");
 		return HB_MC_FAIL;
 	}

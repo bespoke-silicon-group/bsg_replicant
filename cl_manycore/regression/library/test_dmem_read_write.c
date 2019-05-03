@@ -2,9 +2,9 @@
 
 int test_dmem_read_write() {
 	uint8_t fd; 
-	hb_mc_init_host(&fd);	
+	hb_mc_fifo_init(&fd);	
 
-	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_init(&fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "test_dmem_read_write(): failed to initialize host.\n");
 		return HB_MC_FAIL;
 	}
@@ -25,7 +25,7 @@ int test_dmem_read_write() {
 	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 1, DMEM_BASE >> 2, 1); 
 	bsg_pr_test_info("Completed read\n");
 
-	if (hb_mc_host_finish(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_finish(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "test_dmem_read_write(): failed to terminate host.\n");
 		return HB_MC_FAIL;
 	}
