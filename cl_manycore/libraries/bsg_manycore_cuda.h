@@ -88,7 +88,7 @@ int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 
 
 int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg);  
-int hb_mc_tile_group_init(device_t *device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr);
+int hb_mc_tile_group_init(device_t *device, tile_group_t *tg,  uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
 int hb_mc_tile_group_sync(device_t *device, tile_group_t *tg); 
 int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg);

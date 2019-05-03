@@ -1,8 +1,8 @@
-#include "test_vec_add_2x2.h"
+#include "test_vec_add.h"
 
 /*!
  * Runs the addition kernel on a 2x2 tile group at (0, 1). 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_2x2/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore bitbucket repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore bitbucket repository.  
 */
 int kernel_vec_add () {
 	fprintf(stderr, "Running the CUDA Vector Addition Kernel on a 2x2 tile group.\n\n");
@@ -13,7 +13,7 @@ int kernel_vec_add () {
 	uint8_t grid_origin_x = 0;
 	uint8_t grid_origin_y = 1;
 	eva_id_t eva_id = 0;
-	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_2x2/main.riscv";
+	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add/main.riscv";
 
 	hb_mc_device_init(&device, eva_id, elf, grid_dim_x, grid_dim_y, grid_origin_x, grid_origin_y);
 
@@ -81,7 +81,7 @@ int kernel_vec_add () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
-	bsg_pr_test_info("test_bsg_cuda_lite_runtime_vec_add Regression Test (COSIMULATION)\n");
+	bsg_pr_test_info("test_vec_add Regression Test (COSIMULATION)\n");
 	int rc = kernel_vec_add();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
@@ -89,7 +89,7 @@ void test_main(uint32_t *exit_code) {
 }
 #else
 int main() {
-	bsg_pr_test_info("test_bsg_cuda_lite_runtime_vec_add Regression Test (F1)\n");
+	bsg_pr_test_info("test_vec_add Regression Test (F1)\n");
 	int rc = kernel_vec_add();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;

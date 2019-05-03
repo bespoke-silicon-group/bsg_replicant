@@ -196,9 +196,9 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg){
 				tg->origin_y = org_y;
 				tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
 
-				#ifdef DEBUG
+				//#ifdef DEBUG
 					fprintf(stderr, "%dx%d tile group %d allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
-				#endif
+				//#endif
 				return HB_MC_SUCCESS;
 			}
 		}
@@ -242,7 +242,7 @@ int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) {
  * @param[in] finish_signal_addr is the address that the tilegroup will writes its finish signal into. 
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
+int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
 	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_init() --> hb_mc_check_device(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
@@ -254,6 +254,7 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, uint8_t dim_x, ui
 	kernel->argv = argv;
 	kernel->finish_signal_addr = finish_signal_addr;
 
+
 	tg->dim_x = dim_x;
 	tg->dim_y = dim_y;
 	tg->kernel = kernel; 
@@ -261,6 +262,8 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t* tg, uint8_t dim_x, ui
 	tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
 
 	hb_mc_device_add_tile_group(device, tg); 
+
+	fprintf(stderr, "%dx%d tile group %d initialized.\n", tg->dim_x, tg->dim_y, tg->id) ;
 
 	return HB_MC_SUCCESS;
 }
@@ -354,7 +357,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	} 
 
 	tg->status=HB_MC_TILE_GROUP_STATUS_LAUNCHED;
-
+	fprintf(stderr, "%dx%d tile group %d launched at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
 	return HB_MC_SUCCESS;
 }
 
@@ -566,9 +569,6 @@ int hb_mc_device_launch (device_t *device) {
 				error = hb_mc_tile_group_allocate(device, &(device->tile_groups[tg_num])) ;
 				if (error == HB_MC_SUCCESS) {
 					error = hb_mc_tile_group_launch(device, &(device->tile_groups[tg_num]));
-					#ifdef DEBUG
-						fprintf(stderr, "Tile group  %d launched.\n", tg_num);
-					#endif
 					if (error != HB_MC_SUCCESS) {
 						fprintf(stderr, "hb_mc_device_launch(): failed to launch tile group %d.\n", tg_num);
 						return HB_MC_FAIL;
