@@ -524,6 +524,7 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
 				hb_mc_format_response_packet(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1 /* TODO: magic number */, device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, HB_MC_PACKET_OP_REMOTE_STORE);
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {	/* finished packet received */
+					fprintf(stderr, "Tile group %d finished and deallocated.\n", device->tile_groups[tg_num].id);
 					hb_mc_tile_group_deallocate(device, &(device->tile_groups[tg_num]));
 					tile_group_finished = 1; 
 					break;
@@ -560,7 +561,7 @@ int hb_mc_device_launch (device_t *device) {
 				error = hb_mc_tile_group_allocate(device, &(device->tile_groups[tg_num])) ;
 				if (error == HB_MC_SUCCESS) {
 					error = hb_mc_tile_group_launch(device, &(device->tile_groups[tg_num]));
-					fprintf(stderr, "launched tg %d.\n", tg_num);
+					fprintf(stderr, "Tile group  %d launched.\n", tg_num);
 					if (error != HB_MC_SUCCESS) {
 						fprintf(stderr, "hb_mc_device_launch(): failed to launch tile group %d.\n", tg_num);
 						return HB_MC_FAIL;
