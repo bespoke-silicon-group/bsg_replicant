@@ -97,7 +97,7 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
  */
 int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, uint32_t num_tiles) {
 	
-	int error = hb_mc_init_host(fd); 
+	int error = hb_mc_fifo_init(fd); 
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init() --> hb_mc_init_host(): failed to initialize host.\n");
 		return HB_MC_FAIL;
@@ -154,7 +154,7 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 		hb_mc_tile_freeze(fd, tiles[i].x, tiles[i].y);
 	}
 
-	int error = hb_mc_host_finish(fd);
+	int error = hb_mc_fifo_finish(fd);
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_finish() --> hb_mc_host_finish(): failed to terminate host.\n");
 		return HB_MC_FAIL;

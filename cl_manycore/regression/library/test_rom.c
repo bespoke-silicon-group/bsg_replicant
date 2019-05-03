@@ -52,7 +52,7 @@ int test_rom () {
 	int rc = 0;
 	uint8_t fd = 0;
 
-	if(hb_mc_init_host(&fd) != HB_MC_SUCCESS){
+	if(hb_mc_fifo_init(&fd) != HB_MC_SUCCESS){
 		fprintf(stderr, "test_rom(): failed to initialize host.\n");
 		return HB_MC_FAIL;
 	}
@@ -94,7 +94,7 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
 
-	if(hb_mc_host_finish(fd) != HB_MC_SUCCESS){
+	if(hb_mc_fifo_finish(fd) != HB_MC_SUCCESS){
 		fprintf(stderr, "test_rom(): failed to terminate host.\n");
 		return HB_MC_FAIL;
 	}

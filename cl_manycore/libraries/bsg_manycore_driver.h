@@ -87,9 +87,9 @@ int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
 uint8_t hb_mc_get_manycore_dimension_x();
 uint8_t hb_mc_get_manycore_dimension_y(); 
 
-int hb_mc_host_finish(uint8_t fd);
-int hb_mc_init_host(uint8_t *fd);
-int hb_mc_check_device(uint8_t fd);
+int hb_mc_fifo_finish(uint8_t fd);
+int hb_mc_fifo_init(uint8_t *fd);
+int hb_mc_fifo_check(uint8_t fd);
 
 int hb_mc_get_recv_vacancy (uint8_t fd);
 

@@ -14,7 +14,7 @@
 int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_packet_t freeze; 
 	epa_t freeze_waddr;
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	freeze_waddr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, 
@@ -40,7 +40,7 @@ int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_packet_t unfreeze; 
 	epa_t freeze_waddr;
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 
@@ -71,7 +71,7 @@ int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 	hb_mc_packet_t packet_origin_x, packet_origin_y;
 	epa_t x_origin_addr, y_origin_addr;
 	int rc;
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	x_origin_addr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,

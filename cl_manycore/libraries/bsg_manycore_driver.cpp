@@ -95,7 +95,7 @@ static uint32_t hb_mc_read32 (uint8_t fd, uint32_t ofs) {
  * @param fd userspace file descriptor
  * @return HB_MC_SUCCESS if device has been mapped and HB_MC_FAIL otherwise.
  * */
-int hb_mc_check_device (uint8_t fd) {
+int hb_mc_fifo_check (uint8_t fd) {
 	#ifdef COSIM
 		return HB_MC_SUCCESS;
 	#else
@@ -114,7 +114,7 @@ int hb_mc_check_device (uint8_t fd) {
 int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir) {
 	uint32_t isr_addr;
 
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_clear_int(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
@@ -141,7 +141,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 } 
 #endif
 
-int hb_mc_enable_fifo(uint8_t fd){
+int hb_mc_fifo_enable(uint8_t fd){
 	uint32_t ier_addr_byte;
 	ier_addr_byte = hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET);
 	hb_mc_write32(fd, ier_addr_byte, (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
@@ -163,7 +163,7 @@ int hb_mc_enable_fifo(uint8_t fd){
 int hb_mc_fifo_get_occupancy (uint8_t fd, hb_mc_fifo_rx_t type, uint32_t *occupancy_p) {
 	uint32_t addr;
 	
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 	
@@ -184,7 +184,7 @@ int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
 	uint32_t occupancy; 
 	hb_mc_request_packet_t recv;
 
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_fifo_drain(): userspace file descriptor %d not valid.\n", fd);
 		return HB_MC_FAIL;
 	}
@@ -233,7 +233,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_packet_t tag;	
 	uint32_t vcache_word_addr;
 
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 
@@ -254,7 +254,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
  * @param fd pointer to which the userspace file descriptor is assigned. 
  * @return HB_MC_SUCCESS if device has been initialized and HB_MC_FAIL otherwise.
  */
-int hb_mc_init_host (uint8_t *fd) {
+int hb_mc_fifo_init (uint8_t *fd) {
 	int rc;
 	uint32_t cfg;
 	char *ocl_base;
@@ -262,7 +262,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	#ifndef COSIM
 	ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
-		fprintf(stderr, "hb_mc_init_host(): unable to mmap device.\n");
+		fprintf(stderr, "hb_mc_fifo_init(): unable to mmap device.\n");
 		return HB_MC_FAIL;
 	}	
 	#else
@@ -271,7 +271,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	ocl_table[*fd] = ocl_base;
 	num_dev++;
 
-	hb_mc_enable_fifo(*fd);
+	hb_mc_fifo_enable(*fd);
 
 	rc = hb_mc_fifo_drain(*fd, HB_MC_FIFO_RX_REQ); 
 	if (rc != HB_MC_SUCCESS) {
@@ -302,7 +302,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	hb_mc_manycore_dim_x = cfg;
 
 	if((hb_mc_manycore_dim_x <= 0) || (hb_mc_manycore_dim_x > 32)){
-		fprintf(stderr, "hb_mc_init_host(): Questionable manycore X dimension: %d.\n", hb_mc_manycore_dim_x);
+		fprintf(stderr, "hb_mc_fifo_init(): Questionable manycore X dimension: %d.\n", hb_mc_manycore_dim_x);
 		return HB_MC_FAIL;
 	}
 
@@ -312,7 +312,7 @@ int hb_mc_init_host (uint8_t *fd) {
 	hb_mc_manycore_dim_y = cfg;
 
 	if((hb_mc_manycore_dim_y <= 0) || (hb_mc_manycore_dim_y > 32)){
-		fprintf(stderr, "hb_mc_init_host(): Questionable manycore Y dimension: %d.\n", hb_mc_manycore_dim_y);
+		fprintf(stderr, "hb_mc_fifo_init(): Questionable manycore Y dimension: %d.\n", hb_mc_manycore_dim_y);
 		return HB_MC_FAIL;
 	}
 
@@ -324,9 +324,9 @@ int hb_mc_init_host (uint8_t *fd) {
  * @param [in] fd userspace file descriptor.
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_host_finish(uint8_t fd) {
+int hb_mc_fifo_finish(uint8_t fd) {
 	int rc;
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 
@@ -379,7 +379,7 @@ uint32_t hb_mc_fifo_get_ixr_bit(uint8_t fd, hb_mc_direction_t dir, uint32_t reg,
 int hb_mc_fifo_get_vacancy (uint8_t fd, hb_mc_fifo_tx_t type, uint32_t *vacancy_p) {
 	uint32_t vacancy_addr;
 
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 
@@ -404,7 +404,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, hb_mc_packet_t *packe
 	uint32_t len_addr;
 	hb_mc_direction_t dir;
 
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_fifo_transmit(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
@@ -453,7 +453,7 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 	uint32_t occupancy;
 	uint16_t length;
 
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
 
@@ -485,7 +485,7 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
  * @return number of host credits on success and HB_MC_FAIL on failure.
  */
 int hb_mc_get_host_credits (uint8_t fd) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}		
@@ -497,7 +497,7 @@ int hb_mc_get_host_credits (uint8_t fd) {
  * @return HB_MC_SUCCESS if all requests have been completed and HB_MC_FAIL otherwise.
  * */
 int hb_mc_all_host_req_complete(uint8_t fd) {
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_host_req_complete(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}		
@@ -515,7 +515,7 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_config(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}	
@@ -535,7 +535,7 @@ int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
  */
 int hb_mc_get_recv_vacancy (uint8_t fd) {
 	uint32_t credit_addr;
-	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
 		return HB_MC_FAIL;
 	}
