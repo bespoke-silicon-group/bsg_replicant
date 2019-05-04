@@ -26,9 +26,8 @@ void response_packet_to_array(/*const*/ hb_mc_response_packet_t *pack, /*out*/ u
 int test_packets() {
         
 	uint8_t fd; 
-	hb_mc_init_host(&fd);	
-      	if (hb_mc_init_host(&fd) != HB_MC_SUCCESS) {
-		bsg_pr_test_info(BSG_RED("Failed to initialize host.\n"));
+      	if (hb_mc_fifo_init(&fd) != HB_MC_SUCCESS) {
+		bsg_pr_test_info(BSG_RED("Failed to initialize fifo.\n"));
 		return HB_MC_FAIL;
 	}
  
