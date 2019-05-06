@@ -34,7 +34,7 @@ int test_vcache_stride() {
 
 	uint8_t dram_coord_x = 0;
 	uint8_t dram_coord_y = manycore_dim_y + 1;
-
+	int mismatch = 0;
 
 	/* For now only tests the first DRAM bank. To test all, change the loop to dram_coord_x < manycore_dim_x */
 	for (dram_coord_x = 0 ; dram_coord_x < 1; dram_coord_x ++) {
@@ -81,10 +81,12 @@ int test_vcache_stride() {
 			}
 			else {
 				fprintf(stderr, "Failed -- A_host[%d] = %d   !=   A_device[%d] = %d - EPA = %d.\n", stride, A_host[stride], stride, A_device[stride], dram_addr);
-				return HB_MC_FAIL;
+				mismatch = 1;
 			}
 		}
 	}
+	if (mismatch)
+		return HB_MC_FAIL;
 	return HB_MC_SUCCESS;
 }
 
