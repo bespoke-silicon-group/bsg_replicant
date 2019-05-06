@@ -21,10 +21,10 @@
 #endif
 
 /* The following values are cached by the API during initialization */
-static uint8_t hb_mc_manycore_dim_x = 0; 
-static uint8_t hb_mc_manycore_dim_y = 0; 
-static uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
-static uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
+uint8_t hb_mc_manycore_dim_x = 0; 
+uint8_t hb_mc_manycore_dim_y = 0; 
+uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
+uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
@@ -394,10 +394,10 @@ int hb_mc_fifo_get_vacancy (uint8_t fd, hb_mc_fifo_tx_t type, uint32_t *vacancy_
  * @param[in] fd userspace file descriptor
  * @param[in] type transmit packet type (HB_MC_FIFO_TX_REQ for request
  *    packets, HB_MC_FIFO_TX_RSP for response packets)
- * @param[out] packet Manycore packet to write
+ * @param[in] packet Manycore packet to write
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
-int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, hb_mc_packet_t *packet) {
+int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t *packet) {
 	uint32_t vacancy; 
 	uint32_t data_addr;
 	uint32_t isr_addr;
@@ -494,6 +494,7 @@ int hb_mc_get_host_credits (uint8_t fd) {
 
 /*!
  * Checks that all host requests have been completed.
+ * @param fd userspace file descriptor
  * @return HB_MC_SUCCESS if all requests have been completed and HB_MC_FAIL otherwise.
  * */
 int hb_mc_all_host_req_complete(uint8_t fd) {
@@ -557,27 +558,4 @@ uint8_t hb_mc_get_manycore_dimension_x () {
  * */
 uint8_t hb_mc_get_manycore_dimension_y () {
 	return hb_mc_manycore_dim_y;
-}
-
-
-/*
- * Formats a Manycore request packet.
- * @param packet packet struct that this function will populate. caller must allocate. 
- * @param addr address to send packet to.
- * @param data packet's data
- * @param x destination tile's x coordinate
- * @param y destination tile's y coordinate
- * @param opcode operation type (e.g load, store, etc.)
- * @return array of bytes that form the Manycore packet.
- * assumes all fields are <= 32
- * */
-void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode) {
-	hb_mc_request_packet_set_x_dst(packet, x);
-	hb_mc_request_packet_set_y_dst(packet, y);
-	hb_mc_request_packet_set_x_src(packet, hb_mc_host_intf_coord_x);
-	hb_mc_request_packet_set_y_src(packet, hb_mc_host_intf_coord_y);
-	hb_mc_request_packet_set_data(packet, data);
-	hb_mc_request_packet_set_mask(packet, HB_MC_PACKET_REQUEST_MASK_WORD);
-	hb_mc_request_packet_set_op(packet, opcode);
-	hb_mc_request_packet_set_addr(packet, addr);
 }

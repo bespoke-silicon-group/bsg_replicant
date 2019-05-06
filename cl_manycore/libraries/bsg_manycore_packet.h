@@ -22,6 +22,9 @@
 extern "C" {
 #endif
 
+extern uint8_t hb_mc_host_intf_coord_x;
+extern uint8_t hb_mc_host_intf_coord_y;
+        
 /**
  * The raw request packets that are used to initiate communications between the manycore and the host.
  * You should not read from any of the fields directly, instead use the accessor functions.
@@ -55,7 +58,7 @@ typedef struct request_packet {
  * @param[in] packet a request packet
  * @return the X coordinate of the requester for packet
  */
-static inline uint8_t hb_mc_request_packet_get_x_dst(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_x_dst(const hb_mc_request_packet_t *packet)
 {
         return packet->x_dst;
 }
@@ -65,7 +68,7 @@ static inline uint8_t hb_mc_request_packet_get_x_dst(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the Y coordinate of the requester for packet
  */
-static inline uint8_t hb_mc_request_packet_get_y_dst(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_y_dst(const hb_mc_request_packet_t *packet)
 {
         return packet->y_dst;
 }
@@ -75,7 +78,7 @@ static inline uint8_t hb_mc_request_packet_get_y_dst(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the X coordinate of the responder for packet
  */
-static inline uint8_t hb_mc_request_packet_get_x_src(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_x_src(const hb_mc_request_packet_t *packet)
 {
         return packet->x_src;
 }
@@ -85,7 +88,7 @@ static inline uint8_t hb_mc_request_packet_get_x_src(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the X coordinate of the responder for packet
  */
-static inline uint8_t hb_mc_request_packet_get_y_src(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_y_src(const hb_mc_request_packet_t *packet)
 {
         return packet->y_src;
 }
@@ -95,7 +98,7 @@ static inline uint8_t hb_mc_request_packet_get_y_src(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the extended opcode of packet
  */
-static inline uint8_t hb_mc_request_packet_get_mask(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_mask(const hb_mc_request_packet_t *packet)
 {
         return packet->mask;
 }
@@ -105,7 +108,7 @@ static inline uint8_t hb_mc_request_packet_get_mask(hb_mc_request_packet_t *pack
  * @param[in] packet a request packet
  * @return the opcode of packet
  */
-static inline uint8_t hb_mc_request_packet_get_op(hb_mc_request_packet_t *packet)
+static inline uint8_t hb_mc_request_packet_get_op(const hb_mc_request_packet_t *packet)
 {
         return packet->op;
 }
@@ -115,7 +118,7 @@ static inline uint8_t hb_mc_request_packet_get_op(hb_mc_request_packet_t *packet
  * @param[in] packet a request packet
  * @return the address field of packet
  */
-static inline uint32_t hb_mc_request_packet_get_addr(hb_mc_request_packet_t *packet)
+static inline uint32_t hb_mc_request_packet_get_addr(const hb_mc_request_packet_t *packet)
 {
         return le32toh(packet->addr);
 }
@@ -125,7 +128,7 @@ static inline uint32_t hb_mc_request_packet_get_addr(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the data field of packet
  */
-static inline uint32_t hb_mc_request_packet_get_data(hb_mc_request_packet_t *packet)
+static inline uint32_t hb_mc_request_packet_get_data(const hb_mc_request_packet_t *packet)
 {
         return le32toh(packet->data); 
 }
@@ -135,7 +138,7 @@ static inline uint32_t hb_mc_request_packet_get_data(hb_mc_request_packet_t *pac
  * @param[in] packet a request packet
  * @return the valid data field of packet
  */
-static inline uint32_t hb_mc_request_packet_get_data_valid(hb_mc_request_packet_t *packet)
+static inline uint32_t hb_mc_request_packet_get_data_valid(const hb_mc_request_packet_t *packet)
 {
 	uint32_t valid = 0;
 	for (int i = 0; i < 4; i++) { /* TODO: hardcoded */		
@@ -231,7 +234,7 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
  * @param[in] b a request packet
  * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the non-data fields of a an b must be the same and the valid data must be the same. 
  */
-static int hb_mc_request_packet_equals(hb_mc_request_packet_t *a, hb_mc_request_packet_t *b) {
+static int hb_mc_request_packet_equals(const hb_mc_request_packet_t *a, const hb_mc_request_packet_t *b) {
 	if (!a || !b) {
 		return HB_MC_FAIL;
 	}
@@ -255,6 +258,28 @@ static int hb_mc_request_packet_equals(hb_mc_request_packet_t *a, hb_mc_request_
 	}
 	return HB_MC_SUCCESS;
 }
+
+/*
+ * Formats a Manycore request packet.
+ * @param packet packet struct that this function will populate. caller must allocate. 
+ * @param addr address to send packet to.
+ * @param data packet's data
+ * @param x destination tile's x coordinate
+ * @param y destination tile's y coordinate
+ * @param opcode operation type (e.g load, store, etc.)
+ * assumes all fields are <= 32
+ * */
+static inline void hb_mc_format_request_packet(hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode) {
+	hb_mc_request_packet_set_x_dst(packet, x);
+	hb_mc_request_packet_set_y_dst(packet, y);
+	hb_mc_request_packet_set_x_src(packet, hb_mc_host_intf_coord_x);
+	hb_mc_request_packet_set_y_src(packet, hb_mc_host_intf_coord_y);
+	hb_mc_request_packet_set_data(packet, data);
+	hb_mc_request_packet_set_mask(packet, HB_MC_PACKET_REQUEST_MASK_WORD);
+	hb_mc_request_packet_set_op(packet, opcode);
+	hb_mc_request_packet_set_addr(packet, addr);
+}
+        
 /* 
  * * The raw response packets that are used to respond to requests.  You should not read from any of the fields directly, instead use the accessor functions.
  */
@@ -279,7 +304,7 @@ typedef union packet {
  * @param[in] packet a response packet
  * @return the X coordinate of the requester for packet
  */
-static inline uint8_t hb_mc_response_packet_get_x_dst(hb_mc_response_packet_t *packet)
+static inline uint8_t hb_mc_response_packet_get_x_dst(const hb_mc_response_packet_t *packet)
 {
         return packet->x_dst;
 }
@@ -289,7 +314,7 @@ static inline uint8_t hb_mc_response_packet_get_x_dst(hb_mc_response_packet_t *p
  * @param[in] packet a response packet
  * @return the Y coordinate of the requester for packet
  */
-static inline uint8_t hb_mc_response_packet_get_y_dst(hb_mc_response_packet_t *packet)
+static inline uint8_t hb_mc_response_packet_get_y_dst(const hb_mc_response_packet_t *packet)
 {
         return packet->y_dst;
 }
@@ -299,7 +324,7 @@ static inline uint8_t hb_mc_response_packet_get_y_dst(hb_mc_response_packet_t *p
  * @param[in] packet a response packet
  * @return the load ID of the packet
  */
-static inline uint32_t hb_mc_response_packet_get_load_id(hb_mc_response_packet_t *packet)
+static inline uint32_t hb_mc_response_packet_get_load_id(const hb_mc_response_packet_t *packet)
 {
         return packet->load_id;
 }
@@ -309,7 +334,7 @@ static inline uint32_t hb_mc_response_packet_get_load_id(hb_mc_response_packet_t
  * @param[in] packet a response packet
  * @return the packet's payload data
  */
-static inline uint32_t hb_mc_response_packet_get_data(hb_mc_response_packet_t *packet)
+static inline uint32_t hb_mc_response_packet_get_data(const hb_mc_response_packet_t *packet)
 {
         return packet->data;
 }
@@ -319,11 +344,68 @@ static inline uint32_t hb_mc_response_packet_get_data(hb_mc_response_packet_t *p
  * @param[in] packet a response packet
  * @return the packet's opcode
  */
-static inline uint8_t hb_mc_response_packet_get_op(hb_mc_response_packet_t *packet)
+static inline uint8_t hb_mc_response_packet_get_op(const hb_mc_response_packet_t *packet)
 {
         return packet->op;
 }
 
+/**
+ * Set the x destination of the response packet
+ * @param packet a response packet
+ * @param x x destination
+ */
+static inline void hb_mc_response_packet_set_x_dst(hb_mc_response_packet_t *packet, uint8_t x)
+{
+        packet->x_dst = x;
+}
+
+/**
+ * Set the y destination of the response packet
+ * @param packet a response packet
+ * @param y y destination
+ */
+static inline void hb_mc_response_packet_set_y_dst(hb_mc_response_packet_t *packet, uint8_t y)
+{
+        packet->y_dst = y;
+}
+
+/**
+ * Set the data of the response packet
+ * @param packet a response packet
+ * @param data the data to send
+ */
+static inline void hb_mc_response_packet_set_data(hb_mc_response_packet_t *packet, uint32_t data)
+{
+        packet->data = data;
+}
+
+/**
+ * Set the opcode of the response packet
+ * @param packet a response packet
+ * @param op the opcode to set
+ */
+static inline void hb_mc_response_packet_set_op(hb_mc_response_packet_t *packet, uint8_t op)
+{
+        packet->op = op;
+}
+        
+/*
+ * Formats a Manycore request packet.
+ * @param packet packet struct that this function will populate. caller must allocate. 
+ * @param x destination tile's x coordinate
+ * @param y destination tile's y coordinate
+ * @param data packet's data
+ * @param opcode operation type (e.g load, store, etc.)
+ * assumes all fields are <= 32
+ * */
+static inline void hb_mc_format_response_packet(hb_mc_response_packet_t *packet, uint8_t x, uint8_t y, uint32_t data, hb_mc_packet_op_t opcode) {
+	hb_mc_response_packet_set_x_dst(packet, x);
+	hb_mc_response_packet_set_y_dst(packet, y);
+	hb_mc_response_packet_set_data(packet, data);
+	hb_mc_response_packet_set_op(packet, opcode);
+}
+
+        
 #ifdef __cplusplus
 }
 #endif
