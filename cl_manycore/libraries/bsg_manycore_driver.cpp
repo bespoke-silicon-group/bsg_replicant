@@ -831,8 +831,8 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
 	}	
 }
 
-/*
- * Sets a Vanilla Core Endpoint's tile group's origin.
+/*!
+ * Sets a Vanilla Core Endpoint's tile group's origin hardware registers CSR_TGO_X/Y.
  * @param[in] fd userspace file descriptor
  * @param[in] eva_id eva-to-npa mapping
  * @param[in] x x coordinate of tile
@@ -841,9 +841,9 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
  * @param[in] origin_y y coordinate of tile groups origin
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y) {
+int hb_mc_tile_set_origin_registers(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin(): invalid device %d.\n", fd);
+		fprintf(stderr, "hb_mc_tile_set_origin_registers(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 	
@@ -859,18 +859,69 @@ int hb_mc_tile_set_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, ui
 				origin_y, x, y, 
 				HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin() --> hb_mc_fifo_transmit(): failed to set tile X origin.\n");
+		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_fifo_transmit(): failed to set tile X origin.\n");
 		return HB_MC_FAIL;
 	}
 	#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", x, y, origin_x);
 	#endif
 	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin() --> hb_mc_fifo_transmit(): failed to set tile Y origin.\n");
+		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_fifo_transmit(): failed to set tile Y origin.\n");
 		return HB_MC_FAIL;
 	}
 	#ifdef DEBUG
 	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", x, y, origin_y);
+	#endif
+
+	return HB_MC_SUCCESS;
+}
+
+/*!
+ * Sets a Vanilla Core Endpoint's tile group's origin symbols __bsg_grp_org_x/y.
+ * @param[in] fd userspace file descriptor
+ * @param[in] eva_id eva-to-npa mapping
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @param[in] origin_x x coordinate of tile group's origin
+ * @param[in] origin_y y coordinate of tile groups origin
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_tile_set_origin_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t origin_x, uint32_t origin_y){
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols(): invalid device %d.\n", fd);
+		return HB_MC_FAIL;
+	}
+
+	eva_t bsg_origin_x_eva, bsg_origin_y_eva;
+	if (symbol_to_eva(elf, "__bsg_grp_org_x", &bsg_origin_x_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_x eva.\n");
+		return HB_MC_FAIL;
+	}
+	if (symbol_to_eva(elf, "__bsg_grp_org_y", &bsg_origin_y_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_y eva.\n");
+		return HB_MC_FAIL;
+	}
+
+
+	hb_mc_packet_t packet_origin_x, packet_origin_y;
+	hb_mc_format_request_packet (&packet_origin_x.request, (bsg_origin_x_eva >> 2), origin_x, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet (&packet_origin_y.request, (bsg_origin_y_eva >> 2), origin_y, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	
+	
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_fifo_transmit(): failed to set tile __bsg_grp_org_x.\n");
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_x (eva %d) to %d.\n", x, y, bsg_origin_x_eva, origin_x);
+	#endif
+
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_fifo_transmit(): failed to set tile __bsg_grp_org_y.\n");
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_y (eva %d) to %d.\n", x, y, bsg_origin_y_eva, origin_y);
 	#endif
 
 	return HB_MC_SUCCESS;
@@ -884,19 +935,19 @@ int hb_mc_tile_set_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, ui
  * @param[in] y y coordinate of tile
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_cord (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y){
+int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y){
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_cord(): invalid device %d.\n", fd);
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_x_eva, bsg_y_eva;
 	if (symbol_to_eva(elf, "__bsg_x", &bsg_x_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_cord() --> symbol_to_eva(): failed to aquire __bsg_x eva.\n");
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> symbol_to_eva(): failed to aquire __bsg_x eva.\n");
 		return HB_MC_FAIL;
 	}
 	if (symbol_to_eva(elf, "__bsg_y", &bsg_y_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_cord() --> symbol_to_eva(): failed to aquire __bsg_y eva.\n");
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> symbol_to_eva(): failed to aquire __bsg_y eva.\n");
 		return HB_MC_FAIL;
 	}
 
@@ -907,7 +958,7 @@ int hb_mc_tile_set_cord (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uin
 	
 	
 	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_x) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_cord() --> hb_mc_fifo_transmit(): failed to set tile X.\n");
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_fifo_transmit(): failed to set tile X.\n");
 		return HB_MC_FAIL;
 	}
 	#ifdef DEBUG
@@ -915,7 +966,7 @@ int hb_mc_tile_set_cord (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uin
 	#endif
 
 	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_y) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_cord() --> hb_mc_fifo_transmit(): failed to set tile Y.\n");
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_fifo_transmit(): failed to set tile Y.\n");
 		return HB_MC_FAIL;
 	}
 	#ifdef DEBUG
@@ -924,6 +975,50 @@ int hb_mc_tile_set_cord (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uin
 
 	return HB_MC_SUCCESS;
 }
+
+
+/*! 
+ * Sets a Vanilla Core Endpoint's tile's _bsg_id symbol.
+ * @param[in] fd userspace file descriptor
+ * @param[in] eva_id eva-to-npa mapping
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @param[in] dim_x x dimension of tile group.
+ * @param[in] dim_y y dimension of tile group.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_id_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y, uint32_t dim_x, uint32_t dim_y){
+	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_id_symbol(): invalid device %d.\n", fd);
+		return HB_MC_FAIL;
+	}
+
+	uint32_t id = cord_y * dim_x + cord_x; /* calculate tile's id */
+
+	eva_t bsg_id_eva;
+	if (symbol_to_eva(elf, "__bsg_id", &bsg_id_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> symbol_to_eva(): failed to aquire __bsg_id eva.\n");
+		return HB_MC_FAIL;
+	}
+	
+
+	hb_mc_packet_t packet_id;
+	hb_mc_format_request_packet (&packet_id.request, (bsg_id_eva >> 2), id, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+
+	
+	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_id) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> hb_mc_fifo_transmit(): failed to set tile __bsg_id.\n");
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_id (eva %d) to %d.\n", x, y, bsg_id_eva, id);
+	#endif
+
+	return HB_MC_SUCCESS;
+}
+
+
+
 
 
 /*!

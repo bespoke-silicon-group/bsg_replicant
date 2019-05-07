@@ -9,7 +9,7 @@ int test_loopback () {
 
 	uint8_t x = 0, y = 1;
 	hb_mc_tile_freeze(fd, 0, 1);	
-	hb_mc_tile_set_group_origin(fd, 0, 1, 0, 1);
+	hb_mc_tile_set_origin_registers(fd, 0, 1, 0, 1);
 	bsg_pr_test_info("file to be loaded is %s\n", getenv("MAIN_LOOPBACK"));	
 	
 	
