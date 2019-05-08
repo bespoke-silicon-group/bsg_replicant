@@ -7,7 +7,8 @@ class VersionAction(Action):
         setattr(namespace, self.dest, v)
 
     def validate(self, v):
-        if len(v.split('.')) != 3 and [int(x) for x in v.split('.')]:
+        ds = v.strip('rc').split('.')
+        if len(ds) != 3 and [int(x) for x in ds]:
             raise ArgumentTypeError("Invalid Version ID: {0} must be three"
-                                    "decimal numbers separated by .".format(v))
+                                    "decimal numbers separated by '.'".format(v))
         return v.strip()
