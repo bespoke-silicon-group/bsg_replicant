@@ -1,5 +1,5 @@
-#ifndef __TEST_DRAM_READ_WRITE_H
-#define __TEST_DRAM_READ_WRITE_H
+#ifndef __TEST_VCACHE_SEQUENCE_H
+#define __TEST_VCACHE_SEQUENCE_H
 
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -9,4 +9,4 @@
 #include <stdlib.h>
 #include "library_tests.h"
 
-#endif // __TEST_DRAM_READ_WRITE_H
+#endif // __TEST_VCACHE_SEQUENCE_H
