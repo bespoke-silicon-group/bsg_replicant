@@ -437,9 +437,9 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	// Write 1 to the Transmit Complete bit to clear it
 	hb_mc_fifo_set_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT);
 
-	//#ifdef DEBUG
-	fprintf(stderr, "Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
-	//#endif
+	#ifdef DEBUG
+	fprintf(stderr, "Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
+	#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -482,9 +482,9 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 		packet->words[i] = hb_mc_read32(fd, data_addr);
 	}
 
-	//#ifdef DEBUG
+	#ifdef DEBUG
 	fprintf(stderr, "Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
-	//#endif
+	#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -496,6 +496,7 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
   * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
 int hb_mc_fifo_drain (uint8_t fd, hb_mc_direction_t dir) {
+	return HB_MC_SUCCESS; /* TODO: remove this */
 	if (dir >= HB_MC_MMIO_FIFO_MAX) {
 		fprintf(stderr, "hb_mc_fifo_drain(): fifo direction %d not valid.\n", dir);
 		return HB_MC_FAIL;
@@ -754,6 +755,7 @@ static uint32_t hb_mc_dram_get_epa (eva_t eva) {
  */
 int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa) {
 	if (eva_id != 0) {
+		fprintf(stderr, "hb_mc_eva_to_npa(): invalid eva_id %d.\n", eva_id); 
 		return HB_MC_FAIL; /* invalid eva_id */
 	}
 	else if (hb_mc_is_global_network(eva) == HB_MC_SUCCESS) {
@@ -769,6 +771,7 @@ int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa) {
 		*npa = {x, y, epa};
 	}
 	else {
+		fprintf(stderr, "hb_mc_eva_to_npa(): invalid eva %d\n.", eva); 
 		return HB_MC_FAIL; /* invalid EVA */
 	}
 	return HB_MC_SUCCESS;
@@ -889,37 +892,28 @@ void hb_mc_device_sync (uint8_t fd, hb_mc_request_packet_t *finish) {
  * @param[in] origin_y y coordinate of tile groups origin
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_registers(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin_x, uint8_t origin_y) {
+int hb_mc_tile_set_origin_registers(uint8_t fd, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y) {
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_origin_registers(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
-	
-	hb_mc_packet_t packet_origin_x, packet_origin_y;		
-	hb_mc_format_request_packet(&packet_origin_x.request, 
-				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
-								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET),
-				origin_x, x, y,
-				HB_MC_PACKET_OP_REMOTE_STORE);
-	hb_mc_format_request_packet(&packet_origin_y.request,
-				hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
-								HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET),
-				origin_y, x, y, 
-				HB_MC_PACKET_OP_REMOTE_STORE);
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_fifo_transmit(): failed to set tile X origin.\n");
+
+
+	if (hb_mc_copy_to_epa(fd, x, y, hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET), &origin_x, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_copy_to_epa(): failed to set tile X origin.\n"); 
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
+	#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", x, y, origin_x);
-	//#endif
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_fifo_transmit(): failed to set tile Y origin.\n");
+	#endif
+
+	if (hb_mc_copy_to_epa(fd, x, y, hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET), &origin_y, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_copy_to_epa(): failed to set tile Y origin.\n"); 
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
+	#ifdef DEBUG
 	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", x, y, origin_y);
-	//#endif
+	#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -934,7 +928,7 @@ int hb_mc_tile_set_origin_registers(uint8_t fd, uint8_t x, uint8_t y, uint8_t or
  * @param[in] origin_y y coordinate of tile groups origin
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t origin_x, uint32_t origin_y){
+int hb_mc_tile_set_origin_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y){
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_origin_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
@@ -950,27 +944,34 @@ int hb_mc_tile_set_origin_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint
 		return HB_MC_FAIL;
 	}
 
-
-	hb_mc_packet_t packet_origin_x, packet_origin_y;
-	hb_mc_format_request_packet (&packet_origin_x.request, (bsg_origin_x_eva >> 2), origin_x, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	hb_mc_format_request_packet (&packet_origin_y.request, (bsg_origin_y_eva >> 2), origin_y, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	
-	
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_x) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_fifo_transmit(): failed to set tile __bsg_grp_org_x.\n");
+/*
+	npa_t bsg_origin_x_npa, bsg_origin_y_npa; 
+	if (hb_mc_eva_to_npa(eva_id, bsg_origin_x_eva, &bsg_origin_x_npa) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_eva_to_npa(): failed to translate __bsg_grp_org_x symbol eva to npa.\n");
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
+	
+	if (hb_mc_eva_to_npa(eva_id, bsg_origin_y_eva, &bsg_origin_y_npa) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_eva_to_npa(): failed to translate __bsg_grp_org_y symbol eva to npa.\n");
+		return HB_MC_FAIL;
+	}
+*/
+
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_origin_x_eva >> 2  /* TODO: magic number */, &origin_x, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grp_org_y symbol.\n"); 
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%x) to %d.\n", x, y, bsg_origin_x_eva, origin_x);
-	//#endif
+	#endif
 
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_origin_y) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_fifo_transmit(): failed to set tile __bsg_grp_org_y.\n");
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_origin_y_eva >> 2 /* TODO: magic number */, &origin_y, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grp_org_y symbol .\n"); 
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
+	#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%x) to %d.\n", x, y, bsg_origin_y_eva, origin_y);
-	//#endif
+	#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -983,7 +984,7 @@ int hb_mc_tile_set_origin_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint
  * @param[in] y y coordinate of tile
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y){
+int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t x, uint32_t y, uint32_t coord_x, uint32_t coord_y){
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_coord_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
@@ -999,27 +1000,34 @@ int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint8
 		return HB_MC_FAIL;
 	}
 
-
-	hb_mc_packet_t packet_cord_x, packet_cord_y;
-	hb_mc_format_request_packet (&packet_cord_x.request, (bsg_x_eva >> 2), cord_x, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	hb_mc_format_request_packet (&packet_cord_y.request, (bsg_y_eva >> 2), cord_y, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	
-	
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_x) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_fifo_transmit(): failed to set tile X.\n");
+/*
+	npa_t bsg_x_npa, bsg_y_npa; 
+	if (hb_mc_eva_to_npa(eva_id, bsg_x_eva, &bsg_x_npa) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_eva_to_npa(): failed to translate __bsg_x symbol eva to npa.\n");
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva 0x%x) to %d.\n", x, y, bsg_x_eva, cord_x);
-	//#endif
-
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_cord_y) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_fifo_transmit(): failed to set tile Y.\n");
+	
+	if (hb_mc_eva_to_npa(eva_id, bsg_y_eva, &bsg_y_npa) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_eva_to_npa(): failed to translate __bsg_y symbol eva to npa.\n");
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva 0x%x) to %d.\n", x, y, bsg_y_eva, cord_y);
-	//#endif
+*/
+
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_x_eva >> 2 /* TODO: magic number */, &coord_x, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_y symbol.\n"); 
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva 0x%x) to %d.\n", x, y, bsg_x_eva, coord_x);
+	#endif
+
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_y_eva >> 2 /* TODO: magic number */, &coord_y, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_y symbol .\n"); 
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva 0x%x) to %d.\n", x, y, bsg_y_eva, coord_y);
+	#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -1035,32 +1043,34 @@ int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint8
  * @param[in] dim_y y dimension of tile group.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_id_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint8_t x, uint8_t y, uint32_t cord_x, uint32_t cord_y, uint32_t dim_x, uint32_t dim_y){
+int hb_mc_tile_set_id_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t x, uint32_t y, uint32_t coord_x, uint32_t coord_y, uint32_t dim_x, uint32_t dim_y){
 	if (hb_mc_check_device(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_id_symbol(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 
-	uint32_t id = cord_y * dim_x + cord_x; /* calculate tile's id */
+	uint32_t id = coord_y * dim_x + coord_x; /* calculate tile's id */
 
 	eva_t bsg_id_eva;
 	if (symbol_to_eva(elf, "__bsg_id", &bsg_id_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> symbol_to_eva(): failed to aquire __bsg_id eva.\n");
 		return HB_MC_FAIL;
 	}
-	
-
-	hb_mc_packet_t packet_id;
-	hb_mc_format_request_packet (&packet_id.request, (bsg_id_eva >> 2), id, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-
-	
-	if (hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, &packet_id) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> hb_mc_fifo_transmit(): failed to set tile __bsg_id.\n");
+/*	
+	npa_t bsg_id_npa; 
+	if (hb_mc_eva_to_npa(eva_id, bsg_id_eva, &bsg_id_npa) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> hb_mc_eva_to_npa(): failed to translate __bsg_id symbol eva to npa.\n");
 		return HB_MC_FAIL;
 	}
-	//#ifdef DEBUG
+*/	
+
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_id_eva >> 2 /* TODO: magic number */, &id, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> hb_mc_copy_to_epa(): failed to set tile __bsg_id symbol.\n"); 
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_id (eva 0x%x) to %d.\n", x, y, bsg_id_eva, id);
-	//#endif
+	#endif
 
 	return HB_MC_SUCCESS;
 }
