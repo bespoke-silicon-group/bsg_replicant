@@ -1,22 +1,5 @@
 #include "test_rom.h"
 
-int compare_word(int size, char *desc[], uint32_t *expected, uint32_t *result) {
-	int rc = 0;
-	for(int i = 0; i < size; i++) {
-		bsg_pr_test_info("%s: Expected = %d, Result = %d\n", desc[i], expected[i], result[i]);
-		if(expected[i] != result[i]) {
-			printf("\033[31m Failed \033[0m\n");
-			rc = 1;
-		} 
-		else
-			printf("\033[033m Succeeded \033[0m\n");
-	}
-	if(rc)
-		return HB_MC_FAIL;
-	else
-		return HB_MC_SUCCESS;
-}
-
 int read_npa_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
 	hb_mc_response_packet_t buf[num];
 	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 0, idx, num);
@@ -73,7 +56,7 @@ int test_rom () {
 	read_rom(fd, 4, result); 
 	bsg_pr_test_info("Comparing AXI space results:\n");
 	fflush(stderr);
-	rc = compare_word(4, desc, expected, result);
+	rc = compare_results(4, desc, expected, result);
 	if(rc != HB_MC_SUCCESS){
 		return HB_MC_FAIL;
 	}
@@ -89,7 +72,7 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
 	bsg_pr_test_info("Comparing NPA space results:\n");
-	rc = compare_word(4, desc, expected, result);
+	rc = compare_results(4, desc, expected, result);
 	if(rc != HB_MC_SUCCESS){
 		return HB_MC_FAIL;
 	}
