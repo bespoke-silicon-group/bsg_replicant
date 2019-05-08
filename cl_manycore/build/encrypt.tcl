@@ -142,14 +142,14 @@ file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_clkgate_optional.v            $T
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_banked_crossbar.v          $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w_synth.v               $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w.v                     $TARGET_DIR
-file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v $TARGET_DIR
-file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v  $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync.v                 $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v           $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_2r1w_sync.v                $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_2r1w_sync_synth.v          $TARGET_DIR
+
+file copy -force $BSG_IP_CORES_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v $TARGET_DIR
 
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_manycore_proc_vanilla.v $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/alu.v                       $TARGET_DIR
