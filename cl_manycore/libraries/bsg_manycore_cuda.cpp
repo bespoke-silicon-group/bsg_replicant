@@ -486,8 +486,8 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 		hb_mc_tile_set_origin_registers(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y);
 
 		hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y );
-		hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y);
-		hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->dim_x, device->grid->dim_y);
+		hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].x - device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].y - device->grid->tiles[tile_id].origin_y);
+		hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].x - device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].y - device->grid->tiles[tile_id].origin_y, device->grid->dim_x, device->grid->dim_y);
 
 	
 	}
