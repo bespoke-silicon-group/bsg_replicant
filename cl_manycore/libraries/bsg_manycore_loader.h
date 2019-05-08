@@ -23,14 +23,12 @@
 	#include <bsg_manycore_driver.h>
 	#include <bsg_manycore_tile.h>
 	#include <bsg_manycore_errno.h>
-	#include <bsg_manycore_packet.h>
 	#include <bsg_manycore_mmio.h>
 	#include <bsg_manycore_mem.h>
 #else
 	#include <utils/sh_dpi_tasks.h>
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_tile.h"
-	#include "bsg_manycore_packet.h"
 	#include "bsg_manycore_errno.h"
 	#include "bsg_manycore_mmio.h"
 	#include "bsg_manycore_mem.h"

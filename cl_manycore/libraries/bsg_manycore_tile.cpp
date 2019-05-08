@@ -20,10 +20,11 @@ int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y) {
 	freeze_waddr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, 
 					HB_MC_TILE_EPA_CSR_FREEZE_OFFSET);
 		
-	hb_mc_format_request_packet(&freeze.request,
-				freeze_waddr,
-				HB_MC_CSR_FREEZE,
-				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(fd,
+                                    &freeze.request,
+                                    freeze_waddr,
+                                    HB_MC_CSR_FREEZE,
+                                    x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
@@ -47,10 +48,11 @@ int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
 	freeze_waddr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, 
 						HB_MC_TILE_EPA_CSR_FREEZE_OFFSET);
 		
-	hb_mc_format_request_packet(&unfreeze.request, 
-				freeze_waddr,
-				HB_MC_CSR_UNFREEZE, 
-				x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(fd,
+                                    &unfreeze.request, 
+                                    freeze_waddr,
+                                    HB_MC_CSR_UNFREEZE, 
+                                    x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 	else
@@ -76,10 +78,11 @@ int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 	}
 	x_origin_addr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
 						HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET);
-	hb_mc_format_request_packet(&packet_origin_x.request, 
-				x_origin_addr,
-				origin_x, x, y,
-				HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(fd,
+                                    &packet_origin_x.request, 
+                                    x_origin_addr,
+                                    origin_x, x, y,
+                                    HB_MC_PACKET_OP_REMOTE_STORE);
 	rc = hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &packet_origin_x);
 	if (rc != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
@@ -87,10 +90,11 @@ int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t origin
 
 	y_origin_addr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE,
 						HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET);
-	hb_mc_format_request_packet(&packet_origin_y.request,
-				y_origin_addr,
-				origin_y, x, y, 
-				HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(fd,
+                                    &packet_origin_y.request,
+                                    y_origin_addr,
+                                    origin_y, x, y, 
+                                    HB_MC_PACKET_OP_REMOTE_STORE);
 	rc = hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &packet_origin_y);
 
 	if (rc != HB_MC_SUCCESS) {

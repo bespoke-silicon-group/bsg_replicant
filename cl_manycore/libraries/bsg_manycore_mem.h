@@ -11,9 +11,9 @@
 #include <stdint.h>
 
 #ifndef COSIM
-#include <bsg_manycore_packet.h>
+#include <bsg_manycore_driver.h>
 #else
-#include "bsg_manycore_packet.h"
+#include "bsg_manycore_driver.h"
 #endif 
 
 #ifdef __cplusplus

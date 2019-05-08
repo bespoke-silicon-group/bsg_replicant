@@ -7,7 +7,6 @@
 	#include <bsg_manycore_driver.h>  
 	#include <bsg_manycore_tile.h>
 	#include <bsg_manycore_mmio.h>
-	#include <bsg_manycore_packet.h>
 	#include <fpga_pci.h>
 	#include <fpga_mgmt.h>
 #else
@@ -15,16 +14,15 @@
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_tile.h"
 	#include "bsg_manycore_mmio.h"
-	#include "bsg_manycore_packet.h"
 	#include "fpga_pci_sv.h"
 	#include <utils/sh_dpi_tasks.h>
 #endif
 
 /* The following values are cached by the API during initialization */
-uint8_t hb_mc_manycore_dim_x = 0; 
-uint8_t hb_mc_manycore_dim_y = 0; 
-uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
-uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
+static uint8_t hb_mc_manycore_dim_x = 0; 
+static uint8_t hb_mc_manycore_dim_y = 0; 
+static uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
+static uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
@@ -238,7 +236,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	}
 
 	vcache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_TAG_OFFSET);
-	hb_mc_format_request_packet(&tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_format_request_packet(fd, &tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {
 		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &tag) != HB_MC_SUCCESS) {	
