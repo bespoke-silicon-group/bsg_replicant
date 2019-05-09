@@ -13,7 +13,7 @@ int flush_cache_line_of(uint8_t fd, uint32_t addr, uint32_t target_x, uint32_t t
         for(int i = 1; i <= ASSOCIATIVITY; i++)
         {
                 uint32_t new_addr = (uint32_t)(((uint64_t)addr +  i * NUM_SETS * CACHE_LINE_SIZE) % (1 << 31)); 
-                hb_mc_format_request_packet(&req, new_addr, 0, target_x, target_y,  HB_MC_PACKET_OP_REMOTE_STORE);
+                hb_mc_format_request_packet(fd, &req, new_addr, 0, target_x, target_y,  HB_MC_PACKET_OP_REMOTE_STORE);
                 if(hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&req)) != HB_MC_SUCCESS) {
                         bsg_pr_test_info(BSG_RED("Failed to write to FIFO\n"));
                         return HB_MC_FAIL;;
@@ -26,7 +26,7 @@ int test_address(uint8_t fd, uint32_t addr, uint32_t data, uint32_t target_x, ui
         hb_mc_request_packet_t req;
         hb_mc_response_packet_t res;
 
-        hb_mc_format_request_packet(&req, addr, data, target_x, target_y, HB_MC_PACKET_OP_REMOTE_STORE);
+        hb_mc_format_request_packet(fd, &req, addr, data, target_x, target_y, HB_MC_PACKET_OP_REMOTE_STORE);
         
         bsg_pr_test_info("Sending packet to tile (%d, %d), address 0x%x\n", target_x, target_y, addr);
         if(hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&req)) != HB_MC_SUCCESS) {

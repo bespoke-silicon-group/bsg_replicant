@@ -93,7 +93,7 @@ int test_packets() {
                 return HB_MC_FAIL;
         
         bsg_pr_test_info("Testing hb_mc_format_request_packet\n");
-        hb_mc_format_request_packet(&req2, addr, data, target_x, target_y, HB_MC_PACKET_OP_REMOTE_STORE);
+        hb_mc_format_request_packet(fd, &req2, addr, data, target_x, target_y, HB_MC_PACKET_OP_REMOTE_STORE);
         request_packet_to_array(&req2, actual);
         if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;

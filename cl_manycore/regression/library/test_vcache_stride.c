@@ -55,7 +55,7 @@ int test_vcache_stride() {
 	        	hb_mc_request_packet_t req;
 		        hb_mc_response_packet_t res;
         
-        		hb_mc_format_request_packet(&req, dram_addr, A_host[stride], dram_coord_x, dram_coord_y, HB_MC_PACKET_OP_REMOTE_STORE);
+        		hb_mc_format_request_packet(fd, &req, dram_addr, A_host[stride], dram_coord_x, dram_coord_y, HB_MC_PACKET_OP_REMOTE_STORE);
        
 	        	if(hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, (hb_mc_packet_t *)(&req)) != HB_MC_SUCCESS) {
         	        	fprintf(stderr, "Failed to write to FIFO\n");

@@ -12,10 +12,8 @@
 
 #ifndef COSIM
 #include <bsg_manycore_mem.h>
-#include <bsg_manycore_packet.h>
 #else
 #include "bsg_manycore_mem.h"
-#include "bsg_manycore_packet.h"
 #endif
 
 #ifdef __cplusplus

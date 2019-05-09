@@ -101,12 +101,12 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 					uint32_t dram_word_addr = hb_mc_tile_epa_get_word_addr(
 						hb_mc_tile_epa_get_byte_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_DRAM_OFFSET), ofs);						
 					uint32_t data = text_segment[ofs/sizeof(uint32_t)];
-					hb_mc_format_request_packet(&packets_icache[ofs/sizeof(uint32_t)].request,
+					hb_mc_format_request_packet(fd, &packets_icache[ofs/sizeof(uint32_t)].request,
 								icache_word_addr, 
 								data, x, y, 
 								HB_MC_PACKET_OP_REMOTE_STORE);
 					if (init_dram) {
-						hb_mc_format_request_packet(&packets_dram[ofs/sizeof(uint32_t)].request, dram_word_addr, data, 0, hb_mc_get_manycore_dimension_y() + 1, HB_MC_PACKET_OP_REMOTE_STORE);
+						hb_mc_format_request_packet(fd, &packets_dram[ofs/sizeof(uint32_t)].request, dram_word_addr, data, 0, hb_mc_get_manycore_dimension_y() + 1, HB_MC_PACKET_OP_REMOTE_STORE);
 					}
 				}
 			}
@@ -120,7 +120,7 @@ static int hb_mc_parse_elf(char *filename, uint8_t x, uint8_t y, hb_mc_packet_t 
 				for (int ofs = 0; ofs < ph[i].p_memsz; ofs += sizeof(uint32_t)) {
 					uint32_t dmem_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_DMEM_BASE, ofs);
 					uint32_t data = data_segment[ofs/sizeof(uint32_t)];
-					hb_mc_format_request_packet(&packets_data[ofs/sizeof(uint32_t)].request,
+					hb_mc_format_request_packet(fd, &packets_data[ofs/sizeof(uint32_t)].request,
 								dmem_word_addr, data, 
 								x, y, 
 								HB_MC_PACKET_OP_REMOTE_STORE);
