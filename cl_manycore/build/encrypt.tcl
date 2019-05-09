@@ -154,8 +154,7 @@ file copy -force $BSG_IP_CORES_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_manycore_proc_vanilla.v $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/alu.v                       $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/cl_decode.v                 $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/cl_state_machine.v          $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/rf_2r1w_sync_wrapper.v      $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/regfile.v                   $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/scoreboard.v                $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/icache.v                    $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/imul_idiv_iterative.v       $TARGET_DIR
