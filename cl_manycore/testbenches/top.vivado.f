@@ -129,8 +129,7 @@ ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_2r1w_sync_synth.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/bsg_manycore_proc_vanilla.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/alu.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/cl_decode.v
-${BSG_MANYCORE_DIR}/v/vanilla_bean/cl_state_machine.v
-${BSG_MANYCORE_DIR}/v/vanilla_bean/rf_2r1w_sync_wrapper.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/regfile.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/scoreboard.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/icache.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/imul_idiv_iterative.v
