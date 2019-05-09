@@ -16,7 +16,7 @@
  * @param[in] success_condition a condition which, if true, indicates that the test has passed
  */
 #define bsg_pr_test_pass_fail(success_condition)			\
-        printf("BSG RERGRESSION TEST %s\n", ((success_condition) ? BSG_GREEN("PASSED") : BSG_RED("FAILED")))
+        printf("BSG REGRESSION TEST %s\n", ((success_condition) ? BSG_GREEN("PASSED") : BSG_RED("FAILED")))
 
 // Compares two arrays and prints the indices of mismatching elements. 
 // @param num_fields The number of elements to compare
