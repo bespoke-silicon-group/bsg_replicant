@@ -14,6 +14,7 @@ HEADERS += bsg_manycore_bits.h
 HEADERS += bsg_manycore_elf.h
 HEADERS += bsg_manycore_memory_manager.h
 HEADERS += bsg_manycore_cuda.h
+HEADERS += bsg_manycore_features.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
