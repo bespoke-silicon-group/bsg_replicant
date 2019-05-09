@@ -1,20 +1,15 @@
 #ifndef BSG_MANYCORE_CUDA_H
 #define BSG_MANYCORE_CUDA_H
 
-#ifndef _BSD_SOURCE
-	#define _BSD_SOURCE
-#endif
-#ifndef _XOPEN_SOURCE
-	#define _XOPEN_SOURCE 500
+#ifndef COSIM
+#include <bsg_manycore_features.h>
+#include <bsg_manycore_mem.h>
+#else
+#include "bsg_manycore_features.h"
+#include "bsg_manycore_mem.h"
 #endif
 
 #include <stdint.h>
-
-#ifndef COSIM
-#include <bsg_manycore_mem.h>
-#else
-#include "bsg_manycore_mem.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
