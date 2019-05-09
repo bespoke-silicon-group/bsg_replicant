@@ -112,8 +112,8 @@ int test_dram_packets() {
         
         uint8_t target_x = dim_x + 1;
         uint8_t target_y = dim_y + 1;
-        uint32_t min_addr = 1 << 31;
-        uint32_t max_addr = ~0;
+        uint32_t min_addr = 0;
+        uint32_t max_addr = 1 << 27 - 1;
         uint32_t data = rand();
         bsg_pr_test_info("Min Address: 0x%x, Max Address: 0x%x, Expected data: 0x%x\n", min_addr, max_addr, data);
 
