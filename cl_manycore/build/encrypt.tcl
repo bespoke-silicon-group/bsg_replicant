@@ -36,6 +36,7 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 
 # List your design files below. Include any .inc files, but do NOT include
 # AWS source files.
+file copy -force $COMMON_DIR/f1_bladerunner_ports.inc                         $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
 file copy -force $COMMON_DIR/axil_to_mcl.vh                                   $TARGET_DIR
 file copy -force $COMMON_DIR/axil_to_mcl.v                                    $TARGET_DIR
@@ -43,10 +44,12 @@ file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $T
 file copy -force $COMMON_DIR/axil_to_mem.sv                                   $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
+file copy -force $COMMON_DIR/axi_mux.v                                        $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore_defines.vh                      $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                            $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_target_defines.vh                        $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore.sv                              $TARGET_DIR
 file copy -force $CL_DIR/hardware/bsg_bladerunner_configuration.v             $TARGET_DIR
 

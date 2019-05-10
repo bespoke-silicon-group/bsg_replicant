@@ -57,7 +57,7 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
   .s_axi_rresp  (s_axil_mcl_bus_o_cast.rresp  ),
   .s_axi_rvalid (s_axil_mcl_bus_o_cast.rvalid ),
   .s_axi_rready (s_axil_mcl_bus_i_cast.rready ),
-  
+
   .m_axi_awaddr (s_axil_mcl_mosi_r.awaddr     ),
   .m_axi_awprot (                             ),
   .m_axi_awvalid(s_axil_mcl_mosi_r.awvalid    ),
@@ -89,6 +89,7 @@ bsg_axisN_miso_bus_s  miso_axisN_bus ;
 
 // convert axil to axis
 //---------------------------------
+`ifdef BSG_TARGET_F1
 axi_fifo_mm_s #(
   .C_FAMILY              (fpga_version_p),
   .C_S_AXI_ID_WIDTH      (4             ),
@@ -181,6 +182,45 @@ axi_fifo_mm_s #(
   .axi_str_rxd_tid       (4'h0                      ),
   .axi_str_rxd_tuser     (4'h0                      )
 );
+`else
+axi_fifo_mm_s_0 axi_fifo_mm_s_axi_lite (
+  .interrupt( ),                            // output wire interrupt
+  .s_axi_aclk(clk_i),                          // input wire s_axi_aclk
+  .s_axi_aresetn(~reset_i),                    // input wire s_axi_aresetn
+  .s_axi_awaddr(s_axil_mcl_mosi_r.awaddr),                      // input wire [31 : 0] s_axi_awaddr
+  .s_axi_awvalid(s_axil_mcl_mosi_r.awvalid),                    // input wire s_axi_awvalid
+  .s_axi_awready(s_axil_mcl_miso_r.awready),                    // output wire s_axi_awready
+  .s_axi_wdata(s_axil_mcl_mosi_r.wdata),                        // input wire [31 : 0] s_axi_wdata
+  .s_axi_wstrb(s_axil_mcl_mosi_r.wstrb),                        // input wire [3 : 0] s_axi_wstrb
+  .s_axi_wvalid(s_axil_mcl_mosi_r.wvalid),                      // input wire s_axi_wvalid
+  .s_axi_wready(s_axil_mcl_miso_r.wready),                      // output wire s_axi_wready
+  .s_axi_bresp(s_axil_mcl_miso_r.bresp),                        // output wire [1 : 0] s_axi_bresp
+  .s_axi_bvalid(s_axil_mcl_miso_r.bvalid),                      // output wire s_axi_bvalid
+  .s_axi_bready(s_axil_mcl_mosi_r.bready),                      // input wire s_axi_bready
+  .s_axi_araddr(s_axil_mcl_mosi_r.araddr),                      // input wire [31 : 0] s_axi_araddr
+  .s_axi_arvalid(s_axil_mcl_mosi_r.arvalid),                    // input wire s_axi_arvalid
+  .s_axi_arready(s_axil_mcl_miso_r.arready),                    // output wire s_axi_arready
+  .s_axi_rdata(s_axil_mcl_miso_r.rdata),                        // output wire [31 : 0] s_axi_rdata
+  .s_axi_rresp(s_axil_mcl_miso_r.rresp),                        // output wire [1 : 0] s_axi_rresp
+  .s_axi_rvalid(s_axil_mcl_miso_r.rvalid),                      // output wire s_axi_rvalid
+  .s_axi_rready(s_axil_mcl_mosi_r.rready),                      // input wire s_axi_rready
+  .mm2s_prmry_reset_out_n( ),  // output wire mm2s_prmry_reset_out_n
+  .axi_str_txd_tvalid(mosi_axis32_bus.txd_tvalid),          // output wire axi_str_txd_tvalid
+  .axi_str_txd_tready(miso_axis32_bus.txd_tready),          // input wire axi_str_txd_tready
+  .axi_str_txd_tlast(mosi_axis32_bus.txd_tlast ),            // output wire axi_str_txd_tlast
+  .axi_str_txd_tdata(mosi_axis32_bus.txd_tdata),            // output wire [31 : 0] axi_str_txd_tdata
+  .mm2s_cntrl_reset_out_n( ),  // output wire mm2s_cntrl_reset_out_n
+  .axi_str_txc_tvalid( ),          // output wire axi_str_txc_tvalid
+  .axi_str_txc_tready(1'h0 ),          // input wire axi_str_txc_tready
+  .axi_str_txc_tlast( ),            // output wire axi_str_txc_tlast
+  .axi_str_txc_tdata( ),            // output wire [31 : 0] axi_str_txc_tdata
+  .s2mm_prmry_reset_out_n( ),  // output wire s2mm_prmry_reset_out_n
+  .axi_str_rxd_tvalid(miso_axis32_bus.rxd_tvalid),          // input wire axi_str_rxd_tvalid
+  .axi_str_rxd_tready(mosi_axis32_bus.rxd_tready),          // output wire axi_str_rxd_tready
+  .axi_str_rxd_tlast(miso_axis32_bus.rxd_tlast),            // input wire axi_str_rxd_tlast
+  .axi_str_rxd_tdata(miso_axis32_bus.rxd_tdata)            // input wire [31 : 0] axi_str_rxd_tdata
+);
+`endif
 /*
    ila_0 CL_ILA_0 (
                    .clk    (clk_i),
