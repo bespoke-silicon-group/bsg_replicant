@@ -85,8 +85,8 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y){ 
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 	
@@ -228,8 +228,8 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg){
  * */
 int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) { 
 
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_add_tile_group() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_add_tile_group() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -257,8 +257,8 @@ int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) {
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
 int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_init() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_init() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -289,8 +289,8 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, ui
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  * */
 int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -393,8 +393,8 @@ int hb_mc_wait_for_packet(device_t *device, hb_mc_request_packet_t *packet) {
 
 
 int hb_mc_tile_group_sync (device_t *device, tile_group_t *tg) { 
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_sync) --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_sync) --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -412,8 +412,8 @@ int hb_mc_tile_group_sync (device_t *device, tile_group_t *tg) {
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  * */
 int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg) {
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -514,8 +514,8 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
  * */
 int hb_mc_device_all_tile_groups_finished(device_t *device) {
 	
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_all_tile_groups_finished() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_all_tile_groups_finished() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -534,8 +534,8 @@ int hb_mc_device_all_tile_groups_finished(device_t *device) {
  * */
 int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_wait_for_tile_group_finish() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_wait_for_tile_group_finish() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
@@ -575,8 +575,8 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
  * */
 int hb_mc_device_launch (device_t *device) {
 	
-	if (hb_mc_check_device(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_launch() --> hb_mc_check_device(): failed to verify device.\n"); 
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_launch() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
