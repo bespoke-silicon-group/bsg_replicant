@@ -46,7 +46,12 @@ typedef enum __hb_mc_csr_freeze_t{
 
 int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
+int hb_mc_tile_set_origin_registers(uint8_t fd, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
+int hb_mc_tile_set_origin_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
+int hb_mc_tile_set_coord_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t coord_x, uint32_t coord_y);
+int hb_mc_tile_set_id_symbol(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t cord_x, uint32_t cord_y, uint32_t dim_x, uint32_t dim_y);
+
+
 
 #ifdef __cplusplus
 }
