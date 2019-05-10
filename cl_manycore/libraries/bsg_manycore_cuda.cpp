@@ -375,36 +375,6 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	return HB_MC_SUCCESS;
 }
 
-
-
-int hb_mc_wait_for_packet(device_t *device, hb_mc_request_packet_t *packet) {
-
-	while (1) {	
-		hb_mc_request_packet_t recv;
-		hb_mc_fifo_receive(device->fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv); 
-		fprintf(stderr, "Received Packet: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data); 
-		if (hb_mc_request_packet_equals(&recv, packet) == HB_MC_SUCCESS)
-			break; 
-	}
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-int hb_mc_tile_group_sync (device_t *device, tile_group_t *tg) { 
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_sync) --> hb_mc_fifo_check(): failed to verify device.\n"); 
-		return HB_MC_FAIL;
-	}
-
-	hb_mc_request_packet_t finish;
-	hb_mc_format_response_packet (&finish, tg->kernel->finish_signal_addr, 0x1 /* TODO: magic number */, tg->origin_x, tg->origin_y, HB_MC_PACKET_OP_REMOTE_STORE);	
-	fprintf(stderr, "Requested Packet: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", finish.x_src, finish.y_src, finish.x_dst, finish.y_dst, finish.addr, finish.data); 
-	hb_mc_wait_for_packet(device, &finish); 
-	return HB_MC_SUCCESS;	
-}	
-
 /* 
  * @param[in] De-allocates all tiles in tile group, and resets their tile-group id and origin in the device book keeping.
  * @param[in] device device pointer.
@@ -450,7 +420,7 @@ int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg) {
  */
 int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y) {
 	
-	int error = hb_mc_fifo_init(fd); 
+	int error = hb_mc_fifo_init(&(device->fd)); 
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_init() --> hb_mc_host_init(): failed to initialize host.\n");
 		return HB_MC_FAIL;
@@ -472,7 +442,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
-		hb_mc_freeze(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y);
+		hb_mc_tile_freeze(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y);
 		hb_mc_tile_set_origin_registers(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y);
 /*
 		hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y );
@@ -497,7 +467,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[i]), KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_unfreeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
+		hb_mc_tile_unfreeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
 
 	device->tile_groups = NULL;
@@ -539,18 +509,42 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 		return HB_MC_FAIL;
 	}
 
-	
 	int tile_group_finished = 0;
 	hb_mc_request_packet_t recv, finish;
+	uint32_t intf_coord_x, intf_coord_y;
+	int error; 
+
+	error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &intf_coord_x);
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_wait_for_tile_group_finish(): failed to get host interface X coord.\n");
+		return HB_MC_FAIL;
+	}
+
+	error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &intf_coord_y);
+	if (error != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_device_wait_for_tile_group_finish(): failed to get host interface Y coord.\n");
+		return HB_MC_FAIL;
+	}
+	
  
 	while (!tile_group_finished) {
-		hb_mc_fifo_receive(device->fd, HB_MC_MMIO_FIFO_TO_HOST, (hb_mc_packet_t *) &recv);
+		hb_mc_fifo_receive(device->fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
 		
 		/* Check all tile groups to see if the received packet is the finish packet from one of them */
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) {
 			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
-				hb_mc_format_response_packet(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1 /* TODO: magic number */, device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, HB_MC_PACKET_OP_REMOTE_STORE);
-				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {	/* finished packet received */
+
+//				hb_mc_format_response_packet(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1 /* TODO: magic number */, device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, HB_MC_PACKET_OP_REMOTE_STORE);
+//				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {	/* finished packet received */
+
+
+				if (	   recv.x_src == device->tile_groups[tg_num].origin_x 
+					&& recv.y_src == device->tile_groups[tg_num].origin_y 
+					&& recv.x_dst == (uint8_t) intf_coord_x 
+					&& recv.y_dst == (uint8_t) intf_coord_y
+					&& recv.addr == device->tile_groups[tg_num].kernel->finish_signal_addr 
+					&& recv.data == 0x1 /* TODO: hardcoded */) {
+					
 					#ifdef DEBUG
 						fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
 					#endif
@@ -628,13 +622,11 @@ int hb_mc_device_finish (device_t *device) {
 		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */	
 	delete(mem_manager[device->eva_id]);
 	
-	delete(mem_manager[eva_id]);
-	
-	for (int i = 0; i < num_tiles; i++) { /* freeze tiles */
-		hb_mc_tile_freeze_dep(fd, tiles[i].x, tiles[i].y);
+	for (int i = 0; i < device->grid->dim_x * device->grid->dim_y ; i++) { /* freeze tiles */
+		hb_mc_tile_freeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
 
-	int error = hb_mc_fifo_finish(fd);
+	int error = hb_mc_fifo_finish(device->fd);
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_device_finish() --> hb_mc_host_finish(): failed to terminate host.\n");
 		return HB_MC_FAIL;
@@ -774,16 +766,6 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 		return HB_MC_FAIL; 
 		}
 }
-
-void hb_mc_cuda_sync (uint8_t fd, tile_t *tile) {
-	uint8_t host_x = hb_mc_get_manycore_dimension_x() -1;
-	uint8_t host_y = 0;
-	hb_mc_packet_op_t op = HB_MC_PACKET_OP_REMOTE_STORE;
-	hb_mc_packet_mask_t mask = HB_MC_PACKET_REQUEST_MASK_WORD; 
-	hb_mc_request_packet_t finish = {host_x, host_y, tile->x, tile->y, 0x1 /* data */, mask, op, FINISH_ADDRESS, {0, 0}};
-	hb_mc_device_sync(fd, &finish);
-} 
-
 
 
 /*!
