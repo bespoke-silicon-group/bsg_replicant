@@ -1,16 +1,17 @@
-#ifndef BSG_MANYCORE_ERRNO
-#define BSG_MANYCORE_ERRNO
+#ifndef BSG_MANYCORE_BITS_H
+#define BSG_MANYCORE_BITS_H
 #ifndef COSIM
 #include <bsg_manycore_features.h>
 #else
 #include "bsg_manycore_features.h"
 #endif
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define HB_MC_SUCCESS (0)
-#define HB_MC_FAIL (-1)
+uint32_t hb_mc_get_bits (uint32_t val, uint32_t start, uint32_t size);
 
 #ifdef __cplusplus
 }

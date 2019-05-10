@@ -29,7 +29,7 @@ module axil_to_mem #(
 // synopsys translate_off
 always_ff @(posedge clk_i)
 begin
-  assert (!(mem_addr_width_p > axil_base_addr_width_p) || (axil_base_addr_width_p > 32-4))
+  assert ((mem_addr_width_p <= axil_base_addr_width_p) && (axil_base_addr_width_p <= 32-4))
     else $error("config address width should not exceed axil base address width");
 end
 // synopsys translate_on

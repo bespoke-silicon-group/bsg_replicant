@@ -1,15 +1,29 @@
-/**
+/*
  *  axil_to_mcl.v
- *
+ *  
+ *  This module converts the AXIL memory-mapped interface to the manycore network interface.
+ *  It also reads from the ROM in the AXIL addres space. 
+ *  TODO: factor a single link out using basejump_stl.
+ *          ______________     _______________                 __________
+ *         | axi crossbar |==>|axi mcl adapter|--> fifo_o --> | manycore |
+ *  AXIL==>|              |   |___to device___|<-- fifo_i <-- | endpoint | --> link_sif_o
+ *         |              |    _______________                |          | <-- link_sif_i
+ *         |              |==>|axi mcl adapter|--> fifo_o --> |          |
+ *         |              |   |___to host_____|<-- fifo_i <-- |__________|
+ *         |              |    ...............
+ *         |______________|==>|F1 config rom  |
+ *                             ```````````````
  */
 
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_defines.v"
 `include "bsg_manycore_packet.vh"
 `include "axil_to_mcl.vh"
+`include "bsg_bladerunner_rom_pkg.vh"
 
 module axil_to_mcl
   import cl_mcl_pkg::*;
+  import bsg_bladerunner_rom_pkg::*;
   #(
   // manycore link paramters
   num_mcl_p="inv"
@@ -465,8 +479,8 @@ module axil_to_mcl
   end
 
 
-  logic [axil_base_addr_width_lp-1:0] mcl_mon_addr;
-  logic [31:0] mcl_mon_data;
+  logic [axil_base_addr_width_lp-1:0] axil_mem_addr_lo;
+  logic [31:0] axil_mem_data_li;
 
   axil_to_mem #(
     .mem_addr_width_p(axil_base_addr_width_lp)
@@ -477,25 +491,52 @@ module axil_to_mcl
     ,.reset_i     (reset_i)
     ,.s_axil_bus_i(axil_demux_mosi_bus[axil_bus_num_lp])
     ,.s_axil_bus_o(axil_demux_miso_bus[axil_bus_num_lp])
-    ,.addr_o      (mcl_mon_addr)
+    ,.addr_o      (axil_mem_addr_lo)
     ,.wen_o       ()
     ,.data_o      ()
     ,.ren_o       ()
-    ,.data_i      (mcl_mon_data)
+    ,.data_i      (axil_mem_data_li)
     ,.done        ()
   );
 
-always_comb
-begin
-  // start from bit 2 because we use the byte address
-  case (mcl_mon_addr[2+:$bits(mcl_mon_e)])
-    HOST_RCV_VACANCY_MC_REQ:  mcl_mon_data = (32)'(rcv_fifo_vacancy_lo[1]);
-    HOST_RCV_VACANCY_MC_RES:  mcl_mon_data = (32)'(rcv_fifo_vacancy_lo[0]);
-    HOST_REQ_CREDITS: mcl_mon_data = (32)'(out_credits_lo[0]);
-    MC_NUM_X:         mcl_mon_data = (32)'(num_tiles_x_p);
-    MC_NUM_Y:         mcl_mon_data = (32)'(num_tiles_y_p);
-    default:          mcl_mon_data = 32'hFFFF_FFFF;
-  endcase
-end
+
+  localparam lg_rom_els_lp = `BSG_SAFE_CLOG2(rom_els_p);
+  // synopsys translate_off
+  initial begin
+    assert (lg_rom_els_lp <= axil_base_addr_width_lp)
+      else begin
+        $error("## rom address width can not exceed axil_base_addr!");
+        $finish();
+      end
+  end
+  // synopsys translate_on
+
+  logic [31:0] rom_data_lo;
+  bsg_bladerunner_configuration #(
+    .width_p     (rom_width_p  ),
+    .addr_width_p(lg_rom_els_lp)
+  ) configuration_rom (
+    .addr_i(axil_mem_addr_lo[2+:lg_rom_els_lp]),
+    .data_o(rom_data_lo                        )
+  );
+
+  wire is_accessing_rcv_res_fifo = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_RCV_VACANCY_MC_RES));
+  wire is_accessing_rcv_req_fifo = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ));
+  wire is_accessing_host_req_credits = (axil_mem_addr_lo==axil_base_addr_width_lp'(HOST_REQ_CREDITS));
+
+  always_comb begin
+    if (is_accessing_rcv_res_fifo) begin
+      axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[0]);
+    end
+    else if (is_accessing_rcv_req_fifo) begin
+      axil_mem_data_li = (32)'(rcv_fifo_vacancy_lo[1]);
+    end
+    else if (is_accessing_host_req_credits) begin
+      axil_mem_data_li = (32)'(out_credits_lo[0]);
+    end
+    else begin
+      axil_mem_data_li = (32)'(rom_data_lo);
+    end
+  end
 
 endmodule
