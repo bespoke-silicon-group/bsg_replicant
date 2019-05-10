@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <array>
 
 #ifndef COSIM
 	#include <bsg_manycore_errno.h> 
@@ -23,6 +24,9 @@ static uint8_t hb_mc_manycore_dim_x = 0;
 static uint8_t hb_mc_manycore_dim_y = 0; 
 static uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
 static uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
+
+using hb_mc_config_t = std::array<uint32_t, HB_MC_CONFIG_MAX>;
+static hb_mc_config_t config_table[256]; // Indexed by file descriptor
 
 /*!
  * writes to a 16b register in the OCL BAR of the FPGA
@@ -246,6 +250,21 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	return HB_MC_SUCCESS;
 }
 
+static int hb_mc_read_into_config_table(uint8_t fd)
+{
+        if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_read_into_config_table(): device not initialized.\n");
+		return HB_MC_FAIL;
+	}
+        auto &tb_entry = config_table[fd];
+        for(int id = 0; id < HB_MC_CONFIG_MAX; id++)
+        {
+                uint32_t rom_addr_byte = HB_MC_MMIO_ROM_BASE + (id << 2);
+                tb_entry[id] = hb_mc_read32(fd, rom_addr_byte);
+        }
+	return HB_MC_SUCCESS;
+}
+
 /*! 
  * Initializes the FPGA at slot 0. 
  * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
@@ -283,6 +302,8 @@ int hb_mc_fifo_init (uint8_t *fd) {
 	}
 	hb_mc_clear_int(*fd, HB_MC_MMIO_FIFO_TO_HOST);
 
+        hb_mc_read_into_config_table(*fd);
+        
 	/* get device information */
 	rc = hb_mc_get_config(*fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &cfg);
 	if(rc != HB_MC_SUCCESS)
@@ -513,18 +534,13 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
  * @param[out] cfg configuration value pointer to store data in
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
-	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_get_config(): device not initialized.\n");
-		return HB_MC_FAIL;
-	}	
-	if ((id < 0) || (id > HB_MC_CONFIG_MAX)) {
+int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg) {
+        if ((id < 0) || (id > HB_MC_CONFIG_MAX)) {
 		fprintf(stderr, "hb_mc_get_config(): invalid configuration ID.\n");
 		return HB_MC_FAIL;
 	}
-	uint32_t rom_addr_byte = HB_MC_MMIO_ROM_BASE + (id << 2);
-	*cfg = hb_mc_read32(fd, rom_addr_byte);
-	return HB_MC_SUCCESS;
+        *cfg = config_table[fd][id];
+        return HB_MC_SUCCESS;
 }
 
 /*!
