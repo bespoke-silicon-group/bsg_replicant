@@ -1,5 +1,7 @@
+#include <stdio.h>
+
 #ifndef COSIM
-	#include <bsg_manycore_tile.h>  
+	#include <bsg_manycore_tile.h> 
 #else
 	#include "bsg_manycore_tile.h"
 #endif

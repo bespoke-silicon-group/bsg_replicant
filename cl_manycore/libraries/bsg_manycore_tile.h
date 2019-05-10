@@ -2,13 +2,15 @@
 #define BSG_MANYCORE_TILE_H
 
 #ifndef COSIM
-#include <bsg_manycore_features.h>
-#include <bsg_manycore_driver.h>
-#include <bsg_manycore_mem.h>
+	#include <bsg_manycore_features.h>
+	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore_mem.h>
+	#include <bsg_manycore_elf.h>
 #else
-#include "bsg_manycore_features.h"
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_mem.h"
+	#include "bsg_manycore_features.h"
+	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore_mem.h"
+	#incdlue "bsg_manycore_elf.h"
 #endif
 
 #ifdef __cplusplus
