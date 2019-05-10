@@ -1,6 +1,12 @@
 #ifndef BSG_MANYCORE_MMIO
 #define BSG_MANYCORE_MMIO
 
+#ifndef COSIM
+#include <bsg_manycore_features.h>
+#else
+#include "bsg_manycore_features.h"
+#endif
+
 /* PCIe FIFOs */
 // From https://www.xilinx.com/support/documentation/ip_documentation/axi_fifo_mm_s/v4_1/pg080-axi-fifo-mm-s.pdf
 #define HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET 0xC

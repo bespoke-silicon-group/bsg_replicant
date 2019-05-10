@@ -1,20 +1,21 @@
 #ifndef BSG_MANYCORE_MEM_H
 #define BSG_MANYCORE_MEM_H
 
-#ifndef _BSD_SOURCE
-	#define _BSD_SOURCE
-#endif
-#ifndef _XOPEN_SOURCE
-	#define _XOPEN_SOURCE 500
-#endif
-
-#include <stdint.h>
+/* #ifndef _BSD_SOURCE */
+/* 	#define _BSD_SOURCE */
+/* #endif */
+/* #ifndef _XOPEN_SOURCE */
+/* 	#define _XOPEN_SOURCE 500 */
+/* #endif */
 
 #ifndef COSIM
+#include <bsg_manycore_features.h>
 #include <bsg_manycore_driver.h>
 #else
+#include "bsg_manycore_features.h"
 #include "bsg_manycore_driver.h"
 #endif 
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

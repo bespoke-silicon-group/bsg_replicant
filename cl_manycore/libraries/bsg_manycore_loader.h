@@ -8,6 +8,22 @@
 	#define _XOPEN_SOURCE 500
 #endif
 
+#ifndef COSIM
+        #include <bsg_manycore_features.h>
+	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore_tile.h>
+	#include <bsg_manycore_errno.h>
+	#include <bsg_manycore_mmio.h>
+	#include <bsg_manycore_mem.h>
+#else
+	#include <utils/sh_dpi_tasks.h>
+        #include "bsg_manycore_features.h"
+	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore_tile.h"
+	#include "bsg_manycore_errno.h"
+	#include "bsg_manycore_mmio.h"
+	#include "bsg_manycore_mem.h"
+#endif
 #include "elf.h"
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -19,20 +35,6 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
-#ifndef COSIM
-	#include <bsg_manycore_driver.h>
-	#include <bsg_manycore_tile.h>
-	#include <bsg_manycore_errno.h>
-	#include <bsg_manycore_mmio.h>
-	#include <bsg_manycore_mem.h>
-#else
-	#include <utils/sh_dpi_tasks.h>
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore_tile.h"
-	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_mmio.h"
-	#include "bsg_manycore_mem.h"
-#endif
 
 #ifdef __cplusplus
 extern "C" {
