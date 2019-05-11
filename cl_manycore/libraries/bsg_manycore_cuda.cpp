@@ -562,8 +562,9 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 				//uint32_t *finish_signal = (uint32_t *)(device->tile_groups[tg_num].kernel->finish_signal_addr);
 				//if (*finish_signal == 1) { 					
 
+				#ifdef DEBUG
 				fprintf(stderr, "Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, intf_coord_x, intf_coord_y, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1);
-
+				#endif
 
 				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) intf_coord_x);
 				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) intf_coord_y);
@@ -576,9 +577,10 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
-					#ifdef DEBUG
-						fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
-					#endif
+					//#ifdef DEBUG
+						fprintf(stderr, "Finish packet received for tile group %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg_num, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
+						//fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
+					//#endif
 					hb_mc_tile_group_deallocate(device, &(device->tile_groups[tg_num]));
 					tile_group_finished = 1; 
 					break;
