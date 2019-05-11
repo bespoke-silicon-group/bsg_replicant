@@ -273,13 +273,15 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, ui
 	}
 
 	uint32_t *finish_signal_addr = (uint32_t *) malloc (sizeof (uint32_t));
+	*finish_signal_addr = 0; 
 
 	kernel_t *kernel = new kernel_t;
 	kernel->name = name;
 	kernel->argc = argc;
 	kernel->argv = argv;
-	kernel->finish_signal_addr = (intptr_t) finish_signal_addr;
+	kernel->finish_signal_addr = reinterpret_cast<std::intptr_t> (finish_signal_addr);
 
+	fprintf(stderr, "Finish signal addr 0x%x\n.", kernel->finish_signal_addr);
 
 	tg->dim_x = dim_x;
 	tg->dim_y = dim_y;
@@ -546,9 +548,10 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) {
 			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
 
-//				hb_mc_format_response_packet(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1 /* TODO: magic number */, device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, HB_MC_PACKET_OP_REMOTE_STORE);
-//				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {	/* finished packet received */
-
+				//uint32_t *finish_signal = (uint32_t *)(device->tile_groups[tg_num].kernel->finish_signal_addr);
+				//if (*finish_signal == 1) { 					
+		
+				fprintf(stderr, "Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, intf_coord_x, intf_coord_y, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1);
 
 				if (	   recv.x_src == device->tile_groups[tg_num].origin_x 
 					&& recv.y_src == device->tile_groups[tg_num].origin_y 
@@ -556,7 +559,7 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 					&& recv.y_dst == (uint8_t) intf_coord_y
 					&& recv.addr == device->tile_groups[tg_num].kernel->finish_signal_addr 
 					&& recv.data == 0x1 /* TODO: hardcoded */) {
-					
+
 					#ifdef DEBUG
 						fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
 					#endif
