@@ -178,6 +178,7 @@ int hb_mc_fifo_get_occupancy (uint8_t fd, hb_mc_fifo_rx_t type, uint32_t *occupa
   * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
 int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
+	return HB_MC_SUCCESS; /* TODO: remove this */
 	int rc;
 	uint32_t occupancy; 
 	hb_mc_request_packet_t recv;
