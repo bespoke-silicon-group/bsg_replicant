@@ -45,10 +45,8 @@ int kernel_vec_add () {
 	uint8_t tg_dim_y = 2;
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / (tg_dim_x * tg_dim_y)};
-	uint32_t finish_signal_addr = 0xC0DA;
 
-
-	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv, finish_signal_addr);
+	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
 
 	hb_mc_device_launch(&device);
 	

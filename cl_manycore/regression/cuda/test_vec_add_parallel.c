@@ -92,13 +92,9 @@ int kernel_vec_add_parallel () {
 	int argv_2[4] = {B_device_2, B_device_2, C_device_2, size_buffer / (tg_dim_x_2 * tg_dim_y_2)};
 	int argv_3[4] = {C_device_3, B_device_3, C_device_3, size_buffer / (tg_dim_x_3 * tg_dim_y_3)};
 
-	uint32_t finish_signal_addr_1 = 0xC0D0;
-	uint32_t finish_signal_addr_2 = 0xC0D4;
-	uint32_t finish_signal_addr_3 = 0xC0D8;
-
-	hb_mc_tile_group_init (&device, &tg_1, tg_dim_x_1, tg_dim_y_1, "kernel_vec_add", 4, argv_1, finish_signal_addr_1);
-	hb_mc_tile_group_init (&device, &tg_2, tg_dim_x_2, tg_dim_y_2, "kernel_vec_add", 4, argv_2, finish_signal_addr_2);
-	hb_mc_tile_group_init (&device, &tg_3, tg_dim_x_3, tg_dim_y_3, "kernel_vec_add", 4, argv_3, finish_signal_addr_3);
+	hb_mc_tile_group_init (&device, &tg_1, tg_dim_x_1, tg_dim_y_1, "kernel_vec_add", 4, argv_1);
+	hb_mc_tile_group_init (&device, &tg_2, tg_dim_x_2, tg_dim_y_2, "kernel_vec_add", 4, argv_2);
+	hb_mc_tile_group_init (&device, &tg_3, tg_dim_x_3, tg_dim_y_3, "kernel_vec_add", 4, argv_3);
 
 	fprintf(stderr, "INIT.\n");
 
