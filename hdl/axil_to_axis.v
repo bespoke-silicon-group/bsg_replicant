@@ -31,55 +31,55 @@ localparam fpga_version_p = "virtexuplus";
 
 `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
 
-bsg_axil_mosi_bus_s s_axil_mcl_bus_i_cast, s_axil_mcl_mosi_r;
-bsg_axil_miso_bus_s s_axil_mcl_bus_o_cast, s_axil_mcl_miso_r;
+bsg_axil_mosi_bus_s s_axil_mcl_bus_i_cast;
+bsg_axil_miso_bus_s s_axil_mcl_bus_o_cast;
 assign s_axil_mcl_bus_i_cast = s_axil_mcl_bus_i;
 assign s_axil_mcl_bus_o      = s_axil_mcl_bus_o_cast;
 
-// flop the input OCL bus
-//---------------------------------
-axi_register_slice_light AXIL_OCL_REG_SLC (
-  .aclk         (clk_i                        ),
-  .aresetn      (~reset_i                     ),
-  .s_axi_awaddr (s_axil_mcl_bus_i_cast.awaddr ),
-  .s_axi_awprot (3'h0                         ),
-  .s_axi_awvalid(s_axil_mcl_bus_i_cast.awvalid),
-  .s_axi_awready(s_axil_mcl_bus_o_cast.awready),
-  .s_axi_wdata  (s_axil_mcl_bus_i_cast.wdata  ),
-  .s_axi_wstrb  (s_axil_mcl_bus_i_cast.wstrb  ),
-  .s_axi_wvalid (s_axil_mcl_bus_i_cast.wvalid ),
-  .s_axi_wready (s_axil_mcl_bus_o_cast.wready ),
-  .s_axi_bresp  (s_axil_mcl_bus_o_cast.bresp  ),
-  .s_axi_bvalid (s_axil_mcl_bus_o_cast.bvalid ),
-  .s_axi_bready (s_axil_mcl_bus_i_cast.bready ),
-  .s_axi_araddr (s_axil_mcl_bus_i_cast.araddr ),
-  .s_axi_arvalid(s_axil_mcl_bus_i_cast.arvalid),
-  .s_axi_arready(s_axil_mcl_bus_o_cast.arready),
-  .s_axi_rdata  (s_axil_mcl_bus_o_cast.rdata  ),
-  .s_axi_rresp  (s_axil_mcl_bus_o_cast.rresp  ),
-  .s_axi_rvalid (s_axil_mcl_bus_o_cast.rvalid ),
-  .s_axi_rready (s_axil_mcl_bus_i_cast.rready ),
-
-  .m_axi_awaddr (s_axil_mcl_mosi_r.awaddr     ),
-  .m_axi_awprot (                             ),
-  .m_axi_awvalid(s_axil_mcl_mosi_r.awvalid    ),
-  .m_axi_awready(s_axil_mcl_miso_r.awready    ),
-  .m_axi_wdata  (s_axil_mcl_mosi_r.wdata      ),
-  .m_axi_wstrb  (s_axil_mcl_mosi_r.wstrb      ),
-  .m_axi_wvalid (s_axil_mcl_mosi_r.wvalid     ),
-  .m_axi_wready (s_axil_mcl_miso_r.wready     ),
-  .m_axi_bresp  (s_axil_mcl_miso_r.bresp      ),
-  .m_axi_bvalid (s_axil_mcl_miso_r.bvalid     ),
-  .m_axi_bready (s_axil_mcl_mosi_r.bready     ),
-  .m_axi_araddr (s_axil_mcl_mosi_r.araddr     ),
-  .m_axi_arvalid(s_axil_mcl_mosi_r.arvalid    ),
-  .m_axi_arready(s_axil_mcl_miso_r.arready    ),
-  .m_axi_rdata  (s_axil_mcl_miso_r.rdata      ),
-  .m_axi_rresp  (s_axil_mcl_miso_r.rresp      ),
-  .m_axi_rvalid (s_axil_mcl_miso_r.rvalid     ),
-  .m_axi_rready (s_axil_mcl_mosi_r.rready     )
-);
-
+//// flop the input OCL bus
+////---------------------------------
+//axi_register_slice_light AXIL_OCL_REG_SLC (
+//  .aclk         (clk_i                        ),
+//  .aresetn      (~reset_i                     ),
+//  .s_axi_awaddr (s_axil_mcl_bus_i_cast.awaddr ),
+//  .s_axi_awprot (3'h0                         ),
+//  .s_axi_awvalid(s_axil_mcl_bus_i_cast.awvalid),
+//  .s_axi_awready(s_axil_mcl_bus_o_cast.awready),
+//  .s_axi_wdata  (s_axil_mcl_bus_i_cast.wdata  ),
+//  .s_axi_wstrb  (s_axil_mcl_bus_i_cast.wstrb  ),
+//  .s_axi_wvalid (s_axil_mcl_bus_i_cast.wvalid ),
+//  .s_axi_wready (s_axil_mcl_bus_o_cast.wready ),
+//  .s_axi_bresp  (s_axil_mcl_bus_o_cast.bresp  ),
+//  .s_axi_bvalid (s_axil_mcl_bus_o_cast.bvalid ),
+//  .s_axi_bready (s_axil_mcl_bus_i_cast.bready ),
+//  .s_axi_araddr (s_axil_mcl_bus_i_cast.araddr ),
+//  .s_axi_arvalid(s_axil_mcl_bus_i_cast.arvalid),
+//  .s_axi_arready(s_axil_mcl_bus_o_cast.arready),
+//  .s_axi_rdata  (s_axil_mcl_bus_o_cast.rdata  ),
+//  .s_axi_rresp  (s_axil_mcl_bus_o_cast.rresp  ),
+//  .s_axi_rvalid (s_axil_mcl_bus_o_cast.rvalid ),
+//  .s_axi_rready (s_axil_mcl_bus_i_cast.rready ),
+//
+//  .m_axi_awaddr (s_axil_mcl_mosi_r.awaddr     ),
+//  .m_axi_awprot (                             ),
+//  .m_axi_awvalid(s_axil_mcl_mosi_r.awvalid    ),
+//  .m_axi_awready(s_axil_mcl_miso_r.awready    ),
+//  .m_axi_wdata  (s_axil_mcl_mosi_r.wdata      ),
+//  .m_axi_wstrb  (s_axil_mcl_mosi_r.wstrb      ),
+//  .m_axi_wvalid (s_axil_mcl_mosi_r.wvalid     ),
+//  .m_axi_wready (s_axil_mcl_miso_r.wready     ),
+//  .m_axi_bresp  (s_axil_mcl_miso_r.bresp      ),
+//  .m_axi_bvalid (s_axil_mcl_miso_r.bvalid     ),
+//  .m_axi_bready (s_axil_mcl_mosi_r.bready     ),
+//  .m_axi_araddr (s_axil_mcl_mosi_r.araddr     ),
+//  .m_axi_arvalid(s_axil_mcl_mosi_r.arvalid    ),
+//  .m_axi_arready(s_axil_mcl_miso_r.arready    ),
+//  .m_axi_rdata  (s_axil_mcl_miso_r.rdata      ),
+//  .m_axi_rresp  (s_axil_mcl_miso_r.rresp      ),
+//  .m_axi_rvalid (s_axil_mcl_miso_r.rvalid     ),
+//  .m_axi_rready (s_axil_mcl_mosi_r.rready     )
+//);
+//
 
 `declare_bsg_axis_bus_s(32, bsg_axis32_mosi_bus_s, bsg_axis32_miso_bus_s);
 `declare_bsg_axis_bus_s(mcl_width_p, bsg_axisN_mosi_bus_s, bsg_axisN_miso_bus_s);
@@ -129,6 +129,7 @@ bsg_axisN_miso_bus_s  miso_axisN_bus ;
 // );
 // `else
 
+`ifdef USE_XILINX_IP
 // convert axil to axis
 //---------------------------------
 axi_fifo_mm_s #(
@@ -223,8 +224,25 @@ axi_fifo_mm_s #(
  .axi_str_rxd_tid       (4'h0                      ),
  .axi_str_rxd_tuser     (4'h0                      )
 );
-// `endif
+`else
 
+	bsg_axil_to_fifos #(
+		.num_2fifos_p(1)
+		,.fifo_els_p(256)
+	) axil_to_fifos (
+		.*
+		,.s_axil_bus_i(s_axil_mcl_bus_i_cast)
+		,.s_axil_bus_o(s_axil_mcl_bus_o_cast)
+		,.fifo_v_i(miso_axis32_bus.rxd_tvalid)
+		,.fifo_data_i(miso_axis32_bus.rxd_tdata)
+		,.fifo_rdy_o(mosi_axis32_bus.rxd_tready)
+		,.fifo_v_o(mosi_axis32_bus.txd_tvalid)
+		,.fifo_data_o(mosi_axis32_bus.txd_tdata)
+		,.fifo_rdy_i(miso_axis32_bus.txd_tready)
+	);
+`endif
+
+	assign mosi_axis32_bus.txd_tlast = 1'b1;
 
 axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
   .C_FAMILY(fpga_version_p),

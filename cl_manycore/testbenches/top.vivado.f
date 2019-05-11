@@ -57,10 +57,12 @@ ${CL_DIR}/hardware/bsg_bladerunner_configuration.v
 ${CL_DIR}/../hdl/hb_mc_wrapper.v
 ${CL_DIR}/../hdl/axi4_mux.v
 ${CL_DIR}/../hdl/axil_to_axis.v
+${CL_DIR}/../hdl/bsg_axil_to_fifos.v
 ${CL_DIR}/../hdl/axil_to_fifos.v
 ${CL_DIR}/../hdl/axil_to_mem.sv
 ${CL_DIR}/../hdl/bsg_manycore_endpoint_to_fifos.v
 ${CL_DIR}/../hdl/bsg_bladerunner_rom.v
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_encode_one_hot.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v
