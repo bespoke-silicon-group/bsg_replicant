@@ -185,22 +185,22 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg){
 							fprintf (stderr, "hb_mc_tile_group_allocate() --> hb_mc_tile_set_origin_registers(): failed to set tile group origin registers CSR_TGO_X/Y.\n");
 							return HB_MC_FAIL;
 						}
-/*
+
 						if (hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y) != HB_MC_SUCCESS){
 							fprintf(stderr, "hb_mc_tile_group_allocate() --> hb_mc_tile_set_origin_symbols(): failed to set tile group origin symbols __bsg_grp_org_x/y.\n");
 							return HB_MC_FAIL;
 						}
-*/
+
 						if (hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, (x - org_x), (y - org_y)) != HB_MC_SUCCESS){
 							fprintf(stderr, "hb_mc_tile_group_allocate() --> hb_mc_tile_set_coord_symbols(): failed to set tile coordinate symbols __bsg_x/y.\n");
 							return HB_MC_FAIL;
 						}
-/*
+
 						if (hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, (x - org_x), (y - org_y), tg->dim_x, tg->dim_y) != HB_MC_SUCCESS){
 							fprintf(stderr, "hb_mc_tile_group_allocate() --> hb_mc_tile_set_id_symbol(): failed to set tile id symbol __bsg_id.\n");
 							return HB_MC_FAIL;
 						}
-*/
+
 
 
 					}
@@ -270,7 +270,7 @@ int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, ui
 	kernel->argc = argc;
 	kernel->argv = argv;
 	//kernel->finish_signal_addr = reinterpret_cast<std::uintptr_t> (finish_signal_addr);
-	kernel->finish_signal_addr = 0xCAD0;
+	kernel->finish_signal_addr = 0xFFFF;
 
 	tg->dim_x = dim_x;
 	tg->dim_y = dim_y;
@@ -461,11 +461,9 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
 		hb_mc_tile_freeze(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y);
 		hb_mc_tile_set_origin_registers(device->fd, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y);
-/*
 		hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].origin_y );
 		hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].x - device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].y - device->grid->tiles[tile_id].origin_y);
 		hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->grid->tiles[tile_id].x, device->grid->tiles[tile_id].y, device->grid->tiles[tile_id].x - device->grid->tiles[tile_id].origin_x, device->grid->tiles[tile_id].y - device->grid->tiles[tile_id].origin_y, device->grid->dim_x, device->grid->dim_y);
-*/
 	
 	}
 
@@ -553,19 +551,26 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 
 				//uint32_t *finish_signal = (uint32_t *)(device->tile_groups[tg_num].kernel->finish_signal_addr);
 				//if (*finish_signal == 1) { 					
-		
+
+				#ifdef DEBUG
 				fprintf(stderr, "Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, intf_coord_x, intf_coord_y, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1);
+				#endif
 
-				if (	   recv.x_src == device->tile_groups[tg_num].origin_x 
-					&& recv.y_src == device->tile_groups[tg_num].origin_y 
-					&& recv.x_dst == (uint8_t) intf_coord_x 
-					&& recv.y_dst == (uint8_t) intf_coord_y
-					&& recv.addr == device->tile_groups[tg_num].kernel->finish_signal_addr 
-					&& recv.data == 0x1 /* TODO: hardcoded */) {
+				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) intf_coord_x);
+				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) intf_coord_y);
+				hb_mc_request_packet_set_x_src(&finish, (uint8_t) device->tile_groups[tg_num].origin_x);
+				hb_mc_request_packet_set_y_src(&finish, (uint8_t) device->tile_groups[tg_num].origin_y);
+				hb_mc_request_packet_set_data(&finish, 0x1 /* TODO: Hardcoded */);
+				hb_mc_request_packet_set_mask(&finish, HB_MC_PACKET_REQUEST_MASK_WORD);
+				hb_mc_request_packet_set_op(&finish, HB_MC_PACKET_OP_REMOTE_STORE);
+				hb_mc_request_packet_set_addr(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr);
 
-					#ifdef DEBUG
-						fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
-					#endif
+				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
+		
+					//#ifdef DEBUG
+						fprintf(stderr, "Finish packet received for tile group %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg_num, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
+						//fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
+					//#endif
 					hb_mc_tile_group_deallocate(device, &(device->tile_groups[tg_num]));
 					tile_group_finished = 1; 
 					break;
