@@ -256,17 +256,19 @@ int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) {
  * @param[in] finish_signal_addr is the address that the tilegroup will writes its finish signal into. 
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[], uint32_t finish_signal_addr) {
+int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
 	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_init() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
+	uint32_t *finish_signal_addr = (uint32_t *) malloc (sizeof (uint32_t));
+
 	kernel_t *kernel = new kernel_t;
 	kernel->name = name;
 	kernel->argc = argc;
 	kernel->argv = argv;
-	kernel->finish_signal_addr = finish_signal_addr;
+	kernel->finish_signal_addr = (intptr_t) finish_signal_addr;
 
 
 	tg->dim_x = dim_x;
