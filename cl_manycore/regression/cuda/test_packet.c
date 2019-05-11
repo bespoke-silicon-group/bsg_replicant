@@ -23,10 +23,8 @@ int kernel_packet () {
 	uint8_t tg_dim_y = 2;
 
 	int argv[1];
-	uint32_t finish_signal_addr = 0xC0DA;
 
-
-	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_packet", 0, argv, finish_signal_addr);
+	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_packet", 0, argv);
 
 	hb_mc_device_launch(&device);
 	
