@@ -133,6 +133,8 @@ int hb_mc_all_host_req_complete(uint8_t fd);
 int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
 uint8_t hb_mc_get_manycore_dimension_x();
 uint8_t hb_mc_get_manycore_dimension_y(); 
+uint8_t hb_mc_get_host_intf_coord_x();
+uint8_t hb_mc_get_host_intf_coord_y(); 
 
 int hb_mc_fifo_finish(uint8_t fd);
 int hb_mc_fifo_init(uint8_t *fd);
