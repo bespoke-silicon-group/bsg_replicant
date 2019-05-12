@@ -77,9 +77,9 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 int hb_mc_device_finish (device_t *device);
 int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (device_t *device, eva_t eva);
-int hb_mc_device_launch (device_t *device);
+int hb_mc_device_tile_groups_execute (device_t *device);
 int hb_mc_device_all_tile_groups_finished(device_t *device);
-int hb_mc_device_wait_for_tile_group_finish(device_t *device);
+int hb_mc_device_wait_for_tile_group_finish_any(device_t *device);
 
 enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
 int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
@@ -87,10 +87,10 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
 
-int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg);  
-int hb_mc_tile_group_init(device_t *device,  uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_tile_group_allocate_tiles(device_t *device, tile_group_t *tg);  
+int hb_mc_tile_group_enqueue(device_t *device,  uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[]);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
-int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg);
+int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg);
 
 void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size); /* TODO: Remove; this is for testing only */
 
