@@ -45,9 +45,9 @@ int kernel_vec_add () {
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / (tg_dim_x * tg_dim_y)};
 
-	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
+	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
 
-	hb_mc_device_launch(&device);
+	hb_mc_device_tile_groups_execute(&device);
 	
 
 	uint32_t C_host[size_buffer];
