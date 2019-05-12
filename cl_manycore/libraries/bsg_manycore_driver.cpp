@@ -438,7 +438,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	hb_mc_fifo_set_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT);
 
 	//#ifdef DEBUG
-	fprintf(stderr, "Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
+	fprintf(stderr, "Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
 	//#endif
 
 	return HB_MC_SUCCESS;
@@ -483,7 +483,7 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 	}
 
 	//#ifdef DEBUG
-	fprintf(stderr, "Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
+	fprintf(stderr, "Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
 	//#endif
 
 	return HB_MC_SUCCESS;
