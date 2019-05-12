@@ -3,14 +3,24 @@
 *
 * adapt axil interface to parameterized fifo interface
 *
-* FIFO pair configuration base address = n * 0x100
-* Register offsets:
-* TX_VACANCY=0xC      TX_DATA=0x10    TX_LENGTH=0x14 (store and forward mode)
-* RX_OCCUPANCY=0x1C   RX_DATA=0x20    RX_LENGTH=0x24 (store and forward mode)
+* Note:
+* Config sets n=range(num_2fifos_p) have base address = n * 0x100
 *
-* if write to a full fifo, data will not be updated
+* The host should checkout the status registers before issuing a AXI-Lite transaction:
+
+* To write to a FIFO,
+* 1st set the isr[27] to 0
+* 2nd write the data to base_addr + tx_data_lp
+* 3rd read the isr and check [27]=1 for successful write. Write again if fail
+* Read the transmit vacancy register at base_addr + tx_vacancy_lp to get the current tx FIFO status
+* if write to a full fifo, data will not be updated.
+*
+* To read from a FIFO,
+* 1st read the receive length reigster, return fifo_width_lp/8 * fifo_rx_els_lp if rx_FIFO >= fifo_rx_els_lp, else 0
 * if read from a empty fifo, stale data will be readout
-* The host should checkout the status registers before issue a AXI-Lite transaction
+*
+* This adapter is similar to the Xilinx axi_fifo_mm_s IP working on cut-though mode
+* tx_length_lp = 8'h14  // not supported
 *
 */
 
@@ -23,6 +33,7 @@ module bsg_axil_to_fifos #(
   , parameter rcv_buf_els_p = "inv"
   , parameter axil_base_addr_p = 32'h0000_0000
   , localparam fifo_width_lp = 32
+  , localparam fifo_rx_els_lp = 4
   , localparam fifo_ptr_width_lp = `BSG_WIDTH(fifo_els_p)
   , localparam axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   , localparam axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
@@ -31,7 +42,6 @@ module bsg_axil_to_fifos #(
   , localparam isr_lp = 8'h0
   , localparam tx_vacancy_lp = 8'hC
   , localparam tx_data_lp = 8'h10
-  , localparam tx_length_lp = 8'h14
   , localparam rx_occupancy_lp = 8'h1C
   , localparam rx_data_lp = 8'h20
   , localparam rx_length_lp = 8'h24
@@ -196,7 +206,7 @@ module bsg_axil_to_fifos #(
   logic [num_2fifos_p-1:0]                    tx_v_li, tx_r_lo;
   logic [num_2fifos_p-1:0][fifo_width_lp-1:0] tx_li  ;
 
-  assign tx_v_li    = {num_2fifos_p{wvalid_li}} & write_to_fifo;
+  assign tx_v_li    = {num_2fifos_p{wvalid_li & wready_lo}} & write_to_fifo;
   assign tx_li      = {num_2fifos_p{wdata_li}};
   assign tx_done_lo = |write_to_base;  // assign tx_done_lo = |(tx_v_li & tx_r_lo);
 
@@ -213,7 +223,7 @@ module bsg_axil_to_fifos #(
 
   logic [num_2fifos_p-1:0][fifo_ptr_width_lp-1:0] tx_vacancy_lo;
 
-  for (genvar i=0; i<num_2fifos_p; i++) begin
+  for (genvar i=0; i<num_2fifos_p; i++) begin : transmit_fifo
     bsg_counter_up_down #(
       .max_val_p (fifo_els_p),
       .init_val_p(fifo_els_p),
@@ -329,11 +339,14 @@ module bsg_axil_to_fifos #(
   logic [num_2fifos_p-1:0]                    rx_v_lo, rx_r_li;
   logic [num_2fifos_p-1:0][fifo_width_lp-1:0] rx_lo  ;
 
+  logic [num_2fifos_p-1:0][31:0] reg_lo;
+
   logic [`BSG_SAFE_CLOG2(num_2fifos_p)-1:0] fifo_rdy_idx  ;
   logic                                     fifo_rdy_idx_v;
   if (num_2fifos_p == 1) begin : one_fifo
     assign fifo_rdy_idx[0] = read_from_fifo[0];
     assign fifo_rdy_idx_v  = read_from_fifo[0];
+    assign rdata_lo        = fifo_rdy_idx_v ? rx_lo[0] : reg_lo[0];
   end
   else begin : many_fifos
     bsg_encode_one_hot #(.width_p(num_2fifos_p)) fifo_idx_encode (
@@ -341,12 +354,11 @@ module bsg_axil_to_fifos #(
       ,.addr_o(fifo_rdy_idx)
       ,.v_o(fifo_rdy_idx_v)
     );
+    assign rdata_lo = fifo_rdy_idx_v ? rx_lo[fifo_rdy_idx] : reg_lo[fifo_rdy_idx];
   end
 
-  logic [num_2fifos_p-1:0][31:0] reg_lo;
 
-  assign rx_r_li    = {num_2fifos_p{rready_li}} & read_from_fifo;
-  assign rdata_lo   = fifo_rdy_idx_v ? rx_lo[fifo_rdy_idx] : reg_lo[fifo_rdy_idx];
+  assign rx_r_li    = {num_2fifos_p{rvalid_lo & rready_li}} & read_from_fifo;
   assign rx_done_lo = |read_from_base;
 
   // outside write to fifo
@@ -362,14 +374,14 @@ module bsg_axil_to_fifos #(
 
   logic [num_2fifos_p-1:0][fifo_ptr_width_lp-1:0] rx_occupancy_lo;
 
-  for (genvar i=0; i<num_2fifos_p; i++) begin
+  for (genvar i=0; i<num_2fifos_p; i++) begin : receive_fifo
     bsg_counter_up_down #(
       .max_val_p (fifo_els_p),
       .init_val_p(0         ),
       .max_step_p(1         )
     ) rx_occupancy_counter (      .*,
-      .down_i (rx_enqueue[i]     ),
-      .up_i   (rx_dequeue[i]     ),
+      .down_i (rx_dequeue[i]     ),
+      .up_i   (rx_enqueue[i]     ),
       .count_o(rx_occupancy_lo[i])
     );
 
@@ -394,6 +406,7 @@ module bsg_axil_to_fifos #(
         isr_lp          : reg_lo[i] = isr_r;
         tx_vacancy_lp   : reg_lo[i] = fifo_width_lp'(tx_vacancy_lo[i]);
         rx_occupancy_lp : reg_lo[i] = fifo_width_lp'(rx_occupancy_lo[i]);
+        rx_length_lp    : reg_lo[i] = (rx_occupancy_lo[i] >= fifo_rx_els_lp) ? (fifo_width_lp/8*fifo_rx_els_lp): '0;
         default         : reg_lo[i] = fifo_width_lp'(32'hDEAD_BEEF);
       endcase
     end

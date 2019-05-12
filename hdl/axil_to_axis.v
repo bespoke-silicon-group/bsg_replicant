@@ -65,38 +65,22 @@ bsg_axisN_miso_bus_s  miso_axisN_bus ;
 
 	assign mosi_axis32_bus.txd_tlast = 1'b1;
 
-axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
-  .C_FAMILY(fpga_version_p),
-  .C_S_AXIS_TDATA_WIDTH(32),
-  .C_M_AXIS_TDATA_WIDTH(mcl_width_p),
-  .C_AXIS_TID_WIDTH(1),
-  .C_AXIS_TDEST_WIDTH(1),
-  .C_S_AXIS_TUSER_WIDTH(1),
-  .C_M_AXIS_TUSER_WIDTH(1),
-  .C_AXIS_SIGNAL_SET('B00000000000000000000000000010011)
-) axis_32_128 (
-  .aclk(clk_i),
-  .aresetn(~reset_i),
-  .aclken(1'H1),
-  .s_axis_tvalid(mosi_axis32_bus.txd_tvalid),
-  .s_axis_tready(miso_axis32_bus.txd_tready),
-  .s_axis_tdata(mosi_axis32_bus.txd_tdata),
-  .s_axis_tstrb(4'HF),
-  .s_axis_tkeep(4'HF),
-  .s_axis_tlast(mosi_axis32_bus.txd_tlast),
-  .s_axis_tid(1'H0),
-  .s_axis_tdest(1'H0),
-  .s_axis_tuser(1'H0),
-  .m_axis_tvalid(mosi_axisN_bus.txd_tvalid),  // ->
-  .m_axis_tready(miso_axisN_bus.txd_tready),  // <-
-  .m_axis_tdata(mosi_axisN_bus.txd_tdata),    // ->
-  .m_axis_tstrb(),
-  .m_axis_tkeep(mosi_axisN_bus.txd_tkeep),    // ->
-  .m_axis_tlast(mosi_axisN_bus.txd_tlast),    // -> not used
-  .m_axis_tid(),
-  .m_axis_tdest(),
-  .m_axis_tuser()
+logic [3:0] ser_to_par_valid_lo;
+assign mosi_axisN_bus.txd_tvalid = &ser_to_par_valid_lo;
+wire [$clog2(4+1)-1:0] ser_to_par_yumi_cnt_li = (mosi_axisN_bus.txd_tvalid && miso_axisN_bus.txd_tready) ? 3'd4 : 3'd0;
+
+bsg_serial_in_parallel_out #(
+  .width_p(32),
+  .els_p  (4 )
+) fifo_32_to_128 (  .*,
+  .valid_i   (mosi_axis32_bus.txd_tvalid),
+  .data_i    (mosi_axis32_bus.txd_tdata ),
+  .ready_o   (miso_axis32_bus.txd_tready),
+  .valid_o   (ser_to_par_valid_lo       ),
+  .data_o    (mosi_axisN_bus.txd_tdata  ),
+  .yumi_cnt_i(ser_to_par_yumi_cnt_li    )
 );
+
 
 assign mcl_v_o                   = mosi_axisN_bus.txd_tvalid;
 assign mcl_data_o                = mosi_axisN_bus.txd_tdata[mcl_width_p-1:0];
@@ -157,37 +141,19 @@ bsg_fifo_1r1w_small #(
   .yumi_i (rcv_fifo_yumi_li)
 );
 
-axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
-  .C_FAMILY            (fpga_version_p                    ),
-  .C_S_AXIS_TDATA_WIDTH(mcl_width_p                       ),
-  .C_M_AXIS_TDATA_WIDTH(32                                ),
-  .C_AXIS_TID_WIDTH    (1                                 ),
-  .C_AXIS_TDEST_WIDTH  (1                                 ),
-  .C_S_AXIS_TUSER_WIDTH(1                                 ),
-  .C_M_AXIS_TUSER_WIDTH(1                                 ),
-  .C_AXIS_SIGNAL_SET   ('B00000000000000000000000000010011)
-) axis_128_32 (
-  .aclk         (clk_i                     ),
-  .aresetn      (~reset_i                  ),
-  .aclken       (1'H1                      ),
-  .s_axis_tvalid(rcv_fifo_v_lo             ),
-  .s_axis_tready(rcv_fifo_r_li             ),
-  .s_axis_tdata (rcv_fifo_lo               ),
-  .s_axis_tstrb (16'HFFFF                  ),
-  .s_axis_tkeep (16'HFFFF                  ),
-  .s_axis_tlast (rcv_fifo_last_li          ), // miso_axisN_bus.rxd_tlast
-  .s_axis_tid   (1'H0                      ),
-  .s_axis_tdest (1'H0                      ),
-  .s_axis_tuser (1'H0                      ),
-  .m_axis_tvalid(miso_axis32_bus.rxd_tvalid),
-  .m_axis_tready(mosi_axis32_bus.rxd_tready),
-  .m_axis_tdata (miso_axis32_bus.rxd_tdata ),
-  .m_axis_tstrb (                          ),
-  .m_axis_tkeep (                          ),
-  .m_axis_tlast (miso_axis32_bus.rxd_tlast ),
-  .m_axis_tid   (                          ),
-  .m_axis_tdest (                          ),
-  .m_axis_tuser (                          )
+
+wire par_to_ser_yumi_li = mosi_axis32_bus.rxd_tready & miso_axis32_bus.rxd_tvalid;
+bsg_parallel_in_serial_out #(
+  .width_p(32),
+  .els_p  (4)
+) fifo_128_32 (  .*,
+  .valid_i(rcv_fifo_v_lo             ),
+  .data_i (rcv_fifo_lo               ),
+  .ready_o(rcv_fifo_r_li             ),
+  .valid_o(miso_axis32_bus.rxd_tvalid),
+  .data_o (miso_axis32_bus.rxd_tdata ),
+  .yumi_i (par_to_ser_yumi_li        )
 );
+
 
 endmodule
