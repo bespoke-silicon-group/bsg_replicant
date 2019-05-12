@@ -41,6 +41,6 @@ clean:
 	rm -f *.o
 
 uninstall: clean
-	sudo rm /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h
+	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h
 
 .PHONY: build install clean uninstall 
