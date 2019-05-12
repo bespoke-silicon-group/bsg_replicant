@@ -6,12 +6,14 @@ int read_npa_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
 	if (read == HB_MC_SUCCESS) {
 		for (int i=0; i<num; i++) {
 			result[i] = hb_mc_response_packet_get_data(&buf[i]);
-			bsg_pr_test_info("Read rom data from address 0x%x: 0x%x\n", idx + i, result[i]); 
+			bsg_pr_test_info("Read rom data from address 0x%x: 0x%x\n", idx + i, result[i]);
 		}
 		return HB_MC_SUCCESS;
 	}
-	bsg_pr_test_info("Read from ROM failed.\n");
-	return HB_MC_FAIL;
+	else {
+		bsg_pr_test_info("Read from ROM failed.\n");
+		return HB_MC_FAIL;
+	}
 }
 
 int read_rom(uint8_t fd, int num, /* out */ uint32_t *result) {
@@ -53,14 +55,14 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
 
-	read_rom(fd, 4, result); 
+	read_rom(fd, 4, result);
 	bsg_pr_test_info("Comparing AXI space results:\n");
 	fflush(stderr);
 	rc = compare_results(4, desc, expected, result);
 	if(rc != HB_MC_SUCCESS){
 		return HB_MC_FAIL;
 	}
- 
+
 	printf("Read RCV_FIFO_MC_RES: %x\n", hb_mc_get_recv_vacancy(fd));
 
 	bsg_pr_test_info("Readback manycore link monitor register\n");
@@ -86,7 +88,7 @@ int test_rom () {
 }
 
 #ifdef COSIM
-void test_main(uint32_t *exit_code) { 
+void test_main(uint32_t *exit_code) {
 	bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
 	int rc = test_rom();
 	*exit_code = rc;
