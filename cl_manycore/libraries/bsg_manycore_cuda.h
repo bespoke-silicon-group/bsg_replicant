@@ -68,6 +68,7 @@ typedef struct {
 	char* elf;
 	tile_group_t *tile_groups;
 	uint32_t num_tile_groups;
+	uint32_t tile_group_capacity;
 } device_t; 
 
 
@@ -77,7 +78,6 @@ int hb_mc_device_finish (device_t *device);
 int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (device_t *device, eva_t eva);
 int hb_mc_device_launch (device_t *device);
-int hb_mc_device_add_tile_group (device_t *device, tile_group_t *tg);
 int hb_mc_device_all_tile_groups_finished(device_t *device);
 int hb_mc_device_wait_for_tile_group_finish(device_t *device);
 
@@ -88,7 +88,7 @@ int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 
 
 int hb_mc_tile_group_allocate(device_t *device, tile_group_t *tg);  
-int hb_mc_tile_group_init(device_t *device, tile_group_t *tg,  uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_tile_group_init(device_t *device,  uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[]);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
 int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg);
 

@@ -18,13 +18,12 @@ int kernel_packet () {
 	hb_mc_device_init(&device, eva_id, elf, grid_dim_x, grid_dim_y, grid_origin_x, grid_origin_y);
 
 
-	tile_group_t tg; 
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[1];
 
-	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_packet", 0, argv);
+	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_packet", 0, argv);
 
 	hb_mc_device_launch(&device);
 	

@@ -18,7 +18,7 @@ int kernel_vec_add () {
 	hb_mc_device_init(&device, eva_id, elf, grid_dim_x, grid_dim_y, grid_origin_x, grid_origin_y);
 
 
-	uint32_t size_buffer = 8; 
+	uint32_t size_buffer = 64; 
 	eva_t A_device, B_device, C_device; 
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &A_device); /* allocate A on the device */
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &B_device); /* allocate B on the device */
@@ -40,13 +40,12 @@ int kernel_vec_add () {
 	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
 
 
-	tile_group_t tg; 
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer / (tg_dim_x * tg_dim_y)};
 
-	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
+	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
 
 	hb_mc_device_launch(&device);
 	

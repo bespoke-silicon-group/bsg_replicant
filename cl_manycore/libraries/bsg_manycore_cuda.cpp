@@ -221,32 +221,6 @@ int hb_mc_tile_group_allocate (device_t *device, tile_group_t *tg){
 }
 
 /*
- * Adds a tile group to the list of device tile groups.
- * @param[in] device device pointer.
- * @param[in] tg tile group pointer.
- * return HB_MC_SUCCESS of success and HB_MC_FAIL otherwise.
- * */
-int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) { 
-
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_device_add_tile_group() --> hb_mc_fifo_check(): failed to verify device.\n"); 
-		return HB_MC_FAIL;
-	}
-
-	tile_group_t *tile_groups = (tile_group_t *) malloc ( (device->num_tile_groups + 1) * sizeof(tile_group_t));
-	if (tile_groups == NULL) {
-		fprintf(stderr, "hb_mc_device_add_tile_group(): failed to allocate space for tile group list.\n");
-		return HB_MC_FAIL;
-	}
-	memcpy (tile_groups, device->tile_groups, device->num_tile_groups * sizeof(tile_group_t)) ;
-	memcpy (tile_groups + device->num_tile_groups * sizeof(tile_group_t), tg, sizeof(tile_group_t));
-	free (device->tile_groups); 
-	device->tile_groups = tile_groups; 
-	device->num_tile_groups += 1;
-	return HB_MC_SUCCESS;
-}
-
-/*
  * Takes the kernel name, argc, argv* and the finish signal address, and initializes a kernel and passes it to tilegroup.
  * @param[in] *device device pointer.
  * @param[in] *tg points to the tile group structure.
@@ -256,30 +230,46 @@ int hb_mc_device_add_tile_group(device_t *device, tile_group_t *tg) {
  * @param[in] finish_signal_addr is the address that the tilegroup will writes its finish signal into. 
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_tile_group_init (device_t* device, tile_group_t *tg, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_tile_group_init (device_t* device, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
 	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_init() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
+
 	uint32_t *finish_signal_addr = (uint32_t *) malloc (sizeof (uint32_t));	
 	*finish_signal_addr = 0; 
 
-	kernel_t *kernel = new kernel_t;
-	kernel->name = name;
-	kernel->argc = argc;
-	kernel->argv = argv;
-	//kernel->finish_signal_addr = reinterpret_cast<std::uintptr_t> (finish_signal_addr);
-	kernel->finish_signal_addr = 0xFFFF;
 
+	if (device->num_tile_groups == device->tile_group_capacity) { 
+		device->tile_group_capacity *= 2;
+		device->tile_groups = (tile_group_t *) realloc (device->tile_groups, device->tile_group_capacity * sizeof(tile_group_t));
+		if (device->tile_groups == NULL) {
+			fprintf(stderr, "hb_mc_tile_group_init(): failed to allocate space for tile_group_t structs.\n");
+			return HB_MC_FAIL;
+		}
+	}
+	
+
+	tile_group_t* tg = (tile_group_t *)(device->tile_groups + device->num_tile_groups) ; /* TODO: fix?? */
 	tg->dim_x = dim_x;
 	tg->dim_y = dim_y;
-	tg->kernel = kernel; 
+	tg->origin_x = device->grid->origin_x;
+	tg->origin_y = device->grid->origin_y;
 	tg->id = device->num_tile_groups;
 	tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
-
-	hb_mc_device_add_tile_group(device, tg); 
-
+	tg->kernel = (kernel_t *) malloc (sizeof(kernel_t));
+	if (tg->kernel == NULL) { 
+		fprintf(stderr, "hb_mc_tile_group_init(): failed to allocated space for kernel_t struct.\n");
+		return HB_MC_FAIL;
+	}
+	tg->kernel->name = name;
+	tg->kernel->argc = argc;
+	tg->kernel->argv = argv;
+	tg->kernel->finish_signal_addr = 0xFFFF;
+		
+	device->num_tile_groups += 1;
+	
 	fprintf(stderr, "%dx%d tile group %d initialized.\n", tg->dim_x, tg->dim_y, tg->id) ;
 
 	return HB_MC_SUCCESS;
@@ -328,18 +318,18 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argc %d to device for tile group %d.\n", tg->kernel->argc, tg->id); 
 				return HB_MC_FAIL; 
 			}
-			//#ifdef DEBUG
+			#ifdef DEBUG
 				fprintf(stderr, "Setting tile[%d] (%d,%d) argc to %d.\n", tile_id, x, y, tg->kernel->argc);
-			//#endif	
+			#endif	
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), ARGV_REG, args_eva); /* write EVA of arguments to tile group */
 			if (error != HB_MC_SUCCESS) {
 				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argv to device for tile group %d.\n", tg->id);
 				return HB_MC_FAIL; 
 			}
-			//#ifdef DEBUG
+			#ifdef DEBUG
 				fprintf(stderr, "Setting tile[%d] (%d,%d) argv to 0x%x.\n", tile_id, x, y, args_eva);
-			//#endif
+			#endif
 
 			uint32_t host_coord_x, host_coord_y;
 			error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &host_coord_x);
@@ -357,9 +347,9 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 
 			npa_t finish_signal_host_npa = {host_coord_x, host_coord_y, tg->kernel->finish_signal_addr};
-			//#ifdef DEBUG
+			#ifdef DEBUG
 				fprintf(stderr, "Finish signal <X, Y, EPA> is: <%d, %d, 0x%x>.\n", host_coord_x, host_coord_y, tg->kernel->finish_signal_addr) ;
-			//#endif
+			#endif
 			eva_t finish_signal_host_eva;
 			error = hb_mc_npa_to_eva(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva); /* tile will write to this address when it finishes executing the kernel */
 			if (error != HB_MC_SUCCESS) {
@@ -372,18 +362,18 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				fprintf(stderr, "hb_mc_tile_group_allocate_tile_group() --> hb_mc_write_tile_reg(): failed to write finish_signal_addr %d to device for tile group %d.\n", finish_signal_host_eva, tg->id);
 				return HB_MC_FAIL;
 			}
-			//#ifdef DEBUG
+			#ifdef DEBUG
 				fprintf(stderr, "Setting tile[%d] (%d,%d) SIGNAL_REG to 0x%x.\n", tile_id, x, y, finish_signal_host_eva);
-			//#endif
+			#endif
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
 			if (error != HB_MC_SUCCESS) {
 				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write kernel eva %d to device for tile group %d.\n", kernel_eva, tg->id);
 				return HB_MC_FAIL; 
 			}
-			//#ifdef DEBUG
+			#ifdef DEBUG
 				fprintf(stderr, "Setting tile[%d] (%d,%d) KERNEL_REG to 0x%x.\n", tile_id, x, y, kernel_eva); 
-			//#endif 
+			#endif 
 		}
 	} 
 
@@ -414,9 +404,9 @@ int hb_mc_tile_group_deallocate(device_t *device, tile_group_t *tg) {
 			device->grid->tiles[tile_id].free = 1;
 		}
 	}
-	#ifdef DEBUG
+	//#ifdef DEBUG
 		printf("%dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
-	#endif
+	//#endif
 	
 	tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
 
@@ -485,7 +475,13 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 		hb_mc_tile_unfreeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
 
-	device->tile_groups = NULL;
+	device->tile_group_capacity = 1;
+	device->tile_groups = (tile_group_t *) malloc (device->tile_group_capacity * sizeof(tile_group_t));
+	if (device->tile_groups == NULL) {
+		fprintf(stderr, "hb_mc_device_init(): failed to allocated space for list of tile groups.\n");
+		return HB_MC_FAIL;
+	}
+	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(tile_group_t));
 	device->num_tile_groups = 0;
 
 	return HB_MC_SUCCESS;
@@ -504,8 +500,9 @@ int hb_mc_device_all_tile_groups_finished(device_t *device) {
 		return HB_MC_FAIL;
 	}
 
-	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) {
-		if (device->tile_groups[tg_num].status != HB_MC_TILE_GROUP_STATUS_FINISHED )
+	tile_group_t *tg = device->tile_groups; 
+	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
+		if (tg->status != HB_MC_TILE_GROUP_STATUS_FINISHED )
 			return HB_MC_FAIL; 
 	}
 
@@ -546,32 +543,33 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 		hb_mc_fifo_receive(device->fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
 		
 		/* Check all tile groups to see if the received packet is the finish packet from one of them */
-		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) {
-			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
+		tile_group_t *tg = device->tile_groups;
+		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
+			if (tg->status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
 
 				//uint32_t *finish_signal = (uint32_t *)(device->tile_groups[tg_num].kernel->finish_signal_addr);
 				//if (*finish_signal == 1) { 					
 
-				#ifdef DEBUG
-				fprintf(stderr, "Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", device->tile_groups[tg_num].origin_x, device->tile_groups[tg_num].origin_y, intf_coord_x, intf_coord_y, device->tile_groups[tg_num].kernel->finish_signal_addr, 0x1);
-				#endif
+				//#ifdef DEBUG
+				fprintf(stderr, "Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", tg->origin_x, tg->origin_y, intf_coord_x, intf_coord_y, tg->kernel->finish_signal_addr, 0x1);
+				//#endif
 
 				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) intf_coord_x);
 				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) intf_coord_y);
-				hb_mc_request_packet_set_x_src(&finish, (uint8_t) device->tile_groups[tg_num].origin_x);
-				hb_mc_request_packet_set_y_src(&finish, (uint8_t) device->tile_groups[tg_num].origin_y);
+				hb_mc_request_packet_set_x_src(&finish, (uint8_t) tg->origin_x);
+				hb_mc_request_packet_set_y_src(&finish, (uint8_t) tg->origin_y);
 				hb_mc_request_packet_set_data(&finish, 0x1 /* TODO: Hardcoded */);
 				hb_mc_request_packet_set_mask(&finish, HB_MC_PACKET_REQUEST_MASK_WORD);
 				hb_mc_request_packet_set_op(&finish, HB_MC_PACKET_OP_REMOTE_STORE);
-				hb_mc_request_packet_set_addr(&finish, device->tile_groups[tg_num].kernel->finish_signal_addr);
+				hb_mc_request_packet_set_addr(&finish, tg->kernel->finish_signal_addr);
 
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
 					//#ifdef DEBUG
 						fprintf(stderr, "Finish packet received for tile group %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg_num, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
-						//fprintf(stderr, "Tile group %d finished execution.\n", device->tile_groups[tg_num].id);
+						//fprintf(stderr, "Tile group %d finished execution.\n", tg->id);
 					//#endif
-					hb_mc_tile_group_deallocate(device, &(device->tile_groups[tg_num]));
+					hb_mc_tile_group_deallocate(device, tg);
 					tile_group_finished = 1; 
 					break;
 				}				
@@ -601,11 +599,12 @@ int hb_mc_device_launch (device_t *device) {
 	/* loop untill all tile groups have been allocated, launched and finished. */
 	while(hb_mc_device_all_tile_groups_finished(device) != HB_MC_SUCCESS) {
 		/* loop over all tile groups and try to launch as many as possible */
-		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++) { 
-			if (device->tile_groups[tg_num].status == HB_MC_TILE_GROUP_STATUS_INITIALIZED) {
-				error = hb_mc_tile_group_allocate(device, &(device->tile_groups[tg_num])) ;
+		tile_group_t *tg = device->tile_groups;
+		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) { 
+			if (tg->status == HB_MC_TILE_GROUP_STATUS_INITIALIZED) {
+				error = hb_mc_tile_group_allocate(device, tg) ;
 				if (error == HB_MC_SUCCESS) {
-					error = hb_mc_tile_group_launch(device, &(device->tile_groups[tg_num]));
+					error = hb_mc_tile_group_launch(device, tg);
 					if (error != HB_MC_SUCCESS) {
 						fprintf(stderr, "hb_mc_device_launch(): failed to launch tile group %d.\n", tg_num);
 						return HB_MC_FAIL;
@@ -648,6 +647,8 @@ int hb_mc_device_finish (device_t *device) {
 	for (int i = 0; i < device->grid->dim_x * device->grid->dim_y ; i++) { /* freeze tiles */
 		hb_mc_tile_freeze_dep(device->fd, device->grid->tiles[i].x, device->grid->tiles[i].y);
 	}
+
+	free (device->tile_groups);
 
 	int error = hb_mc_fifo_finish(device->fd);
 	if (error != HB_MC_SUCCESS) {
