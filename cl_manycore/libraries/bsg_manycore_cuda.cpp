@@ -22,7 +22,7 @@ static const uint32_t ARGV_REG = 0x1008 >> 2; //!< EPA of arguments for kernel.
 static const uint32_t SIGNAL_REG = 0x100c >> 2; //!< EPA of register that holds signal address. Tile will write to this address once it completes the kernel.   
 
 
-static const uint32_t FINISH_ADDRESS = 0xC0DA; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
+static const uint32_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
 
 static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}; /* This array has an element for every EVA <-> NPA mapping. Currently, only one mapping is supported. */
 
@@ -247,8 +247,8 @@ int hb_mc_tile_group_init (device_t* device, uint8_t dim_x, uint8_t dim_y, char*
 	}
 
 
-	uint32_t *finish_signal_addr = (uint32_t *) malloc (sizeof (uint32_t));	
-	*finish_signal_addr = 0; 
+	//uint32_t *finish_signal_addr = (uint32_t *) malloc (sizeof (uint32_t));	i
+	//*finish_signal_addr = 0; 
 
 
 	if (device->num_tile_groups == device->tile_group_capacity) { 
@@ -261,7 +261,7 @@ int hb_mc_tile_group_init (device_t* device, uint8_t dim_x, uint8_t dim_y, char*
 	}
 	
 
-	tile_group_t* tg = (tile_group_t *)(device->tile_groups + device->num_tile_groups) ; /* TODO: fix?? */
+	tile_group_t* tg = (tile_group_t *)(device->tile_groups + device->num_tile_groups) ; 
 	tg->dim_x = dim_x;
 	tg->dim_y = dim_y;
 	tg->origin_x = device->grid->origin_x;
@@ -276,7 +276,7 @@ int hb_mc_tile_group_init (device_t* device, uint8_t dim_x, uint8_t dim_y, char*
 	tg->kernel->name = name;
 	tg->kernel->argc = argc;
 	tg->kernel->argv = argv;
-	tg->kernel->finish_signal_addr = 0xFFFF;
+	tg->kernel->finish_signal_addr = FINISH_BASE_ADDR + (tg->id << 2); /* TODO: Hardcoded */
 		
 	device->num_tile_groups += 1;
 	
@@ -560,9 +560,9 @@ int hb_mc_device_wait_for_tile_group_finish(device_t *device) {
 				//uint32_t *finish_signal = (uint32_t *)(device->tile_groups[tg_num].kernel->finish_signal_addr);
 				//if (*finish_signal == 1) { 					
 
-				//#ifdef DEBUG
+				#ifdef DEBUG
 				fprintf(stderr, "Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", tg->origin_x, tg->origin_y, intf_coord_x, intf_coord_y, tg->kernel->finish_signal_addr, 0x1);
-				//#endif
+				#endif
 
 				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) intf_coord_x);
 				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) intf_coord_y);
