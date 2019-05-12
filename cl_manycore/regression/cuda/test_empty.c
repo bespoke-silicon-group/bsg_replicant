@@ -22,9 +22,9 @@ int kernel_empty () {
 
 	int argv[1];
 
-	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
+	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
 	
-	hb_mc_device_launch(&device);
+	hb_mc_device_tile_groups_execute(&device);
 	
 	hb_mc_device_finish(&device); /* freeze the tiles and memory manager cleanup */
 

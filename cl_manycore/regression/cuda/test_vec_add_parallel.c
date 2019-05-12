@@ -90,12 +90,12 @@ int kernel_vec_add_parallel () {
 	int argv_2[4] = {A_device_2, B_device_2, C_device_2, size_buffer / (tg_dim_x * tg_dim_y)};
 	int argv_3[4] = {A_device_3, B_device_3, C_device_3, size_buffer / (tg_dim_x * tg_dim_y)};
 
-	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_1);
-	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_2);
-	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_3);
+	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_1);
+	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_2);
+	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_3);
 
 
-	hb_mc_device_launch(&device);
+	hb_mc_device_tile_groups_execute(&device);
 	
 	uint32_t C_host_1[size_buffer];
 	src = (void *) ((intptr_t) C_device_1);
