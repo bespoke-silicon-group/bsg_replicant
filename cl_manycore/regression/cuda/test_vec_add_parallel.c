@@ -7,6 +7,8 @@
 int kernel_vec_add_parallel () {
 	fprintf(stderr, "Running the CUDA Vector Addition Kernel on three 2x2 tile groups in parallel.\n\n");
 
+	srand(time);
+
 	device_t device;
 	uint8_t grid_dim_x = 4;
 	uint8_t grid_dim_y = 4;
@@ -18,7 +20,7 @@ int kernel_vec_add_parallel () {
 	hb_mc_device_init(&device, eva_id, elf, grid_dim_x, grid_dim_y, grid_origin_x, grid_origin_y);
 
 
-	uint32_t size_buffer = 4; 
+	uint32_t size_buffer = 8; 
 
 	eva_t A_device_1, B_device_1, C_device_1; 
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &A_device_1); /* allocate A1 on the device */
@@ -27,7 +29,6 @@ int kernel_vec_add_parallel () {
 
 	uint32_t A_host_1[size_buffer]; /* allocate A1 on the host */ 
 	uint32_t B_host_1[size_buffer]; /* allocate B1 on the host */
-	srand(0);
 	for (int i = 0; i < size_buffer; i++) { /* fill A1 and B1 with arbitrary data */
 		A_host_1[i] = rand() % ((1 << 16) - 1); /* avoid overflow */
 		B_host_1[i] = rand() % ((1 << 16) - 1); 
@@ -48,7 +49,6 @@ int kernel_vec_add_parallel () {
 
 	uint32_t A_host_2[size_buffer]; /* allocate A2 on the host */ 
 	uint32_t B_host_2[size_buffer]; /* allocate B2 on the host */
-	srand(0);
 	for (int i = 0; i < size_buffer; i++) { /* fill A2 and B2 with arbitrary data */
 		A_host_2[i] = rand() % ((1 << 16) - 1); /* avoid overflow */
 		B_host_2[i] = rand() % ((1 << 16) - 1); 
@@ -69,7 +69,6 @@ int kernel_vec_add_parallel () {
 
 	uint32_t A_host_3[size_buffer]; /* allocate A3 on the host */ 
 	uint32_t B_host_3[size_buffer]; /* allocate B3 on the host */
-	srand(0);
 	for (int i = 0; i < size_buffer; i++) { /* fill A3 and B3 with arbitrary data */
 		A_host_3[i] = rand() % ((1 << 16) - 1); /* avoid overflow */
 		B_host_3[i] = rand() % ((1 << 16) - 1); 
@@ -84,28 +83,20 @@ int kernel_vec_add_parallel () {
 
 
 
-	uint8_t tg_dim_x_1 = 2, tg_dim_x_2 = 2, tg_dim_x_3 = 2;
-	uint8_t tg_dim_y_1 = 2, tg_dim_y_2 = 2, tg_dim_y_3 = 2;
+	uint8_t tg_dim_x = 2;
+	uint8_t tg_dim_y = 2;
 
-	int argv_1[4] = {A_device_1, B_device_1, C_device_1, size_buffer / (tg_dim_x_1 * tg_dim_y_1)};
-	int argv_2[4] = {B_device_2, B_device_2, C_device_2, size_buffer / (tg_dim_x_2 * tg_dim_y_2)};
-	int argv_3[4] = {C_device_3, B_device_3, C_device_3, size_buffer / (tg_dim_x_3 * tg_dim_y_3)};
+	int argv_1[4] = {A_device_1, B_device_1, C_device_1, size_buffer / (tg_dim_x * tg_dim_y)};
+	int argv_2[4] = {A_device_2, B_device_2, C_device_2, size_buffer / (tg_dim_x * tg_dim_y)};
+	int argv_3[4] = {A_device_3, B_device_3, C_device_3, size_buffer / (tg_dim_x * tg_dim_y)};
 
-	hb_mc_tile_group_init (&device, tg_dim_x_1, tg_dim_y_1, "kernel_vec_add", 4, argv_1);
-	hb_mc_tile_group_init (&device, tg_dim_x_2, tg_dim_y_2, "kernel_vec_add", 4, argv_2);
-	hb_mc_tile_group_init (&device, tg_dim_x_3, tg_dim_y_3, "kernel_vec_add", 4, argv_3);
+	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_1);
+	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_2);
+	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_3);
 
-	fprintf(stderr, "INIT.\n");
-
-	tile_group_t *tg = device.tile_groups;
-	for (int tg_num = 0; tg_num < device.num_tile_groups; tg_num ++, tg ++) {
-		fprintf(stderr, "INFO --  Tile Group %d, id: %d, origin: (%d,%d), dim: (%d,%d), kernel: %s, argc: %d\n", tg_num, tg->id, tg->origin_x, tg->origin_y, tg->dim_x, tg->dim_y, tg->kernel->name, tg->kernel->argc); 
-	}
 
 	hb_mc_device_launch(&device);
 	
-	fprintf(stderr, "LAUNCHED.\n");
-
 	uint32_t C_host_1[size_buffer];
 	src = (void *) ((intptr_t) C_device_1);
 	dst = (void *) &C_host_1[0];
