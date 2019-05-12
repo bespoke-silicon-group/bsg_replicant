@@ -127,17 +127,17 @@ int hb_mc_tile_set_origin_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint
 		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grp_org_x symbol.\n"); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
+	//#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%x) to %d.\n", x, y, bsg_origin_x_eva, origin_x);
-	#endif
+	//#endif
 
 	if (hb_mc_copy_to_epa(fd, x, y, bsg_origin_y_eva >> 2 /* TODO: magic number */, &origin_y, 1) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grp_org_y symbol .\n"); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_orgy (eva 0x%x) to %d.\n", x, y, bsg_origin_y_eva, origin_y);
-	#endif
+	//#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%x) to %d.\n", x, y, bsg_origin_y_eva, origin_y);
+	//#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -170,17 +170,17 @@ int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint3
 		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_y symbol.\n"); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
+	//#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva 0x%x) to %d.\n", x, y, bsg_x_eva, coord_x);
-	#endif
+	//#endif
 
 	if (hb_mc_copy_to_epa(fd, x, y, bsg_y_eva >> 2 /* TODO: magic number */, &coord_y, 1) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_y symbol .\n"); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
+	//#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva 0x%x) to %d.\n", x, y, bsg_y_eva, coord_y);
-	#endif
+	//#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -214,9 +214,9 @@ int hb_mc_tile_set_id_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t 
 		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> hb_mc_copy_to_epa(): failed to set tile __bsg_id symbol.\n"); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
+	//#ifdef DEBUG
 		fprintf(stderr, "Setting tile (%d,%d) __bsg_id (eva 0x%x) to %d.\n", x, y, bsg_id_eva, id);
-	#endif
+	//#endif
 
 	return HB_MC_SUCCESS;
 }

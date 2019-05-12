@@ -339,7 +339,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				return HB_MC_FAIL; 
 			}
 			//#ifdef DEBUG
-				fprintf(stderr, "Setting tile[%d] argc to %d.\n", tile_id, tg->kernel->argc);
+				fprintf(stderr, "Setting tile[%d] (%d,%d) argc to %d.\n", tile_id, x, y, tg->kernel->argc);
 			//#endif	
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), ARGV_REG, args_eva); /* write EVA of arguments to tile group */
@@ -348,7 +348,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				return HB_MC_FAIL; 
 			}
 			//#ifdef DEBUG
-				fprintf(stderr, "Setting tile[%d] argv to 0x%x.\n", tile_id, args_eva);
+				fprintf(stderr, "Setting tile[%d] (%d,%d) argv to 0x%x.\n", tile_id, x, y, args_eva);
 			//#endif
 
 			uint32_t host_coord_x, host_coord_y;
@@ -383,7 +383,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				return HB_MC_FAIL;
 			}
 			//#ifdef DEBUG
-				fprintf(stderr, "Setting tile[%d] SIGNAL_REG to 0x%x.\n", tile_id, finish_signal_host_eva);
+				fprintf(stderr, "Setting tile[%d] (%d,%d) SIGNAL_REG to 0x%x.\n", tile_id, x, y, finish_signal_host_eva);
 			//#endif
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->grid->tiles[tile_id]), KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
@@ -392,7 +392,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				return HB_MC_FAIL; 
 			}
 			//#ifdef DEBUG
-				fprintf(stderr, "Setting tile[%d] KERNEL_REG to 0x%x.\n", tile_id, kernel_eva); 
+				fprintf(stderr, "Setting tile[%d] (%d,%d) KERNEL_REG to 0x%x.\n", tile_id, x, y, kernel_eva); 
 			//#endif 
 		}
 	} 
