@@ -259,7 +259,8 @@ module axil_to_fifos #(
   for (genvar i=0; i<num_fifo_pair_p; i=i+1) begin
     axil_to_axis #(
       .mcl_width_p      (fifo_width_p     ),
-      .max_out_credits_p(max_out_credits_p)
+      .max_out_credits_p(max_out_credits_p),
+      .axil_base_addr_p(i<<12)
     ) s_axil_to_fifos (
       .clk_i           (clk_i                 ),
       .reset_i         (reset_i               ),

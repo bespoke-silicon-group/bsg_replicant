@@ -20,13 +20,15 @@
 module bsg_axil_to_fifos #(
   parameter num_2fifos_p = "inv"
   , parameter fifo_els_p = "inv"
+  , parameter rcv_buf_els_p = "inv"
+  , parameter axil_base_addr_p = 32'h0000_0000
   , localparam fifo_width_lp = 32
   , localparam fifo_ptr_width_lp = `BSG_WIDTH(fifo_els_p)
-  , localparam axil_base_addr_start_lp = 32'h0000_0000
   , localparam axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   , localparam axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
-  , localparam config_addr_width_lp = 8
+  , localparam config_addr_width_lp = 12
   , localparam index_addr_width_lp = (32-config_addr_width_lp)
+  , localparam isr_lp = 8'h0
   , localparam tx_vacancy_lp = 8'hC
   , localparam tx_data_lp = 8'h10
   , localparam tx_length_lp = 8'h14
@@ -53,6 +55,10 @@ module bsg_axil_to_fifos #(
   output [          num_2fifos_p-1:0][fifo_width_lp-1:0] fifo_data_o
   ,
   input  [          num_2fifos_p-1:0]                    fifo_rdy_i
+  ,
+  output [                      31:0]                    addr_o
+  ,
+  input  [                      31:0]                    data_i
 );
 
   // synopsys translate_off
@@ -181,8 +187,11 @@ module bsg_axil_to_fifos #(
   end
 
   // wdata channel
-  logic [num_2fifos_p-1:0] write_to_fifo;
   logic [num_2fifos_p-1:0] write_to_base;
+  logic [num_2fifos_p-1:0] write_to_fifo;
+  logic [num_2fifos_p-1:0] write_to_isr ;
+
+  logic [num_2fifos_p-1:0][31:0] isr_r;
 
   logic [num_2fifos_p-1:0]                    tx_v_li, tx_r_lo;
   logic [num_2fifos_p-1:0][fifo_width_lp-1:0] tx_li  ;
@@ -190,7 +199,6 @@ module bsg_axil_to_fifos #(
   assign tx_v_li    = {num_2fifos_p{wvalid_li}} & write_to_fifo;
   assign tx_li      = {num_2fifos_p{wdata_li}};
   assign tx_done_lo = |write_to_base;  // assign tx_done_lo = |(tx_v_li & tx_r_lo);
-
 
   // outside read from fifo
   logic [num_2fifos_p-1:0]                    tx_v_lo, tx_r_li;
@@ -229,8 +237,18 @@ module bsg_axil_to_fifos #(
       .yumi_i (tx_dequeue[i])
     );
 
-    assign write_to_fifo[i] = (wr_addr_r == {index_addr_width_lp'(i + axil_base_addr_start_lp), config_addr_width_lp'(tx_data_lp)});
-    assign write_to_base[i] = (wr_addr_r[axil_base_addr_start_lp+:index_addr_width_lp] == index_addr_width_lp'(i + axil_base_addr_start_lp));
+    assign write_to_base[i] = (wr_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i+ (axil_base_addr_p>>config_addr_width_lp)));
+    assign write_to_fifo[i] = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(tx_data_lp));
+    assign write_to_isr[i]  = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(isr_lp));
+
+    always_ff @(posedge clk_i) begin : cfg_register
+      if (write_to_isr[i])
+        isr_r[i] <= wdata_li;
+      else if (tx_enqueue[i])
+        isr_r[i][27] <= 1'b1;
+      else
+        isr_r[i] <= isr_r[i];
+    end
   end
 
   // bus response channel
@@ -325,7 +343,7 @@ module bsg_axil_to_fifos #(
     );
   end
 
-  logic [num_2fifos_p-1:0][fifo_width_lp-1:0] reg_lo;
+  logic [num_2fifos_p-1:0][31:0] reg_lo;
 
   assign rx_r_li    = {num_2fifos_p{rready_li}} & read_from_fifo;
   assign rdata_lo   = fifo_rdy_idx_v ? rx_lo[fifo_rdy_idx] : reg_lo[fifo_rdy_idx];
@@ -368,11 +386,12 @@ module bsg_axil_to_fifos #(
       .yumi_i (rx_dequeue[i])
     );
 
-    assign read_from_fifo[i] = rd_addr_r == {index_addr_width_lp'(i + axil_base_addr_start_lp), config_addr_width_lp'(rx_data_lp)};
-    assign read_from_base[i] = rd_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i + axil_base_addr_start_lp);
+    assign read_from_base[i] = (rd_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i + (axil_base_addr_p>>config_addr_width_lp)));
+    assign read_from_fifo[i] = read_from_base[i] && (rd_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(rx_data_lp));
 
     always_comb begin : registers
       case (rd_addr_r[0+:config_addr_width_lp])
+        isr_lp          : reg_lo[i] = isr_r;
         tx_vacancy_lp   : reg_lo[i] = fifo_width_lp'(tx_vacancy_lo[i]);
         rx_occupancy_lp : reg_lo[i] = fifo_width_lp'(rx_occupancy_lo[i]);
         default         : reg_lo[i] = fifo_width_lp'(32'hDEAD_BEEF);
