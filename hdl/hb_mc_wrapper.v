@@ -120,26 +120,7 @@ module hb_mc_wrapper #(
   logic [1-1:0][x_cord_width_p-1:0] mcl_x_cord_lp = x_cord_width_p'(num_tiles_x_p-1);
   logic [1-1:0][y_cord_width_p-1:0] mcl_y_cord_lp = '0                              ;
 
-  // bsg_manycore_link_to_axil #(
-  //   .axil_base_addr_p (32'h0000_0000    ),
-  //   .x_cord_width_p   (x_cord_width_p   ),
-  //   .y_cord_width_p   (y_cord_width_p   ),
-  //   .addr_width_p     (addr_width_p     ),
-  //   .data_width_p     (data_width_p     ),
-  //   .max_out_credits_p(max_out_credits_p),
-  //   .load_id_width_p  (load_id_width_p  )
-  // ) axi_to_mc (
-  //   .clk_i           (clk_i             ),
-  //   .reset_i         (~axi_mcl_rstn     ),
-  //   .s_axil_mcl_bus_i(m_axil_bus_lo_cast),
-  //   .s_axil_mcl_bus_o(m_axil_bus_li_cast),
-  //   .link_sif_i      (loader_link_sif_lo),
-  //   .link_sif_o      (loader_link_sif_li),
-  //   .my_x_i          (mcl_x_cord_lp     ),
-  //   .my_y_i          (mcl_y_cord_lp     )
-  // );
-
-axil_to_mcl #(
+	axil_to_mcl #(
   .num_mcl_p        (1                )
   ,.num_tiles_x_p    (num_tiles_x_p    )
   ,.num_tiles_y_p    (num_tiles_y_p    )

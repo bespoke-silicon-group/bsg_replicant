@@ -45,6 +45,7 @@ file copy -force $COMMON_DIR/axil_to_mem.sv                                   $T
 file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
 file copy -force $COMMON_DIR/axi_mux.v                                        $TARGET_DIR
+file copy -force $COMMON_DIR/hb_mc_wrapper.v                                  $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore_defines.vh                      $TARGET_DIR
@@ -74,6 +75,7 @@ file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure
 file copy -force $VIVADO_IP_DIR/axis_infrastructure_v1_1/hdl/axis_infrastructure_v1_1_vl_rfs.v      $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axis_dwidth_converter_v1_1/hdl/axis_dwidth_converter_v1_1_vl_rfs.v  $TARGET_DIR
 
+file copy -force $COMMON_DIR/f1_bladerunner_ports.inc                         $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_apppf_irq_template.inc          $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_cl_sda_template.inc             $TARGET_DIR
 file copy -force $UNUSED_TEMPLATES_DIR/unused_ddr_a_b_d_template.inc          $TARGET_DIR

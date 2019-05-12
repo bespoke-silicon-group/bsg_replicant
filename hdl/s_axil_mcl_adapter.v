@@ -89,7 +89,7 @@ bsg_axisN_miso_bus_s  miso_axisN_bus ;
 
 // convert axil to axis
 //---------------------------------
-`ifndef LOCAL_FPGA
+`ifdef BSG_TARGET_F1
 axi_fifo_mm_s #(
   .C_FAMILY              (fpga_version_p),
   .C_S_AXI_ID_WIDTH      (4             ),
