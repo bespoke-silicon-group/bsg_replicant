@@ -84,7 +84,6 @@ int kernel_vec_add_parallel () {
 
 
 
-	tile_group_t tg_1, tg_2, tg_3; 
 	uint8_t tg_dim_x_1 = 2, tg_dim_x_2 = 2, tg_dim_x_3 = 2;
 	uint8_t tg_dim_y_1 = 2, tg_dim_y_2 = 2, tg_dim_y_3 = 2;
 
@@ -92,16 +91,16 @@ int kernel_vec_add_parallel () {
 	int argv_2[4] = {B_device_2, B_device_2, C_device_2, size_buffer / (tg_dim_x_2 * tg_dim_y_2)};
 	int argv_3[4] = {C_device_3, B_device_3, C_device_3, size_buffer / (tg_dim_x_3 * tg_dim_y_3)};
 
-	hb_mc_tile_group_init (&device, &tg_1, tg_dim_x_1, tg_dim_y_1, "kernel_vec_add", 4, argv_1);
-	hb_mc_tile_group_init (&device, &tg_2, tg_dim_x_2, tg_dim_y_2, "kernel_vec_add", 4, argv_2);
-	hb_mc_tile_group_init (&device, &tg_3, tg_dim_x_3, tg_dim_y_3, "kernel_vec_add", 4, argv_3);
+	hb_mc_tile_group_init (&device, tg_dim_x_1, tg_dim_y_1, "kernel_vec_add", 4, argv_1);
+	hb_mc_tile_group_init (&device, tg_dim_x_2, tg_dim_y_2, "kernel_vec_add", 4, argv_2);
+	hb_mc_tile_group_init (&device, tg_dim_x_3, tg_dim_y_3, "kernel_vec_add", 4, argv_3);
 
 	fprintf(stderr, "INIT.\n");
 
-
-	fprintf(stderr, "IDs: %d, %d, %d.\n", device.tile_groups[0].id, device.tile_groups[1].id, device.tile_groups[2].id);
-
-
+	tile_group_t *tg = device.tile_groups;
+	for (int tg_num = 0; tg_num < device.num_tile_groups; tg_num ++, tg ++) {
+		fprintf(stderr, "INFO --  Tile Group %d, id: %d, origin: (%d,%d), dim: (%d,%d), kernel: %s, argc: %d\n", tg_num, tg->id, tg->origin_x, tg->origin_y, tg->dim_x, tg->dim_y, tg->kernel->name, tg->kernel->argc); 
+	}
 
 	hb_mc_device_launch(&device);
 	

@@ -5,7 +5,7 @@
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore github repository.  
 */
 int kernel_empty () {
-	fprintf(stderr, "Running the CUDA Barrier Kernel on a 2x2 tile group.\n\n");
+	fprintf(stderr, "Running the CUDA Empyt Kernel on a 2x2 tile group.\n\n");
 
 	device_t device;
 	uint8_t grid_dim_x = 4;
@@ -17,15 +17,13 @@ int kernel_empty () {
 
 	hb_mc_device_init(&device, eva_id, elf, grid_dim_x, grid_dim_y, grid_origin_x, grid_origin_y);
 
-
-	tile_group_t tg; 
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[1];
 
-	hb_mc_tile_group_init (&device, &tg, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
-
+	hb_mc_tile_group_init (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
+	
 	hb_mc_device_launch(&device);
 	
 	hb_mc_device_finish(&device); /* freeze the tiles and memory manager cleanup */
