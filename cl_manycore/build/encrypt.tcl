@@ -89,6 +89,7 @@ file copy -force $BSG_IP_CORES_DIR/bsg_noc/bsg_noc_links.vh                   $T
 
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_pkg.v                  $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_pkt.vh                 $TARGET_DIR
+file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_pkt_decode.v           $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_dma_pkt.vh             $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_manycore_link_to_cache.v     $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_to_axi_rx.v            $TARGET_DIR
