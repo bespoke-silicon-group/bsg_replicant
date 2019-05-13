@@ -68,7 +68,8 @@ int kernel_vec_add_parallel_multi_grid () {
 
 
 
-	uint8_t grid_size = 4;
+	uint8_t grid_dim_x = 4;
+	uint8_t grid_dim_y = 1;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
@@ -76,8 +77,8 @@ int kernel_vec_add_parallel_multi_grid () {
 	int argv_2[4] = {A_device_2, B_device_2, C_device_2, size_buffer};
 
 
-	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_1);
-	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_2);
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_1);
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv_2);
 
 	hb_mc_device_tile_groups_execute(&device);
 	

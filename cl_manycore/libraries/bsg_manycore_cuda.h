@@ -35,7 +35,8 @@ typedef struct {
 	uint8_t y;
 	uint8_t origin_x;
 	uint8_t origin_y;
-	uint8_t tile_group_id;
+	uint8_t tile_group_id_x;
+	uint8_t tile_group_id_y;
 	uint8_t free;
 } tile_t;
 
@@ -47,9 +48,11 @@ typedef struct {
 } kernel_t;
 
 typedef struct {
-	tile_group_id_t id;
+	tile_group_id_t id_x;
+	tile_group_id_t id_y;
 	grid_id_t grid_id;
-	uint8_t grid_size;	
+	uint8_t grid_dim_x;
+	uint8_t grid_dim_y;	
 	tile_group_status_t status;
 	uint8_t origin_x;
 	uint8_t origin_y;
@@ -94,10 +97,10 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 
 int hb_mc_mesh_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
-int hb_mc_grid_init (device_t *device, uint8_t grid_size, uint8_t tg_dim_x, uint8_t tg_dim_y, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_grid_init (device_t *device, uint8_t grid_dim_x, uint8_t grid_dim_y, uint8_t tg_dim_x, uint8_t tg_dim_y, char *name, uint32_t argc, uint32_t argv[]);
 
 int hb_mc_tile_group_allocate_tiles(device_t *device, tile_group_t *tg);  
-int hb_mc_tile_group_enqueue(device_t *device, grid_id_t grid_id, tile_group_id_t tg_id, uint8_t grid_size, uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_tile_group_enqueue(device_t *device, grid_id_t grid_id, tile_group_id_t tg_id_x, tile_group_id_t tg_id_y, uint8_t grid_dim_x, uint8_t grid_dim_y, uint8_t dim_x, uint8_t dim_y, char *name, uint32_t argc, uint32_t argv[]);
 int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
 int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg);
 
