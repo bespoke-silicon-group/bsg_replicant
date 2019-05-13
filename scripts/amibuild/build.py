@@ -16,6 +16,8 @@ from AfiAction import AfiAction
 from VersionAction import VersionAction
 
 parser = argparse.ArgumentParser(description='Build an AWS EC2 F1 FPGA Image')
+parser.add_argument('Name', type=str, nargs=1,
+                    help='Project Name for AMI')
 parser.add_argument('Release', action=ReleaseRepoAction, nargs=1,
                     help='BSG Release repository for this build as: repo_name@commit_id')
 parser.add_argument('AfiId', action=AfiAction, nargs=1,
@@ -31,7 +33,7 @@ args = parser.parse_args()
 # The timestamp is used in the instance name and the AMI name
 timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
 instance_name = timestamp + '_image_build'
-ami_name = 'BSG AMI ' + timestamp
+ami_name = 'BSG ' + args.Name[0] + ' v' + args.ImageVersion + ' AMI ' + timestamp
 base_ami = 'ami-093cf634bf32a0b7e'
 # The instance type is used to build the image - it does not need to match the
 # final instance type (e.g. an F1 instance type)
@@ -54,6 +56,7 @@ UserData = UserData.replace("$release_repo", args.Release["name"])
 UserData = UserData.replace("$release_hash", args.Release["commit"])
 
 if(args.dryrun):
+    print(ami_name)
     print(UserData)
     exit(0)
 
