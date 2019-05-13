@@ -247,7 +247,7 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 				tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
 
 				//#ifdef DEBUG
-					fprintf(stderr, "%dx%d tile group %d allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
+					fprintf(stderr, "Grid %d: %dx%d tile group %d allocated at origin (%d,%d).\n", tg-> grid_id, tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
 				//#endif
 				return HB_MC_SUCCESS;
 			}
@@ -307,7 +307,9 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id
 		
 	device->num_tile_groups += 1;
 	
-	fprintf(stderr, "%dx%d tile group %d initialized.\n", tg->dim_x, tg->dim_y, tg->id) ;
+	//#ifdef DEBUG
+		fprintf(stderr, "Grid %d: %dx%d tile group %d initialized.\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id) ;
+	//#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -415,7 +417,9 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	} 
 
 	tg->status=HB_MC_TILE_GROUP_STATUS_LAUNCHED;
-	fprintf(stderr, "%dx%d tile group %d launched at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+	//#ifdef DEBUG
+		fprintf(stderr, "Grid %d: %dx%d tile group %d launched at origin (%d,%d).\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+	//#endif
 	return HB_MC_SUCCESS;
 }
 
@@ -442,7 +446,7 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
 		}
 	}
 	//#ifdef DEBUG
-		printf("%dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+		printf("Grid %d: %dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
 	//#endif
 	
 	tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
@@ -611,7 +615,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
 					//#ifdef DEBUG
-						fprintf(stderr, "Finish packet received for tile group %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg_num, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
+						fprintf(stderr, "Finish packet received for grid %d tile group %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg->grid_id, tg->id, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
 						//fprintf(stderr, "Tile group %d finished execution.\n", tg->id);
 					//#endif
 					hb_mc_tile_group_deallocate_tiles(device, tg);
