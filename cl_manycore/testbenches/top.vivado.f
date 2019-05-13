@@ -64,6 +64,7 @@ ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router.v
 
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_pkg.v
+${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_pkt_decode.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_manycore_link_to_cache.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_to_axi_rx.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_to_axi_tx.v
