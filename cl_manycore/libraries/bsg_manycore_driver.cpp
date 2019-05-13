@@ -460,7 +460,6 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 
 	do {
 		hb_mc_fifo_get_occupancy(fd, type, &occupancy);
-		printf("rd fifo occupancy %x\n", occupancy);
 	}while (occupancy < 1);
 
 	length = hb_mc_read16(fd, length_addr);
