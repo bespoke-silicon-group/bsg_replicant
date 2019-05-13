@@ -20,6 +20,8 @@ parser.add_argument('Release', action=ReleaseRepoAction, nargs=1,
 parser.add_argument('AfiId', action=AfiAction, nargs=1,
                     default={"AmazonFpgaImageID":"Not-Specified-During-AMI-Build"},
                     help='JSON File Path with "FpgaImageId" and "FpgaImageGlobalId" defined')
+parser.add_argument('ImageVersion', action=VersionAction, nargs=1,
+                    help='Version number of the AMI')
 parser.add_argument('-d', '--dryrun', action='store_const', const=True,
                     help='Process the arguments but do not launch an instance')
 
