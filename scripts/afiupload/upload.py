@@ -36,18 +36,6 @@ def setup_argparse():
                         help='Upload the image, but do not process it (dry run)')
     return parser
 
-def construct_description(description, deps):
-    desc = ""
-    desc = description + " (Repository SHAs -- "
-
-    for k,v in deps.items():
-        concat = k  + " : " + v["commit"]
-        desc += " "  + concat +  ","
-
-    desc = desc[:-2] +  ")"
-
-    return desc
-
 def construct_name(name, version, config):
     return '{} v{} (Configuration: {})'.format(name, str(version), config)
 
@@ -74,7 +62,7 @@ def process_tar(args):
     log_key = tar_key + '.log'
 
     name = construct_name(args.ImageName, args.ImageVersion, args.configuration[0])
-    desc = construct_description(args.Description[0], args.r)
+    desc = args.Description[0]
 
     print("Processing {}".format(tar_key))
     rsp = ec2.create_fpga_image(
@@ -90,6 +78,12 @@ def process_tar(args):
         Name=name,
         DryRun=args.dryrun
     )
+
+    tags = [{'Key':n,'Value':h['commit']} for (n,h) in args.r.items()]
+    tags.append({'Key':'Version','Value':args.ImageVersion})
+    tags.append({'Key':'Project','Value':args.ImageName})
+    tags.append({'Key':'Configuration','Value':args.configuration[0]})
+    ec2.create_tags(Resources=[rsp['FpgaImageId']],Tags=tags)
 
     print("New AFI: {}".format(rsp['FpgaImageId']))
     print("New AGFI: {}".format(rsp['FpgaImageGlobalId']))

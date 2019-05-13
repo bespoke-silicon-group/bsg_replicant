@@ -31,9 +31,9 @@ parser.add_argument('-d', '--dryrun', action='store_const', const=True,
 args = parser.parse_args()
 
 # The timestamp is used in the instance name and the AMI name
-timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-instance_name = timestamp + '_image_build'
-ami_name = 'BSG ' + args.Name[0] + ' v' + args.ImageVersion + ' AMI ' + timestamp
+timestamp = datetime.datetime.now().strftime('%Y/%m/%d-%H:%M:%S')
+instance_name = 'v' + args.ImageVersion + ' ' + timestamp + '_image_build'
+ami_name = 'BSG ' + args.Name[0] + ' v' + args.ImageVersion + ' AMI ' 
 base_ami = 'ami-093cf634bf32a0b7e'
 # The instance type is used to build the image - it does not need to match the
 # final instance type (e.g. an F1 instance type)
@@ -101,4 +101,7 @@ print('Instance configuration completed')
 # Finally, generate the AMI 
 ami = cli.create_image(InstanceId=instance.id, Name=ami_name, 
                        Description="BSG AMI with release repository {}@{}".format(args.Release["name"], args.Release["commit"]))
+cli.create_tags(Resources=[ami['ImageId']],Tags=[{'Key':'Version','Value':Args.ImageVersion},
+                                                 {'Key':'Timestamp','Value':timestamp},
+                                                 {'Key':'Project','Value':args.Name[0]}])
 print('Creating AMI: ' + ami['ImageId'])
