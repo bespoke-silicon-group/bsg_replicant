@@ -148,6 +148,8 @@ int hb_mc_tile_set_origin_registers(uint8_t fd, uint32_t x, uint32_t y, uint32_t
 int hb_mc_tile_set_origin_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
 int hb_mc_tile_set_coord_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t coord_x, uint32_t coord_y);
 int hb_mc_tile_set_id_symbol(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t cord_x, uint32_t cord_y, uint32_t dim_x, uint32_t dim_y);
+int hb_mc_tile_set_tile_group_id_symbol(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t tg_id);
+int hb_mc_tile_set_grid_size_symbol(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t grid_size);
 
 
 

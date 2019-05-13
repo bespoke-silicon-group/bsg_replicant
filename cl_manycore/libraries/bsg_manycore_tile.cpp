@@ -262,7 +262,7 @@ int hb_mc_tile_set_coord_symbols (uint8_t fd, eva_id_t eva_id, char* elf,  uint3
 
 
 /*! 
- * Sets a Vanilla Core Endpoint's tile's _bsg_id symbol.
+ * Sets a Vanilla Core Endpoint's tile's __bsg_id symbol.
  * @param[in] fd userspace file descriptor
  * @param[in] eva_id eva-to-npa mapping
  * @param[in] x x coordinate of tile
@@ -296,6 +296,69 @@ int hb_mc_tile_set_id_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t 
 	return HB_MC_SUCCESS;
 }
 
+/*! 
+ * Sets a Vanilla Core Endpoint's tile's __bsg_tile_group_id symbol.
+ * @param[in] fd userspace file descriptor
+ * @param[in] eva_id eva-to-npa mapping
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @param[in] tg_id tile group id.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_tile_group_id_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t x, uint32_t y, uint32_t tg_id){
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_id_symbol(): invalid device %d.\n", fd);
+		return HB_MC_FAIL;
+	}
+
+	eva_t bsg_tile_group_id_eva;
+	if (symbol_to_eva(elf, "__bsg_tile_group_id", &bsg_tile_group_id_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbol() --> symbol_to_eva(): failed to aquire __bsg_tile_group_id eva.\n");
+		return HB_MC_FAIL;
+	}
+
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_tile_group_id_eva >> 2 /* TODO: magic number */, &tg_id, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbol() --> hb_mc_copy_to_epa(): failed to set tile __bsg_tile_group_id symbol.\n"); 
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_tile_group_id (eva 0x%x) to %d.\n", x, y, bsg_tile_group_id_eva, tg_id);
+	#endif
+
+	return HB_MC_SUCCESS;
+}
+
+/*! 
+ * Sets a Vanilla Core Endpoint's tile's __bsg_grid_size symbol.
+ * @param[in] fd userspace file descriptor
+ * @param[in] eva_id eva-to-npa mapping
+ * @param[in] x x coordinate of tile
+ * @param[in] y y coordinate of tile
+ * @param[in] grid_size tile group's grid size.
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_grid_size_symbol (uint8_t fd, eva_id_t eva_id, char* elf,  uint32_t x, uint32_t y, uint32_t grid_size){
+	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_grid_symbol_symbol(): invalid device %d.\n", fd);
+		return HB_MC_FAIL;
+	}
+
+	eva_t bsg_grid_size_eva;
+	if (symbol_to_eva(elf, "__bsg_grid_size", &bsg_grid_size_eva) != HB_MC_SUCCESS){
+		fprintf(stderr, "hb_mc_tile_set_grid_size_symbol() --> symbol_to_eva(): failed to aquire __bsg_grid_size eva.\n");
+		return HB_MC_FAIL;
+	}
+
+	if (hb_mc_copy_to_epa(fd, x, y, bsg_grid_size_eva >> 2 /* TODO: magic number */, &grid_size, 1) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_tile_set_grid_size_symbol() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grid_size symbol.\n"); 
+		return HB_MC_FAIL;
+	}
+	#ifdef DEBUG
+		fprintf(stderr, "Setting tile (%d,%d) __bsg_grid_size (eva 0x%x) to %d.\n", x, y, bsg_grid_size_eva, grid_size);
+	#endif
+
+	return HB_MC_SUCCESS;
+}
 
 
 

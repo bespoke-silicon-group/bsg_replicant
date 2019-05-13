@@ -2,7 +2,7 @@
 
 /*!
  * Runs the addition kernel on a 2x2 tile group at (0, 1). 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore bitbucket repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
 */
 int kernel_vec_add () {
 	fprintf(stderr, "Running the CUDA Vector Addition Kernel on a 2x2 tile group.\n\n");
@@ -18,7 +18,7 @@ int kernel_vec_add () {
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 
 
-	uint32_t size_buffer = 64; 
+	uint32_t size_buffer = 256; 
 	eva_t A_device, B_device, C_device; 
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &A_device); /* allocate A on the device */
 	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &B_device); /* allocate B on the device */
@@ -39,13 +39,13 @@ int kernel_vec_add () {
 	src = (void *) &B_host[0];
 	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
 
-
+	uint8_t grid_size = 1;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
-	int argv[4] = {A_device, B_device, C_device, size_buffer / (tg_dim_x * tg_dim_y)};
+	int argv[4] = {A_device, B_device, C_device, size_buffer};
 
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
+	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
 
 	hb_mc_device_tile_groups_execute(&device);
 	
