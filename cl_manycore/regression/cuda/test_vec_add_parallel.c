@@ -39,13 +39,14 @@ int kernel_vec_add_parallel () {
 	src = (void *) &B_host[0];
 	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
 
-	uint8_t grid_size = 4;
+	uint8_t grid_dim_x = 4;
+	uint8_t grid_dim_y = 1;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[4] = {A_device, B_device, C_device, size_buffer};
 
-	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
 
 	hb_mc_device_tile_groups_execute(&device);
 	

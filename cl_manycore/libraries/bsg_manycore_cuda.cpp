@@ -130,7 +130,8 @@ int hb_mc_mesh_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 			tiles[tile_id].y = y;
 			tiles[tile_id].origin_x = origin_x;
 			tiles[tile_id].origin_y = origin_y;
-			tiles[tile_id].tile_group_id = -1;
+			tiles[tile_id].tile_group_id_x = -1;
+			tiles[tile_id].tile_group_id_y = -1;
 			tiles[tile_id].free = 1;
 		}
 	}
@@ -158,18 +159,20 @@ int hb_mc_mesh_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
  * @param[in] *argv pointer to the arguments in memory.
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_grid_init (device_t *device, uint8_t grid_size, uint8_t tg_dim_x, uint8_t tg_dim_y, char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_grid_init (device_t *device, uint8_t grid_dim_x, uint8_t grid_dim_y, uint8_t tg_dim_x, uint8_t tg_dim_y, char* name, uint32_t argc, uint32_t argv[]) {
 	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
 
 	int error; 
-	for (tile_group_id_t tg_id = 0; tg_id < grid_size; tg_id ++) { 
-		error = hb_mc_tile_group_enqueue(device, device->num_grids, tg_id, grid_size, tg_dim_x, tg_dim_y, name, argc, argv); 
-		if (error != HB_MC_SUCCESS) { 
-			fprintf(stderr, "hb_mc_grid_init() --> hb_mc_tile_group_enqueue(): failed to initialize tile group %d of grid %d.\n", tg_id, device->num_grids);
-			return HB_MC_FAIL;
+	for (int tg_id_x = 0; tg_id_x < grid_dim_x; tg_id_x ++) { 
+		for (int tg_id_y = 0; tg_id_y < grid_dim_y; tg_id_y ++) { 
+			error = hb_mc_tile_group_enqueue(device, device->num_grids, tg_id_x, tg_id_y, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, name, argc, argv); 
+			if (error != HB_MC_SUCCESS) { 
+				fprintf(stderr, "hb_mc_grid_init() --> hb_mc_tile_group_enqueue(): failed to initialize tile group (%d,%d) of grid %d.\n", tg_id_x, tg_id_y, device->num_grids);
+				return HB_MC_FAIL;
+			}
 		}
 	}
 	device->num_grids ++;
@@ -207,7 +210,8 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 						tile_id = (y - device->mesh->origin_y) * device->mesh->dim_x + (x - device->mesh->origin_x);
 						device->mesh->tiles[tile_id].origin_x = org_x;
 						device->mesh->tiles[tile_id].origin_y = org_y;
-						device->mesh->tiles[tile_id].tile_group_id = tg->id;
+						device->mesh->tiles[tile_id].tile_group_id_x = tg->id_x;
+						device->mesh->tiles[tile_id].tile_group_id_y = tg->id_y;
 						device->mesh->tiles[tile_id].free = 0;
 
 						if (hb_mc_tile_set_origin_registers(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y) != HB_MC_SUCCESS){
@@ -230,12 +234,12 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 							return HB_MC_FAIL;
 						}
 
-						if (hb_mc_tile_set_tile_group_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->id) != HB_MC_SUCCESS){
+						if (hb_mc_tile_set_tile_group_id_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->id_x, tg->id_y) != HB_MC_SUCCESS){
 							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_tile_group_id_symbol(): failed to set tile group id symbold __bsg_tile_group_id.\n");
 							return HB_MC_FAIL;
 						}
 
-						if (hb_mc_tile_set_grid_size_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->grid_size) != HB_MC_SUCCESS){
+						if (hb_mc_tile_set_grid_dim_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->grid_dim_x, tg->grid_dim_y) != HB_MC_SUCCESS){
 							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_grid_size_symbol(): failed to set tile grid size symbol __bsg_grid_size.\n");
 							return HB_MC_FAIL;
 						}
@@ -247,7 +251,7 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 				tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
 
 				//#ifdef DEBUG
-					fprintf(stderr, "Grid %d: %dx%d tile group %d allocated at origin (%d,%d).\n", tg-> grid_id, tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);	
+					fprintf(stderr, "Grid %d: %dx%d tile group (%d,%d) allocated at origin (%d,%d).\n", tg-> grid_id, tg->dim_x, tg->dim_y, tg->id_x, tg->id_y, tg->origin_x, tg->origin_y);	
 				//#endif
 				return HB_MC_SUCCESS;
 			}
@@ -265,7 +269,7 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
  * @param[in] *argv pointer to the arguments in memory.
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id_t tg_id, uint8_t grid_size, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id_t tg_id_x, tile_group_id_t tg_id_y, uint8_t grid_dim_x, uint8_t grid_dim_y, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
 	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_enqueue() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
@@ -291,9 +295,11 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id
 	tg->dim_y = dim_y;
 	tg->origin_x = device->mesh->origin_x;
 	tg->origin_y = device->mesh->origin_y;
-	tg->id = tg_id;
+	tg->id_x = tg_id_x;
+	tg->id_y = tg_id_y;
 	tg->grid_id = grid_id;
-	tg->grid_size = grid_size;
+	tg->grid_dim_x = grid_dim_x;
+	tg->grid_dim_y = grid_dim_y;
 	tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
 	tg->kernel = (kernel_t *) malloc (sizeof(kernel_t));
 	if (tg->kernel == NULL) { 
@@ -303,12 +309,12 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id
 	tg->kernel->name = name;
 	tg->kernel->argc = argc;
 	tg->kernel->argv = argv;
-	tg->kernel->finish_signal_addr = FINISH_BASE_ADDR + (tg->id << 2); /* TODO: Hardcoded */
+	tg->kernel->finish_signal_addr = FINISH_BASE_ADDR + ((tg->id_y * tg->grid_dim_x + tg->id_x) << 2); /* TODO: Hardcoded */
 		
 	device->num_tile_groups += 1;
 	
 	//#ifdef DEBUG
-		fprintf(stderr, "Grid %d: %dx%d tile group %d initialized.\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id) ;
+		fprintf(stderr, "Grid %d: %dx%d tile group (%d,%d) initialized.\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id_x, tg->id_y) ;
 	//#endif
 
 	return HB_MC_SUCCESS;
@@ -329,20 +335,20 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	eva_t args_eva;
 	int error = hb_mc_device_malloc (device, (tg->kernel->argc) * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_malloc(): failed to allocate space on device of tile group %d arguments.\n", tg->id);
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_malloc(): failed to allocate space on device for grid %d tile group (%d,%d) arguments.\n", tg->grid_id, tg->id_x, tg->id_y);
 		return HB_MC_FAIL;
 	}
 
 	error = hb_mc_device_memcpy(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_memcpy(): failed to copy tile group %d arguments to device.\n", tg->id); 
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_memcpy(): failed to copy grid %d tile group (%d,%d) arguments to device.\n", tg->grid_id, tg->id_x, tg->id_y); 
 		return HB_MC_FAIL;
 	}
 	
 	eva_t kernel_eva; 
 	error = symbol_to_eva(device->elf, tg->kernel->name, &kernel_eva); /* get EVA of kernel */
 	if (error != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_symbol_to_eva(): invalid kernel name %s for tile group %d.\n", tg->kernel->name, tg->id); 
+		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_symbol_to_eva(): invalid kernel name %s for grid %d tile group (%d,%d).\n", tg->kernel->name, tg->grid_id, tg->id_x, tg->id_y); 
 		return HB_MC_FAIL;
 	}
 
@@ -354,7 +360,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), ARGC_REG, tg->kernel->argc); /* write argc to tile */
 			if (error != HB_MC_SUCCESS) {
-				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argc %d to device for tile group %d.\n", tg->kernel->argc, tg->id); 
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argc %d to device for grid %d tile group (%d,%d).\n", tg->kernel->argc, tg->grid_id, tg->id_x, tg->id_y); 
 				return HB_MC_FAIL; 
 			}
 			#ifdef DEBUG
@@ -363,7 +369,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), ARGV_REG, args_eva); /* write EVA of arguments to tile group */
 			if (error != HB_MC_SUCCESS) {
-				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argv to device for tile group %d.\n", tg->id);
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write argv to device for grid %d tile group (%d,%d).\n", tg->grid_id, tg->id_x, tg->id_y);
 				return HB_MC_FAIL; 
 			}
 			#ifdef DEBUG
@@ -398,7 +404,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 			
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), SIGNAL_REG, finish_signal_host_eva); 
 			if (error != HB_MC_SUCCESS) {
-				fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_write_tile_reg(): failed to write finish_signal_addr %d to device for tile group %d.\n", finish_signal_host_eva, tg->id);
+				fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_write_tile_reg(): failed to write finish_signal_addr %d to device for grid %d tile group (%d,%d).\n", finish_signal_host_eva, tg->grid_id, tg->id_x, tg->id_y);
 				return HB_MC_FAIL;
 			}
 			#ifdef DEBUG
@@ -407,7 +413,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
 			if (error != HB_MC_SUCCESS) {
-				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write kernel eva %d to device for tile group %d.\n", kernel_eva, tg->id);
+				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_write_tile_reg(): failed to write kernel eva %d to device for grid %d tile group (%d,%d).\n", kernel_eva, tg->grid_id, tg->id_x, tg->id_y);
 				return HB_MC_FAIL; 
 			}
 			#ifdef DEBUG
@@ -418,7 +424,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 	tg->status=HB_MC_TILE_GROUP_STATUS_LAUNCHED;
 	//#ifdef DEBUG
-		fprintf(stderr, "Grid %d: %dx%d tile group %d launched at origin (%d,%d).\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+		fprintf(stderr, "Grid %d: %dx%d tile group (%d,%d) launched at origin (%d,%d).\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id_x, tg->id_y, tg->origin_x, tg->origin_y);
 	//#endif
 	return HB_MC_SUCCESS;
 }
@@ -441,12 +447,13 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
 			tile_id = (y - device->mesh->origin_y) * device->mesh->dim_x + (x - device->mesh->origin_x);
 			device->mesh->tiles[tile_id].origin_x = device->mesh->origin_x;
 			device->mesh->tiles[tile_id].origin_y = device->mesh->origin_y;
-			device->mesh->tiles[tile_id].tile_group_id = -1;
+			device->mesh->tiles[tile_id].tile_group_id_x = -1;
+			device->mesh->tiles[tile_id].tile_group_id_y = -1;
 			device->mesh->tiles[tile_id].free = 1;
 		}
 	}
 	//#ifdef DEBUG
-		printf("Grid %d: %dx%d tile group %d de-allocated at origin (%d,%d).\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id, tg->origin_x, tg->origin_y);
+		printf("Grid %d: %dx%d tile group (%d,%d) de-allocated at origin (%d,%d).\n", tg->grid_id, tg->dim_x, tg->dim_y, tg->id_x, tg->id_y, tg->origin_x, tg->origin_y);
 	//#endif
 	
 	tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
@@ -500,9 +507,9 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 		hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y, device->mesh->dim_x, device->mesh->dim_y);
 
-		hb_mc_tile_set_tile_group_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 0);
+		hb_mc_tile_set_tile_group_id_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 0, 0);
 
-		hb_mc_tile_set_grid_size_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 1);	
+		hb_mc_tile_set_grid_dim_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 1, 1);	
 	}
 
 
@@ -615,8 +622,8 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
 					//#ifdef DEBUG
-						fprintf(stderr, "Finish packet received for grid %d tile group %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg->grid_id, tg->id, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
-						//fprintf(stderr, "Tile group %d finished execution.\n", tg->id);
+						fprintf(stderr, "Finish packet received for grid %d tile group (%d,%d): src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", tg->grid_id, tg->id_x, tg->id_y, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
+						//fprintf(stderr, "Grid %d tile group (%d,%d) finished execution.\n", tg->grid_id, tg->id_x, tg->id_y);
 					//#endif
 					hb_mc_tile_group_deallocate_tiles(device, tg);
 					tile_group_finished = 1; 

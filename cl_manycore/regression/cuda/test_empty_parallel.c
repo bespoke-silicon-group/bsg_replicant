@@ -1,7 +1,7 @@
 #include "test_empty_parallel.h"
 
 /*!
- * Runs 6 empty kernels in 2x2 tile groups on a 4x4 mesh. 
+ * Runs 8 empty kernels in 2x2 tile groups on a 4x4 mesh. 
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
 */
 int kernel_empty_parallel () {
@@ -17,13 +17,14 @@ int kernel_empty_parallel () {
 
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 	
-	uint8_t grid_size = 6;
+	uint8_t grid_dim_x = 4;
+	uint8_t grid_dim_y = 2;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[1];
 
-	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
 
 	hb_mc_device_tile_groups_execute(&device);
 	
