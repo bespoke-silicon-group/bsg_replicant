@@ -17,7 +17,7 @@
 *
 * To read from a FIFO,
 * 1st read the receive length reigster, return fifo_width_lp/8 * fifo_1rd_bytes_lp if rx_FIFO >= fifo_1rd_bytes_lp, else 0
-* if read from a empty fifo, stale data will be readout
+* if read from a empty fifo, you will get stale data
 *
 * This adapter is similar to the Xilinx axi_fifo_mm_s IP working on cut-though mode
 * tx_length_lp = 8'h14  // not supported
@@ -49,32 +49,19 @@ module bsg_axil_to_fifos #(
   , localparam mc_out_credits_lp = 12'h300
 ) (
   input                                                  clk_i
-  ,
-  input                                                  reset_i
-  ,
-  input  [axil_mosi_bus_width_lp-1:0]                    s_axil_bus_i
-  ,
-  output [axil_miso_bus_width_lp-1:0]                    s_axil_bus_o
-  ,
-  input  [           num_slots_p-1:0]                    fifo_v_i
-  ,
-  input  [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_i
-  ,
-  output [           num_slots_p-1:0]                    fifo_rdy_o
-  ,
-  output [           num_slots_p-1:0]                    fifo_v_o
-  ,
-  output [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_o
-  ,
-  input  [           num_slots_p-1:0]                    fifo_rdy_i
-  ,
-  output [                      31:0]                    rom_addr_o
-  ,
-  input  [                      31:0]                    rom_data_i
-  ,
-  input [num_slots_p-1:0][31:0] rcv_vacancy_i
-  ,
-  input [31:0] mc_out_credits_i
+  ,input                                                  reset_i
+  ,input  [axil_mosi_bus_width_lp-1:0]                    s_axil_bus_i
+  ,output [axil_miso_bus_width_lp-1:0]                    s_axil_bus_o
+  ,input  [           num_slots_p-1:0]                    fifo_v_i
+  ,input  [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_i
+  ,output [           num_slots_p-1:0]                    fifo_rdy_o
+  ,output [           num_slots_p-1:0]                    fifo_v_o
+  ,output [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_o
+  ,input  [           num_slots_p-1:0]                    fifo_rdy_i
+  ,output [                      31:0]                    rom_addr_o
+  ,input  [                      31:0]                    rom_data_i
+  ,input  [           num_slots_p-1:0][             31:0] rcv_vacancy_i
+  ,input  [                      31:0]                    mc_out_credits_i
 );
 
   // synopsys translate_off
@@ -235,22 +222,22 @@ module bsg_axil_to_fifos #(
       .init_val_p(fifo_els_p),
       .max_step_p(1         )
     ) tx_vacancy_counter (      .*,
-      .down_i (tx_enqueue[i]   ),
-      .up_i   (tx_dequeue[i]   ),
-      .count_o(tx_vacancy_lo[i])
+      .down_i (tx_enqueue[i]   )
+      ,.up_i   (tx_dequeue[i]   )
+      ,.count_o(tx_vacancy_lo[i])
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_lp),
-      .els_p             (fifo_els_p   ),
-      .ready_THEN_valid_p(0            )
+      .width_p           (fifo_width_lp)
+      ,.els_p             (fifo_els_p   )
+      ,.ready_THEN_valid_p(0            )
     ) tx_fifo (      .*,
-      .v_i    (tx_v_li[i]   ),
-      .ready_o(tx_r_lo[i]   ),
-      .data_i (tx_li[i]     ),
-      .v_o    (tx_v_lo[i]   ),
-      .data_o (tx_lo[i]     ),
-      .yumi_i (tx_dequeue[i])
+      .v_i    (tx_v_li[i]   )
+      ,.ready_o(tx_r_lo[i]   )
+      ,.data_i (tx_li[i]     )
+      ,.v_o    (tx_v_lo[i]   )
+      ,.data_o (tx_lo[i]     )
+      ,.yumi_i (tx_dequeue[i])
     );
 
     assign write_to_base[i] = (wr_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i+ (axil_base_addr_p>>config_addr_width_lp)));
@@ -343,28 +330,29 @@ module bsg_axil_to_fifos #(
   // rdata channel
   logic [num_slots_p-1:0] read_from_fifo;
   logic [num_slots_p-1:0] read_from_base;
-  logic read_from_rom;
+  logic                   read_from_rom ;
 
   logic [num_slots_p-1:0]                    rx_v_lo, rx_r_li;
   logic [num_slots_p-1:0][fifo_width_lp-1:0] rx_lo  ;
 
-  logic [num_slots_p-1:0][31:0] reg_lo;
-  logic [31:0] monitor_data_lo;
+  logic [num_slots_p-1:0][31:0] reg_lo         ;
+  logic [           31:0]       monitor_data_lo;
 
-  logic [`BSG_SAFE_CLOG2(num_slots_p)-1:0] fifo_rdy_idx  ;
-  logic                                    fifo_rdy_idx_v;
+  logic [`BSG_SAFE_CLOG2(num_slots_p)-1:0] rd_base_idx;
+
+  wire fifo_rdy_idx_v = |read_from_fifo;  // get the fifo data when either fifo is rdy
+
   if (num_slots_p == 1) begin : one_fifo
-    assign fifo_rdy_idx[0] = read_from_fifo[0];
-    assign fifo_rdy_idx_v  = read_from_fifo[0];
-    assign rdata_lo        = read_from_rom ? monitor_data_lo : fifo_rdy_idx_v ? rx_lo[0] : reg_lo[0];
+    assign rd_base_idx[0] = read_from_fifo[0];
+    assign rdata_lo = read_from_rom ? monitor_data_lo : fifo_rdy_idx_v ? rx_lo[0] : reg_lo[0];
   end
   else begin : many_fifos
     bsg_encode_one_hot #(.width_p(num_slots_p)) fifo_idx_encode (
-      .i(read_from_fifo)
-      ,.addr_o(fifo_rdy_idx)
-      ,.v_o(fifo_rdy_idx_v)
+      .i(read_from_base)
+      ,.addr_o(rd_base_idx)
+      ,.v_o()
     );
-    assign rdata_lo = read_from_rom ? monitor_data_lo : fifo_rdy_idx_v ? rx_lo[fifo_rdy_idx] : reg_lo[fifo_rdy_idx];
+    assign rdata_lo = read_from_rom ? monitor_data_lo : fifo_rdy_idx_v ? rx_lo[rd_base_idx] : reg_lo[rd_base_idx];
   end
 
 
@@ -386,26 +374,26 @@ module bsg_axil_to_fifos #(
 
   for (genvar i=0; i<num_slots_p; i++) begin : receive_fifo
     bsg_counter_up_down #(
-      .max_val_p (fifo_els_p),
-      .init_val_p(0         ),
-      .max_step_p(1         )
+      .max_val_p (fifo_els_p)
+      ,.init_val_p(0         )
+      ,.max_step_p(1         )
     ) rx_occupancy_counter (      .*,
-      .down_i (rx_dequeue[i]     ),
-      .up_i   (rx_enqueue[i]     ),
-      .count_o(rx_occupancy_lo[i])
+      .down_i (rx_dequeue[i]     )
+      ,.up_i   (rx_enqueue[i]     )
+      ,.count_o(rx_occupancy_lo[i])
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_lp),
-      .els_p             (fifo_els_p   ),
-      .ready_THEN_valid_p(0            )
+      .width_p           (fifo_width_lp)
+      ,.els_p             (fifo_els_p   )
+      ,.ready_THEN_valid_p(0            )
     ) rx_fifo (      .*,
-      .v_i    (rx_v_li[i]   ),
-      .ready_o(rx_r_lo[i]   ),
-      .data_i (rx_li[i]     ),
-      .v_o    (rx_v_lo[i]   ),
-      .data_o (rx_lo[i]     ),
-      .yumi_i (rx_dequeue[i])
+      .v_i    (rx_v_li[i]   )
+      ,.ready_o(rx_r_lo[i]   )
+      ,.data_i (rx_li[i]     )
+      ,.v_o    (rx_v_lo[i]   )
+      ,.data_o (rx_lo[i]     )
+      ,.yumi_i (rx_dequeue[i])
     );
 
     assign read_from_base[i] = (rd_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i + (axil_base_addr_p>>config_addr_width_lp)));

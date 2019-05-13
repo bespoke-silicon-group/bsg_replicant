@@ -14,16 +14,11 @@ module axi4_mux #(
 	, localparam axi4_miso_bus_width_lp = `bsg_axi4_miso_bus_width(1, id_width_p, addr_width_p, data_width_p)
 ) (
 	input                                                           clk_i
-	,
-	input                                                           reset_i
-	,
-	input  [            slot_num_p-1:0][axi4_mosi_bus_width_lp-1:0] s_axi4_mux_i
-	,
-	output [            slot_num_p-1:0][axi4_miso_bus_width_lp-1:0] s_axi4_mux_o
-	,
-	output [axi4_mosi_bus_width_lp-1:0]                             m_axi4_bus_o
-	,
-	input  [axi4_miso_bus_width_lp-1:0]                             m_axi4_bus_i
+	,input                                                           reset_i
+	,input  [            slot_num_p-1:0][axi4_mosi_bus_width_lp-1:0] s_axi4_mux_i
+	,output [            slot_num_p-1:0][axi4_miso_bus_width_lp-1:0] s_axi4_mux_o
+	,output [axi4_mosi_bus_width_lp-1:0]                             m_axi4_bus_o
+	,input  [axi4_miso_bus_width_lp-1:0]                             m_axi4_bus_i
 );
 
 //---------------------------------------------

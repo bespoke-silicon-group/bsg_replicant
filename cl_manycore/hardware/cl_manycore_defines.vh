@@ -16,6 +16,8 @@
 // Define macros for the manycore hardware
 `define axi4_to_sh_ddr_num 2
 
+// Enable local vcu128 board
+`define LOCAL_FPGA
 
 `endif
 
