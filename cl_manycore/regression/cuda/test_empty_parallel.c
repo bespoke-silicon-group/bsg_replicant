@@ -1,11 +1,11 @@
 #include "test_empty_parallel.h"
 
 /*!
- * Runs 5 empty kernels in 2x2 tile groups on a 4x4 mesh. 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore github repository.  
+ * Runs 6 empty kernels in 2x2 tile groups on a 4x4 mesh. 
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
 */
 int kernel_empty_parallel () {
-	fprintf(stderr, "Running the CUDA Empyt Kernel on a 2x2 tile group.\n\n");
+	fprintf(stderr, "Running the CUDA Parallel Empty Kernel on 6 2x2 tile groups in a 4x4 mesh.\n\n");
 
 	device_t device;
 	uint8_t mesh_dim_x = 4;
@@ -16,18 +16,14 @@ int kernel_empty_parallel () {
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/empty_parallel/main.riscv";
 
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
-
+	
+	uint8_t grid_size = 6;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[1];
 
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
-
+	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
 
 	hb_mc_device_tile_groups_execute(&device);
 	
@@ -46,7 +42,7 @@ void test_main(uint32_t *exit_code) {
 }
 #else
 int main() {
-	bsg_pr_test_info("test_empty_parlalel Regression Test (F1)\n");
+	bsg_pr_test_info("test_empty_parallel Regression Test (F1)\n");
 	int rc = kernel_empty_parallel();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
