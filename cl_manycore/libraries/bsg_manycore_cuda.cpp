@@ -148,6 +148,35 @@ int hb_mc_mesh_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t ori
 }
 
 /*
+ * Takes the grid size, tile group dimensions, kernel name, argc, argv* and the finish signal address, calls hb_mc_tile_group_enqueue to initialize all tile groups for grid.
+ * @param[in] *device device pointer.
+ * @param[in] *tg points to the tile group structure.
+ * @param[in] grid_size size of the grid (number of tile groups)
+ * @param[in] tg_dim_x/y tile group x/y dimensions
+ * @param[in] name pointers to the name of the kernel.
+ * @param[in] argc number of input arguments for the kernel.
+ * @param[in] *argv pointer to the arguments in memory.
+ * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
+ * */	
+int hb_mc_grid_init (device_t *device, uint8_t grid_size, uint8_t tg_dim_x, uint8_t tg_dim_y, char* name, uint32_t argc, uint32_t argv[]) {
+	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
+		fprintf(stderr, "hb_mc_grid_init() --> hb_mc_fifo_check(): failed to verify device.\n"); 
+		return HB_MC_FAIL;
+	}
+
+	int error; 
+	for (tile_group_id_t tg_id = 0; tg_id < grid_size; tg_id ++) { 
+		error = hb_mc_tile_group_enqueue(device, device->num_grids, tg_id, grid_size, tg_dim_x, tg_dim_y, name, argc, argv); 
+		if (error != HB_MC_SUCCESS) { 
+			fprintf(stderr, "hb_mc_grid_init() --> hb_mc_tile_group_enqueue(): failed to initialize tile group %d of grid %d.\n", tg_id, device->num_grids);
+			return HB_MC_FAIL;
+		}
+	}
+	device->num_grids ++;
+	return HB_MC_SUCCESS;
+}
+
+/*
  * Searches for a free tile group inside the device mesh and allocoates it, and sets the dimensions, origin, and id of tile group.
  * @params[in] device and tg point to the device and tile group structures.
  * @paramsi[in] dim_x,y determine the dimensions of requested tile group.
@@ -201,8 +230,15 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 							return HB_MC_FAIL;
 						}
 
+						if (hb_mc_tile_set_tile_group_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->id) != HB_MC_SUCCESS){
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_tile_group_id_symbol(): failed to set tile group id symbold __bsg_tile_group_id.\n");
+							return HB_MC_FAIL;
+						}
 
-
+						if (hb_mc_tile_set_grid_size_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->grid_size) != HB_MC_SUCCESS){
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_grid_size_symbol(): failed to set tile grid size symbol __bsg_grid_size.\n");
+							return HB_MC_FAIL;
+						}
 					}
 				}
 		
@@ -227,10 +263,9 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
  * @param[in] name pointers to the name of the kernel.
  * @param[in] argc number of input arguments for the kernel.
  * @param[in] *argv pointer to the arguments in memory.
- * @param[in] finish_signal_addr is the address that the tilegroup will writes its finish signal into. 
  * @return HB_MC_SUCCESS if tile group is initialized sucessfuly and HB_MC_FAIL otherwise.
  * */	
-int hb_mc_tile_group_enqueue (device_t* device, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id_t tg_id, uint8_t grid_size, uint8_t dim_x, uint8_t dim_y, char* name, uint32_t argc, uint32_t argv[]) {
 	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_enqueue() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
@@ -256,7 +291,9 @@ int hb_mc_tile_group_enqueue (device_t* device, uint8_t dim_x, uint8_t dim_y, ch
 	tg->dim_y = dim_y;
 	tg->origin_x = device->mesh->origin_x;
 	tg->origin_y = device->mesh->origin_y;
-	tg->id = device->num_tile_groups;
+	tg->id = tg_id;
+	tg->grid_id = grid_id;
+	tg->grid_size = grid_size;
 	tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
 	tg->kernel = (kernel_t *) malloc (sizeof(kernel_t));
 	if (tg->kernel == NULL) { 
@@ -450,11 +487,18 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
 		hb_mc_tile_freeze(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+
 		hb_mc_tile_set_origin_registers(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y);
+
 		hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y );
+
 		hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y);
+
 		hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y, device->mesh->dim_x, device->mesh->dim_y);
-	
+
+		hb_mc_tile_set_tile_group_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 0);
+
+		hb_mc_tile_set_grid_size_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 1);	
 	}
 
 
@@ -483,6 +527,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 	}
 	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(tile_group_t));
 	device->num_tile_groups = 0;
+	device->num_grids = 0;
 
 	return HB_MC_SUCCESS;
 }

@@ -1,8 +1,8 @@
 #include "test_packet.h"
 
 /*!
- * Runs a packet  kernel on a 2x2 tile group. 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/packet/ Manycore binary in the dev_cuda_tile_group_refactored branch of the BSG Manycore github repository.  
+ * Runs a packet kernel on a 2x2 tile group. 
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/packet/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
 */
 int kernel_packet () {
 	fprintf(stderr, "Running the CUDA Packet Kernel on a 2x2 tile group.\n\n");
@@ -17,13 +17,13 @@ int kernel_packet () {
 
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 
-
+	uint8_t grid_size = 1;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
 	int argv[1];
 
-	hb_mc_tile_group_enqueue (&device, tg_dim_x, tg_dim_y, "kernel_packet", 0, argv);
+	hb_mc_grid_init (&device, grid_size, tg_dim_x, tg_dim_y, "kernel_packet", 0, argv);
 
 	hb_mc_device_tile_groups_execute(&device);
 	
