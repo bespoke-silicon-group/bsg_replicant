@@ -17,7 +17,7 @@ class ReleaseRepoAction(Action):
                 with tempfile.TemporaryDirectory(dir="/tmp/") as d:
                         r = git.Repo.clone_from(url, d)
                         try:
-                                r.tree(commit)
+                                r.git.checkout(commit)
                         except BadName:
                                 raise ValueError("Commit ID argument {} is not in tree of {}".format(commit, name))
                 return (name, commit)
