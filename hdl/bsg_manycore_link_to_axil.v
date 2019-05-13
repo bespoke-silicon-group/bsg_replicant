@@ -47,7 +47,7 @@ module bsg_manycore_link_to_axil #(
   // monitor signals
   logic [num_endpoint_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] mc_out_credits_lo;
   logic [   num_slots_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] rcv_vacancy_lo   ;
-
+  logic [num_slots_lp-1:0][31:0] rcv_vacancy_lo_cast;
 
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_li   ;
   logic [num_endpoint_lp*2-1:0][mc_data_width_lp-1:0] mc_fifo_data_li;
@@ -110,8 +110,8 @@ module bsg_manycore_link_to_axil #(
     ,.fifo_rdy_i      (axil_fifo_rdy_li )
     ,.rom_addr_o      (rom_addr_li      )
     ,.rom_data_i      (rom_data_lo      )
-    ,.rcv_vacancy_i   (rcv_vacancy_lo   )
-    ,.mc_out_credits_i(mc_out_credits_lo)
+    ,.rcv_vacancy_i   (rcv_vacancy_lo_cast)
+    ,.mc_out_credits_i(32'(mc_out_credits_lo))
   );
 
   localparam lg_rom_els_lp = `BSG_SAFE_CLOG2(rom_els_p);
@@ -147,6 +147,7 @@ module bsg_manycore_link_to_axil #(
       ,.up_i   (rcv_dequeue[i]   )
       ,.count_o(rcv_vacancy_lo[i])
     );
+    assign rcv_vacancy_lo_cast[i] = 32'(rcv_vacancy_lo[i]);
 
     bsg_fifo_1r1w_small #(
       .width_p           (mc_data_width_lp),
@@ -197,7 +198,7 @@ module bsg_manycore_link_to_axil #(
       ,.ready_o   (axil_fifo_rdy_li[i]   )
       ,.valid_o   (ser_to_par_valid_lo[i])
       ,.data_o    (mc_fifo_data_li[i]    )
-      ,.yumi_cnt_i(ser_to_par_yumi_cnt_li)
+      ,.yumi_cnt_i(ser_to_par_yumi_cnt_li[i])
     );
 
     assign mc_fifo_v_li[i]           = &ser_to_par_valid_lo[i];
