@@ -8,14 +8,14 @@ int kernel_packet () {
 	fprintf(stderr, "Running the CUDA Packet Kernel on a 2x2 tile group.\n\n");
 
 	device_t device;
-	uint8_t grid_dim_x = 4;
-	uint8_t grid_dim_y = 4;
-	uint8_t grid_origin_x = 0;
-	uint8_t grid_origin_y = 1;
+	uint8_t mesh_dim_x = 4;
+	uint8_t mesh_dim_y = 4;
+	uint8_t mesh_origin_x = 0;
+	uint8_t mesh_origin_y = 1;
 	eva_id_t eva_id = 0;
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/packet/main.riscv";
 
-	hb_mc_device_init(&device, eva_id, elf, grid_dim_x, grid_dim_y, grid_origin_x, grid_origin_y);
+	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 
 
 	uint8_t tg_dim_x = 2;

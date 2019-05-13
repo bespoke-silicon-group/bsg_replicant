@@ -62,13 +62,13 @@ typedef struct {
 	uint8_t origin_x;
 	uint8_t origin_y;
 	tile_t* tiles;
-} grid_t;
+} mesh_t;
 
 
 typedef struct {
 	uint8_t fd;
 	eva_id_t eva_id; 
-	grid_t *grid;
+	mesh_t *mesh;
 	char* elf;
 	tile_group_t *tile_groups;
 	uint32_t num_tile_groups;
@@ -88,7 +88,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device);
 enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
 int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
-int hb_mc_grid_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
+int hb_mc_mesh_init (device_t *device, uint8_t dim_x, uint8_t dim_y, uint8_t origin_x, uint8_t origin_y); 
 
 
 int hb_mc_tile_group_allocate_tiles(device_t *device, tile_group_t *tg);  
