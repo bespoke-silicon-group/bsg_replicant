@@ -4,7 +4,7 @@
 * adapt axil interface to parameterized fifo interface
 *
 * Note:
-* Config sets n=range(num_2fifos_p) have base address = n * 0x100
+* Config sets n=range(num_slots_p) have base address = n * 0x100
 *
 * The host should checkout the status registers before issuing a AXI-Lite transaction:
 
@@ -16,7 +16,7 @@
 * if write to a full fifo, data will not be updated.
 *
 * To read from a FIFO,
-* 1st read the receive length reigster, return fifo_width_lp/8 * fifo_rx_els_lp if rx_FIFO >= fifo_rx_els_lp, else 0
+* 1st read the receive length reigster, return fifo_width_lp/8 * fifo_1rd_bytes_lp if rx_FIFO >= fifo_1rd_bytes_lp, else 0
 * if read from a empty fifo, stale data will be readout
 *
 * This adapter is similar to the Xilinx axi_fifo_mm_s IP working on cut-though mode
@@ -28,23 +28,25 @@
 `include "bsg_defines.v"
 
 module bsg_axil_to_fifos #(
-  parameter num_2fifos_p = "inv"
+  parameter num_slots_p = "inv"
   , parameter fifo_els_p = "inv"
-  , parameter rcv_buf_els_p = "inv"
   , parameter axil_base_addr_p = 32'h0000_0000
   , localparam fifo_width_lp = 32
-  , localparam fifo_rx_els_lp = 4
+  , localparam fifo_1rd_bytes_lp = 4
   , localparam fifo_ptr_width_lp = `BSG_WIDTH(fifo_els_p)
   , localparam axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   , localparam axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
   , localparam config_addr_width_lp = 12
   , localparam index_addr_width_lp = (32-config_addr_width_lp)
-  , localparam isr_lp = 8'h0
+  , localparam tx_isr_lp = 8'h0
   , localparam tx_vacancy_lp = 8'hC
   , localparam tx_data_lp = 8'h10
   , localparam rx_occupancy_lp = 8'h1C
   , localparam rx_data_lp = 8'h20
   , localparam rx_length_lp = 8'h24
+  , localparam rcv_vacancy_rsp_lp = 12'h100
+  , localparam rcv_vacancy_req_lp = 12'h200
+  , localparam mc_out_credits_lp = 12'h300
 ) (
   input                                                  clk_i
   ,
@@ -54,21 +56,25 @@ module bsg_axil_to_fifos #(
   ,
   output [axil_miso_bus_width_lp-1:0]                    s_axil_bus_o
   ,
-  input  [          num_2fifos_p-1:0]                    fifo_v_i
+  input  [           num_slots_p-1:0]                    fifo_v_i
   ,
-  input  [          num_2fifos_p-1:0][fifo_width_lp-1:0] fifo_data_i
+  input  [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_i
   ,
-  output [          num_2fifos_p-1:0]                    fifo_rdy_o
+  output [           num_slots_p-1:0]                    fifo_rdy_o
   ,
-  output [          num_2fifos_p-1:0]                    fifo_v_o
+  output [           num_slots_p-1:0]                    fifo_v_o
   ,
-  output [          num_2fifos_p-1:0][fifo_width_lp-1:0] fifo_data_o
+  output [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_o
   ,
-  input  [          num_2fifos_p-1:0]                    fifo_rdy_i
+  input  [           num_slots_p-1:0]                    fifo_rdy_i
   ,
-  output [                      31:0]                    addr_o
+  output [                      31:0]                    rom_addr_o
   ,
-  input  [                      31:0]                    data_i
+  input  [                      31:0]                    rom_data_i
+  ,
+  input [num_slots_p-1:0][31:0] rcv_vacancy_i
+  ,
+  input [31:0] mc_out_credits_i
 );
 
   // synopsys translate_off
@@ -197,33 +203,33 @@ module bsg_axil_to_fifos #(
   end
 
   // wdata channel
-  logic [num_2fifos_p-1:0] write_to_base;
-  logic [num_2fifos_p-1:0] write_to_fifo;
-  logic [num_2fifos_p-1:0] write_to_isr ;
+  logic [num_slots_p-1:0] write_to_base;
+  logic [num_slots_p-1:0] write_to_fifo;
+  logic [num_slots_p-1:0] write_to_isr ;
 
-  logic [num_2fifos_p-1:0][31:0] isr_r;
+  logic [num_slots_p-1:0][31:0] isr_r;
 
-  logic [num_2fifos_p-1:0]                    tx_v_li, tx_r_lo;
-  logic [num_2fifos_p-1:0][fifo_width_lp-1:0] tx_li  ;
+  logic [num_slots_p-1:0]                    tx_v_li, tx_r_lo;
+  logic [num_slots_p-1:0][fifo_width_lp-1:0] tx_li  ;
 
-  assign tx_v_li    = {num_2fifos_p{wvalid_li & wready_lo}} & write_to_fifo;
-  assign tx_li      = {num_2fifos_p{wdata_li}};
+  assign tx_v_li    = {num_slots_p{wvalid_li & wready_lo}} & write_to_fifo;
+  assign tx_li      = {num_slots_p{wdata_li}};
   assign tx_done_lo = |write_to_base;  // assign tx_done_lo = |(tx_v_li & tx_r_lo);
 
   // outside read from fifo
-  logic [num_2fifos_p-1:0]                    tx_v_lo, tx_r_li;
-  logic [num_2fifos_p-1:0][fifo_width_lp-1:0] tx_lo  ;
+  logic [num_slots_p-1:0]                    tx_v_lo, tx_r_li;
+  logic [num_slots_p-1:0][fifo_width_lp-1:0] tx_lo  ;
 
   assign fifo_v_o    = tx_v_lo;
   assign fifo_data_o = tx_lo;
   assign tx_r_li     = fifo_rdy_i;
 
-  wire [num_2fifos_p-1:0] tx_enqueue = tx_v_li & tx_r_lo;
-  wire [num_2fifos_p-1:0] tx_dequeue = tx_r_li & tx_v_lo;
+  wire [num_slots_p-1:0] tx_enqueue = tx_v_li & tx_r_lo;
+  wire [num_slots_p-1:0] tx_dequeue = tx_r_li & tx_v_lo;
 
-  logic [num_2fifos_p-1:0][fifo_ptr_width_lp-1:0] tx_vacancy_lo;
+  logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] tx_vacancy_lo;
 
-  for (genvar i=0; i<num_2fifos_p; i++) begin : transmit_fifo
+  for (genvar i=0; i<num_slots_p; i++) begin : transmit_fifo
     bsg_counter_up_down #(
       .max_val_p (fifo_els_p),
       .init_val_p(fifo_els_p),
@@ -249,7 +255,7 @@ module bsg_axil_to_fifos #(
 
     assign write_to_base[i] = (wr_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i+ (axil_base_addr_p>>config_addr_width_lp)));
     assign write_to_fifo[i] = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(tx_data_lp));
-    assign write_to_isr[i]  = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(isr_lp));
+    assign write_to_isr[i]  = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(tx_isr_lp));
 
     always_ff @(posedge clk_i) begin : cfg_register
       if (write_to_isr[i])
@@ -326,55 +332,59 @@ module bsg_axil_to_fifos #(
   // raddr channel
   assign arready_lo = (rd_state_r == E_RD_ADDR);
   assign rvalid_lo  = ((rd_state_r == E_RD_DATA) && rx_done_lo);
+  assign rresp_lo   = 2'h00; // always OKAY to read
 
   logic [31:0] rd_addr_r;
   always_ff @(posedge clk_i) begin
-    rd_addr_r <= (arvalid_li & arready_lo) ? araddr_li : rd_addr_r;
+    if (arvalid_li & arready_lo)
+      rd_addr_r <= araddr_li;
   end
 
   // rdata channel
-  logic [num_2fifos_p-1:0] read_from_fifo;
-  logic [num_2fifos_p-1:0] read_from_base;
+  logic [num_slots_p-1:0] read_from_fifo;
+  logic [num_slots_p-1:0] read_from_base;
+  logic read_from_rom;
 
-  logic [num_2fifos_p-1:0]                    rx_v_lo, rx_r_li;
-  logic [num_2fifos_p-1:0][fifo_width_lp-1:0] rx_lo  ;
+  logic [num_slots_p-1:0]                    rx_v_lo, rx_r_li;
+  logic [num_slots_p-1:0][fifo_width_lp-1:0] rx_lo  ;
 
-  logic [num_2fifos_p-1:0][31:0] reg_lo;
+  logic [num_slots_p-1:0][31:0] reg_lo;
+  logic [31:0] monitor_data_lo;
 
-  logic [`BSG_SAFE_CLOG2(num_2fifos_p)-1:0] fifo_rdy_idx  ;
-  logic                                     fifo_rdy_idx_v;
-  if (num_2fifos_p == 1) begin : one_fifo
+  logic [`BSG_SAFE_CLOG2(num_slots_p)-1:0] fifo_rdy_idx  ;
+  logic                                    fifo_rdy_idx_v;
+  if (num_slots_p == 1) begin : one_fifo
     assign fifo_rdy_idx[0] = read_from_fifo[0];
     assign fifo_rdy_idx_v  = read_from_fifo[0];
-    assign rdata_lo        = fifo_rdy_idx_v ? rx_lo[0] : reg_lo[0];
+    assign rdata_lo        = read_from_rom ? monitor_data_lo : fifo_rdy_idx_v ? rx_lo[0] : reg_lo[0];
   end
   else begin : many_fifos
-    bsg_encode_one_hot #(.width_p(num_2fifos_p)) fifo_idx_encode (
+    bsg_encode_one_hot #(.width_p(num_slots_p)) fifo_idx_encode (
       .i(read_from_fifo)
       ,.addr_o(fifo_rdy_idx)
       ,.v_o(fifo_rdy_idx_v)
     );
-    assign rdata_lo = fifo_rdy_idx_v ? rx_lo[fifo_rdy_idx] : reg_lo[fifo_rdy_idx];
+    assign rdata_lo = read_from_rom ? monitor_data_lo : fifo_rdy_idx_v ? rx_lo[fifo_rdy_idx] : reg_lo[fifo_rdy_idx];
   end
 
 
-  assign rx_r_li    = {num_2fifos_p{rvalid_lo & rready_li}} & read_from_fifo;
-  assign rx_done_lo = |read_from_base;
+  assign rx_r_li    = {num_slots_p{rvalid_lo & rready_li}} & read_from_fifo;
+  assign rx_done_lo = |read_from_base || read_from_rom;
 
   // outside write to fifo
-  logic [num_2fifos_p-1:0]                    rx_v_li, rx_r_lo;
-  logic [num_2fifos_p-1:0][fifo_width_lp-1:0] rx_li  ;
+  logic [num_slots_p-1:0]                    rx_v_li, rx_r_lo;
+  logic [num_slots_p-1:0][fifo_width_lp-1:0] rx_li  ;
 
   assign rx_v_li    = fifo_v_i;
   assign rx_li      = fifo_data_i;
   assign fifo_rdy_o = rx_r_lo;
 
-  wire [num_2fifos_p-1:0] rx_enqueue = rx_v_li & rx_r_lo;
-  wire [num_2fifos_p-1:0] rx_dequeue = rx_r_li & rx_v_lo;
+  wire [num_slots_p-1:0] rx_enqueue = rx_v_li & rx_r_lo;
+  wire [num_slots_p-1:0] rx_dequeue = rx_r_li & rx_v_lo;
 
-  logic [num_2fifos_p-1:0][fifo_ptr_width_lp-1:0] rx_occupancy_lo;
+  logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] rx_occupancy_lo;
 
-  for (genvar i=0; i<num_2fifos_p; i++) begin : receive_fifo
+  for (genvar i=0; i<num_slots_p; i++) begin : receive_fifo
     bsg_counter_up_down #(
       .max_val_p (fifo_els_p),
       .init_val_p(0         ),
@@ -403,15 +413,30 @@ module bsg_axil_to_fifos #(
 
     always_comb begin : registers
       case (rd_addr_r[0+:config_addr_width_lp])
-        isr_lp          : reg_lo[i] = isr_r;
+        tx_isr_lp       : reg_lo[i] = isr_r;
         tx_vacancy_lp   : reg_lo[i] = fifo_width_lp'(tx_vacancy_lo[i]);
         rx_occupancy_lp : reg_lo[i] = fifo_width_lp'(rx_occupancy_lo[i]);
-        rx_length_lp    : reg_lo[i] = (rx_occupancy_lo[i] >= fifo_rx_els_lp) ? (fifo_width_lp/8*fifo_rx_els_lp): '0;
+        rx_length_lp    : reg_lo[i] = (rx_occupancy_lo[i] >= fifo_1rd_bytes_lp) ? (fifo_width_lp/8*fifo_1rd_bytes_lp): '0;
         default         : reg_lo[i] = fifo_width_lp'(32'hDEAD_BEEF);
       endcase
     end
   end
 
-  assign rresp_lo = 2'h00; // always OKAY to read
+
+  // read from monitors
+  assign read_from_rom = (rd_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(num_slots_p + (axil_base_addr_p>>config_addr_width_lp)));
+
+  assign rom_addr_o = rd_addr_r;
+
+  always_comb begin : monitor_signals
+    monitor_data_lo = '0;
+    if (read_from_rom & rvalid_lo)
+      case (rd_addr_r[0+:config_addr_width_lp])
+        rcv_vacancy_req_lp : monitor_data_lo = rcv_vacancy_i[0];
+        rcv_vacancy_req_lp : monitor_data_lo = rcv_vacancy_i[1];
+        mc_out_credits_lp  : monitor_data_lo = mc_out_credits_i;
+        default            : monitor_data_lo = rom_data_i;
+      endcase
+  end
 
 endmodule // bsg_axil_to_fifos

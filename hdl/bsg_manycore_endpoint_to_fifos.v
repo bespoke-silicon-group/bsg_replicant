@@ -9,7 +9,6 @@
 
 module bsg_manycore_endpoint_to_fifos #(
   parameter num_endpoint_p = "inv"
-  , localparam num_fifo_pair_lp = num_endpoint_p*2
   , localparam fifo_width_lp = 128
   // these are endpoint parameters
   , parameter x_cord_width_p="inv"
@@ -27,13 +26,13 @@ module bsg_manycore_endpoint_to_fifos #(
   input                                                   clk_i
   ,input                                                   reset_i
   // fifo to endpoint
-  ,input  [num_fifo_pair_lp-1:0]                           fifo_v_i
-  ,input  [num_fifo_pair_lp-1:0][       fifo_width_lp-1:0] fifo_data_i
-  ,output [num_fifo_pair_lp-1:0]                           fifo_rdy_o
+  ,input  [num_endpoint_p*2-1:0]                           fifo_v_i
+  ,input  [num_endpoint_p*2-1:0][       fifo_width_lp-1:0] fifo_data_i
+  ,output [num_endpoint_p*2-1:0]                           fifo_rdy_o
   // endpoint to fifo
-  ,output [num_fifo_pair_lp-1:0]                           fifo_v_o
-  ,output [num_fifo_pair_lp-1:0][       fifo_width_lp-1:0] fifo_data_o
-  ,input  [num_fifo_pair_lp-1:0]                           fifo_rdy_i
+  ,output [num_endpoint_p*2-1:0]                           fifo_v_o
+  ,output [num_endpoint_p*2-1:0][       fifo_width_lp-1:0] fifo_data_o
+  ,input  [num_endpoint_p*2-1:0]                           fifo_rdy_i
   ,input  [  num_endpoint_p-1:0][   link_sif_width_lp-1:0] link_sif_i
   ,output [  num_endpoint_p-1:0][   link_sif_width_lp-1:0] link_sif_o
   ,input  [  num_endpoint_p-1:0][      x_cord_width_p-1:0] my_x_i

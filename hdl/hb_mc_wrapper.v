@@ -194,8 +194,6 @@ module hb_mc_wrapper #(
   bsg_manycore_link_sif_s rom_link_sif_li;
   bsg_manycore_link_sif_s rom_link_sif_lo;
 
-  // NOTE, only one link is tested!!!
-  logic [$clog2(max_out_credits_p+1)-1:0] endpoint_credits_li;
 
   logic [1-1:0][x_cord_width_p-1:0] mcl_x_cord_lp = x_cord_width_p'(num_tiles_x_p-1);
   logic [1-1:0][y_cord_width_p-1:0] mcl_y_cord_lp = '0                              ;
@@ -204,49 +202,24 @@ module hb_mc_wrapper #(
   // -------------------------------------------------
   // mcl modules
   // -------------------------------------------------
-  axil_to_fifos #(
-    .num_fifo_pair_p       (num_fifo_pair_lp       ),
-    .fifo_width_p          (fifo_width_lp          ),
-    .axil_base_addr_width_p(axil_base_addr_width_lp),
-    .max_out_credits_p     (max_out_credits_p      )
-  ) axi_to_fifos (
-    .clk_i             (clk_i              ),
-    .reset_i           (~axi_mcl_rstn      ),
-    .s_axil_bus_i      (m_axil_bus_o_cast  ),
-    .s_axil_bus_o      (m_axil_bus_i_cast  ),
-    .endpoint_credits_i(endpoint_credits_li),
-    .fifo_v_i          (fifo_v_li          ),
-    .fifo_data_i       (fifo_data_li       ),
-    .fifo_rdy_o        (fifo_rdy_lo        ),
-    .fifo_v_o          (fifo_v_lo          ),
-    .fifo_data_o       (fifo_data_lo       ),
-    .fifo_rdy_i        (fifo_rdy_li        )
-  );
-
-  bsg_manycore_endpoint_to_fifos #(
-    .num_endpoint_p   (num_endpoint_lp  ),
+  bsg_manycore_link_to_axil #(
+    .axil_base_addr_p (32'h0000_0000    ),
     .x_cord_width_p   (x_cord_width_p   ),
     .y_cord_width_p   (y_cord_width_p   ),
     .addr_width_p     (addr_width_p     ),
     .data_width_p     (data_width_p     ),
     .max_out_credits_p(max_out_credits_p),
     .load_id_width_p  (load_id_width_p  )
-  ) endpoint_to_fifos (
-    .clk_i        (clk_i              ),
-    .reset_i      (~axi_mcl_rstn      ),
-    .fifo_v_i     (fifo_v_lo          ),
-    .fifo_data_i  (fifo_data_lo       ),
-    .fifo_rdy_o   (fifo_rdy_li        ),
-    .fifo_v_o     (fifo_v_li          ),
-    .fifo_data_o  (fifo_data_li       ),
-    .fifo_rdy_i   (fifo_rdy_lo        ),
-    .link_sif_i   (loader_link_sif_lo ),
-    .link_sif_o   (loader_link_sif_li ),
-    .my_x_i       (mcl_x_cord_lp      ),
-    .my_y_i       (mcl_y_cord_lp      ),
-    .out_credits_o(endpoint_credits_li)
+  ) axi_to_mc (
+    .clk_i           (clk_i             ),
+    .reset_i         (~axi_mcl_rstn     ),
+    .s_axil_mcl_bus_i(m_axil_bus_o_cast ),
+    .s_axil_mcl_bus_o(m_axil_bus_i_cast ),
+    .link_sif_i      (loader_link_sif_lo),
+    .link_sif_o      (loader_link_sif_li),
+    .my_x_i          (mcl_x_cord_lp     ),
+    .my_y_i          (mcl_y_cord_lp     )
   );
-
 
   // -------------------------------------------------
   // -------------------------------------------------
