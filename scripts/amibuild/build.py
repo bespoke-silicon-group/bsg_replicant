@@ -13,6 +13,7 @@ import inspect
 from functools import reduce
 from ReleaseRepoAction import ReleaseRepoAction
 from AfiAction import AfiAction
+from VersionAction import VersionAction
 
 parser = argparse.ArgumentParser(description='Build an AWS EC2 F1 FPGA Image')
 parser.add_argument('Release', action=ReleaseRepoAction, nargs=1,
@@ -54,7 +55,7 @@ UserData = UserData.replace("$release_hash", args.Release["commit"])
 
 if(args.dryrun):
     print(UserData)
-    exit(1)
+    exit(0)
 
 # Create and launch an instance
 instance = ec2.create_instances(
