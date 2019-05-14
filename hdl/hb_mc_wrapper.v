@@ -198,6 +198,7 @@ module hb_mc_wrapper #(
   logic [1-1:0][x_cord_width_p-1:0] mcl_x_cord_lp = x_cord_width_p'(num_tiles_x_p-1);
   logic [1-1:0][y_cord_width_p-1:0] mcl_y_cord_lp = '0                              ;
 
+  assign m_axil_bus_i_cast = '0;
 
   // -------------------------------------------------
   // mcl modules
@@ -213,8 +214,8 @@ module hb_mc_wrapper #(
   ) axi_to_mc (
     .clk_i           (clk_i             ),
     .reset_i         (~axi_mcl_rstn     ),
-    .s_axil_mcl_bus_i(m_axil_bus_o_cast ),
-    .s_axil_mcl_bus_o(m_axil_bus_i_cast ),
+    .s_axil_mcl_bus_i('0),
+    .s_axil_mcl_bus_o( ),
     .link_sif_i      (loader_link_sif_lo),
     .link_sif_o      (loader_link_sif_li),
     .my_x_i          (mcl_x_cord_lp     ),
@@ -305,78 +306,82 @@ module hb_mc_wrapper #(
   bsg_axi4_mosi_bus_s m_axi4_pcis_lo_cast, m_axi4_ddr_lo_cast;
   bsg_axi4_miso_bus_s m_axi4_pcis_li_cast, m_axi4_ddr_li_cast;
 
-  bsg_cache_wrapper_axi #(
-    .num_cache_p          (num_cache_p          ),
-    .data_width_p         (data_width_p         ),
-    .addr_width_p         (addr_width_p         ),
-    .block_size_in_words_p(block_size_in_words_p),
-    .sets_p               (sets_p               ),
-    .ways_p               (ways_p               ),
+   assign cache_link_sif_li = '0;
+   assign m_axi4_mc_lo_cast = '0;
 
-    .axi_id_width_p       (axi_id_width_p       ),
-    .axi_addr_width_p     (axi_addr_width_p     ),
-    .axi_data_width_p     (axi_data_width_p     ),
-    .axi_burst_len_p      (axi_burst_len_p      ),
 
-    .x_cord_width_p       (x_cord_width_p       ),
-    .y_cord_width_p       (y_cord_width_p       ),
-    .load_id_width_p      (load_id_width_p      )
-  ) cache_wrapper (
-    .clk_i        (clk_i                    ),
-    .reset_i      (~axi_hb_mc_rstn          ),
+//  bsg_cache_wrapper_axi #(
+//    .num_cache_p          (num_cache_p          ),
+//    .data_width_p         (data_width_p         ),
+//    .addr_width_p         (addr_width_p         ),
+//    .block_size_in_words_p(block_size_in_words_p),
+//    .sets_p               (sets_p               ),
+//    .ways_p               (ways_p               ),
 
-    .my_x_i       (cache_x_lo               ),
-    .my_y_i       (cache_y_lo               ),
+//    .axi_id_width_p       (axi_id_width_p       ),
+//    .axi_addr_width_p     (axi_addr_width_p     ),
+//    .axi_data_width_p     (axi_data_width_p     ),
+//    .axi_burst_len_p      (axi_burst_len_p      ),
 
-    .link_sif_i   (cache_link_sif_lo        ),
-    .link_sif_o   (cache_link_sif_li        ),
+//    .x_cord_width_p       (x_cord_width_p       ),
+//    .y_cord_width_p       (y_cord_width_p       ),
+//    .load_id_width_p      (load_id_width_p      )
+//  ) cache_wrapper (
+//    .clk_i        (clk_i                    ),
+//    .reset_i      (~axi_hb_mc_rstn          ),
 
-    .axi_awid_o   (m_axi4_mc_lo_cast.awid   ),
-    .axi_awaddr_o (m_axi4_mc_lo_cast.awaddr ),
-    .axi_awlen_o  (m_axi4_mc_lo_cast.awlen  ),
-    .axi_awsize_o (m_axi4_mc_lo_cast.awsize ),
-    .axi_awburst_o(m_axi4_mc_lo_cast.awburst),
-    .axi_awcache_o(m_axi4_mc_lo_cast.awcache),
-    .axi_awprot_o (m_axi4_mc_lo_cast.awprot ),
-    .axi_awlock_o (m_axi4_mc_lo_cast.awlock ),
-    .axi_awvalid_o(m_axi4_mc_lo_cast.awvalid),
-    .axi_awready_i(m_axi4_mc_li_cast.awready),
+//    .my_x_i       (cache_x_lo               ),
+//    .my_y_i       (cache_y_lo               ),
 
-    .axi_wdata_o  (m_axi4_mc_lo_cast.wdata  ),
-    .axi_wstrb_o  (m_axi4_mc_lo_cast.wstrb  ),
-    .axi_wlast_o  (m_axi4_mc_lo_cast.wlast  ),
-    .axi_wvalid_o (m_axi4_mc_lo_cast.wvalid ),
-    .axi_wready_i (m_axi4_mc_li_cast.wready ),
+//    .link_sif_i   (cache_link_sif_lo        ),
+//    .link_sif_o   (cache_link_sif_li        ),
 
-    .axi_bid_i    (m_axi4_mc_li_cast.bid    ),
-    .axi_bresp_i  (m_axi4_mc_li_cast.bresp  ),
-    .axi_bvalid_i (m_axi4_mc_li_cast.bvalid ),
-    .axi_bready_o (m_axi4_mc_lo_cast.bready ),
+//    .axi_awid_o   (m_axi4_mc_lo_cast.awid   ),
+//    .axi_awaddr_o (m_axi4_mc_lo_cast.awaddr ),
+//    .axi_awlen_o  (m_axi4_mc_lo_cast.awlen  ),
+//    .axi_awsize_o (m_axi4_mc_lo_cast.awsize ),
+//    .axi_awburst_o(m_axi4_mc_lo_cast.awburst),
+//    .axi_awcache_o(m_axi4_mc_lo_cast.awcache),
+//    .axi_awprot_o (m_axi4_mc_lo_cast.awprot ),
+//    .axi_awlock_o (m_axi4_mc_lo_cast.awlock ),
+//    .axi_awvalid_o(m_axi4_mc_lo_cast.awvalid),
+//    .axi_awready_i(m_axi4_mc_li_cast.awready),
 
-    .axi_arid_o   (m_axi4_mc_lo_cast.arid   ),
-    .axi_araddr_o (m_axi4_mc_lo_cast.araddr ),
-    .axi_arlen_o  (m_axi4_mc_lo_cast.arlen  ),
-    .axi_arsize_o (m_axi4_mc_lo_cast.arsize ),
-    .axi_arburst_o(m_axi4_mc_lo_cast.arburst),
-    .axi_arcache_o(m_axi4_mc_lo_cast.arcache),
-    .axi_arprot_o (m_axi4_mc_lo_cast.arprot ),
-    .axi_arlock_o (m_axi4_mc_lo_cast.arlock ),
-    .axi_arvalid_o(m_axi4_mc_lo_cast.arvalid),
-    .axi_arready_i(m_axi4_mc_li_cast.arready),
+//    .axi_wdata_o  (m_axi4_mc_lo_cast.wdata  ),
+//    .axi_wstrb_o  (m_axi4_mc_lo_cast.wstrb  ),
+//    .axi_wlast_o  (m_axi4_mc_lo_cast.wlast  ),
+//    .axi_wvalid_o (m_axi4_mc_lo_cast.wvalid ),
+//    .axi_wready_i (m_axi4_mc_li_cast.wready ),
 
-    .axi_rid_i    (m_axi4_mc_li_cast.rid    ),
-    .axi_rdata_i  (m_axi4_mc_li_cast.rdata  ),
-    .axi_rresp_i  (m_axi4_mc_li_cast.rresp  ),
-    .axi_rlast_i  (m_axi4_mc_li_cast.rlast  ),
-    .axi_rvalid_i (m_axi4_mc_li_cast.rvalid ),
-    .axi_rready_o (m_axi4_mc_lo_cast.rready )
-  );
+//    .axi_bid_i    (m_axi4_mc_li_cast.bid    ),
+//    .axi_bresp_i  (m_axi4_mc_li_cast.bresp  ),
+//    .axi_bvalid_i (m_axi4_mc_li_cast.bvalid ),
+//    .axi_bready_o (m_axi4_mc_lo_cast.bready ),
 
-  assign m_axi4_mc_lo_cast.awregion = 4'b0;
-  assign m_axi4_mc_lo_cast.awqos    = 4'b0;
+//    .axi_arid_o   (m_axi4_mc_lo_cast.arid   ),
+//    .axi_araddr_o (m_axi4_mc_lo_cast.araddr ),
+//    .axi_arlen_o  (m_axi4_mc_lo_cast.arlen  ),
+//    .axi_arsize_o (m_axi4_mc_lo_cast.arsize ),
+//    .axi_arburst_o(m_axi4_mc_lo_cast.arburst),
+//    .axi_arcache_o(m_axi4_mc_lo_cast.arcache),
+//    .axi_arprot_o (m_axi4_mc_lo_cast.arprot ),
+//    .axi_arlock_o (m_axi4_mc_lo_cast.arlock ),
+//    .axi_arvalid_o(m_axi4_mc_lo_cast.arvalid),
+//    .axi_arready_i(m_axi4_mc_li_cast.arready),
 
-  assign m_axi4_mc_lo_cast.arregion = 4'b0;
-  assign m_axi4_mc_lo_cast.arqos    = 4'b0;
+//    .axi_rid_i    (m_axi4_mc_li_cast.rid    ),
+//    .axi_rdata_i  (m_axi4_mc_li_cast.rdata  ),
+//    .axi_rresp_i  (m_axi4_mc_li_cast.rresp  ),
+//    .axi_rlast_i  (m_axi4_mc_li_cast.rlast  ),
+//    .axi_rvalid_i (m_axi4_mc_li_cast.rvalid ),
+//    .axi_rready_o (m_axi4_mc_lo_cast.rready )
+//  );
+
+//  assign m_axi4_mc_lo_cast.awregion = 4'b0;
+//  assign m_axi4_mc_lo_cast.awqos    = 4'b0;
+
+//  assign m_axi4_mc_lo_cast.arregion = 4'b0;
+//  assign m_axi4_mc_lo_cast.arqos    = 4'b0;
 
 
   // --------------------------------------------------------------

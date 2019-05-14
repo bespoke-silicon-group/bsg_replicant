@@ -81,6 +81,8 @@ module bsg_manycore_link_to_axil #(
     ,.out_credits_o(mc_out_credits_lo)
   );
 
+  assign s_axil_mcl_bus_o = '0;
+
 
   // receive fifo to axil_to_fifos
   logic [num_slots_lp-1:0]                         axil_fifo_v_li   ;
@@ -100,8 +102,8 @@ module bsg_manycore_link_to_axil #(
   ) axil_to_fifos (
     .clk_i           (clk_i            )
     ,.reset_i         (reset_i          )
-    ,.s_axil_bus_i    (s_axil_mcl_bus_i )
-    ,.s_axil_bus_o    (s_axil_mcl_bus_o )
+    ,.s_axil_bus_i    ( '0)
+    ,.s_axil_bus_o    ( )
     ,.fifo_v_i        (axil_fifo_v_li   )
     ,.fifo_data_i     (axil_fifo_data_li)
     ,.fifo_rdy_o      (axil_fifo_rdy_lo )
