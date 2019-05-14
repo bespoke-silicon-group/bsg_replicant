@@ -1,9 +1,9 @@
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <cstdint>
+#include <cinttypes>
 #include <unistd.h>
-#include <inttypes.h>
 #include <elf.h>
 #ifndef COSIM
 #include <bsg_manycore_driver.h>
