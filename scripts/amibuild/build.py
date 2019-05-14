@@ -101,7 +101,7 @@ print('Instance configuration completed')
 # Finally, generate the AMI 
 ami = cli.create_image(InstanceId=instance.id, Name=ami_name, 
                        Description="BSG AMI with release repository {}@{}".format(args.Release["name"], args.Release["commit"]))
-cli.create_tags(Resources=[ami['ImageId']],Tags=[{'Key':'Version','Value':Args.ImageVersion},
+cli.create_tags(Resources=[ami['ImageId']],Tags=[{'Key':'Version','Value':args.ImageVersion},
                                                  {'Key':'Timestamp','Value':timestamp},
                                                  {'Key':'Project','Value':args.Name[0]}])
 print('Creating AMI: ' + ami['ImageId'])
