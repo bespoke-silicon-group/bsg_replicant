@@ -13,22 +13,27 @@ import inspect
 from functools import reduce
 from ReleaseRepoAction import ReleaseRepoAction
 from AfiAction import AfiAction
+from VersionAction import VersionAction
 
 parser = argparse.ArgumentParser(description='Build an AWS EC2 F1 FPGA Image')
+parser.add_argument('Name', type=str, nargs=1,
+                    help='Project Name for AMI')
 parser.add_argument('Release', action=ReleaseRepoAction, nargs=1,
                     help='BSG Release repository for this build as: repo_name@commit_id')
 parser.add_argument('AfiId', action=AfiAction, nargs=1,
                     default={"AmazonFpgaImageID":"Not-Specified-During-AMI-Build"},
                     help='JSON File Path with "FpgaImageId" and "FpgaImageGlobalId" defined')
+parser.add_argument('ImageVersion', action=VersionAction, nargs=1,
+                    help='Version number of the AMI')
 parser.add_argument('-d', '--dryrun', action='store_const', const=True,
                     help='Process the arguments but do not launch an instance')
 
 args = parser.parse_args()
 
 # The timestamp is used in the instance name and the AMI name
-timestamp = datetime.datetime.now().strftime('%Y%m%d-%H%M%S')
-instance_name = timestamp + '_image_build'
-ami_name = 'BSG AMI ' + timestamp
+timestamp = datetime.datetime.now().strftime('%Y/%m/%d-%H:%M:%S')
+instance_name = 'v' + args.ImageVersion + ' ' + timestamp + '_image_build'
+ami_name = 'BSG ' + args.Name[0] + ' v' + args.ImageVersion + ' AMI ' 
 base_ami = 'ami-093cf634bf32a0b7e'
 # The instance type is used to build the image - it does not need to match the
 # final instance type (e.g. an F1 instance type)
@@ -51,8 +56,9 @@ UserData = UserData.replace("$release_repo", args.Release["name"])
 UserData = UserData.replace("$release_hash", args.Release["commit"])
 
 if(args.dryrun):
+    print(ami_name)
     print(UserData)
-    exit(1)
+    exit(0)
 
 # Create and launch an instance
 instance = ec2.create_instances(
@@ -95,4 +101,7 @@ print('Instance configuration completed')
 # Finally, generate the AMI 
 ami = cli.create_image(InstanceId=instance.id, Name=ami_name, 
                        Description="BSG AMI with release repository {}@{}".format(args.Release["name"], args.Release["commit"]))
+cli.create_tags(Resources=[ami['ImageId']],Tags=[{'Key':'Version','Value':args.ImageVersion},
+                                                 {'Key':'Timestamp','Value':timestamp},
+                                                 {'Key':'Project','Value':args.Name[0]}])
 print('Creating AMI: ' + ami['ImageId'])
