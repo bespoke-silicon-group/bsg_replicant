@@ -37,10 +37,10 @@ int test_rom () {
 	int rc = 0;
 	uint8_t fd = 0;
 
-	if(hb_mc_fifo_init(&fd) != HB_MC_SUCCESS){
-		fprintf(stderr, "test_rom(): failed to initialize host.\n");
-		return HB_MC_FAIL;
-	}
+	// if(hb_mc_fifo_init(&fd) != HB_MC_SUCCESS){
+	// 	fprintf(stderr, "test_rom(): failed to initialize host.\n");
+	// 	return HB_MC_FAIL;
+	// }
 
 	// In order, at offset 4, the elements of the array are:
 	// NETWORK_DIM_X, NETWORK_DIM_Y, HOST_INTERFACE_COORD_X, HOST_INTERFACE_COORD_Y

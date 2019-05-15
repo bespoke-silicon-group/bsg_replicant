@@ -8,6 +8,7 @@
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_manycore_packet.vh"
 `include "bsg_bladerunner_rom_pkg.vh"
+import bsg_bladerunner_rom_pkg::*;
 
 module bsg_manycore_link_to_axil #(
   // axil parameters
@@ -45,9 +46,9 @@ module bsg_manycore_link_to_axil #(
   localparam num_slots_lp = num_endpoint_lp*2;
 
   // monitor signals
-  logic [num_endpoint_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] mc_out_credits_lo;
-  logic [   num_slots_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] rcv_vacancy_lo   ;
-  logic [num_slots_lp-1:0][31:0] rcv_vacancy_lo_cast;
+  logic [num_endpoint_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] mc_out_credits_lo  ;
+  logic [   num_slots_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] rcv_vacancy_lo     ;
+  logic [   num_slots_lp-1:0][                             31:0] rcv_vacancy_lo_cast;
 
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_li   ;
   logic [num_endpoint_lp*2-1:0][mc_data_width_lp-1:0] mc_fifo_data_li;
@@ -81,9 +82,6 @@ module bsg_manycore_link_to_axil #(
     ,.out_credits_o(mc_out_credits_lo)
   );
 
-  assign s_axil_mcl_bus_o = '0;
-
-
   // receive fifo to axil_to_fifos
   logic [num_slots_lp-1:0]                         axil_fifo_v_li   ;
   logic [num_slots_lp-1:0][axil_data_width_lp-1:0] axil_fifo_data_li;
@@ -100,19 +98,19 @@ module bsg_manycore_link_to_axil #(
     ,.fifo_els_p      (axil_fifo_els_lp)
     ,.axil_base_addr_p(axil_base_addr_p)
   ) axil_to_fifos (
-    .clk_i           (clk_i            )
-    ,.reset_i         (reset_i          )
-    ,.s_axil_bus_i    ( '0)
-    ,.s_axil_bus_o    ( )
-    ,.fifo_v_i        (axil_fifo_v_li   )
-    ,.fifo_data_i     (axil_fifo_data_li)
-    ,.fifo_rdy_o      (axil_fifo_rdy_lo )
-    ,.fifo_v_o        (axil_fifo_v_lo   )
-    ,.fifo_data_o     (axil_fifo_data_lo)
-    ,.fifo_rdy_i      (axil_fifo_rdy_li )
-    ,.rom_addr_o      (rom_addr_li      )
-    ,.rom_data_i      (rom_data_lo      )
-    ,.rcv_vacancy_i   (rcv_vacancy_lo_cast)
+    .clk_i           (clk_i                 )
+    ,.reset_i         (reset_i               )
+    ,.s_axil_bus_i    (s_axil_mcl_bus_i      )
+    ,.s_axil_bus_o    (s_axil_mcl_bus_o      )
+    ,.fifo_v_i        (axil_fifo_v_li        )
+    ,.fifo_data_i     (axil_fifo_data_li     )
+    ,.fifo_rdy_o      (axil_fifo_rdy_lo      )
+    ,.fifo_v_o        (axil_fifo_v_lo        )
+    ,.fifo_data_o     (axil_fifo_data_lo     )
+    ,.fifo_rdy_i      (axil_fifo_rdy_li      )
+    ,.rom_addr_o      (rom_addr_li           )
+    ,.rom_data_i      (rom_data_lo           )
+    ,.rcv_vacancy_i   (rcv_vacancy_lo_cast   )
     ,.mc_out_credits_i(32'(mc_out_credits_lo))
   );
 

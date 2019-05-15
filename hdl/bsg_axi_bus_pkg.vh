@@ -45,7 +45,7 @@ typedef struct packed { \
 // -----------------------------------------------------------
 // AXI4-full interface (optional signals are disabled)
 // -----------------------------------------------------------
-`define declare_bsg_axi4_bus_s(slot_num_lp, id_width_p, addr_width_p, data_width_p, mosi_struct_name, miso_struct_name) \
+`define declare_bsg_axi_bus_s(slot_num_lp, id_width_p, addr_width_p, data_width_p, mosi_struct_name, miso_struct_name) \
 typedef struct packed { \
   logic [  slot_num_lp*id_width_p-1:0] awid    ; \
   logic [slot_num_lp*addr_width_p-1:0] awaddr  ; \
@@ -99,10 +99,10 @@ typedef struct packed { \
   logic [             slot_num_lp-1:0] rvalid; \
 } miso_struct_name
 
-`define bsg_axi4_mosi_bus_width(slot_num_lp, id_width_p, addr_width_p, data_width_p) \
+`define bsg_axi_mosi_bus_width(slot_num_lp, id_width_p, addr_width_p, data_width_p) \
 ( slot_num_lp * (2*id_width_p + 2*addr_width_p + 2*8 + 4*3 + 2*2 + 6*4 + 8 + data_width_p + data_width_p/8))
 
-`define bsg_axi4_miso_bus_width(slot_num_lp, id_width_p, addr_width_p, data_width_p) \
+`define bsg_axi_miso_bus_width(slot_num_lp, id_width_p, addr_width_p, data_width_p) \
 (slot_num_lp * (6 + 2*id_width_p + 2*2 + data_width_p))
 
 
