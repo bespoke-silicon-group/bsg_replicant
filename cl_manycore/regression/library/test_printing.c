@@ -1,3 +1,21 @@
+/********************************************************************/
+/* This tests the print macros defined in `bsg_manycore_printing.h` */
+/* The expected output is:                                          */
+/*                                                                  */
+/* DEBUG:   testing 1... 2... 3...                                  */
+/* DEBUG:   hello                                                   */
+/* DEBUG:   from                                                    */
+/* DEBUG:   test_printing                                           */
+/* DEBUG:                                                           */
+/* DEBUG:   done                                                    */
+/* ERROR:   testing error                                           */
+/* WARNING: 1                                                       */
+/* WARNING: 2                                                       */
+/* WARNING: hello                                                   */
+/* INFO:    hello from                                              */
+/* INFO:    info                                                    */
+/********************************************************************/
+
 #define DEBUG
 #include "test_printing.h"
 static int test_printing(void)
