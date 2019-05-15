@@ -56,9 +56,8 @@ ${CL_DIR}/hardware/cl_manycore.sv
 ${CL_DIR}/hardware/bsg_bladerunner_configuration.v
 ${CL_DIR}/../hdl/hb_mc_wrapper.v
 ${CL_DIR}/../hdl/axi_mux.v
-${CL_DIR}/../hdl/bsg_manycore_endpoint_to_fifos.v
 ${CL_DIR}/../hdl/bsg_bladerunner_rom.v
-
+# TODO: remove Xilinx dependency
 ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/axil_to_mem.sv
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
