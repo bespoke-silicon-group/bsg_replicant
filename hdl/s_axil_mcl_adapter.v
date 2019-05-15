@@ -89,98 +89,100 @@ bsg_axisN_miso_bus_s  miso_axisN_bus ;
 
 // convert axil to axis
 //---------------------------------
-// axi_fifo_mm_s #(
-//   .C_FAMILY              (fpga_version_p),
-//   .C_S_AXI_ID_WIDTH      (4             ),
-//   .C_S_AXI_ADDR_WIDTH    (32            ),
-//   .C_S_AXI_DATA_WIDTH    (32            ),
-//   .C_S_AXI4_DATA_WIDTH   (32            ),
-//   .C_TX_FIFO_DEPTH       (512           ),
-//   .C_RX_FIFO_DEPTH       (512           ),
-//   .C_TX_FIFO_PF_THRESHOLD(507           ),
-//   .C_TX_FIFO_PE_THRESHOLD(2             ),
-//   .C_RX_FIFO_PF_THRESHOLD(507           ),
-//   .C_RX_FIFO_PE_THRESHOLD(2             ),
-//   .C_USE_TX_CUT_THROUGH  (0             ),
-//   .C_DATA_INTERFACE_TYPE (0             ),
-//   .C_BASEADDR            (32'h80000000  ),
-//   .C_HIGHADDR            (32'h80000FFF  ),
-//   .C_AXI4_BASEADDR       (32'h80001000  ),
-//   .C_AXI4_HIGHADDR       (32'h80002FFF  ),
-//   .C_HAS_AXIS_TID        (0             ),
-//   .C_HAS_AXIS_TDEST      (0             ),
-//   .C_HAS_AXIS_TUSER      (0             ),
-//   .C_HAS_AXIS_TSTRB      (0             ),
-//   .C_HAS_AXIS_TKEEP      (0             ),
-//   .C_AXIS_TID_WIDTH      (4             ),
-//   .C_AXIS_TDEST_WIDTH    (4             ),
-//   .C_AXIS_TUSER_WIDTH    (4             ),
-//   .C_USE_RX_CUT_THROUGH  (0             ),
-//   .C_USE_TX_DATA         (1             ),
-//   .C_USE_TX_CTRL         (0             ),
-//   .C_USE_RX_DATA         (1             )
-// ) axi_fifo_mm_s_axi_lite (
-//   .interrupt             (                          ), // output wire interrupt
-//   .s_axi_aclk            (clk_i                     ), // input wire s_axi_aclk
-//   .s_axi_aresetn         (~reset_i                  ), // input wire s_axi_aresetn
-//   .s_axi_awaddr          (s_axil_mcl_mosi_r.awaddr  ), // input wire [31 : 0] s_axi_awaddr
-//   .s_axi_awvalid         (s_axil_mcl_mosi_r.awvalid ), // input wire s_axi_awvalid
-//   .s_axi_awready         (s_axil_mcl_miso_r.awready ), // output wire s_axi_awready
-//   .s_axi_wdata           (s_axil_mcl_mosi_r.wdata   ), // input wire [31 : 0] s_axi_wdata
-//   .s_axi_wstrb           (s_axil_mcl_mosi_r.wstrb   ), // input wire [3 : 0] s_axi_wstrb
-//   .s_axi_wvalid          (s_axil_mcl_mosi_r.wvalid  ), // input wire s_axi_wvalid
-//   .s_axi_wready          (s_axil_mcl_miso_r.wready  ), // output wire s_axi_wready
-//   .s_axi_bresp           (s_axil_mcl_miso_r.bresp   ), // output wire [1 : 0] s_axi_bresp
-//   .s_axi_bvalid          (s_axil_mcl_miso_r.bvalid  ), // output wire s_axi_bvalid
-//   .s_axi_bready          (s_axil_mcl_mosi_r.bready  ), // input wire s_axi_bready
-//   .s_axi_araddr          (s_axil_mcl_mosi_r.araddr  ), // input wire [31 : 0] s_axi_araddr
-//   .s_axi_arvalid         (s_axil_mcl_mosi_r.arvalid ), // input wire s_axi_arvalid
-//   .s_axi_arready         (s_axil_mcl_miso_r.arready ), // output wire s_axi_arready
-//   .s_axi_rdata           (s_axil_mcl_miso_r.rdata   ), // output wire [31 : 0] s_axi_rdata
-//   .s_axi_rresp           (s_axil_mcl_miso_r.rresp   ), // output wire [1 : 0] s_axi_rresp
-//   .s_axi_rvalid          (s_axil_mcl_miso_r.rvalid  ), // output wire s_axi_rvalid
-//   .s_axi_rready          (s_axil_mcl_mosi_r.rready  ), // input wire s_axi_rready
-//   .s_axi4_awid           (4'h0                      ),
-//   .s_axi4_awaddr         (32'h0                     ),
-//   .s_axi4_awlen          (8'h0                      ),
-//   .s_axi4_awsize         (3'h0                      ),
-//   .s_axi4_awburst        (2'h0                      ),
-//   .s_axi4_awlock         (1'h0                      ),
-//   .s_axi4_awcache        (4'h0                      ),
-//   .s_axi4_awprot         (3'h0                      ),
-//   .s_axi4_awvalid        (1'h0                      ),
-//   .s_axi4_wdata          (32'h0                     ),
-//   .s_axi4_wstrb          (4'h0                      ),
-//   .s_axi4_wlast          (1'h0                      ),
-//   .s_axi4_wvalid         (1'h0                      ),
-//   .s_axi4_bready         (1'h0                      ),
-//   .s_axi4_arid           (4'h0                      ),
-//   .s_axi4_araddr         (32'h0                     ),
-//   .s_axi4_arlen          (8'h0                      ),
-//   .s_axi4_arsize         (3'h0                      ),
-//   .s_axi4_arburst        (2'h0                      ),
-//   .s_axi4_arlock         (1'h0                      ),
-//   .s_axi4_arcache        (4'h0                      ),
-//   .s_axi4_arprot         (3'h0                      ),
-//   .s_axi4_arvalid        (1'h0                      ),
-//   .s_axi4_rready         (1'h0                      ),
-//   .mm2s_prmry_reset_out_n(                          ), // output wire mm2s_prmry_reset_out_n
-//   .axi_str_txd_tvalid    (mosi_axis32_bus.txd_tvalid), // output wire axi_str_txd_tvalid
-//   .axi_str_txd_tready    (miso_axis32_bus.txd_tready), // input wire axi_str_txd_tready
-//   .axi_str_txd_tlast     (mosi_axis32_bus.txd_tlast ), // output wire axi_str_txd_tlast
-//   .axi_str_txd_tdata     (mosi_axis32_bus.txd_tdata ), // output wire [31 : 0] axi_str_txd_tdata
-//   .axi_str_txc_tready    (1'h0                      ),
-//   .s2mm_prmry_reset_out_n(                          ), // output wire s2mm_prmry_reset_out_n
-//   .axi_str_rxd_tvalid    (miso_axis32_bus.rxd_tvalid), // input wire axi_str_rxd_tvalid
-//   .axi_str_rxd_tready    (mosi_axis32_bus.rxd_tready), // output wire axi_str_rxd_tready
-//   .axi_str_rxd_tlast     (miso_axis32_bus.rxd_tlast ), // input wire axi_str_rxd_tlast
-//   .axi_str_rxd_tkeep     (4'h0                      ),
-//   .axi_str_rxd_tdata     (miso_axis32_bus.rxd_tdata ), // input wire [31 : 0] axi_str_rxd_tdata
-//   .axi_str_rxd_tstrb     (4'h0                      ),
-//   .axi_str_rxd_tdest     (4'h0                      ),
-//   .axi_str_rxd_tid       (4'h0                      ),
-//   .axi_str_rxd_tuser     (4'h0                      )
-// );
+`ifndef LOCAL_FPGA
+axi_fifo_mm_s #(
+  .C_FAMILY              (fpga_version_p),
+  .C_S_AXI_ID_WIDTH      (4             ),
+  .C_S_AXI_ADDR_WIDTH    (32            ),
+  .C_S_AXI_DATA_WIDTH    (32            ),
+  .C_S_AXI4_DATA_WIDTH   (32            ),
+  .C_TX_FIFO_DEPTH       (512           ),
+  .C_RX_FIFO_DEPTH       (512           ),
+  .C_TX_FIFO_PF_THRESHOLD(507           ),
+  .C_TX_FIFO_PE_THRESHOLD(2             ),
+  .C_RX_FIFO_PF_THRESHOLD(507           ),
+  .C_RX_FIFO_PE_THRESHOLD(2             ),
+  .C_USE_TX_CUT_THROUGH  (0             ),
+  .C_DATA_INTERFACE_TYPE (0             ),
+  .C_BASEADDR            (32'h80000000  ),
+  .C_HIGHADDR            (32'h80000FFF  ),
+  .C_AXI4_BASEADDR       (32'h80001000  ),
+  .C_AXI4_HIGHADDR       (32'h80002FFF  ),
+  .C_HAS_AXIS_TID        (0             ),
+  .C_HAS_AXIS_TDEST      (0             ),
+  .C_HAS_AXIS_TUSER      (0             ),
+  .C_HAS_AXIS_TSTRB      (0             ),
+  .C_HAS_AXIS_TKEEP      (0             ),
+  .C_AXIS_TID_WIDTH      (4             ),
+  .C_AXIS_TDEST_WIDTH    (4             ),
+  .C_AXIS_TUSER_WIDTH    (4             ),
+  .C_USE_RX_CUT_THROUGH  (0             ),
+  .C_USE_TX_DATA         (1             ),
+  .C_USE_TX_CTRL         (0             ),
+  .C_USE_RX_DATA         (1             )
+) axi_fifo_mm_s_axi_lite (
+  .interrupt             (                          ), // output wire interrupt
+  .s_axi_aclk            (clk_i                     ), // input wire s_axi_aclk
+  .s_axi_aresetn         (~reset_i                  ), // input wire s_axi_aresetn
+  .s_axi_awaddr          (s_axil_mcl_mosi_r.awaddr  ), // input wire [31 : 0] s_axi_awaddr
+  .s_axi_awvalid         (s_axil_mcl_mosi_r.awvalid ), // input wire s_axi_awvalid
+  .s_axi_awready         (s_axil_mcl_miso_r.awready ), // output wire s_axi_awready
+  .s_axi_wdata           (s_axil_mcl_mosi_r.wdata   ), // input wire [31 : 0] s_axi_wdata
+  .s_axi_wstrb           (s_axil_mcl_mosi_r.wstrb   ), // input wire [3 : 0] s_axi_wstrb
+  .s_axi_wvalid          (s_axil_mcl_mosi_r.wvalid  ), // input wire s_axi_wvalid
+  .s_axi_wready          (s_axil_mcl_miso_r.wready  ), // output wire s_axi_wready
+  .s_axi_bresp           (s_axil_mcl_miso_r.bresp   ), // output wire [1 : 0] s_axi_bresp
+  .s_axi_bvalid          (s_axil_mcl_miso_r.bvalid  ), // output wire s_axi_bvalid
+  .s_axi_bready          (s_axil_mcl_mosi_r.bready  ), // input wire s_axi_bready
+  .s_axi_araddr          (s_axil_mcl_mosi_r.araddr  ), // input wire [31 : 0] s_axi_araddr
+  .s_axi_arvalid         (s_axil_mcl_mosi_r.arvalid ), // input wire s_axi_arvalid
+  .s_axi_arready         (s_axil_mcl_miso_r.arready ), // output wire s_axi_arready
+  .s_axi_rdata           (s_axil_mcl_miso_r.rdata   ), // output wire [31 : 0] s_axi_rdata
+  .s_axi_rresp           (s_axil_mcl_miso_r.rresp   ), // output wire [1 : 0] s_axi_rresp
+  .s_axi_rvalid          (s_axil_mcl_miso_r.rvalid  ), // output wire s_axi_rvalid
+  .s_axi_rready          (s_axil_mcl_mosi_r.rready  ), // input wire s_axi_rready
+  .s_axi4_awid           (4'h0                      ),
+  .s_axi4_awaddr         (32'h0                     ),
+  .s_axi4_awlen          (8'h0                      ),
+  .s_axi4_awsize         (3'h0                      ),
+  .s_axi4_awburst        (2'h0                      ),
+  .s_axi4_awlock         (1'h0                      ),
+  .s_axi4_awcache        (4'h0                      ),
+  .s_axi4_awprot         (3'h0                      ),
+  .s_axi4_awvalid        (1'h0                      ),
+  .s_axi4_wdata          (32'h0                     ),
+  .s_axi4_wstrb          (4'h0                      ),
+  .s_axi4_wlast          (1'h0                      ),
+  .s_axi4_wvalid         (1'h0                      ),
+  .s_axi4_bready         (1'h0                      ),
+  .s_axi4_arid           (4'h0                      ),
+  .s_axi4_araddr         (32'h0                     ),
+  .s_axi4_arlen          (8'h0                      ),
+  .s_axi4_arsize         (3'h0                      ),
+  .s_axi4_arburst        (2'h0                      ),
+  .s_axi4_arlock         (1'h0                      ),
+  .s_axi4_arcache        (4'h0                      ),
+  .s_axi4_arprot         (3'h0                      ),
+  .s_axi4_arvalid        (1'h0                      ),
+  .s_axi4_rready         (1'h0                      ),
+  .mm2s_prmry_reset_out_n(                          ), // output wire mm2s_prmry_reset_out_n
+  .axi_str_txd_tvalid    (mosi_axis32_bus.txd_tvalid), // output wire axi_str_txd_tvalid
+  .axi_str_txd_tready    (miso_axis32_bus.txd_tready), // input wire axi_str_txd_tready
+  .axi_str_txd_tlast     (mosi_axis32_bus.txd_tlast ), // output wire axi_str_txd_tlast
+  .axi_str_txd_tdata     (mosi_axis32_bus.txd_tdata ), // output wire [31 : 0] axi_str_txd_tdata
+  .axi_str_txc_tready    (1'h0                      ),
+  .s2mm_prmry_reset_out_n(                          ), // output wire s2mm_prmry_reset_out_n
+  .axi_str_rxd_tvalid    (miso_axis32_bus.rxd_tvalid), // input wire axi_str_rxd_tvalid
+  .axi_str_rxd_tready    (mosi_axis32_bus.rxd_tready), // output wire axi_str_rxd_tready
+  .axi_str_rxd_tlast     (miso_axis32_bus.rxd_tlast ), // input wire axi_str_rxd_tlast
+  .axi_str_rxd_tkeep     (4'h0                      ),
+  .axi_str_rxd_tdata     (miso_axis32_bus.rxd_tdata ), // input wire [31 : 0] axi_str_rxd_tdata
+  .axi_str_rxd_tstrb     (4'h0                      ),
+  .axi_str_rxd_tdest     (4'h0                      ),
+  .axi_str_rxd_tid       (4'h0                      ),
+  .axi_str_rxd_tuser     (4'h0                      )
+);
+`else
 axi_fifo_mm_s_0 axi_fifo_mm_s_axi_lite (
   .interrupt( ),                            // output wire interrupt
   .s_axi_aclk(clk_i),                          // input wire s_axi_aclk
@@ -218,7 +220,7 @@ axi_fifo_mm_s_0 axi_fifo_mm_s_axi_lite (
   .axi_str_rxd_tlast(miso_axis32_bus.rxd_tlast),            // input wire axi_str_rxd_tlast
   .axi_str_rxd_tdata(miso_axis32_bus.rxd_tdata)            // input wire [31 : 0] axi_str_rxd_tdata
 );
-
+`endif
 /*
    ila_0 CL_ILA_0 (
                    .clk    (clk_i),

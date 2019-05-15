@@ -13,9 +13,6 @@
 // Uncomment to disable Virtual JTAG
 //`define DISABLE_VJTAG_DEBUG
 
-// Define macros for the manycore hardware
-`define axi4_to_sh_ddr_num 2
-
 
 `endif
 

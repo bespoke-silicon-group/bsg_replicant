@@ -13,12 +13,17 @@ module axi_mux #(
 	, localparam axi_mosi_bus_width_lp = `bsg_axi_mosi_bus_width(1, id_width_p, addr_width_p, data_width_p)
 	, localparam axi_miso_bus_width_lp = `bsg_axi_miso_bus_width(1, id_width_p, addr_width_p, data_width_p)
 ) (
-	input                                                           clk_i
-	,input                                                           reset_i
-	,input  [            slot_num_p-1:0][axi_mosi_bus_width_lp-1:0] s_axi_mux_i
-	,output [            slot_num_p-1:0][axi_miso_bus_width_lp-1:0] s_axi_mux_o
-	,output [axi_mosi_bus_width_lp-1:0]                             m_axi_bus_o
-	,input  [axi_miso_bus_width_lp-1:0]                             m_axi_bus_i
+	input                                                         clk_i
+	,
+	input                                                         reset_i
+	,
+	input  [           slot_num_p-1:0][axi_mosi_bus_width_lp-1:0] s_axi_mux_i
+	,
+	output [           slot_num_p-1:0][axi_miso_bus_width_lp-1:0] s_axi_mux_o
+	,
+	output [axi_mosi_bus_width_lp-1:0]                            m_axi_bus_o
+	,
+	input  [axi_miso_bus_width_lp-1:0]                            m_axi_bus_i
 );
 
 //---------------------------------------------
@@ -126,8 +131,8 @@ module axi_mux #(
 		.C_M_AXI_SECURE             (32'H00000000                         ),
 		.C_CONNECTIVITY_MODE        (0                                    )
 	) xbar (
-		.aclk          (clk_i                     ),
-		.aresetn       (~reset_i                  ),
+		.aclk          (clk_i                    ),
+		.aresetn       (~reset_i                 ),
 		.s_axi_awid    (s_axi_mux_i_cast.awid    ),
 		.s_axi_awaddr  (s_axi_mux_i_cast.awaddr  ),
 		.s_axi_awlen   (s_axi_mux_i_cast.awlen   ),
@@ -137,19 +142,19 @@ module axi_mux #(
 		.s_axi_awcache (s_axi_mux_i_cast.awcache ),
 		.s_axi_awprot  (s_axi_mux_i_cast.awprot  ),
 		.s_axi_awqos   (s_axi_mux_i_cast.awqos   ),
-		.s_axi_awuser  ('0                        ),
+		.s_axi_awuser  ('0                       ),
 		.s_axi_awvalid (s_axi_mux_i_cast.awvalid ),
 		.s_axi_awready (s_axi_mux_o_cast.awready ),
-		.s_axi_wid     ('0                        ),
+		.s_axi_wid     ('0                       ),
 		.s_axi_wdata   (s_axi_mux_i_cast.wdata   ),
 		.s_axi_wstrb   (s_axi_mux_i_cast.wstrb   ),
 		.s_axi_wlast   (s_axi_mux_i_cast.wlast   ),
-		.s_axi_wuser   ('0                        ),
+		.s_axi_wuser   ('0                       ),
 		.s_axi_wvalid  (s_axi_mux_i_cast.wvalid  ),
 		.s_axi_wready  (s_axi_mux_o_cast.wready  ),
 		.s_axi_bid     (s_axi_mux_o_cast.bid     ),
 		.s_axi_bresp   (s_axi_mux_o_cast.bresp   ),
-		.s_axi_buser   (                          ),
+		.s_axi_buser   (                         ),
 		.s_axi_bvalid  (s_axi_mux_o_cast.bvalid  ),
 		.s_axi_bready  (s_axi_mux_i_cast.bready  ),
 		.s_axi_arid    (s_axi_mux_i_cast.arid    ),
@@ -161,14 +166,14 @@ module axi_mux #(
 		.s_axi_arcache (s_axi_mux_i_cast.arcache ),
 		.s_axi_arprot  (s_axi_mux_i_cast.arprot  ),
 		.s_axi_arqos   (s_axi_mux_i_cast.arqos   ),
-		.s_axi_aruser  ('0                        ),
+		.s_axi_aruser  ('0                       ),
 		.s_axi_arvalid (s_axi_mux_i_cast.arvalid ),
 		.s_axi_arready (s_axi_mux_o_cast.arready ),
 		.s_axi_rid     (s_axi_mux_o_cast.rid     ),
 		.s_axi_rdata   (s_axi_mux_o_cast.rdata   ),
 		.s_axi_rresp   (s_axi_mux_o_cast.rresp   ),
 		.s_axi_rlast   (s_axi_mux_o_cast.rlast   ),
-		.s_axi_ruser   (                          ),
+		.s_axi_ruser   (                         ),
 		.s_axi_rvalid  (s_axi_mux_o_cast.rvalid  ),
 		.s_axi_rready  (s_axi_mux_i_cast.rready  ),
 		// master
@@ -182,19 +187,19 @@ module axi_mux #(
 		.m_axi_awprot  (m_axi_bus_o_cast.awprot  ),
 		.m_axi_awregion(m_axi_bus_o_cast.awregion),
 		.m_axi_awqos   (m_axi_bus_o_cast.awqos   ),
-		.m_axi_awuser  (                          ),
+		.m_axi_awuser  (                         ),
 		.m_axi_awvalid (m_axi_bus_o_cast.awvalid ),
 		.m_axi_awready (m_axi_bus_i_cast.awready ),
-		.m_axi_wid     (                          ),
+		.m_axi_wid     (                         ),
 		.m_axi_wdata   (m_axi_bus_o_cast.wdata   ),
 		.m_axi_wstrb   (m_axi_bus_o_cast.wstrb   ),
 		.m_axi_wlast   (m_axi_bus_o_cast.wlast   ),
-		.m_axi_wuser   (                          ),
+		.m_axi_wuser   (                         ),
 		.m_axi_wvalid  (m_axi_bus_o_cast.wvalid  ),
 		.m_axi_wready  (m_axi_bus_i_cast.wready  ),
 		.m_axi_bid     (m_axi_bus_i_cast.bid     ),
 		.m_axi_bresp   (m_axi_bus_i_cast.bresp   ),
-		.m_axi_buser   ('0                        ),
+		.m_axi_buser   ('0                       ),
 		.m_axi_bvalid  (m_axi_bus_i_cast.bvalid  ),
 		.m_axi_bready  (m_axi_bus_o_cast.bready  ),
 		.m_axi_arid    (m_axi_bus_o_cast.arid    ),
@@ -207,14 +212,14 @@ module axi_mux #(
 		.m_axi_arprot  (m_axi_bus_o_cast.arprot  ),
 		.m_axi_arregion(m_axi_bus_o_cast.arregion),
 		.m_axi_arqos   (m_axi_bus_o_cast.arqos   ),
-		.m_axi_aruser  (                          ),
+		.m_axi_aruser  (                         ),
 		.m_axi_arvalid (m_axi_bus_o_cast.arvalid ),
 		.m_axi_arready (m_axi_bus_i_cast.arready ),
 		.m_axi_rid     (m_axi_bus_i_cast.rid     ),
 		.m_axi_rdata   (m_axi_bus_i_cast.rdata   ),
 		.m_axi_rresp   (m_axi_bus_i_cast.rresp   ),
 		.m_axi_rlast   (m_axi_bus_i_cast.rlast   ),
-		.m_axi_ruser   ('0                        ),
+		.m_axi_ruser   ('0                       ),
 		.m_axi_rvalid  (m_axi_bus_i_cast.rvalid  ),
 		.m_axi_rready  (m_axi_bus_o_cast.rready  )
 	);
