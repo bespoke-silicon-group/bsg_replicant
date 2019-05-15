@@ -9,12 +9,6 @@
 using std::map;
 using std::string;
 
-#ifndef strdupa
-#define strdupa(str)                            \
-    ({ char *__dup = alloca(strlen(str)+1);     \
-        strcpy(__dup, str);})
-#endif
-
 typedef struct prefix_info {
     FILE *file;
     bool newline;
