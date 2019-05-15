@@ -127,25 +127,64 @@ module hb_mc_wrapper #(
   logic [1-1:0][x_cord_width_p-1:0] mcl_x_cord_lp = x_cord_width_p'(num_tiles_x_p-1);
   logic [1-1:0][y_cord_width_p-1:0] mcl_y_cord_lp = '0                              ;
 
-  bsg_manycore_link_to_axil #(
-    .axil_base_addr_p (32'h0000_0000    ),
-    .x_cord_width_p   (x_cord_width_p   ),
-    .y_cord_width_p   (y_cord_width_p   ),
-    .addr_width_p     (addr_width_p     ),
-    .data_width_p     (data_width_p     ),
-    .max_out_credits_p(max_out_credits_p),
-    .load_id_width_p  (load_id_width_p  )
-  ) axi_to_mc (
-    .clk_i           (clk_i             ),
-    .reset_i         (~axi_mcl_rstn     ),
-    .s_axil_mcl_bus_i(m_axil_bus_lo_cast),
-    .s_axil_mcl_bus_o(m_axil_bus_li_cast),
-    .link_sif_i      (loader_link_sif_lo),
-    .link_sif_o      (loader_link_sif_li),
-    .my_x_i          (mcl_x_cord_lp     ),
-    .my_y_i          (mcl_y_cord_lp     )
-  );
+  // bsg_manycore_link_to_axil #(
+  //   .axil_base_addr_p (32'h0000_0000    ),
+  //   .x_cord_width_p   (x_cord_width_p   ),
+  //   .y_cord_width_p   (y_cord_width_p   ),
+  //   .addr_width_p     (addr_width_p     ),
+  //   .data_width_p     (data_width_p     ),
+  //   .max_out_credits_p(max_out_credits_p),
+  //   .load_id_width_p  (load_id_width_p  )
+  // ) axi_to_mc (
+  //   .clk_i           (clk_i             ),
+  //   .reset_i         (~axi_mcl_rstn     ),
+  //   .s_axil_mcl_bus_i(m_axil_bus_lo_cast),
+  //   .s_axil_mcl_bus_o(m_axil_bus_li_cast),
+  //   .link_sif_i      (loader_link_sif_lo),
+  //   .link_sif_o      (loader_link_sif_li),
+  //   .my_x_i          (mcl_x_cord_lp     ),
+  //   .my_y_i          (mcl_y_cord_lp     )
+  // );
 
+axil_to_mcl #(
+  .num_mcl_p        (1                )
+  ,.num_tiles_x_p    (num_tiles_x_p    )
+  ,.num_tiles_y_p    (num_tiles_y_p    )
+  ,.addr_width_p     (addr_width_p     )
+  ,.data_width_p     (data_width_p     )
+  ,.x_cord_width_p   (x_cord_width_p   )
+  ,.y_cord_width_p   (y_cord_width_p   )
+  ,.load_id_width_p  (load_id_width_p  )
+  ,.max_out_credits_p(max_out_credits_p)
+) axil_to_mcl_inst (
+  .clk_i             (clk_i       )
+  ,.reset_i           (~axi_mcl_rstn  )
+
+  // axil slave interface
+  ,.s_axil_mcl_awvalid(m_axil_bus_lo_cast.awvalid)
+  ,.s_axil_mcl_awaddr (m_axil_bus_lo_cast.awaddr )
+  ,.s_axil_mcl_awready(m_axil_bus_li_cast.awready)
+  ,.s_axil_mcl_wvalid (m_axil_bus_lo_cast.wvalid )
+  ,.s_axil_mcl_wdata  (m_axil_bus_lo_cast.wdata  )
+  ,.s_axil_mcl_wstrb  (m_axil_bus_lo_cast.wstrb  )
+  ,.s_axil_mcl_wready (m_axil_bus_li_cast.wready )
+  ,.s_axil_mcl_bresp  (m_axil_bus_li_cast.bresp  )
+  ,.s_axil_mcl_bvalid (m_axil_bus_li_cast.bvalid )
+  ,.s_axil_mcl_bready (m_axil_bus_lo_cast.bready )
+  ,.s_axil_mcl_araddr (m_axil_bus_lo_cast.araddr )
+  ,.s_axil_mcl_arvalid(m_axil_bus_lo_cast.arvalid)
+  ,.s_axil_mcl_arready(m_axil_bus_li_cast.arready)
+  ,.s_axil_mcl_rdata  (m_axil_bus_li_cast.rdata  )
+  ,.s_axil_mcl_rresp  (m_axil_bus_li_cast.rresp  )
+  ,.s_axil_mcl_rvalid (m_axil_bus_li_cast.rvalid )
+  ,.s_axil_mcl_rready (m_axil_bus_lo_cast.rready )
+
+  // manycore link
+  ,.link_sif_i        (loader_link_sif_lo)
+  ,.link_sif_o        (loader_link_sif_li)
+  ,.my_x_i            (mcl_x_cord_lp     )
+  ,.my_y_i            (mcl_y_cord_lp     )
+);
 
 
   `ifndef BYPASS_MC
@@ -314,9 +353,6 @@ module hb_mc_wrapper #(
     //                      END OF MANYCORE
     // -------------------------------------------------------------------
     // -------------------------------------------------------------------
-
-
-
 
 
     // --------------------------------------------------------------
