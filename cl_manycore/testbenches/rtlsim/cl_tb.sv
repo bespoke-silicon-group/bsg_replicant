@@ -53,8 +53,8 @@ module cl_tb();
 
   bsg_mcl_request_s request_packet;
   bsg_mcl_response_s response_packet;
-
-
+  
+  
    initial begin
 
       tb.power_up(
@@ -84,10 +84,10 @@ module cl_tb();
       tb.peek_ocl(.addr(MON_BASE_ADDR + (HOST_REQ_CREDITS<<2)), .data(rdata));
       $display($time,,,"Readback the credits: %10h", rdata);
 
-      tb.peek_ocl(.addr(MON_BASE_ADDR + (4<<2)), .data(rdata));
+      tb.peek_ocl(.addr(MON_BASE_ADDR + (MC_NUM_X<<2)), .data(rdata));
       $display($time,,,"Readback the x demension: %10h", rdata);
 
-      tb.peek_ocl(.addr(MON_BASE_ADDR + (5<<2)), .data(rdata));
+      tb.peek_ocl(.addr(MON_BASE_ADDR + (MC_NUM_Y<<2)), .data(rdata));
       $display($time,,,"Readback the y demension: %10h", rdata);
 
       // -------------------------------------
@@ -100,7 +100,7 @@ module cl_tb();
       tb.kernel_reset();
 
       tb.power_down();
-
+      
       $finish;
    end
 
@@ -110,8 +110,7 @@ module cl_tb();
     logic [31:0] rd_reg;
     tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
     $display($time,,,"Read ISR: %0h", rd_reg);
-    // compare_dword(rd_reg, 32'h01d0_0000);
-    compare_dword(rd_reg, 32'hXXXX_XXXX);
+    compare_dword(rd_reg, 32'h01d0_0000);
 
     tb.poke_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(32'hFFFF_FFFF));
     $display($time,,,"Clear ISR");
@@ -137,7 +136,7 @@ module cl_tb();
     request_packet.op_ex = op_ex;
     request_packet.payload = payload;
     request_packet.src_y_cord =src_y_cord;
-    request_packet.src_x_cord = src_x_cord;
+    request_packet.src_x_cord = src_x_cord;    
     request_packet.y_cord = y_cord;
     request_packet.x_cord = x_cord;
     packet = request_packet;
@@ -210,15 +209,15 @@ module cl_tb();
     // read RDFO in store-and-forward mode
 
     tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDFO_REG), .data(rd_reg));
-    // if(debug_fifo)
+    // if(debug_fifo)  
       $display($time,,,"Receive FIFO Occupancy is: %h", rd_reg);
     // compare_dword(rd_reg, 32'h00000004*(1));
 
     tb.peek_ocl(.addr(FIFO_BASE_ADDR+RLR_REG), .data(rev_num));
-    // if(debug_fifo)
+    // if(debug_fifo)  
       $display($time,,,"Read RLR : %h", rev_num);
     tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDR_REG), .data(rd_reg));
-    if(debug_fifo)
+    if(debug_fifo)  
       $display($time,,,"Read RDR : %h", rev_num);
     for (int k=0; k<rev_num/16; k++) begin
       for (int i=0; i<4; i++) begin
@@ -229,13 +228,13 @@ module cl_tb();
     end
 
     // tb.peek_ocl(.addr(FIFO_BASE_ADDR+ISR_REG), .data(rd_reg));
-    if(debug_fifo)  //
+    if(debug_fifo)  //  
       $display($time,,,"Read ISR: %h", rd_reg);
       // // 0008_0000 is for write FIFO empty
       // compare_dword(rd_reg, 32'h0408_0000);
 
     tb.peek_ocl(.addr(FIFO_BASE_ADDR+RDFO_REG), .data(rd_reg));
-    if(debug_fifo)
+    if(debug_fifo)  
       $display($time,,,"Receive FIFO Occupancy is: %h", rd_reg);
   endtask
 
