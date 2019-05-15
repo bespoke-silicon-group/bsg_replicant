@@ -62,7 +62,6 @@ ${CL_DIR}/../hdl/axil_to_mcl.v
 ${CL_DIR}/../hdl/axil_to_mem.sv
 ${CL_DIR}/../hdl/s_axil_mcl_adapter.v
 
-${BSG_IP_CORES_DIR}/bsg_misc/bsg_encode_one_hot.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v
