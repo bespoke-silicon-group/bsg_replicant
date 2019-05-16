@@ -117,8 +117,8 @@ module hb_mc_wrapper #(
   bsg_manycore_link_sif_s loader_link_sif_lo;
   bsg_manycore_link_sif_s loader_link_sif_li;
 
-  logic [1-1:0][x_cord_width_p-1:0] mcl_x_cord_lp = x_cord_width_p'(num_tiles_x_p-1);
-  logic [1-1:0][y_cord_width_p-1:0] mcl_y_cord_lp = '0                              ;
+  logic [1-1:0][x_cord_width_p-1:0] mcl_x_cord_lp = '0;
+  logic [1-1:0][y_cord_width_p-1:0] mcl_y_cord_lp = '0;
 
 	axil_to_mcl #(
   .num_mcl_p        (1                )
@@ -173,13 +173,6 @@ module hb_mc_wrapper #(
     .out_bus(axi_hb_mc_rstn)
   );
 
-  // rom
-  bsg_manycore_link_sif_s rom_link_sif_li;
-  bsg_manycore_link_sif_s rom_link_sif_lo;
-
-  logic [x_cord_width_p-1:0] rom_x_cord_lp = '0;
-  logic [y_cord_width_p-1:0] rom_y_cord_lp = '0;
-
   // cache
   bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
   bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
@@ -208,31 +201,7 @@ module hb_mc_wrapper #(
     ,.cache_y_o        (cache_y_lo        )
     ,.loader_link_sif_i(loader_link_sif_li)
     ,.loader_link_sif_o(loader_link_sif_lo)
-    ,.rom_link_sif_i   (rom_link_sif_li   )
-    ,.rom_link_sif_o   (rom_link_sif_lo   )
   );
-
-
-  // -------------------------------------------------
-  // bladerunner configuration rom
-  // -------------------------------------------------
-  bsg_bladerunner_rom #(
-    .rom_width_p    (rom_width_p    )
-    ,.rom_els_p      (rom_els_p      )
-    ,.x_cord_width_p (x_cord_width_p )
-    ,.y_cord_width_p (y_cord_width_p )
-    ,.addr_width_p   (addr_width_p   )
-    ,.data_width_p   (data_width_p   )
-    ,.load_id_width_p(load_id_width_p)
-  ) bladerunner_rom (
-    .clk_i     (clk_i          )
-    ,.reset_i   (~axi_hb_mc_rstn)
-    ,.my_x_i    (rom_x_cord_lp  )
-    ,.my_y_i    (rom_y_cord_lp  )
-    ,.link_sif_i(rom_link_sif_lo)
-    ,.link_sif_o(rom_link_sif_li)
-  );
-
 
   `declare_bsg_axi_bus_s(1, axi_id_width_p, axi_addr_width_p, axi_data_width_p, bsg_axi_mosi_bus_s, bsg_axi_miso_bus_s);
 
