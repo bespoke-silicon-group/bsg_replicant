@@ -1,5 +1,5 @@
-#ifndef _INTERNAL_BSG_MANYCORE_PRINTING_H
-#define _INTERNAL_BSG_MANYCORE_PRINTING_H
+#ifndef _BSG_MANYCORE_PRINTING_H
+#define _BSG_MANYCORE_PRINTING_H
 
 #if defined(COSIM)
 #include "bsg_manycore_features.h"
