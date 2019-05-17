@@ -104,7 +104,6 @@ file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_miss.v                 $T
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_sbuf.v                 $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_sbuf_queue.v           $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache.v                      $TARGET_DIR
-file copy -force $BSG_IP_CORES_DIR/bsg_cache/bsg_cache_pkt_decode.v           $TARGET_DIR
 
 file copy -force $BSG_IP_CORES_DIR/bsg_dataflow/bsg_round_robin_n_to_1.v      $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_dataflow/bsg_fifo_tracker.v            $TARGET_DIR
