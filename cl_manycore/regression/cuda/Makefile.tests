@@ -1,8 +1,9 @@
 REGRESSION_TESTS_TYPE = cuda
 
-C_REGRESSION_TESTS = test_empty 
+C_REGRESSION_TESTS += test_empty 
 C_REGRESSION_TESTS += test_empty_parallel 
 C_REGRESSION_TESTS += test_packet 
+C_REGRESSION_TESTS += test_stack_load
 C_REGRESSION_TESTS += test_vec_add
 C_REGRESSION_TESTS += test_vec_add_parallel
 C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
