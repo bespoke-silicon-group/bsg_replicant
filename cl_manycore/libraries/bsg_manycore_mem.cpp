@@ -1,4 +1,4 @@
-#include <stdlib.h>
+#include <cstdlib>
 #ifndef COSIM
 	#include <bsg_manycore_mem.h>
 	#include <bsg_manycore_loader.h>

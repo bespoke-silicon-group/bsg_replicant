@@ -28,13 +28,23 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <assert.h>
 #include <unistd.h>
+
+#ifdef __cplusplus
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <climits>
+#include <cstdbool>
+#else
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

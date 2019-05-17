@@ -16,7 +16,7 @@
  * under the License.
  */
 
-#include <assert.h>
+#include <cassert>
 #ifndef COSIM
 #include <bsg_manycore_memory_manager.h>
 #else
