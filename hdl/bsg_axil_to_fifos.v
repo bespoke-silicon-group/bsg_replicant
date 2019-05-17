@@ -4,7 +4,7 @@
 * adapt axil interface to parameterized fifo interface
 *
 * Note:
-* Config sets n=range(num_slots_p) have base address = n * 0x100
+* Config sets n=range(num_slots_p) have base address = n * 0x100, raise DECERR if access address is out of range
 *
 * The host should checkout the status registers before issuing a AXI-Lite transaction:
 
@@ -178,7 +178,7 @@ module bsg_axil_to_fifos #(
     endcase
   end
 
-  logic tx_done_lo; // from tx fifo
+  wire tx_done_lo = 1'b1; // always ready for the write
 
   // waddr channel
   assign awready_lo = (wr_state_r == E_WR_ADDR);
@@ -188,6 +188,25 @@ module bsg_axil_to_fifos #(
   always_ff @(posedge clk_i) begin
     wr_addr_r <= (awvalid_li & awready_lo) ? awaddr_li : wr_addr_r;
   end
+
+  // write response channel
+  always_ff @(posedge clk_i) begin
+    if ((wr_state_r == E_WR_DATA) || (wr_state_r == E_WR_RESP))
+      bresp_lo <= |write_to_base ? '0 : 2'b11;  // OKAY or DECERR
+    else
+      bresp_lo <= '0;
+  end
+
+  always_comb begin : bus_response
+    if ((wr_state_r == E_WR_RESP) && bready_li) begin
+      bvalid_lo = '1;
+    end
+    else begin
+      bvalid_lo = '0;
+    end
+  end
+
+  assign write_bresp_lo = bready_li & bvalid_lo;
 
   // wdata channel
   logic [num_slots_p-1:0] write_to_base;
@@ -201,7 +220,6 @@ module bsg_axil_to_fifos #(
 
   assign tx_v_li    = {num_slots_p{wvalid_li & wready_lo}} & write_to_fifo;
   assign tx_li      = {num_slots_p{wdata_li}};
-  assign tx_done_lo = |write_to_base;  // assign tx_done_lo = |(tx_v_li & tx_r_lo);
 
   // outside read from fifo
   logic [num_slots_p-1:0]                    tx_v_lo, tx_r_li;
@@ -254,19 +272,6 @@ module bsg_axil_to_fifos #(
     end
   end
 
-  // bus response channel
-  always_comb begin : bus_response
-    if ((wr_state_r == E_WR_RESP) && bready_li) begin
-      bvalid_lo = '1;
-    end
-    else begin
-      bvalid_lo = '0;
-    end
-  end
-
-  assign bresp_lo       = 2'h00; // always OKAY to read
-  assign write_bresp_lo = bready_li & bvalid_lo;
-
 // --------------------------------------------
 // axil read state machine
 // --------------------------------------------
@@ -314,17 +319,24 @@ module bsg_axil_to_fifos #(
   end
 
 
-  logic rx_done_lo; // from rx fifo
+  wire rx_done_lo = 1'b1; // from rx fifo
 
   // raddr channel
   assign arready_lo = (rd_state_r == E_RD_ADDR);
   assign rvalid_lo  = ((rd_state_r == E_RD_DATA) && rx_done_lo);
-  assign rresp_lo   = 2'h00; // always OKAY to read
 
   logic [31:0] rd_addr_r;
   always_ff @(posedge clk_i) begin
     if (arvalid_li & arready_lo)
       rd_addr_r <= araddr_li;
+  end
+
+  // read response channel
+  always_ff @(posedge clk_i) begin
+    if (rd_state_r == E_RD_DATA)
+      rresp_lo <= (|read_from_base || read_from_rom) ? '0 : 2'b11;  // OKAY or DECERR
+    else
+      rresp_lo <= '0;
   end
 
   // rdata channel
@@ -357,7 +369,6 @@ module bsg_axil_to_fifos #(
 
 
   assign rx_r_li    = {num_slots_p{rvalid_lo & rready_li}} & read_from_fifo;
-  assign rx_done_lo = |read_from_base || read_from_rom;
 
   // outside write to fifo
   logic [num_slots_p-1:0]                    rx_v_li, rx_r_lo;
