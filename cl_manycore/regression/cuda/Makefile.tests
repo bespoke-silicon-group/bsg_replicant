@@ -1,5 +1,14 @@
 REGRESSION_TESTS_TYPE = cuda
-C_REGRESSION_TESTS = test_empty test_empty_parallel test_packet test_vec_add test_vec_add_parallel test_vec_add_parallel_multi_grid test_matrix_mul
+
+C_REGRESSION_TESTS = test_empty 
+C_REGRESSION_TESTS += test_empty_parallel 
+C_REGRESSION_TESTS += test_packet 
+C_REGRESSION_TESTS += test_vec_add
+C_REGRESSION_TESTS += test_vec_add_parallel
+C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
+C_REGRESSION_TESTS += test_shared_mem
+C_REGRESSION_TESTS += test_matrix_mul
+
 CXX_REGRESSION_TESTS = 
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
