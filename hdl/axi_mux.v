@@ -21,74 +21,81 @@ module axi_mux #(
   ,input  [axi_miso_bus_width_lp-1:0]                            m_axi_bus_i
 );
 
+  `declare_bsg_axi_bus_s(slot_num_p, id_width_p, addr_width_p, data_width_p, bsg_axi_mosi_mux_s, bsg_axi_miso_mux_s);
+  `declare_bsg_axi_bus_s(1, id_width_p, addr_width_p, data_width_p, bsg_axi_mosi_bus_s, bsg_axi_miso_bus_s);
+
 //---------------------------------------------
 // Concatenated Signals
 //---------------------------------------------
-  `declare_bsg_axi_bus_s(slot_num_p, id_width_p, addr_width_p, data_width_p, bsg_axi_mosi_mux_s, bsg_axi_miso_mux_s);
   bsg_axi_mosi_mux_s s_axi_mux_i_cast;
   bsg_axi_miso_mux_s s_axi_mux_o_cast;
 
-  logic [slot_num_p-1:0][axi_mosi_bus_width_lp-1:0] s_axi_mux_li;
-  logic [slot_num_p-1:0][axi_miso_bus_width_lp-1:0] s_axi_mux_lo;
+  bsg_axi_mosi_bus_s [slot_num_p-1:0] s_axi_li_cast;
+  bsg_axi_miso_bus_s [slot_num_p-1:0] s_axi_lo_cast;
 
-  assign s_axi_mux_li = s_axi_mux_i;
-  assign s_axi_mux_o  = s_axi_mux_lo;
+  assign s_axi_li_cast = s_axi_mux_i;
+  assign s_axi_mux_o   = s_axi_lo_cast;
 
   for (genvar i=0; i<slot_num_p; i=i+1) begin
-    always_comb begin: axi_mux_assignment
-      {s_axi_mux_i_cast.awid[i*id_width_p+:id_width_p]
-        ,s_axi_mux_i_cast.awaddr[i*addr_width_p+:addr_width_p]
-        ,s_axi_mux_i_cast.awlen[i*8+:8]
-        ,s_axi_mux_i_cast.awsize[i*3+:3]
-        ,s_axi_mux_i_cast.awburst[i*2+:2]
-        ,s_axi_mux_i_cast.awlock[i]
-        ,s_axi_mux_i_cast.awcache[i*4+:4]
-        ,s_axi_mux_i_cast.awprot[i*3+:3]
-        ,s_axi_mux_i_cast.awqos[i*4+:4]
-        ,s_axi_mux_i_cast.awregion[i*4+:4]
-        ,s_axi_mux_i_cast.awvalid[i]
 
-        ,s_axi_mux_i_cast.wdata[i*data_width_p+:data_width_p]
-        ,s_axi_mux_i_cast.wstrb[i*(data_width_p/8)+:(data_width_p/8)]
-        ,s_axi_mux_i_cast.wlast[i]
-        ,s_axi_mux_i_cast.wvalid[i]
+    always_comb begin: axi_slave_input
 
-        ,s_axi_mux_i_cast.bready[i]
+      s_axi_mux_i_cast.awid[i*id_width_p+:id_width_p] = s_axi_li_cast[i].awid;
+      s_axi_mux_i_cast.awaddr[i*addr_width_p+:addr_width_p] = s_axi_li_cast[i].awaddr;
+      s_axi_mux_i_cast.awlen[i*8+:8] = s_axi_li_cast[i].awlen;
+      s_axi_mux_i_cast.awsize[i*3+:3] = s_axi_li_cast[i].awsize;
+      s_axi_mux_i_cast.awburst[i*2+:2] = s_axi_li_cast[i].awburst;
+      s_axi_mux_i_cast.awlock[i] = s_axi_li_cast[i].awlock;
+      s_axi_mux_i_cast.awcache[i*4+:4] = s_axi_li_cast[i].awcache;
+      s_axi_mux_i_cast.awprot[i*3+:3] = s_axi_li_cast[i].awprot;
+      s_axi_mux_i_cast.awqos[i*4+:4] = s_axi_li_cast[i].awqos;
+      s_axi_mux_i_cast.awregion[i*4+:4] = s_axi_li_cast[i].awregion;
+      s_axi_mux_i_cast.awvalid[i] = s_axi_li_cast[i].awvalid;
 
-        ,s_axi_mux_i_cast.arid[i*id_width_p+:id_width_p]
-        ,s_axi_mux_i_cast.araddr[i*addr_width_p+:addr_width_p]
-        ,s_axi_mux_i_cast.arlen[i*8+:8]
-        ,s_axi_mux_i_cast.arsize[i*3+:3]
-        ,s_axi_mux_i_cast.arburst[i*2+:2]
-        ,s_axi_mux_i_cast.arlock[i]
-        ,s_axi_mux_i_cast.arcache[i*4+:4]
-        ,s_axi_mux_i_cast.arprot[i*3+:3]
-        ,s_axi_mux_i_cast.arqos[i*4+:4]
-        ,s_axi_mux_i_cast.arregion[i*4+:4]
-        ,s_axi_mux_i_cast.arvalid[i]
+      s_axi_mux_i_cast.wdata[i*data_width_p+:data_width_p] = s_axi_li_cast[i].wdata;
+      s_axi_mux_i_cast.wstrb[i*(data_width_p/8)+:(data_width_p/8)] = s_axi_li_cast[i].wstrb;
+      s_axi_mux_i_cast.wlast[i] = s_axi_li_cast[i].wlast;
+      s_axi_mux_i_cast.wvalid[i] = s_axi_li_cast[i].wvalid;
 
-        ,s_axi_mux_i_cast.rready[i]
-      } = s_axi_mux_li[i];
+      s_axi_mux_i_cast.bready[i] = s_axi_li_cast[i].bready;
 
-      s_axi_mux_lo[i] = {s_axi_mux_o_cast.awready[i]
-        ,s_axi_mux_o_cast.wready[i]
+      s_axi_mux_i_cast.arid[i*id_width_p+:id_width_p] = s_axi_li_cast[i].arid;
+      s_axi_mux_i_cast.araddr[i*addr_width_p+:addr_width_p] = s_axi_li_cast[i].araddr;
+      s_axi_mux_i_cast.arlen[i*8+:8] = s_axi_li_cast[i].arlen;
+      s_axi_mux_i_cast.arsize[i*3+:3] = s_axi_li_cast[i].arsize;
+      s_axi_mux_i_cast.arburst[i*2+:2] = s_axi_li_cast[i].arburst;
+      s_axi_mux_i_cast.arlock[i] = s_axi_li_cast[i].arlock;
+      s_axi_mux_i_cast.arcache[i*4+:4] = s_axi_li_cast[i].arcache;
+      s_axi_mux_i_cast.arprot[i*3+:3] = s_axi_li_cast[i].arprot;
+      s_axi_mux_i_cast.arqos[i*4+:4] = s_axi_li_cast[i].arqos;
+      s_axi_mux_i_cast.arregion[i*4+:4] = s_axi_li_cast[i].arregion;
+      s_axi_mux_i_cast.arvalid[i] = s_axi_li_cast[i].arvalid;
 
-        ,s_axi_mux_o_cast.bid[i*id_width_p+:id_width_p]
-        ,s_axi_mux_o_cast.bresp[i*2+:2]
-        ,s_axi_mux_o_cast.bvalid[i]
+      s_axi_mux_i_cast.rready[i] = s_axi_li_cast[i].rready;
+      
+    end
 
-        ,s_axi_mux_o_cast.arready[i]
+    always_comb begin: axi_slave_output
 
-        ,s_axi_mux_o_cast.rid[i*id_width_p+:id_width_p]
-        ,s_axi_mux_o_cast.rdata[i*data_width_p+:data_width_p]
-        ,s_axi_mux_o_cast.rresp[i*2+:2]
-        ,s_axi_mux_o_cast.rlast[i]
-        ,s_axi_mux_o_cast.rvalid[i]
-      };
+      s_axi_lo_cast[i].awready = s_axi_mux_o_cast.awready[i];
+      s_axi_lo_cast[i].wready = s_axi_mux_o_cast.wready[i];
+
+      s_axi_lo_cast[i].bid = s_axi_mux_o_cast.bid[i*id_width_p+:id_width_p];
+      s_axi_lo_cast[i].bresp = s_axi_mux_o_cast.bresp[i*2+:2];
+      s_axi_lo_cast[i].bvalid = s_axi_mux_o_cast.bvalid[i];
+
+      s_axi_lo_cast[i].arready = s_axi_mux_o_cast.arready[i];
+
+      s_axi_lo_cast[i].rid = s_axi_mux_o_cast.rid[i*id_width_p+:id_width_p];
+      s_axi_lo_cast[i].rdata = s_axi_mux_o_cast.rdata[i*data_width_p+:data_width_p];
+      s_axi_lo_cast[i].rresp = s_axi_mux_o_cast.rresp[i*2+:2];
+      s_axi_lo_cast[i].rlast = s_axi_mux_o_cast.rlast[i];
+      s_axi_lo_cast[i].rvalid = s_axi_mux_o_cast.rvalid[i];
+
     end
   end
 
-  `declare_bsg_axi_bus_s(1, id_width_p, addr_width_p, data_width_p, bsg_axi_mosi_bus_s, bsg_axi_miso_bus_s);
+
   bsg_axi_mosi_bus_s m_axi_bus_o_cast;
   bsg_axi_miso_bus_s m_axi_bus_i_cast;
 
