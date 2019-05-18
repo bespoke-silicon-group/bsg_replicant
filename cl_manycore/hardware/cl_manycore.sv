@@ -14,6 +14,7 @@ module cl_manycore
 // For some silly reason, you need to leave this up here...
 logic rst_main_n_sync;
 
+`include "cl_target_defines.vh"
 `include "cl_id_defines.vh"
 `include "cl_manycore_defines.vh"
 
@@ -100,7 +101,7 @@ assign cl_sh_status1[31:0] = 32'h0;
 // -------------------------------------------------------
 // HammerBlader Manycore wrapper
 // -------------------------------------------------------
-`ifndef LOCAL_FPGA
+`ifdef BSG_TARGET_F1
 `include "f1_bladerunner_ports.inc"
 `else
 `include "vcu128_bladerunner_ports.inc"

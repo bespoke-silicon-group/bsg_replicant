@@ -49,6 +49,7 @@ file copy -force $COMMON_DIR/axi_mux.v                                        $T
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore_defines.vh                      $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                            $TARGET_DIR
+file copy -force $CL_DIR/hardware/cl_target_defines.vh                        $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore.sv                              $TARGET_DIR
 file copy -force $CL_DIR/hardware/bsg_bladerunner_configuration.v             $TARGET_DIR
 
