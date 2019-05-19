@@ -16,6 +16,7 @@ HEADERS += bsg_manycore_memory_manager.h
 HEADERS += bsg_manycore_cuda.h
 HEADERS += bsg_manycore_features.h
 HEADERS += bsg_manycore_printing.h
+HEADERS += bsg_manycore.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
@@ -26,6 +27,7 @@ OBJECTS += bsg_manycore_elf.o
 OBJECTS += bsg_manycore_memory_manager.o
 OBJECTS += bsg_manycore_cuda.o
 OBJECTS += bsg_manycore_printing.o
+OBJECTS += bsg_manycore.o
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
