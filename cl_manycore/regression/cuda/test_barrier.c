@@ -1,12 +1,12 @@
-#include "test_empty.h"
+#include "test_barrier.h"
 
 /*!
- * Runs an empty kernel on a 2x2 tile group. 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
+ * Runs a barrier kernel on a 2x2 tile group. 
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/barrier/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
 */
 
-int kernel_empty () {
-	fprintf(stderr, "Running the CUDA Empty Kernel on a 2x2 tile group.\n\n");
+int kernel_barrier () {
+	fprintf(stderr, "Running the CUDA Barrier Kernel on a 2x2 tile group.\n\n");
 
 
 	/*****************************************************************************************************************
@@ -20,7 +20,7 @@ int kernel_empty () {
 	uint8_t mesh_origin_x = 0;
 	uint8_t mesh_origin_y = 1;
 	eva_id_t eva_id = 0;
-	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/empty/main.riscv";
+	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/barrier/main.riscv";
 
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 
@@ -45,7 +45,7 @@ int kernel_empty () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_barrier", 0, argv);
 	
 
 	/*****************************************************************************************************************
@@ -64,16 +64,16 @@ int kernel_empty () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
-	bsg_pr_test_info("test_empty Regression Test (COSIMULATION)\n");
-	int rc = kernel_empty();
+	bsg_pr_test_info("test_barrier Regression Test (COSIMULATION)\n");
+	int rc = kernel_barrier();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main() {
-	bsg_pr_test_info("test_empty Regression Test (F1)\n");
-	int rc = kernel_empty();
+	bsg_pr_test_info("test_barrier Regression Test (F1)\n");
+	int rc = kernel_barrier();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
