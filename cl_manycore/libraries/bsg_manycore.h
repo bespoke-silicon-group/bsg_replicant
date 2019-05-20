@@ -47,7 +47,7 @@ static inline uint8_t hb_mc_coordinate_get_y(hb_mc_coordinate_t coordinate)
 static inline uint8_t hb_mc_coordinate_set_y(hb_mc_coordinate_t coordinate, uint8_t y)
 {
 	uint16_t ny = y;
-	
+
 	return (coordinate & HB_MC_COORDINATE_X_MASK) | (ny << HB_MC_COORDINATE_Y_SHIFT);
 }
 
@@ -57,6 +57,11 @@ static inline hb_mc_coordinate_t hb_mc_coordinate(uint8_t x, uint8_t y)
 }
 
 typedef uint32_t hb_mc_config_t[HB_MC_CONFIG_MAX];
+
+static inline uint32_t hb_mc_config_get_repo_stl_hash(hb_mc_config_t *config)
+{
+        return config[0][HB_MC_CONFIG_REPO_STL_HASH];
+}
 
 typedef int hb_mc_manycore_id_t;
 #define HB_MC_MANYCORE_ID_ANY -1
@@ -95,27 +100,31 @@ void hb_mc_manycore_exit(hb_mc_manycore_t *mc);
 
 /**
  * Transmit a packet to manycore hardware
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in] packet A packet to transmit to manycore hardware
- * @param[in] type   Is this packet a request or response packet?
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] packet  A packet to transmit to manycore hardware
+ * @param[in] type    Is this packet a request or response packet?
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
 int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 			     hb_mc_packet_t *packet,
-			     hb_mc_fifo_tx_t type);
+			     hb_mc_fifo_tx_t type,
+                             long timeout);
 
 /**
  * Receive a packet from manycore hardware
  * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] packet A packet into which data should be read
  * @param[in] type   Is this packet a request or response packet?
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
 int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
 			     hb_mc_packet_t *packet,
-			     hb_mc_fifo_rx_t type);
+			     hb_mc_fifo_rx_t type,
+                             long timeout);
 ////////////////
 // Memory API //
 ////////////////
@@ -297,7 +306,7 @@ int hb_mc_manycore_eva_to_npa(hb_mc_manycore_t *mc, eva_t eva,  npa_t *npa,
 			      hb_mc_coordinate_t coordinate,
 			      eva_id_t eva_id);
 
-#ifdef __cplusplus    
+#ifdef __cplusplus
 }
 #endif
 #endif
