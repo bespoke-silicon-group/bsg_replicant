@@ -678,6 +678,12 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
         hb_mc_direction_t dir;
         uint32_t vacancy, tx_complete;
 	int err;
+
+	if (timeout != -1) {
+                manycore_pr_err(mc, "%s: only a timeout value of -1 is supported\n",
+                                __func__);
+                return HB_MC_INVALID;
+        }
 	
         // get the address of the data and length registers
         data_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_DATA_OFFSET);

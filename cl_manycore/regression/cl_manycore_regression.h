@@ -1,6 +1,6 @@
 #ifndef _CL_MANYCORE_REGRESSION_H
 #define _CL_MANYCORE_REGRESSION_H
-
+#include <stdio.h>
 #define BSG_RED(x) "\033[31m" x "\033[0m"
 #define BSG_GREEN(x) "\033[32m" x "\033[0m"
 #define BSG_YELLOW(x) "\033[33m" x "\033[0m"
@@ -22,6 +22,7 @@
 // @param num_fields The number of elements to compare
 // @param expected The expected values to compare against
 // @param actual The actual values returned by the test
+static
 int compare_arrays(int num_fields, const uint32_t *expected, const uint32_t *actual) {
         int num_bad_indices = 0;
         int bad_indices[num_fields];
@@ -52,6 +53,7 @@ int compare_arrays(int num_fields, const uint32_t *expected, const uint32_t *act
 // @param expected The expected values to compare against
 // @param actual The actual values returned by the test
 // @returns HB_MC_SUCCESS if all fields at corresponding indices in expected and actual match, HB_MC_FAIL otherwise
+static
 int compare_results(int num_fields, const char *desc[], const uint32_t *expected, const uint32_t *actual) {
 	int success = 1;
 	for(int i = 0; i < num_fields; i++) {
