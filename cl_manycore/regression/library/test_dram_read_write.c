@@ -44,7 +44,6 @@ int test_dram_read_write() {
 		}
 
 		for (int i = 0; i < ARRAY_LEN; i ++) {
-			printf("write %x at %x\n", A_host[i], BASE_ADDR + i);
 			error = hb_mc_copy_to_epa(fd, dram_coord_x, dram_coord_y, BASE_ADDR + i, &A_host[i], 1);
 			if (error != HB_MC_SUCCESS) {
 				fprintf(stderr, "hb_mc_copy_to_epa: failed to write A[%d] = %d to DRAM coord(%d,%d) addr %d.\n", i, A_host[i], dram_coord_x, dram_coord_y, BASE_ADDR + i);
@@ -56,7 +55,6 @@ int test_dram_read_write() {
 		hb_mc_response_packet_t buf[1];
 		for (int i = 0; i < ARRAY_LEN; i ++) {
 			error = hb_mc_copy_from_epa(fd, &buf[0], dram_coord_x, dram_coord_y, BASE_ADDR + i, 1);
-			printf("read %x at %x\n", buf[0], BASE_ADDR + i);
 			if ( error != HB_MC_SUCCESS) {
 				fprintf(stderr, "hb_mc_copy_from_epa: failed to read A[%d] from DRAM coord (%d,%d) addr %d.\n", i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
 				return HB_MC_FAIL;
