@@ -101,19 +101,55 @@ module bsg_manycore_endpoint_to_fifos #(
 
 
   // manycore request to fifo
-  assign mc_req_v_lo = endpoint_in_v_lo;
+  logic [num_endpoint_p-1:0] timer_v_lo;
+  logic [num_endpoint_p-1:0] timer_rdy_li;
+  logic [num_endpoint_p-1:0] [data_width_p-1:0] timer_data_lo;
+  logic [num_endpoint_p-1:0] [(data_width_p>>3)-1:0] timer_mask_lo;
+  logic [num_endpoint_p-1:0] [addr_width_p-1:0] timer_addr_lo;
+  logic [num_endpoint_p-1:0] timer_we_lo;
+  logic [num_endpoint_p-1:0] [x_cord_width_p-1:0] timer_src_x_cord_lo;
+  logic [num_endpoint_p-1:0] [y_cord_width_p-1:0] timer_src_y_cord_lo;
+
+  assign mc_req_v_lo = timer_v_lo;
+  assign timer_rdy_li = mc_req_rdy_li;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     assign mc_req_lo[i].padding = '0;
-    assign mc_req_lo[i].addr = (32)'(endpoint_in_addr_lo[i]);
-    assign mc_req_lo[i].op = (8)'({1'b0, endpoint_in_we_lo[i]});
-    assign mc_req_lo[i].op_ex = (8)'(endpoint_in_mask_lo[i]);
-    assign mc_req_lo[i].payload.data = (32)'(endpoint_in_data_lo[i]);
-    assign mc_req_lo[i].src_y_cord = (8)'(in_src_y_cord_lo[i]);
-    assign mc_req_lo[i].src_x_cord = (8)'(in_src_x_cord_lo[i]);
+    assign mc_req_lo[i].addr = (32)'(timer_addr_lo[i]);
+    assign mc_req_lo[i].op = (8)'(timer_we_lo[i]);
+    assign mc_req_lo[i].op_ex = (8)'(timer_mask_lo[i]);
+    assign mc_req_lo[i].payload.data = (32)'(timer_data_lo[i]);
+    assign mc_req_lo[i].src_y_cord = (8)'(timer_src_x_cord_lo[i]);
+    assign mc_req_lo[i].src_x_cord = (8)'(timer_src_y_cord_lo[i]);
     assign mc_req_lo[i].y_cord = (8)'(my_y_li[i]);
     assign mc_req_lo[i].x_cord = (8)'(my_x_li[i]);
+
+    bsg_manycore_endpoint_request_timer #(
+      .x_cord_width_p(x_cord_width_p),
+      .y_cord_width_p(y_cord_width_p),
+      .addr_width_p  (addr_width_p  ),
+      .data_width_p  (data_width_p  )
+    ) endpoint_timer (
+      .clk_i       (clk_i                 ),
+      .reset_i     (reset_i               ),
+      .v_i         (endpoint_in_v_lo[i]   ),
+      .yumi_o      (endpoint_in_yumi_li[i]),
+      .data_i      (endpoint_in_data_lo[i]),
+      .mask_i      (endpoint_in_mask_lo[i]),
+      .addr_i      (endpoint_in_addr_lo[i]),
+      .we_i        (endpoint_in_we_lo[i]  ),
+      .src_x_cord_i(in_src_x_cord_lo[i]   ),
+      .src_y_cord_i(in_src_y_cord_lo[i]   ),
+      .v_o         (timer_v_lo[i]         ),
+      .rdy_i       (timer_rdy_li[i]       ),
+      .data_o      (timer_data_lo[i]      ),
+      .mask_o      (timer_mask_lo[i]      ),
+      .addr_o      (timer_addr_lo[i]      ),
+      .we_o        (timer_we_lo[i]        ),
+      .src_x_cord_o(timer_src_x_cord_lo[i]),
+      .src_y_cord_o(timer_src_y_cord_lo[i])
+    );
   end
-  assign endpoint_in_yumi_li = mc_req_rdy_li & mc_req_v_lo; // must always ready
+
 
   // fifo request to manycore
   assign endpoint_out_v_li = fifo_req_v_li;

@@ -60,7 +60,10 @@ ${CL_DIR}/../hdl/bsg_bladerunner_rom.v
 ${CL_DIR}/../hdl/bsg_manycore_link_to_axil.v
 ${CL_DIR}/../hdl/bsg_axil_to_fifos.v
 ${CL_DIR}/../hdl/bsg_manycore_endpoint_to_fifos.v
+${CL_DIR}/../hdl/bsg_manycore_endpoint_request_timer.v
 
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_cycle_counter.v
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_dff_en.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_encode_one_hot.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
