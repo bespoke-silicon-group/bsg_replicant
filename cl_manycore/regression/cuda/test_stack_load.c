@@ -7,11 +7,12 @@
 */
 
 
-int kernel_shared_mem () {
-	fprintf(stderr, "Running the CUDA Stack Load  Kernel on a 1x1 grid of 2x2 tile group.\n\n");
+#define	NUM_ARGS	15		// Number of arguments passed to kernel
+#define	SUM_ARGS	120		// Sum of arguments passed to kernel
 
-	srand(time); 
 
+int kernel_stack_load () {
+	fprintf(stderr, "Running the CUDA Stack Load Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 
 	/*****************************************************************************************************************
 	* Define the dimension of tile pool.
@@ -29,12 +30,10 @@ int kernel_shared_mem () {
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 
 
-
 	/*****************************************************************************************************************
 	* Define tg_dim_x/y: number of tiles in each tile group
 	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
 	******************************************************************************************************************/
-
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
@@ -43,14 +42,23 @@ int kernel_shared_mem () {
 
 
 	/*****************************************************************************************************************
+	* Allocate memory on the device for sum of input arguments, one element for each tile.
+	******************************************************************************************************************/
+	eva_t sum_device;
+	hb_mc_device_malloc(&device, tg_dim_x * tg_dim_y * sizeof (uint32_t), &sum_device);
+
+
+	/*****************************************************************************************************************
 	* Prepare list of input arguments for kernel. {Num of arguments, Sum of arguments, arguments}
 	******************************************************************************************************************/
-	int argv[16] = {14, 105, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+	int argv[NUM_ARGS + 2] = {sum_device, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+
 
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_stack_load", 16, argv);
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_stack_load", NUM_ARGS + 1, argv);
+
 
 	/*****************************************************************************************************************
 	* Launch and execute all tile groups on device and wait for all to finish. 
@@ -59,26 +67,56 @@ int kernel_shared_mem () {
 	
 
 	/*****************************************************************************************************************
+	* Copy result sum back from device DRAM into host memory. 
+	******************************************************************************************************************/
+	uint32_t sum_host[tg_dim_x * tg_dim_y];
+	void *src = (void *) ((intptr_t) sum_device);
+	void *dst = (void *) &sum_host[0];
+	hb_mc_device_memcpy (&device, (void *) dst, src, (tg_dim_x * tg_dim_y) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy sum_device to the host */
+
+
+	/*****************************************************************************************************************
 	* Freeze the tiles and memory manager cleanup. 
 	******************************************************************************************************************/
 	hb_mc_device_finish(&device); 
 
 
+	/*****************************************************************************************************************
+	* Compare the expected sum and the manycore sum. 
+	******************************************************************************************************************/
+	int mismatch = 0;
+	for (int y = 0; y < tg_dim_y; y ++) { 
+		for (int x = 0; x < tg_dim_x; x ++) { 
+			if (sum_host[y * tg_dim_x + x] == SUM_ARGS) { 
+				fprintf (stderr, "Success: sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim_x + x], SUM_ARGS);
+			}
+			else { 
+				fprintf (stderr, "Failed : sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim_x + x], SUM_ARGS);
+				mismatch = 0; 
+			}
+		}
+	}
+
+
+
+	if (mismatch) { 
+		return HB_MC_FAIL;
+	}
 	return HB_MC_SUCCESS;
 }
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
-	bsg_pr_test_info("test_shared_mem Regression Test (COSIMULATION)\n");
-	int rc = kernel_shared_mem();
+	bsg_pr_test_info("test_stack_load Regression Test (COSIMULATION)\n");
+	int rc = kernel_stack_load();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main() {
-	bsg_pr_test_info("test_shared_mem Regression Test (F1)\n");
-	int rc = kernel_shared_mem();
+	bsg_pr_test_info("test_stack_load Regression Test (F1)\n");
+	int rc = kernel_stack_load();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
