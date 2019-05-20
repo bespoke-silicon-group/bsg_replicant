@@ -1,12 +1,19 @@
 #include "test_empty_parallel.h"
 
 /*!
- * Runs 8 empty kernels in 2x2 tile groups on a 4x4 mesh. 
+ * Runs an empty kernel on a 4x2 grid of 2x2 tile groups. 
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
 */
-int kernel_empty_parallel () {
-	fprintf(stderr, "Running the CUDA Parallel Empty Kernel on 6 2x2 tile groups in a 4x4 mesh.\n\n");
 
+int kernel_empty_parallel () {
+	fprintf(stderr, "Running the CUDA Empty Parallel Kernel on a 4x2 grid of 2x2 tile groups.\n\n");
+
+
+	/*****************************************************************************************************************
+	* Define the dimension of tile pool.
+	* Define path to binary.
+	* Initialize device, load binary and unfreeze tiles.
+	******************************************************************************************************************/
 	device_t device;
 	uint8_t mesh_dim_x = 4;
 	uint8_t mesh_dim_y = 4;
@@ -16,18 +23,40 @@ int kernel_empty_parallel () {
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/empty_parallel/main.riscv";
 
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
-	
+
+
+	/*****************************************************************************************************************
+	* Define grid_dim_x/y: total number of tile groups
+	* Define tg_dim_x/y: number of tiles in each tile group
+	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
+	******************************************************************************************************************/
 	uint8_t grid_dim_x = 4;
 	uint8_t grid_dim_y = 2;
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
+
+	/*****************************************************************************************************************
+	* Prepare list of input arguments for kernel.
+	******************************************************************************************************************/
 	int argv[1];
 
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
 
+	/*****************************************************************************************************************
+	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
+	******************************************************************************************************************/
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_empty", 0, argv);
+	
+
+	/*****************************************************************************************************************
+	* Launch and execute all tile groups on device and wait for all to finish. 
+	******************************************************************************************************************/
 	hb_mc_device_tile_groups_execute(&device);
 	
+
+	/*****************************************************************************************************************
+	* Freeze the tiles and memory manager cleanup. 
+	******************************************************************************************************************/
 	hb_mc_device_finish(&device); /* freeze the tiles and memory manager cleanup */
 
 	return HB_MC_SUCCESS;

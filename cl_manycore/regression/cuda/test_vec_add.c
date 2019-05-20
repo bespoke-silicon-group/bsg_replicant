@@ -1,12 +1,31 @@
 #include "test_vec_add.h"
 
 /*!
- * Runs the addition kernel on a 2x2 tile group at (0, 1). 
+ * Runs the vector addition a one 2x2 tile groups. A[N] + B[N] --> C[N]
+ * Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
 */
-int kernel_vec_add () {
-	fprintf(stderr, "Running the CUDA Vector Addition Kernel on a 2x2 tile group.\n\n");
 
+
+void host_vec_add (int *A, int *B, int *C, int N) { 
+	for (int i = 0; i < N; i ++) { 
+		C[i] = A[i] + B[i];
+	}
+	return;
+}
+
+
+int kernel_vec_add () {
+	fprintf(stderr, "Running the CUDA Vector Addition Kernel on one 2x2 tile groups.\n\n");
+
+	srand(time); 
+
+
+	/*****************************************************************************************************************
+	* Define the dimension of tile pool.
+	* Define path to binary.
+	* Initialize device, load binary and unfreeze tiles.
+	******************************************************************************************************************/
 	device_t device;
 	uint8_t mesh_dim_x = 4;
 	uint8_t mesh_dim_y = 4;
@@ -18,62 +37,112 @@ int kernel_vec_add () {
 	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
 
 
-	uint32_t size_buffer = 256; 
-	eva_t A_device, B_device, C_device; 
-	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &A_device); /* allocate A on the device */
-	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &B_device); /* allocate B on the device */
-	hb_mc_device_malloc(&device, size_buffer * sizeof(uint32_t), &C_device); /* allocate C on the device */
 
-	uint32_t A_host[size_buffer]; /* allocate A on the host */ 
-	uint32_t B_host[size_buffer]; /* allocate B on the host */
-	srand(0);
-	for (int i = 0; i < size_buffer; i++) { /* fill A and B with arbitrary data */
-		A_host[i] = rand() % ((1 << 16) - 1); /* avoid overflow */
-		B_host[i] = rand() % ((1 << 16) - 1); 
+
+	/*****************************************************************************************************************
+	* Allocate memory on the device for A, B and C.
+	******************************************************************************************************************/
+	uint32_t N = 1024;
+
+	eva_t A_device, B_device, C_device; 
+	hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device); /* allocate A[N] on the device */
+	hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B_device); /* allocate B[N] on the device */
+	hb_mc_device_malloc(&device, N * sizeof(uint32_t), &C_device); /* allocate C[N] on the device */
+
+
+
+	/*****************************************************************************************************************
+	* Allocate memory on the host for A & B and initialize with random values.
+	******************************************************************************************************************/
+	uint32_t A_host[N]; /* allocate A[N] on the host */ 
+	uint32_t B_host[N]; /* allocate B[N] on the host */
+	for (int i = 0; i < N; i++) { /* fill A with arbitrary data */
+		A_host[i] = rand() & 0xFFFF;
+		B_host[i] = rand() & 0xFFFF;
 	}
 
+
+
+	/*****************************************************************************************************************
+	* Copy A & B from host onto device DRAM.
+	******************************************************************************************************************/
 	void *dst = (void *) ((intptr_t) A_device);
 	void *src = (void *) &A_host[0];
-	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A1 to the device  */	
+	hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	dst = (void *) ((intptr_t) B_device);
 	src = (void *) &B_host[0];
-	hb_mc_device_memcpy (&device, dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
+	hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
 
-	uint8_t grid_dim_x = 1;
-	uint8_t grid_dim_y = 1;
+
+
+	/*****************************************************************************************************************
+	* Define block_size_x/y: amount of work for each tile group
+	* Define tg_dim_x/y: number of tiles in each tile group
+	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
+	******************************************************************************************************************/
+	uint32_t block_size_x = N;
+
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
 
-	int argv[4] = {A_device, B_device, C_device, size_buffer};
+	uint32_t grid_dim_x = 1;
+	uint32_t grid_dim_y = 1;
 
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add", 4, argv);
 
+	/*****************************************************************************************************************
+	* Prepare list of input arguments for kernel.
+	******************************************************************************************************************/
+	int argv[5] = {A_device, B_device, C_device, N, block_size_x};
+
+	/*****************************************************************************************************************
+	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
+	******************************************************************************************************************/
+	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add", 5, argv);
+
+	/*****************************************************************************************************************
+	* Launch and execute all tile groups on device and wait for all to finish. 
+	******************************************************************************************************************/
 	hb_mc_device_tile_groups_execute(&device);
 	
 
-	uint32_t C_host[size_buffer];
+
+	/*****************************************************************************************************************
+	* Copy result matrix back from device DRAM into host memory. 
+	******************************************************************************************************************/
+	uint32_t C_host[N];
 	src = (void *) ((intptr_t) C_device);
 	dst = (void *) &C_host[0];
-	hb_mc_device_memcpy (&device, (void *) dst, src, size_buffer * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C to the host */
+	hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C to the host */
+
+
+
+	/*****************************************************************************************************************
+	* Freeze the tiles and memory manager cleanup. 
+	******************************************************************************************************************/
+	hb_mc_device_finish(&device); 
+
+
+	/*****************************************************************************************************************
+	* Calculate the expected result using host code and compare the results. 
+	******************************************************************************************************************/
+	uint32_t C_expected[N]; 
+	host_vec_add (A_host, B_host, C_expected, N); 
 
 
 	int mismatch = 0; 
-	for (int i = 0; i < size_buffer; i++) {
+	for (int i = 0; i < N; i++) {
 		if (A_host[i] + B_host[i] == C_host[i]) {
-			fprintf(stderr, "Success -- A[%d] + B[%d] =  0x%x + 0x%x = 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
+			fprintf(stderr, "Success -- C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
 		}
 		else {
-			fprintf(stderr, "Failed -- A[%d] + B[%d] =  0x%x + 0x%x != 0x%x\n", i, i , A_host[i], B_host[i], C_host[i]);
+			fprintf(stderr, "Failed  -- C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
 			mismatch = 1;
 		}
-	}	
+	} 
 
-
-	hb_mc_device_finish(&device); /* freeze the tiles and memory manager cleanup */
-	
-
-	if (mismatch)
+	if (mismatch) { 
 		return HB_MC_FAIL;
+	}
 	return HB_MC_SUCCESS;
 }
 
