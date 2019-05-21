@@ -557,16 +557,12 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[i]), KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-<<<<<<< HEAD
-		hb_mc_tile_unfreeze_dep(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
-=======
 
-		error = hb_mc_tile_unfreeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
+		error = hb_mc_tile_unfreeze_dep(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
 		if (error != HB_MC_SUCCESS) { 
 			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_unfreeze(): failed to unfreeze tile (%d,%d).\n", device->mesh->tiles[i].x, device->mesh->tiles[i].y);
 			return HB_MC_FAIL;
 		}
->>>>>>> 69c6211... Added some debug statements in bsg_manycore_cuda.cpp library.
 	}
 
 	device->tile_group_capacity = 1;
