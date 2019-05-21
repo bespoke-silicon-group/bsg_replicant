@@ -39,8 +39,8 @@ typedef enum __hb_mc_direction_t {  /*  */
 static inline const char *hb_mc_direction_to_string(hb_mc_direction_t dir)
 {
         static const char *strtab [] = {
-                [HB_MC_MMIO_FIFO_TO_DEVICE] = "tx (to-device)",
-                [HB_MC_MMIO_FIFO_TO_HOST]   = "rx (to-host)",
+                [HB_MC_MMIO_FIFO_TO_DEVICE] = "host-initiated",
+                [HB_MC_MMIO_FIFO_TO_HOST]   = "device-initiated",
         };
 
         return strtab[dir];
