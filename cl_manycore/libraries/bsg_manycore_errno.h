@@ -14,6 +14,8 @@ extern "C" {
 #define HB_MC_TIMEOUT       (-2)
 #define HB_MC_UNINITIALIZED (-3)
 #define HB_MC_INVALID       (-4)
+#define HB_MC_NOMEM         (-5)
+#define HB_MC_INITIALIZED_TWICE (-6)
 
 static inline const char * hb_mc_strerror(int err)
 {
@@ -23,6 +25,8 @@ static inline const char * hb_mc_strerror(int err)
                 [-HB_MC_TIMEOUT] = "Timeout",
 		[-HB_MC_UNINITIALIZED] = "Manycore not initialized",
 		[-HB_MC_INVALID] = "Invalid input",
+		[-HB_MC_NOMEM]   = "Out of memory",
+		[-HB_MC_INITIALIZED_TWICE] = "Non-zeroed input",
         };
         return strtab[-err];
 }
