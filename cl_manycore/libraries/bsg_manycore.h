@@ -34,6 +34,7 @@ typedef struct hb_mc_manycore {
         void    *private_data;   //!< implementation private data
 } hb_mc_manycore_t;
 
+#define HB_MC_MANYCORE_INIT {0}
 /*********************/
 /* Configuration API */
 /*********************/
