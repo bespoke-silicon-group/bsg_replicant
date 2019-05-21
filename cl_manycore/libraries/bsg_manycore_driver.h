@@ -127,6 +127,7 @@ static inline const char *hb_mc_fifo_tx_to_string(hb_mc_fifo_tx_t type)
 	[HB_MC_FIFO_TX_REQ] = "tx-requests",
 	[HB_MC_FIFO_TX_RSP] = "tx-responses",
     };
+    return strtab[type];
 }
         
 inline hb_mc_direction_t hb_mc_get_rx_direction(hb_mc_fifo_rx_t d){
