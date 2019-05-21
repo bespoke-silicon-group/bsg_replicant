@@ -1,12 +1,14 @@
 #define DEBUG
 #ifndef COSIM
 #include <bsg_manycore.h>
+#include <bsg_manycore_driver.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_printing.h>
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #else
 #include "bsg_manycore.h"
+#include "bsg_manycore_driver.h"
 #include "bsg_manycore_mmio.h"
 #include "bsg_manycore_printing.h"
 #include "fpga_pci_sv.h"
@@ -861,7 +863,7 @@ static int hb_mc_manycore_format_store_request_packet(hb_mc_manycore_t *mc,
 	if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
 		return r;
 
-	hb_mc_request_packet_set_opcode(mc, pkt, HB_MC_PACKET_OP_REMOTE_STORE);
+	hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_STORE);
 
 	return 0;
 }
@@ -875,7 +877,7 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 	if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
 		return r;
 
-	hb_mc_request_packet_set_opcode(mc, pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
+	hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
 
 	return 0;
 }
@@ -885,7 +887,7 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 ////////////////
 
 static int hb_mc_manycore_read_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz);
-static int hb_mc_manycore_write_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_T sz);
+static int hb_mc_manycore_write_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz);
 
 /**
  * Write memory out to manycore hardware starting at a given NPA
