@@ -135,7 +135,7 @@ module bsg_manycore_endpoint_request_timer #(
       src_y_cord_r <= src_y_cord_i;
     end
 
-  assign data_o = (state_r == E_BUBBLE) ? (bubble_r ? data_width_p'(timer_cnt_r[timer_wdith_lp:32])
+  assign data_o = (state_r == E_BUBBLE) ? (bubble_r ? data_width_p'(timer_cnt_r[timer_wdith_lp-1:32])
                                                   : data_width_p'(timer_cnt_r[31:0]))
                                                   : data_r;
   assign mask_o = (state_r == E_BUBBLE) ? (data_width_p>>3)'(-1) : mask_r;

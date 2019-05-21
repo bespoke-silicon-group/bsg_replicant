@@ -19,6 +19,7 @@ module bsg_manycore_link_to_axil #(
   , localparam axil_data_width_lp = 32
   , localparam mc_data_width_lp = 128
   , localparam axil_fifo_els_lp = 256
+  , localparam rcv_fifo_els_lp = 256
   , localparam num_endpoint_lp = 1
   // endpoint parameters
   , parameter x_cord_width_p="inv"
@@ -28,7 +29,7 @@ module bsg_manycore_link_to_axil #(
   , parameter data_width_p = "inv"
   , parameter max_out_credits_p = "inv"
   , parameter load_id_width_p = "inv"
-  , localparam credits_width_lp = $clog2(max_out_credits_p+1)
+  , localparam credits_width_lp = `BSG_WIDTH(max_out_credits_p)
   , localparam link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
   , localparam packet_width_lp = `bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
   , localparam return_packet_width_lp =`bsg_manycore_return_packet_width(x_cord_width_p,y_cord_width_p,data_width_p,load_id_width_p)
@@ -46,9 +47,10 @@ module bsg_manycore_link_to_axil #(
   localparam num_slots_lp = num_endpoint_lp*2;
 
   // monitor signals
-  logic [num_endpoint_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] mc_out_credits_lo  ;
-  logic [   num_slots_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] rcv_vacancy_lo     ;
-  logic [   num_slots_lp-1:0][                             31:0] rcv_vacancy_lo_cast;
+  logic [num_endpoint_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] mc_out_credits_lo     ;
+  logic [num_endpoint_lp-1:0][                             31:0] mc_out_credits_lo_cast;
+  logic [   num_slots_lp-1:0][  `BSG_WIDTH(rcv_fifo_els_lp)-1:0] rcv_vacancy_lo        ;
+  logic [   num_slots_lp-1:0][                             31:0] rcv_vacancy_lo_cast   ;
 
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_li   ;
   logic [num_endpoint_lp*2-1:0][mc_data_width_lp-1:0] mc_fifo_data_li;
@@ -93,6 +95,10 @@ module bsg_manycore_link_to_axil #(
   logic [axil_addr_width_lp-1:0] rom_addr_li;
   logic [axil_data_width_lp-1:0] rom_data_lo;
 
+  for (genvar i=0; i<num_endpoint_lp; i++) begin : mc_credits
+    assign mc_out_credits_lo_cast[i] = 32'(mc_out_credits_lo[i]);
+  end
+
   bsg_axil_to_fifos #(
     .num_slots_p     (num_slots_lp    )
     ,.fifo_els_p      (axil_fifo_els_lp)
@@ -111,7 +117,7 @@ module bsg_manycore_link_to_axil #(
     ,.rom_addr_o      (rom_addr_li           )
     ,.rom_data_i      (rom_data_lo           )
     ,.rcv_vacancy_i   (rcv_vacancy_lo_cast   )
-    ,.mc_out_credits_i(32'(mc_out_credits_lo))
+    ,.mc_out_credits_i(mc_out_credits_lo_cast)
   );
 
   localparam lg_rom_els_lp = `BSG_SAFE_CLOG2(rom_els_p);
@@ -137,9 +143,9 @@ module bsg_manycore_link_to_axil #(
 
   for (genvar i=0; i<num_slots_lp; i++) begin : mc128_to_fifo32
     bsg_counter_up_down #(
-      .max_val_p (max_out_credits_p)
-      ,.init_val_p(max_out_credits_p)
-      ,.max_step_p(1                )
+      .max_val_p (rcv_fifo_els_lp)
+      ,.init_val_p(rcv_fifo_els_lp)
+      ,.max_step_p(1              )
     ) rcv_vacancy_cnt (
       .clk_i  (clk_i            )
       ,.reset_i(reset_i          )
@@ -150,9 +156,9 @@ module bsg_manycore_link_to_axil #(
     assign rcv_vacancy_lo_cast[i] = 32'(rcv_vacancy_lo[i]);
 
     bsg_fifo_1r1w_small #(
-      .width_p           (mc_data_width_lp),
-      .els_p             (axil_fifo_els_lp),
-      .ready_THEN_valid_p(0               )  // for input
+      .width_p           (mc_data_width_lp)
+      ,.els_p             (rcv_fifo_els_lp )
+      ,.ready_THEN_valid_p(0               )  // for input
     ) rcv_fifo (
       .clk_i  (clk_i             )
       ,.reset_i(reset_i           )

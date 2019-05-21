@@ -23,21 +23,21 @@ module bsg_manycore_endpoint_to_fifos #(
   , localparam packet_width_lp = `bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
   , localparam return_packet_width_lp =`bsg_manycore_return_packet_width(x_cord_width_p,y_cord_width_p,data_width_p,load_id_width_p)
 ) (
-  input                                                   clk_i
-  ,input                                                   reset_i
+  input                                                clk_i
+  ,input                                                reset_i
   // fifo to endpoint
-  ,input  [num_endpoint_p*2-1:0]                           fifo_v_i
-  ,input  [num_endpoint_p*2-1:0][       fifo_width_lp-1:0] fifo_data_i
-  ,output [num_endpoint_p*2-1:0]                           fifo_rdy_o
+  ,input  [num_endpoint_p*2-1:0]                        fifo_v_i
+  ,input  [num_endpoint_p*2-1:0][    fifo_width_lp-1:0] fifo_data_i
+  ,output [num_endpoint_p*2-1:0]                        fifo_rdy_o
   // endpoint to fifo
-  ,output [num_endpoint_p*2-1:0]                           fifo_v_o
-  ,output [num_endpoint_p*2-1:0][       fifo_width_lp-1:0] fifo_data_o
-  ,input  [num_endpoint_p*2-1:0]                           fifo_rdy_i
-  ,input  [  num_endpoint_p-1:0][   link_sif_width_lp-1:0] link_sif_i
-  ,output [  num_endpoint_p-1:0][   link_sif_width_lp-1:0] link_sif_o
-  ,input  [  num_endpoint_p-1:0][      x_cord_width_p-1:0] my_x_i
-  ,input  [  num_endpoint_p-1:0][      y_cord_width_p-1:0] my_y_i
-  ,output [  num_endpoint_p-1:0][credits_width_lp-1:0] out_credits_o
+  ,output [num_endpoint_p*2-1:0]                        fifo_v_o
+  ,output [num_endpoint_p*2-1:0][    fifo_width_lp-1:0] fifo_data_o
+  ,input  [num_endpoint_p*2-1:0]                        fifo_rdy_i
+  ,input  [  num_endpoint_p-1:0][link_sif_width_lp-1:0] link_sif_i
+  ,output [  num_endpoint_p-1:0][link_sif_width_lp-1:0] link_sif_o
+  ,input  [  num_endpoint_p-1:0][   x_cord_width_p-1:0] my_x_i
+  ,input  [  num_endpoint_p-1:0][   y_cord_width_p-1:0] my_y_i
+  ,output [  num_endpoint_p-1:0][ credits_width_lp-1:0] out_credits_o
 );
 
   `declare_bsg_mcl_request_s;

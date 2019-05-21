@@ -61,7 +61,7 @@ module bsg_axil_to_fifos #(
   ,output [                      31:0]                    rom_addr_o
   ,input  [                      31:0]                    rom_data_i
   ,input  [           num_slots_p-1:0][             31:0] rcv_vacancy_i
-  ,input  [                      31:0]                    mc_out_credits_i
+  ,input  [         num_slots_p/2-1:0][             31:0] mc_out_credits_i
 );
 
   // synopsys translate_off
@@ -69,6 +69,11 @@ module bsg_axil_to_fifos #(
     assert (fifo_width_lp%8 == 0)
       else begin
         $error("## axis fifo width should be multiple of 8!");
+        $finish();
+      end
+    assert (num_slots_p%2 == 0)
+      else begin
+        $error("## axis fifo slot number should be multiple of 2!");
         $finish();
       end
   end
@@ -236,9 +241,9 @@ module bsg_axil_to_fifos #(
 
   for (genvar i=0; i<num_slots_p; i++) begin : transmit_fifo
     bsg_counter_up_down #(
-      .max_val_p (fifo_els_p),
-      .init_val_p(fifo_els_p),
-      .max_step_p(1         )
+      .max_val_p (fifo_els_p)
+      ,.init_val_p(fifo_els_p)
+      ,.max_step_p(1         )
     ) tx_vacancy_counter (      .*,
       .down_i (tx_enqueue[i]   )
       ,.up_i   (tx_dequeue[i]   )
@@ -431,9 +436,9 @@ module bsg_axil_to_fifos #(
     monitor_data_lo = '0;
     if (read_from_rom & rvalid_lo)
       case (rd_addr_r[0+:config_addr_width_lp])
-        rcv_vacancy_req_lp : monitor_data_lo = rcv_vacancy_i[0];
+        rcv_vacancy_rsp_lp : monitor_data_lo = rcv_vacancy_i[0];
         rcv_vacancy_req_lp : monitor_data_lo = rcv_vacancy_i[1];
-        mc_out_credits_lp  : monitor_data_lo = mc_out_credits_i;
+        mc_out_credits_lp  : monitor_data_lo = mc_out_credits_i[0];
         default            : monitor_data_lo = rom_data_i;
       endcase
   end
