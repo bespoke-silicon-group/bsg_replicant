@@ -18,8 +18,14 @@ void print_config(hb_mc_manycore_t *manycore)
 static
 int test_manycore_compile(void)
 {
-	hb_mc_manycore_t manycore;
-	hb_mc_manycore_init(&manycore, "manycore@test_manycore_compile", 0);
+        int rc;
+        hb_mc_manycore_t manycore;
+        rc = hb_mc_manycore_init(&manycore, "manycore@test_manycore_compile", 0);
+        if(rc != HB_MC_SUCCESS){
+                bsg_pr_test_err("Failed to initialize manycore device!\n");
+                return HB_MC_FAIL;
+        }
+
         uintptr_t addr = hb_mc_mmio_fifo_get_reg_addr(HB_MC_FIFO_RX_REQ,
                                                       HB_MC_MMIO_FIFO_ISR_OFFSET);
         uint32_t val;
@@ -27,21 +33,21 @@ int test_manycore_compile(void)
         bsg_pr_test_info("Value @ 0x%08" PRIx32 " = 0x%08" PRIx32 "\n", addr, val);
 
         print_config(&manycore);
-	return 0;
+        return 0;
 }
 #ifdef COSIM
-void test_main(uint32_t *exit_code) {	
-	bsg_pr_test_info("test_manycore_compile Regression Test (COSIMULATION)\n");
-	int rc = test_manycore_compile();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+void test_main(uint32_t *exit_code) {   
+        bsg_pr_test_info("test_manycore_compile Regression Test (COSIMULATION)\n");
+        int rc = test_manycore_compile();
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main() {
-	bsg_pr_test_info("test_manycore_compile Regression Test (F1)\n");
-	int rc = test_manycore_compile();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("test_manycore_compile Regression Test (F1)\n");
+        int rc = test_manycore_compile();
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif

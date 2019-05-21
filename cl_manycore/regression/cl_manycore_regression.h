@@ -8,14 +8,20 @@
 /**
  * bsg_pr_test_info() a version of printf. All regression tests should prefer this function over direct stdio calls.
  */
-#define bsg_pr_test_info(fmt, ...)					\
+#define bsg_pr_test_info(fmt, ...)                                      \
     printf("BSG INFO: " fmt, ##__VA_ARGS__)
+
+/**
+ * bsg_pr_test_info() a version of printf(stderr,...). All regression tests should prefer this function over direct stdio calls.
+ */
+#define bsg_pr_test_err(fmt, ...)                                      \
+    fprintf(stderr, BSG_RED("BSG ERR: " fmt), ##__VA_ARGS__)
 
 /**
  * bsg_pr_test_pass_fail() prints a success/fail message depending on a test condition
  * @param[in] success_condition a condition which, if true, indicates that the test has passed
  */
-#define bsg_pr_test_pass_fail(success_condition)			\
+#define bsg_pr_test_pass_fail(success_condition)                        \
         printf("BSG REGRESSION TEST %s\n", ((success_condition) ? BSG_GREEN("PASSED") : BSG_RED("FAILED")))
 
 // Compares two arrays and prints the indices of mismatching elements. 
@@ -55,16 +61,16 @@ int compare_arrays(int num_fields, const uint32_t *expected, const uint32_t *act
 // @returns HB_MC_SUCCESS if all fields at corresponding indices in expected and actual match, HB_MC_FAIL otherwise
 static
 int compare_results(int num_fields, const char *desc[], const uint32_t *expected, const uint32_t *actual) {
-	int success = 1;
-	for(int i = 0; i < num_fields; i++) {
-		bsg_pr_test_info("%s: Expected = %u, Actual = %u", desc[i], expected[i], actual[i]);
-		if(expected[i] != actual[i]) {
-			printf(BSG_RED(" Failed\n"));
-			success = 0;
-		} 
-		else
-			printf(BSG_GREEN(" Success\n"));
-	}
+        int success = 1;
+        for(int i = 0; i < num_fields; i++) {
+                bsg_pr_test_info("%s: Expected = %u, Actual = %u", desc[i], expected[i], actual[i]);
+                if(expected[i] != actual[i]) {
+                        printf(BSG_RED(" Failed\n"));
+                        success = 0;
+                } 
+                else
+                        printf(BSG_GREEN(" Success\n"));
+        }
         return success ? HB_MC_SUCCESS : HB_MC_FAIL;
 }
 
