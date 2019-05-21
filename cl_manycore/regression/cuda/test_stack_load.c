@@ -2,7 +2,6 @@
 
 /*!
  * Runs the stack_load test on a grid of one tile group
- * If the test fails, the execution will hang.
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/stack_load/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
 */
 
