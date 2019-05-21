@@ -1129,6 +1129,8 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
 	size_t n_words = sz >> 2;
 	npa_t  addr = *npa;
 
+	/* we batch our read requests here instead of completing each read one at a time */
+
 	/* send a read request for each word */
 	for (size_t i = 0; i < n_words; i++) {
 		addr.epa++; // epas are in terms of word
