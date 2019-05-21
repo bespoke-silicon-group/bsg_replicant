@@ -45,6 +45,7 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_tile.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_printing.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_cuda.cpp
 
 CFLAGS   = -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
