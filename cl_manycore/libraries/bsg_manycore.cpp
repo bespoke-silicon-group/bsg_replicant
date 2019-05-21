@@ -296,7 +296,7 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
         for (idx = HB_MC_CONFIG_MIN; idx < HB_MC_CONFIG_MAX; idx++) {
 		addr = hb_mc_config_id_to_addr(HB_MC_MMIO_ROM_BASE,
 					       (hb_mc_config_id_t) idx);
-		
+
                 err = hb_mc_manycore_mmio_read32(mc, addr, &config[idx]);
                 if (err != HB_MC_SUCCESS) {
                         manycore_pr_err(mc, "%s: failed to read config word %d from ROM\n",
@@ -929,8 +929,113 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 // Memory API //
 ////////////////
 
-static int hb_mc_manycore_read_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz);
-static int hb_mc_manycore_write_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz);
+/* send a read request and don't wait for the return packet */
+static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, npa_t *npa, size_t sz)
+{
+	hb_mc_packet_t rqst;
+	int err;
+
+	/* format the request packet */
+	err = hb_mc_format_load_request_packet(mc, &rqst->request, npa);
+	if (err != HB_MC_SUCCESS) {
+		manycore_pr_err(mc, "%s: failed to format load request packet: %s\n",
+				__func__, hb_mc_strerror(err));
+		return err;
+	}
+
+	/* set the byte mask */
+	switch (sz) {
+	case 4:
+		hb_mc_request_packet_set_mask(&rqst->request, HB_MC_PACKET_REQUEST_MASK_WORD);
+		break;
+	case 2:
+	case 1:
+		manycore_pr_err(mc, "%zu byte reads are not yet supported\n", sz);
+		return HB_MC_NOIMPL;
+	default:
+		return HB_MC_INVALID;
+	}
+
+	/* transmit the request to the hardware */
+	err = hb_mc_manycore_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
+	if (err != HB_MC_SUCCESS) {
+		manycore_pr_err(mc, "%s: failed to send request packet: %s\n",
+				__func__, hb_mc_strerror(err));
+		return err;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+/* read a response packet for a read request to an npa */
+static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz)
+{
+	hb_mc_packet_t rsp;
+
+	/* receive a packet from the hardware */
+	err = hb_mc_manycore_packet_rx(mc, &rsp, HB_MC_FIFO_RX_RSP, -1);
+	if (err != HB_MC_SUCCESS) {
+		manycore_pr_err(mc, "%s: failed to read response packet: %s\n",
+				__func__, hb_mc_strerror(err));
+		return err;
+	}
+
+	/* check that the npa matches? */
+
+	/* read data from packet */
+	switch (sz) {
+	case 4:
+		*(uint32_t*)vp = hb_mc_respone_packet_get_data(&rsp->response);
+		break;
+	case 2:
+	case 1:
+		manycore_pr_err("%zu byte reads are not yet supported\n", sz);
+		return HB_MC_NOIMPL;
+	default:
+		return HB_MC_INVALID:
+	}
+
+	return HB_MC_SUCCESS;
+}
+/* read from a memory address on the manycore */
+static int hb_mc_manycore_read(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz)
+{
+	int err;
+
+	err = hb_mc_manycore_send_read_rqst(mc, npa, sz);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	return hb_mc_manycore_recv_read_rsp(mc, npa, vp, sz);
+}
+
+static int hb_mc_manycore_write(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz)
+{
+	int err;
+	hb_mc_packet_t rqst;
+
+	/* format the packet */
+	err = hb_mc_manycore_format_store_request_packet(mc, &rqst->request, npa);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	/* set data and size */
+	switch (sz) {
+	case 4:
+		hb_mc_request_packet_set_data(&rqst->request, *(uint32_t)vp);
+		hb_mc_request_packet_set_mask(&rqst->request, HB_MC_PACKET_REQUEST_MASK_WORD);
+		break;
+	case 2:
+	case 1:
+		manycore_pr_err("%zu byte writes are not yet supported\n", sz);
+		return HB_MC_NOIMPL;
+	default:
+		return HB_MC_INVALID;
+	}
+
+	/* transmit the request */
+	return hb_mc_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
+}
 
 /**
  * Write memory out to manycore hardware starting at a given NPA
@@ -961,7 +1066,10 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
  * @param[out] vp     A byte to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read8(const hb_mc_manycore_t *mc, npa_t *npa, uint8_t *vp);
+int hb_mc_manycore_read8(const hb_mc_manycore_t *mc, npa_t *npa, uint8_t *vp)
+{
+	return hb_mc_manycore_read(mc, npa, vp, 1);
+}
 
 /**
  * Read a 16-bit half-word from manycore hardware at a given NPA
@@ -970,7 +1078,10 @@ int hb_mc_manycore_read8(const hb_mc_manycore_t *mc, npa_t *npa, uint8_t *vp);
  * @param[out] vp     A half-word to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read16(const hb_mc_manycore_t *mc, npa_t *npa, uint16_t *vp);
+int hb_mc_manycore_read16(const hb_mc_manycore_t *mc, npa_t *npa, uint16_t *vp)
+{
+	return hb_mc_manycore_read(mc, npa, vp, 2);
+}
 
 /**
  * Read a 32-bit word from manycore hardware at a given NPA
@@ -979,7 +1090,10 @@ int hb_mc_manycore_read16(const hb_mc_manycore_t *mc, npa_t *npa, uint16_t *vp);
  * @param[out] vp     A word to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read32(const hb_mc_manycore_t *mc, npa_t *npa, uint32_t *vp);
+int hb_mc_manycore_read32(const hb_mc_manycore_t *mc, npa_t *npa, uint32_t *vp)
+{
+	return hb_mc_manycore_read(mc, npa, vp, 4);
+}
 
 /**
  * Write one byte to manycore hardware at a given NPA
@@ -988,7 +1102,10 @@ int hb_mc_manycore_read32(const hb_mc_manycore_t *mc, npa_t *npa, uint32_t *vp);
  * @param[in]  v      A byte value to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write8(const hb_mc_manycore_t *mc, npa_t *npa, uint8_t v);
+int hb_mc_manycore_write8(const hb_mc_manycore_t *mc, npa_t *npa, uint8_t v)
+{
+	return hb_mc_manycore_write(mc, npa, vp, &v, 1);
+}
 
 /**
  * Write a 16-bit half-word to manycore hardware at a given NPA
@@ -997,7 +1114,10 @@ int hb_mc_manycore_write8(const hb_mc_manycore_t *mc, npa_t *npa, uint8_t v);
  * @param[in]  v      A half-word value to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write16(const hb_mc_manycore_t *mc, npa_t *npa, uint16_t v);
+int hb_mc_manycore_write16(const hb_mc_manycore_t *mc, npa_t *npa, uint16_t v)
+{
+	return hb_mc_manycore_write(mc, npa, vp, &v, 2);
+}
 
 /**
  * Write a 32-bit word to manycore hardware at a given NPA
@@ -1006,7 +1126,10 @@ int hb_mc_manycore_write16(const hb_mc_manycore_t *mc, npa_t *npa, uint16_t v);
  * @param[in]  v      A word value to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write32(const hb_mc_manycore_t *mc, npa_t *npa, uint32_t v);
+int hb_mc_manycore_write32(const hb_mc_manycore_t *mc, npa_t *npa, uint32_t v)
+{
+	return hb_mc_manycore_write(mc, npa, vp, &v, 4);
+}
 
 /////////////////////////////
 // Address Translation API //
