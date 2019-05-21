@@ -23,7 +23,6 @@
 extern "C" {
 #endif
 
-
 typedef int hb_mc_manycore_id_t;
 #define HB_MC_MANYCORE_ID_ANY -1
 
@@ -34,6 +33,15 @@ typedef struct hb_mc_manycore {
 	hb_mc_config_t config;   //!< configuration of the manycore
 	void    *private_data;   //!< implementation private data
 } hb_mc_manycore_t;
+
+/*********************/
+/* Configuration API */
+/*********************/
+static hb_mc_coordinate_t hb_mc_manycore_get_host_coordinate(hb_mc_manycore_t *mc)
+{
+    return hb_mc_coordinate(mc->config[HB_MC_CONFIG_HOST_INTF_COORD_X],
+			    mc->config[HB_MC_CONFIG_HOST_INTF_COORD_Y]);
+}
 
 ///////////////////
 // Init/Exit API //

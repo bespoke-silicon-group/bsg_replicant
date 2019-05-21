@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <cinttypes>
+#include <vector>
 
 #define array_size(x)                                                   \
         (sizeof(x)/sizeof(x[0]))
@@ -67,16 +68,16 @@ static int hb_mc_manycore_fifo_get_isr_bit(hb_mc_manycore_t *mc, hb_mc_direction
 				hb_mc_direction_to_string(dir), hb_mc_strerror(err));
 		return err;
 	}
-	
+
 	*v = (tmp >> bit) & 1;
-	return HB_MC_SUCCESS;	
+	return HB_MC_SUCCESS;
 }
 
 static int hb_mc_manycore_fifo_clear_isr_bit(hb_mc_manycore_t *mc, hb_mc_direction_t dir, uint32_t bit)
 {
 	uintptr_t isr_addr = hb_mc_mmio_fifo_get_reg_addr(dir, HB_MC_MMIO_FIFO_ISR_OFFSET);
 	int err;
-	
+
 	err = hb_mc_manycore_mmio_write32(mc, isr_addr, (1<<bit));
 	if (err != HB_MC_SUCCESS) {
 		manycore_pr_err(mc, "failed to set bit in %s ISR register: %s\n",
@@ -697,13 +698,13 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
                                 __func__);
                 return HB_MC_INVALID;
         }
-	
+
         // get the address of the data and length registers
         data_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_DATA_OFFSET);
         len_addr  = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_LENGTH_OFFSET);
-        
+
         // get the direction
-        dir = hb_mc_get_tx_direction(type); // ? MHR: why is the direction not "to-device" ?
+        dir = hb_mc_get_tx_direction(type);
 
 	// get vacancy
 	err = hb_mc_manycore_tx_fifo_get_vacancy(mc, type, &vacancy);
@@ -744,7 +745,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 					__func__, typestr, hb_mc_strerror(err));
 			return err;
 		}
-		
+
 		err = hb_mc_manycore_fifo_get_isr_bit(mc, dir, HB_MC_MMIO_FIFO_IXR_TC_BIT, &tx_complete);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: failed to read TX-Complete bit for FIFO %s (direction = %s):"
@@ -761,7 +762,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 				__func__, typestr, hb_mc_direction_to_string(dir), hb_mc_strerror(err));
 		return err;
 	}
-	
+
 	return HB_MC_SUCCESS;
 }
 
@@ -801,7 +802,7 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
                                         __func__, typestr, hb_mc_strerror(err));
                         return err;
                 }
-                
+
         } while (occupancy < 1);
 
         /* get FIFO length */
@@ -835,9 +836,78 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
+/////////////////////////////
+// Packet Helper Functions //
+/////////////////////////////
+
+static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_request_packet_t *pkt, npa_t *npa)
+{
+	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(mc);
+
+	hb_mc_request_packet_set_x_dst(pkt, npa->x);
+	hb_mc_request_packet_set_y_dst(pkt, npa->y);
+	hb_mc_request_packet_set_x_src(pkt, hb_mc_coordinate_get_x(host_coordinate));
+	hb_mc_request_packet_set_y_src(pkt, hb_mc_coordinate_get_y(host_coordinate));
+	hb_mc_request_packet_set_addr(pkt, npa->epa);
+	return 0;
+}
+
+static int hb_mc_manycore_format_store_request_packet(hb_mc_manycore_t *mc,
+						      hb_mc_request_packet_t *pkt,
+						      npa_t *npa)
+{
+	int r;
+
+	if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+		return r;
+
+	hb_mc_request_packet_set_opcode(mc, pkt, HB_MC_PACKET_OP_REMOTE_STORE);
+
+	return 0;
+}
+
+static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
+						     hb_mc_request_packet_t *pkt,
+						     npa_t *npa)
+{
+	int r;
+
+	if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+		return r;
+
+	hb_mc_request_packet_set_opcode(mc, pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
+
+	return 0;
+}
+
 ////////////////
 // Memory API //
 ////////////////
+
+static int hb_mc_manycore_read_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz);
+static int hb_mc_manycore_write_one(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_T sz);
+
+/**
+ * Write memory out to manycore hardware starting at a given NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid npa_t
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
+			     const void *data, size_t sz);
+
+/**
+ * Read memory from manycore hardware starting at a given NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid npa_t
+ * @param[in]  data   A buffer into which data will be read
+ * @param[in]  sz     The number of bytes to read from manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
+			    void *data, size_t sz);
 
 /**
  * Read one byte from manycore hardware at a given NPA
@@ -893,27 +963,6 @@ int hb_mc_manycore_write16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t v);
  */
 int hb_mc_manycore_write32(hb_mc_manycore_t *mc, npa_t *npa, uint32_t v);
 
-/**
- * Write memory out to manycore hardware starting at a given NPA
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
- * @param[in]  data   A buffer to be written out manycore hardware
- * @param[in]  sz     The number of bytes to write to manycore hardware
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
-				    const void *data, size_t sz);
-
-/**
- * Read memory from manycore hardware starting at a given NPA
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
- * @param[in]  data   A buffer into which data will be read
- * @param[in]  sz     The number of bytes to read from manycore hardware
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
-				   void *data, size_t sz);
 /////////////////////////////
 // Address Translation API //
 /////////////////////////////
