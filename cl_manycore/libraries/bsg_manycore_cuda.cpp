@@ -225,32 +225,32 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 						device->mesh->tiles[tile_id].free = 0;
 
 						if (hb_mc_tile_set_origin_registers(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y) != HB_MC_SUCCESS){
-							fprintf (stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_origin_registers(): failed to set tile group origin registers CSR_TGO_X/Y.\n");
+							fprintf (stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_origin_registers(): failed to set tile (%d,%d) tile group origin registers CSR_TGO_X/Y.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 							return HB_MC_FAIL;
 						}
 
 						if (hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_origin_symbols(): failed to set tile group origin symbols __bsg_grp_org_x/y.\n");
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_origin_symbols(): failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 							return HB_MC_FAIL;
 						}
 
 						if (hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, (x - org_x), (y - org_y)) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_coord_symbols(): failed to set tile coordinate symbols __bsg_x/y.\n");
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_coord_symbols(): failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 							return HB_MC_FAIL;
 						}
 
 						if (hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, (x - org_x), (y - org_y), tg->dim_x, tg->dim_y) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_id_symbol(): failed to set tile id symbol __bsg_id.\n");
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_id_symbol(): failed to set tile (%d,%d) id symbol __bsg_id.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 							return HB_MC_FAIL;
 						}
 
 						if (hb_mc_tile_set_tile_group_id_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->id_x, tg->id_y) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_tile_group_id_symbol(): failed to set tile group id symbold __bsg_tile_group_id.\n");
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_tile_group_id_symbol(): failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 							return HB_MC_FAIL;
 						}
 
 						if (hb_mc_tile_set_grid_dim_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, tg->grid_dim_x, tg->grid_dim_y) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_grid_size_symbol(): failed to set tile grid size symbol __bsg_grid_size.\n");
+							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_grid_dim_symbol(): failed to set tile (%d,%d) grid size symbol __bsg_grid_size.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 							return HB_MC_FAIL;
 						}
 					}
@@ -284,10 +284,6 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, tile_group_id
 		fprintf(stderr, "hb_mc_tile_group_enqueue() --> hb_mc_fifo_check(): failed to verify device.\n"); 
 		return HB_MC_FAIL;
 	}
-
-
-	//uint32_t *finish_signal_addr = (uint32_t *) malloc (sizeof (uint32_t));	i
-	//*finish_signal_addr = 0; 
 
 
 	if (device->num_tile_groups == device->tile_group_capacity) { 
@@ -507,19 +503,53 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
-		hb_mc_tile_freeze(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+		error = hb_mc_tile_freeze(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+		if (error != HB_MC_SUCCESS) { 
+			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_freeze(): failed to freeze tile (%d,%d).\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL;
+		}
 
-		hb_mc_tile_set_origin_registers(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y);
 
-		hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y );
+		error = hb_mc_tile_set_origin_registers(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y);
+		if (error != HB_MC_SUCCESS) { 
+			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_set_origin_registers(): failed to set tile (%d,%d) tile group origin registers CSR_TGO_X/Y.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL;
+		}
 
-		hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y);
 
-		hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y, device->mesh->dim_x, device->mesh->dim_y);
+		error = hb_mc_tile_set_origin_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].origin_y );
+		if (error != HB_MC_SUCCESS) { 
+			fprintf(stderr, "hb_mc_device_init() --> hb_mc_tile_set_origin_symbols(): failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL;
+		}
 
-		hb_mc_tile_set_tile_group_id_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 0, 0);
 
-		hb_mc_tile_set_grid_dim_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 1, 1);	
+		error = hb_mc_tile_set_coord_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y);
+		if (error != HB_MC_SUCCESS) { 
+			fprintf(stderr, "hb_mc_device_init() --> hb_mc_tile_set_coord_symbols(): failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL;
+		}
+
+
+		error = hb_mc_tile_set_id_symbol(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, device->mesh->tiles[tile_id].x - device->mesh->tiles[tile_id].origin_x, device->mesh->tiles[tile_id].y - device->mesh->tiles[tile_id].origin_y, device->mesh->dim_x, device->mesh->dim_y);
+		if (error != HB_MC_SUCCESS) { 
+			fprintf(stderr, "hb_mc_device_init() --> hb_mc_tile_set_id_symbol(): failed to set tile (%d,%d) id symbol __bsg_id.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL;
+		}
+
+
+		error = hb_mc_tile_set_tile_group_id_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 0, 0);
+		if (error != HB_MC_SUCCESS) { 
+			fprintf(stderr, "hb_mc_device_init() --> hb_mc_tile_set_tile_group_id_symbol(): failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL; 
+		}
+
+
+		error = hb_mc_tile_set_grid_dim_symbols(device->fd, device->eva_id, device->elf, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y, 1, 1);	
+		if (error != HB_MC_SUCCESS) { 
+			fprintf(stderr, "hb_mc_device_init() --> hb_mc_tile_set_grid_dim_symbol(): failed to set tile (%d, %d) grid size symbol __bsg_grid_size.\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+			return HB_MC_FAIL;
+		}
 	}
 
 
@@ -537,7 +567,12 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[i]), KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_tile_unfreeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
+
+		error = hb_mc_tile_unfreeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
+		if (error != HB_MC_SUCCESS) { 
+			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_unfreeze(): failed to unfreeze tile (%d,%d).\n", device->mesh->tiles[i].x, device->mesh->tiles[i].y);
+			return HB_MC_FAIL;
+		}
 	}
 
 	device->tile_group_capacity = 1;
@@ -710,9 +745,9 @@ int hb_mc_device_finish (device_t *device) {
 		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */	
 	delete(mem_manager[device->eva_id]);
 	
-	for (int i = 0; i < device->mesh->dim_x * device->mesh->dim_y ; i++) { /* freeze tiles */
-		hb_mc_tile_freeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
-	}
+	//for (int i = 0; i < device->mesh->dim_x * device->mesh->dim_y ; i++) { /* freeze tiles */
+	//	hb_mc_tile_freeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
+	//}
 
 	free (device->tile_groups);
 

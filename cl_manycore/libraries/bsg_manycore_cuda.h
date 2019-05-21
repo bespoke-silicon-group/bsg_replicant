@@ -44,7 +44,7 @@ typedef struct {
 	char *name;
 	uint32_t argc;
 	uint32_t *argv;
-	uintptr_t finish_signal_addr;
+	uint32_t finish_signal_addr;
 } kernel_t;
 
 typedef struct {
