@@ -8,7 +8,6 @@
 #include "bsg_manycore.h"
 #include "bsg_manycore_driver.h"
 #include "bsg_manycore_mmio.h"
-#include "bsg_manycore_printing.h"
 #endif
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
