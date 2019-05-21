@@ -39,8 +39,7 @@ typedef struct hb_mc_manycore {
 /*********************/
 static hb_mc_coordinate_t hb_mc_manycore_get_host_coordinate(hb_mc_manycore_t *mc)
 {
-    return hb_mc_coordinate(mc->config[HB_MC_CONFIG_HOST_INTF_COORD_X],
-			    mc->config[HB_MC_CONFIG_HOST_INTF_COORD_Y]);
+        return hb_mc_config_get_host_interface(&mc->config);
 }
 
 ///////////////////
