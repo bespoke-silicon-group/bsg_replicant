@@ -19,7 +19,7 @@ extern "C" {
 /* #define BSG_PRINT_PREFIX_DEBUG "DEBUG @(%llu):   " */
 /* #endif */
 
-#define BSG_PRINT_PREFIX_DEBUG "DEBUG:   "
+#define BSG_PRINT_PREFIX_DEBUG "DEBUG"
 #define BSG_PRINT_PREFIX_ERROR "ERROR:   "
 #define BSG_PRINT_PREFIX_WARN  "WARNING: "
 #define BSG_PRINT_PREFIX_INFO  "INFO:    "
