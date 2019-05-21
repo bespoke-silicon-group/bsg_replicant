@@ -1,17 +1,20 @@
 REGRESSION_TESTS_TYPE = cuda
 
-C_REGRESSION_TESTS = test_empty 
-C_REGRESSION_TESTS += test_empty_parallel 
-C_REGRESSION_TESTS += test_barrier
-C_REGRESSION_TESTS += test_packet 
-C_REGRESSION_TESTS += test_stack_load
-C_REGRESSION_TESTS += test_vec_add
-C_REGRESSION_TESTS += test_vec_add_parallel
-C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
-C_REGRESSION_TESTS += test_shared_mem
-C_REGRESSION_TESTS += test_shared_mem_load_store
-C_REGRESSION_TESTS += test_matrix_mul
-C_REGRESSION_TESTS += test_matrix_mul_shared_mem
+# For F1, only run one test at a time, and reload the agfi image in between runs. To be fixed.
+C_REGRESSION_TESTS = test_empty
+
+#C_REGRESSION_TESTS = test_empty 
+#C_REGRESSION_TESTS += test_empty_parallel 
+#C_REGRESSION_TESTS += test_barrier
+#C_REGRESSION_TESTS += test_packet 
+#C_REGRESSION_TESTS += test_stack_load
+#C_REGRESSION_TESTS += test_vec_add
+#C_REGRESSION_TESTS += test_vec_add_parallel
+#C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
+#C_REGRESSION_TESTS += test_shared_mem
+#C_REGRESSION_TESTS += test_shared_mem_load_store
+#C_REGRESSION_TESTS += test_matrix_mul
+#C_REGRESSION_TESTS += test_matrix_mul_shared_mem
 
 CXX_REGRESSION_TESTS = 
 
