@@ -78,7 +78,7 @@ int test_manycore_init(void)
 {
     int testno, fail = 0, err;
 
-    hb_mc_manycore_t initialized;
+    hb_mc_manycore_t initialized = {0};
     err = hb_mc_manycore_init(&initialized, "initialized", 0);
     if (err != HB_MC_SUCCESS) {
 	test_pr_err(BSG_RED("ERROR") " while initializing test suite: %s\n",
@@ -114,7 +114,7 @@ int test_manycore_init(void)
 			      ? BSG_GREEN("PASSED")
 			      : BSG_RED("FAILED"));
 
-	fail = fail || (err == test->manycore_init_output.mc_err);
+	fail = fail || (err != test->manycore_init_output.mc_err);
 	
 	// determine if the test passed or failed
 	test_pr_info("Test %15s %s: "
