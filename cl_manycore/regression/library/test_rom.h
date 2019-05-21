@@ -1,12 +1,15 @@
-#ifndef __TEST_ROM_H
-#define __TEST_ROM_H
+#ifndef TEST_MANYCORE_COMPILE_H
+#define TEST_MANYCORE_COMPILE_H
+#ifdef COSIM
+#include <bsg_manycore.h>
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore_mmio.h>
+#else
+#include "bsg_manycore.h"
+#include "bsg_manycore_driver.h"
+#include "bsg_manycore_mmio.h"
+#endif
+#include <inttypes.h>
+#include "../cl_manycore_regression.h"
 
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
-#include "library_tests.h"
-
-#endif // __TEST_ROM_H
+#endif
