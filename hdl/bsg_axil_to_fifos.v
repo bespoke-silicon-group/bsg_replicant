@@ -185,6 +185,10 @@ module bsg_axil_to_fifos #(
 
   wire tx_done_lo = 1'b1; // always ready for the write
 
+  logic [num_slots_p-1:0] write_to_base;
+  logic [num_slots_p-1:0] write_to_fifo;
+  logic [num_slots_p-1:0] write_to_isr ;
+
   // waddr channel
   assign awready_lo = (wr_state_r == E_WR_ADDR);
   assign wready_lo  = ((wr_state_r == E_WR_DATA) && (tx_done_lo));
@@ -214,12 +218,6 @@ module bsg_axil_to_fifos #(
   assign write_bresp_lo = bready_li & bvalid_lo;
 
   // wdata channel
-  logic [num_slots_p-1:0] write_to_base;
-  logic [num_slots_p-1:0] write_to_fifo;
-  logic [num_slots_p-1:0] write_to_isr ;
-
-  logic [num_slots_p-1:0][31:0] isr_r;
-
   logic [num_slots_p-1:0]                    tx_v_li, tx_r_lo;
   logic [num_slots_p-1:0][fifo_width_lp-1:0] tx_li  ;
 
@@ -238,6 +236,8 @@ module bsg_axil_to_fifos #(
   wire [num_slots_p-1:0] tx_dequeue = tx_r_li & tx_v_lo;
 
   logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] tx_vacancy_lo;
+
+  logic [num_slots_p-1:0][31:0] isr_r;
 
   for (genvar i=0; i<num_slots_p; i++) begin : transmit_fifo
     bsg_counter_up_down #(

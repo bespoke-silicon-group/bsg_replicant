@@ -102,6 +102,14 @@ module bsg_manycore_endpoint_request_timer #(
 
   logic [timer_wdith_lp-1:0] timer_cnt_r;
 
+  logic record_time, v_r;
+
+  always_ff @(posedge clk_i) begin : v_pose_edge_r
+    v_r <= v_i;
+  end
+
+  assign record_time = v_i & ~v_r;
+
   bsg_dff_en #(.width_p(timer_wdith_lp)) timer_cnt_dff (
     .clk_i (clk_i       ),
     .data_i(timer_cnt_lo),
