@@ -87,3 +87,11 @@ exit_func:
     funlockfile(info->file);
     return r;
 }
+#ifdef COSIM
+uint64_t bsg_realtime(){
+	uint64_t val;
+	fprintf(stderr,"bsg_realtime()\n");
+        sv_bsg_realtime(&val);
+        return val;
+}
+#endif

@@ -59,7 +59,7 @@ SIM_LOG_TARGETS  = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
 
 cosim: $(SIM_LOG_TARGETS)
 
-%.so: $(TESTS_PATH)/%.c $(C_LIB_SRC) $(C_DPI_SRC) 
+%.so: $(TESTS_PATH)/%.c $(C_DPI_SRC) $(C_LIB_SRC) 
 	xsc $? $(XSC_FLAGS) $(XSC_INCLUDES) -o $@
 
 # HARDWARE_PATH must be set by including makefile
