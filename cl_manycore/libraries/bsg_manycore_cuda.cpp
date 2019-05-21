@@ -745,9 +745,9 @@ int hb_mc_device_finish (device_t *device) {
 		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */	
 	delete(mem_manager[device->eva_id]);
 	
-	//for (int i = 0; i < device->mesh->dim_x * device->mesh->dim_y ; i++) { /* freeze tiles */
-	//	hb_mc_tile_freeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
-	//}
+	for (int i = 0; i < device->mesh->dim_x * device->mesh->dim_y ; i++) { /* freeze tiles */
+		hb_mc_tile_freeze(device->fd, device->mesh->tiles[i].x, device->mesh->tiles[i].y);
+	}
 
 	free (device->tile_groups);
 

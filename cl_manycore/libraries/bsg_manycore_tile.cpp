@@ -29,8 +29,11 @@ int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y) {
                                     x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
-	else
-		return HB_MC_SUCCESS;
+
+	#ifdef DEBUG
+	fprintf(stderr, "Freeze packet sent to tile (%d,%d).\n", x,y); 
+	#endif
+	return HB_MC_SUCCESS;
 }
 
 /*!
@@ -57,8 +60,11 @@ int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
                                     x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 	if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
-	else
-		return HB_MC_SUCCESS;
+
+	#ifdef DEBUG
+	fprintf(stderr, "Unfreeze packet sent to tile (%d,%d).\n", x,y); 
+	#endif
+	return HB_MC_SUCCESS;
 }
 
 /*!
