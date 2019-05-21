@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <libgen.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_printing.h>
@@ -27,62 +28,52 @@ void response_packet_to_array(/*const*/ hb_mc_response_packet_t *pack, /*out*/ u
 }
 
 int test_manycore_packets() {
-	hb_mc_manycore_t manycore, *mc = &manycore;
+	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
 	int err;
-	
-	err = hb_mc_manycore_init(mc, "test_manycore_packets", 1);
+
+	/*****************************/
+	/* Initializing the manycore */
+	/*****************************/
+	err = hb_mc_manycore_init(mc, "test_manycore_packets", 0);
 	if (err != HB_MC_SUCCESS) {
 		bsg_pr_err(BSG_RED("failed to initialize manycore: %s\n"), hb_mc_strerror(err));
 		return err;
 	}
 
-	hb_mc_manycore_exit(mc);
-	return HB_MC_SUCCESS;
+	/*************************/
+	/* Seeding the test data */
+	/*************************/
+	srand(time(0));
 	
-	// end
-	#if 0
-	uint8_t fd; 
-      	if (hb_mc_fifo_init(&fd) != HB_MC_SUCCESS) {
-		bsg_pr_test_info(BSG_RED("Failed to initialize fifo.\n"));
-		return HB_MC_FAIL;
-	}
- 
-        srand(time(0));
-        
-        uint32_t host_x, host_y;
-        if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &host_x) == HB_MC_FAIL) {
-                bsg_pr_test_info(BSG_RED("Failed to read host X coordinate from rom.\n"));
-                return HB_MC_FAIL;
-        }
-        if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &host_y) == HB_MC_FAIL) {
-                bsg_pr_test_info(BSG_RED("Failed to read host Y coordinate from rom.\n"));
-                return HB_MC_FAIL;
-        }
+	hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(mc);
+	uint32_t host_x = hb_mc_coordinate_get_x(host);
+	uint32_t host_y = hb_mc_coordinate_get_y(host);
 
-        uint8_t target_x = 0;
-        uint8_t target_y = 1;
-        uint32_t addr = DMEM_BASE >> 2;
-        uint32_t data = rand();
-        bsg_pr_test_info("Address: %x, Expected data: %x\n", addr, data);
+	uint8_t target_x = 0;
+	uint8_t target_y = 1;
+	uint32_t addr = DMEM_BASE >> 2; // EPA
+	uint32_t data  = rand();
 
-        hb_mc_request_packet_t req1, req2;
-        hb_mc_response_packet_t res;
-        
-        const char *req_desc[] = {
+	bsg_pr_test_info("Address: 0x%08" PRIx32 ", Expected data: %08" PRIx32 "\n", addr, data);
+
+	hb_mc_request_packet_t req1, req2;
+	hb_mc_response_packet_t res;
+
+	const char *req_desc[] = {
                 "Destination X", "Destination Y",
                      "Source X",      "Source Y",
                          "Mask",        "Opcode",
                       "Address",          "Data",
         };
 
-        uint32_t req_expected[] = {
-                                      target_x,                     target_y,
-                                        host_x,                       host_y,
+	uint32_t req_expected[] = {
+		target_x,                       target_y,
+		host_x,                         host_y,
                 HB_MC_PACKET_REQUEST_MASK_WORD, HB_MC_PACKET_OP_REMOTE_STORE,
-                                          addr,                         data,
+		addr,                           data,
         };
 
-        const char *res_desc[] = {
+	const char *res_desc[] = {
                 "Destination X", "Destination Y",
                        "Opcode",          "Data",
         };
@@ -92,9 +83,12 @@ int test_manycore_packets() {
                 HB_MC_PACKET_OP_REMOTE_STORE,   data,
         };
 
-        uint32_t actual[8];
-        
-        bsg_pr_test_info("Manually formatting packet\n");
+	uint32_t actual[8];
+
+	/**************************/
+	/* Test packet formatting */
+	/**************************/
+	bsg_pr_test_info("Manually formatting packet\n");
         hb_mc_request_packet_set_x_dst(&req1, target_x);
         hb_mc_request_packet_set_y_dst(&req1, target_y);
         hb_mc_request_packet_set_x_src(&req1, host_x);
@@ -103,48 +97,58 @@ int test_manycore_packets() {
         hb_mc_request_packet_set_mask (&req1, 0xF);
         hb_mc_request_packet_set_op   (&req1, HB_MC_PACKET_OP_REMOTE_STORE);
         hb_mc_request_packet_set_addr (&req1, addr);
-        
-        request_packet_to_array(&req1, actual);
-        if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
-                return HB_MC_FAIL;
-        
-        bsg_pr_test_info("Testing hb_mc_format_request_packet\n");
-        hb_mc_format_request_packet(fd, &req2, addr, data, target_x, target_y, HB_MC_PACKET_OP_REMOTE_STORE);
-        request_packet_to_array(&req2, actual);
+
+	request_packet_to_array(&req1, actual);
         if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
 
-        bsg_pr_test_info("The two packets should be equal now:");
-        if(hb_mc_request_packet_equals(&req1, &req2) == HB_MC_FAIL) {
-                printf(BSG_RED("hb_mc_request_packet_equals says they are not\n"));
-                return HB_MC_FAIL;
-        }
-        printf(BSG_GREEN("Success\n"));
+	/************************************/
+	/* Test transmitting a store packet */
+	/************************************/
+	bsg_pr_test_info("Sending store packet to tile (%d, %d)\n", target_x, target_y);
+	err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_test_info(BSG_RED("Failed to write to FIFO (%s)") ": %s\n",
+				 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
+				 hb_mc_strerror(err));
+		return HB_MC_FAIL;
+	}
+	
+        bsg_pr_test_info(BSG_GREEN("Succesfully Wrote packet to FIFO (%s)") "\n",
+			 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE));
 
-        bsg_pr_test_info("Sending packet to tile (%d, %d)\n", target_x, target_y);
-        if(hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&req1)) != HB_MC_SUCCESS) {
-                bsg_pr_test_info(BSG_RED("Failed to write to FIFO\n"));
-                return HB_MC_FAIL;
-        }
-        bsg_pr_test_info(BSG_GREEN("Written successfully\n"));
-        
-        hb_mc_request_packet_set_op(&req1, HB_MC_PACKET_OP_REMOTE_LOAD);
+	/************************************************************/
+	/* Test transmitting a load packet and receiving the result */
+	/************************************************************/
+	hb_mc_request_packet_set_op(&req1, HB_MC_PACKET_OP_REMOTE_LOAD);
         bsg_pr_test_info("Testing reading packet\n");
-        if(hb_mc_fifo_transmit(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&req1)) != HB_MC_SUCCESS) {
-                bsg_pr_test_info(BSG_RED("Failed to write to FIFO\n"));
+	err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);	
+        if(err != HB_MC_SUCCESS) {
+                bsg_pr_test_info(BSG_RED("Failed to write to FIFO (%s)") ": %s\n",
+				 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
+				 hb_mc_strerror(err));
                 return HB_MC_FAIL;
         }
+	
         bsg_pr_test_info("Reading\n");
-        if(hb_mc_fifo_receive(fd, HB_MC_MMIO_FIFO_TO_DEVICE, (hb_mc_packet_t *)(&res)) != HB_MC_SUCCESS) {
-                bsg_pr_test_info(BSG_RED("Failed to read from FIFO\n"));
-                return HB_MC_FAIL;
-        }
-        bsg_pr_test_info("Comparing to expected read packet:\n");
-        response_packet_to_array(&res, actual);
+	err = hb_mc_manycore_packet_rx(mc, (hb_mc_packet_t*)&res, HB_MC_MMIO_FIFO_TO_DEVICE, -1);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_test_info(BSG_RED("Failed to read from FIFO (%s)") ": %s\n",
+				 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
+				 hb_mc_strerror(err));
+		return HB_MC_FAIL;
+	}
+	bsg_pr_test_info("Comparing to expected read packet:\n");
+
+	response_packet_to_array(&res, actual);
         if(compare_results(4, res_desc, res_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
-        return HB_MC_SUCCESS;
-	#endif
+
+	/*******/
+	/* END */
+	/*******/
+	hb_mc_manycore_exit(mc);
+	return HB_MC_SUCCESS;	
 }
 
 #ifdef COSIM
