@@ -13,7 +13,6 @@ int test_rom () {
                 return HB_MC_FAIL;
         }
         config = hb_mc_manycore_get_config_ptr(&mc);
-
         /* Test host credit return value. Expect 16 and fail otherwise */
         expected = 16;
         bsg_pr_test_info("Checking that the number of host credits is %d\n", expected);
