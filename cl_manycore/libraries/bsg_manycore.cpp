@@ -278,17 +278,30 @@ static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc)
 /* initialize configuration */
 static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 {
-        uintptr_t config_addr = HB_MC_MMIO_ROM_BASE;
-        int i, err;
+        int err;
+	uintptr_t addr;
+	int idx;
+	hb_mc_config_raw_t config[HB_MC_CONFIG_MAX];
 
-        for (i = 0; i < HB_MC_CONFIG_MAX; i++) {
-                err = hb_mc_manycore_mmio_read32(mc, config_addr + (i << 2), &mc->config[i]);
+        for (idx = HB_MC_CONFIG_MIN; idx < HB_MC_CONFIG_MAX; idx++) {
+		addr = hb_mc_config_id_to_addr(HB_MC_MMIO_ROM_BASE, 
+					(hb_mc_config_id_t) idx);
+                err = hb_mc_manycore_mmio_read32(mc, addr, &config[idx]);
                 if (err != HB_MC_SUCCESS) {
                         manycore_pr_err(mc, "%s: failed to read config word %d from ROM\n",
-                                        __func__, i);
+                                        __func__, idx);
                         return err;
                 }
         }
+
+	err = hb_mc_config_init(config, &(mc->config));
+	if (err != HB_MC_SUCCESS) {
+		manycore_pr_err(mc, "%s: failed to initialize configuration"
+				"fields of manycore struct\n",
+				__func__);
+		return err;
+	}
+
         return HB_MC_SUCCESS;
 }
 

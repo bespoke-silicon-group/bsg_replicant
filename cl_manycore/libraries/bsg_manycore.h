@@ -3,12 +3,12 @@
 
 #ifndef COSIM
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_driver.h>
 #include <bsg_manycore_mem.h>
+#include <bsg_manycore_config.h>
 #else
 #include "bsg_manycore_features.h"
-#include "bsg_manycore_driver.h"
 #include "bsg_manycore_mem.h"
+#include "bsg_manycore_config.h"
 #endif
 
 #ifdef __cplusplus
@@ -23,45 +23,6 @@
 extern "C" {
 #endif
 
-typedef uint16_t hb_mc_coordinate_t;
-
-#define HB_MC_COORDINATE_Y_SHIFT 8
-#define HB_MC_COORDINATE_X_MASK 0x00FF
-#define HB_MC_COORDINATE_Y_MASK 0xFF00
-
-static inline uint8_t hb_mc_coordinate_get_x(hb_mc_coordinate_t coordinate)
-{
-	return coordinate & HB_MC_COORDINATE_X_MASK;
-}
-
-static inline hb_mc_coordinate_t hb_mc_coordinate_set_x(hb_mc_coordinate_t coordinate, uint8_t x)
-{
-	return (coordinate & HB_MC_COORDINATE_Y_MASK) | x;
-}
-
-static inline uint8_t hb_mc_coordinate_get_y(hb_mc_coordinate_t coordinate)
-{
-	return coordinate >> HB_MC_COORDINATE_Y_SHIFT;
-}
-
-static inline uint8_t hb_mc_coordinate_set_y(hb_mc_coordinate_t coordinate, uint8_t y)
-{
-	uint16_t ny = y;
-
-	return (coordinate & HB_MC_COORDINATE_X_MASK) | (ny << HB_MC_COORDINATE_Y_SHIFT);
-}
-
-static inline hb_mc_coordinate_t hb_mc_coordinate(uint8_t x, uint8_t y)
-{
-	return hb_mc_coordinate_set_x(hb_mc_coordinate_set_y(0, y), x);
-}
-
-typedef uint32_t hb_mc_config_t[HB_MC_CONFIG_MAX];
-
-static inline uint32_t hb_mc_config_get_repo_stl_hash(hb_mc_config_t *config)
-{
-        return config[0][HB_MC_CONFIG_REPO_STL_HASH];
-}
 
 typedef int hb_mc_manycore_id_t;
 #define HB_MC_MANYCORE_ID_ANY -1

@@ -8,11 +8,11 @@ void print_config(hb_mc_manycore_t *manycore)
 {
         bsg_pr_test_info("Printing configuration for '%s'\n", manycore->name);
         bsg_pr_test_info("%s: basejump-stl: 0x%" PRIx32 "\n",
-                         manycore->name, hb_mc_config_get_repo_stl_hash(&manycore->config));
+                         manycore->name, hb_mc_config_get_githash_basejump(&manycore->config));
         bsg_pr_test_info("%s: manycore:     0x%" PRIx32 "\n",
-                         manycore->name, manycore->config[HB_MC_CONFIG_REPO_MANYCORE_HASH]);
+                         manycore->name, hb_mc_config_get_githash_manycore(&manycore->config));
         bsg_pr_test_info("%s: f1:           0x%" PRIx32 "\n",
-                         manycore->name, manycore->config[HB_MC_CONFIG_REPO_F1_HASH]);
+                         manycore->name, hb_mc_config_get_githash_f1(&manycore->config));
 }
 
 static

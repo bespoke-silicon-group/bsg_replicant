@@ -5,10 +5,12 @@
         #include <bsg_manycore_features.h>
         #include <bsg_manycore_errno.h>
 	#include <bsg_manycore_bits.h>
+	#include <bsg_manycore_config.h>
 #else
         #include "bsg_manycore_features.h"
         #include "bsg_manycore_errno.h"
 	#include "bsg_manycore_bits.h"
+	#include "bsg_manycore_config.h"
 #endif
 #include <endian.h>
 
@@ -126,22 +128,6 @@ static inline const char *hb_mc_fifo_tx_to_string(hb_mc_fifo_tx_t type)
 	[HB_MC_FIFO_TX_RSP] = "tx-responses",
     };
 }
-
-typedef enum __hb_mc_config_id_t {
-	HB_MC_CONFIG_VERSION = 0,
-	HB_MC_CONFIG_COMPLIATION_DATE = 1,
-	HB_MC_CONFIG_NETWORK_ADDR_WIDTH = 2,
-	HB_MC_CONFIG_NETWORK_DATA_WIDTH = 3,
-	HB_MC_CONFIG_DEVICE_DIM_X = 4,
-	HB_MC_CONFIG_DEVICE_DIM_Y = 5,
-	HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X = 6,
-	HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y = 7,
-	HB_MC_CONFIG_NOT_IMPLEMENTED = 8,
-	HB_MC_CONFIG_REPO_STL_HASH = 9,
-	HB_MC_CONFIG_REPO_MANYCORE_HASH = 10,
-	HB_MC_CONFIG_REPO_F1_HASH = 11,
-	HB_MC_CONFIG_MAX = 12
-} hb_mc_config_id_t;
         
 inline hb_mc_direction_t hb_mc_get_rx_direction(hb_mc_fifo_rx_t d){
 	return (hb_mc_direction_t)d;

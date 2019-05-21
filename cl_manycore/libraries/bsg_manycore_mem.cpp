@@ -4,11 +4,13 @@
 	#include <bsg_manycore_loader.h>
 	#include <bsg_manycore_driver.h>
 	#include <bsg_manycore_errno.h>
+#include <bsg_manycore_driver.h>
 #else
 	#include "bsg_manycore_mem.h"
 	#include "bsg_manycore_loader.h"
 	#include "bsg_manycore_driver.h"
 	#include "bsg_manycore_errno.h"
+#include "bsg_manycore_driver.h"
 #endif
 
 /*! 
