@@ -1,8 +1,15 @@
+#define DEBUG
 #ifndef COSIM
-	#include <bsg_manycore_loader.h>
+#include <bsg_manycore_loader.h>
+#include <bsg_manycore_printing.h>
 #else
-	#include "bsg_manycore_loader.h"
+#include "bsg_manycore_loader.h"
+#include "bsg_manycore_printing.h"
 #endif
+#include <cstring>
+#include <elf.h>
+#include <endian.h>
+
 
 typedef enum __hb_mc_loader_elf_field_t{
 	HB_MC_LOADER_ELF_DATA_ID = 0,
@@ -11,6 +18,7 @@ typedef enum __hb_mc_loader_elf_field_t{
 
 typedef hb_mc_loader_elf_field_t hb_mc_segment_t; // This should replace above
 
+//#if 0
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
  *	 * */
@@ -162,6 +170,58 @@ int hb_mc_load_binary(uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_
 	}
 	return HB_MC_SUCCESS;
 }
+//#endif
+
+/////////////////////////////////
+// Accessors for the ELF types //
+/////////////////////////////////
+
+#define EM_RISCV 	243 	/* RISC-V */
+
+static Elf32_Word RV32_Word_to_host(Elf32_Word word)
+{
+	return le32toh(word);
+}
+
+static Elf32_Half RV32_Half_to_host(Elf32_Half half)
+{
+	return le16toh(half);
+}
+
+static Elf32_Sword RV32_Sword_to_host(Elf32_Sword sword)
+{
+	return le32toh(sword);
+}
+
+static Elf32_Xword RV32_Xword_to_host(Elf32_Xword xword)
+{
+	return le64toh(xword);
+}
+
+static Elf32_Sxword RV32_Sxword_to_host(Elf32_Sxword sxword)
+{
+	return le64toh(sxword);
+}
+
+static Elf32_Addr RV32_Addr_to_host(Elf32_Addr addr)
+{
+	return le32toh(addr);
+}
+
+static Elf32_Off RV32_Off_to_host(Elf32_Off off)
+{
+	return le32toh(off);
+}
+
+static Elf32_Section RV32_Section_to_host(Elf32_Section section)
+{
+	return le16toh(section);
+}
+
+static Elf32_Versym RV32_Versym_to_host(Elf32_Versym versym)
+{
+	return RV32_Half_to_host(versym);
+}
 
 /**
  * Gets a pointer to a segment in the ELF binary
@@ -188,8 +248,54 @@ static int hb_mc_loader_elf_get_segment(const void *bin, size_t sz,
  */
 static int hb_mc_loader_elf_validate(const void *elf, size_t sz)
 {
+    	const Elf32_Ehdr *ehdr = (const Elf32_Ehdr *)elf;	
 	int rc;
 
+	/* sz should definitely be larger than the elf header */
+	if (sz < sizeof(*ehdr)) {
+		bsg_pr_dbg("%s: 'sz' = %zu is less than minimum valid object size\n",
+			   __func__, sz);
+		return HB_MC_INVALID;
+	}
+	
+	/* validate magic number */		
+	if (memcmp(ehdr->e_ident, ELFMAG, SELFMAG) != 0) {
+		bsg_pr_dbg("%s: object is missing the elf magic number\n",
+			   __func__);		
+		return HB_MC_INVALID;
+	}
+	
+	/* check that this object is for a 32-bit machine */
+	if (ehdr->e_ident[EI_CLASS] != ELFCLASS32) {
+		bsg_pr_dbg("%s: object is not for 32-bit machine\n",
+			   __func__);
+		return HB_MC_INVALID;
+	}
+
+	/* check that this object is little-endian */
+	if (ehdr->e_ident[EI_DATA] != ELFDATA2LSB) {
+		bsg_pr_dbg("%s: object is not 2's complement, little endian\n",
+			   __func__);
+		return HB_MC_INVALID;
+	}
+
+	/* check that this object is executable */
+	if (RV32_Half_to_host(ehdr->e_type) != ET_EXEC) {
+		bsg_pr_dbg("%s: object is not executable\n",
+			   __func__);
+		return HB_MC_INVALID;
+	}
+
+	/* check that this machine is RV32 */
+	if (RV32_Half_to_host(ehdr->e_machine) != EM_RISCV) {
+		bsg_pr_dbg("%s: object does not target RISC-V\n",
+			   __func__);
+		return HB_MC_INVALID;
+	}
+
+	/* make some size checks? */
+
+	/* at this point the caller is trying pretty hard to mess up*/
 	return HB_MC_SUCCESS;
 }
 
@@ -345,6 +451,10 @@ int hb_mc_loader_load(const void *bin, size_t sz, const hb_mc_manycore_t *mc,
 {
 	int rc;
 	// Validate ELF File
+	rc = hb_mc_loader_elf_validate(bin, sz);
+	if (rc != HB_MC_SUCCESS)
+	    return rc;
+	
 	// Load tiles
 	// Load DRAMs	
 	return HB_MC_SUCCESS;
