@@ -280,7 +280,7 @@ int hb_mc_manycore_eva_to_npa(hb_mc_manycore_t *mc, eva_t eva,  npa_t *npa,
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @return NULL if uninitialized, else hb_mc_config_t*
  */
-static inline const hb_mc_config_t* hb_mc_manycore_get_config_ptr(const hb_mc_manycore_t *mc){
+static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manycore_t *mc){
         return &mc->config;
 }
 
