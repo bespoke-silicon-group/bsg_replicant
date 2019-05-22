@@ -417,11 +417,11 @@ module bsg_axil_to_fifos #(
 
     always_comb begin : registers
       case (rd_addr_r[0+:config_addr_width_lp])
-        tx_isr_lp       : reg_lo[i] = isr_r;
+        tx_isr_lp       : reg_lo[i] = isr_r[i];
         tx_vacancy_lp   : reg_lo[i] = fifo_width_lp'(tx_vacancy_lo[i]);
         rx_occupancy_lp : reg_lo[i] = fifo_width_lp'(rx_occupancy_lo[i]);
         rx_length_lp    : reg_lo[i] = (rx_occupancy_lo[i] >= fifo_1rd_bytes_lp) ? (fifo_width_lp/8*fifo_1rd_bytes_lp): '0;
-        default         : reg_lo[i] = fifo_width_lp'(32'hDEAD_BEEF);
+        default         : reg_lo[i] = fifo_width_lp'(32'hBEEF_DEAD);
       endcase
     end
   end
