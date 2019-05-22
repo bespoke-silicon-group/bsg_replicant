@@ -1,4 +1,3 @@
-#define DEBUG
 #ifndef COSIM
 #include <bsg_manycore.h>
 #include <bsg_manycore_driver.h>
@@ -39,8 +38,8 @@
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
 
-#undef manycore_pr_err
-#define manycore_pr_err(...)
+// #undef manycore_pr_err
+// #define manycore_pr_err(...)
 
 typedef struct hb_mc_manycore_private {
         pci_bar_handle_t handle;
@@ -72,7 +71,7 @@ static int hb_mc_manycore_fifo_get_isr_bit(hb_mc_manycore_t *mc, hb_mc_direction
 
         err = hb_mc_manycore_mmio_read32(mc, isr_addr, &tmp);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "failed to read bit in %s ISR register: %s\n",
+                manycore_pr_err(mc, "Failed to read bit in %s ISR register: %s\n",
                                 hb_mc_direction_to_string(dir), hb_mc_strerror(err));
                 return err;
         }
@@ -88,7 +87,7 @@ static int hb_mc_manycore_fifo_clear_isr_bit(hb_mc_manycore_t *mc, hb_mc_directi
 
         err = hb_mc_manycore_mmio_write32(mc, isr_addr, (1<<bit));
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "failed to set bit in %s ISR register: %s\n",
+                manycore_pr_err(mc, "Failed to set bit in %s ISR register: %s\n",
                                 hb_mc_direction_to_string(dir), hb_mc_strerror(err));
                 return err;
         }
@@ -106,7 +105,7 @@ static int hb_mc_manycore_tx_fifo_get_vacancy(hb_mc_manycore_t *mc,
 
         err = hb_mc_manycore_mmio_read32(mc, vacancy_addr, vacancy);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "failed to get %s vacancy\n", typestr);
+                manycore_pr_err(mc, "Failed to get %s vacancy\n", typestr);
                 return err;
         }
 
@@ -125,7 +124,7 @@ static int hb_mc_manycore_rx_fifo_get_occupancy(hb_mc_manycore_t *mc,
 
         err = hb_mc_manycore_mmio_read32(mc, occupancy_addr, occupancy);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "failed to get %s occupancy\n", typestr);
+                manycore_pr_err(mc, "Failed to get %s occupancy\n", typestr);
                 return err;
         }
 
@@ -149,7 +148,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 	for (unsigned i = 0; i < occupancy; i++){
                 rc = hb_mc_manycore_packet_rx(mc, (hb_mc_packet_t*) &recv, type, -1);
                 if (rc != HB_MC_SUCCESS) {
-                        manycore_pr_err(mc, "%s: failed to read packet from %s fifo\n",
+                        manycore_pr_err(mc, "%s: Failed to read packet from %s fifo\n",
                                         __func__, typestr);
                         return HB_MC_FAIL;
                 }
@@ -174,7 +173,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 
         /* fail if new packets have arrived */
         if (occupancy > 0){
-                manycore_pr_err(mc, "%s: failed to drain %s fifo: new packets generated\n",
+                manycore_pr_err(mc, "%s: Failed to drain %s fifo: new packets generated\n",
                                 __func__, type);
                 return HB_MC_FAIL;
         }
@@ -190,7 +189,7 @@ static int hb_mc_manycore_fifo_clear_isr(hb_mc_manycore_t *mc, hb_mc_direction_t
         /* ISR bits are write-one-to-clear */
         err = hb_mc_manycore_mmio_write32(mc, isr_addr, 0xFFFFFFFF);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "failed clear ISR\n");
+                manycore_pr_err(mc, "Failed clear ISR\n");
                 return err;
         }
         return HB_MC_SUCCESS;
@@ -210,12 +209,13 @@ static int hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id
 
 	// all IDs except 0 are unused at the moment
 	if (id != 0) {
-		manycore_pr_err(mc, "failed to init MMIO: invalid ID\n");
+		manycore_pr_err(mc, "Failed to init MMIO: invalid ID\n");
 		return HB_MC_INVALID;
 	}
 
         if ((err = fpga_pci_attach(id, pf_id, bar_id, write_combine, &pdata->handle)) != 0) {
-                manycore_pr_err(mc, "failed to init MMIO: %s\n", FPGA_ERR2STR(err));
+                manycore_pr_err(mc, "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
+		manycore_pr_err(mc, "Are you running with sudo?\n");
                 return r;
         }
 
@@ -223,7 +223,7 @@ static int hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id
 	// it is not clear to me where 0x4000 comes from...
 	// map in the base address register to our address space
 	if ((err = fpga_pci_get_address(pdata->handle, 0, 0x4000, (void**)&mc->mmio)) != 0) {
-		manycore_pr_err(mc, "failed to init MMIO: %s\n", FPGA_ERR2STR(err));
+		manycore_pr_err(mc, "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
 		goto cleanup;
 	}
 #else
@@ -251,7 +251,7 @@ static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc)
                 return;
 
         if ((err = fpga_pci_detach(pdata->handle)) != 0)
-                manycore_pr_err(mc, "failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
+                manycore_pr_err(mc, "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
 
         pdata->handle = PCI_BAR_HANDLE_INIT;
         mc->mmio = (uintptr_t)nullptr;
@@ -299,7 +299,7 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 
                 err = hb_mc_manycore_mmio_read32(mc, addr, &config[idx]);
                 if (err != HB_MC_SUCCESS) {
-                        manycore_pr_err(mc, "%s: failed to read config word %d from ROM\n",
+                        manycore_pr_err(mc, "%s: Failed to read config word %d from ROM\n",
                                         __func__, idx);
                         return err;
                 }
@@ -307,13 +307,13 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 
         err = hb_mc_config_init(config, &(mc->config));
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: failed to initialize configuration"
-                                "fields of manycore struct\n",
+                manycore_pr_err(mc, "%s: Failed to initialize configuration"
+                                " fields of manycore struct\n",
                                 __func__);
                 return err;
         }
 
-	manycore_pr_dbg(mc, "initialized configuration from ROM\n");
+	manycore_pr_dbg(mc, "Initialized configuration from ROM\n");
 
         return HB_MC_SUCCESS;
 }
@@ -327,11 +327,11 @@ static int hb_mc_fifo_enable(hb_mc_manycore_t *mc, hb_mc_direction_t fifo)
         /* enable the transmit complete interrupt status bit */
         int err = hb_mc_manycore_mmio_write32(mc, ier_addr, 1 << HB_MC_MMIO_FIFO_IXR_TC_BIT);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "failed to initialize %s fifo\n", fifo_name);
+                manycore_pr_err(mc, "Failed to initialize %s fifo\n", fifo_name);
                 return err;
         }
 
-	manycore_pr_dbg(mc, "enabled fifo (%s)\n", fifo_name);
+	manycore_pr_dbg(mc, "Enabled fifo (%s)\n", fifo_name);
         return HB_MC_SUCCESS;
 }
 
@@ -398,7 +398,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
 	// copy name
 	mc->name = strdup(name);
 	if (!mc->name) {
-		bsg_pr_err("failed to initialize %s: %m\n", name);
+		bsg_pr_err("Failed to initialize %s: %m\n", name);
 		return r;
 	}
 
@@ -457,13 +457,13 @@ static int  hb_mc_manycore_mmio_read_mmio(hb_mc_manycore_t *mc, uintptr_t offset
         uint32_t tmp;
 
         if (addr == nullptr) {
-                manycore_pr_err(mc, "%s: failed: MMIO not initialized", __func__);
+                manycore_pr_err(mc, "%s: Failed: MMIO not initialized", __func__);
                 return HB_MC_UNINITIALIZED;
         }
 
         // check that the address is aligned to a four byte boundar
         if (offset % 4) {
-                manycore_pr_err(mc, "%s: failed: 0x%" PRIxPTR " "
+                manycore_pr_err(mc, "%s: Failed: 0x%" PRIxPTR " "
 				"is not aligned to 4 byte boundary\n",
                                 __func__, offset);
                 return HB_MC_INVALID;
@@ -484,7 +484,7 @@ static int  hb_mc_manycore_mmio_read_mmio(hb_mc_manycore_t *mc, uintptr_t offset
                 *(uint8_t*)vp  = tmp;
                 break;
         default:
-                manycore_pr_err(mc, "%s: failed: invalid load size (%zu)\n", __func__, sz);
+                manycore_pr_err(mc, "%s: Failed: invalid load size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
 
@@ -501,7 +501,7 @@ static int  hb_mc_manycore_mmio_read_pci(hb_mc_manycore_t *mc, uintptr_t offset,
         int err;
 
         if ((err = fpga_pci_peek(pdata->handle, offset, &val)) != 0) {
-                manycore_pr_err(mc, "%s: failed: %s\n", __func__, FPGA_ERR2STR(err));
+                manycore_pr_err(mc, "%s: Failed: %s\n", __func__, FPGA_ERR2STR(err));
                 return HB_MC_FAIL;
         }
 
@@ -516,7 +516,7 @@ static int  hb_mc_manycore_mmio_read_pci(hb_mc_manycore_t *mc, uintptr_t offset,
                 *(uint8_t *)vp = val;
                 break;
         default:
-                manycore_pr_err(mc, "%s: failed: invalid load size (%zu)\n", __func__, sz);
+                manycore_pr_err(mc, "%s: Failed: invalid load size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
         return HB_MC_SUCCESS;
@@ -535,7 +535,7 @@ int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc)
         addr = hb_mc_mmio_credits_get_reg_addr(HB_MC_MMIO_CREDITS_HOST_OFFSET);
         err = hb_mc_manycore_mmio_read32(mc, addr, &value);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: failed to read Host Credits Register: %s\n",
+                manycore_pr_err(mc, "%s: Failed to read Host Credits Register: %s\n",
                                 __func__, hb_mc_strerror(err));
                 return err;
         }
@@ -562,13 +562,13 @@ static int hb_mc_manycore_mmio_write_mmio(hb_mc_manycore_t *mc, uintptr_t offset
         uint32_t tmp;
 
         if (addr == nullptr) {
-                manycore_pr_err(mc, "%s: failed: MMIO not initialized", __func__);
+                manycore_pr_err(mc, "%s: Failed: MMIO not initialized", __func__);
                 return HB_MC_UNINITIALIZED;
         }
 
         // check that the address is aligned to a four byte boundary
         if (offset % 4) {
-                manycore_pr_err(mc, "%s: failed: 0x%" PRIxPTR " "
+                manycore_pr_err(mc, "%s: Failed: 0x%" PRIxPTR " "
 				"is not aligned to 4 byte boundary\n",
                                 __func__, offset);
                 return HB_MC_INVALID;
@@ -587,7 +587,7 @@ static int hb_mc_manycore_mmio_write_mmio(hb_mc_manycore_t *mc, uintptr_t offset
                 tmp = *(uint8_t*)vp;
                 break;
         default:
-                manycore_pr_err(mc, "%s: failed: invalid load size (%zu)\n", __func__, sz);
+                manycore_pr_err(mc, "%s: Failed: invalid load size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
 
@@ -617,13 +617,13 @@ static int hb_mc_manycore_mmio_write_pci(hb_mc_manycore_t *mc, uintptr_t offset,
                 val = *(uint8_t*)vp;
                 break;
         default:
-                manycore_pr_err(mc, "%s: failed: invalid store size (%zu)\n", __func__, sz);
+                manycore_pr_err(mc, "%s: Failed: invalid store size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
 
 	err = fpga_pci_poke(pdata->handle, offset, val);
 	if (err != 0) {
-		manycore_pr_err(mc, "%s: failed: %s\n", __func__, FPGA_ERR2STR(err));
+		manycore_pr_err(mc, "%s: Failed: %s\n", __func__, FPGA_ERR2STR(err));
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -741,7 +741,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
         int err;
 
         if (timeout != -1) {
-                manycore_pr_err(mc, "%s: only a timeout value of -1 is supported\n",
+                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
                 return HB_MC_INVALID;
         }
@@ -756,7 +756,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
         // get vacancy
         err = hb_mc_manycore_tx_fifo_get_vacancy(mc, type, &vacancy);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: failed to read %s FIFO vacancy: %s\n",
+                manycore_pr_err(mc, "%s: Failed to read %s FIFO vacancy: %s\n",
                                 __func__, typestr, hb_mc_strerror(err));
                 return err;
         }
@@ -770,7 +770,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
         // clear the Transmit Complete bit
         err = hb_mc_manycore_fifo_clear_isr_bit(mc, dir, HB_MC_MMIO_FIFO_IXR_TC_BIT);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: failed to clear TX-Complete bit for FIFO %s "
+                manycore_pr_err(mc, "%s: Failed to clear TX-Complete bit for FIFO %s "
 				"(direction = %s): %s\n",
                                 __func__,
 				typestr,
@@ -782,7 +782,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 	for (unsigned i = 0; i < array_size(packet->words); i++) {
  		err = hb_mc_manycore_mmio_write32(mc, data_addr, packet->words[i]);
 		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err(mc, "%s: failed to transmit word %d via %s FIFO: %s\n",
+			manycore_pr_err(mc, "%s: Failed to transmit word %d via %s FIFO: %s\n",
 					__func__, i, typestr, hb_mc_strerror(err));
 			return err;
 		}
@@ -791,14 +791,14 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 	do { //	wait until transmit is complete: continuously write a packet length until done
 		err = hb_mc_manycore_mmio_write32(mc, len_addr, sizeof(*packet));
 		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err(mc, "%s: failed to write length to FIFO %s: %s\n",
+			manycore_pr_err(mc, "%s: Failed to write length to FIFO %s: %s\n",
 					__func__, typestr, hb_mc_strerror(err));
 			return err;
 		}
 
 		err = hb_mc_manycore_fifo_get_isr_bit(mc, dir, HB_MC_MMIO_FIFO_IXR_TC_BIT, &tx_complete);
 		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err(mc, "%s: failed to read TX-Complete bit for FIFO %s "
+			manycore_pr_err(mc, "%s: Failed to read TX-Complete bit for FIFO %s "
 					"(direction = %s):"
 					"%s\n",
 					__func__,
@@ -811,7 +811,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 	// clear the Transmit Complete bit
 	err = hb_mc_manycore_fifo_clear_isr_bit(mc, dir, HB_MC_MMIO_FIFO_IXR_TC_BIT);
 	if (err != HB_MC_SUCCESS) {
-		manycore_pr_err(mc, "%s: failed to clear TX-Complete bit for FIFO %s "
+		manycore_pr_err(mc, "%s: Failed to clear TX-Complete bit for FIFO %s "
 				"(direction = %s): %s\n",
 				__func__,
 				typestr,
@@ -842,7 +842,7 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         int err;
 
         if (timeout != -1) {
-                manycore_pr_err(mc, "%s: only a timeout value of -1 is supported\n",
+                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
                 return HB_MC_INVALID;
         }
@@ -854,7 +854,7 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         do {
                 err = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
                 if (err != HB_MC_SUCCESS) {
-                        manycore_pr_err(mc, "%s: failed to get %s FIFO occupancy while waiting for packet: %s\n",
+                        manycore_pr_err(mc, "%s: Failed to get %s FIFO occupancy while waiting for packet: %s\n",
                                         __func__, typestr, hb_mc_strerror(err));
                         return err;
                 }
@@ -864,18 +864,18 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         /* get FIFO length */
         err = hb_mc_manycore_mmio_read32(mc, length_addr, &length);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: failed to read %s FIFO length register: %s\n",
+                manycore_pr_err(mc, "%s: Failed to read %s FIFO length register: %s\n",
                                 __func__, typestr, hb_mc_strerror(err));
                 return err;
         }
 
         if (length != sizeof(*packet)) {
-                manycore_pr_err(mc, "%s: read bad length %" PRId32 " from %s FIFO length register\n",
+                manycore_pr_err(mc, "%s: Read bad length %" PRId32 " from %s FIFO length register\n",
                                 __func__, length, typestr);
                 return HB_MC_FAIL;
         }
 
-        manycore_pr_dbg(mc, "%s: from %s FIFO: read the receive length register "
+        manycore_pr_dbg(mc, "%s: From %s FIFO: Read the receive length register "
 			"@ 0x%08" PRIxPTR " to be %" PRIu32 "\n",
                         __func__, typestr, length_addr, length);
 
@@ -883,7 +883,7 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         for (unsigned i = 0; i < array_size(packet->words); i++) {
                 err = hb_mc_manycore_mmio_read32(mc, data_addr, &packet->words[i]);
                 if (err != HB_MC_SUCCESS) {
-                        manycore_pr_err(mc, "%s: failed read data from %s FIFO: %s\n",
+                        manycore_pr_err(mc, "%s: Failed read data from %s FIFO: %s\n",
                                         __func__, typestr, hb_mc_strerror(err));
                         return err;
                 }
@@ -949,7 +949,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, npa_t *npa, size_
 	/* format the request packet */
 	err = hb_mc_manycore_format_load_request_packet(mc, &rqst.request, npa);
 	if (err != HB_MC_SUCCESS) {
-		manycore_pr_err(mc, "%s: failed to format load request packet: %s\n",
+		manycore_pr_err(mc, "%s: Failed to format load request packet: %s\n",
 				__func__, hb_mc_strerror(err));
 		return err;
 	}
@@ -970,7 +970,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, npa_t *npa, size_
 	/* transmit the request to the hardware */
 	err = hb_mc_manycore_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
 	if (err != HB_MC_SUCCESS) {
-		manycore_pr_err(mc, "%s: failed to send request packet: %s\n",
+		manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
 				__func__, hb_mc_strerror(err));
 		return err;
 	}
@@ -987,7 +987,7 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, npa_t *npa, void *
 	/* receive a packet from the hardware */
 	err = hb_mc_manycore_packet_rx(mc, &rsp, HB_MC_FIFO_RX_RSP, -1);
 	if (err != HB_MC_SUCCESS) {
-		manycore_pr_err(mc, "%s: failed to read response packet: %s\n",
+		manycore_pr_err(mc, "%s: Failed to read response packet: %s\n",
 				__func__, hb_mc_strerror(err));
 		return err;
 	}
@@ -1001,7 +1001,7 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, npa_t *npa, void *
 		break;
 	case 2:
 	case 1:
-		manycore_pr_err("%zu byte reads are not yet supported\n", sz);
+		manycore_pr_err(mc, "%zu byte reads are not yet supported\n", sz);
 		return HB_MC_NOIMPL;
 	default:
 		return HB_MC_INVALID;
@@ -1040,7 +1040,7 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, npa_t *npa, const void *vp
 		break;
 	case 2:
 	case 1:
-		manycore_pr_err("%zu byte writes are not yet supported\n", sz);
+		manycore_pr_err(mc, "%zu byte writes are not yet supported\n", sz);
 		return HB_MC_NOIMPL;
 	default:
 		return HB_MC_INVALID;
@@ -1058,14 +1058,14 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
 	uintptr_t ptr = (uintptr_t)data;
 
 	if (ptr & 0x3) {
-		manycore_pr_err(mc, "%s: input 'data' = %p: "
+		manycore_pr_err(mc, "%s: Input 'data' = %p: "
 				"only 32-bit aligned data is supported\n",
 				caller_name, data);
 		return HB_MC_NOIMPL;
 	}
 
 	if (sz & 0x3) {
-		manycore_pr_err(mc, "%s: input 'sz' = %zu: "
+		manycore_pr_err(mc, "%s: Input 'sz' = %zu: "
 				"only multiples of 4 are supported\n",
 				caller_name, sz);
 		return HB_MC_NOIMPL;
@@ -1099,7 +1099,7 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
 		addr.epa++; // epas are in terms of words
 		err = hb_mc_manycore_write(mc, &addr, &words[i], 4);
 		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err("%s: failed to send write request: %s\n",
+			manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
@@ -1136,7 +1136,7 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
 		addr.epa++; // epas are in terms of word
 		err = hb_mc_manycore_send_read_rqst(mc, &addr, 4);
 		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err("%s: failed to send read request: %s\n",
+			manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
@@ -1148,7 +1148,7 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
 		addr.epa++; // epas are in terms of words
 		err = hb_mc_manycore_recv_read_rsp(mc, &addr, &words[i], 4);
 		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err("%s: failed to receive read response: %s\n",
+			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
