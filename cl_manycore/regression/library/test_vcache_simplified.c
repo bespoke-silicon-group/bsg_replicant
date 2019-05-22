@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <bsg_manycore.h>
 #include "test_vcache_simplified.h"
 
@@ -36,7 +37,8 @@ int test_vcache_simplified() {
 		npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR + tag_reset_addr };
 		err = hb_mc_manycore_write_mem(mc, &npa, &zeros, sizeof(zeros));
 		if (err != HB_MC_SUCCESS) {
-			bsg_pr_err("hb_mc_copy_to_epa: failed to reset the vcache tag A[%d] at DRAM coord(%d,%d) addr %d.\n", i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
+			bsg_pr_err("%s: failed to reset the vcache tag A[%d] at DRAM coord(%d,%d) addr 0x%08" PRIx32 ": %s\n",
+				   __func__, i, dram_coord_x, dram_coord_y, BASE_ADDR + i, hb_mc_strerror(err));
 			goto cleanup;
 		} else {
 			bsg_pr_test_info("reset tag %d succesfully\n", i);
@@ -57,7 +59,8 @@ int test_vcache_simplified() {
 		npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR + epa_addr[i] };
 		err = hb_mc_manycore_write_mem(mc, &npa, &A_host[i], sizeof(A_host[i]));
 		if (err != HB_MC_SUCCESS) {
-			bsg_pr_err("hb_mc_copy_to_epa: failed to write A[%d] = %d to DRAM coord(%d,%d) addr %d.\n", i, A_host[i], dram_coord_x, dram_coord_y, BASE_ADDR + i);
+			bsg_pr_err("%s: failed to write A[%d] = %d to DRAM coord(%d,%d) addr 0x%08" PRIx32 ": %s\n",
+				   __func__, i, A_host[i], dram_coord_x, dram_coord_y, BASE_ADDR + epa_addr[i], hb_mc_strerror(err));
 			goto cleanup;
 		}
 	}
@@ -66,7 +69,8 @@ int test_vcache_simplified() {
 		npa_t npa = { .x = dram_coord_x, .y = dram_coord_y , .epa = BASE_ADDR + epa_addr[i] };
 		err = hb_mc_manycore_read_mem(mc, &npa, &A_device[i], sizeof(A_device[i]));
 		if (err != HB_MC_SUCCESS) {
-			bsg_pr_err("hb_mc_copy_from_epa: failed to read A[%d] from DRAM coord (%d,%d) addr %d.\n", i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
+			bsg_pr_err("%s: failed to read A[%d] from DRAM coord (%d,%d) addr 0x%08" PRIx32 ": %s\n",
+				   __func__, i, dram_coord_x, dram_coord_y, BASE_ADDR + epa_addr[i], hb_mc_strerror(err));
 			goto cleanup;
 		}
 	}
@@ -74,10 +78,12 @@ int test_vcache_simplified() {
 	bsg_pr_test_info("Checking vcache at (%d,%d):\n", dram_coord_x, dram_coord_y); 
 	for (int i = 0; i < WRITE_BLOCK_NUM; i ++) { 
 		if (A_host[i] == A_device[i]) {
-			bsg_pr_err("Success -- A_host[%d] = %d   ==   A_device[%d] = %d -- EPA: %d.\n", i, A_host[i], i, A_device[i], BASE_ADDR + i); 
+			bsg_pr_test_info("%s: " BSG_GREEN("Success") " -- A_host[%d] = %d   ==   A_device[%d] = %d -- EPA: 0x%08" PRIx32 "\n",
+				   __func__, i, A_host[i], i, A_device[i], BASE_ADDR + epa_addr[i], hb_mc_strerror(err)); 
 		}
 		else { 
-			bsg_pr_err("Failed -- A_host[%d] = %d   !=   A_device[%d] = %d -- EPA: %d.\n", i, A_host[i], i, A_device[i], BASE_ADDR + i);
+			bsg_pr_test_info("%s: " BSG_RED("Failed") " -- A_host[%d] = %d   !=   A_device[%d] = %d -- EPA: 0x%08" PRIx32 "\n",
+				   __func__, i, A_host[i], i, A_device[i], BASE_ADDR + epa_addr[i]);
 			mismatch = 1;
 		}
 	}
