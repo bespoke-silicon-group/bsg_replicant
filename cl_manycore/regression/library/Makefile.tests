@@ -15,6 +15,7 @@ C_REGRESSION_TESTS += test_manycore_packets
 C_REGRESSION_TESTS += test_manycore_init
 C_REGRESSION_TESTS += test_manycore_dmem_read_write
 C_REGRESSION_TESTS += test_manycore_vcache_sequence
+C_REGRESSION_TESTS += test_manycore_dram_read_write
 
 CXX_REGRESSION_TESTS = 
 
