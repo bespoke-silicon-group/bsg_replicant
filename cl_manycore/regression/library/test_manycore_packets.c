@@ -161,8 +161,8 @@ void test_main(uint32_t *exit_code) {
 }
 #else
 int main() {
-	bsg_pr_test_info("%s Regression Test (F1)\n", basename(__FILE__)));
-	int rc = test_packets();
+	bsg_pr_test_info("%s Regression Test (F1)\n", basename(__FILE__));
+	int rc = test_manycore_packets();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }

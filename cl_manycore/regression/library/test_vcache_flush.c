@@ -120,7 +120,7 @@ int test_vcache_flush() {
 		return HB_MC_FAIL;
 	}
 
-	config = hb_mc_manycore_get_config_ptr(&mc);
+	config = hb_mc_manycore_get_config(&mc);
 
 	host = hb_mc_config_get_host_interface(config);
 	host_x = hb_mc_coordinate_get_x(host);

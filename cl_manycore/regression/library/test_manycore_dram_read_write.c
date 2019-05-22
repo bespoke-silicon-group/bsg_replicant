@@ -65,8 +65,8 @@ int test_manycore_dram_read_write() {
 
 		for (size_t i = 0; i < ARRAY_LEN; i++) {
 			if (i % 64 == 1)
-				bsg_pr_info("%s: Have read %zu words from DRAM\n",
-				    __func__, i);
+				bsg_pr_test_info("%s: Have read %zu words from DRAM\n",
+						 __func__, i);
 			npa_t npa = { .x = dram_coord_x, .y = dram_coord_y , .epa = BASE_ADDR+i};
 			err = hb_mc_manycore_read_mem(mc, &npa,
 						      &read_data[i], sizeof(read_data[i]));

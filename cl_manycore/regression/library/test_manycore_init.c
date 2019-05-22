@@ -8,7 +8,7 @@
     bsg_pr_err(TEST_NAME ": " fmt, ##__VA_ARGS__)
 
 #define test_pr_info(fmt, ...)				\
-    bsg_pr_info(TEST_NAME ": " fmt, ##__VA_ARGS__)
+    bsg_pr_test_info(TEST_NAME ": " fmt, ##__VA_ARGS__)
 
 #define array_size(x)                           \
         (sizeof(x)/sizeof(x[0]))
