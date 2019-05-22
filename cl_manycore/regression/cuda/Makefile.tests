@@ -8,6 +8,7 @@ C_REGRESSION_TESTS = test_empty
 #C_REGRESSION_TESTS += test_barrier
 #C_REGRESSION_TESTS += test_packet 
 #C_REGRESSION_TESTS += test_stack_load
+#C_REGRESSION_TESTS += test_dram
 #C_REGRESSION_TESTS += test_vec_add
 #C_REGRESSION_TESTS += test_vec_add_parallel
 #C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
