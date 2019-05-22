@@ -11,6 +11,7 @@
 #ifndef COSIM
         #include <bsg_manycore_features.h>
 	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore.h>
 	#include <bsg_manycore_tile.h>
 	#include <bsg_manycore_errno.h>
 	#include <bsg_manycore_mmio.h>
@@ -19,6 +20,7 @@
 	#include <utils/sh_dpi_tasks.h>
         #include "bsg_manycore_features.h"
 	#include "bsg_manycore_driver.h"
+	#include "bsg_manycore.h"
 	#include "bsg_manycore_tile.h"
 	#include "bsg_manycore_errno.h"
 	#include "bsg_manycore_mmio.h"
@@ -52,6 +54,10 @@ extern "C" {
 
 int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
+
+// Loads an ELF into each tile in tiles, and all DRAMs
+int hb_mc_loader_load(const void *bin, size_t sz, const hb_mc_manycore_t *mc, eva_id_t id, const hb_mc_coordinate_t *tiles, uint32_t len);
+
 #ifdef __cplusplus
 }
 #endif

@@ -9,6 +9,8 @@ typedef enum __hb_mc_loader_elf_field_t{
 	HB_MC_LOADER_ELF_TEXT_ID = 1
 } hb_mc_loader_elf_field_t;
 
+typedef hb_mc_loader_elf_field_t hb_mc_segment_t; // This should replace above
+
 /*!
  *	* writes the binary's instructions into (x,y)'s icache.
  *	 * */
@@ -132,7 +134,7 @@ static int hb_mc_parse_elf(uint8_t device_fd, char *filename, uint8_t x, uint8_t
 	return HB_MC_SUCCESS;
 }
 
-int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size) {
+int hb_mc_load_binary(uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
@@ -158,5 +160,95 @@ int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8
 		}
 		hb_mc_load_packets(fd, packets_data, data_size);
 	}
+	return HB_MC_SUCCESS;
+}
+
+
+
+// Loads an ELF into each tile in tiles, and all DRAMs
+int hb_mc_loader_load(const void *bin, size_t sz, const hb_mc_manycore_t *mc, eva_id_t id, const hb_mc_coordinate_t *tiles, uint32_t len){
+	int rc;
+	// Validate ELF File
+	// Load tiles
+	// Load DRAMs	
+	return HB_MC_SUCCESS;
+}
+
+// Gets the memory segment associated with an id 
+static int hb_mc_loader_elf_get_segment(const void *bin, size_t sz, hb_mc_segment_t id, void **seg, size_t *segsz){
+	int rc;
+	return HB_MC_SUCCESS;
+}
+
+// Validates a buffer is in elf format
+static int hb_mc_loader_elf_validate(const void *elf, size_t sz){
+	int rc;
+
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_tiles(const void *bin, size_t sz, 
+				const hb_mc_manycore_t *mc, 
+				eva_id_t id, hb_mc_coordinate_t *tiles,
+				uint32_t len,
+				bool preload=true){
+	int rc, idx;
+	// For each tile in tiles
+	// rc = hb_mc_load_tile()
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_tile_icache(const void *bin, size_t sz,
+					const hb_mc_manycore_t *mc,
+					eva_id_t id, hb_mc_coordinate_t tile){
+	int rc;
+	// Get text segment
+	// EVA memcopy
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_tile_dmem(const void *bin, size_t sz,
+				const hb_mc_manycore_t *mc,
+				eva_id_t id, hb_mc_coordinate_t tile){
+	int rc;
+	// Get Data Segment
+	// EVA memcopy
+	return HB_MC_SUCCESS;
+}
+
+// Reset instruction cache?
+// Loads DMEM and Instruction Cache (Optional) for a tile
+static int hb_mc_loader_load_tile(const void *bin, size_t sz,
+				const hb_mc_manycore_t *mc,
+				eva_id_t id, hb_mc_coordinate_t tile,
+				bool preload){
+	int rc;
+	// Load DMEM
+	if(preload){
+		// Load ICache
+	}
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_dram_text(const void *bin, size_t sz, const hb_mc_manycore_t *mc, eva_id_t id){
+	int rc;
+	// Get Data segment
+	// EVA memcopy
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_dram_data(const void *bin, size_t sz, const hb_mc_manycore_t *mc, eva_id_t id){
+	int rc;
+	// Get Text segment
+	// EVA memcopy
+	return HB_MC_SUCCESS;
+}
+
+// Loads all DRAMs
+static int hb_mc_loader_load_drams(const void *bin, size_t sz, const hb_mc_manycore_t *mc, eva_id_t id){
+	int rc;
+	// rc = hb_mc_loader_load_dram_text();
+	// rc = hb_mc_loader_load_dram_data();
+	// load data
 	return HB_MC_SUCCESS;
 }
