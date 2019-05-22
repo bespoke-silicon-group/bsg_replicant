@@ -1,5 +1,5 @@
-#ifndef __TEST_VCACHE_STRIDE_H
-#define __TEST_VCACHE_STRIDE_H
+#ifndef __TEST_VCACHE_FLUSH_H
+#define __TEST_VCACHE_FLUSH_H
 
 #ifdef COSIM
 #include <bsg_manycore.h>
@@ -11,4 +11,4 @@
 #include <time.h>
 #include "../cl_manycore_regression.h"
 
-#endif // __TEST_VCACHE_STRIDE_H
+#endif // __TEST_VCACHE_FLUSH_H
