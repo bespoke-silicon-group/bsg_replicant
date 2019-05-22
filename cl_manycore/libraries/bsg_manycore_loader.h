@@ -55,8 +55,18 @@ extern "C" {
 int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
 static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
 
-// Loads an ELF into each tile in tiles, and all DRAMs
-int hb_mc_loader_load(const void *bin, size_t sz, const hb_mc_manycore_t *mc, eva_id_t id, const hb_mc_coordinate_t *tiles, uint32_t len);
+/**
+ * Loads an ELF file into a list of tiles and DRAM
+ * @param[in]  bin    A memory buffer containing a valid manycore binary
+ * @param[in]  sz     Size of #bin in bytes
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  tiles  A list of manycore to load with #bin, with the origin at 0
+ * @param[in]  len    The number of tiles in #tiles
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_loader_load(const void *bin, size_t sz, const hb_mc_manycore_t *mc,
+		const eva_id_t *id, const hb_mc_coordinate_t *tiles, uint32_t len);
 
 #ifdef __cplusplus
 }
