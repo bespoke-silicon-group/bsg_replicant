@@ -61,6 +61,8 @@ ${CL_DIR}/../hdl/bsg_manycore_link_to_axil.v
 ${CL_DIR}/../hdl/bsg_axil_to_fifos.v
 ${CL_DIR}/../hdl/bsg_manycore_endpoint_to_fifos.v
 ${CL_DIR}/../hdl/bsg_manycore_endpoint_request_timer.v
+${CL_DIR}/../hdl/axil_demux.v
+${CL_DIR}/../hdl/axi_perf_mon.v
 
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_cycle_counter.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_dff_en.v
@@ -166,6 +168,7 @@ ${XILINX_VIVADO}/data/ip/xilinx/generic_baseblocks_v2_1/hdl/generic_baseblocks_v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_data_fifo_v2_1/hdl/axi_data_fifo_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v
 ${XILINX_VIVADO}/data/ip/xilinx/axi_dwidth_converter_v2_1/hdl/axi_dwidth_converter_v2_1_vl_rfs.v
+${XILINX_VIVADO}/data/ip/xilinx/axi_perf_mon_v5_0/hdl/axi_perf_mon_v5_0_syn_rfs.v
 
 # AWS design files
 ${HDK_SHELL_DESIGN_DIR}/ip/ila_vio_counter/sim/ila_vio_counter.v
@@ -186,6 +189,7 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl/axi_infrastructure_v1_1_
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/axi_clock_converter_v2_1_vl_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/fifo_generator_v13_2_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
+
 
 # Simulator-specific design files
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.${SIMULATOR}.f

@@ -88,6 +88,31 @@ static uint32_t hb_mc_read32 (uint8_t fd, uint32_t ofs) {
 	#endif
 }
 
+
+uint32_t hb_mc_read_axi_mon (uint8_t fd, uint32_t ofs) {
+	#ifdef COSIM
+		uint32_t read;
+		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs + 0x10000, &read);
+		return read;
+	#else
+		char *ocl_base = ocl_table[fd];
+		return *((uint32_t *) (ocl_base + ofs + 0x10000));
+	#endif
+}
+
+int hb_mc_enable_mon (uint8_t fd) {
+	#ifdef COSIM
+		fpga_pci_poke(PCI_BAR_HANDLE_INIT, 0x10300, 0x20000);
+		fpga_pci_poke(PCI_BAR_HANDLE_INIT, 0x10300, 0x10001);
+	#else
+		char *ocl_base = ocl_table[fd];
+		*((uint32_t *) (ocl_base + 0x10300)) = 0x20000;
+		*((uint32_t *) (ocl_base + 0x10300)) = 0x10001;
+	#endif
+}
+
+
+
 /*!
  * Checks if corresponding FPGA has been memory mapped.
  * @param fd userspace file descriptor

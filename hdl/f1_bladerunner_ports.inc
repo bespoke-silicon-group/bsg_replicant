@@ -6,29 +6,69 @@
 wire clk_i    = clk_main_a0    ;
 wire resetn_i = rst_main_n_sync;
 
-`declare_bsg_axil_bus_s(1, sh_ocl_si_s, sh_ocl_so_s);
-sh_ocl_si_s s_axil_ocl_li_cast;
-sh_ocl_so_s s_axil_ocl_lo_cast;
+`declare_bsg_axil_bus_s(1, axil_mosi_s, axil_miso_s);
+axil_mosi_s m_axil_bus_lo_cast, s_axil_ocl_li_cast, s_axil_mon_li_cast;
+axil_miso_s m_axil_bus_li_cast, s_axil_ocl_lo_cast, s_axil_mon_lo_cast;
 
-assign s_axil_ocl_li_cast.awaddr  = sh_ocl_awaddr;
-assign s_axil_ocl_li_cast.awvalid = sh_ocl_awvalid;
-assign s_axil_ocl_li_cast.wdata   = sh_ocl_wdata;
-assign s_axil_ocl_li_cast.wstrb   = sh_ocl_wstrb;
-assign s_axil_ocl_li_cast.wvalid  = sh_ocl_wvalid;
-assign s_axil_ocl_li_cast.bready  = sh_ocl_bready;
-assign s_axil_ocl_li_cast.araddr  = sh_ocl_araddr;
-assign s_axil_ocl_li_cast.arvalid = sh_ocl_arvalid;
-assign s_axil_ocl_li_cast.rready  = sh_ocl_rready;
+axi_register_slice_light AXIL_OCL_REG_SLC (
+   .aclk          (clk_i),
+   .aresetn       (resetn_i),
+   .s_axi_awaddr  (sh_ocl_awaddr),
+   .s_axi_awprot  (3'h0),
+   .s_axi_awvalid (sh_ocl_awvalid),
+   .s_axi_awready (ocl_sh_awready),
+   .s_axi_wdata   (sh_ocl_wdata),
+   .s_axi_wstrb   (sh_ocl_wstrb),
+   .s_axi_wvalid  (sh_ocl_wvalid),
+   .s_axi_wready  (ocl_sh_wready),
+   .s_axi_bresp   (ocl_sh_bresp),
+   .s_axi_bvalid  (ocl_sh_bvalid),
+   .s_axi_bready  (sh_ocl_bready),
+   .s_axi_araddr  (sh_ocl_araddr),
+   .s_axi_arvalid (sh_ocl_arvalid),
+   .s_axi_arready (ocl_sh_arready),
+   .s_axi_rdata   (ocl_sh_rdata),
+   .s_axi_rresp   (ocl_sh_rresp),
+   .s_axi_rvalid  (ocl_sh_rvalid),
+   .s_axi_rready  (sh_ocl_rready),
+   .m_axi_awaddr  (m_axil_bus_lo_cast.awaddr),
+   .m_axi_awprot  (),
+   .m_axi_awvalid (m_axil_bus_lo_cast.awvalid),
+   .m_axi_awready (m_axil_bus_li_cast.awready),
+   .m_axi_wdata   (m_axil_bus_lo_cast.wdata),
+   .m_axi_wstrb   (m_axil_bus_lo_cast.wstrb),
+   .m_axi_wvalid  (m_axil_bus_lo_cast.wvalid),
+   .m_axi_wready  (m_axil_bus_li_cast.wready),
+   .m_axi_bresp   (m_axil_bus_li_cast.bresp),
+   .m_axi_bvalid  (m_axil_bus_li_cast.bvalid),
+   .m_axi_bready  (m_axil_bus_lo_cast.bready),
+   .m_axi_araddr  (m_axil_bus_lo_cast.araddr),
+   .m_axi_arvalid (m_axil_bus_lo_cast.arvalid),
+   .m_axi_arready (m_axil_bus_li_cast.arready),
+   .m_axi_rdata   (m_axil_bus_li_cast.rdata),
+   .m_axi_rresp   (m_axil_bus_li_cast.rresp),
+   .m_axi_rvalid  (m_axil_bus_li_cast.rvalid),
+   .m_axi_rready  (m_axil_bus_lo_cast.rready)
+  );
 
-assign ocl_sh_awready = s_axil_ocl_lo_cast.awready;
-assign ocl_sh_wready  = s_axil_ocl_lo_cast.wready;
-assign ocl_sh_bresp   = s_axil_ocl_lo_cast.bresp;
-assign ocl_sh_bvalid  = s_axil_ocl_lo_cast.bvalid;
-assign ocl_sh_arready = s_axil_ocl_lo_cast.arready;
-assign ocl_sh_rdata   = s_axil_ocl_lo_cast.rdata;
-assign ocl_sh_rresp   = s_axil_ocl_lo_cast.rresp;
-assign ocl_sh_rvalid  = s_axil_ocl_lo_cast.rvalid;
+  localparam axil_demux_slot_num_lp = 2;
 
+  logic [axil_demux_slot_num_lp-1:0][`bsg_axil_mosi_bus_width(1)-1:0] m_axil_demux_lo;
+  logic [axil_demux_slot_num_lp-1:0][`bsg_axil_miso_bus_width(1)-1:0] m_axil_demux_li;
+  axil_demux #(.slot_num_p(axil_demux_slot_num_lp)) axil_2deumx (
+    .clk_i         (clk_i             ),
+    .reset_i       (~resetn_i         ),
+    .s_axil_bus_i  (m_axil_bus_lo_cast),
+    .s_axil_bus_o  (m_axil_bus_li_cast),
+    .m_axil_demux_o(m_axil_demux_lo   ),
+    .m_axil_demux_i(m_axil_demux_li   )
+  );
+
+  assign s_axil_ocl_li_cast = m_axil_demux_lo[0];
+  assign s_axil_mon_li_cast = m_axil_demux_lo[1];
+
+  assign m_axil_demux_li[0] = s_axil_ocl_lo_cast;
+  assign m_axil_demux_li[1] = s_axil_mon_lo_cast;
 
 // ---------------------------------------------
 // axi4 pcis interface
@@ -115,6 +155,28 @@ assign m_axi_ddr_li_cast.rvalid  = sh_cl_ddr_rvalid;
 
 // NOT USED in AXI4
 assign cl_sh_ddr_wid = '0;
+
+axi_perf_mon #(
+  .slot_num_p  (1               ),
+  .id_width_p  (axi_id_width_p  ),
+  .addr_width_p(axi_addr_width_p),
+  .data_width_p(axi_data_width_p)
+) axi4_performance_monitor (
+  .s_axil_clk_i       (clk_i             ),
+  .s_axil_resetn_i    (resetn_i          ),
+  .s_axil_bus_i       (s_axil_mon_li_cast),
+  .s_axil_bus_o       (s_axil_mon_lo_cast),
+  .slot_0_axi_aclk_i  (clk_i             ),
+  .slot_0_axi_resetn_i(resetn_i          ),
+  .slot_0_axi_mo_i    (m_axi_ddr_lo_cast ),
+  .slot_0_axi_mi_i    (m_axi_ddr_li_cast ),
+  .core_clk_i         (clk_i             ),
+  .core_aresetn_i     (resetn_i          ),
+  .capture_event_i    ('0                ),
+  .reset_event_i      ('0                ),
+  .interrupt_o        (                  )
+);
+
 
 // synopsys translate_off
 initial begin

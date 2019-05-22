@@ -119,6 +119,9 @@ inline hb_mc_direction_t hb_mc_get_tx_direction(hb_mc_fifo_tx_t d){
 	return (hb_mc_direction_t)d;
 }
 
+uint32_t hb_mc_read_axi_mon (uint8_t fd, uint32_t ofs);
+int hb_mc_enable_mon (uint8_t fd);
+
 int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t *packet);
 int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet);
 

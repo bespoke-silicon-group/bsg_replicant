@@ -40,6 +40,19 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
 
+  hb_mc_enable_mon(fd);
+
+	uint32_t axi_mon_clock_hi, axi_mon_clock_lo;
+	axi_mon_clock_hi = hb_mc_read_axi_mon(fd, 0x0000);
+	axi_mon_clock_lo = hb_mc_read_axi_mon(fd, 0x0004);
+	bsg_pr_test_info("Global clock: %x, %x\n", axi_mon_clock_hi, axi_mon_clock_lo);
+
+	sv_pause(10);
+
+	axi_mon_clock_hi = hb_mc_read_axi_mon(fd, 0x0000);
+	axi_mon_clock_lo = hb_mc_read_axi_mon(fd, 0x0004);
+	bsg_pr_test_info("Global clock: %x, %x\n", axi_mon_clock_hi, axi_mon_clock_lo);
+
 	// In order, at offset 4, the elements of the array are:
 	// NETWORK_DIM_X, NETWORK_DIM_Y, HOST_INTERFACE_COORD_X, HOST_INTERFACE_COORD_Y
 	const char *desc[4] = { "Network X Dimension", "Network Y Dimension", "Host X Coordinate", "Host Y Coordinate" };
