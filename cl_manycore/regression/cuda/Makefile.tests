@@ -11,6 +11,7 @@ C_REGRESSION_TESTS = test_empty
 #C_REGRESSION_TESTS += test_vec_add
 #C_REGRESSION_TESTS += test_vec_add_parallel
 #C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
+#C_REGRESSION_TESTS += test_vec_add_shared_mem
 #C_REGRESSION_TESTS += test_shared_mem
 #C_REGRESSION_TESTS += test_shared_mem_load_store
 #C_REGRESSION_TESTS += test_matrix_mul
