@@ -251,29 +251,60 @@ int hb_mc_manycore_mmio_write32(hb_mc_manycore_t *mc, uintptr_t offset, uint32_t
  * Translates a Network Physical Address to an Endpoint Virtual Address
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in]  npa    A valid npa_t to translate
+ * @param[in]  id     An eva ID for computing the eva to npa map
  * @param[out] eva    An eva to be set by translating #npa
- * @param[in]  coordinate A coordinate for which #eva will be formatted
- * @param[in]  eva_id An EVA address space ID (unused: should always be 0)
- * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ * @param[out] sz     The size in bytes of the EVA segment for the #npa
+ * @param[in]  c      (Optional) A coordinate for which #eva will be formatted
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-__attribute__((warn_unused_result))
-int hb_mc_manycore_npa_to_eva(hb_mc_manycore_t *mc, npa_t *npa, eva_t *eva,
-                              hb_mc_coordinate_t coordinate,
-                              eva_id_t eva_id);
+int hb_mc_manycore_npa_to_eva(hb_mc_manycore_t *mc, npa_t *npa, 
+			eva_id_t id, eva_t *eva, size_t *sz,
+			hb_mc_coordinate_t *c);
 
 /**
  * Translate an Endpoint Virtual Address to a Network Physical Address
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  id     An eva ID for computing the eva to npa map
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva
- * @param[in]  coordinate A coordinate for which #eva is be formatted
- * @param[in]  eva_id An EVA address space ID (unused: should always be 0)
- * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @param[in]  c      (Optional) A coordinate for which #eva is be formatted
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_eva_to_npa(hb_mc_manycore_t *mc, eva_t eva,  npa_t *npa,
-                              hb_mc_coordinate_t coordinate,
-                              eva_id_t eva_id);
+int hb_mc_manycore_eva_to_npa(hb_mc_manycore_t *mc, eva_id_t id,
+			eva_t eva, npa_t *npa, size_t *sz,
+			const hb_mc_coordinate_t *c);
+
+/**
+ * Write memory out to manycore hardware starting at a given EVA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  eva    A valid eva_t
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @param[in]  c      (Optional) A coordinate on the the Manycore
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_write_eva(hb_mc_manycore_t *mc, eva_id_t id,
+			eva_t *eva, const void *data, size_t sz, 
+			const hb_mc_coordinate_t *c);
+
+/**
+ * Read memory from manycore hardware starting at a given EVA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  eva    A valid eva_t
+ * @param[out] data   A buffer into which data will be read
+ * @param[in]  sz     The number of bytes to read from the manycore hardware
+ * @param[in]  c      (Optional) A coordinate on the the Manycore
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_read_eva(hb_mc_manycore_t *mc, eva_id_t id,
+			eva_t *eva, const void *data, size_t sz, 
+			const hb_mc_coordinate_t *c);
 
 /**
  * Get a pointer to the configuration struct
