@@ -9,7 +9,7 @@
  * bsg_pr_test_info() a version of printf. All regression tests should prefer this function over direct stdio calls.
  */
 #define bsg_pr_test_info(fmt, ...)                                      \
-    printf("BSG INFO: " fmt, ##__VA_ARGS__)
+    do { printf("BSG INFO: " fmt, ##__VA_ARGS__); fflush(NULL); } while (0)
 
 /**
  * bsg_pr_test_info() a version of printf(stderr,...). All regression tests should prefer this function over direct stdio calls.
