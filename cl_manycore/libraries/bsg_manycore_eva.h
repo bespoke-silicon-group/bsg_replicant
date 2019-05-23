@@ -69,7 +69,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 
 /**
  * Write memory out to manycore hardware starting at a given EVA
- * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  mc     An initialized manycore struct
  * @param[in]  id     An eva ID for computing the eva to npa map
  * @param[in]  c      A target tile to compute the NPA
  * @param[in]  eva    A valid eva_t
@@ -77,16 +77,15 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-// I think this is impossible to implement with this signature?
 __attribute__((warn_unused_result))
-int hb_mc_manycore_eva_write(const hb_mc_config_t *cfg,
+int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
 			     const hb_mc_eva_id_t *id,
 			     const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			     const void *data, size_t sz);
 
 /**
  * Read memory from manycore hardware starting at a given EVA
- * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  mc     An initialized manycore struct
  * @param[in]  id     An eva ID for computing the eva to npa map
  * @param[in]  c      A coordinate on the the Manycore
  * @param[in]  eva    A valid eva_t
@@ -96,7 +95,7 @@ int hb_mc_manycore_eva_write(const hb_mc_config_t *cfg,
  */
 // I think this is impossible to implement with this signature?
 __attribute__((warn_unused_result))
-int hb_mc_manycore_eva_read(const hb_mc_config_t *cfg,
+int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
 			    const hb_mc_eva_id_t *id,
 			    const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			    const void *data, size_t sz);
