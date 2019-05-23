@@ -88,15 +88,15 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 		*sz = DEFAULT_TILE_DMEM_SIZE - epa;
 	}else if(epa == DEFAULT_TILE_FREEZE_ADDR){
 		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-		*sz = 4;
+		*sz = sizeof(uint32_t);
 	}else if(epa == DEFAULT_TILE_ORIGIN_X_ADDR){
 		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-		*sz = 4;
+		*sz = sizeof(uint32_t);
 	}else if(epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
 		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-		*sz = 4;
+		*sz = sizeof(uint32_t);
 	} else {
-		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", *eva);
+		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", __func__, *eva);
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
