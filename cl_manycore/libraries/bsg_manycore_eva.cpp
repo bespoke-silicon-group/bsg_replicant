@@ -102,6 +102,10 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Determines if an EVA is a group EVA
+ * @return true if EVA addresses group memory, false otherwise
+ */
 static bool default_eva_is_group(const hb_mc_eva_t *eva)
 {
 	return (hb_mc_eva_addr(eva) & DEFAULT_GROUP_BITMASK) != 0;
@@ -114,7 +118,7 @@ static bool default_eva_is_group(const hb_mc_eva_t *eva)
  * @param[in]  eva    An eva to translate
  * @param[out] npa    An npa to be set by translating #eva and #id
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
- * @return true if EVA addresses tile-local memory, false otherwise
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
@@ -131,6 +135,10 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Determines if an EVA is a global EVA
+ * @return true if EVA addresses global memory, false otherwise
+ */
 static bool default_eva_is_global(const hb_mc_eva_t *eva)
 {
 	return (hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_BITMASK) != 0;
@@ -143,7 +151,7 @@ static bool default_eva_is_global(const hb_mc_eva_t *eva)
  * @param[in]  eva    An eva to translate
  * @param[out] npa    An npa to be set by translating #eva and #id
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
- * @return true if EVA addresses tile-local memory, false otherwise
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
@@ -160,6 +168,10 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Determines if an EVA is in DRAM
+ * @return true if EVA addresses DRAM memory, false otherwise
+ */
 static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 {
 	return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
@@ -172,7 +184,7 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
  * @param[in]  eva    An eva to translate
  * @param[out] npa    An npa to be set by translating #eva and #id
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
- * @return true if EVA addresses tile-local memory, false otherwise
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
@@ -211,9 +223,9 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
  * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  c      A target tile to compute #npa
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by translating #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
- * @return true if EVA addresses tile-local memory, false otherwise
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_eva_to_npa(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c,
@@ -231,18 +243,29 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 	return HB_MC_FAIL;
 }
 
+/**
+ * Converts a NPA to a EVA in a coordinate's address space.
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  c      A target tile to compute #eva
+ * @param[in]  npa    An npa to translate
+ * @param[out] eva    An eva to set by translating #npa
+ * @param[out] sz     The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
 static int default_npa_to_eva(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c,
 			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
-	if(default_eva_is_dram(eva))
-		return default_eva_to_npa_dram(cfg, c, eva, npa, sz);
-	if(default_eva_is_global(eva))
-		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
-	if(default_eva_is_group(eva))
-		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
-	if(default_eva_is_local(eva))
-		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
+	/*
+	if(default_npa_is_dram(npa, c))
+		return default_npa_to_eva_dram(cfg, c, npa, eva, sz);
+	if(default_npa_is_global(npa, c))
+		return default_npa_to_eva_global(cfg, c, npa, eva, sz);
+	if(default_npa_is_group(npa, c))
+		return default_npa_to_eva_group(cfg, c, npa, eva, sz);
+	if(default_npa_is_local(npa, c))
+		return default_npa_to_eva_local(cfg, c, npa, eva, sz);
+	*/
 	return HB_MC_FAIL;
 }
 
@@ -263,14 +286,12 @@ hb_mc_eva_id_t default_eva = {
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
-			const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *c,
-			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
+		const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *c,
+		const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
 
-	// TODO: Don't set sz if NULL
-
-	err = HB_MC_FAIL;// TODO: Check (NPA, ID, Coordinate) is valid
+	err = id->npa_to_eva(cfg, c, npa, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -294,7 +315,6 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 {
 	int err;
 	
-
 	err = id->eva_to_npa(cfg, c, eva, npa, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;

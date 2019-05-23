@@ -104,15 +104,16 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-// I think this is impossible to implement with this signature?
 __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
 			    const hb_mc_eva_id_t *id,
 			    const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			    const void *data, size_t sz);
-
-
-// What is this function supposed to do?
+/**
+ * Returns the EVA associated with a hb_mc_eva_t 
+ * @param[in]  eva    A valid eva_t
+ * @return A 32-bit EVA Address
+ */
 static inline uint32_t hb_mc_eva_addr(const hb_mc_eva_t *eva)
 {
 	return *eva;
