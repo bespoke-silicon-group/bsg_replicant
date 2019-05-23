@@ -34,8 +34,8 @@ int kernel_shared_mem_load_store () {
 	/*****************************************************************************************************************
 	* Allocate memory on the device for A, B and C.
 	******************************************************************************************************************/
-	uint32_t M = 8;
-	uint32_t N = 16;
+	uint32_t M = 64;
+	uint32_t N = 64;
 
 	eva_t A_in_device, A_out_device; 
 	hb_mc_device_malloc(&device, M * N * sizeof(uint32_t), &A_in_device); /* allocate A_in[M][N] on the device */
@@ -48,7 +48,7 @@ int kernel_shared_mem_load_store () {
 	******************************************************************************************************************/
 	uint32_t A_in_host[M * N]; /* allocate A[M][N] on the host */ 
 	for (int i = 0; i < M * N; i++) { /* fill A with arbitrary data */
-		A_in_host[i] = rand() & 0xFFFF;
+		A_in_host[i] = i; // rand() & 0xFFFF;
 	}
 
 
@@ -66,8 +66,8 @@ int kernel_shared_mem_load_store () {
 	* Define tg_dim_x/y: number of tiles in each tile group
 	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
 	******************************************************************************************************************/
-	uint32_t block_size_y = 4;
-	uint32_t block_size_x = 4;
+	uint32_t block_size_y = 32;
+	uint32_t block_size_x = 16;
 
 	uint8_t tg_dim_y = 2;
 	uint8_t tg_dim_x = 2;

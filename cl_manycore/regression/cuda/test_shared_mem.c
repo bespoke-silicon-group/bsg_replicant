@@ -5,7 +5,8 @@
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/shared_mem/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
 */
 
-#define N 16
+// Maximum N that passed the test with 2x2 tile group dimensions is 2048
+#define N 256
 
 
 int kernel_shared_mem () {
