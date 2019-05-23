@@ -11,6 +11,8 @@
 #include "bsg_manycore_features.h"
 #include "bsg_manycore_coordinate.h"
 #include "bsg_manycore.h"
+#include "bsg_manycore_npa.h"
+#include "bsg_manycore_epa.h"
 #endif
 
 #ifdef __cplusplus
@@ -23,14 +25,13 @@
 extern "C" {
 #endif
 
-typedef uint32_t eva_t;
-typedef eva_t hb_mc_eva_t;
+typedef uint32_t hb_mc_eva_t;
 
 typedef struct __hb_mc_eva_id_t{
 	int (*eva_to_npa)(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *c,
-			const eva_t *eva, hb_mc_npa_t *npa, size_t *sz);
+			const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz);
 	int (*npa_to_eva)(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *c,
-			const hb_mc_npa_t *npa, eva_t *eva, size_t *sz);
+			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz);
 } hb_mc_eva_id_t;
 
 extern hb_mc_eva_id_t default_eva;
@@ -48,7 +49,7 @@ extern hb_mc_eva_id_t default_eva;
 __attribute__((warn_unused_result))
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
 		     const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *c,
-		     const hb_mc_npa_t *npa, eva_t *eva, size_t *sz);
+		     const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz);
 
 /**
  * Translate an Endpoint Virtual Address to a Network Physical Address
@@ -63,7 +64,7 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
 __attribute__((warn_unused_result))
 int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 		     const hb_mc_eva_id_t *id,
-		     const hb_mc_coordinate_t *c, const eva_t *eva,
+		     const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 		     hb_mc_npa_t *npa, size_t *sz);
 
 /**
@@ -80,7 +81,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_write(const hb_mc_config_t *cfg,
 			     const hb_mc_eva_id_t *id,
-			     const hb_mc_coordinate_t *c, const eva_t *eva,
+			     const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			     const void *data, size_t sz);
 
 /**
@@ -97,11 +98,11 @@ int hb_mc_manycore_eva_write(const hb_mc_config_t *cfg,
 __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_read(const hb_mc_config_t *cfg,
 			    const hb_mc_eva_id_t *id,
-			    const hb_mc_coordinate_t *c, const eva_t *eva,
+			    const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			    const void *data, size_t sz);
 
 // What is this function supposed to do?
-static inline uint32_t hb_mc_eva_addr(const eva_t *eva)
+static inline uint32_t hb_mc_eva_addr(const hb_mc_eva_t *eva)
 {
 	return *eva;
 }

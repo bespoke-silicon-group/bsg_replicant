@@ -96,6 +96,7 @@ static size_t hb_mc_loader_get_tile_segment_capacity(const void *bin, size_t sz,
 						     hb_mc_coordinate_t tile,
 						     hb_mc_loader_elf_field_t segment)
 {
+
 	return 0;
 }
 
