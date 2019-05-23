@@ -12,20 +12,23 @@
 #define MAKE_MASK(WIDTH) ((1ULL << WIDTH) - 1)
 
 
-// Tile Memory default is 4096 bytes, but 18 bits are used. 
-#define DEFAULT_TILE_EPA_WIDTH 18
-#define DEFAULT_TILE_EPA_BITMASK MAKE_MASK(DEFAULT_TILE_EPA_WIDTH)
-#define DEFAULT_TILE_EPA_SIZE (1ULL << DEFAULT_TILE_EPA_WIDTH)
+// Tile Memory default is 4096 bytes
+#define DEFAULT_TILE_DMEM_WIDTH 12
+#define DEFAULT_TILE_DMEM_BITMASK MAKE_MASK(DEFAULT_TILE_DMEM_WIDTH)
+#define DEFAULT_TILE_DMEM_SIZE (1ULL << DEFAULT_TILE_DMEM_WIDTH)
+#define DEFAULT_TILE_CSR_WIDTH 17
+#define DEFAULT_TILE_FREEZE_ADDR (1ULL << DEFAULT_TILE_CSR_WIDTH)
+#define DEFAULT_TILE_ORIGIN_X_ADDR (DEFAULT_TILE_FREEZE_ADDR + 4)
+#define DEFAULT_TILE_ORIGIN_Y_ADDR (DEFAULT_TILE_FREEZE_ADDR + 8)
 
-#define DEFAULT_LOCAL_WIDTH DEFAULT_TILE_EPA_WIDTH
+// However, 18 bits are exposed
+#define DEFAULT_LOCAL_WIDTH 18
 #define DEFAULT_LOCAL_BITMASK MAKE_MASK(DEFAULT_LOCAL_WIDTH)
-#define DEFAULT_LOCAL_EPA_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_LOCAL_SIZE DEFAULT_TILE_EPA_SIZE
 
 #define DEFAULT_GROUP_BITIDX 29
 #define DEFAULT_GROUP_BITMASK (1ULL << DEFAULT_GROUP_BITIDX)
-#define DEFAULT_GROUP_EPA_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_GROUP_EPA_SIZE DEFAULT_TILE_EPA_SIZE
+#define DEFAULT_GROUP_EPA_BITMASK DEFAULT_TILE_DMEM_BITMASK
+#define DEFAULT_GROUP_EPA_SIZE DEFAULT_TILE_DMEM_SIZE
 
 #define DEFAULT_GROUP_X_WIDTH 6
 #define DEFAULT_GROUP_X_BITIDX DEFAULT_LOCAL_WIDTH
@@ -37,8 +40,8 @@
 
 #define DEFAULT_GLOBAL_BITIDX 30
 #define DEFAULT_GLOBAL_BITMASK (1ULL << DEFAULT_GLOBAL_BITIDX)
-#define DEFAULT_GLOBAL_EPA_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_GLOBAL_EPA_SIZE DEFAULT_TILE_EPA_SIZE
+#define DEFAULT_GLOBAL_EPA_BITMASK DEFAULT_TILE_DMEM_BITMASK
+#define DEFAULT_GLOBAL_EPA_SIZE DEFAULT_TILE_DMEM_SIZE
 
 #define DEFAULT_GLOBAL_X_WIDTH 6
 #define DEFAULT_GLOBAL_X_BITIDX DEFAULT_LOCAL_WIDTH
@@ -78,9 +81,24 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 	hb_mc_epa_t epa;
 	x = hb_mc_coordinate_get_x(*c);
 	y = hb_mc_coordinate_get_y(*c);
-	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_EPA_BITMASK;
-	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-	*sz = DEFAULT_LOCAL_SIZE - epa;
+	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	// EVA is writing to DMEM
+	if(epa < DEFAULT_TILE_DMEM_SIZE){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = DEFAULT_TILE_DMEM_SIZE - epa;
+	}else if(epa == DEFAULT_TILE_FREEZE_ADDR){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = 4;
+	}else if(epa == DEFAULT_TILE_ORIGIN_X_ADDR){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = 4;
+	}else if(epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = 4;
+	} else {
+		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", *eva);
+		return HB_MC_FAIL;
+	}
 	return HB_MC_SUCCESS;
 }
 

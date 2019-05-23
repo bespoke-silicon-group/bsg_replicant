@@ -22,9 +22,10 @@ typedef enum __hb_mc_region_t{
 
 // These are explicitly not copied from the bsg_manycore_eva.h 
 #define LOCAL_EPA_SIZE (1<<18)
+#define DMEM_EPA_SIZE (1<<12)
 
 #define GROUP_INDICATOR (1 << 29)
-#define GROUP_EPA_SIZE LOCAL_EPA_SIZE
+#define GROUP_EPA_SIZE DMEM_EPA_SIZE
 #define GROUP_X_BITS 6
 #define GROUP_X_MAX ((1 << GROUP_X_BITS) - 1)
 #define GROUP_X_MASK GROUP_X_MAX
@@ -37,7 +38,7 @@ typedef enum __hb_mc_region_t{
 
 #define GLOBAL_INDICATOR_WIDTH 1
 #define GLOBAL_INDICATOR (1 << 30)
-#define GLOBAL_EPA_SIZE LOCAL_EPA_SIZE
+#define GLOBAL_EPA_SIZE DMEM_EPA_SIZE
 #define GLOBAL_X_BITS 6
 #define GLOBAL_X_MAX ((1 << GLOBAL_X_BITS) - 1)
 #define GLOBAL_X_MASK GLOBAL_X_MAX
@@ -119,10 +120,10 @@ int test_manycore_eva () {
 	for( i = 0; i < NUM_EVAS; ++i){
 		region = rand() % NUM_REGIONS;
 		if(region == LOCAL){
-			eva = rand() % LOCAL_EPA_SIZE;
+			eva = rand() % DMEM_EPA_SIZE;
 			bsg_pr_test_info("Creating Local EVA: 0x%x\n", eva);
 			tgt_epa = eva;
-			tgt_sz = LOCAL_EPA_SIZE - tgt_epa;
+			tgt_sz = DMEM_EPA_SIZE - tgt_epa;
 			tgt_x = src_x;
 			tgt_y = src_y;
 		} else if (region == GROUP){
