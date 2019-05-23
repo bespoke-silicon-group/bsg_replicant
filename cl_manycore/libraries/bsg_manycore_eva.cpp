@@ -226,13 +226,22 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
-	return HB_MC_SUCCESS;
+	bsg_pr_err("%s: EVA did not map to a known region\n", __func__);
+	return HB_MC_FAIL;
 }
 
 static int default_npa_to_eva(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c, 
 			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
+	if(default_eva_is_dram(eva))
+		return default_eva_to_npa_dram(cfg, c, eva, npa, sz);
+	if(default_eva_is_global(eva))
+		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
+	if(default_eva_is_group(eva))
+		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
+	if(default_eva_is_local(eva))
+		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
 	return HB_MC_FAIL;
 }
 
