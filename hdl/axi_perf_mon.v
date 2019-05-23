@@ -208,7 +208,7 @@ module axi_perf_mon #(
     .C_S_AXI4_BASEADDR           ('HFFFFFFFF    ),
     .C_S_AXI4_HIGHADDR           ('H00000000    ),
     .C_EN_ALL_TRACE              (1             )
-  ) axi_perf_mon (
+  ) axi_perf_monitor (
     .s_axi_aclk           (s_axil_clk_i                   ),
     .s_axi_aresetn        (s_axil_resetn_i                ),
     .s_axi_awaddr         (s_axil_bus_li_cast.awaddr[15:0]),

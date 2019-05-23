@@ -97,6 +97,8 @@ module bsg_bladerunner_rom #(
     assign returning_data_li[8*i+:8] = {8{in_mask_r[i]}} & returning_data_r[8*i+:8];
   end
 
+  logic [rom_width_p-1:0] rom_data_lo;
+
   always_ff @(posedge clk_i)
   begin: return_valid_reg
     if(reset_i) begin
@@ -114,9 +116,8 @@ module bsg_bladerunner_rom #(
   // rom data path
   localparam lg_rom_els_lp = `BSG_SAFE_CLOG2(rom_els_p);
 
-  logic [lg_rom_els_lp-1:0] rom_addr_li;
-  logic [rom_width_p-1:0] rom_data_lo;
 
+  logic [lg_rom_els_lp-1:0] rom_addr_li;
   assign rom_addr_li = lg_rom_els_lp'(in_addr_lo);
   assign returning_v_li = returning_v_r;
 

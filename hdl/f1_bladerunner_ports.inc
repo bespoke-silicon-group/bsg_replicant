@@ -1,10 +1,11 @@
 `include "bsg_axi_bus_pkg.vh"
 
+wire clk_i    = clk_main_a0    ;
+wire resetn_i = rst_main_n_sync;
+
 // ---------------------------------------------
 // axil ocl interface
 // ---------------------------------------------
-wire clk_i    = clk_main_a0    ;
-wire resetn_i = rst_main_n_sync;
 
 `declare_bsg_axil_bus_s(1, axil_mosi_s, axil_miso_s);
 axil_mosi_s m_axil_bus_lo_cast, s_axil_ocl_li_cast, s_axil_mon_li_cast;
