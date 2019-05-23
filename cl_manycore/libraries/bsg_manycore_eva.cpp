@@ -123,7 +123,7 @@ static bool default_eva_is_global(const hb_mc_eva_t *eva)
  * @return true if EVA addresses tile-local memory, false otherwise
  */
 static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
-				const hb_mc_coordinate_t *c, 
+				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	hb_mc_idx_t x, y;
@@ -170,7 +170,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 
 	x = (hb_mc_eva_addr(eva) >> shift) & mask;
 	y = hb_mc_dimension_get_y(dim) + 1;
-	
+
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 	// Likewise, the size of the NPA segment is determined by the number of
 	// bits not used by the x dimension (plus 1 for the top bit that
@@ -189,7 +189,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
  * @return true if EVA addresses tile-local memory, false otherwise
  */
 static int default_eva_to_npa(const hb_mc_config_t *cfg,
-			const hb_mc_coordinate_t *c, 
+			const hb_mc_coordinate_t *c,
 		const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	if(default_eva_is_local(eva))
@@ -204,15 +204,16 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 }
 
 static int default_npa_to_eva(const hb_mc_config_t *cfg,
-			const hb_mc_coordinate_t *c, 
+			const hb_mc_coordinate_t *c,
 			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
 	return HB_MC_FAIL;
 }
 
 hb_mc_eva_id_t default_eva = {
-	.eva_to_npa = default_eva_to_npa, 
-	.npa_to_eva = default_npa_to_eva
+	.eva_id_name = "default EVA space",
+	.eva_to_npa  = default_eva_to_npa,
+	.npa_to_eva  = default_npa_to_eva
 };
 
 /**
@@ -311,7 +312,7 @@ int hb_mc_manycore_read_eva(const hb_mc_config_t *cfg,
 	err = HB_MC_FAIL;// TODO: Check that (sz, eva, id, coord) is valid
 	if (err != HB_MC_SUCCESS)
 		return err;
-	
+
 	// TODO: Perform a memcopy for each EVA -> NPA Segment
 	return HB_MC_SUCCESS;
 }

@@ -10,9 +10,15 @@
 #include "bsg_manycore_npa.h"
 #include "bsg_manycore_eva.h"
 #endif
+#include <cinttypes>
 #include <cstring>
 #include <elf.h>
 #include <endian.h>
+
+static size_t min_size_t(size_t x, size_t y)
+{
+	return x < y ? x : y;
+}
 
 
 typedef enum __hb_mc_loader_elf_field_t{
@@ -20,6 +26,16 @@ typedef enum __hb_mc_loader_elf_field_t{
 	HB_MC_LOADER_ELF_TEXT_ID = 1,
 	HB_MC_LOADER_ELF_DRAM_ID = 2,
 } hb_mc_loader_elf_field_t;
+
+const char * hb_mc_loader_elf_field_to_string(hb_mc_loader_elf_field_t segment)
+{
+	static const char *strtab [] = {
+		[HB_MC_LOADER_ELF_DATA_ID] = "dmem data",
+		[HB_MC_LOADER_ELF_TEXT_ID] = "program text",
+		[HB_MC_LOADER_ELF_DRAM_ID] = "program data",
+	};
+	return strtab[segment];
+}
 
 typedef hb_mc_loader_elf_field_t hb_mc_segment_t; // This should replace above
 
@@ -91,15 +107,135 @@ static int hb_mc_loader_elf_get_segment(const void *bin, size_t sz,
 	return HB_MC_FAIL;
 }
 
+/**
+ * Get the max memory capacity of a program segment (these map to hardware).
+ * @param[in] bin      Program data (unused)
+ * @param[in] sz       The size of program data.
+ * @param[in] mc       A manycore instance.
+ * @param[in] tile     A manycore coordinate.
+ * @param[in] segment  A segment ID.
+ * @return the max size for #segment.
+ */
 static size_t hb_mc_loader_get_tile_segment_capacity(const void *bin, size_t sz,
 						     hb_mc_manycore_t *mc,
 						     hb_mc_coordinate_t tile,
 						     hb_mc_loader_elf_field_t segment)
 {
+	switch (segment) {
+	case HB_MC_LOADER_ELF_DATA_ID:
+		return hb_mc_manycore_get_dmem_size(mc, &tile);
+	case HB_MC_LOADER_ELF_TEXT_ID:
+		return hb_mc_manycore_get_icache_size(mc, &tile);
+	case HB_MC_LOADER_ELF_DRAM_ID:
+		return hb_mc_manycore_get_dram_size(mc);
+	}
 
 	return 0;
 }
 
+/**
+ * Writes zeros to an NPA.
+ * @param[in]  mc     A manycore instance.
+ * @param[in]  start  A start NPA.
+ * @param[in]  sz     How many zero bytes to write.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+static int hb_mc_loader_write_zeros_to_page(hb_mc_manycore_t *mc,
+					    const hb_mc_npa_t *start,
+					    size_t sz)
+{
+	size_t words = sz >> 2;
+	hb_mc_npa_t npa = *start;
+	int rc;
+
+	for (size_t i = 0; i < words; i++) {
+		rc = hb_mc_manycore_write32(mc, &npa, 0);
+		if (rc != HB_MC_SUCCESS)
+			return rc;
+
+                /* increment by 1 -- EPAs are word addressed */
+		hb_mc_npa_set_epa(&npa, hb_mc_npa_get_epa(&npa)+1);
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Writes program data to an EVA.
+ * @param[in] data       Data to be written out.
+ * @param[in] start_eva  The start EVA.
+ * @param[in] mc         A manycore instance.
+ * @param[in] id         And EVA space id.
+ * @param[in] tile       A manycore coordinate.
+ * @param[in] segment    A segment ID (for debugging).
+ * @param[in] zeros      If true, zeros will be written instead of data.
+ * @return HB_MC_SUCCESS if succesful. Otherwise and error code is returned.
+ */
+static int hb_mc_loader_write_to_eva(const unsigned char *data, size_t sz,
+				     hb_mc_eva_t start_eva,
+				     hb_mc_manycore_t *mc,
+				     const hb_mc_eva_id_t *id,
+				     hb_mc_coordinate_t tile,
+				     hb_mc_loader_elf_field_t segment,
+				     bool zeros = false)
+{
+	hb_mc_eva_t eva = start_eva;
+	size_t off = 0, rem = sz;
+	int rc;
+
+	/* while there's data left to write */
+	while (rem > 0) {
+		hb_mc_npa_t npa;
+		size_t page_sz;
+
+		/* translate the EVA */
+		rc = hb_mc_eva_to_npa(hb_mc_manycore_get_config(mc), id, &tile,
+				      &eva, &npa, &page_sz);
+		if (rc != HB_MC_SUCCESS) {
+			bsg_pr_err("%s: %s: writing %s: "
+				   "EVA 0x%08" PRIx32 " does not map to any NPA\n",
+				   __func__,
+				   hb_mc_eva_id_get_name(id),
+				   hb_mc_loader_elf_field_to_string(segment),
+				   eva);
+			return rc;
+		}
+
+		/* write min(page_sz, file_sz) to npa and then increment eva by page_sz */
+		size_t cpy_sz = min_size_t(page_sz, rem);
+
+		if (zeros) { /* write zeros to this page */
+			rc = hb_mc_loader_write_zeros_to_page(mc, &npa, cpy_sz);
+		} else { /* write from data */
+			rc = hb_mc_manycore_write_mem(mc, &npa, &data[off], cpy_sz);
+		}
+
+		/* report error? */
+		if (rc != HB_MC_SUCCESS) {
+			bsg_pr_err("%s: failed to write %s @ offset 0x%08zx: %s\n",
+				   __func__, hb_mc_loader_elf_field_to_string(segment),
+				   off, hb_mc_strerror(rc));
+			return rc;
+		}
+
+		/* update off, rem, and eva */
+		off += cpy_sz;
+		rem -= cpy_sz;
+		eva += cpy_sz;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Load a program segment.
+ * @param[in] bin      A pointer to pogram data.
+ * @param[in] sz       The size of the program data in #bin.
+ * @param[in] id       A EVA space ID.
+ * @param[in] tile     A manycore coordinate.
+ * @param[in] segment  A segment ID.
+ * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
+ */
 static int hb_mc_loader_load_tile_segment(const void *bin, size_t sz,
 					  hb_mc_manycore_t *mc,
 					  const hb_mc_eva_id_t *id,
@@ -110,17 +246,47 @@ static int hb_mc_loader_load_tile_segment(const void *bin, size_t sz,
 	int rc;
 	void *segptr;
 	unsigned char *segdata;
-	size_t cap;
-	
+	size_t cap, seg_sz;
+
 	/* get the segment info */
 	rc = hb_mc_loader_elf_get_segment(bin, sz, segment, &phdr, &segptr);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
-	/* get hardware capacity of the segment */
-	//cap = hb_mc_loader_get_tile_segment_capacity(bin, sz, mc, tile, segment);
+	segdata = (unsigned char *)segptr;
 
-	return HB_MC_FAIL;
+	/* get hardware capacity of the segment */
+	cap = hb_mc_loader_get_tile_segment_capacity(bin, sz, mc, tile, segment);
+	seg_sz = RV32_Word_to_host(phdr->p_memsz);
+
+        /* return error if the hardware lacks the capacity */
+	if (cap < seg_sz) {
+		bsg_pr_err("%s: segment '%s' (%zu bytes) exceeds "
+			   "maximum (%zu bytes)\n",
+			   __func__,
+			   hb_mc_loader_elf_field_to_string(segment),
+			   seg_sz,
+			   cap);
+		return HB_MC_FAIL;
+	}
+
+	/* load initialized data */
+	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_vaddr); /* get the eva */
+	size_t file_sz = RV32_Word_to_host(phdr->p_filesz); /* get the size of segdata */
+
+	rc = hb_mc_loader_write_to_eva(segdata, file_sz, eva, mc, id, tile, segment, false);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
+	/* load zeroed data */
+	size_t zeros_sz  = seg_sz - file_sz;  // zeros are the remainder of the segment
+	eva += file_sz; // increment eva by number of initialized bytes written
+
+	rc = hb_mc_loader_write_to_eva(NULL, zeros_sz, eva, mc, id, tile, segment, true);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
+	return HB_MC_SUCCESS;
 }
 
 /**

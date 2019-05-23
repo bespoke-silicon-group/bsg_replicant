@@ -300,6 +300,19 @@ static inline size_t hb_mc_manycore_get_icache_size(const hb_mc_manycore_t *mc,
 	return 4 * (1<<10); //4K -- this might be later read from the config
 }
 
+
+/**
+ * Get the size of DRAM.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  tile   The coordinate tile to query for its instruction cache size.
+ * @return the size of the tiles instruction cache.
+ */
+static inline size_t hb_mc_manycore_get_dram_size(const hb_mc_manycore_t *mc)
+{
+	return 4ul * (1ul<<30ul); //4G -- this might be later read from the config
+}
+
 /**
  * Read the number of remaining available host credits
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()

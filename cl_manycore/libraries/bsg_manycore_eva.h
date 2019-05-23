@@ -28,6 +28,7 @@ extern "C" {
 typedef uint32_t hb_mc_eva_t;
 
 typedef struct __hb_mc_eva_id_t{
+	const char *eva_id_name;
 	int (*eva_to_npa)(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *c,
 			const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz);
 	int (*npa_to_eva)(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *c,
@@ -35,6 +36,16 @@ typedef struct __hb_mc_eva_id_t{
 } hb_mc_eva_id_t;
 
 extern hb_mc_eva_id_t default_eva;
+
+/**
+ * Get the name of an eva id.
+ * @param[in] id  An EVA id. Behaviour is undefined it #id is NULL.
+ * @return The name of the EVA id as a string.
+ */
+static inline const char *hb_mc_eva_id_get_name(const hb_mc_eva_id_t *id)
+{
+	return id->eva_id_name;
+}
 
 /**
  * Translates a Network Physical Address to an Endpoint Virtual Address
@@ -100,6 +111,7 @@ int hb_mc_manycore_eva_read(const hb_mc_config_t *cfg,
 			    const hb_mc_eva_id_t *id,
 			    const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			    const void *data, size_t sz);
+
 
 // What is this function supposed to do?
 static inline uint32_t hb_mc_eva_addr(const hb_mc_eva_t *eva)
