@@ -316,8 +316,36 @@ int hb_mc_manycore_read_eva(const hb_mc_manycore_t *mc,
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @return NULL if uninitialized, else hb_mc_config_t*
  */
-static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manycore_t *mc){
+static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manycore_t *mc)
+{
         return &mc->config;
+}
+
+/**
+ * Get the size of a tiles local data memory.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  tile   The coordinate tile to query for its data memory size.
+ * @return the size of the tiles data memory.
+ */
+static inline size_t hb_mc_manycore_get_dmem_size(const hb_mc_manycore_t *mc,
+						  const hb_mc_coordinate_t *tile)
+{
+	return 4 * (1<<10); //4K -- this might be later read from the config
+}
+
+
+/**
+ * Get the size of a tiles local data memory.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  tile   The coordinate tile to query for its instruction cache size.
+ * @return the size of the tiles instruction cache.
+ */
+static inline size_t hb_mc_manycore_get_icache_size(const hb_mc_manycore_t *mc,
+						    const hb_mc_coordinate_t *tile)
+{
+	return 4 * (1<<10); //4K -- this might be later read from the config
 }
 
 /**
