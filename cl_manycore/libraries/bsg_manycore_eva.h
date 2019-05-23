@@ -108,7 +108,7 @@ __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
 			    const hb_mc_eva_id_t *id,
 			    const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
-			    const void *data, size_t sz);
+			    void *data, size_t sz);
 /**
  * Returns the EVA associated with a hb_mc_eva_t 
  * @param[in]  eva    A valid eva_t

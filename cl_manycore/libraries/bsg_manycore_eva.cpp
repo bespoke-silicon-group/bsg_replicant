@@ -333,7 +333,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write_eva(const hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
 			const hb_mc_eva_id_t *id,
 			const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
@@ -358,10 +358,10 @@ int hb_mc_manycore_write_eva(const hb_mc_manycore_t *mc,
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read_eva(const hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
 			const hb_mc_eva_id_t *id,
 			const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
-			const void *data, size_t sz)
+			void *data, size_t sz)
 {
 	int err;
 
