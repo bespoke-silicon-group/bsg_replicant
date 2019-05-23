@@ -1,3 +1,4 @@
+#define DEBUG
 #include "bsg_manycore_eva.h"
 #include <math.h>
 #ifndef COSIM
@@ -10,22 +11,27 @@
 
 #define MAKE_MASK(WIDTH) ((1ULL << WIDTH) - 1)
 
-#define DEFAULT_TILE_EPA_WIDTH 18
-#define DEFAULT_TILE_EPA_BITMASK MAKE_MASK(DEFAULT_TILE_EPA_WIDTH)
-#define DEFAULT_TILE_EPA_BYTES (1ULL << DEFAULT_TILE_EPA_WIDTH)
 
-#define DEFAULT_LOCAL_BITIDX DEFAULT_TILE_EPA_WIDTH
-#define DEFAULT_LOCAL_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_LOCAL_EPA_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_LOCAL_BYTES DEFAULT_TILE_EPA_BYTES
+// Tile Memory default is 4096 bytes
+#define DEFAULT_TILE_DMEM_WIDTH 12
+#define DEFAULT_TILE_DMEM_BITMASK MAKE_MASK(DEFAULT_TILE_DMEM_WIDTH)
+#define DEFAULT_TILE_DMEM_SIZE (1ULL << DEFAULT_TILE_DMEM_WIDTH)
+#define DEFAULT_TILE_CSR_WIDTH 17
+#define DEFAULT_TILE_FREEZE_ADDR (1ULL << DEFAULT_TILE_CSR_WIDTH)
+#define DEFAULT_TILE_ORIGIN_X_ADDR (DEFAULT_TILE_FREEZE_ADDR + 4)
+#define DEFAULT_TILE_ORIGIN_Y_ADDR (DEFAULT_TILE_FREEZE_ADDR + 8)
+
+// However, 18 bits are exposed
+#define DEFAULT_LOCAL_WIDTH 18
+#define DEFAULT_LOCAL_BITMASK MAKE_MASK(DEFAULT_LOCAL_WIDTH)
 
 #define DEFAULT_GROUP_BITIDX 29
 #define DEFAULT_GROUP_BITMASK (1ULL << DEFAULT_GROUP_BITIDX)
-#define DEFAULT_GROUP_EPA_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_GROUP_EPA_BYTES DEFAULT_TILE_EPA_BYTES
+#define DEFAULT_GROUP_EPA_BITMASK DEFAULT_TILE_DMEM_BITMASK
+#define DEFAULT_GROUP_EPA_SIZE DEFAULT_TILE_DMEM_SIZE
 
 #define DEFAULT_GROUP_X_WIDTH 6
-#define DEFAULT_GROUP_X_BITIDX DEFAULT_TILE_EPA_WIDTH
+#define DEFAULT_GROUP_X_BITIDX DEFAULT_LOCAL_WIDTH
 #define DEFAULT_GROUP_X_BITMASK (MAKE_MASK(DEFAULT_GROUP_X_WIDTH) << DEFAULT_GROUP_X_BITIDX)
 
 #define DEFAULT_GROUP_Y_WIDTH 5
@@ -34,11 +40,11 @@
 
 #define DEFAULT_GLOBAL_BITIDX 30
 #define DEFAULT_GLOBAL_BITMASK (1ULL << DEFAULT_GLOBAL_BITIDX)
-#define DEFAULT_GLOBAL_EPA_BITMASK DEFAULT_TILE_EPA_BITMASK
-#define DEFAULT_GLOBAL_EPA_BYTES DEFAULT_TILE_EPA_BYTES
+#define DEFAULT_GLOBAL_EPA_BITMASK DEFAULT_TILE_DMEM_BITMASK
+#define DEFAULT_GLOBAL_EPA_SIZE DEFAULT_TILE_DMEM_SIZE
 
 #define DEFAULT_GLOBAL_X_WIDTH 6
-#define DEFAULT_GLOBAL_X_BITIDX DEFAULT_TILE_EPA_WIDTH
+#define DEFAULT_GLOBAL_X_BITIDX DEFAULT_LOCAL_WIDTH
 #define DEFAULT_GLOBAL_X_BITMASK (MAKE_MASK(DEFAULT_GLOBAL_X_WIDTH) << DEFAULT_GLOBAL_X_BITIDX)
 
 #define DEFAULT_GLOBAL_Y_WIDTH 6
@@ -70,13 +76,29 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	x = hb_mc_coordinate_get_x(*c);
 	y = hb_mc_coordinate_get_y(*c);
-	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_EPA_BITMASK;
-	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-	*sz = DEFAULT_LOCAL_BYTES - epa;
+	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	// EVA is writing to DMEM
+	if(epa < DEFAULT_TILE_DMEM_SIZE){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = DEFAULT_TILE_DMEM_SIZE - epa;
+	}else if(epa == DEFAULT_TILE_FREEZE_ADDR){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = sizeof(uint32_t);
+	}else if(epa == DEFAULT_TILE_ORIGIN_X_ADDR){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = sizeof(uint32_t);
+	}else if(epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
+		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+		*sz = sizeof(uint32_t);
+	} else {
+		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", __func__, *eva);
+		return HB_MC_FAIL;
+	}
 	return HB_MC_SUCCESS;
 }
 
@@ -98,19 +120,20 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_X_BITMASK) >> DEFAULT_GROUP_X_BITIDX);
 	y = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_Y_BITMASK) >> DEFAULT_GROUP_Y_BITIDX);
 	epa = hb_mc_eva_addr(eva) & DEFAULT_GROUP_EPA_BITMASK;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-	*sz = DEFAULT_GROUP_EPA_BYTES - epa;
+	*sz = DEFAULT_GROUP_EPA_SIZE - epa;
 	return HB_MC_SUCCESS;
 }
 
 static bool default_eva_is_global(const hb_mc_eva_t *eva)
 {
-	return !(hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_BITMASK) != 0;
+	return (hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_BITMASK) != 0;
 }
 
 /**
@@ -126,19 +149,20 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
 	y = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_Y_BITMASK) >> DEFAULT_GLOBAL_Y_BITIDX);
 	epa = hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_EPA_BITMASK;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-	*sz = DEFAULT_GLOBAL_EPA_BYTES - epa;
+	*sz = DEFAULT_GLOBAL_EPA_SIZE - epa;
 	return HB_MC_SUCCESS;
 }
 
 static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 {
-	return !(hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
+	return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
 }
 
 /**
@@ -154,6 +178,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
 	uint32_t mask, shift, clogxdim;
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
@@ -161,8 +186,8 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	dim = hb_mc_config_get_dimension(cfg);
 
 	// The number of bits used for the x index, and the location of the x
-	// index in the eva is determined by clog2 of the x dimension (or the number of
-	// bits needed to represent the maximum x dimension).
+	// index in the eva is determined by clog2 of the x dimension (or the
+	// number of bits needed to represent the maximum x dimension).
 	clogxdim = ceil(log2(hb_mc_dimension_get_x(dim)));
 
 	shift = DEFAULT_DRAM_BITIDX - clogxdim;
@@ -170,12 +195,14 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 
 	x = (hb_mc_eva_addr(eva) >> shift) & mask;
 	y = hb_mc_dimension_get_y(dim) + 1;
+	
+	epa = (*eva & MAKE_MASK(shift));
 
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 	// Likewise, the size of the NPA segment is determined by the number of
 	// bits not used by the x dimension (plus 1 for the top bit that
 	// indicates this EVA is for DRAM)
-	*sz = 1 << shift;
+	*sz = (1 << shift) - epa;
 	return HB_MC_SUCCESS;
 }
 
@@ -192,21 +219,30 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c,
 		const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
-	if(default_eva_is_local(eva))
-		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
-	if(default_eva_is_group(eva))
-		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
-	if(default_eva_is_global(eva))
-		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
 	if(default_eva_is_dram(eva))
 		return default_eva_to_npa_dram(cfg, c, eva, npa, sz);
-	return HB_MC_SUCCESS;
+	if(default_eva_is_global(eva))
+		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
+	if(default_eva_is_group(eva))
+		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
+	if(default_eva_is_local(eva))
+		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
+	bsg_pr_err("%s: EVA did not map to a known region\n", __func__);
+	return HB_MC_FAIL;
 }
 
 static int default_npa_to_eva(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c,
 			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
+	if(default_eva_is_dram(eva))
+		return default_eva_to_npa_dram(cfg, c, eva, npa, sz);
+	if(default_eva_is_global(eva))
+		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
+	if(default_eva_is_group(eva))
+		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
+	if(default_eva_is_local(eva))
+		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
 	return HB_MC_FAIL;
 }
 
@@ -257,9 +293,9 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 		     hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
-	// TODO: Don't set sz if NULL
+	
 
-	err = HB_MC_FAIL;// TODO: Check (EVA, ID, Coordinate) is valid
+	err = id->eva_to_npa(cfg, c, eva, npa, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -269,15 +305,15 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 
 /**
  * Write memory out to manycore hardware starting at a given EVA
- * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  mc     An initialized manycore struct
  * @param[in]  id     An eva ID for computing the eva to npa map
  * @param[in]  c      A target tile to compute the NPA
- * @param[in]  eva    A valid eva_t
+ * @param[in]  eva    A valid hb_mc_eva_t
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write_eva(const hb_mc_config_t *cfg,
+int hb_mc_manycore_write_eva(const hb_mc_manycore_t *mc,
 			const hb_mc_eva_id_t *id,
 			const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
@@ -294,15 +330,15 @@ int hb_mc_manycore_write_eva(const hb_mc_config_t *cfg,
 
 /**
  * Read memory from manycore hardware starting at a given EVA
- * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  mc     An initialized manycore struct
  * @param[in]  id     An eva ID for computing the eva to npa map
  * @param[in]  c      A coordinate on the the Manycore
- * @param[in]  eva    A valid eva_t
+ * @param[in]  eva    A valid hb_mc_eva_t
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read_eva(const hb_mc_config_t *cfg,
+int hb_mc_manycore_read_eva(const hb_mc_manycore_t *mc,
 			const hb_mc_eva_id_t *id,
 			const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
