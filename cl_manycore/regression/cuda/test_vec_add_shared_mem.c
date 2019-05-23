@@ -42,7 +42,7 @@ int kernel_vec_add_shared_mem () {
 	/*****************************************************************************************************************
 	* Allocate memory on the device for A, B and C.
 	******************************************************************************************************************/
-	uint32_t N = 4;
+	uint32_t N = 256;
 
 	eva_t A_device, B_device, C_device; 
 	hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device); /* allocate A[N] on the device */
@@ -80,7 +80,7 @@ int kernel_vec_add_shared_mem () {
 	* Define tg_dim_x/y: number of tiles in each tile group
 	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
 	******************************************************************************************************************/
-	uint32_t block_size_x = 4;
+	uint32_t block_size_x = 16;
 
 	uint8_t tg_dim_x = 2;
 	uint8_t tg_dim_y = 2;
@@ -132,7 +132,7 @@ int kernel_vec_add_shared_mem () {
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
 		if (A_host[i] + B_host[i] == C_host[i]) {
-			fprintf(stderr, "Success -- C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
+			fprintf(stderr, "Success -- C[%d]: 0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
 		}
 		else {
 			fprintf(stderr, "Failed  -- C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
