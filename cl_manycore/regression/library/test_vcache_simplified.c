@@ -7,6 +7,15 @@
 #define EPA_ADDR_WIDTH 28 
 #define BASE_ADDR 0x0000
 
+static hb_mc_npa_t make_npa(hb_mc_idx_t x, hb_mc_idx_t y, hb_mc_epa_t addr)
+{
+    hb_mc_npa_t npa;
+    hb_mc_npa_set_x(&npa, x);
+    hb_mc_npa_set_y(&npa, y);
+    hb_mc_npa_set_epa(&npa, addr);
+    return npa;
+}
+
 int test_vcache_simplified() {
 	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
 	int err, r = HB_MC_FAIL;
@@ -34,11 +43,11 @@ int test_vcache_simplified() {
          // 1st reset the tag of the vcache under test
 	for (int i = 0; i < 2; i ++) {
 		tag_reset_addr = (1 << (EPA_ADDR_WIDTH - 2 + 1)) + ((i+1) << VCACHE_ADDR_WIDTH); // tagst command to invalidate the tag
-		npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR + tag_reset_addr };
+		hb_mc_npa_t npa = make_npa(dram_coord_x, dram_coord_y, tag_reset_addr);
 		err = hb_mc_manycore_write_mem(mc, &npa, &zeros, sizeof(zeros));
 		if (err != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: failed to reset the vcache tag A[%d] at DRAM coord(%d,%d) addr 0x%08" PRIx32 ": %s\n",
-				   __func__, i, dram_coord_x, dram_coord_y, BASE_ADDR + i, hb_mc_strerror(err));
+				   __func__, i, dram_coord_x, dram_coord_y, tag_reset_addr, hb_mc_strerror(err));
 			goto cleanup;
 		} else {
 			bsg_pr_test_info("reset tag %d succesfully\n", i);
@@ -54,9 +63,9 @@ int test_vcache_simplified() {
 		A_host[i] = 1 + i; // write none zero data
 		epa_addr[i] = ((1 + i) << VCACHE_ADDR_WIDTH);  // write none zero address
 	}
-
+	
 	for (int i = 0; i < WRITE_BLOCK_NUM; i ++) {
-		npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR + epa_addr[i] };
+		hb_mc_npa_t npa = make_npa(dram_coord_x, dram_coord_y, BASE_ADDR + epa_addr[i]);
 		err = hb_mc_manycore_write_mem(mc, &npa, &A_host[i], sizeof(A_host[i]));
 		if (err != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: failed to write A[%d] = %d to DRAM coord(%d,%d) addr 0x%08" PRIx32 ": %s\n",
@@ -66,7 +75,7 @@ int test_vcache_simplified() {
 	}
 	
 	for (int i = 0; i < WRITE_BLOCK_NUM; i ++) {
-		npa_t npa = { .x = dram_coord_x, .y = dram_coord_y , .epa = BASE_ADDR + epa_addr[i] };
+		hb_mc_npa_t npa = make_npa(dram_coord_x, dram_coord_y, BASE_ADDR + epa_addr[i]);
 		err = hb_mc_manycore_read_mem(mc, &npa, &A_device[i], sizeof(A_device[i]));
 		if (err != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: failed to read A[%d] from DRAM coord (%d,%d) addr 0x%08" PRIx32 ": %s\n",

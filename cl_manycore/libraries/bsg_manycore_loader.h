@@ -9,24 +9,22 @@
 #endif
 
 #ifndef COSIM
-        #include <bsg_manycore_features.h>
-	#include <bsg_manycore_driver.h>
-	#include <bsg_manycore.h>
-	#include <bsg_manycore_tile.h>
-	#include <bsg_manycore_errno.h>
-	#include <bsg_manycore_mmio.h>
-	#include <bsg_manycore_mem.h>
+#include <bsg_manycore_features.h>
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_mmio.h>
+#include <bsg_manycore_eva.h>
 #else
-	#include <utils/sh_dpi_tasks.h>
-        #include "bsg_manycore_features.h"
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore.h"
-	#include "bsg_manycore_tile.h"
-	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_mmio.h"
-	#include "bsg_manycore_mem.h"
+#include <utils/sh_dpi_tasks.h>
+#include "bsg_manycore_features.h"
+#include "bsg_manycore_driver.h"
+#include "bsg_manycore.h"
+#include "bsg_manycore_errno.h"
+#include "bsg_manycore_mmio.h"
+#include "bsg_manycore_eva.h"
 #endif
-#include "elf.h"
+
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -52,11 +50,8 @@
 extern "C" {
 #endif
 
-int hb_mc_load_binary (uint8_t fd, char *filename, uint8_t *x, uint8_t *y, uint8_t size);
-static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y); 
-
 /**
- * Loads an ELF file into a list of tiles and DRAM
+ * Loads a binary object into a list of tiles and DRAM
  * @param[in]  bin    A memory buffer containing a valid manycore binary
  * @param[in]  sz     Size of #bin in bytes
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
@@ -65,8 +60,8 @@ static uint8_t *hb_mc_get_unfreeze_pkt (uint8_t x, uint8_t y);
  * @param[in]  len    The number of tiles in #tiles
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_loader_load(const void *bin, size_t sz, const hb_mc_manycore_t *mc,
-		const eva_id_t *id, const hb_mc_coordinate_t *tiles, uint32_t len);
+int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
+		const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *tiles, uint32_t len);
 
 #ifdef __cplusplus
 }

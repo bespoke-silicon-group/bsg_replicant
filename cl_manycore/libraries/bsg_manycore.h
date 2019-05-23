@@ -3,12 +3,16 @@
 
 #ifndef COSIM
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_mem.h>
 #include <bsg_manycore_config.h>
+#include <bsg_manycore_npa.h>
+#include <bsg_manycore_epa.h>
+#include <bsg_manycore_driver.h>
 #else
 #include "bsg_manycore_features.h"
-#include "bsg_manycore_mem.h"
 #include "bsg_manycore_config.h"
+#include "bsg_manycore_npa.h"
+#include "bsg_manycore_epa.h"
+#include "bsg_manycore_driver.h"
 #endif
 
 #ifdef __cplusplus
@@ -101,85 +105,85 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
 /**
  * Read one byte from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[out] vp     A byte to be set to the data read
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_read8(hb_mc_manycore_t *mc, npa_t *npa, uint8_t *vp);
+int hb_mc_manycore_read8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t *vp);
 
 /**
  * Read a 16-bit half-word from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a two byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a two byte boundary
  * @param[out] vp     A half-word to be set to the data read
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_read16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t *vp);
+int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t *vp);
 
 /**
  * Read a 32-bit word from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a four byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
  * @param[out] vp     A word to be set to the data read
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_read32(hb_mc_manycore_t *mc, npa_t *npa, uint32_t *vp);
+int hb_mc_manycore_read32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t *vp);
 
 /**
  * Write one byte to manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[in]  v      A byte value to be written out
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_write8(hb_mc_manycore_t *mc, npa_t *npa, uint8_t v);
+int hb_mc_manycore_write8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t v);
 
 /**
  * Write a 16-bit half-word to manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a two byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a two byte boundary
  * @param[in]  v      A half-word value to be written out
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_write16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t v);
+int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t v);
 
 /**
  * Write a 32-bit word to manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a four byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
  * @param[in]  v      A word value to be written out
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_write32(hb_mc_manycore_t *mc, npa_t *npa, uint32_t v);
+int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v);
 
 /**
  * Write memory out to manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
+int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                              const void *data, size_t sz);
 
 /**
  * Read memory from manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[in]  data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from manycore hardware
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
+int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                             void *data, size_t sz);
 /************/
 /* MMIO API */
@@ -261,8 +265,11 @@ static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manyco
 
 typedef uint32_t hb_mc_epa_t; // Should be removed
 
-static inline npa_t hb_mc_epa_to_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa){
-	npa_t result = {hb_mc_coordinate_get_x(c), hb_mc_coordinate_get_y(c), epa};
+static inline hb_mc_npa_t hb_mc_epa_to_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa){
+	hb_mc_npa_t result;
+	hb_mc_npa_set_x(&result, hb_mc_coordinate_get_x(c));
+	hb_mc_npa_set_y(&result, hb_mc_coordinate_get_y(c));
+	hb_mc_npa_set_epa(&result, epa);
 	return result;
 }
 

@@ -1,3 +1,4 @@
+#include <bsg_manycore_npa.h>
 #include "test_vcache_flush.h"
 
 #define NUM_TESTS 2
@@ -13,7 +14,7 @@
 int flush_cache_line(hb_mc_manycore_t *mc, hb_mc_epa_t addr, hb_mc_idx_t x, hb_mc_idx_t y)
 {
 	int rc;
-	npa_t npa;
+	hb_mc_npa_t npa;
 	hb_mc_epa_t flush_addr;
 	hb_mc_coordinate_t dest;
 	uint64_t stride;
@@ -41,7 +42,7 @@ int flush_cache_line(hb_mc_manycore_t *mc, hb_mc_epa_t addr, hb_mc_idx_t x, hb_m
 int test_address(hb_mc_manycore_t *mc, hb_mc_epa_t addr, uint32_t data, hb_mc_idx_t x, hb_mc_idx_t y) {
 	int rc;
 	hb_mc_coordinate_t dest;
-	npa_t npa;
+	hb_mc_npa_t npa;
 	uint32_t result;
 
         bsg_pr_test_info("Testing Address 0x%x at (%d, %d) with data: 0x%x\n",

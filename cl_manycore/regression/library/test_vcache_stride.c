@@ -42,7 +42,7 @@ int test_vcache_stride() {
 	hb_mc_idx_t dram_coord_y = dim_y + 1;
 	hb_mc_idx_t dram_coord_x = -1;
 	hb_mc_epa_t epa;
-	npa_t npa;
+	hb_mc_npa_t npa;
 	int xidx, stride;
 	uint32_t gold  [NUM_STRIDES] = {0};
 	uint32_t result[NUM_STRIDES] = {0};

@@ -896,21 +896,21 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
 // Packet Helper Functions //
 /////////////////////////////
 
-static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_request_packet_t *pkt, npa_t *npa)
+static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_request_packet_t *pkt, const hb_mc_npa_t *npa)
 {
         hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(mc);
 
-        hb_mc_request_packet_set_x_dst(pkt, npa->x);
-        hb_mc_request_packet_set_y_dst(pkt, npa->y);
+        hb_mc_request_packet_set_x_dst(pkt, hb_mc_npa_get_x(npa));
+        hb_mc_request_packet_set_y_dst(pkt, hb_mc_npa_get_y(npa));
         hb_mc_request_packet_set_x_src(pkt, hb_mc_coordinate_get_x(host_coordinate));
         hb_mc_request_packet_set_y_src(pkt, hb_mc_coordinate_get_y(host_coordinate));
-        hb_mc_request_packet_set_addr(pkt, npa->epa);
+	hb_mc_request_packet_set_addr(pkt, hb_mc_npa_get_epa(npa));
         return 0;
 }
 
 static int hb_mc_manycore_format_store_request_packet(hb_mc_manycore_t *mc,
 						      hb_mc_request_packet_t *pkt,
-						      npa_t *npa)
+						      const hb_mc_npa_t *npa)
 {
         int r;
 
@@ -924,7 +924,7 @@ static int hb_mc_manycore_format_store_request_packet(hb_mc_manycore_t *mc,
 
 static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 						     hb_mc_request_packet_t *pkt,
-						     npa_t *npa)
+						     const hb_mc_npa_t *npa)
 {
         int r;
 
@@ -941,7 +941,7 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 ////////////////
 
 /* send a read request and don't wait for the return packet */
-static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, npa_t *npa, size_t sz)
+static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz)
 {
 	hb_mc_packet_t rqst;
 	int err;
@@ -979,7 +979,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, npa_t *npa, size_
 }
 
 /* read a response packet for a read request to an npa */
-static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz)
+static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, void *vp, size_t sz)
 {
 	hb_mc_packet_t rsp;
 	int err;
@@ -1010,7 +1010,7 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, npa_t *npa, void *
 	return HB_MC_SUCCESS;
 }
 /* read from a memory address on the manycore */
-static int hb_mc_manycore_read(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_t sz)
+static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, void *vp, size_t sz)
 {
 	int err;
 
@@ -1022,7 +1022,7 @@ static int hb_mc_manycore_read(hb_mc_manycore_t *mc, npa_t *npa, void *vp, size_
 }
 
 /* write to a memory address on the manycore */
-static int hb_mc_manycore_write(hb_mc_manycore_t *mc, npa_t *npa, const void *vp, size_t sz)
+static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, const void *vp, size_t sz)
 {
 	int err;
 	hb_mc_packet_t rqst;
@@ -1076,12 +1076,12 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
 /**
  * Write memory out to manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
+int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			     const void *data, size_t sz)
 {
 	int err;
@@ -1092,11 +1092,13 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
 
 	const uint32_t *words = (const uint32_t*)data;
 	size_t n_words = sz >> 2;
-	npa_t addr = *npa;
+	hb_mc_npa_t addr = *npa;
 
 	/* send store requests one word at a time */
 	for (size_t i = 0; i < n_words; i++) {
-		addr.epa++; // epas are in terms of words
+		// increment EPA by 1: (EPA's address words)
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
+		
 		err = hb_mc_manycore_write(mc, &addr, &words[i], 4);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
@@ -1111,12 +1113,12 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, npa_t *npa,
 /**
  * Read memory from manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
+int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			    void *data, size_t sz)
 {
 	int err;
@@ -1127,13 +1129,15 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
 
 	uint32_t *words = (uint32_t*)data;
 	size_t n_words = sz >> 2;
-	npa_t  addr = *npa;
+	hb_mc_npa_t  addr = *npa;
 
 	/* we batch our read requests here instead of completing each read one at a time */
 
 	/* send a read request for each word */
 	for (size_t i = 0; i < n_words; i++) {
-		addr.epa++; // epas are in terms of word
+		// increment EPA by 1: (EPA's address words)
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
+		
 		err = hb_mc_manycore_send_read_rqst(mc, &addr, 4);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
@@ -1145,7 +1149,9 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
 	/* now receive a packet for each word */
 	addr = *npa;
 	for (size_t i = 0; i < n_words; i++) {
-		addr.epa++; // epas are in terms of words
+                // increment EPA by 1: (EPA's address words)
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
+		
 		err = hb_mc_manycore_recv_read_rsp(mc, &addr, &words[i], 4);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
@@ -1160,11 +1166,11 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, npa_t *npa,
 /**
  * Read one byte from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[out] vp     A byte to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read8(hb_mc_manycore_t *mc, npa_t *npa, uint8_t *vp)
+int hb_mc_manycore_read8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t *vp)
 {
 	return hb_mc_manycore_read(mc, npa, vp, 1);
 }
@@ -1172,11 +1178,11 @@ int hb_mc_manycore_read8(hb_mc_manycore_t *mc, npa_t *npa, uint8_t *vp)
 /**
  * Read a 16-bit half-word from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a two byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a two byte boundary
  * @param[out] vp     A half-word to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t *vp)
+int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t *vp)
 {
 	return hb_mc_manycore_read(mc, npa, vp, 2);
 }
@@ -1184,11 +1190,11 @@ int hb_mc_manycore_read16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t *vp)
 /**
  * Read a 32-bit word from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a four byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
  * @param[out] vp     A word to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read32(hb_mc_manycore_t *mc, npa_t *npa, uint32_t *vp)
+int hb_mc_manycore_read32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t *vp)
 {
 	return hb_mc_manycore_read(mc, npa, vp, 4);
 }
@@ -1196,11 +1202,11 @@ int hb_mc_manycore_read32(hb_mc_manycore_t *mc, npa_t *npa, uint32_t *vp)
 /**
  * Write one byte to manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t
  * @param[in]  v      A byte value to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write8(hb_mc_manycore_t *mc, npa_t *npa, uint8_t v)
+int hb_mc_manycore_write8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t v)
 {
 	return hb_mc_manycore_write(mc, npa, &v, 1);
 }
@@ -1208,11 +1214,11 @@ int hb_mc_manycore_write8(hb_mc_manycore_t *mc, npa_t *npa, uint8_t v)
 /**
  * Write a 16-bit half-word to manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a two byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a two byte boundary
  * @param[in]  v      A half-word value to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t v)
+int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t v)
 {
 	return hb_mc_manycore_write(mc, npa, &v, 2);
 }
@@ -1220,11 +1226,11 @@ int hb_mc_manycore_write16(hb_mc_manycore_t *mc, npa_t *npa, uint16_t v)
 /**
  * Write a 32-bit word to manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid npa_t aligned to a four byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
  * @param[in]  v      A word value to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write32(hb_mc_manycore_t *mc, npa_t *npa, uint32_t v)
+int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v)
 {
 	return hb_mc_manycore_write(mc, npa, &v, 4);
 }

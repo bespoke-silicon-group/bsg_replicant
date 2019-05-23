@@ -41,8 +41,11 @@ typedef struct {
 
 int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size); 
 int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_t *buf, uint32_t size);
-int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa);
-int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva);
+
+__attribute__((deprecated))
+int hb_mc_eva_to_npa_deprecated (eva_id_t eva_id, eva_t eva, npa_t *npa);
+__attribute__((deprecated))
+int hb_mc_npa_to_eva_deprecated (eva_id_t eva_id, npa_t *npa, eva_t *eva);
 
 
 #ifdef __cplusplus

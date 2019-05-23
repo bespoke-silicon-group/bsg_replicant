@@ -68,7 +68,7 @@ static bool default_eva_is_local(const eva_t *eva)
  */
 static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
-				const eva_t *eva, npa_t *npa, size_t *sz)
+				const eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
@@ -96,7 +96,7 @@ static bool default_eva_is_group(const eva_t *eva)
  */
 static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
-				const eva_t *eva, npa_t *npa, size_t *sz)
+				const eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
@@ -124,7 +124,7 @@ static bool default_eva_is_global(const eva_t *eva)
  */
 static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c, 
-				const eva_t *eva, npa_t *npa, size_t *sz)
+				const eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
@@ -152,7 +152,7 @@ static bool default_eva_is_dram(const eva_t *eva)
  */
 static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
-				const eva_t *eva, npa_t *npa, size_t *sz)
+				const eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	uint32_t mask, shift, clogxdim;
 	hb_mc_idx_t x, y;
@@ -190,7 +190,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
  */
 static int default_eva_to_npa(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c, 
-		const eva_t *eva, npa_t *npa, size_t *sz)
+		const eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
@@ -205,7 +205,7 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 
 static int default_npa_to_eva(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c, 
-			const npa_t *npa, eva_t *eva, size_t *sz)
+			const hb_mc_npa_t *npa, eva_t *eva, size_t *sz)
 {
 	return HB_MC_FAIL;
 }
@@ -225,9 +225,9 @@ hb_mc_eva_id_t default_eva = {
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_npa_to_eva(const hb_mc_config_t *cfg,
+int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
 			const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *c,
-			const npa_t *npa, eva_t *eva, size_t *sz)
+			const hb_mc_npa_t *npa, eva_t *eva, size_t *sz)
 {
 	int err;
 
@@ -250,10 +250,10 @@ int hb_mc_manycore_npa_to_eva(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_eva_to_npa(const hb_mc_config_t *cfg,
-			const hb_mc_eva_id_t *id,
-			const hb_mc_coordinate_t *c, const eva_t *eva,
-			npa_t *npa, size_t *sz)
+int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
+		     const hb_mc_eva_id_t *id,
+		     const hb_mc_coordinate_t *c, const eva_t *eva,
+		     hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
 	// TODO: Don't set sz if NULL

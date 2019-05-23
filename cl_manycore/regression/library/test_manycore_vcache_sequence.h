@@ -6,6 +6,6 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include "library_tests.h"
+#include "../cl_manycore_regression.h"
 
 

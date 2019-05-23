@@ -2,6 +2,8 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_printing.h>
+#include <bsg_manycore_npa.h>
 #include "test_manycore_vcache_sequence.h"
 
 #define TEST_NAME "test_manycore_vcache_sequence"
@@ -47,11 +49,9 @@ int test_manycore_vcache_sequence() {
 				bsg_pr_test_info("%s: Have written and read back %4zu words\n",
 						 __func__, i);
 			
-			npa_t npa = {
-				.x = dram_coord_x,
-				.y = dram_coord_y,
-				.epa = BASE_ADDR + i,
-			};
+			hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
+							     dram_coord_y,
+							     BASE_ADDR+i);
 			write_data = rand();
 			err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
 			if (err != HB_MC_SUCCESS) {
@@ -77,10 +77,11 @@ int test_manycore_vcache_sequence() {
 
 			int data_match = read_data == write_data;
 			if (!data_match) {
-				bsg_pr_err("\n%s: mismatch @ index %d: "
-					   "wrote 0x%08" PRIx32 " -- "
-					   "read 0x%08" PRIx32 ": @ 0x%08" PRIx32 "\n",
-					   __func__, i, i, read_data, write_data);
+				bsg_pr_test_info("\n%s: mismatch @ index %d: "
+						 "wrote 0x%08" PRIx32 " -- "
+						 "read 0x%08" PRIx32 ": @ 0x%08" PRIx32 "\n",
+						 __func__, i, i, write_data, read_data,
+						 hb_mc_npa_get_epa(&npa));
 			}
 			
 			mismatch = mismatch || !data_match;
