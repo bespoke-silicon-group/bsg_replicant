@@ -42,6 +42,7 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_driver.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_elf.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp 
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_eva.cpp 
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_tile.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_printing.cpp
