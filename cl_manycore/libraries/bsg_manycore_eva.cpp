@@ -76,7 +76,7 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	x = hb_mc_coordinate_get_x(*c);
@@ -96,7 +96,7 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 		*sz = sizeof(uint32_t);
 	} else {
-		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", __func__, *eva);
+		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", __func__, hb_mc_eva_addr(eva));
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -124,7 +124,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_X_BITMASK) >> DEFAULT_GROUP_X_BITIDX);
@@ -157,7 +157,7 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
@@ -190,7 +190,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *c,
 				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, *eva);
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
 	uint32_t mask, shift, clogxdim;
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
@@ -208,7 +208,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	x = (hb_mc_eva_addr(eva) >> shift) & mask;
 	y = hb_mc_dimension_get_y(dim) + 1;
 
-	epa = (*eva & MAKE_MASK(shift));
+	epa = (hb_mc_eva_addr(eva) & MAKE_MASK(shift));
 
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 	// Likewise, the size of the NPA segment is determined by the number of
