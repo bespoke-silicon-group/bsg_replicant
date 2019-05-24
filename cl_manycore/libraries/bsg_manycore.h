@@ -263,16 +263,6 @@ static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manyco
         return &mc->config;
 }
 
-typedef uint32_t hb_mc_epa_t; // Should be removed
-
-static inline hb_mc_npa_t hb_mc_epa_to_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa){
-	hb_mc_npa_t result;
-	hb_mc_npa_set_x(&result, hb_mc_coordinate_get_x(c));
-	hb_mc_npa_set_y(&result, hb_mc_coordinate_get_y(c));
-	hb_mc_npa_set_epa(&result, epa);
-	return result;
-}
-
 /**
  * Get the max size of program text.
  */

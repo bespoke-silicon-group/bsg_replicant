@@ -128,6 +128,15 @@ static inline hb_mc_npa_t hb_mc_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa)
 }
 
 
+/**
+ * Create a Network Physical Address from a coordinate and an EPA.
+ * @param[in] c    A coordinate.
+ * @param[in] epa  An Endpoint Physical Address.
+ * @return A Network Physical Address.
+ */
+#define hb_mc_epa_to_npa(coordinate, epa)				\
+    hb_mc_npa(coordinate, epa)
+
 
 #ifdef __cplusplus
 };
