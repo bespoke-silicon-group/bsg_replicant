@@ -27,8 +27,8 @@ extern "C" {
 
 typedef uint32_t hb_mc_eva_t;
 
-typedef struct __hb_mc_eva_id_t{
-	const char *eva_id_name;
+typedef struct __hb_mc_eva_map_t{
+	const char *eva_map_name;
 	const void *priv;
 /**
  * Translate an Endpoint Virtual Address in a source tile's address space
@@ -64,25 +64,25 @@ typedef struct __hb_mc_eva_id_t{
 			const hb_mc_coordinate_t *tgt, 
 			const hb_mc_npa_t *npa, 
 			hb_mc_eva_t *eva, size_t *sz);
-} hb_mc_eva_id_t;
+} hb_mc_eva_map_t;
 
-extern hb_mc_eva_id_t default_eva;
+extern hb_mc_eva_map_t default_eva;
 
 /**
- * Get the name of an eva id.
- * @param[in] id  An EVA id. Behaviour is undefined it #id is NULL.
- * @return The name of the EVA id as a string.
+ * Get the name of an eva map.
+ * @param[in] map  An EVA map. Behaviour is undefined if #map is NULL.
+ * @return The name of the EVA map as a string.
  */
-static inline const char *hb_mc_eva_id_get_name(const hb_mc_eva_id_t *id)
+static inline const char *hb_mc_eva_map_get_name(const hb_mc_eva_map_t *map)
 {
-	return id->eva_id_name;
+	return map->eva_map_name;
 }
 
 /**
  * Translate a Network Physical Address to an Endpoint Virtual Address in a
  * target tile's address space
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tgt    Coordinates of the target tile
  * @param[in]  npa    An npa to translate
  * @param[out] eva    An eva to set by translating #npa
@@ -91,7 +91,7 @@ static inline const char *hb_mc_eva_id_get_name(const hb_mc_eva_id_t *id)
  */
 __attribute__((warn_unused_result))
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg, 
-		const hb_mc_eva_id_t *id, 
+		const hb_mc_eva_map_t *map, 
 		const hb_mc_coordinate_t *tgt,
 		const hb_mc_npa_t *npa, 
 		hb_mc_eva_t *eva, size_t *sz);
@@ -100,16 +100,16 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
  * Translate an Endpoint Virtual Address in a source tile's address space
  * to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by translating #eva and #map
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
 int hb_mc_eva_to_npa(const hb_mc_config_t *cfg, 
-		const hb_mc_eva_id_t *id, 
+		const hb_mc_eva_map_t *map, 
 		const hb_mc_coordinate_t *src, 
 		const hb_mc_eva_t *eva, 
 		hb_mc_npa_t *npa, size_t *sz);
@@ -117,7 +117,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 /**
  * Write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[in]  data   A buffer to be written out manycore hardware
@@ -126,7 +126,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  */
 __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
-			const hb_mc_eva_id_t *id,
+			const hb_mc_eva_map_t *map,
 			const hb_mc_coordinate_t *src, 
 			const hb_mc_eva_t *eva,
 			const void *data, size_t sz);
@@ -134,7 +134,7 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
 /**
  * Read memory from manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[out] data   A buffer into which data will be read
@@ -143,7 +143,7 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
  */
 __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
-			const hb_mc_eva_id_t *id,
+			const hb_mc_eva_map_t *map,
 			const hb_mc_coordinate_t *src, 
 			const hb_mc_eva_t *eva,
 			void *data, size_t sz);

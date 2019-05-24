@@ -344,8 +344,8 @@ static int default_npa_to_eva(const hb_mc_config_t *cfg,
 }
 
 const hb_mc_coordinate_t default_origin[1] = {{ .x = 1, .y = 0 }};
-hb_mc_eva_id_t default_eva = {
-	.eva_id_name = "Default EVA space",
+hb_mc_eva_map_t default_eva = {
+	.eva_map_name = "Default EVA space",
 	.priv = (const void *)(default_origin),
 	.eva_to_npa  = default_eva_to_npa,
 	.npa_to_eva  = default_npa_to_eva,
@@ -355,7 +355,7 @@ hb_mc_eva_id_t default_eva = {
  * Translate a Network Physical Address to an Endpoint Virtual Address in a
  * target tile's address space
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tgt    Coordinates of the target tile
  * @param[in]  npa    An npa to translate
  * @param[out] eva    An eva to set by translating #npa
@@ -363,14 +363,14 @@ hb_mc_eva_id_t default_eva = {
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
-		const hb_mc_eva_id_t *id, 
+		const hb_mc_eva_map_t *map, 
 		const hb_mc_coordinate_t *tgt,
 		const hb_mc_npa_t *npa, 
 		hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
 
-	err = id->npa_to_eva(cfg, id->priv, tgt, npa, eva, sz);
+	err = map->npa_to_eva(cfg, map->priv, tgt, npa, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -381,22 +381,22 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
  * Translate an Endpoint Virtual Address in a source tile's address space
  * to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by using #map to translate #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
-		const hb_mc_eva_id_t *id, 
+		const hb_mc_eva_map_t *map, 
 		const hb_mc_coordinate_t *src, 
 		const hb_mc_eva_t *eva, 
 		hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
 
-	err = id->eva_to_npa(cfg, id->priv, src, eva, npa, sz);
+	err = map->eva_to_npa(cfg, map->priv, src, eva, npa, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -407,7 +407,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 /**
  * Write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[in]  data   A buffer to be written out manycore hardware
@@ -415,14 +415,14 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
-			const hb_mc_eva_id_t *id,
+			const hb_mc_eva_map_t *map,
 			const hb_mc_coordinate_t *src, 
 			const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
 {
 	int err;
 
-	err = HB_MC_FAIL;// TODO: Check that (sz, eva, id, coord) is valid
+	err = HB_MC_FAIL;// TODO: Check that (sz, eva, map, coord) is valid
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -433,7 +433,7 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
 /**
  * Read memory from manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa map
  * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[out] data   A buffer into which data will be read
@@ -441,14 +441,14 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
-			const hb_mc_eva_id_t *id,
+			const hb_mc_eva_map_t *map,
 			const hb_mc_coordinate_t *src, 
 			const hb_mc_eva_t *eva,
 			void *data, size_t sz)
 {
 	int err;
 
-	err = HB_MC_FAIL;// TODO: Check that (sz, eva, id, coord) is valid
+	err = HB_MC_FAIL;// TODO: Check that (sz, eva, map, coord) is valid
 	if (err != HB_MC_SUCCESS)
 		return err;
 

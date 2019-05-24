@@ -55,13 +55,16 @@ extern "C" {
  * @param[in]  bin    A memory buffer containing a valid manycore binary
  * @param[in]  sz     Size of #bin in bytes
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tiles  A list of manycore to load with #bin, with the origin at 0
  * @param[in]  len    The number of tiles in #tiles
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
-		const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *tiles, uint32_t len);
+int hb_mc_loader_load(const void *bin, size_t sz, 
+		hb_mc_manycore_t *mc,
+		const hb_mc_eva_map_t *map, 
+		const hb_mc_coordinate_t *tiles, 
+		uint32_t len);
 
 #ifdef __cplusplus
 }
