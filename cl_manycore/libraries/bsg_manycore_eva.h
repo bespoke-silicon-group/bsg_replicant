@@ -48,6 +48,18 @@ typedef struct __hb_mc_eva_map_t{
 			hb_mc_npa_t *npa, size_t *sz);
 
 /**
+ * Returns the number of contiguous bytes following an EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  eva    An eva 
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+	int (*eva_size)(const hb_mc_config_t *cfg, 
+			const hb_mc_eva_t *eva, 
+			size_t *sz);
+
+/**
  * Translate a Network Physical Address to an Endpoint Virtual Address in a
  * target tile's address space
  * @param[in]  cfg    An initialized manycore configuration struct
@@ -118,16 +130,16 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  * Write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa translation
- * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  tgt    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *src, 
+			const hb_mc_coordinate_t *tgt, 
 			const hb_mc_eva_t *eva,
 			const void *data, size_t sz);
 
@@ -135,7 +147,7 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
  * Read memory from manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa translation
- * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  tgt    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from the manycore hardware
@@ -144,7 +156,7 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
 __attribute__((warn_unused_result))
 int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *src, 
+			const hb_mc_coordinate_t *tgt, 
 			const hb_mc_eva_t *eva,
 			void *data, size_t sz);
 /**
