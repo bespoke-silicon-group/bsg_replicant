@@ -586,6 +586,11 @@ int hb_mc_eva_size(const hb_mc_config_t *cfg,
 }
 
 
+static size_t min_size_t(size_t x, size_t y)
+{
+	return x < y ? x : y;
+}
+
 /**
  * Write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
@@ -604,7 +609,7 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 {
 	int err;
 	const hb_mc_config_t* config;
-	size_t dest_sz;
+	size_t dest_sz, xfer_sz;
 	hb_mc_npa_t dest_npa;
 	char *destp;
 	config = hb_mc_manycore_get_config(mc);
@@ -624,16 +629,18 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 				__func__);
 			return err;
 		}
-		err = hb_mc_manycore_write_mem(mc, &dest_npa, destp, dest_sz);
+		xfer_sz = min_size_t(sz, dest_sz);
+
+		err = hb_mc_manycore_write_mem(mc, &dest_npa, destp, xfer_sz);
 		if(err != HB_MC_SUCCESS){
 			bsg_pr_err("%s: Failed to copy data from host to NPA\n",
 				__func__);
 			return err;
 		}
 
-		destp += dest_sz;
-		sz -= dest_sz;
-		eva += src_sz
+		destp += xfer_sz;
+		sz -= xfer_sz;
+		eva += xfer_sz;
 	}
 
 	return HB_MC_SUCCESS;
@@ -657,7 +664,7 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 {
 	int err;
 	const hb_mc_config_t* config;
-	size_t src_sz;
+	size_t src_sz, xfer_sz;
 	hb_mc_npa_t src_npa;
 	char *srcp;
 
@@ -679,16 +686,18 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 			return err;
 		}
 
-		err = hb_mc_manycore_read_mem(mc, &src_npa, srcp, src_sz);
+		xfer_sz = min_size_t(sz, src_sz);
+
+		err = hb_mc_manycore_read_mem(mc, &src_npa, srcp, xfer_sz);
 		if(err != HB_MC_SUCCESS){
 			bsg_pr_err("%s: Failed to copy data from host to NPA\n",
 				__func__);
 			return err;
 		}
 
-		srcp += src_sz;
-		sz -= src_sz;
-		eva += src_sz
+		srcp += xfer_sz;
+		sz -= xfer_sz;
+		eva += xfer_sz;
 	}
 	return HB_MC_SUCCESS;
 }
