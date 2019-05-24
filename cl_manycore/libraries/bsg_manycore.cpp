@@ -1236,3 +1236,29 @@ int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_
 }
 
 
+
+/**
+ * Freeze a tile.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to freeze.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_manycore_freeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
+{
+	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
+	hb_mc_manycore_write32(mc, &npa, 1);
+}
+
+/**
+ * Unfreeze a tile.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to unfreeze.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_manycore_unfreeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
+{
+	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
+	hb_mc_manycore_write32(mc, &npa, 0);
+}

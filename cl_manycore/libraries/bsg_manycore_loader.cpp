@@ -87,10 +87,10 @@ static size_t hb_mc_loader_get_tile_segment_capacity(hb_mc_manycore_t *mc,
 						     hb_mc_coordinate_t tile)
 {
 	/*
-	  The right thing to do here would to get the hardware component
+	  The right thing to do here would be to get the hardware component
 	  from the NPA, and then check the capacity of that.
 
-	  We don't currently have a function the maps NPAs to their
+	  We don't currently have a function that maps NPAs to their
 	  underlying hardware type.
 
 	  So for now we just check the top bit of the EVA.
@@ -173,8 +173,8 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 		size_t page_sz;
 
 		/* translate the EVA */
-		rc = hb_mc_eva_to_npa(hb_mc_manycore_get_config(mc), map, &tile,
-				      &eva, &npa, &page_sz);
+		rc = hb_mc_eva_to_npa(hb_mc_manycore_get_config(mc), map, &tile, &eva,
+				      &npa, &page_sz);
 		if (rc != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: %s: writing %s: "
 				   "EVA 0x%08" PRIx32 " does not map to any NPA\n",
@@ -317,6 +317,17 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 		   hb_mc_npa_get_epa(&icache_npa)
 		);
 
+	/*
+	  The address space of the ICACHE is larger than the ICACHE itself.
+	  Bits 12-23 actually indicate the tag data rather than a location.
+	  Only bits 0-11 actually index the memory in the ICACHE.
+	  It's important that bits 10-21 are zero.
+	 */
+	if (((hb_mc_npa_get_epa(&icache_npa)<<2) + sz) & 0x00FFF000) {
+		bsg_pr_dbg("%s: Oops: ICACHE EPA sets tag bits\n", __func__);
+		return HB_MC_FAIL;
+	}
+
 	rc = hb_mc_manycore_write_mem(mc, &icache_npa, segdata, sz);
 	if (rc != HB_MC_SUCCESS) {
 		bsg_pr_dbg("%s: failed to write to (%d,%d)'s icache: %s\n",
@@ -411,7 +422,12 @@ static bool hb_mc_loader_segment_is_load_never(hb_mc_manycore *mc,
 					       const hb_mc_coordinate_t *tiles,
 					       uint32_t ntiles)
 {
-	return false;
+	switch (RV32_Word_to_host(phdr->p_type)) {
+	case PT_LOAD:
+		return false;
+	default:
+		return true;
+	}
 }
 
 static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
@@ -434,13 +450,58 @@ static bool hb_mc_loader_segment_is_load_icache(hb_mc_manycore *mc,
 						const hb_mc_coordinate_t *tiles,
 						uint32_t ntiles)
 {
-	return false;
+	Elf32_Word type, flags;
+
+	type  = RV32_Word_to_host(phdr->p_type);
+	flags = RV32_Word_to_host(phdr->p_flags);
+
+	return (type == PT_LOAD) && (flags & PF_X);
 }
 
-static int hb_mc_loader_get_segment(const void *bin, size_t sz, int segidx,
-				    const Elf32_Phdr **phdr, const unsigned char **segdata)
+static int hb_mc_loader_get_segment(const void *bin, size_t sz, unsigned segidx,
+				    const Elf32_Phdr **ophdr, const unsigned char **osegdata)
 {
-	return HB_MC_FAIL;
+	const unsigned char *segdata, *data = (const unsigned char *)bin;
+	const Elf32_Ehdr *ehdr = (const Elf32_Ehdr*)bin;
+	const Elf32_Phdr *phdr_table, *phdr;
+	size_t phoff = RV32_Off_to_host(ehdr->e_phoff);
+
+	/*
+	   Check that the binary is big enough.
+
+	   The binary should be at least as big as the offset to the
+	   program header table + the size of the header table.
+	 */
+	size_t header = phoff + (RV32_Half_to_host(ehdr->e_phnum) * sizeof(*phdr));
+	if (sz < header) {
+		bsg_pr_dbg("%s: Header offset+size (%zu) for segment %u "
+			   "exceeds object size (%zu)\n",
+			   __func__, header, segidx, sz);
+		return HB_MC_INVALID;
+	}
+	/* Get our program header */
+	phdr_table = (const Elf32_Phdr*) &data[phoff];
+	phdr = &phdr_table[segidx];
+
+	size_t segoff = RV32_Off_to_host(phdr->p_offset);
+	size_t segsz  = RV32_Word_to_host(phdr->p_filesz);
+
+	/* Again, check that the binary is big enough. */
+	if (sz < (segoff + segsz)) {
+		bsg_pr_dbg("%s: Data offset+size (%zu) for segument %u "
+			   "exceeds object size (%zu)\n",
+			   __func__, segoff+segsz, segidx, sz);
+		return HB_MC_INVALID;
+	}
+
+	/* Get our program data */
+	segdata = &data[segoff];
+
+	/* set outputs */
+	*ophdr    = phdr;
+	*osegdata = segdata;
+
+	return HB_MC_SUCCESS;
 }
 
 static int hb_mc_loader_load_segments(const void *bin, size_t sz,
@@ -508,6 +569,54 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 	return HB_MC_FAIL;
 }
 
+static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
+					   const hb_mc_eva_map_t *map,
+					   hb_mc_coordinate_t tile,
+					   const hb_mc_coordinate_t *all_tiles,
+					   uint32_t ntiles)
+{
+	int rc;
+
+	if (ntiles == 0)
+		return HB_MC_INVALID;
+
+	/* set the origin tile */
+	hb_mc_coordinate_t origin = all_tiles[0]; // tile[0] is always the origin
+	hb_mc_npa_t origin_x_npa = hb_mc_npa(tile, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X);
+	hb_mc_npa_t origin_y_npa = hb_mc_npa(tile, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y);
+
+	rc = hb_mc_manycore_write32(mc, &origin_x_npa, hb_mc_coordinate_get_x(origin));
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
+	rc = hb_mc_manycore_write32(mc, &origin_y_npa, hb_mc_coordinate_get_y(origin));
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: failed to write (%d,%d)'s origin Y register: %s\n",
+			   __func__,
+			   hb_mc_coordinate_get_x(tile),
+			   hb_mc_coordinate_get_y(tile),
+			   hb_mc_strerror(rc));
+		return rc;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_tiles_set_registers(hb_mc_manycore_t *mc,
+					    const hb_mc_eva_map_t *map,
+					    const hb_mc_coordinate_t *tiles,
+					    uint32_t ntiles)
+{
+	int rc;
+	for (uint32_t i = 0; i < ntiles; i++) {
+		rc = hb_mc_loader_tile_set_registers(mc, map, tiles[i], tiles, ntiles);
+		if (rc != HB_MC_SUCCESS)
+			return rc;
+	}
+
+	return HB_MC_FAIL;
+}
+
 /**
  * Loads an ELF file into a list of tiles and DRAM
  * @param[in]  bin    A memory buffer containing a valid manycore binary
@@ -523,13 +632,19 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 		      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
 	int rc;
-	// Validate ELF File
+
+        // Validate ELF File
 	rc = hb_mc_loader_elf_validate(bin, sz);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
         // Load segments
 	rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
+	// Set CSRs
+	rc = hb_mc_loader_tiles_set_registers(mc, map, tiles, ntiles);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 

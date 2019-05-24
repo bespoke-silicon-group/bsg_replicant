@@ -317,6 +317,27 @@ static inline size_t hb_mc_manycore_get_dram_size(const hb_mc_manycore_t *mc)
  * @return HB_MC_FAIL if an error occured. Number of remaining host credits otherwise
  */
 int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc);
+
+/**
+ * Freeze a tile.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to freeze.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_freeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
+
+/**
+ * Unfreeze a tile.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to unfreeze.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_unfreeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
+
 #ifdef __cplusplus
 }
 #endif
