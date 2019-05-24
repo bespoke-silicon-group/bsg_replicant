@@ -181,7 +181,7 @@ static const char *hb_mc_loader_segment_to_string(const Elf32_Phdr *phdr,
  * @param[in] data       Data to be written out.
  * @param[in] start_eva  The start EVA.
  * @param[in] mc         A manycore instance.
- * @param[in] id         And EVA space id.
+ * @param[in] map        And EVA to NPA map
  * @param[in] tile       A manycore coordinate.
  * @param[in] zeros      If true, zeros will be written instead of data.
  * @return HB_MC_SUCCESS if succesful. Otherwise and error code is returned.
@@ -190,7 +190,7 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 				     const unsigned char *data, size_t sz,
 				     hb_mc_eva_t start_eva,
 				     hb_mc_manycore_t *mc,
-				     const hb_mc_eva_id_t *id,
+				     const hb_mc_eva_map_t *map,
 				     hb_mc_coordinate_t tile,
 				     bool zeros = false)
 {
@@ -207,13 +207,13 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 		size_t page_sz;
 
 		/* translate the EVA */
-		rc = hb_mc_eva_to_npa(hb_mc_manycore_get_config(mc), id, &tile,
+		rc = hb_mc_eva_to_npa(hb_mc_manycore_get_config(mc), map, &tile,
 				      &eva, &npa, &page_sz);
 		if (rc != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: %s: writing %s: "
 				   "EVA 0x%08" PRIx32 " does not map to any NPA\n",
 				   __func__,
-				   hb_mc_eva_id_get_name(id),
+				   hb_mc_eva_map_get_name(map),
 				   segname,
 				   eva);
 			return rc;
@@ -250,12 +250,12 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
  * Load a program segment.
  * @param[in] bin      A pointer to pogram data.
  * @param[in] sz       The size of the program data in #bin.
- * @param[in] id       A EVA space ID.
+ * @param[in] map      A EVA to NPA map.
  * @param[in] tile     A manycore coordinate.
- * @param[in] segment  A segment ID.
  * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
  */
-static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
+static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
+					  const hb_mc_eva_map_t *map,
 					  const Elf32_Phdr *phdr,
 					  const unsigned char *segdata,
 					  hb_mc_coordinate_t tile)
@@ -285,15 +285,15 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc, const hb_mc_eva_
 	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_vaddr); /* get the eva */
 	size_t file_sz = RV32_Word_to_host(phdr->p_filesz); /* get the size of segdata */
 
-	rc = hb_mc_loader_write_to_eva(phdr, segdata, file_sz, eva, mc, id, tile, false);
+	rc = hb_mc_loader_write_to_eva(phdr, segdata, file_sz, eva, mc, map, tile, false);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
 	/* load zeroed data */
 	size_t zeros_sz  = seg_sz - file_sz;  // zeros are the remainder of the segment
 	eva += file_sz; // increment eva by number of initialized bytes written
-
-	rc = hb_mc_loader_write_to_eva(phdr, NULL, zeros_sz, eva, mc, id, tile, true);
+	
+	rc = hb_mc_loader_write_to_eva(phdr, NULL, zeros_sz, eva, mc, map, tile, true);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
@@ -360,136 +360,9 @@ static int hb_mc_loader_elf_validate(const void *elf, size_t sz)
 
 
 
-/**
- * Loads an ELF file into the instruction cache of a tile
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  tile   The target manycore tile
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_tile_icache(const void *bin, size_t sz,
-					 hb_mc_manycore_t *mc,
-					 const hb_mc_eva_id_t *id, hb_mc_coordinate_t tile)
-{
-	int rc;
-
-	// Get text segment
-	// Get ICache Size (How?)
-	// EVA memcopy
-	return HB_MC_SUCCESS;
-}
-
-/**
- * Loads an ELF file into the data memory of a tile
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  tile   The target manycore tile
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_tile_dmem(const void *bin, size_t sz,
-				       hb_mc_manycore_t *mc,
-				       const hb_mc_eva_id_t *id, hb_mc_coordinate_t tile)
-{
-	return HB_MC_FAIL;
-}
-
-/**
- * Loads an ELF file into the data memory and instruction cache of a tile
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  tile   The target manycore tile
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_tile(const void *bin, size_t sz,
-				  hb_mc_manycore_t *mc,
-				  const hb_mc_eva_id_t *id,
-				  hb_mc_coordinate_t tile)
-{
-	int rc;
-
-	return HB_MC_FAIL;
-}
-
-/**
- * Loads an ELF file into a list of tiles
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  tiles  A list of manycore to load with #bin, with the origin at 0
- * @param[in]  ntiles The number of tiles in #tiles
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_tiles(const void *bin, size_t sz,
-				   hb_mc_manycore_t *mc,
-				   const hb_mc_eva_id_t *id,
-				   const hb_mc_coordinate_t *tiles,
-				   uint32_t ntiles)
-{
-	uint32_t idx;
-	int rc;
-
-	return HB_MC_SUCCESS;
-}
-
-/**
- * Loads the text segment of an ELF file into DRAM
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  origin The origin tile of the tile group, for EVA->NPA conversion
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_dram_text(const void *bin, size_t sz,
-				       hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
-				       hb_mc_coordinate_t origin)
-{
-	return HB_MC_SUCCESS;
-}
-
-/**
- * Loads the data segment of an ELF file into DRAM
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  origin The origin tile of a group, for EVA->NPA conversion
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_dram_data(const void *bin, size_t sz,
-				       hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
-				       hb_mc_coordinate_t origin)
-{
-	return HB_MC_SUCCESS;
-}
-
-/**
- * Loads an ELF binary into DRAM
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  origin The origin tile of a group, for EVA->NPA conversion
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_load_drams(const void *bin, size_t sz,
-				   hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
-				   hb_mc_coordinate_t origin)
-{
-	return HB_MC_SUCCESS;
-}
-
-
 static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
 					      const Elf32_Phdr *phdr,
-					      const hb_mc_eva_id_t *id,
+					      const hb_mc_eva_map_t *map,
 					      const hb_mc_coordinate_t *tiles,
 					      uint32_t ntiles)
 {
@@ -508,7 +381,7 @@ static int hb_mc_loader_get_segment(const void *bin, size_t sz, int segidx,
 }
 				    
 static int hb_mc_loader_load_segments(const void *bin, size_t sz,
-				      hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
+				      hb_mc_manycore_t *mc, const hb_mc_eva_map_t *map,
 				      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
 	const Elf32_Ehdr *ehdr = (const Elf32_Ehdr *)bin;
@@ -540,13 +413,13 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
  * @param[in]  bin    A memory buffer containing a valid manycore binary
  * @param[in]  sz     Size of #bin in bytes
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  id     An eva ID for computing the eva to npa map
+ * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tiles  A list of manycore to load with #bin, with the origin at 0
  * @param[in]  ntiles The number of tiles in #tiles
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
-		      const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *tiles, uint32_t ntiles)
+		      const hb_mc_eva_map_t *map, const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
 	int rc;
 	// Validate ELF File
@@ -554,7 +427,7 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
-	rc = hb_mc_loader_load_segments(bin, sz, mc, id, tiles, ntiles);
+	rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
 	if (rc != HB_MC_SUCCESS)
 		return rc;	
 

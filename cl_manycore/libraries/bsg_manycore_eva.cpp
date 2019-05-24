@@ -63,42 +63,60 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 	return !(hb_mc_eva_addr(eva) & ~(DEFAULT_LOCAL_BITMASK));
 }
 
-/**
- * Converts a tile-local EVA to an NPA
- * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  c      A target tile to compute #npa
- * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
- * @param[out] sz     The size in bytes of the NPA segment for the #eva
- * @return true if EVA addresses tile-local memory, false otherwise
- */
-static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
-				const hb_mc_coordinate_t *c,
-				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
+static int default_eva_to_epa_tile(const hb_mc_eva_t *eva, 
+				hb_mc_epa_t *epa,
+				size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
-	hb_mc_idx_t x, y;
-	hb_mc_epa_t epa;
-	x = hb_mc_coordinate_get_x(*c);
-	y = hb_mc_coordinate_get_y(*c);
-	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	*epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
 	// EVA is writing to DMEM
-	if(epa < DEFAULT_TILE_DMEM_SIZE){
-		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-		*sz = DEFAULT_TILE_DMEM_SIZE - epa;
-	}else if(epa == DEFAULT_TILE_FREEZE_ADDR){
-		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+	if(*epa < DEFAULT_TILE_DMEM_SIZE){
+		*sz = DEFAULT_TILE_DMEM_SIZE - *epa;
+	}else if(*epa == DEFAULT_TILE_FREEZE_ADDR){
 		*sz = sizeof(uint32_t);
-	}else if(epa == DEFAULT_TILE_ORIGIN_X_ADDR){
-		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+	}else if(*epa == DEFAULT_TILE_ORIGIN_X_ADDR){
 		*sz = sizeof(uint32_t);
-	}else if(epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
-		*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+	}else if(*epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
 		*sz = sizeof(uint32_t);
 	} else {
-		bsg_pr_err("%s: Invalid EVA Address 0x%x\n", __func__, hb_mc_eva_addr(eva));
+		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
+			" addressible memory locaition.\n", 
+			__func__, hb_mc_eva_addr(eva));
+		*epa = 0;
+		*sz = 0;
 		return HB_MC_FAIL;
 	}
+	return HB_MC_SUCCESS;
+
+}
+
+/**
+ * Converts a local Endpoint Virtual Address to a Network Physical Address
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_to_npa_local(const hb_mc_config_t *cfg, 
+				const hb_mc_coordinate_t *o,
+				const hb_mc_coordinate_t *src, 
+				const hb_mc_eva_t *eva,
+				hb_mc_npa_t *npa, size_t *sz)
+{
+	int rc;
+	hb_mc_idx_t x, y;
+	hb_mc_epa_t epa;
+
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+
+	x = hb_mc_coordinate_get_x(*src);
+	y = hb_mc_coordinate_get_y(*src);
+	rc = default_eva_to_epa_tile(eva, &epa, sz);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 	return HB_MC_SUCCESS;
 }
 
@@ -112,26 +130,55 @@ static bool default_eva_is_group(const hb_mc_eva_t *eva)
 }
 
 /**
- * Converts a group-local EVA to an NPA
+ * Converts a group Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  c      A target tile to compute #npa (not used)
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by translating #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
-				const hb_mc_coordinate_t *c,
-				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
+static int default_eva_to_npa_group(const hb_mc_config_t *cfg, 
+				const hb_mc_coordinate_t *o,
+				const hb_mc_coordinate_t *src, 
+				const hb_mc_eva_t *eva,
+				hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
-	hb_mc_idx_t x, y;
+	int rc;
+	hb_mc_dimension_t dim;
+	hb_mc_idx_t x, y, ox, oy, dim_x, dim_y;
 	hb_mc_epa_t epa;
+
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+
+	dim = hb_mc_config_get_dimension(cfg);
+	dim_x = hb_mc_dimension_get_x(dim);
+	dim_y = hb_mc_dimension_get_y(dim);
+	ox = hb_mc_coordinate_get_x(*o);
+	oy = hb_mc_coordinate_get_y(*o);
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_X_BITMASK) >> DEFAULT_GROUP_X_BITIDX);
+	x += ox;
 	y = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_Y_BITMASK) >> DEFAULT_GROUP_Y_BITIDX);
-	epa = hb_mc_eva_addr(eva) & DEFAULT_GROUP_EPA_BITMASK;
+	y += oy;
+	if(dim_x < x){
+		bsg_pr_err("%s: Invalid Group EVA. X coordinate destination %d"
+			"is larger than current manycore configuration\n", 
+			__func__, x);
+		return HB_MC_FAIL;
+	}
+
+	if(dim_y < y){
+		bsg_pr_err("%s: Invalid Group EVA. Y coordinate destination %d"
+			"is larger than current manycore configuration\n", 
+			__func__, y);
+		return HB_MC_FAIL;
+	}
+
+	rc = default_eva_to_epa_tile(eva, &epa, sz);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-	*sz = DEFAULT_GROUP_EPA_SIZE - epa;
 	return HB_MC_SUCCESS;
 }
 
@@ -145,26 +192,33 @@ static bool default_eva_is_global(const hb_mc_eva_t *eva)
 }
 
 /**
- * Converts a global EVA to an NPA
+ * Converts a global Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  c      A target tile to compute #npa (not used)
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by translating #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
-				const hb_mc_coordinate_t *c,
-				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
+static int default_eva_to_npa_global(const hb_mc_config_t *cfg, 
+				const hb_mc_coordinate_t *o,
+				const hb_mc_coordinate_t *src, 
+				const hb_mc_eva_t *eva,
+				hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+	int rc;
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
+
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
 	y = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_Y_BITMASK) >> DEFAULT_GLOBAL_Y_BITIDX);
-	epa = hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_EPA_BITMASK;
+	rc = default_eva_to_epa_tile(eva, &epa, sz);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-	*sz = DEFAULT_GLOBAL_EPA_SIZE - epa;
 	return HB_MC_SUCCESS;
 }
 
@@ -178,23 +232,28 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 }
 
 /**
- * Converts a DRAM EVA to an NPA
+ * Converts a DRAM Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  c      A target tile to compute #npa (not used)
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by translating #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
-				const hb_mc_coordinate_t *c,
-				const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
+static int default_eva_to_npa_dram(const hb_mc_config_t *cfg, 
+				const hb_mc_coordinate_t *o,
+				const hb_mc_coordinate_t *src, 
+				const hb_mc_eva_t *eva,
+				hb_mc_npa_t *npa, size_t *sz)
 {
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
 	uint32_t mask, shift, clogxdim;
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	hb_mc_dimension_t dim;
+
+	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+
 	dim = hb_mc_config_get_dimension(cfg);
 
 	// The number of bits used for the x index, and the location of the x
@@ -219,44 +278,56 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 }
 
 /**
- * Converts a EVA to an NPA
+ * Translate an Endpoint Virtual Address in a source tile's address space
+ * to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  c      A target tile to compute #npa
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
  * @param[out] npa    An npa to be set by translating #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa(const hb_mc_config_t *cfg,
-			const hb_mc_coordinate_t *c,
-		const hb_mc_eva_t *eva, hb_mc_npa_t *npa, size_t *sz)
+static int default_eva_to_npa(const hb_mc_config_t *cfg, 
+			const void *priv,
+			const hb_mc_coordinate_t *src, 
+			const hb_mc_eva_t *eva,
+			hb_mc_npa_t *npa, size_t *sz)
 {
+	const hb_mc_coordinate_t *origin;
+
+	origin = (const hb_mc_coordinate_t *) priv;
+
 	if(default_eva_is_dram(eva))
-		return default_eva_to_npa_dram(cfg, c, eva, npa, sz);
+		return default_eva_to_npa_dram(cfg, origin, src, eva, npa, sz);
 	if(default_eva_is_global(eva))
-		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
+		return default_eva_to_npa_global(cfg, origin, src, eva, npa, sz);
 	if(default_eva_is_group(eva))
-		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
+		return default_eva_to_npa_group(cfg, origin, src, eva, npa, sz);
 	if(default_eva_is_local(eva))
-		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
+		return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
+
 	bsg_pr_err("%s: EVA did not map to a known region\n", __func__);
 	return HB_MC_FAIL;
 }
 
 /**
- * Converts a NPA to a EVA in a coordinate's address space.
+ * Translate a Network Physical Address to an Endpoint Virtual Address in a
+ * target tile's address space
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  cs     Coordinates of tiles in the target's group (#len > 1) 
- *                    or the target (#len = 1)
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  tgt    Coordinates of the target tile
  * @param[in]  len    Number of tiles in the target tile's group
  * @param[in]  npa    An npa to translate
  * @param[out] eva    An eva to set by translating #npa
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_npa_to_eva(const hb_mc_config_t *cfg,
-			const hb_mc_coordinate_t *c, uint32_t len,
-			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
+static int default_npa_to_eva(const hb_mc_config_t *cfg, 
+			const void *priv,
+			const hb_mc_coordinate_t *tgt, 
+			const hb_mc_npa_t *npa, 
+			hb_mc_eva_t *eva, size_t *sz)
 {
 	bsg_pr_err("%s: this function is not yet implemented\n", __func__);
 	/*
@@ -272,32 +343,34 @@ static int default_npa_to_eva(const hb_mc_config_t *cfg,
 	return HB_MC_FAIL;
 }
 
-hb_mc_eva_id_t default_eva = {
-	.eva_id_name = "Default EVA space",
+const hb_mc_coordinate_t default_origin[1] = {{ .x = 1, .y = 0 }};
+hb_mc_eva_map_t default_eva = {
+	.eva_map_name = "Default EVA space",
+	.priv = (const void *)(default_origin),
 	.eva_to_npa  = default_eva_to_npa,
-	.npa_to_eva  = default_npa_to_eva
+	.npa_to_eva  = default_npa_to_eva,
 };
 
 /**
- * Converts a NPA to a EVA in a coordinate's address space.
+ * Translate a Network Physical Address to an Endpoint Virtual Address in a
+ * target tile's address space
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  cs     Coordinates of tiles in the target's group (#len > 1) 
- *                    or the target (#len = 1)
- * @param[in]  len    Number of tiles in the target tile's group
+ * @param[in]  map    An eva map for computing the eva to npa translation
+ * @param[in]  tgt    Coordinates of the target tile
  * @param[in]  npa    An npa to translate
  * @param[out] eva    An eva to set by translating #npa
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
-		const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *cs,
-		const uint32_t len,
-		const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
+		const hb_mc_eva_map_t *map, 
+		const hb_mc_coordinate_t *tgt,
+		const hb_mc_npa_t *npa, 
+		hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
 
-	err = id->npa_to_eva(cfg, cs, len, npa, eva, sz);
+	err = map->npa_to_eva(cfg, map->priv, tgt, npa, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -305,23 +378,25 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
 }
 
 /**
- * Translate an Endpoint Virtual Address to a Network Physical Address
+ * Translate an Endpoint Virtual Address in a source tile's address space
+ * to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  c      A target tile to compute #npa
+ * @param[in]  map    An eva map for computing the eva to npa translation
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva and #id
+ * @param[out] npa    An npa to be set by using #map to translate #eva
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
-		     const hb_mc_eva_id_t *id,
-		     const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
-		     hb_mc_npa_t *npa, size_t *sz)
+		const hb_mc_eva_map_t *map, 
+		const hb_mc_coordinate_t *src, 
+		const hb_mc_eva_t *eva, 
+		hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
 
-	err = id->eva_to_npa(cfg, c, eva, npa, sz);
+	err = map->eva_to_npa(cfg, map->priv, src, eva, npa, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -332,21 +407,22 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 /**
  * Write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  c      A target tile to compute the NPA
+ * @param[in]  map    An eva map for computing the eva to npa translation
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
-			const hb_mc_eva_id_t *id,
-			const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
+			const hb_mc_eva_map_t *map,
+			const hb_mc_coordinate_t *src, 
+			const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
 {
 	int err;
 
-	err = HB_MC_FAIL;// TODO: Check that (sz, eva, id, coord) is valid
+	err = HB_MC_FAIL;// TODO: Check that (sz, eva, map, coord) is valid
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -357,21 +433,22 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
 /**
  * Read memory from manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
- * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  c      A coordinate on the the Manycore
+ * @param[in]  map    An eva map for computing the eva to npa map
+ * @param[in]  src    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
-			const hb_mc_eva_id_t *id,
-			const hb_mc_coordinate_t *c, const hb_mc_eva_t *eva,
+			const hb_mc_eva_map_t *map,
+			const hb_mc_coordinate_t *src, 
+			const hb_mc_eva_t *eva,
 			void *data, size_t sz)
 {
 	int err;
 
-	err = HB_MC_FAIL;// TODO: Check that (sz, eva, id, coord) is valid
+	err = HB_MC_FAIL;// TODO: Check that (sz, eva, map, coord) is valid
 	if (err != HB_MC_SUCCESS)
 		return err;
 

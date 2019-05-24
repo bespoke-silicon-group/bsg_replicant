@@ -67,6 +67,9 @@ int test_manycore_eva () {
         hb_mc_coordinate_t src;
 	hb_mc_idx_t src_x, src_y;
 
+        hb_mc_coordinate_t origin;
+	hb_mc_idx_t origin_x, origin_y;
+
         hb_mc_coordinate_t tgt;
 	hb_mc_idx_t tgt_x, tgt_y;
 	hb_mc_epa_t tgt_epa;
@@ -114,6 +117,11 @@ int test_manycore_eva () {
 	}
 
 	bsg_pr_test_info("Testing Random Manycore EVAs\n");
+	// This is the origin of the Default EVA ID
+	origin_x = 1;
+	origin_y = 0;
+	origin = hb_mc_coordinate(origin_x, origin_y);
+
 	src_x = 1;
 	src_y = 1;
 	src = hb_mc_coordinate(src_x, src_y);
@@ -127,11 +135,11 @@ int test_manycore_eva () {
 			tgt_x = src_x;
 			tgt_y = src_y;
 		} else if (region == GROUP){
-			tgt_x = rand() % dim_x;
-			tgt_y = rand() % (dim_y / 2);
+			tgt_x = (rand() % (dim_x - origin_x)) + origin_x;
+			tgt_y = (rand() % ((dim_y / 2) - origin_y)) + origin_y;
 			tgt_epa = rand() % GROUP_EPA_SIZE;
-			eva = (GROUP_INDICATOR) | (tgt_x << GROUP_X_OFFSET) | 
-				(tgt_y << GROUP_Y_OFFSET) | (tgt_epa);
+			eva = (GROUP_INDICATOR) | ((tgt_x - origin_x) << GROUP_X_OFFSET) | 
+				((tgt_y - origin_y) << GROUP_Y_OFFSET) | (tgt_epa);
 			bsg_pr_test_info("Creating GROUP EVA: 0x%x\n", eva);
 			tgt_sz = GROUP_EPA_SIZE - tgt_epa;
 		} else if (region == GLOBAL){
@@ -156,7 +164,7 @@ int test_manycore_eva () {
 		
 		result_x = 0; result_y = 0; result_epa = 0; result_sz = 0;
 		rc = hb_mc_eva_to_npa(config, &default_eva, &src,
-					&eva, &result_npa, &result_sz);
+				&eva, &result_npa, &result_sz);
 		if(rc != HB_MC_SUCCESS){
 			bsg_pr_test_err("Call to hb_mc_manycore_eva_to_npa failed\n", eva);
 			fail = 1;
