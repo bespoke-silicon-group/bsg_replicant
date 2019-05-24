@@ -633,6 +633,7 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 
 		destp += dest_sz;
 		sz -= dest_sz;
+		eva += src_sz
 	}
 
 	return HB_MC_SUCCESS;
@@ -684,8 +685,10 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 				__func__);
 			return err;
 		}
+
 		srcp += src_sz;
 		sz -= src_sz;
+		eva += src_sz
 	}
 	return HB_MC_SUCCESS;
 }
