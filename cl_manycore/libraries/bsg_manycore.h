@@ -274,6 +274,14 @@ static inline hb_mc_npa_t hb_mc_epa_to_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa
 }
 
 /**
+ * Get the max size of program text.
+ */
+static inline size_t hb_mc_manycore_get_max_program_text_size(const hb_mc_manycore_t* mc,
+							      const hb_mc_coordinate_t *tile)
+{
+    return 16ul * (1ul<<20ul); // 16M -- this might be later from the config
+}
+/**
  * Get the size of a tiles local data memory.
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()

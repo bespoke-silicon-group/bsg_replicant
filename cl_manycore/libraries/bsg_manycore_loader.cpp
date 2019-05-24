@@ -125,7 +125,7 @@ static size_t hb_mc_loader_get_tile_segment_capacity(const void *bin, size_t sz,
 	case HB_MC_LOADER_ELF_DATA_ID:
 		return hb_mc_manycore_get_dmem_size(mc, &tile);
 	case HB_MC_LOADER_ELF_TEXT_ID:
-		return hb_mc_manycore_get_icache_size(mc, &tile);
+		return hb_mc_manycore_get_dram_size(mc);
 	case HB_MC_LOADER_ELF_DRAM_ID:
 		return hb_mc_manycore_get_dram_size(mc);
 	}
@@ -363,6 +363,7 @@ static int hb_mc_loader_load_tile_icache(const void *bin, size_t sz,
 					 const hb_mc_eva_id_t *id, hb_mc_coordinate_t tile)
 {
 	int rc;
+
 	// Get text segment
 	// Get ICache Size (How?)
 	// EVA memcopy
@@ -457,10 +458,7 @@ static int hb_mc_loader_load_dram_text(const void *bin, size_t sz,
 				       hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
 				       hb_mc_coordinate_t origin)
 {
-	int rc;
-	// Get Data segment
-	// EVA memcopy
-	return HB_MC_SUCCESS;
+	return hb_mc_loader_load_tile_segment(bin, sz, mc, id, origin, HB_MC_LOADER_ELF_TEXT_ID);
 }
 
 /**
@@ -474,11 +472,9 @@ static int hb_mc_loader_load_dram_text(const void *bin, size_t sz,
  */
 static int hb_mc_loader_load_dram_data(const void *bin, size_t sz,
 				       hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
-				       hb_mc_coordinate_t origin){
-	int rc;
-	// Get Text segment
-	// EVA memcopy
-	return HB_MC_SUCCESS;
+				       hb_mc_coordinate_t origin)
+{
+	return hb_mc_loader_load_tile_segment(bin, sz, mc, id, origin, HB_MC_LOADER_ELF_DRAM_ID);
 }
 
 /**
@@ -492,12 +488,20 @@ static int hb_mc_loader_load_dram_data(const void *bin, size_t sz,
  */
 static int hb_mc_loader_load_drams(const void *bin, size_t sz,
 				   hb_mc_manycore_t *mc, const hb_mc_eva_id_t *id,
-				   hb_mc_coordinate_t origin){
+				   hb_mc_coordinate_t origin)
+{
 	int rc;
-	// rc = hb_mc_loader_load_dram_text();
-	// rc = hb_mc_loader_load_dram_data();
-	// load data
-	// load text
+
+	/* I'm pretty sure that text and data are the same segment... */
+	/* This should be refactored to loop over DRAM segments */
+	rc = hb_mc_loader_load_dram_text(bin, sz, mc, id, origin);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
+	rc = hb_mc_loader_load_dram_data(bin, sz, mc, id, origin);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
 	return HB_MC_SUCCESS;
 }
 
@@ -526,5 +530,9 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 		return rc;
 
 	// Load DRAMs
+	rc = hb_mc_loader_load_drams(bin, sz, mc, id, tiles[0]);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
 	return HB_MC_SUCCESS;
 }

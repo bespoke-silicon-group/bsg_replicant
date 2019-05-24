@@ -195,7 +195,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 
 	x = (hb_mc_eva_addr(eva) >> shift) & mask;
 	y = hb_mc_dimension_get_y(dim) + 1;
-	
+
 	epa = (*eva & MAKE_MASK(shift));
 
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -235,14 +235,6 @@ static int default_npa_to_eva(const hb_mc_config_t *cfg,
 			const hb_mc_coordinate_t *c,
 			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
-	if(default_eva_is_dram(eva))
-		return default_eva_to_npa_dram(cfg, c, eva, npa, sz);
-	if(default_eva_is_global(eva))
-		return default_eva_to_npa_global(cfg, c, eva, npa, sz);
-	if(default_eva_is_group(eva))
-		return default_eva_to_npa_group(cfg, c, eva, npa, sz);
-	if(default_eva_is_local(eva))
-		return default_eva_to_npa_local(cfg, c, eva, npa, sz);
 	return HB_MC_FAIL;
 }
 
@@ -293,7 +285,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 		     hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
-	
+
 
 	err = id->eva_to_npa(cfg, c, eva, npa, sz);
 	if (err != HB_MC_SUCCESS)
