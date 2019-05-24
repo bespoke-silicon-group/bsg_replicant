@@ -63,12 +63,17 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 	return !(hb_mc_eva_addr(eva) & ~(DEFAULT_LOCAL_BITMASK));
 }
 
-static int default_eva_to_epa_tile(const hb_mc_eva_t *eva, 
-				hb_mc_epa_t *epa,
-				size_t *sz)
+/**
+ * Returns the number of contiguous bytes following a local EPA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  epa    An epa 
+ * @param[out] sz     Number of contiguous bytes remaining in the #epa segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_epa_size_local(
+		const hb_mc_epa_t *epa,
+		size_t *sz)
 {
-	*epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
-	// EVA is writing to DMEM
 	if(*epa < DEFAULT_TILE_DMEM_SIZE){
 		*sz = DEFAULT_TILE_DMEM_SIZE - *epa;
 	}else if(*epa == DEFAULT_TILE_FREEZE_ADDR){
@@ -78,11 +83,48 @@ static int default_eva_to_epa_tile(const hb_mc_eva_t *eva,
 	}else if(*epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
 		*sz = sizeof(uint32_t);
 	} else {
+		*sz = 0;
+		return HB_MC_FAIL;
+	}
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Returns the number of contiguous bytes following a local EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  eva    An eva 
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_size_local(
+		const hb_mc_eva_t *eva,
+		size_t *sz)
+{
+	int rc;
+	hb_mc_epa_t epa;
+	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	rc = default_epa_size_local(&epa, sz);
+	if(rc != HB_MC_SUCCESS){
 		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
-			" addressible memory locaition.\n", 
+			" addressible tile memory locatiion.\n", 
+			__func__, hb_mc_eva_addr(eva));
+		return HB_MC_FAIL;
+	}
+	return HB_MC_SUCCESS;
+}
+
+static int default_eva_to_epa_tile(const hb_mc_eva_t *eva, 
+				hb_mc_epa_t *epa,
+				size_t *sz)
+{
+	int rc;
+	*epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	rc = default_epa_size_local(epa, sz);
+	if(rc != HB_MC_SUCCESS){
+		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
+			" addressible tile memory locatiion.\n", 
 			__func__, hb_mc_eva_addr(eva));
 		*epa = 0;
-		*sz = 0;
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -127,6 +169,30 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 static bool default_eva_is_group(const hb_mc_eva_t *eva)
 {
 	return (hb_mc_eva_addr(eva) & DEFAULT_GROUP_BITMASK) != 0;
+}
+
+/**
+ * Returns the number of contiguous bytes following a group EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  eva    An eva 
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_size_group(
+		const hb_mc_eva_t *eva,
+		size_t *sz)
+{
+	int rc;
+	hb_mc_epa_t epa;
+	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	rc = default_epa_size_local(&epa, sz);
+	if(rc != HB_MC_SUCCESS){
+		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
+			" addressible tile memory locatiion.\n", 
+			__func__, hb_mc_eva_addr(eva));
+		return HB_MC_FAIL;
+	}
+	return HB_MC_SUCCESS;
 }
 
 /**
@@ -192,6 +258,30 @@ static bool default_eva_is_global(const hb_mc_eva_t *eva)
 }
 
 /**
+ * Returns the number of contiguous bytes following a global EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  eva    An eva 
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_size_global(
+		const hb_mc_eva_t *eva,
+		size_t *sz)
+{
+	int rc;
+	hb_mc_epa_t epa;
+	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+	rc = default_epa_size_local(&epa, sz);
+	if(rc != HB_MC_SUCCESS){
+		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
+			" addressible tile memory locatiion.\n", 
+			__func__, hb_mc_eva_addr(eva));
+		return HB_MC_FAIL;
+	}
+	return HB_MC_SUCCESS;
+}
+
+/**
  * Converts a global Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  o      Coordinate of the origin for this tile's group
@@ -232,6 +322,42 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 }
 
 /**
+ * Returns the number of contiguous bytes following a DRAM EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  eva    An eva 
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_size_dram(
+	const hb_mc_config_t *cfg,
+	const hb_mc_eva_t *eva,
+	size_t *sz)
+{
+	uint32_t mask, shift, clogxdim;
+	hb_mc_idx_t x, y;
+	hb_mc_epa_t epa;
+	hb_mc_dimension_t dim;
+
+	dim = hb_mc_config_get_dimension(cfg);
+
+	// The number of bits used for the x index, and the location of the x
+	// index in the eva is determined by clog2 of the x dimension (or the
+	// number of bits needed to represent the maximum x dimension).
+	clogxdim = ceil(log2(hb_mc_dimension_get_x(dim)));
+
+	shift = DEFAULT_DRAM_BITIDX - clogxdim;
+	mask = MAKE_MASK(clogxdim);
+
+	x = (hb_mc_eva_addr(eva) >> shift) & mask;
+	y = hb_mc_dimension_get_y(dim) + 1;
+
+	epa = (hb_mc_eva_addr(eva) & MAKE_MASK(shift));
+
+	*sz = (1 << shift) - epa;
+	return HB_MC_SUCCESS;
+}
+
+/**
  * Converts a DRAM Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  o      Coordinate of the origin for this tile's group
@@ -251,6 +377,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	hb_mc_dimension_t dim;
+	int rc;
 
 	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
 
@@ -273,7 +400,10 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	// Likewise, the size of the NPA segment is determined by the number of
 	// bits not used by the x dimension (plus 1 for the top bit that
 	// indicates this EVA is for DRAM)
-	*sz = (1 << shift) - epa;
+	rc = default_eva_size_dram(cfg, eva, sz);
+	if(rc != HB_MC_SUCCESS){
+		return rc;
+	}
 	return HB_MC_SUCCESS;
 }
 
@@ -307,7 +437,8 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
 
-	bsg_pr_err("%s: EVA did not map to a known region\n", __func__);
+	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n", 
+		hb_mc_eva_addr(eva), __func__);
 	return HB_MC_FAIL;
 }
 
@@ -323,7 +454,7 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_npa_to_eva(const hb_mc_config_t *cfg, 
+static int default_npa_to_eva(const hb_mc_config_t *cfg,
 			const void *priv,
 			const hb_mc_coordinate_t *tgt, 
 			const hb_mc_npa_t *npa, 
@@ -343,11 +474,41 @@ static int default_npa_to_eva(const hb_mc_config_t *cfg,
 	return HB_MC_FAIL;
 }
 
+/**
+ * Returns the number of contiguous bytes following an EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  eva    An eva
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_size(
+	const hb_mc_config_t *cfg,
+	const hb_mc_eva_t *eva,
+	size_t *sz)
+{
+	if(default_eva_is_dram(eva))
+		return default_eva_size_dram(cfg, eva, sz);
+	if(default_eva_is_global(eva))
+		return default_eva_size_global(eva, sz);
+	if(default_eva_is_group(eva))
+		return default_eva_size_group(eva, sz);
+	if(default_eva_is_local(eva))
+		return default_eva_size_local(eva, sz);
+
+	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n", 
+		hb_mc_eva_addr(eva), __func__);
+	return HB_MC_FAIL;
+
+}
+
+
 const hb_mc_coordinate_t default_origin[1] = {{ .x = 1, .y = 0 }};
 hb_mc_eva_map_t default_eva = {
 	.eva_map_name = "Default EVA space",
 	.priv = (const void *)(default_origin),
 	.eva_to_npa  = default_eva_to_npa,
+	.eva_size = default_eva_size,
 	.npa_to_eva  = default_npa_to_eva,
 };
 
@@ -403,30 +564,77 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Translate an Endpoint Virtual Address in a source tile's address space
+ * to a Network Physical Address
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  eva    An eva to translate
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_eva_size(const hb_mc_config_t *cfg,
+		const hb_mc_eva_map_t *map, 
+		const hb_mc_eva_t *eva, size_t *sz)
+{
+	int err;
+
+	err = map->eva_size(cfg, eva, sz);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	return HB_MC_SUCCESS;
+}
+
 
 /**
  * Write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa translation
- * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  tgt    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *src, 
+			const hb_mc_coordinate_t *tgt, 
 			const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
 {
 	int err;
+	const hb_mc_config_t* config;
+	size_t dest_sz;
+	hb_mc_npa_t dest_npa;
+	char *destp;
+	config = hb_mc_manycore_get_config(mc);
 
-	err = HB_MC_FAIL;// TODO: Check that (sz, eva, map, coord) is valid
-	if (err != HB_MC_SUCCESS)
-		return err;
+	err = hb_mc_eva_size(config, map, eva, &dest_sz);
+	if (sz > dest_sz){
+		bsg_pr_err("%s: Error, requested copy to region that is smaller "
+			"than buffer\n", __func__);
+		return HB_MC_FAIL;
+	}
+	
+	destp = (char *)data;
+	while(sz > 0){
+		err = hb_mc_eva_to_npa(config, map, tgt, eva, &dest_npa, &dest_sz);
+		if(err != HB_MC_SUCCESS){
+			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
+				__func__);
+			return err;
+		}
+		err = hb_mc_manycore_write_mem(mc, &dest_npa, destp, dest_sz);
+		if(err != HB_MC_SUCCESS){
+			bsg_pr_err("%s: Failed to copy data from host to NPA\n",
+				__func__);
+			return err;
+		}
 
-	// TODO: Perform a memcopy for each EVA -> NPA Segment
+		destp += dest_sz;
+		sz -= dest_sz;
+	}
+
 	return HB_MC_SUCCESS;
 }
 
@@ -434,24 +642,50 @@ int hb_mc_manycore_eva_write(const hb_mc_manycore_t *mc,
  * Read memory from manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa map
- * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  tgt    Coordinate of the tile issuing this #eva
  * @param[in]  eva    A valid hb_mc_eva_t
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *src, 
+			const hb_mc_coordinate_t *tgt,
 			const hb_mc_eva_t *eva,
 			void *data, size_t sz)
 {
 	int err;
+	const hb_mc_config_t* config;
+	size_t src_sz;
+	hb_mc_npa_t src_npa;
+	char *srcp;
 
-	err = HB_MC_FAIL;// TODO: Check that (sz, eva, map, coord) is valid
-	if (err != HB_MC_SUCCESS)
-		return err;
+	config = hb_mc_manycore_get_config(mc);
 
-	// TODO: Perform a memcopy for each EVA -> NPA Segment
+	err = hb_mc_eva_size(config, map, eva, &src_sz);
+	if (sz > src_sz){
+		bsg_pr_err("%s: Error, requested read from region that is smaller "
+			"than buffer\n", __func__);
+		return HB_MC_FAIL;
+	}
+	
+	srcp = (char *)data;
+	while(sz > 0){
+		err = hb_mc_eva_to_npa(config, map, tgt, eva, &src_npa, &src_sz);
+		if(err != HB_MC_SUCCESS){
+			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
+				__func__);
+			return err;
+		}
+
+		err = hb_mc_manycore_read_mem(mc, &src_npa, srcp, src_sz);
+		if(err != HB_MC_SUCCESS){
+			bsg_pr_err("%s: Failed to copy data from host to NPA\n",
+				__func__);
+			return err;
+		}
+		srcp += src_sz;
+		sz -= src_sz;
+	}
 	return HB_MC_SUCCESS;
 }
