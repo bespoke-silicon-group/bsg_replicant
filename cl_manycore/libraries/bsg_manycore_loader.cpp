@@ -116,7 +116,7 @@ static int hb_mc_loader_elf_get_segment(const void *bin, size_t sz,
  * @return the max size for #segment.
  */
 static size_t hb_mc_loader_get_tile_segment_capacity(hb_mc_manycore_t *mc,
-						     const hb_mc_eva_id_t *id,
+						     const hb_mc_eva_map_t *id,
 						     const Elf32_Phdr *phdr,
 						     hb_mc_coordinate_t tile)
 {
@@ -267,7 +267,7 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
 	
 	/* get hardware capacity of the segment */
-	cap = hb_mc_loader_get_tile_segment_capacity(mc, id, phdr, tile);
+	cap = hb_mc_loader_get_tile_segment_capacity(mc, map, phdr, tile);
 	seg_sz = RV32_Word_to_host(phdr->p_memsz);
 
         /* return error if the hardware lacks the capacity */
@@ -397,8 +397,8 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 			return rc;
 
 		/* decide if this segment is 'load once' or 'load for each tile' */
-		if (hb_mc_loader_segment_is_load_once(mc, phdr, id, tiles, ntiles)) {
-			rc = hb_mc_loader_load_tile_segment(mc, id, phdr, segdata, tiles[0]);
+		if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
+			rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
 			if (rc != HB_MC_SUCCESS)
 				return rc;
 		} else { /* load on  each tile */			
