@@ -246,16 +246,19 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
 /**
  * Converts a NPA to a EVA in a coordinate's address space.
  * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  c      A target tile to compute #eva
+ * @param[in]  cs     Coordinates of tiles in the target's group (#len > 1) 
+ *                    or the target (#len = 1)
+ * @param[in]  len    Number of tiles in the target tile's group
  * @param[in]  npa    An npa to translate
  * @param[out] eva    An eva to set by translating #npa
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_npa_to_eva(const hb_mc_config_t *cfg,
-			const hb_mc_coordinate_t *c,
+			const hb_mc_coordinate_t *c, uint32_t len,
 			const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
+	bsg_pr_err("%s: this function is not yet implemented\n", __func__);
 	/*
 	if(default_npa_is_dram(npa, c))
 		return default_npa_to_eva_dram(cfg, c, npa, eva, sz);
@@ -270,28 +273,31 @@ static int default_npa_to_eva(const hb_mc_config_t *cfg,
 }
 
 hb_mc_eva_id_t default_eva = {
-	.eva_id_name = "default EVA space",
+	.eva_id_name = "Default EVA space",
 	.eva_to_npa  = default_eva_to_npa,
 	.npa_to_eva  = default_npa_to_eva
 };
 
 /**
- * Translates a Network Physical Address to an Endpoint Virtual Address
+ * Converts a NPA to a EVA in a coordinate's address space.
  * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  id     An eva ID for computing the eva to npa map
- * @param[in]  c      A coordinate for which #eva will be formatted
- * @param[in]  npa    A valid npa_t to translate
- * @param[out] eva    An eva to be set by translating #npa
+ * @param[in]  cs     Coordinates of tiles in the target's group (#len > 1) 
+ *                    or the target (#len = 1)
+ * @param[in]  len    Number of tiles in the target tile's group
+ * @param[in]  npa    An npa to translate
+ * @param[out] eva    An eva to set by translating #npa
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
-		const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *c,
+		const hb_mc_eva_id_t *id, const hb_mc_coordinate_t *cs,
+		const uint32_t len,
 		const hb_mc_npa_t *npa, hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
 
-	err = id->npa_to_eva(cfg, c, npa, eva, sz);
+	err = id->npa_to_eva(cfg, cs, len, npa, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
