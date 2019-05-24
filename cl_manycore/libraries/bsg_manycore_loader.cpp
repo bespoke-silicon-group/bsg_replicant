@@ -156,16 +156,14 @@ static const char *hb_mc_loader_segment_to_string(const Elf32_Phdr *phdr,
  * @param[in] mc         A manycore instance.
  * @param[in] map        And EVA to NPA map
  * @param[in] tile       A manycore coordinate.
- * @param[in] zeros      If true, zeros will be written instead of data.
  * @return HB_MC_SUCCESS if succesful. Otherwise and error code is returned.
  */
-static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
+static int hb_mc_loader_eva_write(const Elf32_Phdr *phdr,
 				     const unsigned char *data, size_t sz,
 				     hb_mc_eva_t start_eva,
 				     hb_mc_manycore_t *mc,
 				     const hb_mc_eva_map_t *map,
-				     hb_mc_coordinate_t tile,
-				     bool zeros = false)
+				     hb_mc_coordinate_t tile)
 {
 	hb_mc_eva_t eva = start_eva;
 	size_t off = 0, rem = sz;
@@ -174,48 +172,57 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 
 	hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
 
-	/* while there's data left to write */
-	while (rem > 0) {
-		hb_mc_npa_t npa;
-		size_t page_sz;
+	rc = hb_mc_manycore_eva_write(mc, map, &tile, &start_eva, data, sz);
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_err("%s: failed to write %s @ eva 0x%08x for tile (%d, %d)"
+			": %s\n",
+			__func__,
+			segname,
+			eva,
+			hb_mc_coordinate_get_x(tile),
+			hb_mc_coordinate_get_y(tile),
+			hb_mc_strerror(rc));
+		return rc;
+	}
 
-		/* translate the EVA */
-		rc = hb_mc_eva_to_npa(hb_mc_manycore_get_config(mc), map, &tile, &eva,
-				      &npa, &page_sz);
-		if (rc != HB_MC_SUCCESS) {
-			bsg_pr_err("%s: %s: writing %s: "
-				   "EVA 0x%08" PRIx32 " does not map to any NPA\n",
-				   __func__,
-				   hb_mc_eva_map_get_name(map),
-				   segname,
-				   eva);
-			return rc;
-		}
-		/* npa = target NPA that eva maps to */
-		/* page_sz = remaining length of page starting from npa */
+	return HB_MC_SUCCESS;
+}
 
-		/* write min(page_sz, file_sz) to npa and then increment eva by page_sz */
-		size_t cpy_sz = min_size_t(page_sz, rem);
+/**
+ * Writes program data to an EVA.
+ * @param[in] phdr       The program header for this data (for debugging).
+ * @param[in] val        The value to be written
+ * @param[in] start_eva  The start EVA.
+ * @param[in] mc         A manycore instance.
+ * @param[in] map        And EVA to NPA map
+ * @param[in] tile       A manycore coordinate.
+ * @return HB_MC_SUCCESS if succesful. Otherwise and error code is returned.
+ */
+static int hb_mc_loader_eva_memset(const Elf32_Phdr *phdr,
+				uint8_t val, size_t sz,
+				hb_mc_eva_t start_eva,
+				hb_mc_manycore_t *mc,
+				const hb_mc_eva_map_t *map,
+				hb_mc_coordinate_t tile)
+{
+	hb_mc_eva_t eva = start_eva;
+	size_t off = 0, rem = sz;
+	int rc;
+	char segname[64];
 
-		if (zeros) { /* write zeros to this page */
-			rc = hb_mc_loader_write_zeros_to_page(mc, &npa, cpy_sz);
-		} else { /* write from data */
-			rc = hb_mc_manycore_write_mem(mc, &npa, &data[off], cpy_sz);
-		}
+	hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
 
-		/* report error? */
-		if (rc != HB_MC_SUCCESS) {
-			bsg_pr_err("%s: failed to write %s @ offset 0x%08zx: %s\n",
-				   __func__,
-				   "anonymous segment",
-				   off, hb_mc_strerror(rc));
-			return rc;
-		}
-
-		/* update off, rem, and eva */
-		off += cpy_sz;
-		rem -= cpy_sz;
-		eva += cpy_sz;
+	rc = hb_mc_manycore_eva_memset(mc, map, &tile, &start_eva, val, sz);
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_err("%s: failed to memset %s @ eva 0x%08x for tile (%d, %d)"
+			": %s\n",
+			__func__,
+			segname,
+			eva,
+			hb_mc_coordinate_get_x(tile),
+			hb_mc_coordinate_get_y(tile),
+			hb_mc_strerror(rc));
+		return rc;
 	}
 
 	return HB_MC_SUCCESS;
@@ -261,7 +268,7 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_vaddr); /* get the eva */
 	size_t file_sz = RV32_Word_to_host(phdr->p_filesz); /* get the size of segdata */
 
-	rc = hb_mc_loader_write_to_eva(phdr, segdata, file_sz, eva, mc, map, tile, false);
+	rc = hb_mc_loader_eva_write(phdr, segdata, file_sz, eva, mc, map, tile);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
@@ -269,7 +276,7 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	size_t zeros_sz  = seg_sz - file_sz;  // zeros are the remainder of the segment
 	eva += file_sz; // increment eva by number of initialized bytes written
 
-	rc = hb_mc_loader_write_to_eva(phdr, NULL, zeros_sz, eva, mc, map, tile, true);
+	rc = hb_mc_loader_eva_memset(phdr, 0, zeros_sz, eva, mc, map, tile);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 

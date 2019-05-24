@@ -1111,6 +1111,43 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 }
 
 /**
+ * Set memory to a given value starting at a given NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t
+ * @param[in]  val    Value to be written out
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+			uint8_t val, size_t sz)
+{
+	int err;
+
+	err = hb_mc_manycore_read_write_mem_check_args(mc, __func__, NULL, sz);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	const uint32_t word = (val << 24) | (val << 16) | (val << 8) | val;
+	size_t n_words = sz >> 2;
+	hb_mc_npa_t addr = *npa;
+
+	/* send store requests one word at a time */
+	for (size_t i = 0; i < n_words; i++) {
+		// increment EPA by 1: (EPA's address words)
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
+		
+		err = hb_mc_manycore_write(mc, &addr, &word, 4);
+		if (err != HB_MC_SUCCESS) {
+			manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
+					__func__, hb_mc_strerror(err));
+			return err;
+		}
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+/**
  * Read memory from manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in]  npa    A valid hb_mc_npa_t
@@ -1247,7 +1284,7 @@ int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_
 int hb_mc_manycore_freeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
 {
 	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
-	hb_mc_manycore_write32(mc, &npa, 1);
+	return hb_mc_manycore_write32(mc, &npa, 1);
 }
 
 /**
@@ -1260,5 +1297,5 @@ int hb_mc_manycore_freeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *t
 int hb_mc_manycore_unfreeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
 {
 	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
-	hb_mc_manycore_write32(mc, &npa, 0);
+	return hb_mc_manycore_write32(mc, &npa, 0);
 }

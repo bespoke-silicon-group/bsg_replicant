@@ -163,6 +163,18 @@ __attribute__((warn_unused_result))
 int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v);
 
 /**
+ * Set memory to a given value starting at a given NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t
+ * @param[in]  val    Value to be written out
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+			uint8_t data, size_t sz);
+
+/**
  * Write memory out to manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in]  npa    A valid hb_mc_npa_t
