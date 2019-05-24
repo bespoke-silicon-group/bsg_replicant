@@ -132,6 +132,13 @@ static int hb_mc_loader_write_zeros_to_page(hb_mc_manycore_t *mc,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Format a segment program header as a human readable string.
+ * @param[in] phdr    A program header.
+ * @param[in] buffer  A buffer to which string data is written.
+ * @param[in] n       The size of #buffer.
+ * @return A pointer to #buffer.
+ */
 static const char *hb_mc_loader_segment_to_string(const Elf32_Phdr *phdr,
 						  char *buffer,
 						  size_t n)
@@ -295,6 +302,14 @@ static int hb_mc_loader_load_tiles_segment(hb_mc_manycore_t *mc,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Load a tile's ICACHE.
+ * @param[in] mc       A manycore instance.
+ * @param[in] phdr     The program header to be loaded.
+ * @param[in] segdata  The program data to be loaded.
+ * @param[in] tile     A tile whose ICACHE needs to be initialized.
+ * @return HB_MC_SUCCESS if succseful. Otherwise an error code is returned.
+ */
 static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 					  const hb_mc_eva_map_t *map,
 					  const Elf32_Phdr *phdr,
@@ -341,6 +356,15 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Load tiles' ICACHE.
+ * @param[in] mc       A manycore instance.
+ * @param[in] phdr     The program header to be loaded.
+ * @param[in] segdata  The program data to be loaded.
+ * @param[in] tiles    Tiles whose ICACHE needs to be initialized.
+ * @param[in] ntiles   Number of tiles.
+ * @return HB_MC_SUCCESS if succseful. Otherwise an error code is returned.
+ */
 static int hb_mc_loader_load_tiles_icache(hb_mc_manycore_t *mc,
 					  const hb_mc_eva_map_t *map,
 					  const Elf32_Phdr *phdr,
@@ -416,6 +440,16 @@ static int hb_mc_loader_elf_validate(const void *elf, size_t sz)
 }
 
 
+/**
+ * Check is a segment should not be loaded.
+ * This generally pertains to the program data the .data section (goes to DMEM).
+ * @param[in] mc      A manycore instance.
+ * @param[in] phdr    A program header.
+ * @param[in] map     An EVA<->NPA map.
+ * @param[in] tiles   Tiles being loaded.
+ * @param[in] ntiles  Number of tiles being loaded.
+ * @return true if the segment should only be loaded once.
+ */
 static bool hb_mc_loader_segment_is_load_never(hb_mc_manycore *mc,
 					       const Elf32_Phdr *phdr,
 					       const hb_mc_eva_map_t *map,
@@ -430,6 +464,16 @@ static bool hb_mc_loader_segment_is_load_never(hb_mc_manycore *mc,
 	}
 }
 
+/**
+ * Check is a segment should only be loaded once.
+ * This generally pertains to the program data containing .text and .dram (goes to DRAM).
+ * @param[in] mc      A manycore instance.
+ * @param[in] phdr    A program header.
+ * @param[in] map     An EVA<->NPA map.
+ * @param[in] tiles   Tiles being loaded.
+ * @param[in] ntiles  Number of tiles being loaded.
+ * @return true if the segment should only be loaded once.
+ */
 static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
 					      const Elf32_Phdr *phdr,
 					      const hb_mc_eva_map_t *map,
@@ -444,6 +488,15 @@ static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
 	return (eva & (1<<31) ? true : false);
 }
 
+/**
+ * Check is a segment should be written ICACHE.
+ * @param[in] mc      A manycore instance.
+ * @param[in] phdr    A program header.
+ * @param[in] map     An EVA<->NPA map.
+ * @param[in] tiles   Tiles being loaded.
+ * @param[in] ntiles  Number of tiles being loaded.
+ * @return true if the segment is should be loaded ICACHE.
+ */
 static bool hb_mc_loader_segment_is_load_icache(hb_mc_manycore *mc,
 						const Elf32_Phdr *phdr,
 						const hb_mc_eva_map_t *map,
@@ -458,6 +511,15 @@ static bool hb_mc_loader_segment_is_load_icache(hb_mc_manycore *mc,
 	return (type == PT_LOAD) && (flags & PF_X);
 }
 
+/**
+ * Get a program segment from a binary object.
+ * @param[in] bin       A binary object to load onto the tiles.
+ * @param[in] sz        The size of the binary object.
+ * @param[in] segidx    A segment index to get.
+ * @param[out] ophdr    Is set to the program header for request segment.
+ * @param[out] osegdata Is set to the segment data to be loaded.
+ * @return HB_MC_SUCCESS if succseful. Otherwise an error code is returned.
+ */
 static int hb_mc_loader_get_segment(const void *bin, size_t sz, unsigned segidx,
 				    const Elf32_Phdr **ophdr, const unsigned char **osegdata)
 {
@@ -504,6 +566,16 @@ static int hb_mc_loader_get_segment(const void *bin, size_t sz, unsigned segidx,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Load program segments onto tiles.
+ * @param[in] bin     A binary object to load onto the tiles.
+ * @param[in] sz      The size of the binary object.
+ * @param[in] mc      A manycore instance.
+ * @param[in] map     An EVA<->NPA map.
+ * @param[in] tiles   Tiles to load.
+ * @param[in] ntiles  The number of tiles to load.
+ * @return HB_MC_SUCCESS if succseful. Otherwise an error code is returned.
+ */
 static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 				      hb_mc_manycore_t *mc, const hb_mc_eva_map_t *map,
 				      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
@@ -569,6 +641,15 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 	return HB_MC_FAIL;
 }
 
+/**
+ * Perform register steup for a tile.
+ * @param[in] mc         A manycore instance.
+ * @param[in] map        An EVA<->NPA map.
+ * @param[in] tile       A tile to setup.
+ * @param[in] all_tiles  All tiles being loaded.
+ * @param[in] ntiles     Number of tiles being loaded.
+ * @return
+ */
 static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 					   const hb_mc_eva_map_t *map,
 					   hb_mc_coordinate_t tile,
@@ -602,6 +683,14 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 	return HB_MC_SUCCESS;
 }
 
+/**
+ * Perform register setup for tiles.
+ * @param[in] mc      A manycore instance.
+ * @param[in] map     An EVA<->NPA address map.
+ * @param[in] tiles   Tiles to setup.
+ * @param[in] ntiles  The number of tiles.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
 static int hb_mc_loader_tiles_set_registers(hb_mc_manycore_t *mc,
 					    const hb_mc_eva_map_t *map,
 					    const hb_mc_coordinate_t *tiles,
@@ -632,6 +721,9 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 		      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
 	int rc;
+
+	if (ntiles < 1)
+		return HB_MC_INVALID;
 
         // Validate ELF File
 	rc = hb_mc_loader_elf_validate(bin, sz);
