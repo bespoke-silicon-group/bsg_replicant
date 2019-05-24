@@ -21,24 +21,6 @@ static size_t min_size_t(size_t x, size_t y)
 }
 
 
-typedef enum __hb_mc_loader_elf_field_t{
-	HB_MC_LOADER_ELF_DATA_ID = 0,
-	HB_MC_LOADER_ELF_TEXT_ID = 1,
-	HB_MC_LOADER_ELF_DRAM_ID = 2,
-} hb_mc_loader_elf_field_t;
-
-const char * hb_mc_loader_elf_field_to_string(hb_mc_loader_elf_field_t segment)
-{
-	static const char *strtab [] = {
-		[HB_MC_LOADER_ELF_DATA_ID] = "dmem data",
-		[HB_MC_LOADER_ELF_TEXT_ID] = "program text",
-		[HB_MC_LOADER_ELF_DRAM_ID] = "program data",
-	};
-	return strtab[segment];
-}
-
-typedef hb_mc_loader_elf_field_t hb_mc_segment_t; // This should replace above
-
 /////////////////////////////////
 // Accessors for the ELF types //
 /////////////////////////////////
@@ -90,22 +72,6 @@ static Elf32_Versym RV32_Versym_to_host(Elf32_Versym versym)
 	return RV32_Half_to_host(versym);
 }
 
-/**
- * Gets a pointer to a segment in the ELF binary
- * @param[in]  bin    A memory buffer containing a valid manycore binary
- * @param[in]  sz     Size of #bin in bytes
- * @param[in]  id     The segment id to read from the ELF file
- * @param[out] phdr   A pointer to the program header for this segment.
- * @param[out] seg    A pointer to segment location in #bin
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int hb_mc_loader_elf_get_segment(const void *bin, size_t sz,
-					hb_mc_segment_t id,
-					Elf32_Phdr **phdr, void **seg)
-{
-	int rc;
-	return HB_MC_FAIL;
-}
 
 /**
  * Get the max memory capacity of a program segment (these map to hardware).
@@ -121,16 +87,16 @@ static size_t hb_mc_loader_get_tile_segment_capacity(hb_mc_manycore_t *mc,
 						     hb_mc_coordinate_t tile)
 {
 	/*
-	  The right thing to do here would to get the hardware component 
+	  The right thing to do here would to get the hardware component
 	  from the NPA, and then check the capacity of that.
-	  
-	  We don't currently have a function the maps NPAs to their 
+
+	  We don't currently have a function the maps NPAs to their
 	  underlying hardware type.
 
 	  So for now we just check the top bit of the EVA.
 	  If the top bit is 1, then address is DRAM (
-	 */
-	
+	*/
+
 	/* if the EVA maps to DRAM */
 	if (RV32_Addr_to_host(phdr->p_vaddr) & (1<<31)) {
 		return hb_mc_manycore_get_dram_size(mc);
@@ -200,7 +166,7 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 	char segname[64];
 
 	hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
-	
+
 	/* while there's data left to write */
 	while (rem > 0) {
 		hb_mc_npa_t npa;
@@ -218,6 +184,8 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 				   eva);
 			return rc;
 		}
+		/* npa = target NPA that eva maps to */
+		/* page_sz = remaining length of page starting from npa */
 
 		/* write min(page_sz, file_sz) to npa and then increment eva by page_sz */
 		size_t cpy_sz = min_size_t(page_sz, rem);
@@ -248,9 +216,10 @@ static int hb_mc_loader_write_to_eva(const Elf32_Phdr *phdr,
 
 /**
  * Load a program segment.
- * @param[in] bin      A pointer to pogram data.
- * @param[in] sz       The size of the program data in #bin.
+ * @param[in] mc       A manycore instance.
  * @param[in] map      A EVA to NPA map.
+ * @param[in] phdr     A program header for the data to be loaded.
+ * @param[in] segdata  Program data to be loaded.
  * @param[in] tile     A manycore coordinate.
  * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
  */
@@ -265,7 +234,7 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	char segname[64];
 
 	hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
-	
+
 	/* get hardware capacity of the segment */
 	cap = hb_mc_loader_get_tile_segment_capacity(mc, map, phdr, tile);
 	seg_sz = RV32_Word_to_host(phdr->p_memsz);
@@ -292,11 +261,88 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	/* load zeroed data */
 	size_t zeros_sz  = seg_sz - file_sz;  // zeros are the remainder of the segment
 	eva += file_sz; // increment eva by number of initialized bytes written
-	
+
 	rc = hb_mc_loader_write_to_eva(phdr, NULL, zeros_sz, eva, mc, map, tile, true);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Load a program segment.
+ * @param[in] mc       A manycore instance.
+ * @param[in] map      A EVA to NPA map.
+ * @param[in] phdr     A program header for the data to be loaded.
+ * @param[in] segdata  Program data to be loaded.
+ * @param[in] tile     A manycore coordinate.
+ * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
+ */
+static int hb_mc_loader_load_tiles_segment(hb_mc_manycore_t *mc,
+					   const hb_mc_eva_map_t *map,
+					   const Elf32_Phdr *phdr,
+					   const unsigned char *segdata,
+					   const hb_mc_coordinate_t *tiles,
+					   uint32_t ntiles)
+{
+	int rc;
+
+	for (uint32_t i = 0; i < ntiles; i++) {
+		rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[i]);
+		if (rc != HB_MC_SUCCESS)
+			return rc;
+	}
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
+					  const hb_mc_eva_map_t *map,
+					  const Elf32_Phdr *phdr,
+					  const unsigned char *segdata,
+					  hb_mc_coordinate_t tile)
+{
+	int rc;
+
+	/* get the NPA of this tiles ICACHE */
+	hb_mc_npa_t icache_npa = hb_mc_npa(tile, HB_MC_TILE_EPA_ICACHE);
+
+        /* write min(icache size, segment size) bytes */
+	size_t sz = min_size_t(RV32_Word_to_host(phdr->p_filesz),
+			       hb_mc_manycore_get_icache_size(mc, &tile));
+
+	bsg_pr_dbg("%s: writing %zu bytes to (%d,%d)'s icache @ EPA 0x%08" PRIx32 "\n",
+		   __func__, sz,
+		   hb_mc_coordinate_get_x(tile),
+		   hb_mc_coordinate_get_y(tile),
+		   hb_mc_npa_get_epa(&icache_npa)
+		);
+
+	rc = hb_mc_manycore_write_mem(mc, &icache_npa, segdata, sz);
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: failed to write to (%d,%d)'s icache: %s\n",
+			   __func__,
+			   hb_mc_coordinate_get_x(tile),
+			   hb_mc_coordinate_get_y(tile),
+			   hb_mc_strerror(rc));
+		return rc;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_loader_load_tiles_icache(hb_mc_manycore_t *mc,
+					  const hb_mc_eva_map_t *map,
+					  const Elf32_Phdr *phdr,
+					  const unsigned char *segdata,
+					  const hb_mc_coordinate_t *tiles,
+					  uint32_t ntiles)
+{	int rc;
+
+	for (uint32_t i = 0; i < ntiles; i++) {
+		rc = hb_mc_loader_load_tile_icache(mc, map, phdr, segdata, tiles[i]);
+		if (rc != HB_MC_SUCCESS)
+			return rc;
+	}
 	return HB_MC_SUCCESS;
 }
 
@@ -359,6 +405,14 @@ static int hb_mc_loader_elf_validate(const void *elf, size_t sz)
 }
 
 
+static bool hb_mc_loader_segment_is_load_never(hb_mc_manycore *mc,
+					       const Elf32_Phdr *phdr,
+					       const hb_mc_eva_map_t *map,
+					       const hb_mc_coordinate_t *tiles,
+					       uint32_t ntiles)
+{
+	return false;
+}
 
 static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
 					      const Elf32_Phdr *phdr,
@@ -367,11 +421,20 @@ static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
 					      uint32_t ntiles)
 {
 	/* the correct thing to do is get the NPA and check if it maps to DRAM */
-	/* but there's no function at the moment that maps NPAs to 
+	/* but there's no function at the moment that maps NPAs to
 	   what the underlying hardware is */
 	/* for now, just check that the most significant bit of the EVA is 1 */
 	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_vaddr);
 	return (eva & (1<<31) ? true : false);
+}
+
+static bool hb_mc_loader_segment_is_load_icache(hb_mc_manycore *mc,
+						const Elf32_Phdr *phdr,
+						const hb_mc_eva_map_t *map,
+						const hb_mc_coordinate_t *tiles,
+						uint32_t ntiles)
+{
+	return false;
 }
 
 static int hb_mc_loader_get_segment(const void *bin, size_t sz, int segidx,
@@ -379,32 +442,69 @@ static int hb_mc_loader_get_segment(const void *bin, size_t sz, int segidx,
 {
 	return HB_MC_FAIL;
 }
-				    
+
 static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 				      hb_mc_manycore_t *mc, const hb_mc_eva_map_t *map,
 				      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
 	const Elf32_Ehdr *ehdr = (const Elf32_Ehdr *)bin;
-	int rc;
+	int rc, icache_segidx;
+
+	/////////////////////////////////////
+	// Load all segments to their EVAs //
+	/////////////////////////////////////
 
 	/* for each program header */
 	for (int segidx = 0; segidx < RV32_Half_to_host(ehdr->e_phnum); segidx++) {
 		const Elf32_Phdr *phdr;
 		const unsigned char *segdata;
-		
+
 		rc = hb_mc_loader_get_segment(bin, sz, segidx, &phdr, &segdata);
 		if (rc != HB_MC_SUCCESS)
 			return rc;
 
-		/* decide if this segment is 'load once' or 'load for each tile' */
-		if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
+		/* check if program header should be loaded never, once, or for each tile */
+		if (hb_mc_loader_segment_is_load_never(mc, phdr, map, tiles, ntiles)) {
+			// this segment should not be loaded
+			continue;
+		} else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
+			// this segment should be loaded only once (e.g. DRAM = .text + .dram)
 			rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
 			if (rc != HB_MC_SUCCESS)
 				return rc;
-		} else { /* load on  each tile */			
+		} else { // this segment should be loaded once for each tile (e.g. DMEM = .data)
+			rc = hb_mc_loader_load_tiles_segment(mc, map, phdr, segdata,
+							     tiles, ntiles);
+			if (rc != HB_MC_SUCCESS)
+				return rc;
 		}
+
+		/*
+		   The first 1K words of program text needs to be written to icache
+		   as well as once to DRAM.
+
+		   So when we find the segment with program text in it, we save it
+		   for further loading.
+		*/
+		if (hb_mc_loader_segment_is_load_icache(mc, phdr, map, tiles, ntiles))
+			icache_segidx = segidx;
 	}
-	
+
+	const Elf32_Phdr *icache_phdr;
+	const unsigned char *icache_data;
+
+	rc = hb_mc_loader_get_segment(bin, sz, icache_segidx, &icache_phdr, &icache_data);
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: while fetching ICACHE segment (segidx = %d): %s\n",
+			   __func__, icache_segidx, hb_mc_strerror(icache_segidx));
+		return rc;
+	}
+
+	/* init icache */
+	rc = hb_mc_loader_load_tiles_icache(mc, map, icache_phdr, icache_data, tiles, ntiles);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
 	return HB_MC_FAIL;
 }
 
@@ -419,7 +519,8 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
-		      const hb_mc_eva_map_t *map, const hb_mc_coordinate_t *tiles, uint32_t ntiles)
+		      const hb_mc_eva_map_t *map,
+		      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
 	int rc;
 	// Validate ELF File
@@ -427,9 +528,10 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
+        // Load segments
 	rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
 	if (rc != HB_MC_SUCCESS)
-		return rc;	
+		return rc;
 
 	return HB_MC_SUCCESS;
 }

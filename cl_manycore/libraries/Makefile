@@ -42,6 +42,7 @@ OBJECTS += bsg_manycore_loader_dep.o
 bsg_manycore_loader.o: CXXFLAGS += -Wall -Werror
 bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-variable
 bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-function
+bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-but-set-variable
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
