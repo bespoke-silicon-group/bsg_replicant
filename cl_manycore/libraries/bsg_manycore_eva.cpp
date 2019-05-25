@@ -151,14 +151,17 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
-
 	x = hb_mc_coordinate_get_x(*src);
 	y = hb_mc_coordinate_get_y(*src);
+	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d)", 
+		__func__, hb_mc_eva_addr(eva), x, y);
+
 	rc = default_eva_to_epa_tile(eva, &epa, sz);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+	bsg_pr_dbg(" to NPA {x: %d y: %d, EPA: 0x%x}. \n", 
+		hb_mc_npa_get_x(npa), hb_mc_npa_get_y(npa), hb_mc_npa_get_epa(npa));
 	return HB_MC_SUCCESS;
 }
 
@@ -503,10 +506,10 @@ static int default_eva_size(
 }
 
 
-const hb_mc_coordinate_t default_origin[1] = {{ .x = 1, .y = 0 }};
-hb_mc_eva_map_t default_eva = {
+const hb_mc_coordinate_t default_origin = { .x = 1, .y = 0 };
+hb_mc_eva_map_t default_map = {
 	.eva_map_name = "Default EVA space",
-	.priv = (const void *)(default_origin),
+	.priv = (const void *)(&default_origin),
 	.eva_to_npa  = default_eva_to_npa,
 	.eva_size = default_eva_size,
 	.npa_to_eva  = default_npa_to_eva,
@@ -620,7 +623,7 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 			"than buffer\n", __func__);
 		return HB_MC_FAIL;
 	}
-	
+
 	destp = (char *)data;
 	while(sz > 0){
 		err = hb_mc_eva_to_npa(config, map, tgt, eva, &dest_npa, &dest_sz);

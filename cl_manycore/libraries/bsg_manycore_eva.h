@@ -78,7 +78,8 @@ typedef struct __hb_mc_eva_map_t{
 			hb_mc_eva_t *eva, size_t *sz);
 } hb_mc_eva_map_t;
 
-extern hb_mc_eva_map_t default_eva;
+extern const hb_mc_coordinate_t default_origin;
+extern hb_mc_eva_map_t default_map;
 
 /**
  * Get the name of an eva map.
@@ -154,7 +155,7 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_manycore_eva_read(const hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
 			const hb_mc_coordinate_t *tgt, 
 			const hb_mc_eva_t *eva,

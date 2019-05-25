@@ -163,7 +163,7 @@ int test_manycore_eva () {
 		}
 		
 		result_x = 0; result_y = 0; result_epa = 0; result_sz = 0;
-		rc = hb_mc_eva_to_npa(config, &default_eva, &src,
+		rc = hb_mc_eva_to_npa(config, &default_map, &src,
 				&eva, &result_npa, &result_sz);
 		if(rc != HB_MC_SUCCESS){
 			bsg_pr_test_err("Call to hb_mc_manycore_eva_to_npa failed\n", eva);
