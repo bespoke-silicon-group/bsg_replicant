@@ -219,7 +219,10 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	hb_mc_idx_t x, y, ox, oy, dim_x, dim_y;
 	hb_mc_epa_t epa;
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d)", 
+		__func__, hb_mc_eva_addr(eva), 
+		hb_mc_coordinate_get_x(*src),
+		hb_mc_coordinate_get_y(*src));
 
 	dim = hb_mc_config_get_dimension(cfg);
 	dim_x = hb_mc_dimension_get_x(dim);
@@ -248,6 +251,8 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+	bsg_pr_dbg(" to NPA {x: %d y: %d, EPA: 0x%x}. \n", 
+		hb_mc_npa_get_x(npa), hb_mc_npa_get_y(npa), hb_mc_npa_get_epa(npa));
 	return HB_MC_SUCCESS;
 }
 
@@ -304,7 +309,10 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d)", 
+		__func__, hb_mc_eva_addr(eva), 
+		hb_mc_coordinate_get_x(*src),
+		hb_mc_coordinate_get_y(*src));
 
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
 	y = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_Y_BITMASK) >> DEFAULT_GLOBAL_Y_BITIDX);
@@ -312,6 +320,8 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+	bsg_pr_dbg(" to NPA {x: %d y: %d, EPA: 0x%x}. \n", 
+		hb_mc_npa_get_x(npa), hb_mc_npa_get_y(npa), hb_mc_npa_get_epa(npa));
 	return HB_MC_SUCCESS;
 }
 

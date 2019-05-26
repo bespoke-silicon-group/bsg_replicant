@@ -10,4 +10,5 @@
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
 
+#include "test_manycore_parameters.h"
 #endif
