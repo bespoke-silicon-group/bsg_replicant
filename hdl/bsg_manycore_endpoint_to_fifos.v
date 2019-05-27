@@ -164,8 +164,8 @@ module bsg_manycore_endpoint_to_fifos #(
       ,(y_cord_width_p)'(fifo_req_li[i].y_cord)
       ,(x_cord_width_p)'(fifo_req_li[i].x_cord)
     };
+		assign fifo_req_rdy_lo[i] = endpoint_out_ready_lo[i] & (out_credits_lo[i] >= '0);
   end
-  assign fifo_req_rdy_lo = endpoint_out_ready_lo;
 
   // manycore response to fifo
   assign mc_rsp_v_lo = returned_v_r_lo;
