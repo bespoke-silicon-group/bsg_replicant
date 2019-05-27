@@ -1,16 +1,16 @@
 REGRESSION_TESTS_TYPE = library
 
-C_REGRESSION_TESTS = test_struct_size
-C_REGRESSION_TESTS += test_rom
-C_REGRESSION_TESTS += test_dmem_read_write
+C_REGRESSION_TESTS = test_struct_size 
+C_REGRESSION_TESTS += test_rom 
+C_REGRESSION_TESTS += test_dmem_read_write 
 C_REGRESSION_TESTS += test_packets
 C_REGRESSION_TESTS += test_dram_packets
 C_REGRESSION_TESTS += test_vcache_simplified
-C_REGRESSION_TESTS += test_vcache_stride
+C_REGRESSION_TESTS += test_vcache_stride 
 C_REGRESSION_TESTS += test_vcache_sequence
 C_REGRESSION_TESTS += test_dram_read_write
 
-CXX_REGRESSION_TESTS =
+CXX_REGRESSION_TESTS = 
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	-DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) \

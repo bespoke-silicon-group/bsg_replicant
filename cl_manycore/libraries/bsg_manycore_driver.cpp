@@ -3,8 +3,8 @@
 #include <string.h>
 
 #ifndef COSIM
-	#include <bsg_manycore_errno.h>
-	#include <bsg_manycore_driver.h>
+	#include <bsg_manycore_errno.h> 
+	#include <bsg_manycore_driver.h>  
 	#include <bsg_manycore_tile.h>
 	#include <bsg_manycore_mmio.h>
 	#include <fpga_pci.h>
@@ -19,8 +19,8 @@
 #endif
 
 /* The following values are cached by the API during initialization */
-static uint8_t hb_mc_manycore_dim_x = 0;
-static uint8_t hb_mc_manycore_dim_y = 0;
+static uint8_t hb_mc_manycore_dim_x = 0; 
+static uint8_t hb_mc_manycore_dim_y = 0; 
 static uint8_t hb_mc_host_intf_coord_x = 0; /*! network X coordinate of the host  */
 static uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host */
 
@@ -28,7 +28,7 @@ static uint8_t hb_mc_host_intf_coord_y = 0; /*! network Y coordinate of the host
  * writes to a 16b register in the OCL BAR of the FPGA
  * @param fd userspace file descriptor
  * @param ofs offset in OCL BAR to write to
- * @param val value to write
+ * @param val value to write 
  * caller must verify that fd is correct. */
 static void hb_mc_write16 (uint8_t fd, uint32_t ofs, uint16_t val) {
 	#ifdef COSIM
@@ -43,7 +43,7 @@ static void hb_mc_write16 (uint8_t fd, uint32_t ofs, uint16_t val) {
  * writes to a 32b register in the OCL BAR of the FPGA
  * @param fd userspace file descriptor
  * @param ofs offset in OCL BAR to write to
- * @param val value to write
+ * @param val value to write 
  * caller must verify that fd is correct. */
 static void hb_mc_write32 (uint8_t fd, uint32_t ofs, uint32_t val) {
 	#ifdef COSIM
@@ -88,33 +88,8 @@ static uint32_t hb_mc_read32 (uint8_t fd, uint32_t ofs) {
 	#endif
 }
 
-
-uint32_t hb_mc_read_axi_mon (uint8_t fd, uint32_t ofs) {
-	#ifdef COSIM
-		uint32_t read;
-		fpga_pci_peek(PCI_BAR_HANDLE_INIT, ofs + 0x10000, &read);
-		return read;
-	#else
-		char *ocl_base = ocl_table[fd];
-		return *((uint32_t *) (ocl_base + ofs + 0x10000));
-	#endif
-}
-
-int hb_mc_enable_mon (uint8_t fd) {
-	#ifdef COSIM
-		fpga_pci_poke(PCI_BAR_HANDLE_INIT, 0x10300, 0x20000);
-		fpga_pci_poke(PCI_BAR_HANDLE_INIT, 0x10300, 0x10001);
-	#else
-		char *ocl_base = ocl_table[fd];
-		*((uint32_t *) (ocl_base + 0x10300)) = 0x20000;
-		*((uint32_t *) (ocl_base + 0x10300)) = 0x10001;
-	#endif
-}
-
-
-
-/*!
- * Checks if corresponding FPGA has been memory mapped.
+/*! 
+ * Checks if corresponding FPGA has been memory mapped. 
  * @param fd userspace file descriptor
  * @return HB_MC_SUCCESS if device has been mapped and HB_MC_FAIL otherwise.
  * */
@@ -131,8 +106,8 @@ int hb_mc_fifo_check (uint8_t fd) {
 
 /* Clears interrupts for an AXI4-Lite FIFO.
  * @param fd userspace file descriptor
- * @param dir fifo direction
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * @param dir fifo direction 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir) {
 	uint32_t isr_addr;
@@ -156,19 +131,19 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	int slot_id = 0, pf_id = FPGA_APP_PF, write_combine = 0, bar_id = APP_PF_BAR0;
 	pci_bar_handle_t handle;
 	fpga_pci_attach(slot_id, pf_id, bar_id, write_combine, &handle);
-	fpga_pci_get_address(handle, 0, 0x4000, (void **) &ocl_table[fd]);
+	fpga_pci_get_address(handle, 0, 0x4000, (void **) &ocl_table[fd]);	
 	#ifdef DEBUG
 	fprintf(stderr, "hb_mc_mmap_ocl(): map address is %p\n", ocl_table[fd]);
 	#endif
 	return ocl_table[fd];
-}
+} 
 #endif
 
 int hb_mc_fifo_enable(uint8_t fd){
 	uint32_t ier_addr_byte;
 	ier_addr_byte = hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_HOST, HB_MC_MMIO_FIFO_IER_OFFSET);
 	hb_mc_write32(fd, ier_addr_byte, (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
-
+		
 	ier_addr_byte = hb_mc_mmio_fifo_get_reg_addr(HB_MC_MMIO_FIFO_TO_DEVICE, HB_MC_MMIO_FIFO_IER_OFFSET);
 	hb_mc_write32(fd, ier_addr_byte, (1<<HB_MC_MMIO_FIFO_IXR_TC_BIT));
 
@@ -185,11 +160,11 @@ int hb_mc_fifo_enable(uint8_t fd){
  * */
 int hb_mc_fifo_get_occupancy (uint8_t fd, hb_mc_fifo_rx_t type, uint32_t *occupancy_p) {
 	uint32_t addr;
-
+	
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
-
+	
 	addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET);
 
 	*occupancy_p = hb_mc_read16(fd, addr);
@@ -197,14 +172,14 @@ int hb_mc_fifo_get_occupancy (uint8_t fd, hb_mc_fifo_rx_t type, uint32_t *occupa
 }
 
 /*
- * Drains a fifo from all stale packets.
+ * Drains a fifo from all stale packets. 
  * @param[in] fd userspace file descriptor
  * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
   * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
 int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
 	int rc;
-	uint32_t occupancy;
+	uint32_t occupancy; 
 	hb_mc_request_packet_t recv;
 
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
@@ -212,34 +187,34 @@ int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
 		return HB_MC_FAIL;
 	}
 
-	//dir = hb_mc_get_rx_direction(type);
-	rc = hb_mc_fifo_get_occupancy(fd, type, &occupancy);
+	//dir = hb_mc_get_rx_direction(type);	
+	rc = hb_mc_fifo_get_occupancy(fd, type, &occupancy); 
 	if (rc != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_fifo_drain(): failed to get fifo %d occupancy.\n", type);
+		fprintf(stderr, "hb_mc_fifo_drain(): failed to get fifo %d occupancy.\n", type); 
 		return HB_MC_FAIL;
 	}
 
 	/* Read stale packets from fifo */
 	for (int i = 0; i < occupancy; i++){
-		rc = hb_mc_fifo_receive(fd, type, (hb_mc_packet_t *) &recv);
+		rc = hb_mc_fifo_receive(fd, type, (hb_mc_packet_t *) &recv); 
 		if (rc != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_fifo_drain(): failed to read packet from fifo %d.\n", type);
+			fprintf(stderr, "hb_mc_fifo_drain(): failed to read packet from fifo %d.\n", type); 
 			return HB_MC_FAIL;
 		}
 		#ifdef DEBUG
-		fprintf(stderr, "Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", type, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
+		fprintf(stderr, "Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", type, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);  
 		#endif
 	}
 
 	/* recheck occupancy to make sure all packets are drained. */
-	rc = hb_mc_fifo_get_occupancy(fd, type, &occupancy);
+	rc = hb_mc_fifo_get_occupancy(fd, type, &occupancy); 
 	if (rc != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_fifo_drain(): failed to get fifo %d occupancy.\n", type);
+		fprintf(stderr, "hb_mc_fifo_drain(): failed to get fifo %d occupancy.\n", type); 
 		return HB_MC_FAIL;
 	}
 
 	if (occupancy > 0){
-		fprintf(stderr, "hb_mc_fifo_drain(): failed to drain fifo %d even after reading all stale packets.\n", type);
+		fprintf(stderr, "hb_mc_fifo_drain(): failed to drain fifo %d even after reading all stale packets.\n", type); 
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -253,7 +228,7 @@ int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
-	hb_mc_packet_t tag;
+	hb_mc_packet_t tag;	
 	uint32_t vcache_word_addr;
 
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
@@ -262,19 +237,19 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 
 	vcache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_TAG_OFFSET);
 	hb_mc_format_request_packet(fd, &tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-
+		
 	for (int i = 0; i < 4; i++) {
-		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &tag) != HB_MC_SUCCESS) {
+		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &tag) != HB_MC_SUCCESS) {	
 			return HB_MC_FAIL;
 		}
 	}
 	return HB_MC_SUCCESS;
 }
 
-/*!
- * Initializes the FPGA at slot 0.
- * Maps the FPGA to userspace and then creates a userspace file descriptor for it.
- * @param fd pointer to which the userspace file descriptor is assigned.
+/*! 
+ * Initializes the FPGA at slot 0. 
+ * Maps the FPGA to userspace and then creates a userspace file descriptor for it.  
+ * @param fd pointer to which the userspace file descriptor is assigned. 
  * @return HB_MC_SUCCESS if device has been initialized and HB_MC_FAIL otherwise.
  */
 int hb_mc_fifo_init (uint8_t *fd) {
@@ -287,7 +262,7 @@ int hb_mc_fifo_init (uint8_t *fd) {
 	if (!ocl_base) {
 		fprintf(stderr, "hb_mc_fifo_init(): unable to mmap device.\n");
 		return HB_MC_FAIL;
-	}
+	}	
 	#else
 	ocl_base = 0;
 	#endif
@@ -296,7 +271,7 @@ int hb_mc_fifo_init (uint8_t *fd) {
 
 	hb_mc_fifo_enable(*fd);
 
-	rc = hb_mc_fifo_drain(*fd, HB_MC_FIFO_RX_REQ);
+	rc = hb_mc_fifo_drain(*fd, HB_MC_FIFO_RX_REQ); 
 	if (rc != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
@@ -339,11 +314,11 @@ int hb_mc_fifo_init (uint8_t *fd) {
 		return HB_MC_FAIL;
 	}
 
-	return HB_MC_SUCCESS;
+	return HB_MC_SUCCESS; 
 }
 
 /*
- * Drains all fifos and terminates the host.
+ * Drains all fifos and terminates the host. 
  * @param [in] fd userspace file descriptor.
  * returns HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
@@ -358,11 +333,11 @@ int hb_mc_fifo_finish(uint8_t fd) {
 		return HB_MC_FAIL;
 	}
 
-	rc = hb_mc_fifo_drain(fd, HB_MC_FIFO_RX_RSP);
+	rc = hb_mc_fifo_drain(fd, HB_MC_FIFO_RX_RSP); 
 	if (rc != HB_MC_SUCCESS) {
 		return HB_MC_FAIL;
 	}
-
+	
 	return HB_MC_SUCCESS;
 }
 
@@ -380,7 +355,7 @@ void hb_mc_fifo_set_ixr_bit(uint8_t fd, hb_mc_direction_t dir, uint32_t reg, uin
 }
 
 /*
- * Get a bit in the IER/IXR register.
+ * Get a bit in the IER/IXR register. 
  * @param[in] fd userspace file descriptor
  * @param[in] dir FIFO Direction (HB_MC_FIFO_TO_DEVICE, or HB_MC_FIFO_TO_HOST)
  * @param[out] packet Manycore packet to write
@@ -421,7 +396,7 @@ int hb_mc_fifo_get_vacancy (uint8_t fd, hb_mc_fifo_tx_t type, uint32_t *vacancy_
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * */
 int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t *packet) {
-	uint32_t vacancy;
+	uint32_t vacancy; 
 	uint32_t data_addr;
 	uint32_t isr_addr;
 	uint32_t len_addr;
@@ -430,7 +405,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_fifo_transmit(): device not initialized.\n");
 		return HB_MC_FAIL;
-	}
+	}	
 
 	data_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_DATA_OFFSET);
 	isr_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_TX_DATA_OFFSET);
@@ -450,7 +425,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	for (int i = 0; i < (sizeof(hb_mc_packet_t)/sizeof(uint32_t)); i++) {
  		hb_mc_write32(fd, data_addr, packet->words[i]);
 	}
-
+	
 	// Wait for the Transmit Complete bit to get set, while repeatedly writing the size of the packet
 	while(!hb_mc_fifo_get_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT)){
 		hb_mc_write16(fd, len_addr, sizeof(hb_mc_packet_t));
@@ -485,13 +460,13 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 
 	do {
 		hb_mc_fifo_get_occupancy(fd, type, &occupancy);
-	}while (occupancy < 1);
+	}while (occupancy < 1); 
 
 	length = hb_mc_read16(fd, length_addr);
-	if (length != sizeof(hb_mc_packet_t)) {
+	if (length != sizeof(hb_mc_packet_t)) { 
 		return HB_MC_FAIL;
 	}
-
+	
 	#ifdef DEBUG
 	fprintf(stderr, "hb_mc_fifo_receive(): read the receive length register @ %u to be %u\n", length_addr, length);
 	#endif
@@ -511,7 +486,7 @@ int hb_mc_get_host_credits (uint8_t fd) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
 		return HB_MC_FAIL;
-	}
+	}		
 	return hb_mc_read32(fd, hb_mc_mmio_credits_get_reg_addr(HB_MC_MMIO_CREDITS_HOST_OFFSET));
 }
 
@@ -524,12 +499,12 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_host_req_complete(): device not initialized.\n");
 		return HB_MC_FAIL;
-	}
+	}		
 	if (hb_mc_get_host_credits(fd) == HB_MC_MMIO_MAX_CREDITS)
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
-}
+}		
 
 /*!
  * Gets a word from the Manycore ROM
@@ -542,7 +517,7 @@ int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_get_config(): device not initialized.\n");
 		return HB_MC_FAIL;
-	}
+	}	
 	if ((id < 0) || (id > HB_MC_CONFIG_MAX)) {
 		fprintf(stderr, "hb_mc_get_config(): invalid configuration ID.\n");
 		return HB_MC_FAIL;
@@ -573,7 +548,7 @@ int hb_mc_get_recv_vacancy (uint8_t fd) {
  * */
 uint8_t hb_mc_get_manycore_dimension_x () {
 	return hb_mc_manycore_dim_x;
-}
+} 
 
 /*!
  * @param fd user-level file descriptor.

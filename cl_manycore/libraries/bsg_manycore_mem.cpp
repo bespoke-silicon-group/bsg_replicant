@@ -11,7 +11,7 @@
 	#include "bsg_manycore_errno.h"
 #endif
 
-/*!
+/*! 
  * Copies data from Manycore to host.
  * @param x destination x coordinate
  * @param y destination y coordinate
@@ -25,14 +25,14 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 		return HB_MC_FAIL;
 	}
 
-	hb_mc_packet_t requests[size];
+	hb_mc_packet_t requests[size]; 	
 	uint32_t base_byte = epa << 2;
 	for (int i = 0; i < size; i++) {
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = 0; /* unused */
 		hb_mc_format_request_packet(fd, &requests[i].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_LOAD);
-	}
-
+	} 
+	
 	int pass_requests = HB_MC_SUCCESS; /* whether or not load requests send properly */
 	for (int i = 0; i < size; i++) {
 		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &requests[i]) != HB_MC_SUCCESS) {
@@ -43,7 +43,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	if (pass_requests != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_copy_from_epa(): error when sending load request to Manycore.\n");
 	}
-
+	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
 	for (int i = 0; i < size; i++) {
 		hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_RSP, (hb_mc_packet_t *) &buf[i]);
@@ -51,7 +51,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 	return pass_requests;
 }
 
-/*!
+/*! 
  * Copies data from host to manycore
  * @param x destination x coordinate
  * @param y destination y coordinate
@@ -70,7 +70,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 		uint32_t addr = (base_byte + i * sizeof(uint32_t)) >> 2;
 		uint32_t data = buf[i];
 		hb_mc_format_request_packet(fd, &packets[i].request, addr, data, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
-	}
+	} 
 	int pass = HB_MC_SUCCESS;
 	for (int i = 0; i < size; i++) {
 		if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &packets[i]) != HB_MC_SUCCESS) {
@@ -88,7 +88,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
  * returns HB_MC_SUCCESS if eva is a global network address and HB_MC_FAIL if not.
  */
 static int hb_mc_is_global_network (eva_t eva) {
-	if (hb_mc_get_bits(eva, 30, 2) == 0x1)
+	if (hb_mc_get_bits(eva, 30, 2) == 0x1) 
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
@@ -98,7 +98,7 @@ static int hb_mc_is_global_network (eva_t eva) {
  * returns HB_MC_SUCCESS if eva is a DRAM address and HB_MC_FAIL if not.
  */
 static int hb_mc_eva_is_dram (eva_t eva) {
-	if (hb_mc_get_bits(eva, 31, 1) == 0x1)
+	if (hb_mc_get_bits(eva, 31, 1) == 0x1) 
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;
@@ -112,7 +112,7 @@ static int hb_mc_npa_is_dram (npa_t *npa) {
 	if (npa->y == (dim_y + 1))
 		return HB_MC_SUCCESS;
 	else
-		return HB_MC_FAIL;
+		return HB_MC_FAIL;	
 }
 
 /*!
@@ -123,7 +123,7 @@ static int hb_mc_npa_is_host (npa_t *npa) {
 	if ((npa->y == 0) && (npa->x == dim_x))
 		return HB_MC_SUCCESS;
 	else
-		return HB_MC_FAIL;
+		return HB_MC_FAIL;	
 }
 
 /*!
@@ -132,18 +132,18 @@ static int hb_mc_npa_is_host (npa_t *npa) {
 static int hb_mc_npa_is_tile (npa_t *npa) {
 	uint8_t dim_x = hb_mc_get_manycore_dimension_x();
 	uint8_t dim_y = hb_mc_get_manycore_dimension_y();
-	if (((npa->y >= 1) && (npa->y < dim_y)) &&
+	if (((npa->y >= 1) && (npa->y < dim_y)) && 
 		((npa->x >= 0) && (npa->x < dim_x)))
 		return HB_MC_SUCCESS;
 	else
-		return HB_MC_FAIL;
+		return HB_MC_FAIL;	
 }
 
 /*
  * returns x coordinate of a global network address.
  */
 static uint32_t hb_mc_global_network_get_x (eva_t eva) {
-	return hb_mc_get_bits(eva, 18, 6); /* TODO: hardcoded */
+	return hb_mc_get_bits(eva, 18, 6); /* TODO: hardcoded */	
 }
 
 /*
@@ -172,14 +172,14 @@ static uint32_t hb_mc_dram_get_y (eva_t eva) {
  * returns EPA of a global network address.
  */
 static uint32_t hb_mc_global_network_get_epa (eva_t eva) {
-	return hb_mc_get_bits(eva, 0, 18) >> 2; /* TODO: hardcoded */
+	return hb_mc_get_bits(eva, 0, 18) >> 2; /* TODO: hardcoded */ 
 }
 
 /*
  * returns EPA of a DRAM address.
  */
 static uint32_t hb_mc_dram_get_epa (eva_t eva) {
-	return hb_mc_get_bits(eva, 2, 27); /* TODO: hardcoded */
+	return hb_mc_get_bits(eva, 2, 27); /* TODO: hardcoded */ 
 }
 
 /*!
@@ -201,7 +201,7 @@ int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa) {
 		*npa = {x, y, epa};
 	}
 	else if (hb_mc_eva_is_dram(eva) == HB_MC_SUCCESS) {
-		uint32_t x = hb_mc_dram_get_x(eva);
+		uint32_t x = hb_mc_dram_get_x(eva);	
 		uint32_t y = hb_mc_dram_get_y(eva);
 		uint32_t epa = hb_mc_dram_get_epa(eva);
 		*npa = {x, y, epa};
@@ -229,7 +229,7 @@ static int hb_mc_valid_epa_tile (uint32_t epa) {
 		return HB_MC_SUCCESS; /* Tile Group Origin X Cord CSR */
 	else if (epa == 0x20008) /* TODO: hardcoded */
 		return HB_MC_FAIL; /* Tile Group Origin Y Cord CSR */
-}
+} 
 
 /*!
  * Checks if a DRAM EPA is valid.
@@ -247,7 +247,7 @@ static int hb_mc_valid_epa_dram (uint32_t epa) {
 }
 
 /*!
- * checks if NPA has valid (x,y) coordinates.
+ * checks if NPA has valid (x,y) coordinates. 
  */
 static int hb_mc_npa_is_valid (npa_t *npa) {
 	if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
@@ -256,7 +256,7 @@ static int hb_mc_npa_is_valid (npa_t *npa) {
 		return HB_MC_SUCCESS; /* for now, we assume any EPA is valid for the host */
 	else if (hb_mc_npa_is_tile(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_tile(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid Vanilla Core NPA */
-	else
+	else 
 		return HB_MC_FAIL;
 }
 
@@ -284,7 +284,7 @@ static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
 }
 
 /*!
- * Converts an NPA to an EVA.
+ * Converts an NPA to an EVA. 
  * @param eva_id specified EVA-NPA mapping.
  * @param npa pointer to npa_t struct to convert.
  * @param eva pointer to an eva_t that this function should set.

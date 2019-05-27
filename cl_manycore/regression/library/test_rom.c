@@ -40,25 +40,18 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
 
-  hb_mc_enable_mon(fd);
-
-	uint32_t axi_mon_clock_hi, axi_mon_clock_lo;
-	axi_mon_clock_hi = hb_mc_read_axi_mon(fd, 0x0000);
-	axi_mon_clock_lo = hb_mc_read_axi_mon(fd, 0x0004);
-	bsg_pr_test_info("Global clock: %x, %x\n", axi_mon_clock_hi, axi_mon_clock_lo);
-
-	sv_pause(10);
-
-	axi_mon_clock_hi = hb_mc_read_axi_mon(fd, 0x0000);
-	axi_mon_clock_lo = hb_mc_read_axi_mon(fd, 0x0004);
-	bsg_pr_test_info("Global clock: %x, %x\n", axi_mon_clock_hi, axi_mon_clock_lo);
-
 	// In order, at offset 4, the elements of the array are:
 	// NETWORK_DIM_X, NETWORK_DIM_Y, HOST_INTERFACE_COORD_X, HOST_INTERFACE_COORD_Y
 	const char *desc[4] = { "Network X Dimension", "Network Y Dimension", "Host X Coordinate", "Host Y Coordinate" };
-	uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, 0, 0 };
+	uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, CL_MANYCORE_DIM_X - 1, 0 };
 	uint32_t result[4] = {};
 
+	printf("Checking that the number of host credits is 16\n");
+	printf("(I know it's a magic number...)\n");
+	if(hb_mc_get_host_credits(fd) != 16){
+		fprintf(stderr, "Incorrect number of host credits\n");
+		return HB_MC_FAIL;
+	}
 
 	read_rom(fd, 4, result); 
 	bsg_pr_test_info("Comparing AXI space results:\n");
@@ -68,20 +61,21 @@ int test_rom () {
 		return HB_MC_FAIL;
 	}
  
+	printf("Read RCV_FIFO_MC_RES: %x\n", hb_mc_get_recv_vacancy(fd));
+
 	bsg_pr_test_info("Readback manycore link monitor register\n");
 	uint32_t recv_vacancy = hb_mc_get_recv_vacancy(fd);
-	uint32_t host_credits = hb_mc_get_host_credits(fd);
 	bsg_pr_test_info("Recv vacancy is: %x\n", recv_vacancy);
-	bsg_pr_test_info("host credits is: %x\n", host_credits);
+	bsg_pr_test_info("Readback ROM from tile (%d, %d)\n", 0, 0);
 
-//	if(read_npa_rom(fd, 4, 4, result) == HB_MC_FAIL) {
-//		return HB_MC_FAIL;
-//	}
-//	bsg_pr_test_info("Comparing NPA space results:\n");
-//	rc = compare_results(4, desc, expected, result);
-//	if(rc != HB_MC_SUCCESS){
-//		return HB_MC_FAIL;
-//	}
+	if(read_npa_rom(fd, 4, 4, result) == HB_MC_FAIL) {
+		return HB_MC_FAIL;
+	}
+	bsg_pr_test_info("Comparing NPA space results:\n");
+	rc = compare_results(4, desc, expected, result);
+	if(rc != HB_MC_SUCCESS){
+		return HB_MC_FAIL;
+	}
 
 	if(hb_mc_fifo_finish(fd) != HB_MC_SUCCESS){
 		fprintf(stderr, "test_rom(): failed to terminate host.\n");
