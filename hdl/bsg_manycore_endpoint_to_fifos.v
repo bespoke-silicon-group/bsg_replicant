@@ -171,11 +171,11 @@ module bsg_manycore_endpoint_to_fifos #(
   assign mc_rsp_v_lo = returned_v_r_lo;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     assign mc_rsp_lo[i].padding = '0;
-		assign mc_rsp_lo[i].pkt_type = (8)'(`ePacketType_data);
-    assign mc_rsp_lo[i].data = (32)'(returned_data_r_lo[i]);
-    assign mc_rsp_lo[i].load_id = (32)'(returned_load_id_r_lo[i]);
-    assign mc_rsp_lo[i].y_cord = (8)'(my_y_li[i]);
-    assign mc_rsp_lo[i].x_cord = (8)'(my_x_li[i]);
+    assign mc_rsp_lo[i].pkt_type = 8'({`ePacketType_data});  // Curly braces must be kept!
+    assign mc_rsp_lo[i].data = 32'(returned_data_r_lo[i]);
+    assign mc_rsp_lo[i].load_id = 32'(returned_load_id_r_lo[i]);
+    assign mc_rsp_lo[i].y_cord = 8'(my_y_li[i]);
+    assign mc_rsp_lo[i].x_cord = 8'(my_x_li[i]);
   end
   assign returned_yumi_li = mc_rsp_rdy_li & mc_rsp_v_lo;
 
