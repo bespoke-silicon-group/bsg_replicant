@@ -156,7 +156,7 @@ module bsg_manycore_endpoint_to_fifos #(
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     assign endpoint_out_packet_li[i] = {
       (addr_width_p)'(fifo_req_li[i].addr)
-      ,(2)'(fifo_req_li[i].op)
+      ,(request_op_width_p)'(fifo_req_li[i].op)
       ,(data_width_p>>3)'(fifo_req_li[i].op_ex)
       ,(data_width_p)'(fifo_req_li[i].payload.data)
       ,(y_cord_width_p)'(fifo_req_li[i].src_y_cord)
@@ -171,7 +171,7 @@ module bsg_manycore_endpoint_to_fifos #(
   assign mc_rsp_v_lo = returned_v_r_lo;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     assign mc_rsp_lo[i].padding = '0;
-    assign mc_rsp_lo[i].pkt_type = {7'b0, `ePacketType_data};
+		assign mc_rsp_lo[i].pkt_type = (8)'(`ePacketType_data);
     assign mc_rsp_lo[i].data = (32)'(returned_data_r_lo[i]);
     assign mc_rsp_lo[i].load_id = (32)'(returned_load_id_r_lo[i]);
     assign mc_rsp_lo[i].y_cord = (8)'(my_y_li[i]);
