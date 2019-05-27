@@ -97,32 +97,45 @@ int test_manycore_eva () {
 		region = rand() % NUM_REGIONS;
 		if(region == LOCAL){
 			eva = rand() % DMEM_EPA_SIZE;
+			tgt_sz = DMEM_EPA_SIZE - eva;
+			tgt_epa = eva + DMEM_EPA_OFFSET;
 			bsg_pr_test_info("Creating Local EVA: 0x%x\n", eva);
-			tgt_epa = eva;
-			tgt_sz = DMEM_EPA_SIZE - tgt_epa;
+
 			tgt_x = src_x;
 			tgt_y = src_y;
 		} else if (region == GROUP){
+			eva = rand() % DMEM_EPA_SIZE;
+			tgt_sz = DMEM_EPA_SIZE - eva;
+			tgt_epa = eva + DMEM_EPA_OFFSET;
+
 			tgt_x = (rand() % (dim_x - origin_x)) + origin_x;
 			tgt_y = (rand() % ((dim_y / 2) - origin_y)) + origin_y;
-			tgt_epa = rand() % GROUP_EPA_SIZE;
+
 			eva = (GROUP_INDICATOR) | ((tgt_x - origin_x) << GROUP_X_OFFSET) | 
-				((tgt_y - origin_y) << GROUP_Y_OFFSET) | (tgt_epa);
+				((tgt_y - origin_y) << GROUP_Y_OFFSET) | (eva);
+
 			bsg_pr_test_info("Creating GROUP EVA: 0x%x\n", eva);
-			tgt_sz = GROUP_EPA_SIZE - tgt_epa;
 		} else if (region == GLOBAL){
-			tgt_x = rand() % dim_x;
+			eva = rand() % DMEM_EPA_SIZE;
+			tgt_sz = DMEM_EPA_SIZE - eva;
+			tgt_epa = eva + DMEM_EPA_OFFSET;
+
+			tgt_x = (rand() % (dim_x - 1)) + 1;
 			tgt_y = rand() % dim_y;
-			tgt_epa = rand() % GLOBAL_EPA_SIZE;
-			eva = (GLOBAL_INDICATOR) | (tgt_x << GLOBAL_X_OFFSET) |
-				(tgt_y << GLOBAL_Y_OFFSET) | (tgt_epa);
-			bsg_pr_test_info("Creating Global EVA: 0x%x\n", eva);
-			tgt_sz = GLOBAL_EPA_SIZE - tgt_epa;
+
+			eva = (GLOBAL_INDICATOR) | (tgt_x << GLOBAL_X_OFFSET) | 
+				(tgt_y << GLOBAL_Y_OFFSET) | (eva);
+
+			bsg_pr_test_info("Creating GLOBAL EVA: 0x%x\n", eva);
 		} else if (region == DRAM){
-			tgt_x = rand() % dim_x;
+			eva = rand() % DRAM_EPA_SIZE; // Small, but we'll deal.
+			tgt_epa = eva;
+
+			tgt_x = (rand() % (dim_x - 1)) + 1;
 			tgt_y = dim_y + 1;
-			tgt_epa = rand() % DRAM_EPA_SIZE; // Small, but we'll deal.
-			eva = DRAM_INDICATOR | (tgt_x << dram_x_offset) | (tgt_epa);
+
+			eva = DRAM_INDICATOR | (tgt_x << dram_x_offset) | (eva);
+
 			bsg_pr_test_info("Creating DRAM EVA: 0x%x\n", eva);
 			tgt_sz = (1 << dram_x_offset) - tgt_epa;
 		} else {

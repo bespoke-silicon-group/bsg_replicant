@@ -11,6 +11,11 @@
 int check_eva_read(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, hb_mc_coordinate_t *target, hb_mc_eva_t *eva, uint32_t *gold_data, size_t nwords){
 	uint32_t read_data[nwords];
 	int err, errors, i;
+
+	for (i = 0; i < nwords; ++i) {
+		read_data[i] = ~gold_data[i];
+	}
+
 	err = hb_mc_manycore_eva_read(mc, map, target, eva,
 				read_data, nwords*sizeof(*read_data));
 	if (err != HB_MC_SUCCESS) {
@@ -211,7 +216,7 @@ int test_manycore_eva_read_write () {
 	/*********************************************/
 	/* Test RW to Local DMEM (DMEM within target)*/
 	/*********************************************/
-	eva_dest = 0x400;
+	eva_dest = 0x10;
 
 	r = test_eva_srwr(mc, &default_map, &target, &eva_dest, memset_char, write_data, DATA_WORDS);
 
@@ -237,7 +242,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Group DMEM (DMEM within Group)*/
 	/*********************************************/
 	x = 1, y = 1;
-	eva_dest = 0x400;
+	eva_dest = 0x10;
 	eva_dest = (GROUP_INDICATOR) | (x << GROUP_X_OFFSET) |
 		(y << GROUP_Y_OFFSET) | (eva_dest);
 
@@ -265,7 +270,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Group DMEM (DMEM within Group)*/
 	/*********************************************/
 	x = 2, y = 2;
-	eva_dest = 0x400;
+	eva_dest = 0x10;
 	eva_dest = (GLOBAL_INDICATOR) | (x << GLOBAL_X_OFFSET) |
 		(y << GLOBAL_Y_OFFSET) | (eva_dest);
 

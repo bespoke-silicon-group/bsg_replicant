@@ -1,10 +1,13 @@
 #define DEBUG
-#include "bsg_manycore_eva.h"
 #include <math.h>
 #ifndef COSIM
+#include <bsg_manycore_eva.h>
+#include <bsg_manycore_epa.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_coordinate.h>
 #else
+#include "bsg_manycore_eva.h"
+#include "bsg_manycore_epa.h"
 #include "bsg_manycore_printing.h"
 #include "bsg_manycore_coordinate.h"
 #endif
@@ -16,10 +19,10 @@
 #define DEFAULT_TILE_DMEM_WIDTH 12
 #define DEFAULT_TILE_DMEM_BITMASK MAKE_MASK(DEFAULT_TILE_DMEM_WIDTH)
 #define DEFAULT_TILE_DMEM_SIZE (1ULL << DEFAULT_TILE_DMEM_WIDTH)
-#define DEFAULT_TILE_CSR_WIDTH 17
-#define DEFAULT_TILE_FREEZE_ADDR (1ULL << DEFAULT_TILE_CSR_WIDTH)
-#define DEFAULT_TILE_ORIGIN_X_ADDR (DEFAULT_TILE_FREEZE_ADDR + 4)
-#define DEFAULT_TILE_ORIGIN_Y_ADDR (DEFAULT_TILE_FREEZE_ADDR + 8)
+// TODO: These should use Max's macros in epa.h when the epa is now longer word addressed
+#define DEFAULT_TILE_FREEZE_ADDR (HB_MC_TILE_EPA_CSR_BASE + HB_MC_TILE_EPA_CSR_FREEZE_OFFSET)
+#define DEFAULT_TILE_ORIGIN_X_ADDR (HB_MC_TILE_EPA_CSR_BASE + HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET)
+#define DEFAULT_TILE_ORIGIN_Y_ADDR (HB_MC_TILE_EPA_CSR_BASE + HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET)
 
 // However, 18 bits are exposed
 #define DEFAULT_LOCAL_WIDTH 18
@@ -64,25 +67,36 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 }
 
 /**
- * Returns the number of contiguous bytes following a local EPA, regardless of
+ * Returns the EPA and number of contiguous bytes for an EVA in a tile, regardless of
  * the continuity of the underlying NPA.
- * @param[in]  epa    An epa 
- * @param[out] sz     Number of contiguous bytes remaining in the #epa segment
+ * @param[in]  eva    An eva
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_epa_size_local(
-		const hb_mc_epa_t *epa,
-		size_t *sz)
+static int default_eva_to_epa_tile(
+	const hb_mc_eva_t *eva,
+	hb_mc_epa_t *epa,
+	size_t *sz)
 {
-	if(*epa < DEFAULT_TILE_DMEM_SIZE){
-		*sz = DEFAULT_TILE_DMEM_SIZE - *epa;
-	}else if(*epa == DEFAULT_TILE_FREEZE_ADDR){
+	int rc;
+	hb_mc_eva_t eva_masked;
+
+	eva_masked = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
+
+	if(eva_masked < DEFAULT_TILE_DMEM_SIZE){ // Account for DMEM Offset
+		*epa = (eva_masked + HB_MC_TILE_EPA_DMEM_BASE);
+		*sz = DEFAULT_TILE_DMEM_SIZE - eva_masked;
+	}else if(eva_masked == DEFAULT_TILE_FREEZE_ADDR){ // use EPA Macros
 		*sz = sizeof(uint32_t);
-	}else if(*epa == DEFAULT_TILE_ORIGIN_X_ADDR){
+	}else if(eva_masked == DEFAULT_TILE_ORIGIN_X_ADDR){ // use EPA Macros
 		*sz = sizeof(uint32_t);
-	}else if(*epa == DEFAULT_TILE_ORIGIN_Y_ADDR){
+	}else if(eva_masked == DEFAULT_TILE_ORIGIN_Y_ADDR){ // Use EPA Macros
 		*sz = sizeof(uint32_t);
 	} else {
+		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
+			" addressible tile memory locatiion.\n", 
+			__func__, hb_mc_eva_addr(eva));
+		*epa = 0;
 		*sz = 0;
 		return HB_MC_FAIL;
 	}
@@ -102,8 +116,7 @@ static int default_eva_size_local(
 {
 	int rc;
 	hb_mc_epa_t epa;
-	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
-	rc = default_epa_size_local(&epa, sz);
+	rc = default_eva_to_epa_tile(eva, &epa, sz);
 	if(rc != HB_MC_SUCCESS){
 		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
 			" addressible tile memory locatiion.\n", 
@@ -113,23 +126,6 @@ static int default_eva_size_local(
 	return HB_MC_SUCCESS;
 }
 
-static int default_eva_to_epa_tile(const hb_mc_eva_t *eva, 
-				hb_mc_epa_t *epa,
-				size_t *sz)
-{
-	int rc;
-	*epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
-	rc = default_epa_size_local(epa, sz);
-	if(rc != HB_MC_SUCCESS){
-		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
-			" addressible tile memory locatiion.\n", 
-			__func__, hb_mc_eva_addr(eva));
-		*epa = 0;
-		return HB_MC_FAIL;
-	}
-	return HB_MC_SUCCESS;
-
-}
 
 /**
  * Converts a local Endpoint Virtual Address to a Network Physical Address
@@ -187,8 +183,7 @@ static int default_eva_size_group(
 {
 	int rc;
 	hb_mc_epa_t epa;
-	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
-	rc = default_epa_size_local(&epa, sz);
+	rc = default_eva_to_epa_tile(eva, &epa, sz);
 	if(rc != HB_MC_SUCCESS){
 		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
 			" addressible tile memory locatiion.\n", 
@@ -278,8 +273,7 @@ static int default_eva_size_global(
 {
 	int rc;
 	hb_mc_epa_t epa;
-	epa = hb_mc_eva_addr(eva) & DEFAULT_LOCAL_BITMASK;
-	rc = default_epa_size_local(&epa, sz);
+	rc = default_eva_to_epa_tile(eva, &epa, sz);
 	if(rc != HB_MC_SUCCESS){
 		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
 			" addressible tile memory locatiion.\n", 
@@ -392,7 +386,10 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	hb_mc_dimension_t dim;
 	int rc;
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x to NPA\n", __func__, hb_mc_eva_addr(eva));
+	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d)", 
+		__func__, hb_mc_eva_addr(eva), 
+		hb_mc_coordinate_get_x(*src),
+		hb_mc_coordinate_get_y(*src));
 
 	dim = hb_mc_config_get_dimension(cfg);
 
@@ -410,6 +407,10 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	epa = (hb_mc_eva_addr(eva) & MAKE_MASK(shift));
 
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+
+	bsg_pr_dbg(" to NPA {x: %d y: %d, EPA: 0x%x}. \n", 
+		hb_mc_npa_get_x(npa), hb_mc_npa_get_y(npa), hb_mc_npa_get_epa(npa));
+
 	// Likewise, the size of the NPA segment is determined by the number of
 	// bits not used by the x dimension (plus 1 for the top bit that
 	// indicates this EVA is for DRAM)

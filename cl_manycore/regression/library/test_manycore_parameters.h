@@ -4,6 +4,7 @@
 // These are explicitly not copied from the bsg_manycore_eva.h 
 #define LOCAL_EPA_SIZE (1<<18)
 #define DMEM_EPA_SIZE (1<<12)
+#define DMEM_EPA_OFFSET (1<<12)
 
 #define GROUP_INDICATOR (1 << 29)
 #define GROUP_EPA_SIZE DMEM_EPA_SIZE

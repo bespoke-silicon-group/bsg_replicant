@@ -904,7 +904,7 @@ static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_requ
         hb_mc_request_packet_set_y_dst(pkt, hb_mc_npa_get_y(npa));
         hb_mc_request_packet_set_x_src(pkt, hb_mc_coordinate_get_x(host_coordinate));
         hb_mc_request_packet_set_y_src(pkt, hb_mc_coordinate_get_y(host_coordinate));
-	hb_mc_request_packet_set_addr(pkt, hb_mc_npa_get_epa(npa));
+	hb_mc_request_packet_set_addr(pkt, hb_mc_npa_get_epa(npa) >> 2);
         return 0;
 }
 
@@ -968,6 +968,12 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t
 	}
 
 	/* transmit the request to the hardware */
+	manycore_pr_dbg(mc, "Sending %d-byte read request to NPA "
+			"(x: %d, y: %d, 0x%x)\n",
+			sz,
+			hb_mc_npa_get_x(npa),
+			hb_mc_npa_get_y(npa),
+			hb_mc_npa_get_epa(npa));
 	err = hb_mc_manycore_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
 	if (err != HB_MC_SUCCESS) {
 		manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
@@ -1047,6 +1053,12 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
 	}
 
 	/* transmit the request */
+	manycore_pr_dbg(mc, "Sending %d-byte write request to NPA "
+			"(x: %d, y: %d, 0x%x)\n",
+			sz,
+			hb_mc_npa_get_x(npa),
+			hb_mc_npa_get_y(npa),
+			hb_mc_npa_get_epa(npa));
 	return hb_mc_manycore_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
 }
 
@@ -1096,8 +1108,6 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
 	/* send store requests one word at a time */
 	for (size_t i = 0; i < n_words; i++) {
-		// increment EPA by 1: (EPA's address words)
-		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
 		
 		err = hb_mc_manycore_write(mc, &addr, &words[i], 4);
 		if (err != HB_MC_SUCCESS) {
@@ -1105,6 +1115,9 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
+
+		// Increment EPA by 4:
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + 4);
 	}
 
 	return HB_MC_SUCCESS;
@@ -1133,8 +1146,6 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
 	/* send store requests one word at a time */
 	for (size_t i = 0; i < n_words; i++) {
-		// increment EPA by 1: (EPA's address words)
-		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
 		
 		err = hb_mc_manycore_write(mc, &addr, &word, 4);
 		if (err != HB_MC_SUCCESS) {
@@ -1142,6 +1153,9 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
+
+		// increment EPA by 1: (EPA's address words)
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + sizeof(uint32_t));
 	}
 
 	return HB_MC_SUCCESS;
@@ -1172,8 +1186,6 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
 	/* send a read request for each word */
 	for (size_t i = 0; i < n_words; i++) {
-		// increment EPA by 1: (EPA's address words)
-		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
 		
 		err = hb_mc_manycore_send_read_rqst(mc, &addr, 4);
 		if (err != HB_MC_SUCCESS) {
@@ -1181,6 +1193,9 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
+
+		// increment EPA by 4:
+		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) +sizeof(uint32_t));
 	}
 
 	/* now receive a packet for each word */
