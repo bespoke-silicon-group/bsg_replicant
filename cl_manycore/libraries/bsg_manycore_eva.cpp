@@ -1,22 +1,8 @@
-#define DEBUG
 #include <math.h>
-#ifndef COSIM
 #include <bsg_manycore_eva.h>
-#include <bsg_manycore_epa.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>
-#include <bsg_manycore_coordinate.h>
-#include <bsg_manycore_config.h>
-#else
-#include "bsg_manycore_eva.h"
-#include "bsg_manycore_epa.h"
-#include "bsg_manycore_tile.h"
-#include "bsg_manycore_vcache.h"
-#include "bsg_manycore_printing.h"
-#include "bsg_manycore_coordinate.h"
-#include "bsg_manycore_config.h"
-#endif
 
 #define MAKE_MASK(WIDTH) ((1ULL << WIDTH) - 1)
 

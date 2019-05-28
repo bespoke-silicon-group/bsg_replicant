@@ -1,8 +1,8 @@
 #ifndef BSG_MANYCORE_TILE_H
 #define BSG_MANYCORE_TILE_H
-#include <bsg_manycore_epa.h>
-#include <bsg_manycore_driver.h>
+#include <bsg_manycore_features.h>
 #include <bsg_manycore.h>
+
 #ifdef __cplusplus
 #include <cstdint>
 #else

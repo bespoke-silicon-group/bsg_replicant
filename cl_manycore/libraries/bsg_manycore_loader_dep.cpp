@@ -1,18 +1,15 @@
-#define DEBUG
-#ifndef COSIM
 #include <bsg_manycore_loader_dep.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
-#else
-#include "bsg_manycore_loader_dep.h"
-#include "bsg_manycore_printing.h"
-#include "bsg_manycore_mem.h"
-#include "bsg_manycore_tile.h"
-#include "bsg_manycore_vcache.h"
-#endif
+
+#ifdef __cplusplus
 #include <cstring>
+#else
+#include <string.h>
+#endif
+
 #include <elf.h>
 #include <endian.h>
 

@@ -1,50 +1,10 @@
 #ifndef BSG_MANYCORE_LOADER_H
 #define BSG_MANYCORE_LOADER_H
 
-#ifndef _BSD_SOURCE
-	#define _BSD_SOURCE
-#endif
-#ifndef _XOPEN_SOURCE
-	#define _XOPEN_SOURCE 500
-#endif
-
-#ifndef COSIM
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore.h>
-#include <bsg_manycore_errno.h>
-#include <bsg_manycore_mmio.h>
 #include <bsg_manycore_eva.h>
-#else
-#include <utils/sh_dpi_tasks.h>
-#include "bsg_manycore_features.h"
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore.h"
-#include "bsg_manycore_errno.h"
-#include "bsg_manycore_mmio.h"
-#include "bsg_manycore_eva.h"
-#endif
-
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <unistd.h>
-
-#ifdef __cplusplus
-#include <cassert>
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <climits>
-#include <cstdbool>
-#else
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <limits.h>
-#include <stdbool.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

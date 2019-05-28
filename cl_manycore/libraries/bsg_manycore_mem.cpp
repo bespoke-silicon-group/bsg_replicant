@@ -1,17 +1,17 @@
+#include <bsg_manycore_mem.h>
+
+#ifdef __cplusplus
+#include <cassert>
 #include <cstdlib>
-#ifndef COSIM
-	#include <bsg_manycore_mem.h>
-	#include <bsg_manycore_loader.h>
-	#include <bsg_manycore_driver.h>
-	#include <bsg_manycore_errno.h>
-#include <bsg_manycore_driver.h>
+#include <cstring>
+#include <cstdio>
 #else
-	#include "bsg_manycore_mem.h"
-	#include "bsg_manycore_loader.h"
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore_errno.h"
-#include "bsg_manycore_driver.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #endif
+
 
 /*! 
  * Copies data from Manycore to host.

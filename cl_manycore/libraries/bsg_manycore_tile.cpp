@@ -1,8 +1,6 @@
-#ifndef COSIM
-	#include <bsg_manycore_tile.h>  
-#else
-	#include "bsg_manycore_tile.h"
-#endif
+#include <bsg_manycore_tile.h> 
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore_epa.h>
 
 /**
  * Freeze a tile.

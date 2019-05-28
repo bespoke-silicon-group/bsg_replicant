@@ -1,29 +1,39 @@
 #define DEBUG
-#ifndef COSIM
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_npa.h>
-#include <bsg_manycore_eva.h>
-#else
-#include "bsg_manycore_loader.h"
-#include "bsg_manycore_tile.h"
-#include "bsg_manycore_vcache.h"
-#include "bsg_manycore_printing.h"
-#include "bsg_manycore_npa.h"
-#include "bsg_manycore_eva.h"
-#endif
+
 #include <cinttypes>
-#include <cstring>
 #include <elf.h>
 #include <endian.h>
+
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
+
+#ifdef __cplusplus
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
+#include <climits>
+#include <cstdbool>
+#else
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
+#include <stdbool.h>
+#endif
 
 static size_t min_size_t(size_t x, size_t y)
 {
 	return x < y ? x : y;
 }
-
 
 /////////////////////////////////
 // Accessors for the ELF types //

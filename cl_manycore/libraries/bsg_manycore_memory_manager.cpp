@@ -16,12 +16,13 @@
  * under the License.
  */
 
+#ifdef __cplusplus
 #include <cassert>
-#ifndef COSIM
-#include <bsg_manycore_memory_manager.h>
 #else
-#include "bsg_manycore_memory_manager.h"
+#include <assert.h>
 #endif
+
+#include <bsg_manycore_memory_manager.h>
 
 awsbwhal::MemoryManager::MemoryManager(uint64_t size, uint64_t start,
                                       unsigned alignment) : mSize(size), mStart(start), mAlignment(alignment),

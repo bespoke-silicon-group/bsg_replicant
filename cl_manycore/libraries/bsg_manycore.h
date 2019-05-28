@@ -1,19 +1,11 @@
 #ifndef BSG_MANYCORE_H
 #define BSG_MANYCORE_H
 
-#ifndef COSIM
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_epa.h>
 #include <bsg_manycore_driver.h>
-#else
-#include "bsg_manycore_features.h"
-#include "bsg_manycore_config.h"
-#include "bsg_manycore_npa.h"
-#include "bsg_manycore_epa.h"
-#include "bsg_manycore_driver.h"
-#endif
 
 #ifdef __cplusplus
 #include <cstdint>

@@ -1,13 +1,12 @@
-#ifndef COSIM
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_errno.h>
+
+#ifdef __cplusplus
+#include <cmath>
 #else
-#include "bsg_manycore_config.h"
-#include "bsg_manycore_printing.h"
-#include "bsg_manycore_errno.h"
-#endif
 #include <math.h>
+#endif
 
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                 hb_mc_config_t *config)

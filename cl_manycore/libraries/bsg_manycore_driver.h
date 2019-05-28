@@ -1,17 +1,11 @@
 #ifndef BSG_MANYCORE_DRIVER_H
 #define BSG_MANYCORE_DRIVER_H
 
-#ifndef COSIM
-        #include <bsg_manycore_features.h>
-        #include <bsg_manycore_errno.h>
-	#include <bsg_manycore_bits.h>
-	#include <bsg_manycore_config.h>
-#else
-        #include "bsg_manycore_features.h"
-        #include "bsg_manycore_errno.h"
-	#include "bsg_manycore_bits.h"
-	#include "bsg_manycore_config.h"
-#endif
+#include <bsg_manycore_features.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_bits.h>
+#include <bsg_manycore_config.h>
+
 #include <endian.h>
 
 #ifdef __cplusplus

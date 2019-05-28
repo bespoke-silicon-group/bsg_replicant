@@ -1,23 +1,35 @@
-#ifndef COSIM
 #include <bsg_manycore.h>
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_tile.h>
+
+#ifndef COSIM
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #else
-#include "bsg_manycore.h"
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_mmio.h"
-#include "bsg_manycore_tile.h"
-#include "bsg_manycore_printing.h"
-#include "fpga_pci_sv.h"
+#include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
 #endif
+
+#ifdef __cplusplus
+#include <cinttypes>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <cinttypes>
+#include <cstdio>
+#include <climits>
+#include <cstdbool>
+#else
+#include <inttypes>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
+#include <stdbool.h>
+#endif
+
 #include <vector>
 
 #define array_size(x)                           \

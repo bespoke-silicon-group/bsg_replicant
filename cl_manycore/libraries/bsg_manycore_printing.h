@@ -1,14 +1,16 @@
 #ifndef _BSG_MANYCORE_PRINTING_H
 #define _BSG_MANYCORE_PRINTING_H
-
-#if defined(COSIM)
-#include "bsg_manycore_features.h"
-#else
 #include <bsg_manycore_features.h>
-#endif
-#include <stdio.h>
-#include <sys/time.h>
+
+#ifdef __cplusplus
+#include <cstdint>
+#include <cstddef>
+#else
 #include <stdint.h>
+#include <stddef.h>
+#endif
+
+#include <sys/time.h>
 #if defined(__cplusplus)
 extern "C" {
 #endif // #if defined(__cplusplus)

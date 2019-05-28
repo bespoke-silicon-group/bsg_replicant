@@ -1,13 +1,8 @@
 #ifndef BSG_MANYCORE_CONFIG_H
 #define BSG_MANYCORE_CONFIG_H
 
-#ifndef COSIM
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_coordinate.h>
-#else
-#include "bsg_manycore_features.h"
-#include "bsg_manycore_coordinate.h"
-#endif
 
 #ifdef __cplusplus
 #include <cstdint>

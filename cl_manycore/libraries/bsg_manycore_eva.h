@@ -1,19 +1,12 @@
 #ifndef BSG_MANYCORE_EVA_H
 #define BSG_MANYCORE_EVA_H
 
-#ifndef COSIM
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_coordinate.h>
 #include <bsg_manycore.h>
+#include <bsg_manycore_config.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_epa.h>
-#else
-#include "bsg_manycore_features.h"
-#include "bsg_manycore_coordinate.h"
-#include "bsg_manycore.h"
-#include "bsg_manycore_npa.h"
-#include "bsg_manycore_epa.h"
-#endif
+#include <bsg_manycore_coordinate.h>
 
 #ifdef __cplusplus
 #include <cstdint>

@@ -1,4 +1,3 @@
-#ifndef COSIM
 #include <bsg_manycore_cuda.h>  
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_tile.h>
@@ -6,15 +5,6 @@
 #include <bsg_manycore_elf.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_loader_dep.h>
-#else
-#include "bsg_manycore_cuda.h"
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_tile.h"
-#include "bsg_manycore_memory_manager.h"
-#include "bsg_manycore_elf.h"
-#include "bsg_manycore_mem.h"
-#include "bsg_manycore_loader_dep.h"
-#endif
 
 static const uint32_t KERNEL_REG = 0x1000 >> 2; //!< EPA of kernel. 
 static const uint32_t ARGC_REG = 0x1004 >> 2; //!< EPA of number of arguments kernel will use. 

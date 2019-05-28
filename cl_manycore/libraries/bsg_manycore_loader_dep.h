@@ -1,31 +1,16 @@
 #ifndef BSG_MANYCORE_LOADER_H
 #define BSG_MANYCORE_LOADER_H
+#include <bsg_manycore_features.h>
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore.h>
+#include <bsg_manycore_eva.h>
+#include <bsg_manycore_coordinate.h>
+#include <stdint.h>
 
-#ifndef _BSD_SOURCE
-	#define _BSD_SOURCE
-#endif
-#ifndef _XOPEN_SOURCE
-	#define _XOPEN_SOURCE 500
-#endif
-
-#ifndef COSIM
-        #include <bsg_manycore_features.h>
-	#include <bsg_manycore_driver.h>
-	#include <bsg_manycore.h>
-	#include <bsg_manycore_tile.h>
-	#include <bsg_manycore_errno.h>
-	#include <bsg_manycore_mmio.h>
-	#include <bsg_manycore_mem.h>
-#else
+#ifdef COSIM
 	#include <utils/sh_dpi_tasks.h>
-        #include "bsg_manycore_features.h"
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore.h"
-	#include "bsg_manycore_tile.h"
-	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_mmio.h"
-	#include "bsg_manycore_mem.h"
 #endif
+
 #include "elf.h"
 #include <sys/stat.h>
 #include <fcntl.h>
