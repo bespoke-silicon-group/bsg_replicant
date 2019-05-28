@@ -8,7 +8,7 @@ int test_loopback () {
 	}
 
 	uint8_t x = 0, y = 1;
-	hb_mc_tile_freeze(fd, 0, 1);	
+	hb_mc_tile_freeze_dep(fd, 0, 1);	
 	hb_mc_tile_set_group_origin(fd, 0, 1, 0, 1);
 	bsg_pr_test_info("file to be loaded is %s\n", getenv("MAIN_LOOPBACK"));	
 	
@@ -19,7 +19,7 @@ int test_loopback () {
 	if (hb_mc_load_binary(fd, bsg_manycore_dir, &x, &y, 1) != HB_MC_SUCCESS) 
 		return HB_MC_FAIL; /* could not load binary */
 
-  	hb_mc_tile_unfreeze(fd, 0, 1);
+  	hb_mc_tile_unfreeze_dep(fd, 0, 1);
 
 	bsg_pr_test_info("Checking receive packet...\n");
 	usleep(100); /* 100 us */
