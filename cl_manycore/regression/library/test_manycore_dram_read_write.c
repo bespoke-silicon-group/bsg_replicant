@@ -50,7 +50,7 @@ int test_manycore_dram_read_write() {
 				bsg_pr_test_info("%s: Have written %zu words to DRAM\n",
 				    __func__, i);
 			
-			npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR+i };
+			hb_mc_npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR + (i*4) };
 			err = hb_mc_manycore_write_mem(mc, &npa,
 						       &write_data[i], sizeof(write_data[i]));
 			if (err != HB_MC_SUCCESS) {
@@ -67,7 +67,7 @@ int test_manycore_dram_read_write() {
 			if (i % 64 == 1)
 				bsg_pr_test_info("%s: Have read %zu words from DRAM\n",
 						 __func__, i);
-			npa_t npa = { .x = dram_coord_x, .y = dram_coord_y , .epa = BASE_ADDR+i};
+			hb_mc_npa_t npa = { .x = dram_coord_x, .y = dram_coord_y , .epa = BASE_ADDR + (i*4) };
 			err = hb_mc_manycore_read_mem(mc, &npa,
 						      &read_data[i], sizeof(read_data[i]));
 			if (err != HB_MC_SUCCESS) {
