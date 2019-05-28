@@ -1095,7 +1095,7 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_npa_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			     const void *data, size_t sz)
 {
 	int err;
@@ -1171,7 +1171,7 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
  * @param[in]  sz     The number of bytes to read from manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_npa_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			    void *data, size_t sz)
 {
 	int err;
