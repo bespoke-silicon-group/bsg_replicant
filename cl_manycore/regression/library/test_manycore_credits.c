@@ -39,7 +39,7 @@ int test_manycore_credits() {
 	hb_mc_coordinate_t target;
 
 	hb_mc_eva_t eva;
-	size_t dmem_size = hb_mc_manycore_get_dmem_size(mc, &target); 
+	size_t dmem_size = hb_mc_tile_get_size_dmem(mc, &target); 
 	size_t dmem_words = dmem_size/sizeof(uint32_t);
 	uint32_t write_data[dmem_words];
 	uint32_t read_data[dmem_words];
