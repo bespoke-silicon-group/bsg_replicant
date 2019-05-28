@@ -14,7 +14,6 @@ module cl_manycore
 // For some silly reason, you need to leave this up here...
 logic rst_main_n_sync;
 
-`include "cl_target_defines.vh"
 `include "cl_id_defines.vh"
 `include "cl_manycore_defines.vh"
 

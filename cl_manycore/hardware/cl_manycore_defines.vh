@@ -13,6 +13,7 @@
 // Uncomment to disable Virtual JTAG
 //`define DISABLE_VJTAG_DEBUG
 
+`define BSG_TARGET_F1
 
 `endif
 
