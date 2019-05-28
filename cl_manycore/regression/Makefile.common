@@ -20,7 +20,7 @@ $(TARGETS):
 all: $(TARGETS)
 
 regression: $(TARGETS)
-	@pass=0;  total=0; \
+	@pass=0; total=0; failed=""; passed=""; \
 	echo ""; \
 	echo ""; \
 	echo "Running $(REGRESSION_TESTS_TYPE) Regression Tests..."; \
@@ -30,8 +30,10 @@ regression: $(TARGETS)
 		sudo ./$$target | tee $$target.regression.log ; \
 		if [ $${PIPESTATUS[0]} -ne 0 ] ; then \
 			echo "FAIL: Regression Test $$target failed!"; \
+			failed="$$failed $$target"; \
 		else \
 			echo "PASS: Regression Test $$target passed!"; \
+			passed="$$passed $$target"; \
 			let "pass+=1"; \
 		fi; \
 		let "total+=1"; \
@@ -40,6 +42,8 @@ regression: $(TARGETS)
 		echo "==================================================="; \
 		echo "" ; \
 		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"; \
+		echo "     Passed Tests: $$passed"; \
+		echo "     Failed Tests: $$failed"; \
 		echo "" ; \
 		echo "==================================================="; \
 		exit 1; \
