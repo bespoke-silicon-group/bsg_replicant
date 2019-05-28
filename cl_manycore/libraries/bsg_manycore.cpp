@@ -3,12 +3,14 @@
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore_tile.h>
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #else
 #include "bsg_manycore.h"
 #include "bsg_manycore_driver.h"
 #include "bsg_manycore_mmio.h"
+#include "bsg_manycore_tile.h"
 #include "bsg_manycore_printing.h"
 #include "fpga_pci_sv.h"
 #include <utils/sh_dpi_tasks.h>
@@ -1093,7 +1095,7 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+int hb_mc_manycore_npa_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			     const void *data, size_t sz)
 {
 	int err;
@@ -1169,7 +1171,7 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
  * @param[in]  sz     The number of bytes to read from manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+int hb_mc_manycore_npa_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			    void *data, size_t sz)
 {
 	int err;
@@ -1285,32 +1287,4 @@ int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_
 int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v)
 {
 	return hb_mc_manycore_write(mc, npa, &v, 4);
-}
-
-
-
-/**
- * Freeze a tile.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile   A tile to freeze.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-int hb_mc_manycore_freeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
-{
-	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
-	return hb_mc_manycore_write32(mc, &npa, 1);
-}
-
-/**
- * Unfreeze a tile.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile   A tile to unfreeze.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-int hb_mc_manycore_unfreeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
-{
-	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
-	return hb_mc_manycore_write32(mc, &npa, 0);
 }

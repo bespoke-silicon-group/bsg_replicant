@@ -3,11 +3,13 @@
 #ifndef COSIM
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_epa.h>
+#include <bsg_manycore_tile.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_coordinate.h>
 #else
 #include "bsg_manycore_eva.h"
 #include "bsg_manycore_epa.h"
+#include "bsg_manycore_tile.h"
 #include "bsg_manycore_printing.h"
 #include "bsg_manycore_coordinate.h"
 #endif

@@ -4,6 +4,32 @@
 	#include "bsg_manycore_tile.h"
 #endif
 
+/**
+ * Freeze a tile.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to freeze.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_tile_freeze(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
+{
+	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
+	return hb_mc_manycore_write32(mc, &npa, 1);
+}
+
+/**
+ * Unfreeze a tile.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to unfreeze.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_tile_unfreeze(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
+{
+	hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_FREEZE);
+	return hb_mc_manycore_write32(mc, &npa, 0);
+}
+
 /*!
  * Freezes a Vanilla Core Endpoint.
  * @param[in] fd userspace file descriptor.

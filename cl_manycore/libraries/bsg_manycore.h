@@ -279,37 +279,10 @@ static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manyco
  * Get the max size of program text.
  */
 static inline size_t hb_mc_manycore_get_max_program_text_size(const hb_mc_manycore_t* mc,
-							      const hb_mc_coordinate_t *tile)
+							const hb_mc_coordinate_t *tile)
 {
     return 16ul * (1ul<<20ul); // 16M -- this might be later from the config
 }
-/**
- * Get the size of a tiles local data memory.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  tile   The coordinate tile to query for its data memory size.
- * @return the size of the tiles data memory.
- */
-static inline size_t hb_mc_manycore_get_dmem_size(const hb_mc_manycore_t *mc,
-						  const hb_mc_coordinate_t *tile)
-{
-	return 4 * (1<<10); //4K -- this might be later read from the config
-}
-
-
-/**
- * Get the size of a tiles local data memory.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  tile   The coordinate tile to query for its instruction cache size.
- * @return the size of the tiles instruction cache.
- */
-static inline size_t hb_mc_manycore_get_icache_size(const hb_mc_manycore_t *mc,
-						    const hb_mc_coordinate_t *tile)
-{
-	return 4 * (1<<10); //4K -- this might be later read from the config
-}
-
 
 /**
  * Get the size of DRAM.
@@ -318,7 +291,7 @@ static inline size_t hb_mc_manycore_get_icache_size(const hb_mc_manycore_t *mc,
  * @param[in]  tile   The coordinate tile to query for its instruction cache size.
  * @return the size of the tiles instruction cache.
  */
-static inline size_t hb_mc_manycore_get_dram_size(const hb_mc_manycore_t *mc)
+static inline size_t hb_mc_manycore_get_size_dram(const hb_mc_manycore_t *mc)
 {
 	return 4ul * (1ul<<30ul); //4G -- this might be later read from the config
 }
@@ -330,25 +303,6 @@ static inline size_t hb_mc_manycore_get_dram_size(const hb_mc_manycore_t *mc)
  */
 int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc);
 
-/**
- * Freeze a tile.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile   A tile to freeze.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_manycore_freeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
-
-/**
- * Unfreeze a tile.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile   A tile to unfreeze.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_manycore_unfreeze_tile(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
 
 #ifdef __cplusplus
 }

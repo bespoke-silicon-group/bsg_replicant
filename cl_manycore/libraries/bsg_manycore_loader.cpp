@@ -1,11 +1,15 @@
 #define DEBUG
 #ifndef COSIM
 #include <bsg_manycore_loader.h>
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_eva.h>
 #else
 #include "bsg_manycore_loader.h"
+#include "bsg_manycore_tile.h"
+#include "bsg_manycore_vcache.h"
 #include "bsg_manycore_printing.h"
 #include "bsg_manycore_npa.h"
 #include "bsg_manycore_eva.h"
@@ -99,9 +103,9 @@ static size_t hb_mc_loader_get_tile_segment_capacity(hb_mc_manycore_t *mc,
 
 	/* if the EVA maps to DRAM */
 	if (RV32_Addr_to_host(phdr->p_vaddr) & (1<<31)) {
-		return hb_mc_manycore_get_dram_size(mc);
+		return hb_mc_manycore_get_size_dram(mc);
 	} else {
-		return hb_mc_manycore_get_dmem_size(mc, &tile);
+		return hb_mc_tile_get_size_dmem(mc, &tile);
 	}
 }
 
@@ -330,7 +334,7 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 
         /* write min(icache size, segment size) bytes */
 	size_t sz = min_size_t(RV32_Word_to_host(phdr->p_filesz),
-			       hb_mc_manycore_get_icache_size(mc, &tile));
+			       hb_mc_tile_get_size_icache(mc, &tile));
 
 	bsg_pr_dbg("%s: writing %zu bytes to (%d,%d)'s icache @ EPA 0x%08" PRIx32 "\n",
 		   __func__, sz,

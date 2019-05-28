@@ -2,20 +2,19 @@
 #ifndef COSIM
 #include <bsg_manycore_loader_dep.h>
 #include <bsg_manycore_printing.h>
-#include <bsg_manycore_npa.h>
-#include <bsg_manycore_eva.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_tile.h>
+#include <bsg_manycore_vcache.h>
 #else
 #include "bsg_manycore_loader_dep.h"
 #include "bsg_manycore_printing.h"
 #include "bsg_manycore_mem.h"
 #include "bsg_manycore_tile.h"
+#include "bsg_manycore_vcache.h"
 #endif
 #include <cstring>
 #include <elf.h>
 #include <endian.h>
-
 
 typedef enum __hb_mc_loader_elf_field_t{
 	HB_MC_LOADER_ELF_DATA_ID = 0,
@@ -114,7 +113,7 @@ static int hb_mc_parse_elf(uint8_t device_fd, char *filename, uint8_t x, uint8_t
 					// write into the DRAM
 					uint32_t icache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_ICACHE_BASE, ofs);
 					uint32_t dram_word_addr = hb_mc_tile_epa_get_word_addr(
-						hb_mc_tile_epa_get_byte_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_DRAM_OFFSET), ofs);
+						hb_mc_tile_epa_get_byte_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_OFFSET_DRAM), ofs);
 					uint32_t data = text_segment[ofs/sizeof(uint32_t)];
 					hb_mc_format_request_packet(device_fd, &packets_icache[ofs/sizeof(uint32_t)].request,
 								    icache_word_addr,

@@ -108,7 +108,7 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
 	} 
 	
 	for (int i = 0; i < num_tiles; i++) { /* initialize tiles */
-		hb_mc_tile_freeze(*fd, tiles[i].x, tiles[i].y);
+		hb_mc_tile_freeze_dep(*fd, tiles[i].x, tiles[i].y);
 		hb_mc_tile_set_group_origin(*fd, tiles[i].x, tiles[i].y, tiles[i].origin_x, tiles[i].origin_y);
 	}
 
@@ -127,7 +127,7 @@ int hb_mc_device_init (uint8_t *fd, eva_id_t eva_id, char *elf, tile_t *tiles, u
 		error = hb_mc_write_tile_reg(*fd, eva_id, &tiles[i], KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS)
 			return HB_MC_FAIL;
-		hb_mc_tile_unfreeze(*fd, tiles[i].x, tiles[i].y);
+		hb_mc_tile_unfreeze_dep(*fd, tiles[i].x, tiles[i].y);
 	}
 	return HB_MC_SUCCESS;
 }
@@ -151,7 +151,7 @@ int hb_mc_device_finish (uint8_t fd, eva_id_t eva_id, tile_t *tiles, uint32_t nu
 	delete(mem_manager[eva_id]);
 	
 	for (int i = 0; i < num_tiles; i++) { /* freeze tiles */
-		hb_mc_tile_freeze(fd, tiles[i].x, tiles[i].y);
+		hb_mc_tile_freeze_dep(fd, tiles[i].x, tiles[i].y);
 	}
 
 	int error = hb_mc_fifo_finish(fd);
