@@ -7,6 +7,7 @@ LDLIBS  := -lfpga_mgmt
 HEADERS := bsg_manycore_driver.h
 HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_tile.h
+HEADERS += bsg_manycore_vcache.h
 HEADERS += bsg_manycore_mem.h
 HEADERS += bsg_manycore_eva.h
 HEADERS += bsg_manycore_mmio.h
