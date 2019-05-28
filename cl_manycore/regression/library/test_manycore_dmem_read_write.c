@@ -25,7 +25,7 @@ int test_manycore_dmem_read_write () {
 	/* Writing to Data Memory */
 	/**************************/
 	uint32_t write_data = 0xABCD;
-	npa_t npa = { .x = 0, .y = 1, .epa = DMEM_BASE >> 2 };
+	npa_t npa = { .x = 0, .y = 1, .epa = DMEM_BASE };
 
 	bsg_pr_test_info("Writing to DMEM\n");
 	err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
