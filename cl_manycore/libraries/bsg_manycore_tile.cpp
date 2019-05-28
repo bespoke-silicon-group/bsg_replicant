@@ -37,7 +37,7 @@ int hb_mc_tile_unfreeze(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
  * @param[in] y y coordinate of tile
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y) {
+int hb_mc_tile_freeze_dep (uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_packet_t freeze; 
 	epa_t freeze_waddr;
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
@@ -64,7 +64,7 @@ int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y) {
  * @param[in] y y coordinate of tile
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y) {
+int hb_mc_tile_unfreeze_dep (uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_packet_t unfreeze; 
 	epa_t freeze_waddr;
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
