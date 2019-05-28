@@ -1,4 +1,5 @@
 #include <bsg_manycore.h>
+#include <bsg_manycore_npa.h>
 #include <bsg_manycore_printing.h>
 #include <inttypes.h>
 #include "test_dmem_read_write.h"
@@ -25,7 +26,7 @@ int test_manycore_dmem_read_write () {
 	/* Writing to Data Memory */
 	/**************************/
 	uint32_t write_data = 0xABCD;
-	npa_t npa = { .x = 0, .y = 1, .epa = DMEM_BASE };
+	hb_mc_npa_t npa = { .x = 0, .y = 1, .epa = DMEM_BASE };
 
 	bsg_pr_test_info("Writing to DMEM\n");
 	err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
