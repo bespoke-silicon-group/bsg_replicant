@@ -2,6 +2,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore_tile.h>
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
 #include "test_manycore_parameters.h"
@@ -227,7 +228,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Local DMEM (DMEM within target)*/
 	/* Test should FAIL: EVA is > DMEM SIZE      */
 	/*********************************************/
-	eva_dest = eva_dest + hb_mc_manycore_get_dmem_size(mc, &target);
+	eva_dest = eva_dest + hb_mc_tile_get_size_dmem(mc, &target);
 
 	bsg_pr_test_info("Trying to write to invalid Local DMEM address\n");
 	bsg_pr_test_info("This test should fail...\n");
@@ -255,7 +256,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Group DMEM (DMEM within target)*/
 	/* Test should FAIL: EVA is > DMEM SIZE      */
 	/*********************************************/
-	eva_dest = eva_dest + hb_mc_manycore_get_dmem_size(mc, &target);
+	eva_dest = eva_dest + hb_mc_tile_get_size_dmem(mc, &target);
 
 	bsg_pr_test_info("Trying to write to invalid Group DMEM address\n");
 	bsg_pr_test_info("This test should fail...\n");
@@ -283,7 +284,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Global DMEM (DMEM within target)*/
 	/* Test should FAIL: EVA is > DMEM SIZE      */
 	/*********************************************/
-	eva_dest = eva_dest + hb_mc_manycore_get_dmem_size(mc, &target);
+	eva_dest = eva_dest + hb_mc_tile_get_size_dmem(mc, &target);
 
 	bsg_pr_test_info("Trying to write to invalid Global DMEM address\n");
 	bsg_pr_test_info("This test should fail...\n");

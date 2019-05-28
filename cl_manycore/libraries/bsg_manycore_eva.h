@@ -51,11 +51,13 @@ typedef struct __hb_mc_eva_map_t{
  * Returns the number of contiguous bytes following an EVA, regardless of
  * the continuity of the underlying NPA.
  * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
  * @param[in]  eva    An eva 
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 	int (*eva_size)(const hb_mc_config_t *cfg, 
+			const void *priv,
 			const hb_mc_eva_t *eva, 
 			size_t *sz);
 

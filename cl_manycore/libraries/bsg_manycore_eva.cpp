@@ -56,9 +56,10 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 }
 
 /**
- * Returns the EPA and number of contiguous bytes for an EVA in a tile, regardless of
- * the continuity of the underlying NPA.
- * @param[in]  eva    An eva
+ * Returns the EPA and number of contiguous bytes for an EVA in a tile,
+ * regardless of the continuity of the underlying NPA.
+ * @param[in]  eva    An Endpoint Virtual Address
+ * @param[out] epa    An Endpoint Physical Address to be set by translating #eva
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
@@ -67,7 +68,6 @@ static int default_eva_to_epa_tile(
 	hb_mc_epa_t *epa,
 	size_t *sz)
 {
-	int rc;
 	hb_mc_eva_t eva_masked;
 
 	eva_masked = hb_mc_eva_addr(eva) & MAKE_MASK(HB_MC_EPA_LOGSZ);
@@ -90,29 +90,6 @@ static int default_eva_to_epa_tile(
 			__func__, hb_mc_eva_addr(eva));
 		*epa = 0;
 		*sz = 0;
-		return HB_MC_FAIL;
-	}
-	return HB_MC_SUCCESS;
-}
-
-/**
- * Returns the number of contiguous bytes following a local EVA, regardless of
- * the continuity of the underlying NPA.
- * @param[in]  eva    An eva 
- * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int default_eva_size_local(
-		const hb_mc_eva_t *eva,
-		size_t *sz)
-{
-	int rc;
-	hb_mc_epa_t epa;
-	rc = default_eva_to_epa_tile(eva, &epa, sz);
-	if(rc != HB_MC_SUCCESS){
-		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
-			" addressible tile memory locatiion.\n", 
-			__func__, hb_mc_eva_addr(eva));
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -164,29 +141,6 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 static bool default_eva_is_group(const hb_mc_eva_t *eva)
 {
 	return (hb_mc_eva_addr(eva) & DEFAULT_GROUP_BITMASK) != 0;
-}
-
-/**
- * Returns the number of contiguous bytes following a group EVA, regardless of
- * the continuity of the underlying NPA.
- * @param[in]  eva    An eva 
- * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int default_eva_size_group(
-		const hb_mc_eva_t *eva,
-		size_t *sz)
-{
-	int rc;
-	hb_mc_epa_t epa;
-	rc = default_eva_to_epa_tile(eva, &epa, sz);
-	if(rc != HB_MC_SUCCESS){
-		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
-			" addressible tile memory locatiion.\n", 
-			__func__, hb_mc_eva_addr(eva));
-		return HB_MC_FAIL;
-	}
-	return HB_MC_SUCCESS;
 }
 
 /**
@@ -259,29 +213,6 @@ static bool default_eva_is_global(const hb_mc_eva_t *eva)
 }
 
 /**
- * Returns the number of contiguous bytes following a global EVA, regardless of
- * the continuity of the underlying NPA.
- * @param[in]  eva    An eva 
- * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int default_eva_size_global(
-		const hb_mc_eva_t *eva,
-		size_t *sz)
-{
-	int rc;
-	hb_mc_epa_t epa;
-	rc = default_eva_to_epa_tile(eva, &epa, sz);
-	if(rc != HB_MC_SUCCESS){
-		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
-			" addressible tile memory locatiion.\n", 
-			__func__, hb_mc_eva_addr(eva));
-		return HB_MC_FAIL;
-	}
-	return HB_MC_SUCCESS;
-}
-
-/**
  * Converts a global Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  o      Coordinate of the origin for this tile's group
@@ -330,58 +261,8 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 }
 
 /**
- * Returns the number of contiguous bytes following a DRAM EVA, regardless of
- * the continuity of the underlying NPA.
- * @param[in]  eva    An eva 
- * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-static int default_eva_size_dram(
-	const hb_mc_config_t *cfg,
-	const hb_mc_eva_t *eva,
-	size_t *sz)
-{
-	uint32_t addrbits, maxsz, xlogdim, errmask;
-	hb_mc_epa_t epa;
-	hb_mc_idx_t x;
-	int rc;
-
-	// The EVA size is determined y the address bits of the manycore
-	// network. The high-order bit of the network address is reserved for
-	// addressing tags in the victim cache and is not accessible to the EVA,
-	// so we subtract 1. The network address is a byte address, so we add
-	// two to make it a byte address. 
-	addrbits = hb_mc_config_get_network_bitwidth_addr(cfg) - 1 + 
-		log2(sizeof(uint32_t));
-	maxsz = 1 << addrbits;
-
-	// The number of bits used for the x index is determined by clog2 of the
-	// x dimension (or the number of bits needed to represent the maximum x
-	// dimension).
-	x = hb_mc_dimension_get_x(hb_mc_config_get_dimension(cfg));
-	xlogdim = ceil(log2(x));
-
-	// The EPA portion of an EVA is technically determined by addrbits
-	// above.  However, this creates undefined behavior when (addrbits + 1 +
-	// xlogdim) != DEFAULT_DRAM_BITIDX, since there are unused bits between
-	// the x index and EPA.  To avoid really awful debugging, we check this
-	// situation.
-	errmask = MAKE_MASK(DEFAULT_DRAM_BITIDX - xlogdim);
-
-	epa = (hb_mc_eva_addr(eva) & errmask);
-
-	if (epa >= maxsz){
-		bsg_pr_err("%s: Translation of EVA 0x%x failed. EPA requested is "
-			"outside of addressible range in DRAM.");
-		return HB_MC_INVALID;
-	}
-
-	*sz = maxsz - epa;
-	return HB_MC_SUCCESS;
-}
-
-/**
- * Converts a DRAM Endpoint Virtual Address to a Network Physical Address
+ * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
+ * size (contiguous bytes following the specified EVA)
  * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  o      Coordinate of the origin for this tile's group
  * @param[in]  src    Coordinate of the tile issuing this #eva
@@ -396,45 +277,53 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 				const hb_mc_eva_t *eva,
 				hb_mc_npa_t *npa, size_t *sz)
 {
-	uint32_t xmask, xlogdim, addrbits, shift;
+	uint32_t xmask, xdimlog, addrbits, shift, errmask;
+	size_t maxsz;
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	hb_mc_dimension_t dim;
-	int rc;
-
-	rc = default_eva_size_dram(cfg, eva, sz);
-	if(rc != HB_MC_SUCCESS){
-		return rc;
-	}
 
 	dim = hb_mc_config_get_dimension(cfg);
 
 	// The number of bits used for the x index is determined by clog2 of the
 	// x dimension (or the number of bits needed to represent the maximum x
 	// dimension).
-	xlogdim = ceil(log2(hb_mc_dimension_get_x(dim)));
-	xmask = MAKE_MASK(xlogdim);
+	xdimlog = ceil(log2(hb_mc_dimension_get_x(dim)));
+	xmask = MAKE_MASK(xdimlog);
 
 	// The location of the x index in the eva is determined by the x
 	// dimension of the network, and uses the high-order bits after the
 	// High-Order bit that indicates a DRAM access.
-	shift = DEFAULT_DRAM_BITIDX - xlogdim;
+	shift = DEFAULT_DRAM_BITIDX - xdimlog;
 
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
 	y = hb_mc_dimension_get_y(dim) + hb_mc_config_get_vcore_base_y(cfg);
 
-	// The EPA address bits are determined by the address bits of the
-	// manycore network. The high-order bit of the network address is
-	// reserved for addressing tags in the victim cache and is not
-	// accessible to the EVA, so we subtract 1. The network address is a
-	// byte address, so we add two to make it a byte address
-	addrbits = hb_mc_config_get_network_bitwidth_addr(cfg)
-		- HB_MC_VCACHE_EPA_RESERVED_BITS
-		+ log2(sizeof(uint32_t));
+	// The EVA size is determined y the address bits of the manycore
+	// network. The high-order bit of the network address is reserved for
+	// addressing tags in the victim cache and is not accessible to the EVA,
+	// so we subtract 1. The network address is a byte address, so we add
+	// two to make it a byte address. 
+	addrbits = hb_mc_config_get_network_bitwidth_addr(cfg) - 1 + 
+		log2(sizeof(uint32_t));
+	maxsz = 1 << addrbits;
 
-	// Finally, we mask the EVA to get the EPA.
-	epa = (hb_mc_eva_addr(eva) & MAKE_MASK(addrbits));
+	// The EPA portion of an EVA is technically determined by addrbits
+	// above.  However, this creates undefined behavior when (addrbits + 1 +
+	// xdimlog) != DEFAULT_DRAM_BITIDX, since there are unused bits between
+	// the x index and EPA.  To avoid really awful debugging, we check this
+	// situation.
+	errmask = MAKE_MASK(DEFAULT_DRAM_BITIDX - xdimlog);
 
+	epa = (hb_mc_eva_addr(eva) & errmask);
+
+	if (epa >= maxsz){
+		bsg_pr_err("%s: Translation of EVA 0x%x failed. EPA requested is "
+			"outside of addressible range in DRAM.");
+		return HB_MC_INVALID;
+	}
+
+	*sz = maxsz - epa;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
@@ -519,23 +408,31 @@ static int default_npa_to_eva(const hb_mc_config_t *cfg,
  * Returns the number of contiguous bytes following an EVA, regardless of
  * the continuity of the underlying NPA.
  * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
  * @param[in]  eva    An eva
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_eva_size(
 	const hb_mc_config_t *cfg,
+	const void *priv,
 	const hb_mc_eva_t *eva,
 	size_t *sz)
 {
+	hb_mc_npa_t npa;
+	hb_mc_epa_t epa;
+	const hb_mc_coordinate_t *o;
+
+	o = (const hb_mc_coordinate_t *) priv;
+
 	if(default_eva_is_dram(eva))
-		return default_eva_size_dram(cfg, eva, sz);
+		return default_eva_to_npa_dram(cfg, o, o, eva, &npa, sz);
 	if(default_eva_is_global(eva))
-		return default_eva_size_global(eva, sz);
+		return default_eva_to_npa_global(cfg, o, o, eva, &npa, sz);
 	if(default_eva_is_group(eva))
-		return default_eva_size_group(eva, sz);
+		return default_eva_to_npa_group(cfg, o, o, eva, &npa, sz);
 	if(default_eva_is_local(eva))
-		return default_eva_size_local(eva, sz);
+		return default_eva_to_npa_local(cfg, o, o, eva, &npa, sz);
 
 	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n", 
 		hb_mc_eva_addr(eva), __func__);
@@ -548,7 +445,7 @@ const hb_mc_coordinate_t default_origin = {.x = HB_MC_CONFIG_VCORE_BASE_X,
 hb_mc_eva_map_t default_map = {
 	.eva_map_name = "Default EVA space",
 	.priv = (const void *)(&default_origin),
-	.eva_to_npa  = default_eva_to_npa,
+	.eva_to_npa = default_eva_to_npa,
 	.eva_size = default_eva_size,
 	.npa_to_eva  = default_npa_to_eva,
 };
@@ -619,7 +516,7 @@ int hb_mc_eva_size(const hb_mc_config_t *cfg,
 {
 	int err;
 
-	err = map->eva_size(cfg, eva, sz);
+	err = map->eva_size(cfg, map->priv, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
