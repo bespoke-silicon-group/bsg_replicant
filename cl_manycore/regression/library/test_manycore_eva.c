@@ -86,8 +86,8 @@ int test_manycore_eva () {
 
 	bsg_pr_test_info("Testing Random Manycore EVAs\n");
 	// This is the origin of the Default EVA ID
-	origin_x = 1;
-	origin_y = 0;
+	origin_x = 0;
+	origin_y = 1;
 	origin = hb_mc_coordinate(origin_x, origin_y);
 
 	src_x = 1;

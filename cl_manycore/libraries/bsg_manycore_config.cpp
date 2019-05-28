@@ -7,10 +7,12 @@
 #include "bsg_manycore_printing.h"
 #include "bsg_manycore_errno.h"
 #endif
+#include <math.h>
 
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                 hb_mc_config_t *config)
 {
+	uint32_t xlogsz_max, xdim_max;
         hb_mc_config_raw_t cur;
         hb_mc_idx_t idx;
         char date[8], version[3];
@@ -40,13 +42,31 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->timestamp.day =  date[5] * 10 + date[4] * 1;
         config->timestamp.month = date[7] * 10 + date[6] * 1;
 
-        config->network_bitwidth_addr = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
-        config->network_bitwidth_data = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
+	idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
+        if (idx > HB_MC_CONFIG_MAX_BITWIDTH_DATA){
+                bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d\n",
+			__func__, idx);
+                return HB_MC_FAIL;
+        }
+        config->network_bitwidth_data = idx;
+
+	idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
+        if (idx > HB_MC_CONFIG_MAX_BITWIDTH_ADDR){
+                bsg_pr_err("%s: Invalid Network Address Bitwidth %d\n",
+			__func__, idx);
+                return HB_MC_FAIL;
+        }
+        config->network_bitwidth_addr = idx;
+
+	/* The maximum X dimension of the network is limited by the network
+	 * address bitwidth */
+	xlogsz_max = HB_MC_CONFIG_MAX_BITWIDTH_ADDR - config->network_bitwidth_addr;
+	xdim_max = (xlogsz_max - 1) << 1;
 
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
+        if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
                 bsg_pr_err("%s: Invalid Device Dimension X %d\n",
-                                __func__, idx);
+			__func__, idx);
                 return HB_MC_FAIL;
         }
         config->dimension.x = idx;
@@ -54,7 +74,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_Y];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
                 bsg_pr_err("%s: Invalid Device Dimension Y %d\n",
-                                __func__, idx);
+			__func__, idx);
                 return HB_MC_FAIL;
         }
         config->dimension.y = idx;
@@ -62,7 +82,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->dimension.x)){
                 bsg_pr_err("%s: Invalid Host Interface index X %d\n",
-                                __func__, idx);
+			__func__, idx);
                 return HB_MC_FAIL;
         }
         config->host_interface.x = idx;
@@ -70,7 +90,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->dimension.y)){
                 bsg_pr_err("%s: Invalid Host Interface index Y %d\n",
-                                __func__, idx);
+			__func__, idx);
                 return HB_MC_FAIL;
         }
         config->host_interface.y = idx;

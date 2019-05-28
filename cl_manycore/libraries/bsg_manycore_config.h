@@ -19,6 +19,14 @@
 extern "C" {
 #endif
 
+// We expect a 32-bit bus for Addresses, but the top bit is reserved for the
+// victim cache tag.
+#define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 31
+#define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
+
+#define HB_MC_CONFIG_VCORE_BASE_X 0
+#define HB_MC_CONFIG_VCORE_BASE_Y 1
+
 typedef uint32_t hb_mc_config_raw_t;
 /* Compilation Metadata */
 typedef struct __hb_mc_version_t {
@@ -142,6 +150,14 @@ static inline hb_mc_coordinate_t hb_mc_config_get_host_interface(const hb_mc_con
 
 static inline hb_mc_dimension_t hb_mc_config_get_dimension(const hb_mc_config_t *cfg){
         return cfg->dimension;
+}
+
+static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cfg){
+        return HB_MC_CONFIG_VCORE_BASE_Y; // TODO: These should be defined in the ROM?
+}
+
+static inline hb_mc_idx_t hb_mc_config_get_vcore_base_x(const hb_mc_config_t *cfg){
+        return HB_MC_CONFIG_VCORE_BASE_X; // TODO: These should be defined in the ROM?
 }
 
 #ifdef __cplusplus

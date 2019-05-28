@@ -19,6 +19,8 @@ extern "C" {
 typedef uint32_t hb_mc_epa_t;
 typedef hb_mc_epa_t epa_t;
 
+#define HB_MC_EPA_LOGSZ 18
+
 #define EPA_FROM_BASE_AND_OFFSET(base, offset)	\
 	(((base)+(offset)))
 
