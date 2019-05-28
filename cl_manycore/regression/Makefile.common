@@ -1,6 +1,6 @@
 CFLAGS   = -std=c11 -D_XOPEN_SOURCE=500 -D_BSD_SOURCE $(REGRESSION_DEFINES)
 CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
-LDFLAGS  = -lbsg_manycore_runtime
+LDFLAGS  = -lbsg_manycore_runtime -lm
 
 C_TARGETS   := $(C_REGRESSION_TESTS)
 $(C_TARGETS): %: %.h
