@@ -1,6 +1,8 @@
 CL_DIR = $(CURDIR)
 PROJECT = cl_manycore
 
+CL_MANYCORE_RELEASE_VERSION    ?= 00ffddee
+
 include $(CL_DIR)/Makefile.environment
 
 DEBUG ?= 
@@ -12,7 +14,7 @@ all: $(SIM_TARGETS) $(BUILD_TARGETS)
 .PHONY: build regression hardware
 
 build: 
-	$(MAKE) -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT)
+	$(MAKE) -C $@ CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) CL_MANYCORE_RELEASE_VERSION=$(CL_MANYCORE_RELEASE_VERSION)
 
 regression:
 	$(MAKE) -C regression $@ CL_DIR=$(CL_DIR) 
@@ -28,3 +30,4 @@ clean:
 	$(MAKE) -C build clean CL_DIR=$(CL_DIR) PROJECT=$(PROJECT) 
 	$(MAKE) -C regression clean CL_DIR=$(CL_DIR) 
 	$(MAKE) -C hardware clean CL_DIR=$(CL_DIR) 
+
