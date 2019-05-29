@@ -58,6 +58,7 @@ typedef enum __hb_mc_csr_freeze_t{
  * @param[in] x      The X coordinate of the origin tile
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((warn_unused_result))
 int hb_mc_tile_set_origin_x(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
 			const hb_mc_idx_t x);
 /**
@@ -68,6 +69,7 @@ int hb_mc_tile_set_origin_x(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile
  * @param[in] y      The Y coordinate of the origin tile
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((warn_unused_result))
 int hb_mc_tile_set_origin_y(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
 			const hb_mc_idx_t y);
 /**
@@ -78,6 +80,7 @@ int hb_mc_tile_set_origin_y(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile
  * @param[in] o      The origin tile
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((warn_unused_result))
 int hb_mc_tile_set_origin(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
 			const hb_mc_coordinate_t *o);
 
