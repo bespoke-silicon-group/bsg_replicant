@@ -120,33 +120,6 @@ static size_t hb_mc_loader_get_tile_segment_capacity(hb_mc_manycore_t *mc,
 }
 
 /**
- * Writes zeros to an NPA.
- * @param[in]  mc     A manycore instance.
- * @param[in]  start  A start NPA.
- * @param[in]  sz     How many zero bytes to write.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-static int hb_mc_loader_write_zeros_to_page(hb_mc_manycore_t *mc,
-					    const hb_mc_npa_t *start,
-					    size_t sz)
-{
-	size_t words = sz >> 2;
-	hb_mc_npa_t npa = *start;
-	int rc;
-
-	for (size_t i = 0; i < words; i++) {
-		rc = hb_mc_manycore_write32(mc, &npa, 0);
-		if (rc != HB_MC_SUCCESS)
-			return rc;
-
-                /* increment by 1 -- EPAs are word addressed */
-		hb_mc_npa_set_epa(&npa, hb_mc_npa_get_epa(&npa)+1);
-	}
-
-	return HB_MC_SUCCESS;
-}
-
-/**
  * Format a segment program header as a human readable string.
  * @param[in] phdr    A program header.
  * @param[in] buffer  A buffer to which string data is written.
