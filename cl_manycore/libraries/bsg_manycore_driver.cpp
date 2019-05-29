@@ -1,21 +1,24 @@
-#include <cstdlib>
-#include <cstdio>
-#include <cstring>
+#include <bsg_manycore_driver.h>  
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_vcache.h>
+#include <bsg_manycore_mmio.h>
 
 #ifndef COSIM
-	#include <bsg_manycore_errno.h> 
-	#include <bsg_manycore_driver.h>  
-	#include <bsg_manycore_tile.h>
-	#include <bsg_manycore_mmio.h>
-	#include <fpga_pci.h>
-	#include <fpga_mgmt.h>
+#include <fpga_pci.h>
+#include <fpga_mgmt.h>
 #else
-	#include "bsg_manycore_errno.h"
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore_tile.h"
-	#include "bsg_manycore_mmio.h"
-	#include "fpga_pci_sv.h"
-	#include <utils/sh_dpi_tasks.h>
+#include "fpga_pci_sv.h"
+#include <utils/sh_dpi_tasks.h>
+#endif
+
+#ifdef __cplusplus
+#include <cassert>
+#include <cstring>
+#include <cstdio>
+#else
+#include <assert.h>
+#include <string.h>
+#include <stdio.h>
 #endif
 
 /* The following values are cached by the API during initialization */
@@ -235,7 +238,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 		return HB_MC_FAIL;
 	}
 
-	vcache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_TAG_OFFSET);
+	vcache_word_addr = hb_mc_tile_epa_get_word_addr(HB_MC_VCACHE_EPA_BASE, HB_MC_VCACHE_EPA_OFFSET_TAG);
 	hb_mc_format_request_packet(fd, &tag.request, vcache_word_addr, 0, x, y, HB_MC_PACKET_OP_REMOTE_STORE);
 		
 	for (int i = 0; i < 4; i++) {

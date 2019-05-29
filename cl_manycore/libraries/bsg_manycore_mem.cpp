@@ -1,15 +1,17 @@
+#include <bsg_manycore_mem.h>
+
+#ifdef __cplusplus
+#include <cassert>
 #include <cstdlib>
-#ifndef COSIM
-	#include <bsg_manycore_mem.h>
-	#include <bsg_manycore_loader.h>
-	#include <bsg_manycore_driver.h>
-	#include <bsg_manycore_errno.h>
+#include <cstring>
+#include <cstdio>
 #else
-	#include "bsg_manycore_mem.h"
-	#include "bsg_manycore_loader.h"
-	#include "bsg_manycore_driver.h"
-	#include "bsg_manycore_errno.h"
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #endif
+
 
 /*! 
  * Copies data from Manycore to host.
@@ -190,7 +192,7 @@ static uint32_t hb_mc_dram_get_epa (eva_t eva) {
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * This function only supports DRAM and Global Network Address EVAs.
  */
-int hb_mc_eva_to_npa (eva_id_t eva_id, eva_t eva, npa_t *npa) {
+int hb_mc_eva_to_npa_deprecated (eva_id_t eva_id, eva_t eva, npa_t *npa) {
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* invalid eva_id */
 	}
@@ -290,7 +292,7 @@ static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
  * @param eva pointer to an eva_t that this function should set.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function will fail if the NPA is invalid.
  */
-int hb_mc_npa_to_eva (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
+int hb_mc_npa_to_eva_deprecated (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* invalid eva_id */
 	}

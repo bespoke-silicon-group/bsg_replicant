@@ -1,22 +1,27 @@
-#include <cstdlib>
-#include <cstring>
-#include <cstdio>
-#include <cstdint>
-#include <cinttypes>
-#include <unistd.h>
-#include <elf.h>
-#ifndef COSIM
+#include <bsg_manycore_features.h>
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_elf.h>
+
+#ifdef __cplusplus
+#include <cstdint>
+#include <cinttypes>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
+#include <cstdio>
 #else
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_errno.h"
-#include "bsg_manycore_mem.h"
-#include "bsg_manycore_elf.h"
+#include <stdint.h>
+#include <inttypes.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 #endif
 
+#include <unistd.h>
+#include <elf.h>
 
 #include <map>
 #include <string>

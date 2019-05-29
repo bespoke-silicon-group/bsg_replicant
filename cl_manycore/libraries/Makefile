@@ -7,7 +7,9 @@ LDLIBS  := -lfpga_mgmt
 HEADERS := bsg_manycore_driver.h
 HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_tile.h
+HEADERS += bsg_manycore_vcache.h
 HEADERS += bsg_manycore_mem.h
+HEADERS += bsg_manycore_eva.h
 HEADERS += bsg_manycore_mmio.h
 HEADERS += bsg_manycore_errno.h
 HEADERS += bsg_manycore_bits.h
@@ -16,16 +18,36 @@ HEADERS += bsg_manycore_memory_manager.h
 HEADERS += bsg_manycore_cuda.h
 HEADERS += bsg_manycore_features.h
 HEADERS += bsg_manycore_printing.h
+HEADERS += bsg_manycore_config.h
+HEADERS += bsg_manycore_coordinate.h
+HEADERS += bsg_manycore.h
+HEADERS += bsg_manycore_npa.h
+HEADERS += bsg_manycore_epa.h
+HEADERS += bsg_manycore_loader_dep.h
+
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
 OBJECTS += bsg_manycore_mem.o
+OBJECTS += bsg_manycore_eva.o
 OBJECTS += bsg_manycore_tile.o
 OBJECTS += bsg_manycore_bits.o
 OBJECTS += bsg_manycore_elf.o
 OBJECTS += bsg_manycore_memory_manager.o
 OBJECTS += bsg_manycore_cuda.o
 OBJECTS += bsg_manycore_printing.o
+OBJECTS += bsg_manycore_config.o
+OBJECTS += bsg_manycore.o
+OBJECTS += bsg_manycore_loader_dep.o
+
+DEBUG_OBJECTS :=
+
+bsg_manycore_loader.o: CXXFLAGS += -Wall -Werror
+bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-variable
+bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-function
+bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-but-set-variable
+
+$(DEBUG_OBJECTS): CXXFLAGS += -DDEBUG
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
@@ -38,7 +60,7 @@ install: build
 	cp -t /usr/include $(HEADERS)
 
 clean:
-	rm -f *.o
+	rm -f *.o libbsg_manycore_runtime.*
 
 uninstall: clean
 	sudo rm /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h

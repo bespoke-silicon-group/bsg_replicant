@@ -1,12 +1,14 @@
 #ifndef __TEST_VCACHE_STRIDE_H
 #define __TEST_VCACHE_STRIDE_H
 
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
+#ifdef COSIM
+#include <bsg_manycore.h>
+#else
+#include "bsg_manycore.h"
+#endif
+#include <stdint.h>
 #include <stdlib.h>
-#include "library_tests.h"
+#include <time.h>
+#include "../cl_manycore_regression.h"
 
 #endif // __TEST_VCACHE_STRIDE_H

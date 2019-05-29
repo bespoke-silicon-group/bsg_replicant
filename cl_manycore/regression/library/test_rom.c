@@ -1,104 +1,159 @@
 #include "test_rom.h"
 
-int read_npa_rom(uint8_t fd, int idx, int num, /* out */ uint32_t *result) {
-	hb_mc_response_packet_t buf[num];
-	int read = hb_mc_copy_from_epa(fd, &buf[0], 0, 0, idx, num);
-	if (read == HB_MC_SUCCESS) {
-		for (int i=0; i<num; i++) {
-			result[i] = hb_mc_response_packet_get_data(&buf[i]);
-			bsg_pr_test_info("Read rom data from address 0x%x: 0x%x\n", idx + i, result[i]); 
-		}
-		return HB_MC_SUCCESS;
-	}
-	bsg_pr_test_info("Read from ROM failed.\n");
-	return HB_MC_FAIL;
-}
-
-int read_rom(uint8_t fd, int num, /* out */ uint32_t *result) {
-	int rc;
-	rc = hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_DIM_X, &result[0]);
-	if(rc == HB_MC_FAIL)
-		return rc;
-	rc = hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_DIM_Y, &result[1]);
-	if(rc == HB_MC_FAIL)
-		return rc;
-	rc = hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &result[2]);
-	if(rc == HB_MC_FAIL)
-		return rc;
-	rc = hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &result[3]);
-	if(rc == HB_MC_FAIL)
-		return rc;
-	return HB_MC_SUCCESS;
-}
-
 int test_rom () {
-	int rc = 0;
-	uint8_t fd = 0;
+        int rc = 0, fail = 0;
+        uint32_t unexpected, expected, minexpected, maxexpected, result;
+        hb_mc_dimension_t dim;
+        hb_mc_coordinate_t host;
+        const hb_mc_config_t *config;
+        hb_mc_manycore_t mc = {0};
 
-	if(hb_mc_fifo_init(&fd) != HB_MC_SUCCESS){
-		fprintf(stderr, "test_rom(): failed to initialize host.\n");
-		return HB_MC_FAIL;
-	}
+        rc = hb_mc_manycore_init(&mc, "manycore@test_rom", 0);
+        if(rc != HB_MC_SUCCESS){
+		bsg_pr_test_err("Failed to initialize manycore device: %s\n",
+				hb_mc_strerror(rc));
+                return HB_MC_FAIL;
+        }
 
-	// In order, at offset 4, the elements of the array are:
-	// NETWORK_DIM_X, NETWORK_DIM_Y, HOST_INTERFACE_COORD_X, HOST_INTERFACE_COORD_Y
-	const char *desc[4] = { "Network X Dimension", "Network Y Dimension", "Host X Coordinate", "Host Y Coordinate" };
-	uint32_t expected[4] = { CL_MANYCORE_DIM_X, CL_MANYCORE_DIM_Y, CL_MANYCORE_DIM_X - 1, 0 };
-	uint32_t result[4] = {};
+        config = hb_mc_manycore_get_config(&mc);
+        /* Test host credit return value. Expect 16 and fail otherwise */
+        expected = 16;
+        bsg_pr_test_info("Checking that the number of host credits is %d\n", expected);
+        bsg_pr_test_info("(I know it's a magic number...)\n");
+        result = hb_mc_manycore_get_host_credits(&mc);
+        if(result != expected){
+                bsg_pr_test_err("Incorrect number of host credits. "
+                                "Got: %d, expected %d\n", result, expected);
+		fail = 1;
+        }
 
-	printf("Checking that the number of host credits is 16\n");
-	printf("(I know it's a magic number...)\n");
-	if(hb_mc_get_host_credits(fd) != 16){
-		fprintf(stderr, "Incorrect number of host credits\n");
-		return HB_MC_FAIL;
-	}
+        /* Read configuration and test values */
+#ifdef COSIM
+        expected = 0xFF;
+        bsg_pr_test_info("Checking that the COSIM Major Version Number is %d\n", expected);
+        result = hb_mc_config_get_version_major(config);
+        if(result != expected){
+                bsg_pr_test_err("(COSIM) Incorrect Major Version Number. "
+                                "Got: %d, expected %d\n", result, expected);
+		fail = 1;
+        }
+#else
+        minexpected = 0; maxexpected = 1;
+        bsg_pr_test_info("Checking that the F1 Major Version Number is "
+                        "between %d and %d\n", minexpected, maxexpected);
+        result = hb_mc_config_get_version_major(config);
+        if((result <= minexpected) || (result >= maxexpected)){
+                bsg_pr_test_err("Unexpected value for Major Version Number. "
+                                "Got: %d. Expected at least %d, at most %d\n",
+                                result, minexpected, maxexpected);
+		fail = 1;
+        }
+#endif
+	bsg_pr_test_info("Read Major Version = %" PRIu32 ", "
+			 "Minor Version = %" PRIu32 "\n",
+			 hb_mc_config_get_version_major(config),
+			 hb_mc_config_get_version_minor(config));
 
-	read_rom(fd, 4, result); 
-	bsg_pr_test_info("Comparing AXI space results:\n");
-	fflush(stderr);
-	rc = compare_results(4, desc, expected, result);
-	if(rc != HB_MC_SUCCESS){
-		return HB_MC_FAIL;
-	}
- 
-	printf("Read RCV_FIFO_MC_RES: %x\n", hb_mc_get_recv_vacancy(fd));
+        unexpected = 0;
+        bsg_pr_test_info("Checking that the BaseJump STL Hash is not "
+                        "%d\n", unexpected);
+        result = hb_mc_config_get_githash_basejump(config);
+        if(result == unexpected){
+                bsg_pr_test_err("Unexpected value for BaseJump STL Hash. "
+                                "Got: 0x%x. (Should not be this value)\n",
+                                unexpected);
+		fail = 1;
+        }
 
-	bsg_pr_test_info("Readback manycore link monitor register\n");
-	uint32_t recv_vacancy = hb_mc_get_recv_vacancy(fd);
-	bsg_pr_test_info("Recv vacancy is: %x\n", recv_vacancy);
-	bsg_pr_test_info("Readback ROM from tile (%d, %d)\n", 0, 0);
+        unexpected = 0;
+        bsg_pr_test_info("Checking that the BSG Manycore Hash is not "
+                        "%d\n", unexpected);
+        result = hb_mc_config_get_githash_manycore(config);
+        if(result == unexpected){
+                bsg_pr_test_err("Unexpected value for BSG Manycore Hash. "
+                                "Got: 0x%x. (Should not be this value)\n",
+                                unexpected);
+		fail = 1;
+        }
 
-	if(read_npa_rom(fd, 4, 4, result) == HB_MC_FAIL) {
-		return HB_MC_FAIL;
-	}
-	bsg_pr_test_info("Comparing NPA space results:\n");
-	rc = compare_results(4, desc, expected, result);
-	if(rc != HB_MC_SUCCESS){
-		return HB_MC_FAIL;
-	}
+        unexpected = 0;
+        bsg_pr_test_info("Checking that the BSG F1 Hash is not "
+                        "%d\n", unexpected);
+        result = hb_mc_config_get_githash_f1(config);
+        if(result == unexpected){
+                bsg_pr_test_err("Unexpected value for BSG F1 Hash. "
+                                "Got: 0x%x. (Should not be this value)\n",
+                                unexpected);
+		fail = 1;
+        }
 
-	if(hb_mc_fifo_finish(fd) != HB_MC_SUCCESS){
-		fprintf(stderr, "test_rom(): failed to terminate host.\n");
-		return HB_MC_FAIL;
-	}
+        dim = hb_mc_config_get_dimension(config);
+        minexpected = 1; maxexpected = 64;
 
-	return HB_MC_SUCCESS;
+        result = hb_mc_dimension_get_y(dim);
+        bsg_pr_test_info("Checking that the Manycore Y Dimension is "
+                        "between %d and %d\n", minexpected, maxexpected);
+        if((result <= minexpected) || (result >= maxexpected)){
+                bsg_pr_test_err("Unexpected value for Network Y Dimension. "
+                                "Got: %d. Expected at least %d, at most %d\n",
+                                result, minexpected, maxexpected);
+		fail = 1;
+        }
+
+
+        result = hb_mc_dimension_get_x(dim);
+        bsg_pr_test_info("Checking that the Manycore X Dimension is "
+                        "between %d and %d\n", minexpected, maxexpected);
+        if((result <= minexpected) || (result >= maxexpected)){
+                bsg_pr_test_err("Unexpected value for Network X Dimension. "
+                                "Got: %d. Expected at least %d, at most %d\n",
+                                result, minexpected, maxexpected);
+		fail = 1;
+        }
+
+        host = hb_mc_config_get_host_interface(config);
+
+        minexpected = 0; maxexpected = hb_mc_dimension_get_y(dim) - 1;
+        bsg_pr_test_info("Checking that the Host Interface Y Coordinate is "
+                        "between %d and %d\n", minexpected, maxexpected);
+        result = hb_mc_coordinate_get_y(host);
+        if((result < minexpected) || (result > maxexpected)){
+                bsg_pr_test_err("Unexpected value for Host Interface Y Coordinate. "
+                                "Got: %d. Expected at least %d, at most %d\n",
+                                result, minexpected, maxexpected);
+		fail = 1;
+        }
+
+        minexpected = 0; maxexpected = hb_mc_dimension_get_x(dim) - 1;
+        bsg_pr_test_info("Checking that the Host Interface X Coordinate is "
+                        "between %d and %d\n", minexpected, maxexpected);
+        result = hb_mc_coordinate_get_x(host);
+        if((result < minexpected) || (result > maxexpected)){
+                bsg_pr_test_err("Unexpected value for Host Interface X Coordinate. "
+                                "Got: %d. Expected at least %d, at most %d\n",
+                                result, minexpected, maxexpected);
+		fail = 1;
+        }
+
+        hb_mc_manycore_exit(&mc);
+
+        return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
 
 #ifdef COSIM
-void test_main(uint32_t *exit_code) { 
-	bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
-	int rc = test_rom();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+void test_main(uint32_t *exit_code) {
+        bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
+        int rc = test_rom();
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main() {
-	bsg_pr_test_info("test_rom Regression Test (F1)\n");
-	int rc = test_rom();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("test_rom Regression Test (F1)\n");
+        int rc = test_rom();
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
 
