@@ -1,4 +1,3 @@
-#define DEBUG
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
@@ -130,8 +129,9 @@ static const char *hb_mc_loader_segment_to_string(const Elf32_Phdr *phdr,
 						  char *buffer,
 						  size_t n)
 {
-	snprintf(buffer, n, "segment @ 0x%08" PRIx32 "",
-		 RV32_Addr_to_host(phdr->p_vaddr));
+	snprintf(buffer, n, "segment @ 0x%08" PRIx32 " (size = 0x%08" PRIx32 ")",
+		 RV32_Addr_to_host(phdr->p_vaddr),
+		 RV32_Word_to_host(phdr->p_memsz));
 	return buffer;
 }
 
@@ -161,14 +161,13 @@ static int hb_mc_loader_eva_write(const Elf32_Phdr *phdr,
 
 	rc = hb_mc_manycore_eva_write(mc, map, &tile, &start_eva, data, sz);
 	if (rc != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to write %s @ eva 0x%08x for tile (%d, %d)"
-			": %s\n",
-			__func__,
-			segname,
-			eva,
-			hb_mc_coordinate_get_x(tile),
-			hb_mc_coordinate_get_y(tile),
-			hb_mc_strerror(rc));
+		bsg_pr_err("%s: failed to write %s for tile (%d, %d)"
+			   ": %s\n",
+			   __func__,
+			   segname,
+			   hb_mc_coordinate_get_x(tile),
+			   hb_mc_coordinate_get_y(tile),
+			   hb_mc_strerror(rc));
 		return rc;
 	}
 
@@ -240,6 +239,8 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	cap = hb_mc_loader_get_tile_segment_capacity(mc, map, phdr, tile);
 	seg_sz = RV32_Word_to_host(phdr->p_memsz);
 
+	bsg_pr_dbg("%s: writing program data: %s\n", __func__, segname);
+
         /* return error if the hardware lacks the capacity */
 	if (cap < seg_sz) {
 		bsg_pr_err("%s: '%s' (%zu bytes) exceeds "
@@ -256,16 +257,26 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	size_t file_sz = RV32_Word_to_host(phdr->p_filesz); /* get the size of segdata */
 
 	rc = hb_mc_loader_eva_write(phdr, segdata, file_sz, eva, mc, map, tile);
-	if (rc != HB_MC_SUCCESS)
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: write: failed to load segment %s: %s\n",
+			   __func__,
+			   segname,
+			   hb_mc_strerror(rc));
 		return rc;
+	}
 
 	/* load zeroed data */
 	size_t zeros_sz  = seg_sz - file_sz;  // zeros are the remainder of the segment
 	eva += file_sz; // increment eva by number of initialized bytes written
 
 	rc = hb_mc_loader_eva_memset(phdr, 0, zeros_sz, eva, mc, map, tile);
-	if (rc != HB_MC_SUCCESS)
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: memset: failed to load segment %s: %s\n",
+			   __func__,
+			   segname,
+			   hb_mc_strerror(rc));
 		return rc;
+	}
 
 	return HB_MC_SUCCESS;
 }
@@ -587,8 +598,10 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 		const unsigned char *segdata;
 
 		rc = hb_mc_loader_get_segment(bin, sz, segidx, &phdr, &segdata);
-		if (rc != HB_MC_SUCCESS)
+		if (rc != HB_MC_SUCCESS) {
+			bsg_pr_dbg("%s: failed to get segment %d\n", __func__, segidx);
 			return rc;
+		}
 
 		/* check if program header should be loaded never, once, or for each tile */
 		if (hb_mc_loader_segment_is_load_never(mc, phdr, map, tiles, ntiles)) {
@@ -597,8 +610,9 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 		} else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
 			// this segment should be loaded only once (e.g. DRAM = .text + .dram)
 			rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
-			if (rc != HB_MC_SUCCESS)
+			if (rc != HB_MC_SUCCESS) {
 				return rc;
+			}
 		} else { // this segment should be loaded once for each tile (e.g. DMEM = .data)
 			rc = hb_mc_loader_load_tiles_segment(mc, map, phdr, segdata,
 							     tiles, ntiles);
@@ -749,18 +763,24 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 
         // Validate ELF File
 	rc = hb_mc_loader_elf_validate(bin, sz);
-	if (rc != HB_MC_SUCCESS)
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: failed to validate binary\n", __func__);
 		return rc;
+	}
 
 	// Set CSRs
 	rc = hb_mc_loader_tiles_initialize(mc, map, tiles, ntiles);
-	if (rc != HB_MC_SUCCESS)
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: failed to initialize tiles\n", __func__);
 		return rc;
+	}
 
         // Load segments
 	rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
-	if (rc != HB_MC_SUCCESS)
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: failed to load segments\n", __func__);
 		return rc;
+	}
 
 	return HB_MC_SUCCESS;
 }
