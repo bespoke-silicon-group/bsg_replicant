@@ -99,6 +99,7 @@ int test_manycore_eva () {
 			eva = rand() % DMEM_EPA_SIZE;
 			tgt_sz = DMEM_EPA_SIZE - eva;
 			tgt_epa = eva + DMEM_EPA_OFFSET;
+			eva = eva + DMEM_EVA_OFFSET;
 			bsg_pr_test_info("Creating Local EVA: 0x%x\n", eva);
 
 			tgt_x = src_x;
@@ -107,6 +108,7 @@ int test_manycore_eva () {
 			eva = rand() % DMEM_EPA_SIZE;
 			tgt_sz = DMEM_EPA_SIZE - eva;
 			tgt_epa = eva + DMEM_EPA_OFFSET;
+			eva = eva + DMEM_EVA_OFFSET;
 
 			tgt_x = (rand() % (dim_x - origin_x)) + origin_x;
 			tgt_y = (rand() % ((dim_y / 2) - origin_y)) + origin_y;
@@ -119,6 +121,7 @@ int test_manycore_eva () {
 			eva = rand() % DMEM_EPA_SIZE;
 			tgt_sz = DMEM_EPA_SIZE - eva;
 			tgt_epa = eva + DMEM_EPA_OFFSET;
+			eva = eva + DMEM_EVA_OFFSET;
 
 			tgt_x = (rand() % (dim_x - 1)) + 1;
 			tgt_y = rand() % dim_y;

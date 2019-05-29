@@ -5,6 +5,7 @@
 #define LOCAL_EPA_SIZE (1<<18)
 #define DMEM_EPA_SIZE (1<<12)
 #define DMEM_EPA_OFFSET (1<<12)
+#define DMEM_EVA_OFFSET (1<<12)
 
 #define GROUP_INDICATOR (1 << 29)
 #define GROUP_EPA_SIZE DMEM_EPA_SIZE
