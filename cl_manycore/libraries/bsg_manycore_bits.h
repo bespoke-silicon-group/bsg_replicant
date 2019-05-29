@@ -1,11 +1,12 @@
 #ifndef BSG_MANYCORE_BITS_H
 #define BSG_MANYCORE_BITS_H
-#ifndef COSIM
 #include <bsg_manycore_features.h>
+
+#ifdef __cplusplus
+#include <cstdint>
 #else
-#include "bsg_manycore_features.h"
-#endif
 #include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

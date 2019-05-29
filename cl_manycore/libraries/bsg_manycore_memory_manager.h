@@ -20,11 +20,7 @@
 #ifndef _XDMA_MEMORY_MANAGER_H_
 #define _XDMA_MEMORY_MANAGER_H_
 
-#ifndef COSIM
 #include <bsg_manycore_features.h>
-#else
-#include "bsg_manycore_features.h"
-#endif
 
 #include <mutex>
 #include <list>

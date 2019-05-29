@@ -1,8 +1,4 @@
-#ifndef COSIM
 #include <bsg_manycore_bits.h>
-#else
-#include "bsg_manycore_bits.h"
-#endif
 
 /* returns desired bits aligned to the LSB.
  * */

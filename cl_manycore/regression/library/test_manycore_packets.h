@@ -1,6 +1,4 @@
-#ifndef __TEST_DMEM_READ_WRITE_H
-#define __TEST_DMEM_READ_WRITE_H
-
+#pragma once
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -9,4 +7,7 @@
 #include <stdlib.h>
 #include "library_tests.h"
 
-#endif // __TEST_DMEM_READ_WRITE_H
+#define DMEM_BASE 0x1000
+
+
+

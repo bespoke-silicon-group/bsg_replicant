@@ -42,8 +42,13 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_driver.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_elf.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp 
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_eva.cpp 
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_tile.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_printing.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_config.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader_dep.cpp
 
 CFLAGS   = -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
@@ -56,7 +61,7 @@ SIM_LOG_TARGETS  = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
 
 cosim: $(SIM_LOG_TARGETS)
 
-%.so: $(TESTS_PATH)/%.c $(C_LIB_SRC) $(C_DPI_SRC) 
+%.so: $(TESTS_PATH)/%.c $(C_DPI_SRC) $(C_LIB_SRC) 
 	xsc $? $(XSC_FLAGS) $(XSC_INCLUDES) -o $@
 
 # HARDWARE_PATH must be set by including makefile

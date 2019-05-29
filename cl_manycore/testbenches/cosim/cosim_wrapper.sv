@@ -13,25 +13,30 @@
 // implied. See the License for the specific language governing permissions and
 // limitations under the License.
     
+
 module cosim_wrapper();
 
    initial begin
       int exit_code;
+      longint t;
       
       tb.power_up();
 
       tb.test_main(exit_code);
       
       #50ns;
-
+       
       tb.power_down();
       if(exit_code < 0) 
           $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
       else 
           $display("BSG COSIM PASS: Test passed!");
           
+       $display(t);
       
       $finish;
    end
 
 endmodule // cosim_wrapper
+
+

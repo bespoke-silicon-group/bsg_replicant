@@ -6,6 +6,23 @@ ifndef CL_DIR
 $(error "CL_DIR undefined. Set CL_DIR before running this makefile")
 endif
 
+# Default to overriding BSG_IP_CORES_DIR and BSG_MANYCORE_DIR and warn
+ifneq ("$(wildcard $(CL_DIR)/../../Makefile.deps)","")
+ORANGE=\033[0;33m
+NC=\033[0m
+
+ifdef BSG_IP_CORES_DIR
+$(warning $(shell echo -e "\t\n\t$(ORANGE)Overriding BSG_IP_CORES_DIR environment variable with Bladerunner defaults.$(NC)"))
+endif
+
+ifdef BSG_MANYCORE_DIR
+$(warning $(shell echo -e "\t\n\t$(ORANGE)Overriding BSG_MANYCORE_DIR environment variable with Bladerunner defaults.$(NC)"))
+endif
+
+include $(CL_DIR)/../../Makefile.common
+
+endif
+
 ifndef BSG_IP_CORES_DIR
 $(error "BSG_IP_CORES_DIR environment variable undefined.")
 endif
