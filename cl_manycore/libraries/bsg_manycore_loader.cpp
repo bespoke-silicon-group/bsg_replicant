@@ -663,7 +663,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 }
 
 /**
- * Perform register steup for a tile.
+ * Perform register setup for a tile.
  * @param[in] mc         A manycore instance.
  * @param[in] map        An EVA<->NPA map.
  * @param[in] tile       A tile to setup.
@@ -674,26 +674,15 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 					   const hb_mc_eva_map_t *map,
 					   hb_mc_coordinate_t tile,
-					   const hb_mc_coordinate_t *all_tiles,
-					   uint32_t ntiles)
+					   const hb_mc_coordinate_t *origin)
 {
 	int rc;
 
-	if (ntiles == 0)
-		return HB_MC_INVALID;
-
 	/* set the origin tile */
-	hb_mc_coordinate_t origin = all_tiles[0]; // tile[0] is always the origin
-	hb_mc_npa_t origin_x_npa = hb_mc_npa(tile, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X);
-	hb_mc_npa_t origin_y_npa = hb_mc_npa(tile, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y);
+	rc = hb_mc_tile_set_origin(mc, &tile, origin);
 
-	rc = hb_mc_manycore_write32(mc, &origin_x_npa, hb_mc_coordinate_get_x(origin));
-	if (rc != HB_MC_SUCCESS)
-		return rc;
-
-	rc = hb_mc_manycore_write32(mc, &origin_y_npa, hb_mc_coordinate_get_y(origin));
 	if (rc != HB_MC_SUCCESS) {
-		bsg_pr_dbg("%s: failed to write (%d,%d)'s origin Y register: %s\n",
+		bsg_pr_dbg("%s: failed to write (%d,%d)'s origin registers: %s\n",
 			   __func__,
 			   hb_mc_coordinate_get_x(tile),
 			   hb_mc_coordinate_get_y(tile),
@@ -718,8 +707,13 @@ static int hb_mc_loader_tiles_set_registers(hb_mc_manycore_t *mc,
 					    uint32_t ntiles)
 {
 	int rc;
+
+	if (ntiles == 0)
+		return HB_MC_INVALID;
+
 	for (uint32_t i = 0; i < ntiles; i++) {
-		rc = hb_mc_loader_tile_set_registers(mc, map, tiles[i], tiles, ntiles);
+		// tiles[0] is always the origin
+		rc = hb_mc_loader_tile_set_registers(mc, map, tiles[i], tiles);
 		if (rc != HB_MC_SUCCESS)
 			return rc;
 	}
