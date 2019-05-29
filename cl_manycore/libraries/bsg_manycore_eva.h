@@ -73,6 +73,57 @@ typedef struct __hb_mc_eva_map_t{
 			hb_mc_eva_t *eva, size_t *sz);
 } hb_mc_eva_map_t;
 
+/**
+ * Translate an Endpoint Virtual Address in a source tile's address space
+ * to a Network Physical Address
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int default_eva_to_npa(const hb_mc_config_t *cfg, 
+		const void *priv,
+		const hb_mc_coordinate_t *src, 
+		const hb_mc_eva_t *eva,
+		hb_mc_npa_t *npa, size_t *sz);
+
+/**
+ * Translate a Network Physical Address to an Endpoint Virtual Address in a
+ * target tile's address space
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  tgt    Coordinates of the target tile
+ * @param[in]  len    Number of tiles in the target tile's group
+ * @param[in]  npa    An npa to translate
+ * @param[out] eva    An eva to set by translating #npa
+ * @param[out] sz     The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int default_npa_to_eva(const hb_mc_config_t *cfg,
+		const void *priv,
+		const hb_mc_coordinate_t *tgt, 
+		const hb_mc_npa_t *npa, 
+		hb_mc_eva_t *eva, size_t *sz);
+
+/**
+ * Returns the number of contiguous bytes following an EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  eva    An eva
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_size(
+	const hb_mc_config_t *cfg,
+	const void *priv,
+	const hb_mc_eva_t *eva,
+	size_t *sz);
+
+
 extern const hb_mc_coordinate_t default_origin;
 extern hb_mc_eva_map_t default_map;
 
