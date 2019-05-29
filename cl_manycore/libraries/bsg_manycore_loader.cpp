@@ -705,26 +705,50 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 }
 
 /**
- * Perform register setup for tiles.
+ * Performance miscellaneous initialization on one tile.
  * @param[in] mc      A manycore instance.
- * @param[in] map     An EVA<->NPA address map.
- * @param[in] tiles   Tiles to setup.
- * @param[in] ntiles  The number of tiles.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ * @param[in] map     An EVA<->NPA map.
+ * @param[in] tile    A tile to initialize
+ * @param[in] tiles   The list of tiles being initialized.
+ * @param[in] ntiles  The number of tiles being initialized.
+ * @return HB_MC_SUCCESS if an error occured. Otherwise an error code is returned.
  */
-static int hb_mc_loader_tiles_set_registers(hb_mc_manycore_t *mc,
-					    const hb_mc_eva_map_t *map,
-					    const hb_mc_coordinate_t *tiles,
-					    uint32_t ntiles)
+static int hb_mc_loader_tile_initialize(hb_mc_manycore_t *mc,
+					const hb_mc_eva_map_t *map,
+					hb_mc_coordinate_t tile,
+					const hb_mc_coordinate_t *all_tiles,
+					uint32_t ntiles)
+{
+	int rc;
+
+	rc = hb_mc_loader_tile_set_registers(mc, map, tile, all_tiles, ntiles);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Performance miscellaneous initialization of tiles.
+ * @param[in] mc      A manycore instance.
+ * @param[in] map     An EVA<->NPA map.
+ * @param[in] tiles   The list of tiles to initialize.
+ * @param[in] ntiles  The number of tiles to initialize.
+ * @return HB_MC_SUCCESS if an error occured. Otherwise an error code is returned.
+ */
+static int hb_mc_loader_tiles_initialize(hb_mc_manycore_t *mc,
+					 const hb_mc_eva_map_t *map,
+					 const hb_mc_coordinate_t *tiles,
+					 uint32_t ntiles)
 {
 	int rc;
 	for (uint32_t i = 0; i < ntiles; i++) {
-		rc = hb_mc_loader_tile_set_registers(mc, map, tiles[i], tiles, ntiles);
+		rc = hb_mc_loader_tile_initialize(mc, map, tiles[i], tiles, ntiles);
 		if (rc != HB_MC_SUCCESS)
 			return rc;
 	}
 
-	return HB_MC_FAIL;
+	return HB_MC_SUCCESS;
 }
 
 /**
@@ -757,7 +781,7 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 		return rc;
 
 	// Set CSRs
-	rc = hb_mc_loader_tiles_set_registers(mc, map, tiles, ntiles);
+	rc = hb_mc_loader_tiles_initialize(mc, map, tiles, ntiles);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
