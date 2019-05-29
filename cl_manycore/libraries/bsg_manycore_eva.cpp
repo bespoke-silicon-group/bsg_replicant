@@ -334,11 +334,11 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa(const hb_mc_config_t *cfg, 
-			const void *priv,
-			const hb_mc_coordinate_t *src, 
-			const hb_mc_eva_t *eva,
-			hb_mc_npa_t *npa, size_t *sz)
+int default_eva_to_npa(const hb_mc_config_t *cfg, 
+		const void *priv,
+		const hb_mc_coordinate_t *src, 
+		const hb_mc_eva_t *eva,
+		hb_mc_npa_t *npa, size_t *sz)
 {
 	const hb_mc_coordinate_t *origin;
 
@@ -370,22 +370,22 @@ static int default_eva_to_npa(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_npa_to_eva(const hb_mc_config_t *cfg,
-			const void *priv,
-			const hb_mc_coordinate_t *tgt, 
-			const hb_mc_npa_t *npa, 
-			hb_mc_eva_t *eva, size_t *sz)
+int default_npa_to_eva(const hb_mc_config_t *cfg,
+		const void *priv,
+		const hb_mc_coordinate_t *tgt, 
+		const hb_mc_npa_t *npa, 
+		hb_mc_eva_t *eva, size_t *sz)
 {
 	bsg_pr_err("%s: this function is not yet implemented\n", __func__);
 	/*
-	if(default_npa_is_dram(npa, c))
-		return default_npa_to_eva_dram(cfg, c, npa, eva, sz);
-	if(default_npa_is_global(npa, c))
-		return default_npa_to_eva_global(cfg, c, npa, eva, sz);
-	if(default_npa_is_group(npa, c))
-		return default_npa_to_eva_group(cfg, c, npa, eva, sz);
-	if(default_npa_is_local(npa, c))
-		return default_npa_to_eva_local(cfg, c, npa, eva, sz);
+	  if(default_npa_is_dram(npa, c))
+	  return default_npa_to_eva_dram(cfg, c, npa, eva, sz);
+	  if(default_npa_is_global(npa, c))
+	  return default_npa_to_eva_global(cfg, c, npa, eva, sz);
+	  if(default_npa_is_group(npa, c))
+	  return default_npa_to_eva_group(cfg, c, npa, eva, sz);
+	  if(default_npa_is_local(npa, c))
+	  return default_npa_to_eva_local(cfg, c, npa, eva, sz);
 	*/
 	return HB_MC_FAIL;
 }
