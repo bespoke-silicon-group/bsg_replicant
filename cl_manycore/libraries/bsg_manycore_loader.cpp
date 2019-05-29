@@ -652,6 +652,16 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 {
 	int rc;
 
+	rc = hb_mc_tile_freeze(mc, &tile);
+	if (rc != HB_MC_SUCCESS) {
+		bsg_pr_dbg("%s: failed to freeze (%" PRId32 ",%" PRId32 "): %s\n",
+			   __func__,
+			   hb_mc_coordinate_get_x(tile),
+			   hb_mc_coordinate_get_y(tile),
+			   hb_mc_strerror(rc));
+		return rc;
+	}
+
 	/* set the origin tile */
 	rc = hb_mc_tile_set_origin(mc, &tile, &all_tiles[0]); // we assume 0 is the origin
 
@@ -742,13 +752,13 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
-        // Load segments
-	rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
+	// Set CSRs
+	rc = hb_mc_loader_tiles_initialize(mc, map, tiles, ntiles);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
-	// Set CSRs
-	rc = hb_mc_loader_tiles_initialize(mc, map, tiles, ntiles);
+        // Load segments
+	rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
