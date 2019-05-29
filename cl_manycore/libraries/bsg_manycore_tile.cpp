@@ -56,7 +56,7 @@ int hb_mc_tile_set_origin_y(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile
 			const hb_mc_idx_t y)
 {
 	hb_mc_npa_t npa = hb_mc_npa(*tile, 
-				HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X);
+				HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y);
 	return hb_mc_manycore_write32(mc, &npa, y);
 }
 
