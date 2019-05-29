@@ -54,13 +54,14 @@ static int default_eva_to_epa_tile(
 	hb_mc_epa_t *epa,
 	size_t *sz)
 {
-	hb_mc_eva_t eva_masked;
+	hb_mc_eva_t eva_masked, eva_dmem;
 
 	eva_masked = hb_mc_eva_addr(eva) & MAKE_MASK(HB_MC_EPA_LOGSZ);
+	eva_dmem = eva_masked - HB_MC_TILE_EVA_DMEM_BASE;
 
-	if((eva_masked - HB_MC_TILE_EVA_DMEM_BASE) < HB_MC_TILE_DMEM_SIZE){
-		*epa = (eva_masked - HB_MC_TILE_EVA_DMEM_BASE) + HB_MC_TILE_EPA_DMEM_BASE;
-		*sz = HB_MC_TILE_DMEM_SIZE - eva_masked;
+	if(eva_dmem < HB_MC_TILE_DMEM_SIZE){
+		*epa = eva_dmem + HB_MC_TILE_EPA_DMEM_BASE;
+		*sz = HB_MC_TILE_DMEM_SIZE - eva_dmem;
 	}else if(eva_masked == HB_MC_TILE_EPA_CSR_FREEZE){
 		*epa = eva_masked;
 		*sz = sizeof(uint32_t);
