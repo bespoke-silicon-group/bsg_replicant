@@ -1068,7 +1068,7 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
 
 	/* transmit the request */
 	manycore_pr_dbg(mc, "Sending %d-byte write request to NPA "
-			"(x: %d, y: %d, 0x%x)\n",
+			"(x: %d, y: %d, 0x%08x)\n",
 			sz,
 			hb_mc_npa_get_x(npa),
 			hb_mc_npa_get_y(npa),
