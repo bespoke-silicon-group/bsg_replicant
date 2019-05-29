@@ -5,12 +5,15 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_bits.h>
 #include <bsg_manycore_config.h>
-
 #include <endian.h>
 
 #ifdef __cplusplus
 #include <cstdint>
+#include <cinttypes>
+#include <cstdio>
 #else
+#include <stdio.h>
+#include <inttypes.h>
 #include <stdint.h>
 #endif
 
@@ -81,19 +84,19 @@ typedef struct request_packet {
         uint8_t  x_src; //!< x coordinate of the requester
         uint8_t  y_src; //!< y coordinate of the requester
         uint32_t data;  //!< packet's payload data
-        uint8_t  mask;  //!< 4-bit byte mask 
-        uint8_t  op;    //!< opcode 
-        uint32_t addr;  //!< address field (EPA)       
+        uint8_t  mask;  //!< 4-bit byte mask
+        uint8_t  op;    //!< opcode
+        uint32_t addr;  //!< address field (EPA)
         uint8_t  reserved[2];
 }  __attribute__((packed)) hb_mc_request_packet_t;
-        
-/* 
+
+/*
  * * The raw response packets that are used to respond to requests.  You should not read from any of the fields directly, instead use the accessor functions.
  */
 typedef struct response_packet {
         uint8_t  x_dst; //!< x coordinate of the requester
         uint8_t  y_dst; //!< y coordinate of the requester
-        uint32_t  load_id; //!< unused 
+        uint32_t  load_id; //!< unused
         uint32_t data; //!< packet's payload data
         uint8_t  op;    //!< opcode
         uint8_t  reserved[5];
@@ -123,7 +126,7 @@ static inline const char *hb_mc_fifo_tx_to_string(hb_mc_fifo_tx_t type)
     };
     return strtab[type];
 }
-        
+
 inline hb_mc_direction_t hb_mc_get_rx_direction(hb_mc_fifo_rx_t d){
 	return (hb_mc_direction_t)d;
 }
@@ -140,7 +143,7 @@ int hb_mc_all_host_req_complete(uint8_t fd);
 
 int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
 uint8_t hb_mc_get_manycore_dimension_x();
-uint8_t hb_mc_get_manycore_dimension_y(); 
+uint8_t hb_mc_get_manycore_dimension_y();
 
 int hb_mc_fifo_finish(uint8_t fd);
 int hb_mc_fifo_init(uint8_t *fd);
@@ -228,7 +231,7 @@ static inline uint32_t hb_mc_request_packet_get_addr(const hb_mc_request_packet_
  */
 static inline uint32_t hb_mc_request_packet_get_data(const hb_mc_request_packet_t *packet)
 {
-        return le32toh(packet->data); 
+        return le32toh(packet->data);
 }
 
 /**
@@ -239,12 +242,12 @@ static inline uint32_t hb_mc_request_packet_get_data(const hb_mc_request_packet_
 static inline uint32_t hb_mc_request_packet_get_data_valid(const hb_mc_request_packet_t *packet)
 {
 	uint32_t valid = 0;
-	for (int i = 0; i < 4; i++) { /* TODO: hardcoded */		
+	for (int i = 0; i < 4; i++) { /* TODO: hardcoded */
 		if (hb_mc_get_bits(packet->mask, i, 1) == 1)
 			valid |=  hb_mc_get_bits(packet->data, i*8, 8);
 	}
-        return le32toh(valid); 
-	
+        return le32toh(valid);
+
 }
 /**
  * Set the X coordinate of the requester in a request packet
@@ -330,26 +333,26 @@ static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet,
  * Checks if 2 request packets are the same.
  * @param[in] a a request packet
  * @param[in] b a request packet
- * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the non-data fields of a an b must be the same and the valid data must be the same. 
+ * @return HB_MC_SUCCESS if packets match and HB_MC_FAIL if packets do not match. In order to match, all of the non-data fields of a an b must be the same and the valid data must be the same.
  */
 static int hb_mc_request_packet_equals(const hb_mc_request_packet_t *a, const hb_mc_request_packet_t *b) {
 	if (!a || !b) {
 		return HB_MC_FAIL;
 	}
 	else if (hb_mc_request_packet_get_x_dst(a) != hb_mc_request_packet_get_x_dst(b)) {
-		return HB_MC_FAIL;	
+		return HB_MC_FAIL;
 	}
 	else if (hb_mc_request_packet_get_y_dst(a) != hb_mc_request_packet_get_y_dst(b)) {
-		return HB_MC_FAIL;	
+		return HB_MC_FAIL;
 	}
 	else if (hb_mc_request_packet_get_x_src(a) != hb_mc_request_packet_get_x_src(b)) {
-		return HB_MC_FAIL;	
+		return HB_MC_FAIL;
 	}
 	else if (hb_mc_request_packet_get_y_src(a) != hb_mc_request_packet_get_y_src(b)) {
-		return HB_MC_FAIL;	
+		return HB_MC_FAIL;
 	}
 	else if (hb_mc_request_packet_get_data_valid(a) != hb_mc_request_packet_get_data_valid(b)) {
-		return HB_MC_FAIL;	
+		return HB_MC_FAIL;
 	}
 	else if (hb_mc_request_packet_get_addr(a) != hb_mc_request_packet_get_addr(b)) {
 		return HB_MC_FAIL;
@@ -359,7 +362,7 @@ static int hb_mc_request_packet_equals(const hb_mc_request_packet_t *a, const hb
 
 /*
  * Formats a Manycore request packet.
- * @param packet packet struct that this function will populate. caller must allocate. 
+ * @param packet packet struct that this function will populate. caller must allocate.
  * @param addr address to send packet to.
  * @param data packet's data
  * @param x destination tile's x coordinate
@@ -369,11 +372,11 @@ static int hb_mc_request_packet_equals(const hb_mc_request_packet_t *a, const hb
  * */
 static inline int hb_mc_format_request_packet(uint8_t fd, hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode) {
         uint32_t intf_coord_x, intf_coord_y;
-        
+
         if(hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &intf_coord_x) != HB_MC_SUCCESS ||
            hb_mc_get_config(fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &intf_coord_y) != HB_MC_SUCCESS)
                 return HB_MC_FAIL;
-        
+
 	hb_mc_request_packet_set_x_dst(packet, x);
 	hb_mc_request_packet_set_y_dst(packet, y);
 	hb_mc_request_packet_set_x_src(packet, (uint8_t)intf_coord_x);
@@ -382,6 +385,29 @@ static inline int hb_mc_format_request_packet(uint8_t fd, hb_mc_request_packet_t
 	hb_mc_request_packet_set_mask(packet, HB_MC_PACKET_REQUEST_MASK_WORD);
 	hb_mc_request_packet_set_op(packet, opcode);
 	hb_mc_request_packet_set_addr(packet, addr);
+}
+
+/**
+ */
+static inline const char *hb_mc_request_packet_to_string(const hb_mc_request_packet_t *packet,
+							 char *buffer,
+							 size_t sz)
+{
+	snprintf(buffer, sz,
+		 "response_pkt{"
+		 "dst=(%" PRIu8 ",%" PRIu8 "),"
+		 "addr=,0x%08" PRIx32 ""
+		 "data=,0x%08" PRIx32 ""
+		 "op=0x%02" PRIx8 ""
+		 "}",
+		 hb_mc_request_packet_get_x_dst(packet),
+		 hb_mc_request_packet_get_y_dst(packet),
+		 hb_mc_request_packet_get_addr(packet),
+		 hb_mc_request_packet_get_data(packet),
+		 hb_mc_request_packet_get_op(packet)
+		);
+
+	return buffer;
 }
 
 
@@ -474,10 +500,11 @@ static inline void hb_mc_response_packet_set_op(hb_mc_response_packet_t *packet,
 {
         packet->op = op;
 }
-        
+
+
 /*
  * Formats a Manycore request packet.
- * @param packet packet struct that this function will populate. caller must allocate. 
+ * @param packet packet struct that this function will populate. caller must allocate.
  * @param x destination tile's x coordinate
  * @param y destination tile's y coordinate
  * @param data packet's data
@@ -490,7 +517,7 @@ static inline void hb_mc_format_response_packet(hb_mc_response_packet_t *packet,
 	hb_mc_response_packet_set_data(packet, data);
 	hb_mc_response_packet_set_op(packet, opcode);
 }
-        
+
 
 #ifdef __cplusplus
 }
