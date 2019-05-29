@@ -632,7 +632,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
-	return HB_MC_FAIL;
+	return HB_MC_SUCCESS;
 }
 
 /**
