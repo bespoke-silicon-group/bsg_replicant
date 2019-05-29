@@ -1,56 +1,156 @@
+#include <bsg_manycore.h>
+#include <bsg_manycore_printing.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_tile.h>
+
+#include <sys/stat.h>
+
 #include "test_bsg_dram_loopback_cache.h"
 
-int test_loopback () {
-	uint8_t fd;
-	if (hb_mc_fifo_init(&fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "test_bsg_dram_loopback_cache(): failed to initialize host.\n");
+#define TEST_NAME "test_bsg_dram_loopback_cache"
+
+static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
+{
+	struct stat st;
+	FILE *f;
+	int r;
+	unsigned char *data;
+
+	if ((r = stat(file_name, &st)) != 0) {
+		bsg_pr_err("could not stat '%s': %m\n", file_name);
 		return HB_MC_FAIL;
 	}
 
-	uint8_t x = 0, y = 1;
-	hb_mc_tile_freeze_dep(fd, 0, 1);	
-	hb_mc_tile_set_group_origin(fd, 0, 1, 0, 1);
-	bsg_pr_test_info("file to be loaded is %s\n", getenv("MAIN_LOOPBACK"));	
-	
-	
-	char* bsg_manycore_dir = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/"
+	if (!(f = fopen(file_name, "rb"))) {
+		bsg_pr_err("failed to open '%s': %m\n", file_name);
+		return HB_MC_FAIL;
+	}
+
+	if (!(data = (unsigned char *) malloc(st.st_size))) {
+		bsg_pr_err("failed to read '%s': %m\n", file_name);
+		fclose(f);
+		return HB_MC_FAIL;
+	}
+
+	if ((r = fread(data, st.st_size, 1, f)) != 1) {
+		bsg_pr_err("failed to read '%s': %m\n", file_name);
+		fclose(f);
+		free(data);
+		return HB_MC_FAIL;
+	}
+
+	fclose(f);
+	*file_data = data;
+	*file_size = st.st_size;
+	return HB_MC_SUCCESS;
+}
+
+int test_loopback () {
+	unsigned char *program_data;
+	size_t program_size;
+	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
+	int err, r = HB_MC_FAIL;
+
+
+	const char *program_file_name = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/"
 		"bsg_dram_loopback_cache/main.riscv";
 
-	if (hb_mc_load_binary(fd, bsg_manycore_dir, &x, &y, 1) != HB_MC_SUCCESS) 
-		return HB_MC_FAIL; /* could not load binary */
+	// read in the program data from the file system
+	err = read_program_file(program_file_name, &program_data, &program_size);
+	if (err != HB_MC_SUCCESS)
+		return err;
 
-  	hb_mc_tile_unfreeze_dep(fd, 0, 1);
+	// initialize the manycore
+	err = hb_mc_manycore_init(&manycore, TEST_NAME, 0);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("failed to initialize manycore instance: %s\n",
+			   hb_mc_strerror(err));
+		return err;
+	}
+
+	/* initialize the tile */
+	hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
+	hb_mc_coordinate_t origin = hb_mc_coordinate(0,1);
+
+	// freeze the tile
+	err = hb_mc_tile_freeze(mc, &target);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("failed to freeze tile (%" PRId32 ", %" PRId32 "): %s\n",
+			   hb_mc_coordinate_get_x(target),
+			   hb_mc_coordinate_get_y(target),
+			   hb_mc_strerror(err));
+		goto cleanup;
+	}
+
+	// set its origin
+	err = hb_mc_tile_set_origin(mc, &target, &origin);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("failed to set origin of (%" PRId32 ", %" PRId32 ") "
+			   "to (%" PRId32 ", %" PRId32 "): %s\n",
+			   hb_mc_coordinate_get_x(target),
+			   hb_mc_coordinate_get_y(target),
+			   hb_mc_coordinate_get_x(origin),
+			   hb_mc_coordinate_get_y(origin),
+			   hb_mc_strerror(err));
+		goto cleanup;
+	}
+
+	/* load the program */
+	err = hb_mc_loader_load(program_data, program_size,
+				mc, &default_map,
+				&target, 1);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("failed to load binary '%s': %s\n",
+			   program_file_name,
+			   hb_mc_strerror(err));
+		return err;
+	}
+
+	err = hb_mc_tile_unfreeze(mc, &target);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("failed to unfreeze tile (%" PRId32", %" PRId32 "): %s\n",
+			   hb_mc_coordinate_get_x(target),
+			   hb_mc_coordinate_get_y(target),
+			   hb_mc_strerror(err));
+		goto cleanup;
+	}
+
+	usleep(100);
 
 	bsg_pr_test_info("Checking receive packet...\n");
-	usleep(100); /* 100 us */
-	hb_mc_request_packet_t manycore_finish;
-	hb_mc_fifo_receive(fd, HB_MC_FIFO_RX_REQ, &manycore_finish);	
 
-	uint32_t addr = hb_mc_request_packet_get_addr(&manycore_finish);
-	uint32_t data = hb_mc_request_packet_get_data(&manycore_finish);
-	uint32_t mask = hb_mc_request_packet_get_mask(&manycore_finish);
-	uint32_t x_src = hb_mc_request_packet_get_x_src(&manycore_finish);
-	uint32_t y_src = hb_mc_request_packet_get_y_src(&manycore_finish);
-	uint32_t x_dst = hb_mc_request_packet_get_x_dst(&manycore_finish);
-	uint32_t y_dst = hb_mc_request_packet_get_y_dst(&manycore_finish);
-	uint32_t op = hb_mc_request_packet_get_op(&manycore_finish);
-	bsg_pr_test_info("Manycore finish packet received at Address 0x%x at coordinates (0x%x, 0x%x) from (0x%x, 0x%x). Operation: 0x%x, Data: 0x%x\n", addr, x_dst, y_dst, x_src, y_src, op, data);
-
-	if (hb_mc_fifo_finish(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "test_bsg_dram_loopback_cache(): failed to terminate host.\n");
-		return HB_MC_FAIL;
+	hb_mc_packet_t finish;
+	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, -1);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("failed to receive packet: %s\n",
+			   hb_mc_strerror(err));
+		goto cleanup;
 	}
 
 
-	if (addr == 0x3ab4)
-		return HB_MC_SUCCESS;
-	else
-		return HB_MC_FAIL;
+	char buf[256];
+	bsg_pr_test_info("Received manycore finish packet %s\n",
+			 hb_mc_request_packet_to_string(&finish.request, buf ,sizeof(buf)));
+
+	uint32_t magic = 0x3ab4;
+	if (hb_mc_request_packet_get_addr(&finish.request) != magic) {
+		bsg_pr_test_info("Packet does not match finish packet 0x%08" PRIx32 "\n",
+			magic);
+		goto cleanup;
+	}
+
+	// success
+	r = HB_MC_SUCCESS;
+
+cleanup:
+	hb_mc_manycore_exit(mc);
+	return r;
 }
 
 
 #ifdef COSIM
-void test_main(uint32_t *exit_code) {	
+void test_main(uint32_t *exit_code) {
 	bsg_pr_test_info("test_bsg_dram_loopback_cache Regression Test (COSIMULATION)\n");
 	int rc = test_loopback();
 	*exit_code = rc;
