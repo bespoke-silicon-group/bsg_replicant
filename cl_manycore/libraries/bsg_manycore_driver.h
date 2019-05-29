@@ -395,9 +395,9 @@ static inline const char *hb_mc_request_packet_to_string(const hb_mc_request_pac
 {
 	snprintf(buffer, sz,
 		 "response_pkt{"
-		 "dst=(%" PRIu8 ",%" PRIu8 "),"
-		 "addr=,0x%08" PRIx32 ""
-		 "data=,0x%08" PRIx32 ""
+		 "dst=(%" PRIu8 ",%" PRIu8 "), "
+		 "addr=0x%08" PRIx32 ", "
+		 "data=0x%08" PRIx32 ", "
 		 "op=0x%02" PRIx8 ""
 		 "}",
 		 hb_mc_request_packet_get_x_dst(packet),
