@@ -24,11 +24,13 @@ typedef enum __hb_mc_csr_freeze_t{
 
 /* Offsets in bytes */
 #define HB_MC_TILE_EPA_DMEM_BASE   0x00001000
+#define HB_MC_TILE_EVA_DMEM_BASE   0x00001000
 #define HB_MC_TILE_EPA_ICACHE_BASE 0x01000000
 #define HB_MC_TILE_EPA_CSR_BASE                       0x20000
 #define HB_MC_TILE_EPA_CSR_FREEZE_OFFSET              0x00
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET 0x04
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET 0x08
+
 
 #define HB_MC_TILE_DMEM_LOGSZ 12
 #define HB_MC_TILE_DMEM_SIZE (1 << HB_MC_TILE_DMEM_LOGSZ)
