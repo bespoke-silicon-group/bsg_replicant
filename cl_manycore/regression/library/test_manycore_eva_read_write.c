@@ -6,8 +6,11 @@
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
 #include "test_manycore_parameters.h"
+
 #define TEST_NAME "test_manycore_eva_read_write"
 #define DATA_WORDS 16
+#define TEST_BASE_EVA 0x1000
+
 
 int check_eva_read(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, hb_mc_coordinate_t *target, hb_mc_eva_t *eva, uint32_t *gold_data, size_t nwords){
 	uint32_t read_data[nwords];
@@ -217,7 +220,7 @@ int test_manycore_eva_read_write () {
 	/*********************************************/
 	/* Test RW to Local DMEM (DMEM within target)*/
 	/*********************************************/
-	eva_dest = 0x10;
+	eva_dest = TEST_BASE_EVA;
 
 	r = test_eva_srwr(mc, &default_map, &target, &eva_dest, memset_char, write_data, DATA_WORDS);
 
@@ -243,7 +246,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Group DMEM (DMEM within Group)*/
 	/*********************************************/
 	x = 1, y = 1;
-	eva_dest = 0x10;
+	eva_dest = TEST_BASE_EVA;
 	eva_dest = (GROUP_INDICATOR) | (x << GROUP_X_OFFSET) |
 		(y << GROUP_Y_OFFSET) | (eva_dest);
 
@@ -271,7 +274,7 @@ int test_manycore_eva_read_write () {
 	/* Test RW to Group DMEM (DMEM within Group)*/
 	/*********************************************/
 	x = 2, y = 2;
-	eva_dest = 0x10;
+	eva_dest = TEST_BASE_EVA;
 	eva_dest = (GLOBAL_INDICATOR) | (x << GLOBAL_X_OFFSET) |
 		(y << GLOBAL_Y_OFFSET) | (eva_dest);
 
