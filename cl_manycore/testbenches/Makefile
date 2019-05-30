@@ -1,3 +1,5 @@
+include ../Makefile.environment
+
 TARGETS = library spmd
 
 all: cosim

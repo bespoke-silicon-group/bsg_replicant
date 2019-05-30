@@ -2,21 +2,22 @@ ifndef HDK_DIR
 $(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
 endif
 
-ifndef CL_DIR
-$(error "CL_DIR undefined. Set CL_DIR before running this makefile")
-endif
-
-# Default to overriding BSG_IP_CORES_DIR and BSG_MANYCORE_DIR and warn
-ifneq ("$(wildcard $(CL_DIR)/../../Makefile.deps)","")
 ORANGE=\033[0;33m
 NC=\033[0m
 
+CL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+ifneq ("$(wildcard $(CL_DIR)/../../Makefile.deps)","")
+
+# Default to overriding BSG_IP_CORES_DIR and BSG_MANYCORE_DIR and warn
 ifdef BSG_IP_CORES_DIR
 $(warning $(shell echo -e "\t\n\t$(ORANGE)Overriding BSG_IP_CORES_DIR environment variable with Bladerunner defaults.$(NC)"))
+$(warning $(shell echo -e "\t\n\t$(ORANGE)BSG_IP_CORES_DIR=$(BSG_IP_CORES_DIR)$(NC)"))
 endif
 
 ifdef BSG_MANYCORE_DIR
 $(warning $(shell echo -e "\t\n\t$(ORANGE)Overriding BSG_MANYCORE_DIR environment variable with Bladerunner defaults.$(NC)"))
+$(warning $(shell echo -e "\t\n\t$(ORANGE)BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR)$(NC)"))
 endif
 
 include $(CL_DIR)/../../Makefile.common
