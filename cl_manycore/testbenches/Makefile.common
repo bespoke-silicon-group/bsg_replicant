@@ -8,6 +8,7 @@ C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
 C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
 
+COSIM_DIR      = $(CL_DIR)/testbenches/
 RTL_TB_WORKLIB = cosimulation
 RTL_TB_TOP     = cosim_wrapper
 RTL_TB_LIBS    = axis_register_slice_v1_1_17 fifo_generator_v13_2_2
@@ -24,7 +25,7 @@ XVLOG_OPTS += $(if $(AXI_PROT_CHECK),-d ENABLE_PROTOCOL_CHK,)
 XELOG_OPTS += $(if $(AXI_PROT_CHECK),-d ENABLE_PROTOCOL_CHK,)
 
 XSIM_OPTS += $(if $(DEBUG),-gui,)
-XSIM_OPTS += $(if $(DEBUG),-tclbatch ../waves.tcl,)
+XSIM_OPTS += $(if $(DEBUG),-tclbatch waves.tcl,)
 
 AXI_MEMORY_MODEL ?= 1
 XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d AXI_MEMORY_MODEL=1,)
@@ -67,11 +68,11 @@ cosim: $(SIM_LOG_TARGETS)
 # HARDWARE_PATH must be set by including makefile
 include $(HARDWARE_PATH)/Makefile.include
 # HARDWARE_TARGETS is set by $(HARDWARE_PATH)/Makefile.include
-xsim.dir/$(RTL_TB_WORKLIB): $(CL_DIR)/testbenches/top.vivado.f 
-xsim.dir/$(RTL_TB_WORKLIB): ../cosim_wrapper.sv $(HARDWARE_TARGETS)
+xsim.dir/$(RTL_TB_WORKLIB): $(COSIM_DIR)/top.vivado.f 
+xsim.dir/$(RTL_TB_WORKLIB): $(COSIM_DIR)/cosim_wrapper.sv $(HARDWARE_TARGETS)
 	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
 		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
-		-f $(CL_DIR)/testbenches/top.vivado.f $<
+		-f $(COSIM_DIR)/top.vivado.f $<
 
 xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB) 
 	xelab -m64 $(XELOG_OPTS) --timescale 1ps/1ps --debug typical --relax \

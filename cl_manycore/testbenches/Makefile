@@ -1,11 +1,12 @@
-include ../Makefile.environment
-.DEFAULT_GOAL=cosim
-TARGETS=cosim
+TARGETS = library spmd
 
-.PHONY: $(TARGETS) clean $(CLEAN_TARGETS)
+all: cosim
+cosim: $(TARGETS)
 
 $(TARGETS):
-	$(MAKE) -C $@ DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) AXI_PROT_CHECK=$(AXI_PROT_CHECK)
+	$(MAKE) -C $@ regression DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) AXI_PROT_CHECK=$(AXI_PROT_CHECK)
+
+.PHONY: clean $(CLEAN_TARGETS) cosimulation $(TARGETS)
 
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
 clean: $(CLEAN_TARGETS)
