@@ -8,8 +8,10 @@
 #include <math.h>
 #endif
 
+static const char error_init_help [] = "Is your FPGA initialized with an AGFI?";
+
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
-                hb_mc_config_t *config)
+                      hb_mc_config_t *config)
 {
 	uint32_t xlogsz_max, xdim_max;
         hb_mc_config_raw_t cur;
@@ -43,16 +45,16 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 
 	idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
         if (idx > HB_MC_CONFIG_MAX_BITWIDTH_DATA){
-                bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d\n",
-			__func__, idx);
+                bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d: %s\n",
+                           __func__, idx, error_init_help);
                 return HB_MC_FAIL;
         }
         config->network_bitwidth_data = idx;
 
 	idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
         if (idx > HB_MC_CONFIG_MAX_BITWIDTH_ADDR){
-                bsg_pr_err("%s: Invalid Network Address Bitwidth %d\n",
-			__func__, idx);
+                bsg_pr_err("%s: Invalid Network Address Bitwidth %d: %s\n",
+                           __func__, idx, error_init_help);
                 return HB_MC_FAIL;
         }
         config->network_bitwidth_addr = idx;
@@ -64,32 +66,32 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
-                bsg_pr_err("%s: Invalid Device Dimension X %d\n",
-			__func__, idx);
+                bsg_pr_err("%s: Invalid Device Dimension X %d: %s\n",
+                           __func__, idx, error_init_help);
                 return HB_MC_FAIL;
         }
         config->dimension.x = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_Y];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
-                bsg_pr_err("%s: Invalid Device Dimension Y %d\n",
-			__func__, idx);
+                bsg_pr_err("%s: Invalid Device Dimension Y %d: %s\n",
+                           __func__, idx, error_init_help);
                 return HB_MC_FAIL;
         }
         config->dimension.y = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->dimension.x)){
-                bsg_pr_err("%s: Invalid Host Interface index X %d\n",
-			__func__, idx);
+                bsg_pr_err("%s: Invalid Host Interface index X %d: %s\n",
+                           __func__, idx, error_init_help);
                 return HB_MC_FAIL;
         }
         config->host_interface.x = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->dimension.y)){
-                bsg_pr_err("%s: Invalid Host Interface index Y %d\n",
-			__func__, idx);
+                bsg_pr_err("%s: Invalid Host Interface index Y %d: %s\n",
+                           __func__, idx, error_init_help);
                 return HB_MC_FAIL;
         }
         config->host_interface.y = idx;
