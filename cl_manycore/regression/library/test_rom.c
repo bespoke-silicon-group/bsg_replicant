@@ -42,7 +42,7 @@ int test_rom () {
         bsg_pr_test_info("Checking that the F1 Major Version Number is "
                         "between %d and %d\n", minexpected, maxexpected);
         result = hb_mc_config_get_version_major(config);
-        if((result <= minexpected) || (result >= maxexpected)){
+        if((result < minexpected) || (result > maxexpected)){
                 bsg_pr_test_err("Unexpected value for Major Version Number. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
