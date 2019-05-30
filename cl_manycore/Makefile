@@ -1,5 +1,4 @@
 PROJECT = cl_manycore
-include Makefile.environment
 
 # Image version is set by Bladerunner Makefile
 FPGA_IMAGE_VERSION ?= 0.0.0 
