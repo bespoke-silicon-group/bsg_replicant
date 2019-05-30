@@ -24,7 +24,10 @@ int test_rom () {
         if(result != expected){
                 bsg_pr_test_err("Incorrect number of host credits. "
                                 "Got: %d, expected %d\n", result, expected);
+		bsg_pr_test_err("Have you programed your FPGA"
+				" (fpga-load-local-image)\n");
 		fail = 1;
+		goto cleanup; // Considered harmful
         }
 
         /* Read configuration and test values */
@@ -135,6 +138,7 @@ int test_rom () {
 		fail = 1;
         }
 
+cleanup:
         hb_mc_manycore_exit(&mc);
 
         return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
