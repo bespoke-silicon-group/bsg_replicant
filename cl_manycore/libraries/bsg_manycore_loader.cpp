@@ -802,21 +802,70 @@ static int hb_mc_loader_get_section(const void *bin, size_t sz, unsigned idx,
         section_table = (const Elf32_Shdr *)&program_data[shoff];
         section = &section_table[idx];
 
-        size_t off = RV32_Off_to_host(section->sh_offset);
+        /* get the section offset and size and check that it's valid */
+        size_t section_off = RV32_Off_to_host(section->sh_offset);
+        size_t section_sz = RV32_Word_to_host(section->sh_size);
+        if (section_off + section_sz > sz) {
+                bsg_pr_dbg("%s: Section %u: section_offset + section_size = %zu: but binary size = %zu\n",
+                           __func__, idx, section_off+section_sz, sz);
+                return HB_MC_INVALID;
+        }
 
-        return HB_MC_FAIL;
+        /* return the header and data */
+        *shdr = section;
+        *section_data = &program_data[section_off];
+        
+        return HB_MC_SUCCESS;
 }
 
 static bool hb_mc_loader_section_is_symbol_table(const Elf32_Shdr *shdr)
-{
-        return false;
+{        
+        return RV32_Word_to_host(shdr->sh_type) == SHT_SYMTAB;
 }
 
 static int hb_mc_loader_symbol_search_symbol_table(const void *bin, size_t sz, const char *symbol,
-                                                   const Elf32_Shdr *shdr, const unsigned char *section_data,
+                                                   const Elf32_Shdr *symtab_shdr, const unsigned char *symtab_data,
                                                    hb_mc_eva_t *eva)
 {
-        return HB_MC_FAIL;
+        int rc;
+        unsigned strtab_idx = RV32_Word_to_host(symtab_shdr->sh_link);
+        const Elf32_Shdr *strtab_shdr;
+        const unsigned char *strtab_data;
+        const Elf32_Sym *symbol_table = (const Elf32_Sym*)symtab_data, *sym;
+        const char *sym_name;
+        
+        /* get the string table for this section */
+        rc = hb_mc_loader_get_section(bin, sz, strtab_idx,
+                                      &strtab_shdr, &strtab_data);
+        if (rc != HB_MC_SUCCESS)
+                return rc;
+
+        /* total number of symbols in symtab */
+        Elf32_Word sym_n = RV32_Word_to_host(symtab_shdr->sh_size)/RV32_Word_to_host(symtab_shdr->sh_entsize);
+        
+        for (Elf32_Word sym_i = 0; sym_i < sym_n; sym_i++) {
+                sym = &symbol_table[sym_i];
+
+                Elf32_Word sym_name_off = RV32_Word_to_host(sym->st_name);
+                
+                /* skip symbols with no name */
+                if (sym_name_off == 0)
+                        continue;
+
+                /* symbol's name is in bounds? */
+                if (sym_name_off < RV32_Word_to_host(strtab_shdr->sh_size))
+                        return HB_MC_INVALID;
+
+                /* is this the symbol we're looking for? */
+                sym_name = (const char *)&strtab_data[sym_name_off];
+                if (strcmp(sym_name, symbol) == 0) {
+                        *eva = RV32_Addr_to_host(sym->st_value);
+                        return HB_MC_SUCCESS;
+                }
+        }
+        
+        /* for each symbol */
+        return HB_MC_NOTFOUND;
 }
 
 static int hb_mc_loader_symbol_search_symbol_tables(const void *bin, size_t sz, const char *symbol,
