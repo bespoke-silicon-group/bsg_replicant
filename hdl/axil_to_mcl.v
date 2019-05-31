@@ -39,6 +39,7 @@ module axil_to_mcl
   , data_width_p="inv"
   , max_out_credits_p="inv"
   , load_id_width_p="inv"
+  , rcv_fifo_els_lp=256
   , link_sif_width_lp=`bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
   , packet_width_lp=`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
   , return_packet_width_lp=`bsg_manycore_return_packet_width(x_cord_width_p,y_cord_width_p,data_width_p,load_id_width_p)
@@ -262,7 +263,7 @@ module axil_to_mcl
   logic [mux_bus_num_lp-1:0][axil_mosi_bus_width_lp-1:0] axil_demux_mosi_bus;
   logic [mux_bus_num_lp-1:0][axil_miso_bus_width_lp-1:0] axil_demux_miso_bus;
 
-  logic [axil_bus_num_lp-1:0][$clog2(max_out_credits_p+1)-1:0] rcv_fifo_vacancy_lo;
+  logic [axil_bus_num_lp-1:0][$clog2(rcv_fifo_els_lp+1)-1:0] rcv_fifo_vacancy_lo;
 
   for (genvar i=0; i<mux_bus_num_lp; i=i+1) begin
     always_comb begin: axil_bus_assignment
@@ -305,7 +306,7 @@ module axil_to_mcl
   for (genvar i=0; i<axil_bus_num_lp; i=i+1) begin
     s_axil_mcl_adapter #(
       .mcl_width_p      (fifo_width_lp    )
-      ,.max_out_credits_p(max_out_credits_p)
+      ,.max_out_credits_p(rcv_fifo_els_lp)
     ) s_axil_to_mcl (
       .clk_i           (clk_i                 )
       ,.reset_i         (reset_i               )
@@ -367,13 +368,15 @@ module axil_to_mcl
   bsg_mcl_request_s [num_mcl_p-1:0] mc_req_cast;
   bsg_mcl_response_s [num_mcl_p-1:0] fifo_res_cast;
   bsg_mcl_response_s [num_mcl_p-1:0] mc_res_cast;
-
+  
+  logic [num_mcl_p-1:0] fifo_req_enable;
 
   for (genvar i=0; i<num_mcl_p; i=i+1) begin
 
     // fifo request to manycore
-    assign endpoint_out_v_li[i] = fifo_v_lo[2*i];
-    assign fifo_ready_li[2*i] = endpoint_out_ready_lo[i];
+    assign fifo_req_enable[i] = (fifo_req_cast[i].op==8'(`ePacketOp_remote_store)) || (rcv_fifo_vacancy_lo[2*i]>max_out_credits_p);
+    assign endpoint_out_v_li[i] = fifo_v_lo[2*i] & fifo_req_enable[i];
+    assign fifo_ready_li[2*i] = endpoint_out_ready_lo[i] & fifo_req_enable[i];
     assign fifo_req_cast[i]          = fifo_data_lo[2*i];
     assign endpoint_out_packet_li[i] = {
       (addr_width_p)'(fifo_req_cast[i].addr)
@@ -395,11 +398,11 @@ module axil_to_mcl
     assign mc_res_cast[i].load_id = (32)'(returned_load_id_r_lo[i]);
     assign mc_res_cast[i].y_cord = (8)'(my_y_li[i]);
     assign mc_res_cast[i].x_cord = (8)'(my_x_li[i]);
-    assign returned_yumi_li[i] = fifo_ready_lo[2*i] & fifo_v_li[2*i];
+    assign returned_yumi_li[i] = fifo_ready_lo[2*i] & fifo_v_li[2*i];  // must be 1 if fifo_v_li is 1
 
     // manycore request to fifo
     assign fifo_v_li[2*i+1]       = endpoint_in_v_lo[i];
-    assign endpoint_in_yumi_li[i] = fifo_ready_lo[2*i+1] & fifo_v_li[2*i+1]; // must always ready
+    assign endpoint_in_yumi_li[i] = fifo_ready_lo[2*i+1] & fifo_v_li[2*i+1]; // host need to check the rcv vacancy 
     assign fifo_data_li[2*i+1]    = mc_req_cast[i];
     assign mc_req_cast[i].padding = '0;
     assign mc_req_cast[i].addr = (32)'(endpoint_in_addr_lo[i]);

@@ -49,7 +49,7 @@ int test_manycore_credits() {
 	/* Perform an EVA write that fills DMEM of a single tile.     */
 	/**************************************************************/
 	target = hb_mc_coordinate(x, y);
-	eva = 0x0000;
+	eva = 0x1000;
 
 	for (i = 0; i < dmem_words; ++i){
 		write_data[i] = rand() % ((1 << 16)-1);
@@ -61,7 +61,7 @@ int test_manycore_credits() {
 			__func__, eva, x, y);
 		goto cleanup;
 	}
-
+	bsg_pr_info("Successfully fill DMEM of tile (%d, %d)\n", x, y);
 	rc = hb_mc_manycore_eva_read(mc, &default_map, &target, &eva, read_data, dmem_size);
 				
 	if (rc != HB_MC_SUCCESS) {
