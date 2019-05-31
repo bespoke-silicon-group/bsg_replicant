@@ -26,6 +26,17 @@ int hb_mc_loader_load(const void *bin, size_t sz,
 		const hb_mc_coordinate_t *tiles, 
 		uint32_t len);
 
+/**
+ * Get an EVA for a symbol from a program data.
+ * @param[in]  bin     A memory buffer containing a valid manycore binary.
+ * @param[in]  sz      Size of #bin in bytes.
+ * @param[in]  symbol  A program symbol. Behavior is undefined if #symbol is not a zero terminated string.
+ * @param[out] eva     An EVA that addresses #symbol. Behavior is undefined if #eva is invalid.
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
+                               hb_mc_eva_t *eva);
+
 #ifdef __cplusplus
 }
 #endif

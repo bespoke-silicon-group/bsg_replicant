@@ -784,3 +784,90 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
 
 	return HB_MC_SUCCESS;
 }
+
+static int hb_mc_loader_get_section(const void *bin, size_t sz, unsigned idx,
+                                    const Elf32_Shdr **shdr, const unsigned char **section_data)
+{
+        const unsigned char *program_data = (const unsigned char*)bin, *data;
+        const Elf32_Ehdr *ehdr = (const Elf32_Ehdr*)bin;
+        const Elf32_Shdr *section_table, *section;
+
+        /* find the section table */
+        size_t shoff = RV32_Off_to_host(ehdr->e_shoff);
+
+        /* make sure that the section table is completely in bounds */
+        if (shoff + RV32_Half_to_host(ehdr->e_shnum) * sizeof(Elf32_Shdr) > sz)
+                return HB_MC_INVALID;
+
+        section_table = (const Elf32_Shdr *)&program_data[shoff];
+        section = &section_table[idx];
+
+        size_t off = RV32_Off_to_host(section->sh_offset);
+
+        return HB_MC_FAIL;
+}
+
+static bool hb_mc_loader_section_is_symbol_table(const Elf32_Shdr *shdr)
+{
+        return false;
+}
+
+static int hb_mc_loader_symbol_search_symbol_table(const void *bin, size_t sz, const char *symbol,
+                                                   const Elf32_Shdr *shdr, const unsigned char *section_data,
+                                                   hb_mc_eva_t *eva)
+{
+        return HB_MC_FAIL;
+}
+
+static int hb_mc_loader_symbol_search_symbol_tables(const void *bin, size_t sz, const char *symbol,
+                                                    hb_mc_eva_t *eva)
+{
+        Elf32_Ehdr *ehdr = (Elf32_Ehdr*) bin;
+        const Elf32_Shdr *shdr;
+        const unsigned char *section_data;
+        size_t section_sz;
+        int rc;
+
+        for (unsigned idx = 0; idx < RV32_Half_to_host(ehdr->e_shnum); idx++) {
+                rc = hb_mc_loader_get_section(bin, sz, idx, &shdr, &section_data);
+                if (rc != HB_MC_SUCCESS)
+                        return rc;
+
+                if (!hb_mc_loader_section_is_symbol_table(shdr))
+                        continue;
+
+                rc = hb_mc_loader_symbol_search_symbol_table(bin, sz, symbol,
+                                                             shdr, section_data,
+                                                             eva);
+                if (rc == HB_MC_NOTFOUND)
+                        continue;
+                else if (rc != HB_MC_SUCCESS)
+                        return rc;
+        }
+
+        return HB_MC_NOTFOUND;
+}
+
+/**
+ * Get an EVA for a symbol from a program data.
+ * @param[in]  bin     A memory buffer containing a valid manycore binary.
+ * @param[in]  sz      Size of #bin in bytes.
+ * @param[in]  symbol  A program symbol.
+ * @param[out] eva     An EVA that addresses #symbol.
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
+                               hb_mc_eva_t *eva)
+{
+        int rc;
+
+        rc = hb_mc_loader_elf_validate(bin, sz);
+        if (rc != HB_MC_SUCCESS)
+                return rc;
+
+        rc = hb_mc_loader_symbol_search_symbol_tables(bin, sz, symbol, eva);
+        if (rc != HB_MC_SUCCESS)
+                return rc;
+
+        return HB_MC_FAIL;
+}
