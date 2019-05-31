@@ -1,6 +1,7 @@
 REGRESSION_TESTS_TYPE = spmd
 C_REGRESSION_TESTS := test_bsg_dram_loopback_cache
 C_REGRESSION_TESTS += test_symbol_to_eva
+C_REGRESSION_TESTS += test_bsg_loader_suite
 CXX_REGRESSION_TESTS = 
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR)) \
