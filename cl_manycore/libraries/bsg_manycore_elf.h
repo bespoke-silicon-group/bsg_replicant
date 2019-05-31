@@ -7,6 +7,7 @@
 extern "C" {
 #endif
 
+__attribute__((deprecated))
 int symbol_to_eva(const char *fname, const char *sym_name, eva_t *eva);
 
 #ifdef __cplusplus
