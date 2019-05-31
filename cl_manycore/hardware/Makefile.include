@@ -6,7 +6,7 @@ BSG_F1_COMMIT_ID       ?= 42c0ffee
 TEMPLATE_FILE=$(HARDWARE_PATH)/cl_manycore_pkg.template
 CL_MANYCORE_NETWORK_ADDR_WIDTH := $(shell sed -n "s/ *parameter addr_width_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
 CL_MANYCORE_NETWORK_DATA_WIDTH := $(shell sed -n "s/ *parameter data_width_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
-CL_MANYCORE_HOST_COORD_X       := $(shell expr $(CL_MANYCORE_DIM_X) - 1)
+CL_MANYCORE_HOST_COORD_X       := 0
 CL_MANYCORE_HOST_COORD_Y       := 0
 CL_MANYCORE_RELEASE_VERSION    ?= 00ffddee
 CL_MANYCORE_COMPILATION_DATE   ?= $(shell date +%m%d%Y)
