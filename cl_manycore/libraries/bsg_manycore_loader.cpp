@@ -343,7 +343,7 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 	  Only bits 0-11 actually index the memory in the ICACHE.
 	  It's important that bits 10-21 are zero.
 	 */
-	if (((hb_mc_npa_get_epa(&icache_npa)) + sz) & 0x00FFF000) {
+	if (((hb_mc_npa_get_epa(&icache_npa)) + sz - 1) & 0x00FFF000) {
 		bsg_pr_dbg("%s: Oops: ICACHE EPA 0x%08%" PRIx32 " sets tag bits\n",
                            __func__, hb_mc_npa_get_epa(&icache_epa));
 		return HB_MC_FAIL;
