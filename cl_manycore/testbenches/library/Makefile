@@ -1,4 +1,4 @@
-include ../../../Makefile.environment
+include ../../Makefile.environment
 include $(CL_DIR)/Makefile.dimensions
 
 .DEFAULT_GOAL=cosim
