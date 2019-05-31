@@ -1,6 +1,5 @@
 include ../../Makefile.environment
 include $(CL_DIR)/Makefile.dimensions
-
 .DEFAULT_GOAL=cosim
 
 # REGRESSION_PATH is set in Makefile.environment
@@ -15,4 +14,4 @@ include ../Makefile.common
 $(SIM_LOG_TARGETS): test_%.cosim.log: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary:
-	$(MAKE) -C $(TESTS_PATH) $@ 
+	$(MAKE) -C $(TESTS_PATH) $@ IGNORE_CADENV=1
