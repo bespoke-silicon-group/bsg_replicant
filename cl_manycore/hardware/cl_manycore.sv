@@ -459,8 +459,6 @@ logic [num_cache_p-1:0][y_cord_width_p-1:0] cache_y_lo;
 bsg_manycore_link_sif_s loader_link_sif_li;
 bsg_manycore_link_sif_s loader_link_sif_lo;
 
-bsg_manycore_link_sif_s rom_link_sif_li;
-bsg_manycore_link_sif_s rom_link_sif_lo;
 
 bsg_manycore_wrapper #(
   .addr_width_p(addr_width_p)
@@ -486,9 +484,6 @@ bsg_manycore_wrapper #(
 
   ,.loader_link_sif_i(loader_link_sif_li)
   ,.loader_link_sif_o(loader_link_sif_lo)
-
-  ,.rom_link_sif_i(rom_link_sif_li)
-  ,.rom_link_sif_o(rom_link_sif_lo)
 );
 
 
@@ -568,32 +563,11 @@ assign m_axi4_manycore_arregion = 4'b0;
 assign m_axi4_manycore_arqos = 4'b0;
 
 
-// bladerunner configuration rom
-
-logic [x_cord_width_p-1:0] rom_x_cord_lp = '0;
-logic [y_cord_width_p-1:0] rom_y_cord_lp = '0;
-
-bsg_bladerunner_rom #(
-  .rom_width_p    (rom_width_p)
-  ,.rom_els_p      (rom_els_p)
-  ,.x_cord_width_p (x_cord_width_p)
-  ,.y_cord_width_p (y_cord_width_p)
-  ,.addr_width_p   (addr_width_p)
-  ,.data_width_p   (data_width_p)
-  ,.load_id_width_p(load_id_width_p)
-) bladerunner_rom (
-  .clk_i     (clk_main_a0),
-  .reset_i   (~rst_main_n_sync),
-  .my_x_i    (rom_x_cord_lp),
-  .my_y_i    (rom_y_cord_lp),
-  .link_sif_i(rom_link_sif_lo),
-  .link_sif_o(rom_link_sif_li)
-);
 
 
 // manycore link
 
-logic [x_cord_width_p-1:0] mcl_x_cord_lp = x_cord_width_p'(num_tiles_x_p-1);
+logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;
 logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
 
 axil_to_mcl #(
