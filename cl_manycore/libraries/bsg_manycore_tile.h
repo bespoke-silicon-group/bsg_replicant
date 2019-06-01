@@ -2,6 +2,8 @@
 #define BSG_MANYCORE_TILE_H
 #include <bsg_manycore_features.h>
 #include <bsg_manycore.h>
+#include <bsg_manycore_mem.h>
+#include <bsg_manycore_elf.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -142,8 +144,6 @@ int hb_mc_tile_freeze_dep (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_unfreeze_dep (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
 
-int hb_mc_tile_freeze (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_tile_unfreeze (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_set_origin_registers(uint8_t fd, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
 int hb_mc_tile_set_origin_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
 int hb_mc_tile_set_coord_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t coord_x, uint32_t coord_y);
