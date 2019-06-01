@@ -121,10 +121,8 @@ static int hb_mc_npa_is_dram (npa_t *npa) {
  * checks if NPA is in host endpoint.
  */
 static int hb_mc_npa_is_host (npa_t *npa) {
-	uint8_t coord_x = hb_mc_get_host_intf_coord_x();
-	uint8_t coord_y = hb_mc_get_host_intf_coord_y();
-
-	if ((npa->x == coord_x) && (npa->y == coord_y))
+	uint8_t dim_x = hb_mc_get_manycore_dimension_x();
+	if ((npa->y == 0) && (npa->x == dim_x))
 		return HB_MC_SUCCESS;
 	else
 		return HB_MC_FAIL;	

@@ -392,7 +392,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				fprintf(stderr, "Finish signal <X, Y, EPA> is: <%d, %d, 0x%x>.\n", host_coord_x, host_coord_y, tg->kernel->finish_signal_addr) ;
 			#endif
 			eva_t finish_signal_host_eva;
-			error = hb_mc_npa_to_eva(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva); /* tile will write to this address when it finishes executing the kernel */
+			error = hb_mc_npa_to_eva_deprecated(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva); /* tile will write to this address when it finishes executing the kernel */
 			if (error != HB_MC_SUCCESS) {
 				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_npa_to_eva(): failed to get finish_signal_host_eva from finish_signal_host_npa.\n");
 				return HB_MC_FAIL;
@@ -493,7 +493,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, uint8_t dim
 
 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
-		error = hb_mc_tile_freeze(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
+		error = hb_mc_tile_freeze_dep(device->fd, device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 		if (error != HB_MC_SUCCESS) { 
 			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_freeze(): failed to freeze tile (%d,%d).\n", device->mesh->tiles[tile_id].x, device->mesh->tiles[tile_id].y);
 			return HB_MC_FAIL;
