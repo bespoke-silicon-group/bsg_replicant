@@ -25,6 +25,10 @@ HEADERS += bsg_manycore_npa.h
 HEADERS += bsg_manycore_epa.h
 HEADERS += bsg_manycore_loader_dep.h
 HEADERS += bsg_manycore_origin_eva_map.h
+HEADERS += bsg_manycore_packet.h
+HEADERS += bsg_manycore_response_packet.h
+HEADERS += bsg_manycore_request_packet.h
+HEADERS += bsg_manycore_fifo.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o

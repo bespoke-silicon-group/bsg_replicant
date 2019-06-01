@@ -1,5 +1,5 @@
 #include <bsg_manycore.h>
-#include <bsg_manycore_driver.h>
+#include <bsg_manycore_fifo.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_tile.h>

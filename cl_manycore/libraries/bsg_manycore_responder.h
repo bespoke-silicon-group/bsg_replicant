@@ -1,0 +1,4 @@
+#ifndef BSG_MANYCORE_RESPONDER_H
+#define BSG_MANYCORE_RESPONDER_H
+
+#endif
