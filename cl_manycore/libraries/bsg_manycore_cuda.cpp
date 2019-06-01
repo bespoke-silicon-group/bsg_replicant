@@ -374,12 +374,10 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  * */
 int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_fifo_check(): failed to verify device.\n"); 
-		return HB_MC_FAIL;
-	}
 
-	eva_t args_eva;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
+
+	hb_mc_eva_t args_eva;
 	int error = hb_mc_device_malloc (device, (tg->kernel->argc) * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_device_malloc(): failed to allocate space on device for grid %d tile group (%d,%d) arguments.\n", tg->grid_id, tg->id.x, tg->id.y);
@@ -392,16 +390,23 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 		return HB_MC_FAIL;
 	}
 	
-	eva_t kernel_eva; 
-	error = symbol_to_eva(device->bin_name, tg->kernel->name, &kernel_eva); /* get EVA of kernel */
+	hb_mc_eva_t kernel_eva; 
+	error = hb_mc_loader_symbol_to_eva (device->bin, device->bin_size, tg->kernel->name, &kernel_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: invalid kernel name %s for grid %d tile group (%d,%d).\n", __func__, tg->kernel->name, tg->grid_id, tg->id.x, tg->id.y);
+		return HB_MC_FAIL;
+	}	
+
+///// DEPRECATED
+/*
+	error = symbol_to_eva(device->bin_name, tg->kernel->name, &kernel_eva); 
 	if (error != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_symbol_to_eva(): invalid kernel name %s for grid %d tile group (%d,%d).\n", tg->kernel->name, tg->grid_id, tg->id.x, tg->id.y); 
 		return HB_MC_FAIL;
 	}
+*/
 
 
-
-	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc);
 
 	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
 	hb_mc_npa_t finish_signal_npa = hb_mc_npa(host_coordinate, tg->kernel->finish_signal_addr); 
