@@ -17,7 +17,7 @@ static const uint32_t ARGV_REG = 0x1008 >> 2; //!< EPA of arguments for kernel.
 static const uint32_t SIGNAL_REG = 0x100c >> 2; //!< EPA of register that holds signal address. Tile will write to this address once it completes the kernel.   
 
 
-static const uint32_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
+static const hb_mc_epa_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
 
 static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}; /* This array has an element for every EVA <-> NPA mapping. Currently, only one mapping is supported. */
 
@@ -399,6 +399,14 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 		return HB_MC_FAIL;
 	}
 
+
+
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc);
+
+	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
+	hb_mc_npa_t finish_signal_npa = hb_mc_npa(host_coordinate, tg->kernel->finish_signal_addr); 
+
+
 	int tile_id;
 	for (int y = tg->origin.y; y < tg->origin.y + tg->dim.y; y++){
 		for (int x = tg->origin.x; x < tg->origin.x + tg->dim.x; x++){
@@ -438,12 +446,32 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 
 
+
+			hb_mc_eva_t finish_signal_eva;
+			size_t sz; 
+			error = hb_mc_npa_to_eva (cfg, tg->map, &(device->mesh->tiles[tile_id].coord), &(finish_signal_npa), &finish_signal_eva, &sz); 
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to aquire finish signal address eva from npa.\n", __func__); 
+				return HB_MC_FAIL;
+			}
+
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), SIGNAL_REG, finish_signal_eva); 
+			if (error != HB_MC_SUCCESS) {
+				bsg_pr_err("%s: failed to write finish_signal_addr eva 0x%x to device for grid %d tile group (%d,%d).\n", finish_signal_eva, tg->grid_id, tg->id.x, tg->id.y);
+				return HB_MC_FAIL;
+			}
+
+
+
+
+//////// DEPRECATED
+/*
 			npa_t finish_signal_host_npa = {host_coord_x, host_coord_y, tg->kernel->finish_signal_addr};
 			#ifdef DEBUG
 				fprintf(stderr, "Finish signal <X, Y, EPA> is: <%d, %d, 0x%x>.\n", host_coord_x, host_coord_y, tg->kernel->finish_signal_addr) ;
 			#endif
 			eva_t finish_signal_host_eva;
-			error = hb_mc_npa_to_eva_deprecated(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva); /* tile will write to this address when it finishes executing the kernel */
+			error = hb_mc_npa_to_eva_deprecated(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva); // tile will write to this address when it finishes executing the kernel
 			if (error != HB_MC_SUCCESS) {
 				fprintf(stderr, "hb_mc_tile_group_launch() --> hb_mc_npa_to_eva_deprecated(): failed to get finish_signal_host_eva from finish_signal_host_npa.\n");
 				return HB_MC_FAIL;
@@ -457,6 +485,9 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 			#ifdef DEBUG
 				fprintf(stderr, "Setting tile[%d] (%d,%d) SIGNAL_REG to 0x%x.\n", tile_id, x, y, finish_signal_host_eva);
 			#endif
+*/
+
+
 
 			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, kernel_eva); /* write kernel EVA to tile group */
 			if (error != HB_MC_SUCCESS) {

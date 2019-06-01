@@ -37,7 +37,7 @@ typedef struct {
 	char *name;
 	uint32_t argc;
 	uint32_t *argv;
-	uint32_t finish_signal_addr;
+	hb_mc_epa_t finish_signal_addr;
 } kernel_t;
 
 typedef struct {
