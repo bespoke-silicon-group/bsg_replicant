@@ -64,7 +64,7 @@ typedef struct {
 	uint8_t fd;
 	eva_id_t eva_id; 
 	mesh_t *mesh;
-	char* elf;
+	char* bin_name;
 	tile_group_t *tile_groups;
 	uint32_t num_tile_groups;
 	uint32_t tile_group_capacity;
@@ -73,7 +73,7 @@ typedef struct {
 
 
 
-int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
+int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
 int hb_mc_device_finish (device_t *device);
 int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva);
 int hb_mc_device_free (device_t *device, eva_t eva);
