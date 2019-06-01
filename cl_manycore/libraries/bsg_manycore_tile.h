@@ -1,9 +1,14 @@
 #ifndef BSG_MANYCORE_TILE_H
 #define BSG_MANYCORE_TILE_H
+
 #include <bsg_manycore_features.h>
+#include <bsg_manycore_epa.h>
+#include <bsg_manycore_driver.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_elf.h>
+#include <bsg_manycore_printing.h>
+#include <bsg_manycore_eva.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -142,14 +147,21 @@ static inline size_t hb_mc_tile_get_size_icache(const hb_mc_manycore_t *mc,
 
 int hb_mc_tile_freeze_dep (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_unfreeze_dep (uint8_t fd, uint8_t x, uint8_t y);
-int hb_mc_tile_set_group_origin(uint8_t fd, uint8_t x, uint8_t y, uint8_t x_cord, uint8_t y_cord);
+int hb_mc_tile_set_origin_registers_dep(uint8_t fd, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
+int hb_mc_tile_set_origin_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
+int hb_mc_tile_set_coord_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val);
+int hb_mc_tile_set_id_symbol_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim);
+int hb_mc_tile_set_tile_group_id_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id);
+int hb_mc_tile_set_grid_dim_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_dimension_t grid_dim);
 
-int hb_mc_tile_set_origin_registers(uint8_t fd, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
-int hb_mc_tile_set_origin_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t origin_x, uint32_t origin_y);
-int hb_mc_tile_set_coord_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t coord_x, uint32_t coord_y);
-int hb_mc_tile_set_id_symbol(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t cord_x, uint32_t cord_y, uint32_t dim_x, uint32_t dim_y);
-int hb_mc_tile_set_tile_group_id_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t tg_id_x, uint32_t tg_id_y);
-int hb_mc_tile_set_grid_dim_symbols(uint8_t fd, eva_id_t eva_id, char* elf, uint32_t x, uint32_t y, uint32_t grid_dim_x, uint32_t grid_dim_y);
+
+int hb_mc_tile_set_origin_registers (hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin); 
+int hb_mc_tile_set_origin_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char *elf, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin);
+int hb_mc_tile_set_coord_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val);
+int hb_mc_tile_set_id_symbol(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val, const hb_mc_dimension_t *dim);
+int hb_mc_tile_set_tile_group_id_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *tg_id);
+int hb_mc_tile_set_grid_dim_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf, const hb_mc_coordinate_t *coord, const hb_mc_dimension_t *grid_dim);
+
 
 
 

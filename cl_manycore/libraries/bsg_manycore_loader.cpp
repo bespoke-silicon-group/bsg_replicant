@@ -946,3 +946,40 @@ int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
 
         return HB_MC_SUCCESS;
 }
+
+
+int hb_mc_loader_read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
+{
+	struct stat st;
+	FILE *f;
+	int r;
+	unsigned char *data;
+
+	if ((r = stat(file_name, &st)) != 0) {
+		bsg_pr_err("could not stat '%s': %m\n", file_name);
+		return HB_MC_FAIL;
+	}
+
+	if (!(f = fopen(file_name, "rb"))) {
+		bsg_pr_err("failed to open '%s': %m\n", file_name);
+		return HB_MC_FAIL;
+	}
+
+	if (!(data = (unsigned char *) malloc(st.st_size))) {
+		bsg_pr_err("failed to read '%s': %m\n", file_name);
+		fclose(f);
+		return HB_MC_FAIL;
+	}
+
+	if ((r = fread(data, st.st_size, 1, f)) != 1) {
+		bsg_pr_err("failed to read '%s': %m\n", file_name);
+		fclose(f);
+		free(data);
+		return HB_MC_FAIL;
+	}
+
+	fclose(f);
+	*file_data = data;
+	*file_size = st.st_size;
+	return HB_MC_SUCCESS;
+}

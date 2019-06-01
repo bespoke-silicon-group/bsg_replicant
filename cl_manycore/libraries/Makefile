@@ -24,7 +24,7 @@ HEADERS += bsg_manycore.h
 HEADERS += bsg_manycore_npa.h
 HEADERS += bsg_manycore_epa.h
 HEADERS += bsg_manycore_loader_dep.h
-
+HEADERS += bsg_manycore_origin_eva_map.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
@@ -39,6 +39,7 @@ OBJECTS += bsg_manycore_printing.o
 OBJECTS += bsg_manycore_config.o
 OBJECTS += bsg_manycore.o
 OBJECTS += bsg_manycore_loader_dep.o
+OBJECTS += bsg_manycore_origin_eva_map.o
 
 DEBUG_OBJECTS :=
 
