@@ -65,6 +65,8 @@ typedef struct {
 	eva_id_t eva_id; 
 	mesh_t *mesh;
 	char* bin_name;
+	unsigned char* bin;
+	size_t bin_size;
 	tile_group_t *tile_groups;
 	uint32_t num_tile_groups;
 	uint32_t tile_group_capacity;
