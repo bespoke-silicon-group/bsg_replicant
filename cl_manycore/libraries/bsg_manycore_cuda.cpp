@@ -23,6 +23,9 @@ static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}
 
 static uint32_t const DRAM_SIZE = 0x80000000;
 
+
+
+
 /*!
  * Gets the x coordinates of a list of tile_t structs.
  * @param tiles array of tiles. Must be allocated by the caller.
@@ -40,6 +43,9 @@ static int hb_mc_get_x(tile_t *tiles, uint8_t *x_list, uint32_t num_tiles) {
 	return HB_MC_SUCCESS;
 }
 
+
+
+
 /*!
  * Gets the x coordinates of a list of tile_t structs.
  * @param tiles array of tiles. Must be allocated by the caller.
@@ -56,6 +62,9 @@ static int hb_mc_get_y(tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
 	}
 	return HB_MC_SUCCESS;
 }
+
+
+
 
 /*!
  * creates a awsbwhal::MemoryManager object and stores it in a global table.
@@ -81,6 +90,7 @@ static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t
 		return HB_MC_FAIL; /* could not memcpy */
 	return HB_MC_SUCCESS;	
 }
+
 
 
 
@@ -143,6 +153,7 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
 
 
 
+
 /**
  * Takes the grid size, tile group dimensions, kernel name, argc, argv* and the finish signal address, calls hb_mc_tile_group_enqueue to initialize all tile groups for grid.
  * @param[in]  device        Pointer to device
@@ -173,6 +184,7 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
 	device->num_grids ++;
 	return HB_MC_SUCCESS;
 }
+
 
 
 
@@ -314,6 +326,7 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 
 
 
+
 /**
  * Takes the kernel name, argc, argv* and the finish signal address, and initializes a kernel and passes it to tilegroup.
  * @param[in]  device        Pointer to device
@@ -376,6 +389,7 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
 
 	return HB_MC_SUCCESS;
 }
+
 
 
 
@@ -526,6 +540,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 
 
+
 /**
  * De-allocates all tiles in tile group, and resets their tile-group id and origin in the device book keeping.
  * @param[in]  device        Pointer to device
@@ -555,6 +570,8 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
 
 	return HB_MC_SUCCESS;
 }
+
+
 
 
 /**
@@ -769,6 +786,8 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *
 }
 
 
+
+
 /**
  * Checks to see if all tile groups in a device are finished.
  * @param[in]  device        Pointer to device
@@ -789,6 +808,8 @@ int hb_mc_device_all_tile_groups_finished(device_t *device) {
 
 	return HB_MC_SUCCESS;
 }
+
+
 
 
 /**
@@ -861,6 +882,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 
 	return HB_MC_SUCCESS;
 }
+
 
 
 
@@ -944,17 +966,6 @@ int hb_mc_device_finish (device_t *device) {
 	return HB_MC_SUCCESS;
 }
 
-/*!
- * This function is for testing hb_mc_device_init() only. 
- */
-void _hb_mc_get_mem_manager_info(eva_id_t eva_id, uint32_t *start, uint32_t *size) {
-	if (!mem_manager[eva_id]) {
-		printf("_hb_mc_get_mem_manager_info(): mem manager not initialized.\n");
-		return;
-	}
-	*start = mem_manager[eva_id]->start();
-	*size =mem_manager[eva_id]->size();
-}
 
 
 
@@ -985,6 +996,9 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva) {
 	return HB_MC_SUCCESS;
 }
 
+
+
+
 /*!
  * frees Hammerblade Manycore memory.
  *@param device pointer to the device.
@@ -1005,6 +1019,10 @@ int hb_mc_device_free (device_t *device, eva_t eva) {
 	return HB_MC_SUCCESS;
 }
 
+
+
+
+
 /*
  * caller must ensure eva_id is valid. */
 static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *src) {
@@ -1019,6 +1037,10 @@ static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *s
 	}
 	return HB_MC_SUCCESS;
 }
+
+
+
+
 
 /*
  * caller must esure eva_id is valid. 
@@ -1035,6 +1057,9 @@ static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, hb_mc_response_packe
 	}
 	return HB_MC_SUCCESS;
 }
+
+
+
 
 
 /**
