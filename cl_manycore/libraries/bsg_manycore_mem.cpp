@@ -23,7 +23,7 @@
  * */
 int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_copy_from_epa(): device was not initialized.\n");
+		bsg_pr_err("hb_mc_copy_from_epa(): device was not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
@@ -43,7 +43,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
 		}
 	}
 	if (pass_requests != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_copy_from_epa(): error when sending load request to Manycore.\n");
+		bsg_pr_err("%s: hb_mc_copy_from_epa(): error when sending load request to Manycore.\n", __func__);
 	}
 	
 	/* read receive packets from Manycore. TODO: can result in infinite loop. */
@@ -63,7 +63,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
  * */
 int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_t *buf, uint32_t size) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_xeon_to_epa_copy(): device was not initialized.\n");
+		bsg_pr_err("%s: hb_xeon_to_epa_copy(): device was not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}
 	hb_mc_packet_t packets[size];
@@ -81,7 +81,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 		}
 	}
 	if (pass != HB_MC_SUCCESS)
-		fprintf(stderr, "hb_copy_to_epa(): error when writing to Manycore.\n");
+		bsg_pr_err("%s: error when writing to Manycore.\n", __func__);
 
 	return pass;
 }

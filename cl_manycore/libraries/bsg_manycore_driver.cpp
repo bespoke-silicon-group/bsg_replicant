@@ -116,7 +116,7 @@ int hb_mc_clear_int (uint8_t fd, hb_mc_direction_t dir) {
 	uint32_t isr_addr;
 
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_clear_int(): device not initialized.\n");
+		bsg_pr_err("%s: hb_mc_clear_int(): device not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
@@ -135,9 +135,7 @@ static char *hb_mc_mmap_ocl (uint8_t fd) {
 	pci_bar_handle_t handle;
 	fpga_pci_attach(slot_id, pf_id, bar_id, write_combine, &handle);
 	fpga_pci_get_address(handle, 0, 0x4000, (void **) &ocl_table[fd]);	
-	#ifdef DEBUG
-	fprintf(stderr, "hb_mc_mmap_ocl(): map address is %p\n", ocl_table[fd]);
-	#endif
+	bsg_pr_dbg("%s: hb_mc_mmap_ocl(): map address is %p\n", __func__, ocl_table[fd]);
 	return ocl_table[fd];
 } 
 #endif
@@ -186,14 +184,14 @@ int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
 	hb_mc_request_packet_t recv;
 
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_fifo_drain(): userspace file descriptor %d not valid.\n", fd);
+		bsg_pr_err("%s: userspace file descriptor %d not valid.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
 	//dir = hb_mc_get_rx_direction(type);	
 	rc = hb_mc_fifo_get_occupancy(fd, type, &occupancy); 
 	if (rc != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_fifo_drain(): failed to get fifo %d occupancy.\n", type); 
+		bsg_pr_err("%s: failed to get fifo %d occupancy.\n", __func__, type); 
 		return HB_MC_FAIL;
 	}
 
@@ -201,23 +199,21 @@ int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
 	for (int i = 0; i < occupancy; i++){
 		rc = hb_mc_fifo_receive(fd, type, (hb_mc_packet_t *) &recv); 
 		if (rc != HB_MC_SUCCESS) {
-			fprintf(stderr, "hb_mc_fifo_drain(): failed to read packet from fifo %d.\n", type); 
+			bsg_pr_err("%s: failed to read packet from fifo %d.\n", __func__, type); 
 			return HB_MC_FAIL;
 		}
-		#ifdef DEBUG
-		fprintf(stderr, "Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", type, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);  
-		#endif
+		bsg_pr_dbg("%s: Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", __func__, type, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);  
 	}
 
 	/* recheck occupancy to make sure all packets are drained. */
 	rc = hb_mc_fifo_get_occupancy(fd, type, &occupancy); 
 	if (rc != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_fifo_drain(): failed to get fifo %d occupancy.\n", type); 
+		bsg_pr_err("%s: failed to get fifo %d occupancy.\n", __func__, type); 
 		return HB_MC_FAIL;
 	}
 
 	if (occupancy > 0){
-		fprintf(stderr, "hb_mc_fifo_drain(): failed to drain fifo %d even after reading all stale packets.\n", type); 
+		bsg_pr_err("%s: failed to drain fifo %d even after reading all stale packets.\n", __func__, type); 
 		return HB_MC_FAIL;
 	}
 	return HB_MC_SUCCESS;
@@ -263,7 +259,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	#ifndef COSIM
 	ocl_base = hb_mc_mmap_ocl(*fd);
 	if (!ocl_base) {
-		fprintf(stderr, "hb_mc_fifo_init(): unable to mmap device.\n");
+		bsg_pr_err("%s: failed mmap device.\n", __func__);
 		return HB_MC_FAIL;
 	}	
 	#else
@@ -303,7 +299,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_manycore_dim_x = cfg;
 
 	if((hb_mc_manycore_dim_x <= 0) || (hb_mc_manycore_dim_x > 32)){
-		fprintf(stderr, "hb_mc_fifo_init(): Questionable manycore X dimension: %d.\n", hb_mc_manycore_dim_x);
+		bsg_pr_err("%s: Questionable manycore X dimension: %d.\n", __func__, hb_mc_manycore_dim_x);
 		return HB_MC_FAIL;
 	}
 
@@ -313,7 +309,7 @@ int hb_mc_init_cache_tag(uint8_t fd, uint8_t x, uint8_t y) {
 	hb_mc_manycore_dim_y = cfg;
 
 	if((hb_mc_manycore_dim_y <= 0) || (hb_mc_manycore_dim_y > 32)){
-		fprintf(stderr, "hb_mc_fifo_init(): Questionable manycore Y dimension: %d.\n", hb_mc_manycore_dim_y);
+		bsg_pr_err("%s Questionable manycore Y dimension: %d.\n", __func__, hb_mc_manycore_dim_y);
 		return HB_MC_FAIL;
 	}
 
@@ -406,7 +402,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	hb_mc_direction_t dir;
 
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_fifo_transmit(): device not initialized.\n");
+		bsg_pr_err("%s: device not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}	
 
@@ -417,7 +413,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	dir = hb_mc_get_tx_direction(type);
 	hb_mc_fifo_get_vacancy(fd, type, &vacancy);
 	if (vacancy < (sizeof(hb_mc_packet_t)/sizeof(uint32_t))) {
-		fprintf(stderr, "hb_mc_fifo_transmit(): not enough space in fifo.\n");
+		bsg_pr_err("%s: not enough space in fifo.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
@@ -437,9 +433,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	// Write 1 to the Transmit Complete bit to clear it
 	hb_mc_fifo_set_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT);
 
-	#ifdef DEBUG
-	fprintf(stderr, "Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
-	#endif
+	bsg_pr_dbg("%s: Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", __func__, packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
 
 	return HB_MC_SUCCESS;
 }
@@ -474,17 +468,13 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 		return HB_MC_FAIL;
 	}
 	
-	#ifdef DEBUG
-	fprintf(stderr, "hb_mc_fifo_receive(): read the receive length register @ %u to be %u\n", length_addr, length);
-	#endif
+	bsg_pr_dbg("%s: read the receive length register @ %u to be %u\n", __func__, length_addr, length);
 
 	for (int i = 0; i < sizeof(hb_mc_packet_t)/sizeof(uint32_t); i++) {
 		packet->words[i] = hb_mc_read32(fd, data_addr);
 	}
 
-	#ifdef DEBUG
-	fprintf(stderr, "Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
-	#endif
+	bsg_pr_dbg("%s: Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", __func__, packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
 
 	return HB_MC_SUCCESS;
 }
@@ -495,7 +485,7 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
  */
 int hb_mc_get_host_credits (uint8_t fd) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_get_host_credits(): device not initialized.\n");
+		bsg_pr_err("%s: device not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}		
 	return hb_mc_read32(fd, hb_mc_mmio_credits_get_reg_addr(HB_MC_MMIO_CREDITS_HOST_OFFSET));
@@ -508,7 +498,7 @@ int hb_mc_get_host_credits (uint8_t fd) {
  * */
 int hb_mc_all_host_req_complete(uint8_t fd) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_get_host_req_complete(): device not initialized.\n");
+		bsg_pr_err("%s: device not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}		
 	if (hb_mc_get_host_credits(fd) == HB_MC_MMIO_MAX_CREDITS)
@@ -526,11 +516,11 @@ int hb_mc_all_host_req_complete(uint8_t fd) {
  */
 int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_get_config(): device not initialized.\n");
+		bsg_pr_err("%s: device not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}	
 	if ((id < 0) || (id > HB_MC_CONFIG_MAX)) {
-		fprintf(stderr, "hb_mc_get_config(): invalid configuration ID.\n");
+		bsg_pr_err("%s: invalid configuration ID.\n", __func__);
 		return HB_MC_FAIL;
 	}
 	uint32_t rom_addr_byte = HB_MC_MMIO_ROM_BASE + (id << 2);
@@ -546,7 +536,7 @@ int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg){
 int hb_mc_get_recv_vacancy (uint8_t fd) {
 	uint32_t credit_addr;
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_get_recv_vacancy(): device not initialized.\n");
+		bsg_pr_err("%s: device not initialized.\n", __func__);
 		return HB_MC_FAIL;
 	}
 	credit_addr = hb_mc_mmio_credits_get_reg_addr(HB_MC_MMIO_CREDITS_FIFO_HOST_VACANCY_OFFSET);

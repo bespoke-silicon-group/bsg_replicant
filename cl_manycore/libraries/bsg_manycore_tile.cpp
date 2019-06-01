@@ -106,9 +106,7 @@ int hb_mc_tile_freeze_dep (uint8_t fd, uint8_t x, uint8_t y) {
 	if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &freeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 
-	#ifdef DEBUG
-	fprintf(stderr, "Freeze packet sent to tile (%d,%d).\n", x,y); 
-	#endif
+	bsg_pr_dbg("%s: Freeze packet sent to tile (%d,%d).\n", __func__, x, y); 
 	return HB_MC_SUCCESS;
 }
 
@@ -137,9 +135,7 @@ int hb_mc_tile_unfreeze_dep (uint8_t fd, uint8_t x, uint8_t y) {
 	if (hb_mc_fifo_transmit(fd, HB_MC_FIFO_TX_REQ, &unfreeze) != HB_MC_SUCCESS)
 		return HB_MC_FAIL;
 
-	#ifdef DEBUG
-	fprintf(stderr, "Unfreeze packet sent to tile (%d,%d).\n", x,y); 
-	#endif
+	bsg_pr_dbg("%s: Unfreeze packet sent to tile (%d,%d).\n", __func__, x, y); 
 	return HB_MC_SUCCESS;
 }
 
@@ -162,18 +158,14 @@ int hb_mc_tile_set_origin_registers(hb_mc_manycore_t *mc, const hb_mc_coordinate
 		bsg_pr_err("%s: failed to set tile (%d,%d) CSR_TGO_X register.\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", coord->x, coord->y, origin->x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", __func__, coord->x, coord->y, origin->x);
 
 	error = hb_mc_manycore_write32(mc, &org_y_npa, origin->y); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to set tile (%d,%d) CSR_TGO_Y register.\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", coord->x, coord->y, origin->y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", __func__, coord->x, coord->y, origin->y);
 
 	return HB_MC_SUCCESS; 
 }
@@ -228,9 +220,7 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
 		bsg_pr_err("%s: failed to write __bsg_grp_org_x to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_x (epa 0x%x) to %d.\n", coord->x, coord->y, org_x_npa.epa, origin->x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grp_org_x (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, org_x_npa.epa, origin->x);
 
 
 	error = hb_mc_manycore_write32(mc, &org_y_npa, origin->y);
@@ -238,9 +228,7 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
 		bsg_pr_err("%s: failed to write __bsg_grp_org_y to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_y (epa 0x%x) to %d.\n", coord->x, coord->y, org_y_npa.epa, origin->y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grp_org_y (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, org_y_npa.epa, origin->y);
 
 	return HB_MC_SUCCESS;
 }
@@ -295,9 +283,7 @@ int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, un
 		bsg_pr_err("%s: failed to write __bsg_x to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg__x (epa 0x%x) to %d.\n", coord->x, coord->y, bsg_x_npa.epa, coord_val->x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg__x (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, bsg_x_npa.epa, coord_val->x);
 
 
 	error = hb_mc_manycore_write32(mc, &bsg_y_npa, coord_val->y);
@@ -305,9 +291,7 @@ int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, un
 		bsg_pr_err("%s: failed to write __bsg_y to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_y (epa 0x%x) to %d.\n", coord->x, coord->y, bsg_y_npa.epa, coord_val->y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_y (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, bsg_y_npa.epa, coord_val->y);
 
 	return HB_MC_SUCCESS;
 }
@@ -355,9 +339,7 @@ int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsign
 		bsg_pr_err("%s: failed to write __bsg_id to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_id (epa 0x%x) to %d.\n", coord->x, coord->y, bsg_id_npa.epa, id);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_id (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, bsg_id_npa.epa, id);
 
 	return HB_MC_SUCCESS;
 }
@@ -412,9 +394,7 @@ int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t 
 		bsg_pr_err("%s: failed to write __bsg_tile_group_id_x to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_tile_group_id_x (epa 0x%x) to %d.\n", coord->x, coord->y, tg_id_x_npa.epa, tg_id->x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_tile_group_id_x (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, tg_id_x_npa.epa, tg_id->x);
 
 
 	error = hb_mc_manycore_write32(mc, &tg_id_y_npa, tg_id->y);
@@ -422,9 +402,7 @@ int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t 
 		bsg_pr_err("%s: failed to write __bsg_tile_group_id_y to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_tile_group_id_y (epa 0x%x) to %d.\n", coord->x, coord->y, tg_id_y_npa.epa, tg_id->y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_tile_group_id_y (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, tg_id_y_npa.epa, tg_id->y);
 
 	return HB_MC_SUCCESS;
 }
@@ -479,9 +457,7 @@ int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map,
 		bsg_pr_err("%s: failed to write __bsg_grid_dim_x to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_gird_dim_x (epa 0x%x) to %d.\n", coord->x, coord->y, grid_dim_x_npa.epa, grid_dim->x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_gird_dim_x (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, grid_dim_x_npa.epa, grid_dim->x);
 
 
 	error = hb_mc_manycore_write32(mc, &grid_dim_y_npa, grid_dim->y);
@@ -489,9 +465,7 @@ int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map,
 		bsg_pr_err("%s: failed to write __bsg_grid_dim_y to tile (%d,%d).\n", __func__, coord->x, coord->y); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grid_dim_y (epa 0x%x) to %d.\n", coord->x, coord->y, grid_dim_y_npa.epa, grid_dim->y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grid_dim_y (epa 0x%x) to %d.\n", __func__, coord->x, coord->y, grid_dim_y_npa.epa, grid_dim->y);
 
 	return HB_MC_SUCCESS;
 }
@@ -510,26 +484,22 @@ int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map,
  */
 int hb_mc_tile_set_origin_registers_dep(uint8_t fd, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_registers(): invalid device %d.\n", fd);
+		bsg_pr_err("%s: invalid device %d.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET), &(origin.x), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_copy_to_epa(): failed to set tile X origin.\n"); 
+		bsg_pr_err("%s: failed to set tile X origin.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", coord.x, coord.y, origin.x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", __func__, coord.x, coord.y, origin.x);
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, hb_mc_tile_epa_get_word_addr(HB_MC_TILE_EPA_CSR_BASE, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET), &(origin.y), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_registers() --> hb_mc_copy_to_epa(): failed to set tile Y origin.\n"); 
+		bsg_pr_err("%s: failed to set tile Y origin.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-	fprintf(stderr, "Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", coord.x, coord.y, origin.y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", __func__, coord.x, coord.y, origin.y);
 
 	return HB_MC_SUCCESS;
 }
@@ -546,35 +516,31 @@ int hb_mc_tile_set_origin_registers_dep(uint8_t fd, hb_mc_coordinate_t coord, hb
  */
 int hb_mc_tile_set_origin_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t origin){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols(): invalid device %d.\n", fd);
+		bsg_pr_err("%s: invalid device %d.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_origin_x_eva, bsg_origin_y_eva;
 	if (symbol_to_eva(bin_name, "__bsg_grp_org_x", &bsg_origin_x_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_x eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_grp_org_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 	if (symbol_to_eva(bin_name, "__bsg_grp_org_y", &bsg_origin_y_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_y eva.\n");
+		bsg_pr_dbg("%s: failed to aquire __bsg_grp_org_y eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_origin_x_eva >> 2 /* TODO: magic number */, &(origin.x), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grp_org_x symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_grp_org_x symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_origin_x_eva, origin.x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_origin_x_eva, origin.x);
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_origin_y_eva >> 2 /* TODO: magic number */, &(origin.y), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grp_org_y symbol .\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_grp_org_y symbol .\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_origin_y_eva, origin.y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_origin_y_eva, origin.y);
 
 	return HB_MC_SUCCESS;
 }
@@ -589,35 +555,31 @@ int hb_mc_tile_set_origin_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_na
 * */
 int hb_mc_tile_set_coord_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols(): invalid device %d.\n", fd);
+		bsg_pr_err("%s: invalid device %d.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_x_eva, bsg_y_eva;
 	if (symbol_to_eva(bin_name, "__bsg_x", &bsg_x_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> symbol_to_eva(): failed to aquire __bsg_x eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 	if (symbol_to_eva(bin_name, "__bsg_y", &bsg_y_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> symbol_to_eva(): failed to aquire __bsg_y eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_y eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_x_eva >> 2 /* TODO: magic number */, &(coord_val.x), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_y symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_y symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_x (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_x_eva, coord_val.x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_x (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_x_eva, coord_val.x);
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_y_eva >> 2 /* TODO: magic number */, &(coord_val.y), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_y symbol .\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_y symbol .\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_y (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_y_eva, coord_val.y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_y (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_y_eva, coord_val.y);
 
 	return HB_MC_SUCCESS;
 }
@@ -635,7 +597,7 @@ int hb_mc_tile_set_coord_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_nam
 * */
 int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_id_symbol(): invalid device %d.\n", fd);
+		bsg_pr_err("%s: invalid device %d.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
@@ -643,17 +605,15 @@ int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  
 
 	eva_t bsg_id_eva;
 	if (symbol_to_eva(bin_name, "__bsg_id", &bsg_id_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> symbol_to_eva(): failed to aquire __bsg_id eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_id eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_id_eva >> 2 /* TODO: magic number */, &id, 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> hb_mc_copy_to_epa(): failed to set tile __bsg_id symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_id symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_id (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_id_eva, id);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_id (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_id_eva, id);
 
 	return HB_MC_SUCCESS;
 }
@@ -669,35 +629,31 @@ int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  
 * */
 int hb_mc_tile_set_tile_group_id_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols(): invalid device %d.\n", fd);
+		bsg_pr_err("%s: invalid device %d.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_tile_group_id_x_eva, bsg_tile_group_id_y_eva;
 	if (symbol_to_eva(bin_name, "__bsg_tile_group_id_x", &bsg_tile_group_id_x_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols() --> symbol_to_eva(): failed to aquire __bsg_tile_group_id_x eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_tile_group_id_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 	if (symbol_to_eva(bin_name, "__bsg_tile_group_id_y", &bsg_tile_group_id_y_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols() --> symbol_to_eva(): failed to aquire __bsg_tile_group_id_y eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_tile_group_id_y eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_tile_group_id_x_eva >> 2 /* TODO: magic number */, &(tg_id.x), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_tile_group_id_x symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_tile_group_id_x symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_tile_group_id_x (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_tile_group_id_x_eva, tg_id.x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_tile_group_id_x (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_tile_group_id_x_eva, tg_id.x);
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_tile_group_id_y_eva >> 2 /* TODO: magic number */, &(tg_id.y), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_tile_group_id_y symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_tile_group_id_y symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_tile_group_id_y (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_tile_group_id_y_eva, tg_id.y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_tile_group_id_y (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_tile_group_id_y_eva, tg_id.y);
 
 	return HB_MC_SUCCESS;
 }
@@ -713,36 +669,32 @@ int hb_mc_tile_set_tile_group_id_symbols_dep (uint8_t fd, eva_id_t eva_id, char*
 * */
 int hb_mc_tile_set_grid_dim_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t grid_dim){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols(): invalid device %d.\n", fd);
+		bsg_pr_err("%s: hb_mc_tile_set_grid_dim_symbols(): invalid device %d.\n", __func__, fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_grid_dim_x_eva, bsg_grid_dim_y_eva;
 	if (symbol_to_eva(bin_name, "__bsg_grid_dim_x", &bsg_grid_dim_x_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols() --> symbol_to_eva(): failed to aquire __bsg_grid_dim_x eva.\n");
+		bsg_pr_err("%s: hb_mc_tile_set_grid_dim_symbols() --> symbol_to_eva(): failed to aquire __bsg_grid_dim_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
 	if (symbol_to_eva(bin_name, "__bsg_grid_dim_y", &bsg_grid_dim_y_eva) != HB_MC_SUCCESS){
-		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols() --> symbol_to_eva(): failed to aquire __bsg_grid_dim_y eva.\n");
+		bsg_pr_err("%s: failed to aquire __bsg_grid_dim_y eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_grid_dim_x_eva >> 2 /* TODO: magic number */, &(grid_dim.x), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grid_dim_x symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_grid_dim_x symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grid_dim_x (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_grid_dim_x_eva, grid_dim.x);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grid_dim_x (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_grid_dim_x_eva, grid_dim.x);
 
 	if (hb_mc_copy_to_epa(fd, coord.x, coord.y, bsg_grid_dim_y_eva >> 2 /* TODO: magic number */, &(grid_dim.y), 1) != HB_MC_SUCCESS) {
-		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols() --> hb_mc_copy_to_epa(): failed to set tile __bsg_grid_dim_y symbol.\n"); 
+		bsg_pr_err("%s: failed to set tile __bsg_grid_dim_y symbol.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	#ifdef DEBUG
-		fprintf(stderr, "Setting tile (%d,%d) __bsg_grid_dim_y (eva 0x%x) to %d.\n", coord.x, coord.y, bsg_grid_dim_y_eva, grid_dim.y);
-	#endif
+	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grid_dim_y (eva 0x%x) to %d.\n", __func__, coord.x, coord.y, bsg_grid_dim_y_eva, grid_dim.y);
 
 	return HB_MC_SUCCESS;
 }
