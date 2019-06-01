@@ -183,24 +183,25 @@ int hb_mc_tile_set_origin_registers(hb_mc_manycore_t *mc, const hb_mc_coordinate
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] map        Eva to npa mapping. 
- * @param[in] elf        Binary elf file. 
+ * @param[in] bin        Binary elf file.
+ * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the origin of.
  * @param[in] origin     Origin coordinates.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin){
+int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
 
 	hb_mc_eva_t org_x_eva, org_y_eva;
-	error = symbol_to_eva(elf, "__bsg_grp_org_x", &org_x_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_x", &org_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
-	error = symbol_to_eva(elf, "__bsg_grp_org_y", &org_y_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_y", &org_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_y eva.\n", __func__);
 		return HB_MC_FAIL;
@@ -249,24 +250,25 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, c
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] map        Eva to npa mapping. 
- * @param[in] elf        Binary elf file. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the coordinates of.
  * @param[in] coord_val  The cooridnates to set the tile.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val){
+int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
 
 	hb_mc_eva_t bsg_x_eva, bsg_y_eva;
-	error = symbol_to_eva(elf, "__bsg_x", &bsg_x_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_x", &bsg_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
-	error = symbol_to_eva(elf, "__bsg_grp_org_y", &bsg_y_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_y", &bsg_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_y eva.\n", __func__);
 		return HB_MC_FAIL;
@@ -315,13 +317,14 @@ int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, ch
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] map        Eva to npa mapping. 
- * @param[in] elf        Binary elf file. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the id of.
  * @param[in] coord_val  The coordinates to set the tile.
  * @param[in] dim        Tile group dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf,  const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val, const hb_mc_dimension_t *dim){
+int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val, const hb_mc_dimension_t *dim){
 
 
 	int error;
@@ -331,7 +334,7 @@ int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* 
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
 
 	hb_mc_eva_t bsg_id_eva;
-	error = symbol_to_eva(elf, "__bsg_id", &bsg_id_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_id", &bsg_id_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s:: failed to aquire __bsg_id eva.\n", __func__);
 		return HB_MC_FAIL;
@@ -364,24 +367,25 @@ int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* 
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] map        Eva to npa mapping. 
- * @param[in] elf        Binary elf file. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the tile group id of.
  * @param[in] tg_id      Tile group id
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf,  const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *tg_id){
+int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *tg_id){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
 
 	hb_mc_eva_t tg_id_x_eva, tg_id_y_eva;
-	error = symbol_to_eva(elf, "__bsg_tile_group_id_x", &tg_id_x_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_tile_group_id_x", &tg_id_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_tile_group_id_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
-	error = symbol_to_eva(elf, "__bsg_tile_group_id_y", &tg_id_y_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_tile_group_id_y", &tg_id_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_tile_group_id_y eva.\n", __func__);
 		return HB_MC_FAIL;
@@ -430,24 +434,25 @@ int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t 
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] map        Eva to npa mapping. 
- * @param[in] elf        Binary elf file. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the tile group id of.
  * @param[in] tg_id      Grid dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, char* elf,  const hb_mc_coordinate_t *coord, const hb_mc_dimension_t *grid_dim){
+int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_dimension_t *grid_dim){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
 
 	hb_mc_eva_t grid_dim_x_eva, grid_dim_y_eva;
-	error = symbol_to_eva(elf, "__bsg_grid_dim_x", &grid_dim_x_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grid_dim_x", &grid_dim_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_grid_dim_x eva.\n", __func__);
 		return HB_MC_FAIL;
 	}
 
-	error = symbol_to_eva(elf, "__bsg_grid_dim_y", &grid_dim_y_eva);
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grid_dim_y", &grid_dim_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_grid_dim_y eva.\n", __func__);
 		return HB_MC_FAIL;
