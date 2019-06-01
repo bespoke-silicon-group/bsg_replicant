@@ -1,5 +1,7 @@
 #include "test_vec_add.h"
 
+#define TEST_NAME "test_vec_add"
+
 /*!
  * Runs the vector addition a one 2x2 tile groups. A[N] + B[N] --> C[N]
  * Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.
@@ -27,14 +29,11 @@ int kernel_vec_add () {
 	* Initialize device, load binary and unfreeze tiles.
 	******************************************************************************************************************/
 	device_t device;
-	uint8_t mesh_dim_x = 4;
-	uint8_t mesh_dim_y = 4;
-	uint8_t mesh_origin_x = 0;
-	uint8_t mesh_origin_y = 1;
+	hb_mc_dimension_t mesh_dim = { .x = 4, .y = 4 }; 
 	eva_id_t eva_id = 0;
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add/main.riscv";
 
-	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
+	hb_mc_device_init(&device, eva_id, elf, TEST_NAME, 0, mesh_dim);
 
 
 
@@ -82,11 +81,9 @@ int kernel_vec_add () {
 	******************************************************************************************************************/
 	uint32_t block_size_x = N;
 
-	uint8_t tg_dim_x = 2;
-	uint8_t tg_dim_y = 2;
+	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2}; 
 
-	uint32_t grid_dim_x = 1;
-	uint32_t grid_dim_y = 1;
+	hb_mc_dimension_t grid_dim = { .x = 1, .y = 1}; 
 
 
 	/*****************************************************************************************************************
@@ -97,7 +94,7 @@ int kernel_vec_add () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add", 5, argv);
+	hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_vec_add", 5, argv);
 
 	/*****************************************************************************************************************
 	* Launch and execute all tile groups on device and wait for all to finish. 

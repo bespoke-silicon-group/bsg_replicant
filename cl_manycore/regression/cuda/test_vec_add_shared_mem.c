@@ -1,5 +1,7 @@
 #include "test_vec_add_shared_mem.h"
 
+#define TEST_NAME "test_vec_add_shared_mem"
+
 /*!
  * Runs the vector addition with shared memory on a grid of 2x2 tile groups. A[N] + B[N] --> C[N]
  * Grid dimensions are determines by how much of a load we want for each tile group (block_size_x)
@@ -27,14 +29,11 @@ int kernel_vec_add_shared_mem () {
 	* Initialize device, load binary and unfreeze tiles.
 	******************************************************************************************************************/
 	device_t device;
-	uint8_t mesh_dim_x = 4;
-	uint8_t mesh_dim_y = 4;
-	uint8_t mesh_origin_x = 0;
-	uint8_t mesh_origin_y = 1;
+	hb_mc_dimension_t mesh_dim = { .x = 4, .y = 4 };
 	eva_id_t eva_id = 0;
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add_shared_mem/main.riscv";
 
-	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
+	hb_mc_device_init(&device, eva_id, elf, TEST_NAME, 0, mesh_dim);
 
 
 
@@ -82,11 +81,9 @@ int kernel_vec_add_shared_mem () {
 	******************************************************************************************************************/
 	uint32_t block_size_x = 16;
 
-	uint8_t tg_dim_x = 2;
-	uint8_t tg_dim_y = 2;
+	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
 
-	uint32_t grid_dim_x = N / block_size_x;
-	uint32_t grid_dim_y = 1;
+	hb_mc_dimension_t grid_dim = { .x = N / block_size_x , .y = 1 };
 
 
 	/*****************************************************************************************************************
@@ -97,7 +94,7 @@ int kernel_vec_add_shared_mem () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_vec_add_shared_mem", 5, argv);
+	hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_vec_add_shared_mem", 5, argv);
 
 	/*****************************************************************************************************************
 	* Launch and execute all tile groups on device and wait for all to finish. 
