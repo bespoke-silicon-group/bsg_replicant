@@ -1,5 +1,5 @@
-#ifndef BSG_MANYCORE_LOADER_H
-#define BSG_MANYCORE_LOADER_H
+#ifndef BSG_MANYCORE_LOADER_DEP_H
+#define BSG_MANYCORE_LOADER_DEP_H
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_driver.h>
 #include <bsg_manycore.h>

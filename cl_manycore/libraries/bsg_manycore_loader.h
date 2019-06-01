@@ -37,6 +37,10 @@ int hb_mc_loader_load(const void *bin, size_t sz,
 int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
                                hb_mc_eva_t *eva);
 
+
+int hb_mc_loader_read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size);
+
+
 #ifdef __cplusplus
 }
 #endif
