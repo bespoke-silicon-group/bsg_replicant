@@ -539,18 +539,18 @@ int hb_mc_tile_set_origin_registers_dep(uint8_t fd, hb_mc_coordinate_t coord, hb
  * @param[in] origin_y y coordinate of tile groups origin
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_symbols_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc_coordinate_t coord, hb_mc_coordinate_t origin){
+int hb_mc_tile_set_origin_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t origin){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_origin_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_origin_x_eva, bsg_origin_y_eva;
-	if (symbol_to_eva(elf, "__bsg_grp_org_x", &bsg_origin_x_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_grp_org_x", &bsg_origin_x_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_x eva.\n");
 		return HB_MC_FAIL;
 	}
-	if (symbol_to_eva(elf, "__bsg_grp_org_y", &bsg_origin_y_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_grp_org_y", &bsg_origin_y_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_y eva.\n");
 		return HB_MC_FAIL;
 	}
@@ -582,18 +582,18 @@ int hb_mc_tile_set_origin_symbols_dep (uint8_t fd, eva_id_t eva_id, char* elf,  
  * @param[in] y y coordinate of tile
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_coord_symbols_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val){
+int hb_mc_tile_set_coord_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_coord_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_x_eva, bsg_y_eva;
-	if (symbol_to_eva(elf, "__bsg_x", &bsg_x_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_x", &bsg_x_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> symbol_to_eva(): failed to aquire __bsg_x eva.\n");
 		return HB_MC_FAIL;
 	}
-	if (symbol_to_eva(elf, "__bsg_y", &bsg_y_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_y", &bsg_y_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_coord_symbols() --> symbol_to_eva(): failed to aquire __bsg_y eva.\n");
 		return HB_MC_FAIL;
 	}
@@ -628,7 +628,7 @@ int hb_mc_tile_set_coord_symbols_dep (uint8_t fd, eva_id_t eva_id, char* elf,  h
  * @param[in] dim_y y dimension of tile group.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim){
+int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_id_symbol(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
@@ -637,7 +637,7 @@ int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc
 	uint32_t id = coord_val.y * dim.x + coord_val.x; /* calculate tile's id */
 
 	eva_t bsg_id_eva;
-	if (symbol_to_eva(elf, "__bsg_id", &bsg_id_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_id", &bsg_id_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_id_symbol() --> symbol_to_eva(): failed to aquire __bsg_id eva.\n");
 		return HB_MC_FAIL;
 	}
@@ -662,18 +662,18 @@ int hb_mc_tile_set_id_symbol_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc
  * @param[in] tg_id_x/y tile group x/y id.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_tile_group_id_symbols_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id){
+int hb_mc_tile_set_tile_group_id_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_tile_group_id_x_eva, bsg_tile_group_id_y_eva;
-	if (symbol_to_eva(elf, "__bsg_tile_group_id_x", &bsg_tile_group_id_x_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_tile_group_id_x", &bsg_tile_group_id_x_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols() --> symbol_to_eva(): failed to aquire __bsg_tile_group_id_x eva.\n");
 		return HB_MC_FAIL;
 	}
-	if (symbol_to_eva(elf, "__bsg_tile_group_id_y", &bsg_tile_group_id_y_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_tile_group_id_y", &bsg_tile_group_id_y_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_tile_group_id_symbols() --> symbol_to_eva(): failed to aquire __bsg_tile_group_id_y eva.\n");
 		return HB_MC_FAIL;
 	}
@@ -706,19 +706,19 @@ int hb_mc_tile_set_tile_group_id_symbols_dep (uint8_t fd, eva_id_t eva_id, char*
  * @param[in] grid_dim_x/y tile group's grid dimensions.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_grid_dim_symbols_dep (uint8_t fd, eva_id_t eva_id, char* elf,  hb_mc_coordinate_t coord, hb_mc_coordinate_t grid_dim){
+int hb_mc_tile_set_grid_dim_symbols_dep (uint8_t fd, eva_id_t eva_id, char* bin_name,  hb_mc_coordinate_t coord, hb_mc_coordinate_t grid_dim){
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols(): invalid device %d.\n", fd);
 		return HB_MC_FAIL;
 	}
 
 	eva_t bsg_grid_dim_x_eva, bsg_grid_dim_y_eva;
-	if (symbol_to_eva(elf, "__bsg_grid_dim_x", &bsg_grid_dim_x_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_grid_dim_x", &bsg_grid_dim_x_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols() --> symbol_to_eva(): failed to aquire __bsg_grid_dim_x eva.\n");
 		return HB_MC_FAIL;
 	}
 
-	if (symbol_to_eva(elf, "__bsg_grid_dim_y", &bsg_grid_dim_y_eva) != HB_MC_SUCCESS){
+	if (symbol_to_eva(bin_name, "__bsg_grid_dim_y", &bsg_grid_dim_y_eva) != HB_MC_SUCCESS){
 		fprintf(stderr, "hb_mc_tile_set_grid_dim_symbols() --> symbol_to_eva(): failed to aquire __bsg_grid_dim_y eva.\n");
 		return HB_MC_FAIL;
 	}

@@ -148,11 +148,11 @@ static inline size_t hb_mc_tile_get_size_icache(const hb_mc_manycore_t *mc,
 int hb_mc_tile_freeze_dep (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_unfreeze_dep (uint8_t fd, uint8_t x, uint8_t y);
 int hb_mc_tile_set_origin_registers_dep(uint8_t fd, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
-int hb_mc_tile_set_origin_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
-int hb_mc_tile_set_coord_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val);
-int hb_mc_tile_set_id_symbol_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim);
-int hb_mc_tile_set_tile_group_id_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id);
-int hb_mc_tile_set_grid_dim_symbols_dep(uint8_t fd, eva_id_t eva_id, char* elf, hb_mc_coordinate_t coord, hb_mc_dimension_t grid_dim);
+int hb_mc_tile_set_origin_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
+int hb_mc_tile_set_coord_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val);
+int hb_mc_tile_set_id_symbol_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim);
+int hb_mc_tile_set_tile_group_id_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id);
+int hb_mc_tile_set_grid_dim_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_dimension_t grid_dim);
 
 
 int hb_mc_tile_set_origin_registers (hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin); 
