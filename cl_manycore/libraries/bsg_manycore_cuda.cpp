@@ -178,6 +178,7 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
  * returns HB_MC_SUCCESS on successful allocation and HB_MC_FAIL on fail.
  * */	
 int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
+	int error;
 	if (tg->dim.x > device->mesh->dim.x){
 		fprintf(stderr, "hb_mc_tile_group_allocate_tiles(): tile group X dimension (%d) larger than mesh X dimension (%d).\n", tg->dim.x, device->mesh->dim.x);
 		return HB_MC_FAIL;
@@ -211,39 +212,45 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 						hb_mc_coordinate_t coord_val = {.x = (x - org_x), .y = (y - org_y)};
 
 
-						if (hb_mc_tile_set_origin_registers(device->mc, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin)) != HB_MC_SUCCESS){
-							 (stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_origin_registers(): failed to set tile (%d,%d) tile group origin registers CSR_TGO_X/Y.\n", device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+						error = hb_mc_tile_set_origin_registers(device->mc, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
+						if (error != HB_MC_SUCCESS) { 
+							 bsg_pr_err("%s: failed to set tile (%d,%d) tile group origin registers CSR_TGO_X/Y.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 							return HB_MC_FAIL;
 						}
 
 
 
-						if (hb_mc_tile_set_origin_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin)) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_origin_symbols(): failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n", device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+						error = hb_mc_tile_set_origin_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
+						if (error != HB_MC_SUCCESS) { 
+							bsg_pr_err("%s: failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 							return HB_MC_FAIL;
 						}
 
 
-						if (hb_mc_tile_set_coord_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(coord_val)) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_coord_symbols(): failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n", device->mesh->tiles[tile_id].coord);
+						error = hb_mc_tile_set_coord_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(coord_val));
+						if (error != HB_MC_SUCCESS) { 
+							bsg_pr_err("%s: failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n", __func__, device->mesh->tiles[tile_id].coord);
 							return HB_MC_FAIL;
 						}
 
 
-						if (hb_mc_tile_set_id_symbol(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(coord_val), &(tg->dim)) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_id_symbol(): failed to set tile (%d,%d) id symbol __bsg_id.\n", device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+						error = hb_mc_tile_set_id_symbol(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(coord_val), &(tg->dim));
+						if (error != HB_MC_SUCCESS) { 
+							bsg_pr_err("%s: failed to set tile (%d,%d) id symbol __bsg_id.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 							return HB_MC_FAIL;
 						}
 
 
-						if (hb_mc_tile_set_tile_group_id_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(tg->id)) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_tile_group_id_symbol(): failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n", device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+						error = hb_mc_tile_set_tile_group_id_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(tg->id));
+						if (error != HB_MC_SUCCESS) { 
+							bsg_pr_err("%s: failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 							return HB_MC_FAIL;
 						}
 
 
-						if (hb_mc_tile_set_grid_dim_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(tg->grid_dim)) != HB_MC_SUCCESS){
-							fprintf(stderr, "hb_mc_tile_group_allocate_tiles() --> hb_mc_tile_set_grid_dim_symbol(): failed to set tile (%d,%d) grid size symbol __bsg_grid_size.\n", device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+						error = hb_mc_tile_set_grid_dim_symbols(device->mc, tg->map, device->elf, &(device->mesh->tiles[tile_id].coord), &(tg->grid_dim));
+						if (error != HB_MC_SUCCESS) { 
+							bsg_pr_err("%s: failed to set tile (%d,%d) grid size symbol __bsg_grid_size.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 							return HB_MC_FAIL;
 						}
 
@@ -540,6 +547,19 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, char *name,
 
 	uint32_t num_tiles = device->mesh->dim.x * device->mesh->dim.y; 	
 
+
+	// Freeze all tiles 
+	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
+		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to freeze tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+			return HB_MC_FAIL;
+		}
+	}
+
+
+
+	// Load binary into all tiles 
 	unsigned char *program_data;
 	size_t program_size;
 	
@@ -576,10 +596,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, char *name,
 */
 
 
-	/* create a memory manager object */
-	if (hb_mc_create_memory_manager(device->eva_id, device->elf) != HB_MC_SUCCESS)
-		return HB_MC_FAIL;
- 
+
 
 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
@@ -587,13 +604,6 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, char *name,
 		hb_mc_coordinate_t coord = { .x = device->mesh->tiles[tile_id].coord.x - device->mesh->tiles[tile_id].origin.x, .y = device->mesh->tiles[tile_id].coord.y - device->mesh->tiles[tile_id].origin.y};
 		hb_mc_coordinate_t tg_id = {.x = 0, .y = 0};
 		hb_mc_dimension_t tg_dim = {.x = 1, .y = 1};
-
-
-		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
-		if (error != HB_MC_SUCCESS) { 
-			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_freeze_dep(): failed to freeze tile (%d,%d).\n", device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
-			return HB_MC_FAIL;
-		}
 
 
 		error = hb_mc_tile_set_origin_registers(device->mc, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
@@ -678,20 +688,29 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *elf, char *name,
 
 	}
 
+	// create a memory manager object 
+	if (hb_mc_create_memory_manager(device->eva_id, device->elf) != HB_MC_SUCCESS)
+		return HB_MC_FAIL;
+
+
 
  	
-	/* unfreeze the tile group */
-	for (int i = 0; i < num_tiles; i++) {
-		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[i]), KERNEL_REG, 0x1); /* initialize the kernel register */
-		if (error != HB_MC_SUCCESS)
+	// unfreeze all tiles
+	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
+		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, 0x1); /* initialize the kernel register */
+		if (error != HB_MC_SUCCESS) {
+			bsg_pr_err("%s: failed to write 01 to tile (%d,%d) KERNEL_REG.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 			return HB_MC_FAIL;
+		}
 
-		error = hb_mc_tile_unfreeze_dep(device->fd, device->mesh->tiles[i].coord.x, device->mesh->tiles[i].coord.y);
+		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
 		if (error != HB_MC_SUCCESS) { 
-			fprintf (stderr, "hb_mc_device_init() --> hb_mc_tile_unfreeze_dep(): failed to unfreeze tile (%d,%d).\n", device->mesh->tiles[i].coord.x, device->mesh->tiles[i].coord.y);
+			bsg_pr_err("%s: failed to freeze tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 			return HB_MC_FAIL;
 		}
 	}
+
+
 
 	device->tile_group_capacity = 1;
 	device->tile_groups = (tile_group_t *) malloc (device->tile_group_capacity * sizeof(tile_group_t));

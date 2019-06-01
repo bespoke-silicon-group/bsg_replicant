@@ -1,5 +1,7 @@
 #include "test_stack_load.h"
 
+#define TEST_NAME "test_stack_load"
+
 /*!
  * Runs the stack_load test on a grid of one tile group
  * This tests uses the software/spmd/bsg_cuda_lite_runtime/stack_load/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
@@ -19,32 +21,26 @@ int kernel_stack_load () {
 	* Initialize device, load binary and unfreeze tiles.
 	******************************************************************************************************************/
 	device_t device;
-	uint8_t mesh_dim_x = 4;
-	uint8_t mesh_dim_y = 4;
-	uint8_t mesh_origin_x = 0;
-	uint8_t mesh_origin_y = 1;
+	hb_mc_dimension_t mesh_dim = { .x = 4, .y = 4 }; 
 	eva_id_t eva_id = 0;
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/stack_load/main.riscv";
 
-	hb_mc_device_init(&device, eva_id, elf, mesh_dim_x, mesh_dim_y, mesh_origin_x, mesh_origin_y);
+	hb_mc_device_init(&device, eva_id, elf, TEST_NAME, 0,  mesh_dim);
 
 
 	/*****************************************************************************************************************
 	* Define tg_dim_x/y: number of tiles in each tile group
 	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
 	******************************************************************************************************************/
-	uint8_t tg_dim_x = 2;
-	uint8_t tg_dim_y = 2;
-
-	uint32_t grid_dim_x = 1;
-	uint32_t grid_dim_y = 1;
+	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
+	hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 }; 
 
 
 	/*****************************************************************************************************************
 	* Allocate memory on the device for sum of input arguments, one element for each tile.
 	******************************************************************************************************************/
 	eva_t sum_device;
-	hb_mc_device_malloc(&device, tg_dim_x * tg_dim_y * sizeof (uint32_t), &sum_device);
+	hb_mc_device_malloc(&device, tg_dim.x * tg_dim.y * sizeof (uint32_t), &sum_device);
 
 
 	/*****************************************************************************************************************
@@ -56,7 +52,7 @@ int kernel_stack_load () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	hb_mc_grid_init (&device, grid_dim_x, grid_dim_y, tg_dim_x, tg_dim_y, "kernel_stack_load", NUM_ARGS + 1, argv);
+	hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_stack_load", NUM_ARGS + 1, argv);
 
 
 	/*****************************************************************************************************************
@@ -68,10 +64,10 @@ int kernel_stack_load () {
 	/*****************************************************************************************************************
 	* Copy result sum back from device DRAM into host memory. 
 	******************************************************************************************************************/
-	uint32_t sum_host[tg_dim_x * tg_dim_y];
+	uint32_t sum_host[tg_dim.x * tg_dim.y];
 	void *src = (void *) ((intptr_t) sum_device);
 	void *dst = (void *) &sum_host[0];
-	hb_mc_device_memcpy (&device, (void *) dst, src, (tg_dim_x * tg_dim_y) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy sum_device to the host */
+	hb_mc_device_memcpy (&device, (void *) dst, src, (tg_dim.x * tg_dim.y) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy sum_device to the host */
 
 
 	/*****************************************************************************************************************
@@ -84,13 +80,13 @@ int kernel_stack_load () {
 	* Compare the expected sum and the manycore sum. 
 	******************************************************************************************************************/
 	int mismatch = 0;
-	for (int y = 0; y < tg_dim_y; y ++) { 
-		for (int x = 0; x < tg_dim_x; x ++) { 
-			if (sum_host[y * tg_dim_x + x] == SUM_ARGS) { 
-				fprintf (stderr, "Success: sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim_x + x], SUM_ARGS);
+	for (int y = 0; y < tg_dim.y; y ++) { 
+		for (int x = 0; x < tg_dim.x; x ++) { 
+			if (sum_host[y * tg_dim.x + x] == SUM_ARGS) { 
+				fprintf (stderr, "Success: sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
 			}
 			else { 
-				fprintf (stderr, "Failed : sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim_x + x], SUM_ARGS);
+				fprintf (stderr, "Failed : sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
 				mismatch = 0; 
 			}
 		}
