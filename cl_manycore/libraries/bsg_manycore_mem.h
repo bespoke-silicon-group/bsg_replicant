@@ -3,6 +3,7 @@
 
 #include "bsg_manycore_features.h"
 #include "bsg_manycore_driver.h"
+#include "bsg_manycore_printing.h"
 
 #ifdef __cplusplus
 extern "C" {

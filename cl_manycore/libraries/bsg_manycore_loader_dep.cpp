@@ -43,7 +43,7 @@ static int hb_mc_get_elf_segment_size (char *filename, int segment, uint32_t *re
 	int fd = open(filename, O_RDONLY);
 	struct stat s;
 	if (fd == -1) {
-		fprintf(stderr, "hb_mc_get_elf_segment_size(): could not open the elf file %s\n", filename);
+		bsg_pr_err("%s: hb_mc_get_elf_segment_size(): could not open the elf file %s\n", __func__, filename);
 		return HB_MC_FAIL;
 	}
 
