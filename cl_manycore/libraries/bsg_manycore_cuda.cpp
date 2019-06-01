@@ -560,10 +560,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *
 
 
 	// Load binary into all tiles 
-	unsigned char *program_data;
-	size_t program_size;
-	
-	error = hb_mc_loader_read_program_file (device->bin_name, &program_data, &program_size);
+	error = hb_mc_loader_read_program_file (device->bin_name, &(device->bin), &(device->bin_size));
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err ("%s: failed to read binary file.\n", __func__); 
 		return HB_MC_FAIL;
@@ -576,9 +573,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *
 	}
 
 
-	fprintf(stderr, "size: %d.\n", program_size); 
-
-	error = hb_mc_loader_load (program_data, program_size, device->mc, &default_map, tile_list, num_tiles); 
+	error = hb_mc_loader_load (device->bin, device->bin_size, device->mc, &default_map, tile_list, num_tiles); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err ("%s: failed to load binary into tiles.\n", __func__); 
 		return HB_MC_FAIL;
