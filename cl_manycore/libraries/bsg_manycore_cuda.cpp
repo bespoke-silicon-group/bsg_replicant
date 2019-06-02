@@ -793,15 +793,16 @@ int hb_mc_device_program_init (device_t *device, char *bin_name) {
  	
 	// unfreeze all tiles
 	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
-		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, 0x1); /* initialize the kernel register */
+//		error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &KERNEL_REG, 0x1); /* Initilize the kernel register in tile*/  
+ 		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS) {
-			bsg_pr_err("%s: failed to write 01 to tile (%d,%d) KERNEL_REG.\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+			bsg_pr_err("%s: failed to initialize kernel register to 0x1 in tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 			return HB_MC_FAIL;
 		}
 
-		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
+		error = hb_mc_tile_unfreeze(device->mc, &(device->mesh->tiles[tile_id].coord));
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err("%s: failed to freeze tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
+			bsg_pr_err("%s: failed to unfreeze tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 			return HB_MC_FAIL;
 		}
 	}
@@ -966,6 +967,8 @@ int hb_mc_device_tile_groups_execute (device_t *device) {
  */
 int hb_mc_device_finish (device_t *device) {
 
+	int error;
+
 	if (device->eva_id != 0) {
 		bsg_pr_err("%s: eva_id not supported.\n", __func__); 
 		return HB_MC_FAIL;
@@ -975,15 +978,18 @@ int hb_mc_device_finish (device_t *device) {
 		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */	
 	delete(mem_manager[device->eva_id]);
 	
-	for (int i = 0; i < device->mesh->dim.x * device->mesh->dim.y ; i++) { /* freeze tiles */
-		hb_mc_tile_freeze_dep(device->fd, device->mesh->tiles[i].coord.x, device->mesh->tiles[i].coord.y);
+	for (int tile_id = 0; tile_id < device->mesh->dim.x * device->mesh->dim.y ; tile_id ++) { 
+		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to freeze tile.\n", __func__); 
+			return HB_MC_FAIL;
+		}
 	}
-
 
 	hb_mc_manycore_exit(device->mc); 
 
 
-	int error = hb_mc_fifo_finish(device->fd);
+	error = hb_mc_fifo_finish(device->fd);
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to terminate host.\n", __func__);
 		return HB_MC_FAIL;
