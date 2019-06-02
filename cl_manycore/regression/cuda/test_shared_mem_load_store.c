@@ -10,6 +10,7 @@
 
 int kernel_shared_mem_load_store () {
 	fprintf(stderr, "Running the CUDA Shared Memory Load Store Kernel.\n\n");
+	int rc;
 
 	srand(time); 
 
@@ -21,10 +22,19 @@ int kernel_shared_mem_load_store () {
 	******************************************************************************************************************/
 	device_t device;
 	hb_mc_dimension_t mesh_dim = { .x = 4, .y = 4 };
-	hb_mc_device_init(&device, TEST_NAME, 0,  mesh_dim);
+	rc = hb_mc_device_init(&device, TEST_NAME, 0,  mesh_dim);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to initialize device.\n");
+		return HB_MC_FAIL;
+	}
+
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/shared_mem_load_store/main.riscv";
-	hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to initialize program.\n");
+		return HB_MC_FAIL;
+	}
 
 
 	/*****************************************************************************************************************
@@ -34,9 +44,18 @@ int kernel_shared_mem_load_store () {
 	uint32_t N = 64;
 
 	eva_t A_in_device, A_out_device; 
-	hb_mc_device_malloc(&device, M * N * sizeof(uint32_t), &A_in_device); /* allocate A_in[M][N] on the device */
-	hb_mc_device_malloc(&device, N * N * sizeof(uint32_t), &A_out_device); /* allocate A_out[M][N] on the device */
+	rc = hb_mc_device_malloc(&device, M * N * sizeof(uint32_t), &A_in_device); /* allocate A_in[M][N] on the device */
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to allocate memory on device.\n");
+		return HB_MC_FAIL;
+	}
 
+
+	rc = hb_mc_device_malloc(&device, N * N * sizeof(uint32_t), &A_out_device); /* allocate A_out[M][N] on the device */
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to allocate memory on device.\n");
+		return HB_MC_FAIL;
+	}
 
 
 	/*****************************************************************************************************************
@@ -54,7 +73,11 @@ int kernel_shared_mem_load_store () {
 	******************************************************************************************************************/
 	void *dst = (void *) ((intptr_t) A_in_device);
 	void *src = (void *) &A_in_host[0];
-	hb_mc_device_memcpy (&device, dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A_in to the device  */	
+	rc = hb_mc_device_memcpy (&device, dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A_in to the device  */	
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to copy memory to device.\n");
+		return HB_MC_FAIL;
+	}
 
 
 	/*****************************************************************************************************************
@@ -78,14 +101,22 @@ int kernel_shared_mem_load_store () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_shared_mem_load_store", 6, argv);
+	rc = hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_shared_mem_load_store", 6, argv);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to initialize grid.\n");
+		return HB_MC_FAIL;
+	}
+
 
 	/*****************************************************************************************************************
 	* Launch and execute all tile groups on device and wait for all to finish. 
 	******************************************************************************************************************/
-	hb_mc_device_tile_groups_execute(&device);
+	rc = hb_mc_device_tile_groups_execute(&device);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to execute tile groups.\n");
+		return HB_MC_FAIL;
+	}
 	
-
 
 	/*****************************************************************************************************************
 	* Copy result matrix back from device DRAM into host memory. 
@@ -93,15 +124,21 @@ int kernel_shared_mem_load_store () {
 	uint32_t A_out_host[M * N];
 	src = (void *) ((intptr_t) A_out_device);
 	dst = (void *) &A_out_host[0];
-	hb_mc_device_memcpy (&device, (void *) dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A_out to the host */
-
+	rc = hb_mc_device_memcpy (&device, (void *) dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A_out to the host */
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to copy memory from device.\n");
+		return HB_MC_FAIL;
+	}
 
 
 	/*****************************************************************************************************************
 	* Freeze the tiles and memory manager cleanup. 
 	******************************************************************************************************************/
-	hb_mc_device_finish(&device); 
-
+	rc = hb_mc_device_finish(&device); 
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to de-initialize device.\n");
+		return HB_MC_FAIL;
+	}
 
 
 		fprintf(stderr, "Expected Result:\n");
