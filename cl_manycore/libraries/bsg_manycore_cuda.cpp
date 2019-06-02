@@ -462,15 +462,28 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 
 
-			hb_mc_eva_t finish_signal_eva;
-			size_t sz; 
-			error = hb_mc_npa_to_eva (cfg, tg->map, &(device->mesh->tiles[tile_id].coord), &(finish_signal_npa), &finish_signal_eva, &sz); 
-			if (error != HB_MC_SUCCESS) { 
-				bsg_pr_err("%s: failed to aquire finish signal address eva from npa.\n", __func__); 
+//			hb_mc_eva_t finish_signal_eva;
+//			size_t sz; 
+//			error = hb_mc_npa_to_eva (cfg, tg->map, &(device->mesh->tiles[tile_id].coord), &(finish_signal_npa), &finish_signal_eva, &sz); 
+//			if (error != HB_MC_SUCCESS) { 
+//				bsg_pr_err("%s: failed to aquire finish signal address eva from npa.\n", __func__); 
+//				return HB_MC_FAIL;
+//			}
+
+
+//TEMP
+			npa_t finish_signal_host_npa = {host_coordinate.x, host_coordinate.y, tg->kernel->finish_signal_addr};
+			eva_t finish_signal_host_eva;
+			error = hb_mc_npa_to_eva_deprecated(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva);
+			if (error != HB_MC_SUCCESS) {
+				bsg_pr_err("%s: failed to get finish_signal_host_eva from finish_signal_host_npa.\n", __func__);
 				return HB_MC_FAIL;
 			}
 
-			error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &SIGNAL_REG, finish_signal_eva); 
+
+
+
+			error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &SIGNAL_REG, finish_signal_host_eva); 
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to write finish signal address to tile (%d,%d) for grid %d tile group (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y, tg->grid_id, tg->id.x, tg->id.y);
 				return HB_MC_FAIL;
