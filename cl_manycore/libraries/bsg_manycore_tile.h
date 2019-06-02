@@ -155,6 +155,12 @@ int hb_mc_tile_set_id_symbol_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb
 int hb_mc_tile_set_tile_group_id_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id);
 int hb_mc_tile_set_grid_dim_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_dimension_t grid_dim);
 
+int hb_mc_tile_write8(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint8_t v); 
+int hb_mc_tile_write16(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint16_t v); 
+int hb_mc_tile_write32(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint32_t v); 
+
+
+
 
 int hb_mc_tile_set_origin_registers (hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin); 
 int hb_mc_tile_set_origin_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char *bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin);
