@@ -116,7 +116,7 @@ int hb_mc_tile_unfreeze(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
 static inline size_t hb_mc_tile_get_size_dmem(const hb_mc_manycore_t *mc,
 					const hb_mc_coordinate_t *tile)
 {
-	return 4 * (1<<10); //4K -- this might be later read from the config
+	return hb_mc_config_get_dmem_size(hb_mc_manycore_get_config(mc));
 }
 
 /**

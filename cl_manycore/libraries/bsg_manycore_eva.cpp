@@ -73,7 +73,7 @@ static int default_eva_to_epa_tile(
 		*sz = sizeof(uint32_t);
 	} else {
 		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
-			" addressible tile memory locatiion.\n", 
+			" addressible tile memory locatiion.\n",
 			__func__, hb_mc_eva_addr(eva));
 		*epa = 0;
 		*sz = 0;
@@ -93,9 +93,9 @@ static int default_eva_to_epa_tile(
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_local(const hb_mc_config_t *cfg, 
+static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *o,
-				const hb_mc_coordinate_t *src, 
+				const hb_mc_coordinate_t *src,
 				const hb_mc_eva_t *eva,
 				hb_mc_npa_t *npa, size_t *sz)
 {
@@ -112,11 +112,11 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
-		__func__, hb_mc_eva_addr(eva), 
+		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
-		hb_mc_coordinate_get_y(*src), 
-		hb_mc_npa_get_x(npa), 
-		hb_mc_npa_get_y(npa), 
+		hb_mc_coordinate_get_y(*src),
+		hb_mc_npa_get_x(npa),
+		hb_mc_npa_get_y(npa),
 		hb_mc_npa_get_epa(npa));
 	return HB_MC_SUCCESS;
 }
@@ -140,9 +140,9 @@ static bool default_eva_is_group(const hb_mc_eva_t *eva)
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_group(const hb_mc_config_t *cfg, 
+static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *o,
-				const hb_mc_coordinate_t *src, 
+				const hb_mc_coordinate_t *src,
 				const hb_mc_eva_t *eva,
 				hb_mc_npa_t *npa, size_t *sz)
 {
@@ -162,14 +162,14 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	y += oy;
 	if(dim_x < x){
 		bsg_pr_err("%s: Invalid Group EVA. X coordinate destination %d"
-			"is larger than current manycore configuration\n", 
+			"is larger than current manycore configuration\n",
 			__func__, x);
 		return HB_MC_FAIL;
 	}
 
 	if(dim_y < y){
 		bsg_pr_err("%s: Invalid Group EVA. Y coordinate destination %d"
-			"is larger than current manycore configuration\n", 
+			"is larger than current manycore configuration\n",
 			__func__, y);
 		return HB_MC_FAIL;
 	}
@@ -180,11 +180,11 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
-		__func__, hb_mc_eva_addr(eva), 
+		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
-		hb_mc_coordinate_get_y(*src), 
-		hb_mc_npa_get_x(npa), 
-		hb_mc_npa_get_y(npa), 
+		hb_mc_coordinate_get_y(*src),
+		hb_mc_npa_get_x(npa),
+		hb_mc_npa_get_y(npa),
 		hb_mc_npa_get_epa(npa));
 
 	return HB_MC_SUCCESS;
@@ -209,9 +209,9 @@ static bool default_eva_is_global(const hb_mc_eva_t *eva)
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_global(const hb_mc_config_t *cfg, 
+static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *o,
-				const hb_mc_coordinate_t *src, 
+				const hb_mc_coordinate_t *src,
 				const hb_mc_eva_t *eva,
 				hb_mc_npa_t *npa, size_t *sz)
 {
@@ -228,11 +228,11 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
-		__func__, hb_mc_eva_addr(eva), 
+		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
-		hb_mc_coordinate_get_y(*src), 
-		hb_mc_npa_get_x(npa), 
-		hb_mc_npa_get_y(npa), 
+		hb_mc_coordinate_get_y(*src),
+		hb_mc_npa_get_x(npa),
+		hb_mc_npa_get_y(npa),
 		hb_mc_npa_get_epa(npa));
 
 	return HB_MC_SUCCESS;
@@ -258,9 +258,9 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_dram(const hb_mc_config_t *cfg, 
+static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 				const hb_mc_coordinate_t *o,
-				const hb_mc_coordinate_t *src, 
+				const hb_mc_coordinate_t *src,
 				const hb_mc_eva_t *eva,
 				hb_mc_npa_t *npa, size_t *sz)
 {
@@ -290,8 +290,8 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	// network. The high-order bit of the network address is reserved for
 	// addressing tags in the victim cache and is not accessible to the EVA,
 	// so we subtract 1. The network address is a byte address, so we add
-	// two to make it a byte address. 
-	addrbits = hb_mc_config_get_network_bitwidth_addr(cfg) - 1 + 
+	// two to make it a byte address.
+	addrbits = hb_mc_config_get_network_bitwidth_addr(cfg) - 1 +
 		log2(sizeof(uint32_t));
 	maxsz = 1 << addrbits;
 
@@ -314,11 +314,11 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
-		__func__, hb_mc_eva_addr(eva), 
+		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
-		hb_mc_coordinate_get_y(*src), 
-		hb_mc_npa_get_x(npa), 
-		hb_mc_npa_get_y(npa), 
+		hb_mc_coordinate_get_y(*src),
+		hb_mc_npa_get_x(npa),
+		hb_mc_npa_get_y(npa),
 		hb_mc_npa_get_epa(npa));
 
 	return HB_MC_SUCCESS;
@@ -335,9 +335,9 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int default_eva_to_npa(const hb_mc_config_t *cfg, 
+int default_eva_to_npa(const hb_mc_config_t *cfg,
 		const void *priv,
-		const hb_mc_coordinate_t *src, 
+		const hb_mc_coordinate_t *src,
 		const hb_mc_eva_t *eva,
 		hb_mc_npa_t *npa, size_t *sz)
 {
@@ -354,9 +354,113 @@ int default_eva_to_npa(const hb_mc_config_t *cfg,
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
 
-	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n", 
+	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n",
 		hb_mc_eva_addr(eva), __func__);
 	return HB_MC_FAIL;
+}
+
+static bool default_dram_epa_is_valid(const hb_mc_config_t *cfg,
+                                      hb_mc_epa_t epa,
+                                      const hb_mc_coordinate_t *tgt)
+{
+        return epa < hb_mc_config_get_dram_size(cfg);
+}
+
+static bool default_npa_is_dram(const hb_mc_config_t *config,
+                                const hb_mc_npa_t *npa,
+                                const hb_mc_coordinate_t *tgt)
+{
+        hb_mc_coordinate_t dims = hb_mc_config_get_dimension(config);
+        hb_mc_idx_t dim_y = hb_mc_coordinate_get_y(dims);
+
+        return (hb_mc_npa_get_y(npa) == (dim_y+1))
+                && default_dram_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
+}
+
+static bool default_npa_is_host(const hb_mc_config_t *config,
+                                const hb_mc_npa_t *npa,
+                                const hb_mc_coordinate_t *tgt)
+{
+        hb_mc_coordinate_t host = hb_mc_config_get_host_interface(config);
+        // does your coordinate map to the host?
+        // I guess we're generally permissive with host EPAs
+        return hb_mc_coordinate_get_x(host) == hb_mc_npa_get_x(npa) &&
+                hb_mc_coordinate_get_y(host) == hb_mc_npa_get_y(npa);
+}
+
+static bool default_local_epa_is_valid(const hb_mc_config_t *config,
+                                       hb_mc_epa_t epa,
+                                       const hb_mc_coordinate_t *tgt)
+{
+        hb_mc_epa_t floor = HB_MC_TILE_EPA_DMEM_BASE;
+        hb_mc_epa_t ceil  = HB_MC_TILE_EPA_DMEM_BASE + hb_mc_config_get_dmem_size(config);
+        return (epa >= floor) && (epa < ceil);
+}
+
+static bool default_npa_is_local(const hb_mc_config_t *config,
+                                 const hb_mc_npa_t *npa,
+                                 const hb_mc_coordinate_t *tgt)
+{
+        // does your coordinate map to this tgt v-core and is your epa valid?
+        return (hb_mc_npa_get_x(npa) == hb_mc_coordinate_get_x(*tgt)) &&
+                (hb_mc_npa_get_y(npa) == hb_mc_coordinate_get_y(*tgt)) &&
+                default_local_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
+}
+
+static bool default_npa_is_global(const hb_mc_config_t *config,
+                                  const hb_mc_npa_t *npa,
+                                  const hb_mc_coordinate_t *tgt)
+{
+        hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(config);
+        hb_mc_idx_t base_y = hb_mc_config_get_vcore_base_y(config);
+        hb_mc_idx_t ceil_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension(config));
+        hb_mc_idx_t ceil_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension(config));
+
+        // does your coordinate map to any v-core and is your epa valid?
+        return (hb_mc_npa_get_x(npa) >= base_x) && (hb_mc_npa_get_x(npa) <= ceil_x) &&
+                (hb_mc_npa_get_y(npa) >= base_y) && (hb_mc_npa_get_y(npa) <= ceil_y) &&
+                default_local_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
+
+}
+
+static int default_npa_to_eva_dram(const hb_mc_config_t *cfg,
+                                   const hb_mc_coordinate_t *origin,
+                                   const hb_mc_coordinate_t *tgt,
+                                   const hb_mc_npa_t *npa,
+                                   hb_mc_eva_t *eva,
+                                   size_t *sz)
+{
+        return HB_MC_NOIMPL;
+}
+
+static int default_npa_to_eva_host(const hb_mc_config_t *cfg,
+                                   const hb_mc_coordinate_t *origin,
+                                   const hb_mc_coordinate_t *tgt,
+                                   const hb_mc_npa_t *npa,
+                                   hb_mc_eva_t *eva,
+                                   size_t *sz)
+{
+        return HB_MC_NOIMPL;
+}
+
+static int default_npa_to_eva_local(const hb_mc_config_t *cfg,
+                                    const hb_mc_coordinate_t *origin,
+                                    const hb_mc_coordinate_t *tgt,
+                                    const hb_mc_npa_t *npa,
+                                    hb_mc_eva_t *eva,
+                                    size_t *sz)
+{
+        return HB_MC_NOIMPL;
+}
+
+static int default_npa_to_eva_global(const hb_mc_config_t *cfg,
+                                     const hb_mc_coordinate_t *origin,
+                                     const hb_mc_coordinate_t *tgt,
+                                     const hb_mc_npa_t *npa,
+                                     hb_mc_eva_t *eva,
+                                     size_t *sz)
+{
+        return HB_MC_NOIMPL;
 }
 
 /**
@@ -373,21 +477,24 @@ int default_eva_to_npa(const hb_mc_config_t *cfg,
  */
 int default_npa_to_eva(const hb_mc_config_t *cfg,
 		const void *priv,
-		const hb_mc_coordinate_t *tgt, 
-		const hb_mc_npa_t *npa, 
+		const hb_mc_coordinate_t *tgt,
+		const hb_mc_npa_t *npa,
 		hb_mc_eva_t *eva, size_t *sz)
 {
-	bsg_pr_err("%s: this function is not yet implemented\n", __func__);
-	/*
-	  if(default_npa_is_dram(npa, c))
-	  return default_npa_to_eva_dram(cfg, c, npa, eva, sz);
-	  if(default_npa_is_global(npa, c))
-	  return default_npa_to_eva_global(cfg, c, npa, eva, sz);
-	  if(default_npa_is_group(npa, c))
-	  return default_npa_to_eva_group(cfg, c, npa, eva, sz);
-	  if(default_npa_is_local(npa, c))
-	  return default_npa_to_eva_local(cfg, c, npa, eva, sz);
-	*/
+	const hb_mc_coordinate_t *origin = (const hb_mc_coordinate_t*)priv;
+
+        if(default_npa_is_dram(cfg, npa, tgt))
+                return default_npa_to_eva_dram(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_host(cfg, npa, tgt))
+                return default_npa_to_eva_host(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_local(cfg, npa, tgt))
+                return default_npa_to_eva_local(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_global(cfg, npa, tgt))
+                return default_npa_to_eva_global(cfg, origin, tgt, npa, eva, sz);
+
 	return HB_MC_FAIL;
 }
 
@@ -421,13 +528,13 @@ static int default_eva_size(
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, o, o, eva, &npa, sz);
 
-	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n", 
+	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n",
 		hb_mc_eva_addr(eva), __func__);
 	return HB_MC_FAIL;
 
 }
 
-const hb_mc_coordinate_t default_origin = {.x = HB_MC_CONFIG_VCORE_BASE_X, 
+const hb_mc_coordinate_t default_origin = {.x = HB_MC_CONFIG_VCORE_BASE_X,
 					   .y = HB_MC_CONFIG_VCORE_BASE_Y};
 hb_mc_eva_map_t default_map = {
 	.eva_map_name = "Default EVA space",
@@ -449,9 +556,9 @@ hb_mc_eva_map_t default_map = {
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
-		const hb_mc_eva_map_t *map, 
+		const hb_mc_eva_map_t *map,
 		const hb_mc_coordinate_t *tgt,
-		const hb_mc_npa_t *npa, 
+		const hb_mc_npa_t *npa,
 		hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
@@ -475,9 +582,9 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
-		const hb_mc_eva_map_t *map, 
-		const hb_mc_coordinate_t *src, 
-		const hb_mc_eva_t *eva, 
+		const hb_mc_eva_map_t *map,
+		const hb_mc_coordinate_t *src,
+		const hb_mc_eva_t *eva,
 		hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
@@ -498,7 +605,7 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_eva_size(const hb_mc_config_t *cfg,
-		const hb_mc_eva_map_t *map, 
+		const hb_mc_eva_map_t *map,
 		const hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
@@ -528,7 +635,7 @@ static size_t min_size_t(size_t x, size_t y)
  */
 int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *tgt, 
+			const hb_mc_coordinate_t *tgt,
 			const hb_mc_eva_t *eva,
 			const void *data, size_t sz)
 {
@@ -601,7 +708,7 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 			"than buffer\n", __func__);
 		return HB_MC_FAIL;
 	}
-	
+
 	srcp = (char *)data;
 	while(sz > 0){
 		err = hb_mc_eva_to_npa(config, map, tgt, eva, &src_npa, &src_sz);
@@ -639,7 +746,7 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
  */
 int hb_mc_manycore_eva_memset(hb_mc_manycore_t *mc,
 			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *tgt, 
+			const hb_mc_coordinate_t *tgt,
 			const hb_mc_eva_t *eva,
 			uint8_t val, size_t sz)
 {
@@ -655,7 +762,7 @@ int hb_mc_manycore_eva_memset(hb_mc_manycore_t *mc,
 			"than buffer\n", __func__);
 		return HB_MC_FAIL;
 	}
-	
+
 	while(sz > 0){
 		err = hb_mc_eva_to_npa(config, map, tgt, eva, &dest_npa, &dest_sz);
 		if(err != HB_MC_SUCCESS){
