@@ -3,6 +3,7 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_mem.h>
 #include <bsg_manycore_elf.h>
+#include <bsg_manycore_printing.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -45,9 +46,6 @@ struct SymbolInfo {
 typedef unique_ptr<SymbolInfo> SymbolInfoPtr;
 typedef map<string, SymbolInfoPtr> symbol_table;
 
-#define pr_err(fmt, ...)                                \
-        fprintf(stderr, "error: " fmt, ##__VA_ARGS__);
-
 
 
 static int object_symbol_table_import_symbols(symbol_table& symbols, unsigned char *object_data, Elf32_Shdr *symtab_shdr, Elf32_Shdr *strtab_shdr)
@@ -86,38 +84,38 @@ static void object_symbol_table_init(const char *fname, symbol_table& symbols)
         int section_i, r;
         
         if (!f) {
-                pr_err("Failed to open '%s': %s\n", fname, strerror(errno));
+                bsg_pr_err("%s: failed to open '%s': %s\n", __func__, fname, strerror(errno));
                 goto fail_return;
         }
 
         fseek(f, 0, SEEK_END);
         size = ftell(f);
         if (size < 0) {
-                pr_err("Failed to stat '%s': %s\n", fname, strerror(errno));
+                bsg_pr_err("%s: failed to stat '%s': %s\n", __func__, fname, strerror(errno));
                 goto fail_close_f;
         }
 
         object_data = (unsigned char*)malloc(size);
         if (!object_data) {
-                pr_err("Failed to read '%s': %s\n", fname, strerror(errno));
+                bsg_pr_err("%s: failed to read '%s': %s\n", __func__, fname, strerror(errno));
                 goto fail_close_f;
         }
 
         fseek(f, 0, SEEK_SET);
         if ((r = fread(object_data, size, 1, f)) != 1) {
-                pr_err("Failed to read '%s' (fread returned %d): %s\n", fname, r, strerror(errno));
+                bsg_pr_err("%s: failed to read '%s' (fread returned %d): %s\n", __func__, fname, r, strerror(errno));
                 goto fail_free_object_data;
         }
 
         /* check that this is indeed an ELF file */
         if (memcmp(object_data, ELFMAG, SELFMAG) != 0) {
-                pr_err("'%s' is not a valid ELF file\n", fname);
+                bsg_pr_err("%s: '%s' is not a valid ELF file\n", __func__, fname);
                 goto fail_free_object_data;
         }
         /* check that this is 32-bit little endian */
         if (!(object_data[EI_CLASS] == ELFCLASS32  &&
               object_data[EI_DATA]  == ELFDATA2LSB)) {
-                pr_err("'%s' is not a 32-bit little endian object file\n", fname);
+                bsg_pr_err("%s: '%s' is not a 32-bit little endian object file\n", __func__, fname);
                 goto fail_free_object_data;
         }
         /* check here for RISC-V? */
