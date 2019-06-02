@@ -88,7 +88,7 @@ enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
+int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
 
 
 
