@@ -11,10 +11,10 @@
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_origin_eva_map.h>
 
-static const hb_mc_epa_t KERNEL_REG = 0x1000 >> 2; //!< EPA of kernel. 
-static const hb_mc_epa_t ARGC_REG   = 0x1004 >> 2; //!< EPA of number of arguments kernel will use. 
-static const hb_mc_epa_t ARGV_REG   = 0x1008 >> 2; //!< EPA of arguments for kernel. 
-static const hb_mc_epa_t SIGNAL_REG = 0x100c >> 2; //!< EPA of register that holds signal address. Tile will write to this address once it completes the kernel.   
+static const hb_mc_epa_t KERNEL_REG = 0x1000; //!< EPA of kernel. 
+static const hb_mc_epa_t ARGC_REG   = 0x1004; //!< EPA of number of arguments kernel will use. 
+static const hb_mc_epa_t ARGV_REG   = 0x1008; //!< EPA of arguments for kernel. 
+static const hb_mc_epa_t SIGNAL_REG = 0x100c; //!< EPA of register that holds signal address. Tile will write to this address once it completes the kernel.   
 
 
 static const hb_mc_epa_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
@@ -446,7 +446,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
 
 
-/*
+
 			error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &ARGC_REG, tg->kernel->argc); 
 			if (error != HB_MC_SUCCESS) { 
 				bsg_pr_err("%s: failed to write argc to tile (%d,%d) for grid %d tile group (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y, tg->grid_id, tg->id.x, tg->id.y);
@@ -473,7 +473,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 //			}
 
 
-//TEMP
+// TEMP  - TODO: Replace
 			npa_t finish_signal_host_npa = {host_coordinate.x, host_coordinate.y, tg->kernel->finish_signal_addr};
 			eva_t finish_signal_host_eva;
 			error = hb_mc_npa_to_eva_deprecated(device->eva_id, &finish_signal_host_npa, &finish_signal_host_eva);
@@ -481,7 +481,6 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				bsg_pr_err("%s: failed to get finish_signal_host_eva from finish_signal_host_npa.\n", __func__);
 				return HB_MC_FAIL;
 			}
-
 
 
 
@@ -500,21 +499,21 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				return HB_MC_FAIL;
 			}
 			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) KERNEL_REG to 0x%x.\n", __func__, tile_id, x, y, kernel_eva); 
-*/
+
 
 
 
 
 //////// DEPRECATED
-
-			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), ARGC_REG, tg->kernel->argc); 
+/*
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), (ARGC_REG >> 2), tg->kernel->argc); 
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to write argc %d to device for grid %d tile group (%d,%d).\n", __func__, tg->kernel->argc, tg->grid_id, tg->id.x, tg->id.y); 
 				return HB_MC_FAIL; 
 			}
 			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) argc to %d.\n", __func__, tile_id, x, y, tg->kernel->argc);
 
-			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), ARGV_REG, args_eva); 
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), (ARGV_REG >> 2), args_eva); 
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to write argv to device for grid %d tile group (%d,%d).\n", __func__, tg->grid_id, tg->id.x, tg->id.y);
 				return HB_MC_FAIL; 
@@ -546,7 +545,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				return HB_MC_FAIL;
 			}
 			
-			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), SIGNAL_REG, finish_signal_host_eva); 
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), (SIGNAL_REG >> 2), finish_signal_host_eva); 
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to write finish_signal_addr %d to device for grid %d tile group (%d,%d).\n", __func__, finish_signal_host_eva, tg->grid_id, tg->id.x, tg->id.y);
 				return HB_MC_FAIL;
@@ -554,13 +553,13 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) SIGNAL_REG to 0x%x.\n", __func__, tile_id, x, y, finish_signal_host_eva);
 
 
-			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, kernel_eva); 
+			error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), (KERNEL_REG >> 2), kernel_eva); 
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to write kernel eva %d to device for grid %d tile group (%d,%d).\n", __func__, kernel_eva, tg->grid_id, tg->id.x, tg->id.y);
 				return HB_MC_FAIL; 
 			}
 			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) KERNEL_REG to 0x%x.\n", __func__, tile_id, x, y, kernel_eva); 
-
+*/
 
 		}
 	} 
@@ -808,8 +807,9 @@ int hb_mc_device_program_init (device_t *device, char *bin_name) {
  	
 	// unfreeze all tiles
 	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
-//		error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &KERNEL_REG, 0x1); /* Initilize the kernel register in tile*/  
- 		error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), KERNEL_REG, 0x1); /* initialize the kernel register */
+		error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &KERNEL_REG, 0x1); /* Initilize the kernel register in tile*/  
+		// DEPRECATED
+ 		// error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), (KERNEL_REG >> 2), 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: failed to initialize kernel register to 0x1 in tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 			return HB_MC_FAIL;
