@@ -79,16 +79,26 @@ enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
 
 
 /**
- * Initializes Manycore tiles so that they may run kernels.
+ * Initializes the manycor struct, and a mesh structure inside device struct with list of all tiles and their cooridnates 
  * @param[in]  device        Pointer to device
- * @parma[in]  bin_name      Name of binary elf file
  * @param[in]  name          Device name
  * @param[in]  id            Device id
  * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
+int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
+
+
+
+/**
+ * Initializes Manycore tiles so that they may run kernels.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  bin_name      Name of binary elf file
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_program_init (device_t *device, char *bin_name);
 
 
 

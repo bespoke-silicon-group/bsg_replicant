@@ -543,9 +543,7 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
 			device->mesh->tiles[tile_id].free = 1;
 		}
 	}
-	//#ifdef DEBUG
-		printf("Grid %d: %dx%d tile group (%d,%d) de-allocated at origin (%d,%d).\n", tg->grid_id, tg->dim.x, tg->dim.y, tg->id.x, tg->id.y, tg->origin.x, tg->origin.y);
-	//#endif
+	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) de-allocated at origin (%d,%d).\n", __func__, tg->grid_id, tg->dim.x, tg->dim.y, tg->id.x, tg->id.y, tg->origin.x, tg->origin.y);
 	
 	tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
 
@@ -556,15 +554,14 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
 
 
 /**
- * Initializes Manycore tiles so that they may run kernels.
+ * Initializes the manycore struct, and a mesh structure inside device struct with list of tiles and their coordinates 
  * @param[in]  device        Pointer to device
- * @parma[in]  bin_name      Name of binary elf file
  * @param[in]  name          Device name
  * @param[in]  id            Device id
  * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
+int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
 
 	hb_mc_fifo_init(&(device->fd));
 
@@ -580,13 +577,39 @@ int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manyc
 	device->eva_id = 0;  // To be deprecated soon
 
 
-	device->bin_name = strdup (bin_name);
-
 	error = hb_mc_mesh_init(device, dim);
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
 		return HB_MC_FAIL;
 	}
+
+
+	device->tile_group_capacity = 1;
+	device->tile_groups = (tile_group_t *) malloc (device->tile_group_capacity * sizeof(tile_group_t));
+	if (device->tile_groups == NULL) {
+		bsg_pr_err("%s: failed to allocated space for list of tile groups.\n", __func__);
+		return HB_MC_FAIL;
+	}
+	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(tile_group_t));
+	device->num_tile_groups = 0;
+	device->num_grids = 0;
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/**
+ * Freezes tiles, loads program binary into all tiles and into dram, and set the symbols and registers for each tile.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  bin_name      Name of binary elf file
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_program_init (device_t *device, char *bin_name) {
+	int error;
+	
+	device->bin_name = strdup (bin_name);
 
 	uint32_t num_tiles = device->mesh->dim.x * device->mesh->dim.y; 	
 
@@ -625,6 +648,7 @@ int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manyc
 	free (tile_list); 
 	
 
+
 /////// DEPRECATED
 /*
 	uint8_t x_list[num_tiles], y_list[num_tiles];	
@@ -632,8 +656,6 @@ int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manyc
 	hb_mc_get_y(device->mesh->tiles, &y_list[0], num_tiles); 
 	hb_mc_load_binary(device->fd, device->bin_name, &x_list[0], &y_list[0], num_tiles);
 */
-
-
 
 
 
@@ -723,13 +745,7 @@ int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manyc
 		}
 */
 
-
 	}
-
-	// create a memory manager object 
-	if (hb_mc_create_memory_manager(device->eva_id, device->bin_name) != HB_MC_SUCCESS)
-		return HB_MC_FAIL;
-
 
 
  	
@@ -748,17 +764,11 @@ int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manyc
 		}
 	}
 
-
-
-	device->tile_group_capacity = 1;
-	device->tile_groups = (tile_group_t *) malloc (device->tile_group_capacity * sizeof(tile_group_t));
-	if (device->tile_groups == NULL) {
-		bsg_pr_err("%s: failed to allocated space for list of tile groups.\n", __func__);
+	// create a memory manager object 
+	if (hb_mc_create_memory_manager(device->eva_id, device->bin_name) != HB_MC_SUCCESS) {
+		bsg_pr_err("%s: failed to initialize device memory manager.\n", __func__); 
 		return HB_MC_FAIL;
 	}
-	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(tile_group_t));
-	device->num_tile_groups = 0;
-	device->num_grids = 0;
 
 	return HB_MC_SUCCESS;
 }
