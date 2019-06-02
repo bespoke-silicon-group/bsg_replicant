@@ -3,6 +3,7 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_bits.h>
+#include <bsg_manycore_errno.h>
 #include <endian.h>
 #include <inttypes.h>
 #include <stdint.h>
@@ -17,12 +18,12 @@ extern "C" {
  * You should not read from any of the fields directly, instead use the accessor functions.
  */
 typedef struct response_packet {
-        uint8_t  x_dst; //!< x coordinate of the requester
-        uint8_t  y_dst; //!< y coordinate of the requester
+        uint8_t   x_dst; //!< x coordinate of the requester
+        uint8_t   y_dst; //!< y coordinate of the requester
         uint32_t  load_id; //!< unused
-        uint32_t data; //!< packet's payload data
-        uint8_t  op;    //!< opcode
-        uint8_t  reserved[5];
+        uint32_t  data; //!< packet's payload data
+        uint8_t   op;    //!< opcode
+        uint8_t   reserved[5];
 } __attribute__((packed)) hb_mc_response_packet_t;
 
 

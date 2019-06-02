@@ -3,6 +3,7 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_bits.h>
+#include <bsg_manycore_errno.h>
 #include <endian.h>
 #include <inttypes.h>
 #include <stdint.h>

@@ -1,6 +1,7 @@
 INCLUDES := -I$(SDK_DIR)/userspace/include
 INCLUDES += -I$(HDK_DIR)/common/software/include -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include -I.
 
+CFLAGS    := -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES)
 CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
 LDLIBS  := -lfpga_mgmt
 
@@ -29,6 +30,7 @@ HEADERS += bsg_manycore_packet.h
 HEADERS += bsg_manycore_response_packet.h
 HEADERS += bsg_manycore_request_packet.h
 HEADERS += bsg_manycore_fifo.h
+HEADERS += bsg_manycore_request_id.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
@@ -44,6 +46,8 @@ OBJECTS += bsg_manycore_config.o
 OBJECTS += bsg_manycore.o
 OBJECTS += bsg_manycore_loader_dep.o
 OBJECTS += bsg_manycore_origin_eva_map.o
+OBJECTS += bsg_manycore_request_packet_id.o
+OBJECTS += bsg_manycore_uart_responder.o
 
 DEBUG_OBJECTS :=
 

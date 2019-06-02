@@ -33,6 +33,11 @@ static inline const char * hb_mc_strerror(int err)
         return strtab[-err];
 }
 
+static inline int hb_mc_is_error(int err)
+{
+        return (err < HB_MC_SUCCESS) && (err >= HB_MC_NOTFOUND);
+}
+
 #ifdef __cplusplus
 }
 #endif
