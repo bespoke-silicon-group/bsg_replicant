@@ -846,7 +846,11 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
 					bsg_pr_dbg("%s: Finish packet received for grid %d tile group (%d,%d): src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", __func__, tg->grid_id, tg->id.x, tg->id.y, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
-					hb_mc_tile_group_deallocate_tiles(device, tg);
+					error = hb_mc_tile_group_deallocate_tiles(device, tg);
+					if (error != HB_MC_SUCCESS) { 
+						bsg_pr_err("%s: failed to deallocate grid %d tile group (%d,%d).\n", __func__, tg->grid_id, tg->id.x, tg->id.y);
+						return HB_MC_FAIL;
+					}
 					tile_group_finished = 1; 
 					break;
 				}				
@@ -892,7 +896,12 @@ int hb_mc_device_tile_groups_execute (device_t *device) {
 		}
 
 		/* wait for a tile group to finish */
-		hb_mc_device_wait_for_tile_group_finish_any(device);
+		error = hb_mc_device_wait_for_tile_group_finish_any(device);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: tile group not finished, something went wrong.\n", __func__); 
+			return HB_MC_FAIL;
+		}
+
 	}
 
 	return HB_MC_SUCCESS;
