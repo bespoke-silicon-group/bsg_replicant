@@ -30,10 +30,9 @@ int kernel_vec_add () {
 	******************************************************************************************************************/
 	device_t device;
 	hb_mc_dimension_t mesh_dim = { .x = 4, .y = 4 }; 
-	eva_id_t eva_id = 0;
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add/main.riscv";
 
-	hb_mc_device_init(&device, eva_id, elf, TEST_NAME, 0, mesh_dim);
+	hb_mc_device_init(&device, elf, TEST_NAME, 0, mesh_dim);
 
 
 

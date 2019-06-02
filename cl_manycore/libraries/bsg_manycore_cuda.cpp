@@ -564,7 +564,7 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
  * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
+int hb_mc_device_init (device_t *device, char *bin_name, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
 
 	hb_mc_fifo_init(&(device->fd));
 
@@ -577,10 +577,7 @@ int hb_mc_device_init (device_t *device, eva_id_t eva_id, char *bin_name, char *
 		return HB_MC_FAIL;
 	} 
 	
-	if (eva_id != 0) {
-		return HB_MC_FAIL; /* eva_id not supported */
-	} 
-	device->eva_id = eva_id;
+	device->eva_id = 0;  // To be deprecated soon
 
 
 	device->bin_name = strdup (bin_name);
