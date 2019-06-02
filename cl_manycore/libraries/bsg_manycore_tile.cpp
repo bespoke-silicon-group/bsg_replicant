@@ -241,7 +241,7 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
  * @param[in] bin        Binary elf file. 
  * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the coordinates of.
- * @param[in] coord_val  The cooridnates to set the tile.
+ * @param[in] coord_val  The coordinates to set the tile.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val){
@@ -472,6 +472,60 @@ int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map,
 
 
 
+
+/*! 
+ * Writes a uint8_t into a tile given its coordinates and epa 
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] coord      Cooridnates of the destination tile
+ * @param[in] epa        Epa address in desitnation tile to which the write occurs
+ * @param[in] v          Variable to be written into tile 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_write8(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint8_t v) { 
+	hb_mc_npa_t npa = hb_mc_npa(*coord, *epa);
+	return hb_mc_manycore_write8(mc, &npa, v); 
+}
+
+
+
+/*! 
+ * Writes a uint16_t into a tile given its coordinates and epa 
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] coord      Cooridnates of the destination tile
+ * @param[in] epa        Epa address in desitnation tile to which the write occurs
+ * @param[in] vp         Variable to be written into tile 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_write16(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint16_t v) { 
+	hb_mc_npa_t npa = hb_mc_npa(*coord, *epa);
+	return hb_mc_manycore_write16(mc, &npa, v); 
+}
+
+
+
+/*! 
+ * Writes a uint32_t into a tile given its coordinates and epa 
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] coord      Cooridnates of the destination tile
+ * @param[in] epa        Epa address in desitnation tile to which the write occurs
+ * @param[in] vp         Variable to be written into tile 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_write32(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint32_t v) { 
+	hb_mc_npa_t npa = hb_mc_npa(*coord, *epa);
+	return hb_mc_manycore_write32(mc, &npa, v); 
+}
+
+
+
+
+
+
+
+////////// DEPRECATED
 /*!
  * Sets a Vanilla Core Endpoint's tile group's origin hardware registers CSR_TGO_X/Y.
  * @param[in] fd userspace file descriptor
