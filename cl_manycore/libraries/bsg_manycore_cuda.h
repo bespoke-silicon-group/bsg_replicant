@@ -60,13 +60,18 @@ typedef struct {
 
 
 typedef struct {
-	hb_mc_manycore_t *mc;
-	uint8_t fd;
-	eva_id_t eva_id; 
-	mesh_t *mesh;
 	char* bin_name;
 	unsigned char* bin;
 	size_t bin_size;
+} hb_mc_program_t;
+
+
+typedef struct {
+	uint8_t fd;
+	eva_id_t eva_id; 
+	hb_mc_manycore_t *mc;
+	hb_mc_program_t *program;
+	mesh_t *mesh;
 	tile_group_t *tile_groups;
 	uint32_t num_tile_groups;
 	uint32_t tile_group_capacity;
