@@ -166,11 +166,6 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimension_t tg_dim, char* name, uint32_t argc, uint32_t argv[]) {
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to verify device.\n", __func__); 
-		return HB_MC_FAIL;
-	}
-
 	int error; 
 	for (hb_mc_idx_t tg_id_x = 0; tg_id_x < grid_dim.x; tg_id_x ++) { 
 		for (hb_mc_idx_t tg_id_y = 0; tg_id_y < grid_dim.y; tg_id_y ++) { 
@@ -413,7 +408,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 		return HB_MC_FAIL;
 	}
 
-	error = hb_mc_device_memcpy(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	error = hb_mc_device_memcpy_dep(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to copy grid %d tile group (%d,%d) arguments to device.\n", __func__, tg->grid_id, tg->id.x, tg->id.y); 
 		return HB_MC_FAIL;
@@ -581,11 +576,6 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  */
 int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to verify device.\n", __func__); 
-		return HB_MC_FAIL;
-	}
-
 	int tile_id;
 	for (int x = tg->origin.x; x < tg->origin.x + tg->dim.x; x++){
 		for (int y = tg->origin.y; y < tg->origin.y + tg->dim.y; y++){
@@ -893,11 +883,6 @@ int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb
  */
 int hb_mc_device_all_tile_groups_finished(device_t *device) {
 	
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to verify device.\n", __func__); 
-		return HB_MC_FAIL;
-	}
-
 	tile_group_t *tg = device->tile_groups; 
 	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
 		if (tg->status != HB_MC_TILE_GROUP_STATUS_FINISHED )
@@ -917,29 +902,13 @@ int hb_mc_device_all_tile_groups_finished(device_t *device) {
  */
 int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to verify device.\n", __func__); 
-		return HB_MC_FAIL;
-	}
-
 	int tile_group_finished = 0;
 	hb_mc_request_packet_t recv, finish;
 	uint32_t intf_coord_x, intf_coord_y;
 	int error; 
 
-	error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, &intf_coord_x);
-	if (error != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to get host interface X coord.\n", __func__);
-		return HB_MC_FAIL;
-	}
+	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
 
-	error = hb_mc_get_config(device->fd, HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, &intf_coord_y);
-	if (error != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to get host interface Y coord.\n", __func__);
-		return HB_MC_FAIL;
-	}
-	
- 
 	while (!tile_group_finished) {
 		hb_mc_fifo_receive(device->fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
 		
@@ -951,8 +920,8 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 
 				bsg_pr_dbg("%s: Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", __func__, tg->origin.x, tg->origin.y, intf_coord.x, intf_coord.y, tg->kernel->finish_signal_addr, 0x1);
 
-				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) intf_coord_x);
-				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) intf_coord_y);
+				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) host_coordinate.x);
+				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) host_coordinate.y);
 				hb_mc_request_packet_set_x_src(&finish, (uint8_t) tg->origin.x);
 				hb_mc_request_packet_set_y_src(&finish, (uint8_t) tg->origin.y);
 				hb_mc_request_packet_set_data(&finish, 0x1 /* TODO: Hardcoded */);
@@ -988,11 +957,6 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_device_tile_groups_execute (device_t *device) {
-	
-	if (hb_mc_fifo_check(device->fd) != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to verify device.\n", __func__); 
-		return HB_MC_FAIL;
-	}
 
 	int error ;
 	/* loop untill all tile groups have been allocated, launched and finished. */
@@ -1179,7 +1143,8 @@ int hb_mc_device_free_dep (device_t *device, eva_t eva) {
 
 /*
  * caller must ensure eva_id is valid. */
-static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *src) {
+__attribute__((deprecated))
+static int hb_mc_cpy_to_eva_dep (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *src) {
 	npa_t npa;	
 	int error = hb_mc_eva_to_npa_deprecated(eva_id, dst, &npa);
 	if (error != HB_MC_SUCCESS) {
@@ -1199,7 +1164,8 @@ static int hb_mc_cpy_to_eva (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *s
 /*
  * caller must esure eva_id is valid. 
  * */
-static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, hb_mc_response_packet_t *dest, eva_t src) {
+__attribute__((deprecated)) 
+static int hb_mc_cpy_from_eva_dep (uint8_t fd, eva_id_t eva_id, hb_mc_response_packet_t *dest, eva_t src) {
 	npa_t npa;	
 	int error = hb_mc_eva_to_npa_deprecated(eva_id, src, &npa);
 	if (error != HB_MC_SUCCESS) {
@@ -1225,13 +1191,13 @@ static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, hb_mc_response_packe
  * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
+int hb_mc_device_memcpy_dep (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
 
 	if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
 		eva_t dst_eva = (eva_t) reinterpret_cast<uintptr_t>(dst);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
 			char *src_word = (char *) src + i;
-			int error = hb_mc_cpy_to_eva(device->fd, device->eva_id, dst_eva + i, (uint32_t *) (src_word)); 		
+			int error = hb_mc_cpy_to_eva_dep(device->fd, device->eva_id, dst_eva + i, (uint32_t *) (src_word)); 		
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to copy to device.\n", __func__);
 				return HB_MC_FAIL; 
@@ -1245,7 +1211,7 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
                         // read in a packet
                         hb_mc_response_packet_t dst_packet;
-			int error = hb_mc_cpy_from_eva(device->fd, device->eva_id, &dst_packet, src_eva + i);
+			int error = hb_mc_cpy_from_eva_dep(device->fd, device->eva_id, &dst_packet, src_eva + i);
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err("%s: failed to copy to host.\n", __func__);
 				return HB_MC_FAIL; 
