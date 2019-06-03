@@ -901,24 +901,27 @@ int hb_mc_device_all_tile_groups_finished(device_t *device) {
  * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite look if no tile group finishes.
  */
 int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
+	int error; 
 
 	int tile_group_finished = 0;
 	hb_mc_request_packet_t recv, finish;
-	uint32_t intf_coord_x, intf_coord_y;
-	int error; 
-
 	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
 
 	while (!tile_group_finished) {
-		hb_mc_fifo_receive(device->fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
+
+		error = hb_mc_manycore_packet_rx (device->mc, (hb_mc_packet_t *) &recv, HB_MC_FIFO_RX_REQ, -1); 
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to read fifo for finish packet from device.\n", __func__);
+			return HB_MC_FAIL;
+		}
+
+		// DEPRECATED
+		//hb_mc_fifo_receive(device->fd, HB_MC_FIFO_RX_REQ, (hb_mc_packet_t *) &recv);
 		
 		/* Check all tile groups to see if the received packet is the finish packet from one of them */
 		tile_group_t *tg = device->tile_groups;
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
 			if (tg->status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
-
-
-				bsg_pr_dbg("%s: Expecting packet src (%d,%d), dst (%d, %d), addr: 0x%x, data: %d.\n", __func__, tg->origin.x, tg->origin.y, intf_coord.x, intf_coord.y, tg->kernel->finish_signal_addr, 0x1);
 
 				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) host_coordinate.x);
 				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) host_coordinate.y);
@@ -931,7 +934,14 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
-					bsg_pr_dbg("%s: Finish packet received for grid %d tile group (%d,%d): src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", __func__, tg->grid_id, tg->id.x, tg->id.y, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);
+					bsg_pr_dbg("%s: Finish packet received for grid %d tile group (%d,%d): src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", 
+							__func__, 
+							tg->grid_id, 
+							tg->id.x, tg->id.y, 
+							recv.x_src, recv.y_src, 
+							recv.x_dst, recv.y_dst, 
+							recv.addr, recv.data);
+
 					error = hb_mc_tile_group_deallocate_tiles(device, tg);
 					if (error != HB_MC_SUCCESS) { 
 						bsg_pr_err("%s: failed to deallocate grid %d tile group (%d,%d).\n", __func__, tg->grid_id, tg->id.x, tg->id.y);
