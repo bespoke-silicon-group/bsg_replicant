@@ -1,6 +1,8 @@
 #include "test_shared_mem_load_store.h"
 
 #define TEST_NAME "test_shared_mem_load_store"
+#define ALLOC_NAME "default_allocator"
+
 /*!
  * Runs a tile group shared memory load/store kernel. Loads a M * N matrix into tile group shared memory and stores it back to another location.
  * Grid dimensions are determines by how much of a load we want for each tile group (block_size_y/x)
@@ -30,7 +32,7 @@ int kernel_shared_mem_load_store () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/shared_mem_load_store/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;

@@ -1,6 +1,7 @@
 #include "test_dram.h"
 
 #define TEST_NAME "test_dram"
+#define ALLOC_NAME "default_allocator"
 
 /*!
  * Runs the dram store test a grid of 2x2 tile groups. Tiles allocate space on dram and fill it, and return the pointer to host. Host then picks up the array and compares.
@@ -30,7 +31,7 @@ int kernel_dram () {
 	}
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/dram/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;

@@ -1,6 +1,7 @@
 #include "test_shared_mem.h"
 
 #define TEST_NAME "test_shared_mem"
+#define ALLOC_NAME "default_allocator"
 
 /*!
  * Runs the shared_mem test on a grid of one tile group
@@ -33,7 +34,7 @@ int kernel_shared_mem () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/shared_mem/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;
