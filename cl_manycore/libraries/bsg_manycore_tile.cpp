@@ -495,7 +495,7 @@ int hb_mc_tile_write8(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, con
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] coord      Cooridnates of the destination tile
  * @param[in] epa        Epa address in desitnation tile to which the write occurs
- * @param[in] vp         Variable to be written into tile 
+ * @param[in] v          Variable to be written into tile 
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
 int hb_mc_tile_write16(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint16_t v) { 
@@ -511,7 +511,7 @@ int hb_mc_tile_write16(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, co
  * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
  * @param[in] coord      Cooridnates of the destination tile
  * @param[in] epa        Epa address in desitnation tile to which the write occurs
- * @param[in] vp         Variable to be written into tile 
+ * @param[in] v          Variable to be written into tile 
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
 int hb_mc_tile_write32(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint32_t v) { 
@@ -519,6 +519,23 @@ int hb_mc_tile_write32(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, co
 	return hb_mc_manycore_write32(mc, &npa, v); 
 }
 
+
+
+
+/*! 
+ * Writes a buffer into a tile given its coordinates and epa 
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] coord      Cooridnates of the destination tile
+ * @param[in] epa        Epa address in desitnation tile to which the write occurs
+ * @param[in] vp         Buffer to be written into tile 
+ * @param[in] sz         Size of buffer to be written
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_write(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, const void* vp, size_t sz) { 
+	hb_mc_npa_t npa = hb_mc_npa(*coord, *epa);
+	return hb_mc_manycore_write_mem(mc, &npa, vp, sz); 
+}
 
 
 
