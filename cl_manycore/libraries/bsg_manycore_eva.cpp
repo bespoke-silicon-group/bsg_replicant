@@ -359,6 +359,13 @@ int default_eva_to_npa(const hb_mc_config_t *cfg,
 	return HB_MC_FAIL;
 }
 
+/**
+ * Check if a DRAM EPA is valid.
+ * @param[in] config  An initialized manycore configuration struct
+ * @param[in] npa     An npa to translate
+ * @param[in] tgt     Coordinates of the target tile
+ * @return true if the EPA is valid, false otherwise.
+ */
 static bool default_dram_epa_is_valid(const hb_mc_config_t *cfg,
                                       hb_mc_epa_t epa,
                                       const hb_mc_coordinate_t *tgt)
@@ -366,17 +373,56 @@ static bool default_dram_epa_is_valid(const hb_mc_config_t *cfg,
         return epa < hb_mc_config_get_dram_size(cfg);
 }
 
+
+/**
+ * Check if a local EPA is valid.
+ * @param[in] config  An initialized manycore configuration struct
+ * @param[in] npa     An npa to translate
+ * @param[in] tgt     Coordinates of the target tile
+ * @return true if the EPA is valid, false otherwise.
+ */
+static bool default_local_epa_is_valid(const hb_mc_config_t *config,
+                                       hb_mc_epa_t epa,
+                                       const hb_mc_coordinate_t *tgt)
+{
+        hb_mc_epa_t floor = HB_MC_TILE_EPA_DMEM_BASE;
+        hb_mc_epa_t ceil  = HB_MC_TILE_EPA_DMEM_BASE + hb_mc_config_get_dmem_size(config);
+        return (epa >= floor) && (epa < ceil);
+}
+
+/**
+ * Get the Y-coordinate of DRAM.
+ * @param[in]  config  An initialized manycore configuration struct
+ * @return The Y-coordinate of DRAM.
+ */
+static hb_mc_idx_t default_get_dram_y(const hb_mc_config_t *config)
+{
+        hb_mc_coordinate_t dims = hb_mc_config_get_dimension(config);
+        return hb_mc_coordinate_get_y(dims)+1;
+}
+
+/**
+ * Check if an NPA is a host DRAM.
+ * @param[in] config  An initialized manycore configuration struct
+ * @param[in] npa     An npa to translate
+ * @param[in] tgt     Coordinates of the target tile
+ * @return true if the NPA is DRAM, false otherwise.
+ */
 static bool default_npa_is_dram(const hb_mc_config_t *config,
                                 const hb_mc_npa_t *npa,
                                 const hb_mc_coordinate_t *tgt)
 {
-        hb_mc_coordinate_t dims = hb_mc_config_get_dimension(config);
-        hb_mc_idx_t dim_y = hb_mc_coordinate_get_y(dims);
-
-        return (hb_mc_npa_get_y(npa) == (dim_y+1))
+        return (hb_mc_npa_get_y(npa) == default_get_dram_y(config))
                 && default_dram_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
 }
 
+/**
+ * Check if an NPA is a host address.
+ * @param[in] config  An initialized manycore configuration struct
+ * @param[in] npa     An npa to translate
+ * @param[in] tgt     Coordinates of the target tile
+ * @return true if the NPA is host, false otherwise.
+ */
 static bool default_npa_is_host(const hb_mc_config_t *config,
                                 const hb_mc_npa_t *npa,
                                 const hb_mc_coordinate_t *tgt)
@@ -388,15 +434,13 @@ static bool default_npa_is_host(const hb_mc_config_t *config,
                 hb_mc_coordinate_get_y(host) == hb_mc_npa_get_y(npa);
 }
 
-static bool default_local_epa_is_valid(const hb_mc_config_t *config,
-                                       hb_mc_epa_t epa,
-                                       const hb_mc_coordinate_t *tgt)
-{
-        hb_mc_epa_t floor = HB_MC_TILE_EPA_DMEM_BASE;
-        hb_mc_epa_t ceil  = HB_MC_TILE_EPA_DMEM_BASE + hb_mc_config_get_dmem_size(config);
-        return (epa >= floor) && (epa < ceil);
-}
-
+/**
+ * Check if an NPA is a local address.
+ * @param[in] config  An initialized manycore configuration struct
+ * @param[in] npa     An npa to translate
+ * @param[in] tgt     Coordinates of the target tile
+ * @return true if the NPA is local, false otherwise.
+ */
 static bool default_npa_is_local(const hb_mc_config_t *config,
                                  const hb_mc_npa_t *npa,
                                  const hb_mc_coordinate_t *tgt)
@@ -407,12 +451,19 @@ static bool default_npa_is_local(const hb_mc_config_t *config,
                 default_local_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
 }
 
+/**
+ * Check if an NPA is a global address.
+ * @param[in] config  An initialized manycore configuration struct
+ * @param[in] npa     An npa to translate
+ * @param[in] tgt     Coordinates of the target tile
+ * @return true if the NPA is global, false otherwise.
+ */
 static bool default_npa_is_global(const hb_mc_config_t *config,
                                   const hb_mc_npa_t *npa,
                                   const hb_mc_coordinate_t *tgt)
 {
-        hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(config);
-        hb_mc_idx_t base_y = hb_mc_config_get_vcore_base_y(config);
+        hb_mc_idx_t base_x = 0;
+        hb_mc_idx_t base_y = 0;
         hb_mc_idx_t ceil_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension(config));
         hb_mc_idx_t ceil_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension(config));
 
@@ -423,6 +474,16 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
 
 }
 
+/**
+ * Translate a global NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
 static int default_npa_to_eva_dram(const hb_mc_config_t *cfg,
                                    const hb_mc_coordinate_t *origin,
                                    const hb_mc_coordinate_t *tgt,
@@ -430,9 +491,65 @@ static int default_npa_to_eva_dram(const hb_mc_config_t *cfg,
                                    hb_mc_eva_t *eva,
                                    size_t *sz)
 {
-        return HB_MC_NOIMPL;
+        // build the eva
+        hb_mc_eva_t addr = 0;
+        addr |= hb_mc_npa_get_epa(npa); // set the byte address
+        addr |= hb_mc_npa_get_x(npa) << DEFAULT_GLOBAL_X_BITIDX; // set the x coordinate
+        addr |= 1 << DEFAULT_DRAM_BITIDX; // set the DRAM bit
+        *eva  = addr;
+
+        // this is lame but we are basically saying "you can write to this word only"
+        *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
+
+        // done
+        return HB_MC_SUCCESS;
 }
 
+/**
+ * Translate a global NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
+static int default_npa_to_eva_global_remote(const hb_mc_config_t *cfg,
+                                            const hb_mc_coordinate_t *origin,
+                                            const hb_mc_coordinate_t *tgt,
+                                            const hb_mc_npa_t *npa,
+                                            hb_mc_eva_t *eva,
+                                            size_t *sz)
+{
+        // build the eva
+        hb_mc_eva_t addr = 0;
+        addr |= hb_mc_npa_get_epa(npa); // set the byte address
+        addr |= hb_mc_npa_get_x(npa) << DEFAULT_GLOBAL_X_BITIDX; // set x coordinate
+        addr |= hb_mc_npa_get_y(npa) << DEFAULT_GLOBAL_Y_BITIDX; // set y coordinate
+        addr |= 1 << DEFAULT_GLOBAL_BITIDX; // set the global bit
+
+        // this is lame but we are basically saying "you can write to this word only"
+        *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
+
+        // done
+        return HB_MC_SUCCESS;
+}
+
+//////////////////////////////////////////////////////////////////
+// At the moment we treat host, local, and globals all the same //
+//////////////////////////////////////////////////////////////////
+
+/**
+ * Translate an NPA for the host interface to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
 static int default_npa_to_eva_host(const hb_mc_config_t *cfg,
                                    const hb_mc_coordinate_t *origin,
                                    const hb_mc_coordinate_t *tgt,
@@ -440,9 +557,19 @@ static int default_npa_to_eva_host(const hb_mc_config_t *cfg,
                                    hb_mc_eva_t *eva,
                                    size_t *sz)
 {
-        return HB_MC_NOIMPL;
+        return default_npa_to_eva_global_remote(cfg, origin, tgt, npa, eva, sz);
 }
 
+/**
+ * Translate an local NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
 static int default_npa_to_eva_local(const hb_mc_config_t *cfg,
                                     const hb_mc_coordinate_t *origin,
                                     const hb_mc_coordinate_t *tgt,
@@ -450,9 +577,19 @@ static int default_npa_to_eva_local(const hb_mc_config_t *cfg,
                                     hb_mc_eva_t *eva,
                                     size_t *sz)
 {
-        return HB_MC_NOIMPL;
+        return default_npa_to_eva_global_remote(cfg, origin, tgt, npa, eva, sz);
 }
 
+/**
+ * Translate a global NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
 static int default_npa_to_eva_global(const hb_mc_config_t *cfg,
                                      const hb_mc_coordinate_t *origin,
                                      const hb_mc_coordinate_t *tgt,
@@ -460,7 +597,7 @@ static int default_npa_to_eva_global(const hb_mc_config_t *cfg,
                                      hb_mc_eva_t *eva,
                                      size_t *sz)
 {
-        return HB_MC_NOIMPL;
+        return default_npa_to_eva_global_remote(cfg, origin, tgt, npa, eva, sz);
 }
 
 /**
