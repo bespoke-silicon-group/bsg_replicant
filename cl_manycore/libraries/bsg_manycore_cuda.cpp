@@ -402,10 +402,11 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
  */
 int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 
+	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
 
 	hb_mc_eva_t args_eva;
-	int error = hb_mc_device_malloc (device, (tg->kernel->argc) * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
+	error = hb_mc_device_malloc (device, (tg->kernel->argc) * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to allocate space on device for grid %d tile group (%d,%d) arguments.\n", __func__, tg->grid_id, tg->id.x, tg->id.y);
 		return HB_MC_FAIL;
@@ -874,7 +875,7 @@ int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb
 	uint32_t alignment = 32;
 	uint32_t start = program_end_eva + alignment - (program_end_eva % alignment); /* start at the next aligned block */
 	uint32_t size = DRAM_SIZE;
-	program->allocator->memory_manager = new awsbwhal::MemoryManager(DRAM_SIZE, start, alignment); 
+	program->allocator->memory_manager = (awsbwhal::MemoryManager *) new awsbwhal::MemoryManager(DRAM_SIZE, start, alignment); 
 
 	return HB_MC_SUCCESS;	
 }
@@ -1078,7 +1079,37 @@ int hb_mc_device_finish (device_t *device) {
  * @param[out] eva           Eva address of the allocated memory
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva) {
+int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva) {
+        *eva = 0;
+
+	if (!device->program->allocator->memory_manager) {
+		bsg_pr_err("%s: Memory manager not initialized.\n", __func__);
+		return HB_MC_FAIL; 
+	}
+
+	awsbwhal::MemoryManager * mem_manager = (awsbwhal::MemoryManager *) device->program->allocator->memory_manager; 
+	hb_mc_eva_t result = mem_manager->alloc(size);
+	if (result == awsbwhal::MemoryManager::mNull) {
+		bsg_pr_err("%s: failed to allocated memory.\n", __func__);	
+		return HB_MC_FAIL; 
+	}
+        *eva = result;
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+
+
+/**
+ * Allocates memory on device DRAM
+ * @param[in]  device        Pointer to device
+ * @parma[in]  size          Size of requested memory
+ * @param[out] eva           Eva address of the allocated memory
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_malloc_dep (device_t *device, uint32_t size, /*out*/ eva_t *eva) {
         *eva = 0;
 	if (device->eva_id != 0) {
 		bsg_pr_err("%s: invalid EVA ID %d.\n", __func__, device->eva_id);
