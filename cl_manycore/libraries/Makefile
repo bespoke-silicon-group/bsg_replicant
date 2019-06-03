@@ -40,7 +40,7 @@ OBJECTS += bsg_manycore_config.o
 OBJECTS += bsg_manycore.o
 OBJECTS += bsg_manycore_loader_dep.o
 
-DEBUG_OBJECTS :=
+DEBUG_OBJECTS := bsg_manycore_eva.o
 
 bsg_manycore_loader.o: CXXFLAGS += -Wall -Werror
 bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-variable

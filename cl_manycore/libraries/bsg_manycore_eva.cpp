@@ -412,8 +412,16 @@ static bool default_npa_is_dram(const hb_mc_config_t *config,
                                 const hb_mc_npa_t *npa,
                                 const hb_mc_coordinate_t *tgt)
 {
-        return (hb_mc_npa_get_y(npa) == default_get_dram_y(config))
+	char npa_str[64];
+	bool is_dram = (hb_mc_npa_get_y(npa) == default_get_dram_y(config))
                 && default_dram_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
+	
+	bsg_pr_dbg("%s: npa %s %s DRAM\n",
+		   __func__,
+		   hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)),
+		   (is_dram ? "is" : "is not"));
+	
+        return is_dram;
 }
 
 /**
@@ -427,11 +435,19 @@ static bool default_npa_is_host(const hb_mc_config_t *config,
                                 const hb_mc_npa_t *npa,
                                 const hb_mc_coordinate_t *tgt)
 {
+	char npa_str[64];
         hb_mc_coordinate_t host = hb_mc_config_get_host_interface(config);
+	bool is_host = hb_mc_coordinate_get_x(host) == hb_mc_npa_get_x(npa) &&
+                hb_mc_coordinate_get_y(host) == hb_mc_npa_get_y(npa);
+
+	bsg_pr_dbg("%s: npa %s %s a host address\n",
+		   __func__,
+		   hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)),
+		   (is_host ? "is" : "is not"));
+	
         // does your coordinate map to the host?
         // I guess we're generally permissive with host EPAs
-        return hb_mc_coordinate_get_x(host) == hb_mc_npa_get_x(npa) &&
-                hb_mc_coordinate_get_y(host) == hb_mc_npa_get_y(npa);
+	return is_host;
 }
 
 /**
