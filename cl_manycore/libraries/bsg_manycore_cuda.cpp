@@ -1139,58 +1139,6 @@ int hb_mc_device_free_dep (device_t *device, eva_t eva) {
 
 
 
-/**
- * Writes one word to an EVA address on device
- * @param[in]  mc            Pointer to manycore struct
- * @parma[in]  map           Pointer to Eva to Npa mapping
- * @param[in]  dst_eva       EVA address to which the write occurs
- * @param[in]  data          Pointer to the word to be written  
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-static int hb_mc_eva_write32 (hb_mc_manycore_t *mc, const hb_mc_eva_map_t *map, const hb_mc_eva_t *dst_eva, uint32_t *data) {
-	int error;
-	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(mc); 
-	hb_mc_npa_t dst_npa; 
-	size_t sz; 
-
-	error = hb_mc_eva_to_npa (cfg, map, &host_coordinate, dst_eva, &dst_npa, &sz);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to aquire eva from npa.\n", __func__);
-		return HB_MC_FAIL;
-	}
-
-	return hb_mc_manycore_write32(mc, &dst_npa, *data);  
-}
-
-
-
-/**
- * Writes one word to an EVA address on device
- * @param[in]  mc            Pointer to manycore struct
- * @parma[in]  map           Pointer to Eva to Npa mapping
- * @param[in]  dst_eva       EVA address to which the write occurs
- * @param[in]  data          Pointer to the word to be written  
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-static int hb_mc_eva_read32 (hb_mc_manycore_t *mc, const hb_mc_eva_map_t *map, const hb_mc_eva_t *src_eva, uint32_t *data) {
-	int error;
-	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(mc); 
-	hb_mc_npa_t src_npa; 
-	size_t sz; 
-
-	error = hb_mc_eva_to_npa (cfg, map, &host_coordinate, src_eva, &src_npa, &sz);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to aquire eva from npa.\n", __func__);
-		return HB_MC_FAIL;
-	}
-
-	return hb_mc_manycore_read32(mc, &src_npa, data);  
-}
-
-
-
 
 
 /*
@@ -1246,35 +1194,20 @@ static int hb_mc_cpy_from_eva_dep (uint8_t fd, eva_id_t eva_id, hb_mc_response_p
 int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
 
 	int error;
+	
+	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
+	size_t sz = count / sizeof(uint8_t); 
 
 	if (kind == hb_mc_memcpy_to_device) {
 		hb_mc_eva_t dst_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(dst);
-		for (int i = 0; i < count; i += sizeof(uint32_t)) {
-			char *src_word = (char *) src + i;
-			dst_eva += sizeof(uint32_t); 
 
-			error = hb_mc_eva_write32(device->mc, &default_map, &dst_eva, (uint32_t *) (src_word)); 
-			if (error != HB_MC_SUCCESS) {
-				bsg_pr_err("%s: failed to copy memory to device.\n", __func__);
-				return HB_MC_FAIL; 
-			}
-		}
-		return HB_MC_SUCCESS;	
+		return hb_mc_manycore_eva_write(device->mc, &default_map, &host_coordinate, &dst_eva, src, sz); 
+		
 	}
 	
 	else if (kind == hb_mc_memcpy_to_host) { 
 		hb_mc_eva_t src_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(src);
-		for (int i = 0; i < count; i += sizeof(uint32_t)) {
-			char *dst_word = (char *) dst + i; 	
-			src_eva += sizeof (uint32_t); 
-
-			error = hb_mc_eva_read32(device->mc, &default_map, &src_eva, (uint32_t *) (dst_word)); 
-			if (error != HB_MC_SUCCESS) {
-				bsg_pr_err("%s: failed to copy memory to host.\n", __func__);
-				return HB_MC_FAIL; 
-			}
-		}
-		return HB_MC_SUCCESS;	
+		return hb_mc_manycore_eva_read(device->mc, &default_map, &host_coordinate, &src_eva, dst, sz); 
 	}
 
 	else {
