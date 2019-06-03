@@ -72,6 +72,7 @@ static int hb_mc_get_y(tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
  * @param bin_name path to ELF binary
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
+__attribute__((deprecated))
 static int hb_mc_create_memory_manager (eva_id_t eva_id, char *bin_name) {
 	eva_t program_end;
 	if (symbol_to_eva(bin_name, "_bsg_dram_end_addr", &program_end) != HB_MC_SUCCESS) {
@@ -819,8 +820,6 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 	// unfreeze all tiles
 	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
 		error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &KERNEL_REG, 0x1); /* Initilize the kernel register in tile*/  
-		// DEPRECATED
- 		// error = hb_mc_write_tile_reg(device->fd, device->eva_id, &(device->mesh->tiles[tile_id]), (KERNEL_REG >> 2), 0x1); /* initialize the kernel register */
 		if (error != HB_MC_SUCCESS) {
 			bsg_pr_err("%s: failed to initialize kernel register to 0x1 in tile (%d,%d).\n", __func__, device->mesh->tiles[tile_id].coord.x, device->mesh->tiles[tile_id].coord.y);
 			return HB_MC_FAIL;
@@ -833,11 +832,14 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 		}
 	}
 
-	// create a memory manager object 
+// DEPRECATED 
+/*
 	if (hb_mc_create_memory_manager(device->eva_id, device->program->bin_name) != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to initialize device memory manager.\n", __func__); 
 		return HB_MC_FAIL;
 	}
+*/
+
 
 	return HB_MC_SUCCESS;
 }
@@ -1039,10 +1041,7 @@ int hb_mc_device_finish (device_t *device) {
 		return HB_MC_FAIL;
 	} 
 
-	if (!mem_manager[device->eva_id])
-		return HB_MC_SUCCESS; /* there is no memory manager to deinitialize */	
-	delete(mem_manager[device->eva_id]);
-	
+
 	for (int tile_id = 0; tile_id < device->mesh->dim.x * device->mesh->dim.y ; tile_id ++) { 
 		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
 		if (error != HB_MC_SUCCESS) { 
@@ -1060,6 +1059,10 @@ int hb_mc_device_finish (device_t *device) {
 		return HB_MC_FAIL;
 	}
 
+
+	if (device->program->allocator->memory_manager)
+		delete(device->program->allocator->memory_manager);
+	
 
 	free (device->mc); 
 	free (device->mesh);
@@ -1132,13 +1135,37 @@ int hb_mc_device_malloc_dep (device_t *device, uint32_t size, /*out*/ eva_t *eva
 
 
 
+
+/**
+ * Frees memory on device DRAM
+ * @param[in]  device        Pointer to device
+ * @param[out] eva           Eva address of the memory to be freed
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_free (device_t *device, eva_t eva) {
+
+
+	if (!device->program->allocator->memory_manager) {
+		bsg_pr_err("%s: memory manager not initialized.\n", __func__);
+		return HB_MC_FAIL; 
+	}
+
+	awsbwhal::MemoryManager * mem_manager = (awsbwhal::MemoryManager *) device->program->allocator->memory_manager; 
+	mem_manager->free(eva);
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+
 /*!
  * frees Hammerblade Manycore memory.
  *@param device pointer to the device.
  *@param eva address to free.
  *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
  */
-int hb_mc_device_free (device_t *device, eva_t eva) {
+int hb_mc_device_free_dep (device_t *device, eva_t eva) {
 	if (device->eva_id != 0) {
 		bsg_pr_err("%s: invalid EVA ID %d.\n", __func__, device->eva_id); 
 		return HB_MC_FAIL; 
