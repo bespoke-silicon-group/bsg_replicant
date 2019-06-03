@@ -121,12 +121,12 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 
 /**
  * Initializes a program's memory allcoator and creates a memroy manager
- * @param[in]  allocator       Pointer to allocator
+ * @param[in]  program       Pointer to program
  * @param[in]  id            Id of program's memory allocator
  * @param[in]  name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_allocator_init (hb_mc_allocator_t *allocator, const char *name, hb_mc_allocator_id_t id);
+int hb_mc_program_allocator_init (hb_mc_program_t *allocator, const char *name, hb_mc_allocator_id_t id);
 
 
 
