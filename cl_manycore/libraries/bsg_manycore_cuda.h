@@ -232,8 +232,8 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device);
  * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-__attribute__((warn_unused_result))
-int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
+__attribute__((warn_unused_result)) __attribute__((deprecated))
+int hb_mc_device_memcpy_dep (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
 
 
