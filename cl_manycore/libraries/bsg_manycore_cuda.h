@@ -17,6 +17,8 @@ extern "C" {
 
 typedef uint8_t tile_group_id_t;
 typedef uint8_t grid_id_t;
+typedef int hb_mc_allocator_id_t;
+
 
 typedef enum {
 	HB_MC_TILE_GROUP_STATUS_INITIALIZED=0,
@@ -60,9 +62,17 @@ typedef struct {
 
 
 typedef struct {
+	hb_mc_allocator_id_t id;
+	const char *name; 
+	void *memory_manager;
+} hb_mc_allocator_t;
+
+
+typedef struct {
 	char* bin_name;
 	unsigned char* bin;
 	size_t bin_size;
+	hb_mc_allocator_t *allocator;
 } hb_mc_program_t;
 
 
@@ -100,10 +110,23 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
  * Initializes Manycore tiles so that they may run kernels.
  * @param[in]  device        Pointer to device
  * @parma[in]  bin_name      Name of binary elf file
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @param[in]  id            Id of program's memory allocator
+ * @param[in]  alloc_name    Unique name of program's memory allocator
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_program_init (device_t *device, char *bin_name);
+int hb_mc_device_program_init (device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id);
+
+
+
+/**
+ * Initializes a program's memory allcoator and creates a memroy manager
+ * @param[in]  allocator       Pointer to allocator
+ * @param[in]  id            Id of program's memory allocator
+ * @param[in]  name    Unique name of program's memory allocator
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+int hb_mc_allocator_init (hb_mc_allocator_t *allocator, const char *name, hb_mc_allocator_id_t id);
 
 
 

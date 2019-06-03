@@ -654,9 +654,11 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
  * Freezes tiles, loads program binary into all tiles and into dram, and set the symbols and registers for each tile.
  * @param[in]  device        Pointer to device
  * @parma[in]  bin_name      Name of binary elf file
+ * @param[in]  id            Id of program's meomry allocator
+ * @param[in]  alloc_name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_program_init (device_t *device, char *bin_name) {
+int hb_mc_device_program_init (device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id) {
 	int error;
 	
 	device->program = (hb_mc_program_t *) malloc (sizeof (hb_mc_program_t));
@@ -668,7 +670,6 @@ int hb_mc_device_program_init (device_t *device, char *bin_name) {
 	device->program->bin_name = strdup (bin_name);
 
 	uint32_t num_tiles = device->mesh->dim.x * device->mesh->dim.y; 	
-
 
 	// Freeze all tiles 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
@@ -703,6 +704,15 @@ int hb_mc_device_program_init (device_t *device, char *bin_name) {
 
 	free (tile_list); 
 	
+
+	// Initialize program's memory allocator
+	error = hb_mc_allocator_init (device->program->allocator, alloc_name, id); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize memory allocator for program %s.\n", __func__, device->program->bin_name); 
+		return HB_MC_FAIL;
+	}
+
+
 
 
 /////// DEPRECATED
@@ -830,6 +840,22 @@ int hb_mc_device_program_init (device_t *device, char *bin_name) {
 
 	return HB_MC_SUCCESS;
 }
+
+
+
+
+
+/**
+ * Initializes program's memory allocator and creates a memory manager
+ * @param[in]  allocator     Pointer to allocator
+ * @param[in]  id            Id of program's meomry allocator
+ * @param[in]  name    Unique name of program's memory allocator
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_allocator_init (hb_mc_allocator_t *allocator, const char *name, hb_mc_allocator_id_t id) {
+	return HB_MC_SUCCESS;
+}
+
 
 
 
