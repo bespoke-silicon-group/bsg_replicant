@@ -166,14 +166,28 @@ int hb_mc_device_malloc_dep (device_t *device, uint32_t size, eva_t *eva);
 
 
 
+/**
+ * Frees memory on device DRAM
+ * @param[in]  device        Pointer to device
+ * @param[out] eva           Eva address of the memory to be freed
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+__attribute__((warn_unused_result)) 
+int hb_mc_device_free (device_t *device, hb_mc_eva_t eva);
+
+
+
+
+
+
 /*!
  * frees Hammerblade Manycore memory.
  *@param device pointer to the device.
  *@param eva address to free.
  *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
  */
-__attribute__((warn_unused_result))
-int hb_mc_device_free (device_t *device, eva_t eva);
+__attribute__((warn_unused_result)) __attribute__((deprecated))
+int hb_mc_device_free_dep (device_t *device, eva_t eva);
 
 
 
