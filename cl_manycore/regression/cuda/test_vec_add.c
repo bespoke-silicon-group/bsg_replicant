@@ -91,7 +91,7 @@ int kernel_vec_add () {
 	******************************************************************************************************************/
 	void *dst = (void *) ((intptr_t) A_device);
 	void *src = (void *) &A_host[0];
-	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
+	rc = hb_mc_device_memcpy_dep (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -100,7 +100,7 @@ int kernel_vec_add () {
 
 	dst = (void *) ((intptr_t) B_device);
 	src = (void *) &B_host[0];
-	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
+	rc = hb_mc_device_memcpy_dep (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -150,7 +150,7 @@ int kernel_vec_add () {
 	uint32_t C_host[N];
 	src = (void *) ((intptr_t) C_device);
 	dst = (void *) &C_host[0];
-	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C to the host */
+	rc = hb_mc_device_memcpy_dep (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
 		return HB_MC_FAIL;

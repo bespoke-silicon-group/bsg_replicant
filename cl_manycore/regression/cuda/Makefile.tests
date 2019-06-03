@@ -1,7 +1,7 @@
 REGRESSION_TESTS_TYPE = cuda
 
 # For F1, only run one test at a time, and reload the agfi image in between runs. To be fixed.
-C_REGRESSION_TESTS = test_empty
+C_REGRESSION_TESTS = test_matrix_mul_shared_mem
 
 #C_REGRESSION_TESTS = test_empty 
 #C_REGRESSION_TESTS += test_empty_parallel 
