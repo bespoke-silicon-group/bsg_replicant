@@ -91,7 +91,7 @@ int kernel_stack_load () {
 	uint32_t sum_host[tg_dim.x * tg_dim.y];
 	void *src = (void *) ((intptr_t) sum_device);
 	void *dst = (void *) &sum_host[0];
-	rc = hb_mc_device_memcpy (&device, (void *) dst, src, (tg_dim.x * tg_dim.y) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy sum_device to the host */
+	rc = hb_mc_device_memcpy_dep (&device, (void *) dst, src, (tg_dim.x * tg_dim.y) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy sum_device to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
 		return HB_MC_FAIL;
