@@ -1036,12 +1036,6 @@ int hb_mc_device_finish (device_t *device) {
 
 	int error;
 
-	if (device->eva_id != 0) {
-		bsg_pr_err("%s: eva_id not supported.\n", __func__); 
-		return HB_MC_FAIL;
-	} 
-
-
 	for (int tile_id = 0; tile_id < device->mesh->dim.x * device->mesh->dim.y ; tile_id ++) { 
 		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
 		if (error != HB_MC_SUCCESS) { 
@@ -1232,12 +1226,8 @@ static int hb_mc_cpy_from_eva (uint8_t fd, eva_id_t eva_id, hb_mc_response_packe
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
-	if (device->eva_id != 0) {
-		bsg_pr_err("%s: invalid EVA ID %d.\n", __func__, device->eva_id);
-		return HB_MC_FAIL; 
-	}
 
-	else if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
+	if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
 		eva_t dst_eva = (eva_t) reinterpret_cast<uintptr_t>(dst);
 		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
 			char *src_word = (char *) src + i;
