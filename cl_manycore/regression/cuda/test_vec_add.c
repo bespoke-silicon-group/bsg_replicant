@@ -1,6 +1,7 @@
 #include "test_vec_add.h"
 
 #define TEST_NAME "test_vec_add"
+#define ALLOC_NAME "default_allocator"
 
 /*!
  * Runs the vector addition a one 2x2 tile groups. A[N] + B[N] --> C[N]
@@ -39,8 +40,7 @@ int kernel_vec_add () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/vec_add/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf);
-	rc = hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;

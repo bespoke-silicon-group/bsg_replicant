@@ -1,6 +1,8 @@
 #include "test_matrix_mul.h"
 
 #define TEST_NAME "test_matrix_mul"
+#define ALLOC_NAME "default_allocator"
+
 /*!
  * Runs the matrix multiplication on a grid of 2x2 tile groups. A[M][N] * B[N][P] --> C[M][P]
  * Grid dimensions are determines by how much of a load we want for each tile group (block_size_y/x)
@@ -49,7 +51,7 @@ int kernel_matrix_mul () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/matrix_mul/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;

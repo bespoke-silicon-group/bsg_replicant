@@ -2,6 +2,7 @@
 
 
 #define TEST_NAME "test_empty"
+#define ALLOC_NAME "default_allocator"
 
 /*!
  * Runs an empty kernel on a 2x2 tile group. 
@@ -27,7 +28,7 @@ int kernel_empty () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/empty/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf);
+	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;

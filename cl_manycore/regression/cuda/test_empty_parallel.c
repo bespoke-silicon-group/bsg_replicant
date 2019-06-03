@@ -1,6 +1,7 @@
 #include "test_empty_parallel.h"
 
 #define TEST_NAME "test_empty_parallel"
+#define ALLOC_NAME "default_allocator"
 
 /*!
  * Runs an empty kernel on a 4x2 grid of 2x2 tile groups. 
@@ -27,7 +28,7 @@ int kernel_empty_parallel () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/empty_parallel/main.riscv";
-	rc =hb_mc_device_program_init(&device, elf);
+	rc =hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
 		return HB_MC_FAIL;

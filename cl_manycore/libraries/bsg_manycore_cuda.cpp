@@ -1055,7 +1055,7 @@ int hb_mc_device_finish (device_t *device) {
 
 
 	if (device->program->allocator->memory_manager)
-		delete(device->program->allocator->memory_manager);
+		delete((awsbwhal::MemoryManager*)device->program->allocator->memory_manager);
 	
 
 	free (device->mc); 
