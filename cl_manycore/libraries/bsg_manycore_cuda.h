@@ -148,7 +148,21 @@ int hb_mc_device_finish (device_t *device);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_malloc (device_t *device, uint32_t size, /*out*/ eva_t *eva);
+int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva);
+
+
+
+
+/**
+ * Allocates memory on device DRAM
+ * @param[in]  device        Pointer to device
+ * @parma[in]  size          Size of requested memory
+ * @param[out] eva           Eva address of the allocated memory
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+__attribute__((warn_unused_result)) __attribute__((deprecated))
+int hb_mc_device_malloc_dep (device_t *device, uint32_t size, eva_t *eva);
+
 
 
 
