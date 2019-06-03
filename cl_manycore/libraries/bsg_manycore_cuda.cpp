@@ -706,7 +706,7 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 	
 
 	// Initialize program's memory allocator
-	error = hb_mc_allocator_init (device->program->allocator, alloc_name, id); 
+	error = hb_mc_program_allocator_init (device->program, alloc_name, id); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to initialize memory allocator for program %s.\n", __func__, device->program->bin_name); 
 		return HB_MC_FAIL;
@@ -847,18 +847,41 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 
 /**
  * Initializes program's memory allocator and creates a memory manager
- * @param[in]  allocator     Pointer to allocator
+ * @param[in]  program       Pointer to program
  * @param[in]  id            Id of program's meomry allocator
  * @param[in]  name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_allocator_init (hb_mc_allocator_t *allocator, const char *name, hb_mc_allocator_id_t id) {
-	return HB_MC_SUCCESS;
+int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb_mc_allocator_id_t id) {
+	int error;
+
+	program->allocator = (hb_mc_allocator_t *) malloc (sizeof (hb_mc_allocator_t)); 
+	if (program->allocator == NULL) {
+		bsg_pr_err("%s: failed to allcoat space on host for program's hb_mc_allocator_t struct.\n", __func__);
+		return HB_MC_FAIL;
+	}
+
+	program->allocator->name = strdup(name); 
+	program->allocator->id = id; 
+
+	hb_mc_eva_t program_end_eva;
+	error = hb_mc_loader_symbol_to_eva(program->bin, program->bin_size, "_bsg_dram_end_addr", &program_end_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to aquire _bsg_dram_end_addr eva from binary file.\n", __func__); 
+		return HB_MC_FAIL;
+	}
+
+	uint32_t alignment = 32;
+	uint32_t start = program_end_eva + alignment - (program_end_eva % alignment); /* start at the next aligned block */
+	uint32_t size = DRAM_SIZE;
+	program->allocator->memory_manager = new awsbwhal::MemoryManager(DRAM_SIZE, start, alignment); 
+
+	return HB_MC_SUCCESS;	
 }
 
 
 
-
+	
 
 /**
  * Checks to see if all tile groups in a device are finished.
