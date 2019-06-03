@@ -408,7 +408,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 		return HB_MC_FAIL;
 	}
 
-	error = hb_mc_device_memcpy_dep(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
+	error = hb_mc_device_memcpy(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to copy grid %d tile group (%d,%d) arguments to device.\n", __func__, tg->grid_id, tg->id.x, tg->id.y); 
 		return HB_MC_FAIL;
@@ -1201,19 +1201,30 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 	if (kind == hb_mc_memcpy_to_device) {
 		hb_mc_eva_t dst_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(dst);
 
-		return hb_mc_manycore_eva_write(device->mc, &default_map, &host_coordinate, &dst_eva, src, sz); 
-		
+		error =  hb_mc_manycore_eva_write(device->mc, &default_map, &host_coordinate, &dst_eva, src, sz);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to copy memory to device.\n", __func__);
+			return HB_MC_FAIL;
+		}
 	}
 	
 	else if (kind == hb_mc_memcpy_to_host) { 
 		hb_mc_eva_t src_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(src);
-		return hb_mc_manycore_eva_read(device->mc, &default_map, &host_coordinate, &src_eva, dst, sz); 
+
+		error = hb_mc_manycore_eva_read(device->mc, &default_map, &host_coordinate, &src_eva, dst, sz); 
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to copy memory from device.\n", __func__);
+			return HB_MC_FAIL;
+		}
+
 	}
 
 	else {
 		bsg_pr_err("%s: invalid copy type. Copy type can be one of hb_mc_memcpy_to_device or hb_mc_memcpy_to_host.\n", __func__);
 		return HB_MC_FAIL; 
 	}
+
+	return HB_MC_SUCCESS;
 }
 
 
