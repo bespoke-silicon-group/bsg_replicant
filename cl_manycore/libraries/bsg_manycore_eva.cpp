@@ -529,6 +529,8 @@ static int default_npa_to_eva_global_remote(const hb_mc_config_t *cfg,
         addr |= hb_mc_npa_get_y(npa) << DEFAULT_GLOBAL_Y_BITIDX; // set y coordinate
         addr |= 1 << DEFAULT_GLOBAL_BITIDX; // set the global bit
 
+	*eva = addr; 
+
         // this is lame but we are basically saying "you can write to this word only"
         *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
 
