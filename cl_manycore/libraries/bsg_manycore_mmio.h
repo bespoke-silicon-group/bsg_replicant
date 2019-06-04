@@ -27,6 +27,7 @@
 #define HB_MC_MMIO_FIFO_IXR_RPORE_BIT 30
 #define HB_MC_MMIO_FIFO_IXR_RPURE_BIT 31
 
+#define HB_MC_MMIO_FIFO_DATA_WIDTH 32
 #define HB_MC_MMIO_FIFO_NUM_BYTES 0x1000
 
 #define hb_mc_mmio_fifo_get_direction_offset(dir) \

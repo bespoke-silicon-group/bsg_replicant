@@ -132,16 +132,26 @@ static int hb_mc_manycore_rx_fifo_get_occupancy(hb_mc_manycore_t *mc,
                                                 hb_mc_fifo_rx_t type,
                                                 uint32_t *occupancy)
 {
+        uint32_t val, occ;
         uintptr_t occupancy_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET);
         const char *typestr = hb_mc_fifo_rx_to_string(type);
         int err;
 
-        err = hb_mc_manycore_mmio_read32(mc, occupancy_addr, occupancy);
+        err = hb_mc_manycore_mmio_read32(mc, occupancy_addr, &val);
         if (err != HB_MC_SUCCESS) {
                 manycore_pr_err(mc, "Failed to get %s occupancy\n", typestr);
                 return err;
         }
 
+        // All packets recieved packets should have an integral occupancy that                                                                                                                                                                                                                                                                                                                                                                  // is determined by the Packet Bit-Width / FIFO Bit-Width
+	occ = ((sizeof(hb_mc_packet_t) * 8))/HB_MC_MMIO_FIFO_DATA_WIDTH;
+        if(val % occ != 0) {
+                manycore_pr_err(mc, "Invalid occupancy: Non-integral packet"
+                                " received from %s\n", typestr);
+                return HB_MC_FAIL;
+        }
+
+        *occupancy = (val / occ);
         return HB_MC_SUCCESS;
 }
 
