@@ -73,6 +73,15 @@ static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc);
 static int  hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc);
 static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc);
 
+static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
+					     hb_mc_packet_t *packet,
+					     hb_mc_fifo_rx_t type,
+					     long timeout);
+
+static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
+					     hb_mc_packet_t *packet,
+					     hb_mc_fifo_rx_t type,
+					     long timeout);
 ///////////////////////////
 // FIFO Helper Functions //
 ///////////////////////////
@@ -171,7 +180,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 
 	/* Read stale packets from fifo */
 	for (unsigned i = 0; i < occupancy; i++){
-                rc = hb_mc_manycore_packet_rx(mc, (hb_mc_packet_t*) &recv, type, -1);
+                rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type, -1);
                 if (rc != HB_MC_SUCCESS) {
                         manycore_pr_err(mc, "%s: Failed to read packet from %s fifo\n",
                                         __func__, typestr);
@@ -360,6 +369,60 @@ static int hb_mc_fifo_enable(hb_mc_manycore_t *mc, hb_mc_direction_t fifo)
         return HB_MC_SUCCESS;
 }
 
+/*
+ * These might be rewritten to read from MMIO space: hence why error codes are returned.
+ */
+static int hb_mc_manycore_get_host_requests_cap(hb_mc_manycore_t *mc, unsigned *cap)
+{
+	*cap = 32;
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_get_host_requests(hb_mc_manycore_t *mc, unsigned *rqsts)
+{
+	*rqsts = mc->htod_requests;
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc, hb_mc_request_packet_t *request)
+{
+	unsigned cap;
+	int err;
+
+	/* stores don't require an increment */
+	if (hb_mc_request_packet_get_op(request) == HB_MC_PACKET_OP_REMOTE_STORE)
+		return HB_MC_SUCCESS;
+
+	err = hb_mc_manycore_get_host_requests_cap(mc, &cap);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	if (mc->htod_requests >= cap) {
+		manycore_pr_dbg(mc, "%s: Outstanding requests at cap of %u\n", __func__, cap);
+		return HB_MC_BUSY;
+	}
+
+	mc->htod_requests++;
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_decr_host_requests(hb_mc_manycore_t *mc)
+{
+	if (mc->htod_requests == 0) {
+		manycore_pr_err(mc, "%s: No outstanding requests!\n", __func__);
+		return HB_MC_FAIL;
+	}
+
+	mc->htod_requests--;
+	return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_host_requests_init(hb_mc_manycore_t *mc)
+{
+	mc->htod_requests = 0;
+	return HB_MC_SUCCESS;
+}
+
 static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 {
         int rc;
@@ -390,6 +453,12 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
         rc = hb_mc_manycore_fifo_clear_isr(mc, HB_MC_MMIO_FIFO_TO_HOST);
         if (rc != HB_MC_SUCCESS)
                 return rc;
+
+	/* initialize the outstanding request counter */
+	rc = hb_mc_manycore_host_requests_init(mc);
+	if (rc != HB_MC_SUCCESS)
+		return rc;
+
 
         return HB_MC_SUCCESS;
 }
@@ -746,6 +815,9 @@ int hb_mc_manycore_mmio_write32(hb_mc_manycore_t *mc, uintptr_t offset, uint32_t
 ////////////////
 // Packet API //
 ////////////////
+
+
+
 /**
  * Transmit a packet to manycore hardware
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
@@ -755,10 +827,10 @@ int hb_mc_manycore_mmio_write32(hb_mc_manycore_t *mc, uintptr_t offset, uint32_t
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 
-int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
-			     hb_mc_packet_t *packet,
-			     hb_mc_fifo_tx_t type,
-			     long timeout) {
+static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
+					     hb_mc_packet_t *packet,
+					     hb_mc_fifo_tx_t type,
+					     long timeout) {
         const char *typestr = hb_mc_fifo_tx_to_string(type);
         uintptr_t data_addr, len_addr;
         hb_mc_direction_t dir;
@@ -844,6 +916,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
 		return err;
 	}
 
+
 	return HB_MC_SUCCESS;
 }
 
@@ -855,11 +928,10 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
  * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-
-int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
-			     hb_mc_packet_t *packet,
-			     hb_mc_fifo_rx_t type,
-			     long timeout)
+static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
+					     hb_mc_packet_t *packet,
+					     hb_mc_fifo_rx_t type,
+					     long timeout)
 {
         const char *typestr = hb_mc_fifo_rx_to_string(type);
         uintptr_t length_addr, data_addr;
@@ -915,6 +987,121 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         }
 
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Transmit a request packet to manycore hardware
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] request A request packet to transmit to manycore hardware
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_request_tx(hb_mc_manycore_t *mc,
+			      hb_mc_request_packet_t *request,
+			      long timeout)
+{
+	int err;
+
+	/* do we have capacity for another request? */
+	err = hb_mc_manycore_incr_host_requests(mc, request);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	/* send the request packet */
+	err = hb_mc_manycore_packet_tx_internal(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_TX_REQ, timeout);
+	if (err != HB_MC_SUCCESS) {
+		hb_mc_manycore_decr_host_requests(mc);
+		return err;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Receive a response packet from manycore hardware
+ * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] response A packet into which data should be read
+ * @param[in] timeout  A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_response_rx(hb_mc_manycore_t *mc,
+			       hb_mc_response_packet_t *response,
+			       long timeout)
+{
+	int err;
+
+	/* receive the response packet */
+	err = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*)response, HB_MC_FIFO_RX_RSP, timeout);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+
+	/* update the outstanding requests */
+	err = hb_mc_manycore_decr_host_requests(mc);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Transmit a response packet to manycore hardware
+ * @param[in] mc        A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] response  A response packet to transmit to manycore hardware
+ * @param[in] timeout   A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_response_tx(hb_mc_manycore_t *mc,
+			       hb_mc_response_packet_t *response,
+			       long timeout)
+{
+	return hb_mc_manycore_packet_tx_internal(mc, (hb_mc_packet_t*)response, HB_MC_FIFO_TX_RSP, timeout);
+}
+
+/**
+ * Receive a request packet from manycore hardware
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] request A packet into which data should be read
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
+			      hb_mc_request_packet_t *request,
+			      long timeout)
+{
+	return hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_RX_REQ, timeout);
+}
+
+/**
+ * Transmit a packet to manycore hardware
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] packet  A packet to transmit to manycore hardware
+ * @param[in] type    Is this packet a request or response packet?
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
+                             hb_mc_packet_t *packet,
+                             hb_mc_fifo_tx_t type,
+                             long timeout)
+{
+	return hb_mc_manycore_packet_tx_internal(mc, packet, type, timeout);
+}
+
+/**
+ * Receive a packet from manycore hardware
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] packet A packet into which data should be read
+ * @param[in] type   Is this packet a request or response packet?
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
+                             hb_mc_packet_t *packet,
+                             hb_mc_fifo_rx_t type,
+                             long timeout)
+{
+	return hb_mc_manycore_packet_rx_internal(mc, packet, type, timeout);
 }
 
 /////////////////////////////
@@ -999,7 +1186,11 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t
 			hb_mc_npa_get_x(npa),
 			hb_mc_npa_get_y(npa),
 			hb_mc_npa_get_epa(npa));
-	err = hb_mc_manycore_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
+
+	err = hb_mc_manycore_request_tx(mc, &rqst.request, -1);
+	if (err == HB_MC_BUSY)
+		return err; // omit the error message if just busy
+
 	if (err != HB_MC_SUCCESS) {
 		manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
 				__func__, hb_mc_strerror(err));
@@ -1016,7 +1207,7 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, const hb_mc_npa_t 
 	int err;
 
 	/* receive a packet from the hardware */
-	err = hb_mc_manycore_packet_rx(mc, &rsp, HB_MC_FIFO_RX_RSP, -1);
+	err = hb_mc_manycore_response_rx(mc, &rsp.response, -1);
 	if (err != HB_MC_SUCCESS) {
 		manycore_pr_err(mc, "%s: Failed to read response packet: %s\n",
 				__func__, hb_mc_strerror(err));
@@ -1084,7 +1275,8 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
 			hb_mc_npa_get_x(npa),
 			hb_mc_npa_get_y(npa),
 			hb_mc_npa_get_epa(npa));
-	return hb_mc_manycore_packet_tx(mc, &rqst, HB_MC_FIFO_TX_REQ, -1);
+
+	return hb_mc_manycore_request_tx(mc, &rqst.request, -1);
 }
 
 /* checks that the arguments of read/write_mem are supported */
@@ -1133,7 +1325,7 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
 	/* send store requests one word at a time */
 	for (size_t i = 0; i < n_words; i++) {
-		
+
 		err = hb_mc_manycore_write(mc, &addr, &words[i], 4);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
@@ -1171,7 +1363,7 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
 	/* send store requests one word at a time */
 	for (size_t i = 0; i < n_words; i++) {
-		
+
 		err = hb_mc_manycore_write(mc, &addr, &word, 4);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
@@ -1206,36 +1398,65 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	uint32_t *words = (uint32_t*)data;
 	size_t n_words = sz >> 2;
 	hb_mc_npa_t  addr = *npa;
+	size_t rsp_i = 0, rqst_i = 0;
 
-	/* we batch our read requests here instead of completing each read one at a time */
+	while (rsp_i < n_words) {
+		while (rqst_i < n_words) {
+			hb_mc_npa_t rqst_addr = addr;
+			hb_mc_npa_set_epa(&rqst_addr, hb_mc_npa_get_epa(&addr) + rqst_i*sizeof(uint32_t));
 
-	/* send a read request for each word */
-	for (size_t i = 0; i < n_words; i++) {
-		
-		err = hb_mc_manycore_send_read_rqst(mc, &addr, 4);
-		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
-					__func__, hb_mc_strerror(err));
-			return err;
+			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4);
+			if (err == HB_MC_SUCCESS) {
+				rqst_i++;
+			} else if (err == HB_MC_BUSY) {
+				break; // break to reading a request
+			} else {
+				manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
+						__func__, hb_mc_strerror(err));
+				return err;
+			}
 		}
 
-		// increment EPA by 4:
-		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) +sizeof(uint32_t));
-	}
+		// read one request
+		hb_mc_npa_t rsp_addr = addr;
+		hb_mc_npa_set_epa(&rsp_addr, hb_mc_npa_get_epa(&rsp_addr) + rsp_i*sizeof(uint32_t));
 
-	/* now receive a packet for each word */
-	addr = *npa;
-	for (size_t i = 0; i < n_words; i++) {
-                // increment EPA by 1: (EPA's address words)
-		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
-		
-		err = hb_mc_manycore_recv_read_rsp(mc, &addr, &words[i], 4);
+		err = hb_mc_manycore_recv_read_rsp(mc, &rsp_addr, &words[rsp_i], 4);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
+		rsp_i++;
 	}
+
+	// /* send a read request for each word */
+	// for (size_t i = 0; i < n_words; i++) {
+
+	// 	err = hb_mc_manycore_send_read_rqst(mc, &addr, 4);
+	// 	if (err != HB_MC_SUCCESS) {
+	// 		manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
+	// 				__func__, hb_mc_strerror(err));
+	// 		return err;
+	// 	}
+
+	// 	// increment EPA by 4:
+	// 	hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) +sizeof(uint32_t));
+	// }
+
+	// /* now receive a packet for each word */
+	// addr = *npa;
+	// for (size_t i = 0; i < n_words; i++) {
+        //         // increment EPA by 1: (EPA's address words)
+	// 	hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
+
+	// 	err = hb_mc_manycore_recv_read_rsp(mc, &addr, &words[i], 4);
+	// 	if (err != HB_MC_SUCCESS) {
+	// 		manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
+	// 				__func__, hb_mc_strerror(err));
+	// 		return err;
+	// 	}
+	// }
 
 	return HB_MC_SUCCESS;
 }
