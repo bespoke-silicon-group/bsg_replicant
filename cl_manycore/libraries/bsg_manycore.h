@@ -28,6 +28,7 @@ typedef struct hb_mc_manycore {
         uintptr_t      mmio;     //!< pointer to memory mapped io
         hb_mc_config_t config;   //!< configuration of the manycore
         void    *private_data;   //!< implementation private data
+	unsigned htod_requests;  //!< outstanding host requests
 } hb_mc_manycore_t;
 
 #define HB_MC_MANYCORE_INIT {0}
@@ -64,6 +65,54 @@ void hb_mc_manycore_exit(hb_mc_manycore_t *mc);
 ////////////////
 
 /**
+ * Transmit a request packet to manycore hardware
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] request A request packet to transmit to manycore hardware
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_request_tx(hb_mc_manycore_t *mc,
+			      hb_mc_request_packet_t *request,
+			      long timeout);
+
+/**
+ * Receive a response packet from manycore hardware
+ * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] response A packet into which data should be read
+ * @param[in] timeout  A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_response_rx(hb_mc_manycore_t *mc,
+			       hb_mc_response_packet_t *response,
+			       long timeout);
+
+/**
+ * Transmit a response packet to manycore hardware
+ * @param[in] mc        A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] response  A response packet to transmit to manycore hardware
+ * @param[in] timeout   A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_response_tx(hb_mc_manycore_t *mc,
+			       hb_mc_response_packet_t *response,
+			       long timeout);
+
+/**
+ * Receive a request packet from manycore hardware
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] request A packet into which data should be read
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
+			      hb_mc_request_packet_t *request,
+			      long timeout);
+
+/**
  * Transmit a packet to manycore hardware
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] packet  A packet to transmit to manycore hardware
@@ -71,7 +120,7 @@ void hb_mc_manycore_exit(hb_mc_manycore_t *mc);
  * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-__attribute__((warn_unused_result))
+__attribute__((warn_unused_result, deprecated))
 int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
                              hb_mc_packet_t *packet,
                              hb_mc_fifo_tx_t type,
@@ -85,7 +134,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
  * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-__attribute__((warn_unused_result))
+__attribute__((warn_unused_result, deprecated))
 int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
                              hb_mc_packet_t *packet,
                              hb_mc_fifo_rx_t type,

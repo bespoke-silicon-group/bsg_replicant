@@ -15,6 +15,7 @@ extern "C" {
 #define HB_MC_NOMEM         (-5)
 #define HB_MC_NOIMPL        (-6)
 #define HB_MC_NOTFOUND      (-7)
+#define HB_MC_BUSY          (-8)
 
 static inline const char * hb_mc_strerror(int err)
 {
@@ -27,6 +28,7 @@ static inline const char * hb_mc_strerror(int err)
 		[-HB_MC_NOMEM]             = "Out of memory",
 		[-HB_MC_NOIMPL]            = "Not implemented",
                 [-HB_MC_NOTFOUND]          = "Not found",
+		[-HB_MC_BUSY]              = "Busy",
         };
         return strtab[-err];
 }
