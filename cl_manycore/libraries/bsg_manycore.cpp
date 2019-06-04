@@ -1401,6 +1401,8 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	size_t rsp_i = 0, rqst_i = 0;
 
 	while (rsp_i < n_words) {
+
+		/* try to request as many words as we have left */
 		while (rqst_i < n_words) {
 			hb_mc_npa_t rqst_addr = addr;
 			hb_mc_npa_set_epa(&rqst_addr, hb_mc_npa_get_epa(&addr) + rqst_i*sizeof(uint32_t));
@@ -1409,7 +1411,7 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			if (err == HB_MC_SUCCESS) {
 				rqst_i++;
 			} else if (err == HB_MC_BUSY) {
-				break; // break to reading a request
+				break; // if we're busy, break to start reading requests
 			} else {
 				manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
 						__func__, hb_mc_strerror(err));
@@ -1417,7 +1419,7 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 			}
 		}
 
-		// read one request
+		/* read as many responses as we have occupancy */
 		hb_mc_npa_t rsp_addr = addr;
 		hb_mc_npa_set_epa(&rsp_addr, hb_mc_npa_get_epa(&rsp_addr) + rsp_i*sizeof(uint32_t));
 
@@ -1429,34 +1431,6 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 		}
 		rsp_i++;
 	}
-
-	// /* send a read request for each word */
-	// for (size_t i = 0; i < n_words; i++) {
-
-	// 	err = hb_mc_manycore_send_read_rqst(mc, &addr, 4);
-	// 	if (err != HB_MC_SUCCESS) {
-	// 		manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
-	// 				__func__, hb_mc_strerror(err));
-	// 		return err;
-	// 	}
-
-	// 	// increment EPA by 4:
-	// 	hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) +sizeof(uint32_t));
-	// }
-
-	// /* now receive a packet for each word */
-	// addr = *npa;
-	// for (size_t i = 0; i < n_words; i++) {
-        //         // increment EPA by 1: (EPA's address words)
-	// 	hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr)+1);
-
-	// 	err = hb_mc_manycore_recv_read_rsp(mc, &addr, &words[i], 4);
-	// 	if (err != HB_MC_SUCCESS) {
-	// 		manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
-	// 				__func__, hb_mc_strerror(err));
-	// 		return err;
-	// 	}
-	// }
 
 	return HB_MC_SUCCESS;
 }
