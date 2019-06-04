@@ -285,7 +285,7 @@ static inline size_t hb_mc_manycore_get_max_program_text_size(const hb_mc_manyco
  */
 static inline size_t hb_mc_manycore_get_size_dram(const hb_mc_manycore_t *mc)
 {
-	return 4ul * (1ul<<30ul); //4G -- this might be later read from the config
+	return hb_mc_config_get_dram_size(hb_mc_manycore_get_config(mc));
 }
 
 /**

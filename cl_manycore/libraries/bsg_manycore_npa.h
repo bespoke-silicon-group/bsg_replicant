@@ -6,9 +6,13 @@
 #include <bsg_manycore_epa.h>
 
 #ifdef __cplusplus
+#include <cstdio>
 #include <cstdint>
+#include <cinttypes>
 #else
+#include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #endif
 
 #ifdef __cplusplus
@@ -127,6 +131,8 @@ static inline hb_mc_npa_t hb_mc_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa)
 			      epa);    
 }
 
+#define HB_MC_NPA(x_val, y_val, epa_val)			\
+	{ .x = x_val, .y = y_val, .epa = epa_val }
 
 /**
  * Create a Network Physical Address from a coordinate and an EPA.
@@ -137,6 +143,26 @@ static inline hb_mc_npa_t hb_mc_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa)
 #define hb_mc_epa_to_npa(coordinate, epa)				\
     hb_mc_npa(coordinate, epa)
 
+/**
+ * Format an NPA as a human readable string.
+ * @param[in] npa An NPA to format into a string.
+ * @param[in] buf A string buffer.
+ * @param[in] sz  The size of #buf in bytes.
+ * @return A formatted string.
+ */
+static inline const char *hb_mc_npa_to_string(const hb_mc_npa_t *npa, char *buf, size_t sz)
+{
+	snprintf(buf, sz,
+		 "npa { "
+		 ".x = %" PRId8 ", "
+		 ".y = %" PRId8 ", "
+		 ".epa = 0x%08" PRIx32 ""
+		 " }",
+		 hb_mc_npa_get_x(npa),
+		 hb_mc_npa_get_y(npa),
+		 hb_mc_npa_get_epa(npa));
+	return buf;
+}
 
 #ifdef __cplusplus
 };

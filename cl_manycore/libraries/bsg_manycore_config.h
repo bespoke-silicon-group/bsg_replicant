@@ -155,6 +155,23 @@ static inline hb_mc_idx_t hb_mc_config_get_vcore_base_x(const hb_mc_config_t *cf
         return HB_MC_CONFIG_VCORE_BASE_X; // TODO: These should be defined in the ROM?
 }
 
+static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
+{
+        return 4ul * (1ul<<30ul); // 4GB: TODO: should read out of the ROM
+}
+
+static inline size_t hb_mc_config_get_dmem_size(const hb_mc_config_t *cfg)
+{
+        return 4 * (1<<10); // 4K: this might be read from ROM if the value ever changes
+}
+
+static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
+{
+	hb_mc_coordinate_t dims = hb_mc_config_get_dimension(cfg);
+	return hb_mc_coordinate_get_y(dims)+1;
+}
+
+
 #ifdef __cplusplus
 }
 #endif
