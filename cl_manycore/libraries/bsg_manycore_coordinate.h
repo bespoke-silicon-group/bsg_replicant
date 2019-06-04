@@ -67,9 +67,18 @@ static inline hb_mc_idx_t hb_mc_dimension_get_y(hb_mc_dimension_t dim)
 #define HB_MC_COORDINATE(xv, yv)					\
 	{.x = xv, .y = yv}
 
+#define HB_MC_DIMENSION(xv, yv)					\
+	{.x = xv, .y = yv}
+
 static inline hb_mc_coordinate_t hb_mc_coordinate(hb_mc_idx_t x, hb_mc_idx_t y)
 {
 	hb_mc_coordinate_t ret = HB_MC_COORDINATE(x,y);
+	return ret;
+}
+
+static inline hb_mc_dimension_t hb_mc_dimension(hb_mc_idx_t x, hb_mc_idx_t y)
+{
+	hb_mc_dimension_t ret = HB_MC_DIMENSION(x,y);
 	return ret;
 }
 
