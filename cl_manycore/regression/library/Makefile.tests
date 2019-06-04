@@ -2,16 +2,15 @@ REGRESSION_TESTS_TYPE = library
 
 COSIM_REGRESSION_TESTS = test_rom
 COSIM_REGRESSION_TESTS += test_struct_size
+COSIM_REGRESSION_TESTS += test_printing
+COSIM_REGRESSION_TESTS += test_manycore_init
+COSIM_REGRESSION_TESTS += test_manycore_packets
 COSIM_REGRESSION_TESTS += test_dmem_read_write
-COSIM_REGRESSION_TESTS += test_packets
 COSIM_REGRESSION_TESTS += test_vcache_flush
 COSIM_REGRESSION_TESTS += test_vcache_simplified
 COSIM_REGRESSION_TESTS += test_vcache_stride
-COSIM_REGRESSION_TESTS += test_printing
-COSIM_REGRESSION_TESTS += test_manycore_eva_read_write
-COSIM_REGRESSION_TESTS += test_manycore_packets
-COSIM_REGRESSION_TESTS += test_manycore_init
 COSIM_REGRESSION_TESTS += test_manycore_eva
+COSIM_REGRESSION_TESTS += test_manycore_eva_read_write
 COSIM_REGRESSION_TESTS += test_manycore_credits
 
 C_REGRESSION_TESTS := $(COSIM_REGRESSION_TESTS)
