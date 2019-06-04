@@ -70,11 +70,13 @@ include $(HARDWARE_PATH)/Makefile.include
 # HARDWARE_TARGETS is set by $(HARDWARE_PATH)/Makefile.include
 xsim.dir/$(RTL_TB_WORKLIB): $(COSIM_DIR)/top.vivado.f 
 xsim.dir/$(RTL_TB_WORKLIB): $(COSIM_DIR)/cosim_wrapper.sv $(HARDWARE_TARGETS)
+	CL_DIR=$(CL_DIR) \
 	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
 		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
-		-f $(COSIM_DIR)/top.vivado.f $<
+		-f $(COSIM_DIR)/top.vivado.f $< 
 
 xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB) 
+	CL_DIR=$(CL_DIR) \
 	xelab -m64 $(XELOG_OPTS) --timescale 1ps/1ps --debug typical --relax \
 		--mt 8 --initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini \
 		$(foreach lib,$(RTL_TB_LIBS), -L $(lib)) $(RTL_TB_WORKLIB).tb \
@@ -82,6 +84,7 @@ xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB)
 		--snapshot $(notdir $@) -sv_lib $(notdir $@)
 
 %.cosim.log: xsim.dir/%
+	CL_DIR=$(CL_DIR) \
 	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
 
 $(C_REGRESSION_TESTS): %: %.cosim.log
