@@ -1,24 +1,25 @@
 REGRESSION_TESTS_TYPE = library
 
-C_REGRESSION_TESTS = test_rom
-C_REGRESSION_TESTS += test_struct_size
-C_REGRESSION_TESTS += test_dmem_read_write
-C_REGRESSION_TESTS += test_packets
-C_REGRESSION_TESTS += test_vcache_flush
-C_REGRESSION_TESTS += test_vcache_simplified
-C_REGRESSION_TESTS += test_vcache_stride
-C_REGRESSION_TESTS += test_vcache_sequence
+COSIM_REGRESSION_TESTS = test_rom
+COSIM_REGRESSION_TESTS += test_struct_size
+COSIM_REGRESSION_TESTS += test_dmem_read_write
+COSIM_REGRESSION_TESTS += test_packets
+COSIM_REGRESSION_TESTS += test_vcache_flush
+COSIM_REGRESSION_TESTS += test_vcache_simplified
+COSIM_REGRESSION_TESTS += test_vcache_stride
+COSIM_REGRESSION_TESTS += test_printing
+COSIM_REGRESSION_TESTS += test_manycore_eva_read_write
+COSIM_REGRESSION_TESTS += test_manycore_packets
+COSIM_REGRESSION_TESTS += test_manycore_init
+COSIM_REGRESSION_TESTS += test_manycore_eva
+COSIM_REGRESSION_TESTS += test_manycore_credits
+
+C_REGRESSION_TESTS := $(COSIM_REGRESSION_TESTS)
 C_REGRESSION_TESTS += test_dram_read_write
-C_REGRESSION_TESTS += test_printing
-#C_REGRESSION_TESTS += test_manycore_compile
-C_REGRESSION_TESTS += test_manycore_packets
-C_REGRESSION_TESTS += test_manycore_init
 C_REGRESSION_TESTS += test_manycore_dmem_read_write
 C_REGRESSION_TESTS += test_manycore_vcache_sequence
 C_REGRESSION_TESTS += test_manycore_dram_read_write
-C_REGRESSION_TESTS += test_manycore_eva
-C_REGRESSION_TESTS += test_manycore_credits
-C_REGRESSION_TESTS += test_manycore_eva_read_write
+#C_REGRESSION_TESTS += test_manycore_compile
 
 CXX_REGRESSION_TESTS =
 

@@ -1,4 +1,4 @@
-# HARDWARE_PATH, TESTS_PATH, CL_DIR, C_REGRESSION_TESTS, and
+# HARDWARE_PATH, TESTS_PATH, CL_DIR, COSIM_REGRESSION_TESTS, and
 # REGRESSION_TESTS_TYPE must be set by the including makefile
 
 # AWS Paths (Don't modify - variables are set by hdk_setup.sh in aws-fpga)
@@ -58,7 +58,7 @@ INCLUDES += -I$(C_COMMON_DIR)/include -I$(TESTS_PATH) -I$(CL_DIR)/libraries -I$(
 XSC_INCLUDES = $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
 XSC_FLAGS    = $(foreach def,$(CFLAGS),--additional_option "$(def)")
 
-SIM_LOG_TARGETS  = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+SIM_LOG_TARGETS  = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
 
 cosim: $(SIM_LOG_TARGETS)
 
@@ -87,7 +87,7 @@ xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB)
 	CL_DIR=$(CL_DIR) \
 	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
 
-$(C_REGRESSION_TESTS): %: %.cosim.log
+$(COSIM_REGRESSION_TESTS): %: %.cosim.log
 
 regression: $(SIM_LOG_TARGETS)
 	@pass=0;  total=0; \
