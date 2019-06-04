@@ -143,7 +143,8 @@ static int hb_mc_manycore_rx_fifo_get_occupancy(hb_mc_manycore_t *mc,
                 return err;
         }
 
-        // All packets recieved packets should have an integral occupancy that                                                                                                                                                                                                                                                                                                                                                                  // is determined by the Packet Bit-Width / FIFO Bit-Width
+        // All packets recieved packets should have an integral occupancy that
+	// is determined by the Packet Bit-Width / FIFO Bit-Width
 	occ = ((sizeof(hb_mc_packet_t) * 8))/HB_MC_MMIO_FIFO_DATA_WIDTH;
         if(val % occ != 0) {
                 manycore_pr_err(mc, "Invalid occupancy: Non-integral packet"
