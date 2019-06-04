@@ -247,6 +247,32 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 	return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
 }
 
+static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
+{
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension(cfg);
+	return ceil(log2(hb_mc_dimension_get_x(dim)));
+}
+
+static uint32_t default_get_dram_x_bitidx(const hb_mc_config_t *cfg)
+{
+	uint32_t xdimlog;
+	// The number of bits used for the x index is determined by clog2 of the
+	// x dimension (or the number of bits needed to represent the maximum x
+	// dimension).
+	xdimlog = default_get_x_dimlog(cfg);
+	return MAKE_MASK(xdimlog);
+}
+
+static uint32_t default_get_dram_x_shift(const hb_mc_config_t *cfg)
+{
+	uint32_t xdimlog;
+        // The location of the x index in the eva is determined by the x
+	// dimension of the network, and uses the high-order bits after the
+	// High-Order bit that indicates a DRAM access.
+	xdimlog = default_get_x_dimlog(cfg);
+	return DEFAULT_DRAM_BITIDX - xdimlog;
+}
+
 /**
  * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
  * size (contiguous bytes following the specified EVA)
@@ -272,16 +298,9 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 
 	dim = hb_mc_config_get_dimension(cfg);
 
-	// The number of bits used for the x index is determined by clog2 of the
-	// x dimension (or the number of bits needed to represent the maximum x
-	// dimension).
-	xdimlog = ceil(log2(hb_mc_dimension_get_x(dim)));
-	xmask = MAKE_MASK(xdimlog);
-
-	// The location of the x index in the eva is determined by the x
-	// dimension of the network, and uses the high-order bits after the
-	// High-Order bit that indicates a DRAM access.
-	shift = DEFAULT_DRAM_BITIDX - xdimlog;
+	xdimlog = default_get_x_dimlog(cfg);
+	xmask   = default_get_dram_x_bitidx(cfg);
+	shift   = default_get_dram_x_shift(cfg);
 
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
 	y = hb_mc_dimension_get_y(dim) + hb_mc_config_get_vcore_base_y(cfg);
@@ -391,17 +410,6 @@ static bool default_local_epa_is_valid(const hb_mc_config_t *config,
 }
 
 /**
- * Get the Y-coordinate of DRAM.
- * @param[in]  config  An initialized manycore configuration struct
- * @return The Y-coordinate of DRAM.
- */
-static hb_mc_idx_t default_get_dram_y(const hb_mc_config_t *config)
-{
-        hb_mc_coordinate_t dims = hb_mc_config_get_dimension(config);
-        return hb_mc_coordinate_get_y(dims)+1;
-}
-
-/**
  * Check if an NPA is a host DRAM.
  * @param[in] config  An initialized manycore configuration struct
  * @param[in] npa     An npa to translate
@@ -413,14 +421,14 @@ static bool default_npa_is_dram(const hb_mc_config_t *config,
                                 const hb_mc_coordinate_t *tgt)
 {
 	char npa_str[64];
-	bool is_dram = (hb_mc_npa_get_y(npa) == default_get_dram_y(config))
+	bool is_dram = (hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_y(config))
                 && default_dram_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
-	
+
 	bsg_pr_dbg("%s: npa %s %s DRAM\n",
 		   __func__,
 		   hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)),
 		   (is_dram ? "is" : "is not"));
-	
+
         return is_dram;
 }
 
@@ -444,7 +452,7 @@ static bool default_npa_is_host(const hb_mc_config_t *config,
 		   __func__,
 		   hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)),
 		   (is_host ? "is" : "is not"));
-	
+
         // does your coordinate map to the host?
         // I guess we're generally permissive with host EPAs
 	return is_host;
@@ -509,8 +517,10 @@ static int default_npa_to_eva_dram(const hb_mc_config_t *cfg,
 {
         // build the eva
         hb_mc_eva_t addr = 0;
+	hb_mc_eva_t xshift = default_get_dram_x_shift(cfg);
+
         addr |= hb_mc_npa_get_epa(npa); // set the byte address
-        addr |= hb_mc_npa_get_x(npa) << DEFAULT_GLOBAL_X_BITIDX; // set the x coordinate
+        addr |= hb_mc_npa_get_x(npa) << xshift; // set the x coordinate
         addr |= 1 << DEFAULT_DRAM_BITIDX; // set the DRAM bit
         *eva  = addr;
 
@@ -545,7 +555,7 @@ static int default_npa_to_eva_global_remote(const hb_mc_config_t *cfg,
         addr |= hb_mc_npa_get_y(npa) << DEFAULT_GLOBAL_Y_BITIDX; // set y coordinate
         addr |= 1 << DEFAULT_GLOBAL_BITIDX; // set the global bit
 
-	*eva = addr; 
+	*eva = addr;
 
         // this is lame but we are basically saying "you can write to this word only"
         *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);

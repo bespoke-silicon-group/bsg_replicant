@@ -60,8 +60,14 @@ static inline hb_mc_idx_t hb_mc_dimension_get_y(hb_mc_dimension_t dim)
         return dim.y;
 }
 
-#define hb_mc_coordinate(x, y)                                          \
-        {x,y}
+#define HB_MC_COORDINATE(xv, yv)					\
+	{.x = xv, .y = yv}
+
+static inline hb_mc_coordinate_t hb_mc_coordinate(hb_mc_idx_t x, hb_mc_idx_t y)
+{
+	hb_mc_coordinate_t ret = HB_MC_COORDINATE(x,y);
+	return ret;
+}
 
 #ifdef __cplusplus
 }

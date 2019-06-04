@@ -1,4 +1,3 @@
-#define DEBUG
 #include <bsg_manycore.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_errno.h>
@@ -150,7 +149,7 @@ static int run_freeze_and_load(test_t *test,
 	*r_pdata = program_data;
 	*r_psize = program_size;
 	goto done;
-	
+
 cleanup:
 	free(program_data);
 done:
@@ -186,11 +185,11 @@ static int run_finish_packet_test(test_t *test)
         size_t program_size;
         int rc = HB_MC_FAIL, err;
 	hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
-	
+
 	err = run_freeze_and_load(test, target, &program_data, &program_size);
 	if (err != HB_MC_SUCCESS)
 		return rc;
-	
+
 	err = hb_mc_tile_unfreeze(mc, &target);
 	if (err != HB_MC_SUCCESS) {
 		pr_test_failed(test, "failed to unfreeze tile (%" PRId32", %" PRId32 "): %s\n",
@@ -244,7 +243,7 @@ static int run_finish_packet_tests(void)
 {
         int err, rc = HB_MC_SUCCESS;
 
-	bsg_pr_test_info("%s: " BSG_RED("RUNNING PACKET LOOPBACK TESTS") "\n", SUITE_NAME);	
+	bsg_pr_test_info("%s: " BSG_RED("RUNNING PACKET LOOPBACK TESTS") "\n", SUITE_NAME);
         for (int i = 0; i < array_size(finish_packet_tests); i++) {
                 err = run_finish_packet_test(&finish_packet_tests[i]);
                 if (err != HB_MC_SUCCESS)
@@ -272,33 +271,58 @@ static int run_finish_packet_tests(void)
 			.magic = 0x3AB4, .npa = taddr, .data = tdata, .mc = &manycore }
 
 // for DRAM, coordinate is rewritten at runtime according to configuration
-#define NPA_TO_EVA_DRAM_TEST(tname, taddr, tdata)	\
+#define NPA_TO_EVA_DRAM_TEST(tname, epa, tdata)				\
 	{ .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
-			.magic = 0x3AB4, .npa = taddr, .data = tdata, .mc = &manycore,	\
+			.magic = 0x3AB4, .npa = HB_MC_NPA(0,0,epa), .data = tdata, \
+			.mc = &manycore,				\
 			.addr_is_dram = 1, .addr_is_host = 0 }
 
-#define NPA_TO_EVA_HOST_TEST(tname, taddr, tdata)	\
+#define NPA_TO_EVA_HOST_TEST(tname, epa, tdata)				\
 	{ .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
-			.magic = 0x3AB4, .npa = taddr, .data = tdata, .mc = &manycore, \
+			.magic = 0x3AB4, .npa = HB_MC_NPA(0,0,epa), .data = tdata, \
+			.mc = &manycore,				\
 			.addr_is_dram = 0, .addr_is_host = 1 }
+
+#define NPA_TO_EVA_LOCAL_TEST(tname, x, y, epa, tdata)	\
+	{ .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
+			.magic = 0x3AB4, .npa = HB_MC_NPA(x, y, 0x1000 | epa), .data = tdata, \
+			.mc = &manycore,				\
+			.addr_is_dram = 0, .addr_is_host = 0 }
 
 /*********************************/
 /* ADD NEW NPA TO EVA TESTS HERE */
 /*********************************/
 static test_t npa_to_eva_tests [] = {
-	NPA_TO_EVA_DRAM_TEST("dram",    HB_MC_NPA(0,0,0),         0xDEADBEEF),
-	NPA_TO_EVA_DRAM_TEST("dram+4K", HB_MC_NPA(0,0,4*(1<<10)), 0xCAFEBABE),
-	NPA_TO_EVA_HOST_TEST("host",    HB_MC_NPA(0,0,0xF000),    0xCAFEBABE),
+	/* Local memory tests */
+	NPA_TO_EVA_LOCAL_TEST("local mem middle",    0, 1, 1<<9, 0xDEADBEEF),
+	NPA_TO_EVA_LOCAL_TEST("local mem neighbor",  0, 2,    0, 0xDEADBEEF),
+	/* DRAM NPA tests */
+	NPA_TO_EVA_DRAM_TEST("dram",      0,         0xDEADBEEF),
+	NPA_TO_EVA_DRAM_TEST("dram+4K",   4*(1<<10), 0xCAFEBABE),
+	NPA_TO_EVA_DRAM_TEST("dram+1M",   1*(1<<20), 0xABABABAB),
+	/* Host NPA tests */
+	NPA_TO_EVA_HOST_TEST("host F000", 0xF000,    0xCAFEBABE),
+	NPA_TO_EVA_HOST_TEST("host 000C", 0x000C,    0x0000C0DA),
 };
 
 static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc)
-{	
+{
 	hb_mc_coordinate_t dim = hb_mc_config_get_dimension(hb_mc_manycore_get_config(mc));
 	return hb_mc_coordinate_get_y(dim)+1;
 }
 
 static int run_npa_to_eva_test(test_t *test)
 {
+	/**************************************************************************************/
+	/* Each test does the following:						      */
+	/* 1. Load the npa_to_eva riscv executable to one tile.				      */
+	/* 2. Write to its npa_to_eva_(data/addr) variables.				      */
+	/* 3. Unfreeze the tile.							      */
+	/* 4. If the target address is the host, read a request packet.			      */
+	/* 5. Wait for a finish packet.							      */
+	/* 6. Compare the data at the target NPA with data written to npa_to_eva_data.	      */
+	/**************************************************************************************/
+
 	hb_mc_manycore_t *mc = test->mc;
         const char *test_name = test->name;
         unsigned char *program_data;
@@ -308,7 +332,7 @@ static int run_npa_to_eva_test(test_t *test)
 	hb_mc_npa_t npa = test->npa;
 	uint32_t data   = test->data;
 	char npa_str [64];
-	
+
 	/* rewrite Y-coordinate if this is DRAM or Host */
 	if (test->addr_is_dram) {
 		hb_mc_idx_t y = test_get_dram_y(test, mc);
@@ -322,14 +346,16 @@ static int run_npa_to_eva_test(test_t *test)
 
 	// format npa as a string
 	hb_mc_npa_to_string(&npa, npa_str, sizeof(npa_str));
-	
+
 	bsg_pr_dbg("%s: Freezing and Loading\n", test_name);
-	
+
 	err = run_freeze_and_load(test, target, &program_data, &program_size);
 	if (err != HB_MC_SUCCESS)
 		return rc;
-	
-	// get the address of salient variables
+
+	/*
+	  Get the address of npa_to_eva_addr.
+	 */
 	const char *addr_name = "npa_to_eva_addr", *data_name = "npa_to_eva_data";
 	hb_mc_eva_t addr_addr, data_addr;
 	err = hb_mc_loader_symbol_to_eva(program_data, program_size,
@@ -340,6 +366,9 @@ static int run_npa_to_eva_test(test_t *test)
 		goto cleanup;
 	}
 
+	/*
+	  Get the address of npa_to_eva_data.
+	 */
 	err = hb_mc_loader_symbol_to_eva(program_data, program_size,
 					 data_name, &data_addr);
 	if (err != HB_MC_SUCCESS) {
@@ -350,15 +379,17 @@ static int run_npa_to_eva_test(test_t *test)
 
 	bsg_pr_dbg("%s: %s = %08" PRIx32 ", %s = %08" PRIx32 "\n",
 		   test_name, addr_name, addr_addr, data_name, data_addr);
-	
-	// npa to eva translation
+
+	/*
+	  Translate our target NPA to and EVA.
+	 */
 	hb_mc_eva_t addr;
 	size_t addr_bytes;
 	err = hb_mc_npa_to_eva(hb_mc_manycore_get_config(mc),
 			       &default_map,
 			       &target,
 			       &npa,
-			       &addr, 
+			       &addr,
 			       &addr_bytes);
 	if (err != HB_MC_SUCCESS) {
 		pr_test_failed(test, "failed to translate %s: %s\n",
@@ -368,8 +399,13 @@ static int run_npa_to_eva_test(test_t *test)
 
 	bsg_pr_dbg("%s: %s translates to EVA %08" PRIx32 "\n",
 		   test_name, npa_str, addr);
-	
-	// write addr and data to vcore
+
+
+	/*
+	  Now write the produced EVA to the V-Core as well as the data for it to write.
+	  The V-Core should write the data assigned to npa_to_eva_data to the address
+	  assigned to npa_to_eva_addr.
+	 */
 	bsg_pr_dbg("%s: Writing %08" PRIx32 " to %08" PRIx32 " (%s)\n",
 		   test_name, addr, addr_addr, addr_name);
 
@@ -389,12 +425,14 @@ static int run_npa_to_eva_test(test_t *test)
 		goto cleanup;
 	}
 
-	// unfreeze the tile
+	/*
+	  Release the tile so it can do the write.
+	 */
 	bsg_pr_dbg("%s: Unfreezing (%" PRId8 ",%" PRId8 ")\n",
 		   test_name,
 		   hb_mc_coordinate_get_x(target),
 		   hb_mc_coordinate_get_y(target));
-	
+
 	err = hb_mc_tile_unfreeze(mc, &target);
 	if (err != HB_MC_SUCCESS) {
 		pr_test_failed(test, "failed to freeze tile (%" PRId32 ",%" PRId32"): %s\n",
@@ -405,16 +443,22 @@ static int run_npa_to_eva_test(test_t *test)
 		goto cleanup;
 	}
 
-	// sleep 100 microseconds
+	/*
+	  Give the V-Core time to run (100us is plenty of time).
+	 */
 	usleep(100);
 
 	uint32_t data_read;
 
+	/*
+	  If the target NPA was a host address we should expect a remote store
+	  packet from the network.
+	 */
 	if (test->addr_is_host) {
 		// we should expect a write packet since the EVA we gave to the vcore
 		// maps to the host
 		bsg_pr_dbg("%s: Waiting for write packet from V-Core\n", test_name);
-		
+
 		hb_mc_packet_t rqst;
 		err = hb_mc_manycore_packet_rx(mc, &rqst, HB_MC_FIFO_RX_REQ, -1);
 		if (err != HB_MC_SUCCESS) {
@@ -424,7 +468,7 @@ static int run_npa_to_eva_test(test_t *test)
 		}
 		        /* print out the packet */
 		char buf[256];
-		bsg_pr_test_info("%s: %" TN_FMT ": received manycore finish packet %s\n",
+		bsg_pr_test_info("%s: %" TN_FMT ": received manycore request packet %s\n",
 				 SUITE_NAME,
 				 test->name,
 				 hb_mc_request_packet_to_string(&rqst.request,
@@ -434,9 +478,11 @@ static int run_npa_to_eva_test(test_t *test)
 		data_read = hb_mc_request_packet_get_data(&rqst.request);
 	}
 
-	// expect a finish packet
+	/*
+	  We should now expect a finish packet.y
+	 */
 	bsg_pr_dbg("%s: Waiting for finish packet\n", test_name);
-	
+
 	hb_mc_packet_t finish;
 	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, -1);
 	if (err != HB_MC_SUCCESS) {
@@ -448,12 +494,15 @@ static int run_npa_to_eva_test(test_t *test)
 
         /* print out the packet */
 	char buf[256];
-	bsg_pr_test_info("%s: %" TN_FMT ": received manycore finish packet %s\n",
+	bsg_pr_test_info("%s: %" TN_FMT ": received manycore finish packet  %s\n",
 			 SUITE_NAME,
                          test->name,
                          hb_mc_request_packet_to_string(&finish.request, buf ,sizeof(buf)));
 
 
+	/*
+	  Make sure that the finish packet has the magic number we expect.
+	 */
 	uint32_t magic = test->magic;
 	if (hb_mc_request_packet_get_addr(&finish.request) != magic) {
 		pr_test_failed(test, "packet does not match finish packet 0x%08" PRIx32 "\n",
@@ -461,6 +510,10 @@ static int run_npa_to_eva_test(test_t *test)
 		goto cleanup;
 	}
 
+	/*
+	  If the target NPA was somewhere other than the host, we should read from
+	  our target NPA and check that it has the expected value.
+	 */
 	if (!test->addr_is_host) {
 		// we should read from the NPA we gave the vcore
 		err = hb_mc_manycore_read_mem(mc, &npa, &data_read, sizeof(data_read));
@@ -471,7 +524,9 @@ static int run_npa_to_eva_test(test_t *test)
 		}
 	}
 
-	/* finally: compare read data with what we asked the vcore to write */
+	/*
+	   Finally compare read data with what we asked the vcore to write
+	*/
 	if (data_read == data) {
 		pr_test_passed(test, "Data read from %s matches 0x%08" PRIx32 "\n",
 			       npa_str, data);
@@ -482,10 +537,10 @@ static int run_npa_to_eva_test(test_t *test)
 			       npa_str, data_read, data);
 		rc = HB_MC_FAIL;
 	}
-	
+
 cleanup:
 	free(program_data);
-	
+
 done:
 	return rc;
 }
@@ -493,7 +548,7 @@ done:
 static int run_npa_to_eva_tests()
 {
 	int rc, err;
-	
+
 	bsg_pr_test_info("%s: " BSG_RED("RUNNING NPA TO EVA TESTS") "\n", SUITE_NAME);
 	for (int i = 0; i < array_size(npa_to_eva_tests); i++) {
 		err = run_npa_to_eva_test(&npa_to_eva_tests[i]);
@@ -516,14 +571,20 @@ int test_loader_suite (void) {
                 return HB_MC_FAIL;
         }
 
+	/***************************/
+	/* Run finish packet tests */
+	/***************************/
         err = run_finish_packet_tests();
         if (err != HB_MC_SUCCESS)
                 rc = HB_MC_FAIL;
 
+	/************************/
+	/* Run NPA to EVA tests */
+	/************************/
 	err = run_npa_to_eva_tests();
 	if (err != HB_MC_SUCCESS)
 		rc = HB_MC_FAIL;
-	
+
         hb_mc_manycore_exit(&manycore);
 
         return err;

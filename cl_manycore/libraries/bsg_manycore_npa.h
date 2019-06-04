@@ -143,7 +143,13 @@ static inline hb_mc_npa_t hb_mc_npa(hb_mc_coordinate_t c, hb_mc_epa_t epa)
 #define hb_mc_epa_to_npa(coordinate, epa)				\
     hb_mc_npa(coordinate, epa)
 
-
+/**
+ * Format an NPA as a human readable string.
+ * @param[in] npa An NPA to format into a string.
+ * @param[in] buf A string buffer.
+ * @param[in] sz  The size of #buf in bytes.
+ * @return A formatted string.
+ */
 static inline const char *hb_mc_npa_to_string(const hb_mc_npa_t *npa, char *buf, size_t sz)
 {
 	snprintf(buf, sz,

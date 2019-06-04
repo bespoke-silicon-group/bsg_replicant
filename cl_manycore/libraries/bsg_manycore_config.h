@@ -165,6 +165,13 @@ static inline size_t hb_mc_config_get_dmem_size(const hb_mc_config_t *cfg)
         return 4 * (1<<10); // 4K: this might be read from ROM if the value ever changes
 }
 
+static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
+{
+	hb_mc_coordinate_t dims = hb_mc_config_get_dimension(cfg);
+	return hb_mc_coordinate_get_y(dims)+1;
+}
+
+
 #ifdef __cplusplus
 }
 #endif
