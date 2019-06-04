@@ -7,7 +7,7 @@
 `include "bsg_axi_bus_pkg.vh"
 
 module s_axil_mcl_adapter #(
-   mcl_width_p = "inv"
+  mcl_width_p = "inv"
   ,max_out_credits_p = "inv"
   ,axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   ,axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
@@ -272,7 +272,7 @@ bsg_counter_up_down #(
 
 bsg_fifo_1r1w_small #(
   .width_p           (mcl_width_p      )
-  ,.els_p             (256)
+  ,.els_p             (max_out_credits_p)
   ,.ready_THEN_valid_p(0                )
 ) rcv_fifo_converter (
   .clk_i  (clk_i           )
