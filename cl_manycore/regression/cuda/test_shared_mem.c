@@ -13,7 +13,7 @@
 
 
 int kernel_shared_mem () {
-	fprintf(stderr, "Running the CUDA Shared Memory  Kernel on a 1x1 grid of 2x2 tile group.\n\n");
+	bsg_pr_test_info("Running the CUDA Shared Memory  Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
 	srand(time); 
@@ -114,12 +114,8 @@ int kernel_shared_mem () {
 	******************************************************************************************************************/	
 	int mismatch = 0;
 	for (int i = 0; i < N; i ++) { 
-		if (A_host[i] == i) { 
-			fprintf (stderr, "Success: A[%d] = %d\t Expected: %d.\n", i, A_host[i], i); 
-		}
-		else 
-		{
-			fprintf (stderr, "Failed : A_host[%d] = %d\t Expected: %d.\n", i, A_host[i], i);
+		if (A_host[i] != i) { 
+			bsg_pr_err(BSG_RED("Mismatch: ") "A_host[%d] = %d\t Expected: %d.\n", i, A_host[i], i);
 			mismatch = 1 ;
 		}
 	} 

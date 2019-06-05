@@ -11,7 +11,7 @@
 
 
 int kernel_shared_mem_load_store () {
-	fprintf(stderr, "Running the CUDA Shared Memory Load Store Kernel.\n\n");
+	bsg_pr_test_info("Running the CUDA Shared Memory Load Store Kernel.\n\n");
 	int rc;
 
 	srand(time); 
@@ -143,29 +143,12 @@ int kernel_shared_mem_load_store () {
 	}
 
 
-		fprintf(stderr, "Expected Result:\n");
-	for (int y = 0; y < M; y ++) { 
-		for (int x = 0; x < N; x ++) { 
-			fprintf(stderr, "%d\t", A_in_host[y * N + x]); 
-		}
-		fprintf(stderr, "\n");
-	}
-
-		
-	fprintf(stderr, "Manycore Result:\n");
-	for (int y = 0; y < M; y ++) { 
-		for (int x = 0; x < N; x ++) { 
-			fprintf(stderr, "%d\t", A_out_host[y * N + x]); 
-		}
-		fprintf(stderr, "\n");
-	}
-
-	
 	// Compare matrices
 	int mismatch = 0; 
 	for (int y = 0; y < M; y ++) { 
 		for (int x = 0; x < N; x ++) { 
 			if ( A_in_host[y * N + x] != A_out_host[y * N + x]) { 
+				bsg_pr_err(BSG_RED("Mismatch: ") "A[%d][%d] = %d\t Expected: %d.\n", y, x, A_out_host[y * N + x], A_in_host[y * N + x]); 
 				mismatch = 1;
 			}
 		}
@@ -173,10 +156,10 @@ int kernel_shared_mem_load_store () {
 
 
 	if (mismatch) { 
-		fprintf(stderr, "Failed: matrix mismatch.\n");
+		bsg_pr_err(BSG_RED("Matrix mismatch.\n"));
 		return HB_MC_FAIL;
 	}
-	fprintf(stderr, "Success: matrix match.\n");
+	bsg_pr_test_info(BSG_GREEN("Matrix Match.\n"));
 	return HB_MC_SUCCESS;
 }
 

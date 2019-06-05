@@ -14,7 +14,7 @@
 
 
 int kernel_stack_load () {
-	fprintf(stderr, "Running the CUDA Stack Load Kernel on a 1x1 grid of 2x2 tile group.\n\n");
+	bsg_pr_test_info("Running the CUDA Stack Load Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
 	/*****************************************************************************************************************
@@ -115,16 +115,12 @@ int kernel_stack_load () {
 	int mismatch = 0;
 	for (int y = 0; y < tg_dim.y; y ++) { 
 		for (int x = 0; x < tg_dim.x; x ++) { 
-			if (sum_host[y * tg_dim.x + x] == SUM_ARGS) { 
-				fprintf (stderr, "Success: sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
-			}
-			else { 
-				fprintf (stderr, "Failed : sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
+			if (sum_host[y * tg_dim.x + x] != SUM_ARGS) { 
+				bsg_pr_err(BSG_RED("Mismatch: ") "sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
 				mismatch = 0; 
 			}
 		}
 	}
-
 
 
 	if (mismatch) { 

@@ -19,7 +19,7 @@ void host_vec_add (int *A, int *B, int *C, int N) {
 
 
 int kernel_vec_add () {
-	fprintf(stderr, "Running the CUDA Vector Addition Kernel on one 2x2 tile groups.\n\n");
+	bsg_pr_test_info("Running the CUDA Vector Addition Kernel on one 2x2 tile groups.\n\n");
 	int rc;
 
 	srand(time); 
@@ -177,11 +177,8 @@ int kernel_vec_add () {
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		if (A_host[i] + B_host[i] == C_host[i]) {
-			fprintf(stderr, "Success -- C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
-		}
-		else {
-			fprintf(stderr, "Failed  -- C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
+		if (A_host[i] + B_host[i] != C_host[i]) {
+			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A_host[i], B_host[i], C_host[i], C_expected[i]);
 			mismatch = 1;
 		}
 	} 
