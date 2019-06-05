@@ -5,7 +5,7 @@
 
 /*!
  * Runs a barrier kernel on a 2x2 tile group. 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/barrier/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/barrier/ Manycore binary in the BSG Manycore github repository.  
 */
 
 int kernel_barrier () {

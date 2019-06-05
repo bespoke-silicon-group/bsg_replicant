@@ -1,4 +1,4 @@
-TARGETS = library spmd
+TARGETS = library spmd cuda
 
 all: cosim
 cosim: $(TARGETS)

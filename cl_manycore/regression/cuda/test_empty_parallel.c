@@ -5,7 +5,7 @@
 
 /*!
  * Runs an empty kernel on a 4x2 grid of 2x2 tile groups. 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore github repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the BSG Manycore github repository.  
 */
 
 int kernel_empty_parallel () {
