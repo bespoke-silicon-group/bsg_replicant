@@ -19,8 +19,6 @@ static const hb_mc_epa_t SIGNAL_REG = 0x100c; //!< EPA of register that holds si
 
 static const hb_mc_epa_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
 
-static awsbwhal::MemoryManager *mem_manager[1] = {(awsbwhal::MemoryManager *) 0}; /* This array has an element for every EVA <-> NPA mapping. Currently, only one mapping is supported. */
-
 static uint32_t const DRAM_SIZE = 0x80000000;
 
 
@@ -63,34 +61,6 @@ static int hb_mc_get_y(tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
 	return HB_MC_SUCCESS;
 }
 
-
-
-
-/*!
- * creates a awsbwhal::MemoryManager object and stores it in a global table.
- * @param eva_id which specifies which EVA <-> NPA mapping.
- * @param bin_name path to ELF binary
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
- */
-__attribute__((deprecated))
-static int hb_mc_create_memory_manager (eva_id_t eva_id, char *bin_name) {
-	eva_t program_end;
-	if (symbol_to_eva(bin_name, "_bsg_dram_end_addr", &program_end) != HB_MC_SUCCESS) {
-		return HB_MC_FAIL;
-	}
-	uint32_t alignment = 32;
-	uint32_t start = program_end + alignment - (program_end % alignment); /* start at the next aligned block */
-	uint32_t size = DRAM_SIZE;
-	mem_manager[eva_id] = new awsbwhal::MemoryManager(DRAM_SIZE, start, alignment); 
-	return HB_MC_SUCCESS;	
-}
-
-static int hb_mc_write_tile_reg(uint8_t fd, eva_t eva_id, tile_t *tile, uint32_t epa, uint32_t val) {
-	int error =  hb_mc_copy_to_epa (fd, tile->coord.x, tile->coord.y, epa, &val, 1);
-	if (error != HB_MC_SUCCESS)
-		return HB_MC_FAIL; /* could not memcpy */
-	return HB_MC_SUCCESS;	
-}
 
 
 
@@ -492,8 +462,6 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
 		return HB_MC_FAIL;
 	} 
 	
-	device->eva_id = 0;  // To be deprecated soon
-
 
 	error = hb_mc_mesh_init(device, dim);
 	if (error != HB_MC_SUCCESS) {
@@ -874,39 +842,6 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva) {
 
 
 
-
-
-/**
- * Allocates memory on device DRAM
- * @param[in]  device        Pointer to device
- * @parma[in]  size          Size of requested memory
- * @param[out] eva           Eva address of the allocated memory
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-int hb_mc_device_malloc_dep (device_t *device, uint32_t size, /*out*/ eva_t *eva) {
-        *eva = 0;
-	if (device->eva_id != 0) {
-		bsg_pr_err("%s: invalid EVA ID %d.\n", __func__, device->eva_id);
-		return HB_MC_FAIL; 
-	}
-	else if (!mem_manager[device->eva_id]) {
-		bsg_pr_err("%s: memory manager not initialized.\n", __func__);
-		return HB_MC_FAIL; 
-	}
-
-	eva_t result = mem_manager[device->eva_id]->alloc(size);
-	if (result == awsbwhal::MemoryManager::mNull) {
-		bsg_pr_err("%s: failed to allocated memory.\n", __func__);	
-		return HB_MC_FAIL; 
-	}
-        *eva = result;
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-
 /**
  * Frees memory on device DRAM
  * @param[in]  device        Pointer to device
@@ -923,71 +858,6 @@ int hb_mc_device_free (device_t *device, eva_t eva) {
 
 	awsbwhal::MemoryManager * mem_manager = (awsbwhal::MemoryManager *) device->program->allocator->memory_manager; 
 	mem_manager->free(eva);
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-
-/*!
- * frees Hammerblade Manycore memory.
- *@param device pointer to the device.
- *@param eva address to free.
- *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
- */
-int hb_mc_device_free_dep (device_t *device, eva_t eva) {
-	if (device->eva_id != 0) {
-		bsg_pr_err("%s: invalid EVA ID %d.\n", __func__, device->eva_id); 
-		return HB_MC_FAIL; 
-	}
-	else if (!mem_manager[device->eva_id]) {
-		bsg_pr_err("%s: memory manager not initialized.\n", __func__);
-		return HB_MC_FAIL; 
-	}
-
-	mem_manager[device->eva_id]->free(eva);
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-
-/*
- * caller must ensure eva_id is valid. */
-__attribute__((deprecated))
-static int hb_mc_cpy_to_eva_dep (uint8_t fd, eva_id_t eva_id, eva_t dst, uint32_t *src) {
-	npa_t npa;	
-	int error = hb_mc_eva_to_npa_deprecated(eva_id, dst, &npa);
-	if (error != HB_MC_SUCCESS) {
-		return HB_MC_FAIL; /* could not convert EVA to an NPA */
-	}
-	error = hb_mc_copy_to_epa (fd, npa.x, npa.y, npa.epa, src, 1 /* 1 word */);
-	if (error != HB_MC_SUCCESS) {
-		return HB_MC_FAIL; /* could not send data to Manycore */
-	}
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-
-/*
- * caller must esure eva_id is valid. 
- * */
-__attribute__((deprecated)) 
-static int hb_mc_cpy_from_eva_dep (uint8_t fd, eva_id_t eva_id, hb_mc_response_packet_t *dest, eva_t src) {
-	npa_t npa;	
-	int error = hb_mc_eva_to_npa_deprecated(eva_id, src, &npa);
-	if (error != HB_MC_SUCCESS) {
-		return HB_MC_FAIL; /* could not convert EVA to an NPA */
-	}
-	error = hb_mc_copy_from_epa (fd, dest, npa.x, npa.y, npa.epa, 1 /* 1 word */);
-	if (error != HB_MC_SUCCESS) {
-		return HB_MC_FAIL; /* could not send data to Manycore */
-	}
 	return HB_MC_SUCCESS;
 }
 
@@ -1039,57 +909,5 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 
 	return HB_MC_SUCCESS;
 }
-
-
-
-
-
-/**
- * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
- * @param[in]  device        Pointer to device
- * @parma[in]  src           EVA address of src 
- * @param[in]  name          EVA address of dst
- * @param[in]  count         Size of buffer to be copied
- * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-int hb_mc_device_memcpy_dep (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
-
-	if (kind == hb_mc_memcpy_to_device) { /* copy to Manycore */
-		eva_t dst_eva = (eva_t) reinterpret_cast<uintptr_t>(dst);
-		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-			char *src_word = (char *) src + i;
-			int error = hb_mc_cpy_to_eva_dep(device->fd, device->eva_id, dst_eva + i, (uint32_t *) (src_word)); 		
-			if (error != HB_MC_SUCCESS) {
-				bsg_pr_err("%s: failed to copy to device.\n", __func__);
-				return HB_MC_FAIL; 
-			}
-		}
-		return HB_MC_SUCCESS;	
-	}
-	
-	else if (kind == hb_mc_memcpy_to_host) { /* copy to Host */
-		eva_t src_eva = (eva_t) reinterpret_cast<uintptr_t>(src);
-		for (int i = 0; i < count; i += sizeof(uint32_t)) { /* copy one word at a time */
-                        // read in a packet
-                        hb_mc_response_packet_t dst_packet;
-			int error = hb_mc_cpy_from_eva_dep(device->fd, device->eva_id, &dst_packet, src_eva + i);
-			if (error != HB_MC_SUCCESS) {
-				bsg_pr_err("%s: failed to copy to host.\n", __func__);
-				return HB_MC_FAIL; 
-			}
-
-                        // copy the word into caller dst buffer
-                        uint32_t *dst_w = (uint32_t*)dst;
-                        dst_w[i/sizeof(uint32_t)] = hb_mc_response_packet_get_data(&dst_packet);
-		}
-		return HB_MC_SUCCESS;	
-	}
-	else {
-		bsg_pr_err("%s: invalid copy type. Copy type can be one of hb_mc_memcpy_to_device or hb_mc_memcpy_to_host.\n", __func__);
-		return HB_MC_FAIL; 
-		}
-}
-
 
 

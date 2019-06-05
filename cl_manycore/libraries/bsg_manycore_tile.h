@@ -315,31 +315,6 @@ int hb_mc_tile_set_grid_dim_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, 
 #define hb_mc_tile_epa_get_word_addr(base, offset) \
 	(hb_mc_tile_epa_get_byte_addr(base, offset) >> 2)
 
-__attribute__((deprecated))
-int hb_mc_tile_freeze_dep (uint8_t fd, uint8_t x, uint8_t y);
-
-__attribute__((deprecated))
-int hb_mc_tile_unfreeze_dep (uint8_t fd, uint8_t x, uint8_t y);
-
-__attribute__((deprecated))
-int hb_mc_tile_set_origin_registers_dep(uint8_t fd, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
-
-__attribute__((deprecated))
-int hb_mc_tile_set_origin_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t origin);
-
-__attribute__((deprecated))
-int hb_mc_tile_set_coord_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val);
-
-__attribute__((deprecated))
-int hb_mc_tile_set_id_symbol_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t coord_val, hb_mc_dimension_t dim);
-
-__attribute__((deprecated))
-int hb_mc_tile_set_tile_group_id_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_coordinate_t tg_id);
-
-__attribute__((deprecated))
-int hb_mc_tile_set_grid_dim_symbols_dep(uint8_t fd, eva_id_t eva_id, char* bin_name, hb_mc_coordinate_t coord, hb_mc_dimension_t grid_dim);
-
-
 
 
 #ifdef __cplusplus
