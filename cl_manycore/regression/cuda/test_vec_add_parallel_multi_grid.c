@@ -129,7 +129,7 @@ int kernel_vec_add_parallel_multi_grid () {
 	******************************************************************************************************************/
 	void *dst = (void *) ((intptr_t) A1_device);
 	void *src = (void *) &A1_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A1 to the device  */	
+	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A1 to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -138,7 +138,7 @@ int kernel_vec_add_parallel_multi_grid () {
 
 	dst = (void *) ((intptr_t) B1_device);
 	src = (void *) &B1_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B1 to the device */ 
+	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B1 to the device */ 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -150,7 +150,7 @@ int kernel_vec_add_parallel_multi_grid () {
 	******************************************************************************************************************/
 	dst = (void *) ((intptr_t) A2_device);
 	src = (void *) &A2_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A2 to the device  */	
+	rc = hb_mc_device_memcpy (&device, dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A2 to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -159,7 +159,7 @@ int kernel_vec_add_parallel_multi_grid () {
 
 	dst = (void *) ((intptr_t) B2_device);
 	src = (void *) &B2_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
+	rc = hb_mc_device_memcpy (&device, dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -223,7 +223,7 @@ int kernel_vec_add_parallel_multi_grid () {
 	uint32_t C1_host[N];
 	src = (void *) ((intptr_t) C1_device);
 	dst = (void *) &C1_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C1 to the host */
+	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C1 to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
 		return HB_MC_FAIL;
@@ -236,7 +236,7 @@ int kernel_vec_add_parallel_multi_grid () {
 	uint32_t C2_host[N];
 	src = (void *) ((intptr_t) C2_device);
 	dst = (void *) &C2_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, (void *) dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C2 to the host */
+	rc = hb_mc_device_memcpy (&device, (void *) dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C2 to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
 		return HB_MC_FAIL;

@@ -75,7 +75,7 @@ int kernel_shared_mem_load_store () {
 	******************************************************************************************************************/
 	void *dst = (void *) ((intptr_t) A_in_device);
 	void *src = (void *) &A_in_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A_in to the device  */	
+	rc = hb_mc_device_memcpy (&device, dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A_in to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return HB_MC_FAIL;
@@ -126,7 +126,7 @@ int kernel_shared_mem_load_store () {
 	uint32_t A_out_host[M * N];
 	src = (void *) ((intptr_t) A_out_device);
 	dst = (void *) &A_out_host[0];
-	rc = hb_mc_device_memcpy_dep (&device, (void *) dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A_out to the host */
+	rc = hb_mc_device_memcpy (&device, (void *) dst, src, (M * N) * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A_out to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
 		return HB_MC_FAIL;
