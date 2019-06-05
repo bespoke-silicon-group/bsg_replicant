@@ -147,13 +147,10 @@ uint8_t hb_mc_get_manycore_dimension_y();
 uint8_t hb_mc_get_host_intf_coord_x();
 uint8_t hb_mc_get_host_intf_coord_y();
 
-__attribute__((deprecated))
 int hb_mc_fifo_finish(uint8_t fd);
 
-__attribute__((deprecated))
 int hb_mc_fifo_init(uint8_t *fd);
 
-__attribute__((deprecated))
 int hb_mc_fifo_check(uint8_t fd);
 
 int hb_mc_get_recv_vacancy (uint8_t fd);

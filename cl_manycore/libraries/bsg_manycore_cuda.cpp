@@ -724,7 +724,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 
 	while (!tile_group_finished) {
 
-		error = hb_mc_manycore_packet_rx (device->mc, (hb_mc_packet_t *) &recv, HB_MC_FIFO_RX_REQ, -1); 
+		error = hb_mc_manycore_request_rx (device->mc, &recv, -1); 
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err("%s: failed to read fifo for finish packet from device.\n", __func__);
 			return HB_MC_FAIL;
