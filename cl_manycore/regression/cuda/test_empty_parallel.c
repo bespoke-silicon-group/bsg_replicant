@@ -9,7 +9,7 @@
 */
 
 int kernel_empty_parallel () {
-	fprintf(stderr, "Running the CUDA Empty Parallel Kernel on a 4x2 grid of 2x2 tile groups.\n\n");
+	bsg_pr_test_info("Running the CUDA Empty Parallel Kernel on a 4x2 grid of 2x2 tile groups.\n\n");
 	int rc;
 
 

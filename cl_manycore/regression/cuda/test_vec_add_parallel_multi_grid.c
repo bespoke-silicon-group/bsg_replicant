@@ -19,7 +19,7 @@ void host_vec_add (int *A, int *B, int *C, int N) {
 
 
 int kernel_vec_add_parallel_multi_grid () {
-	fprintf(stderr, "Running Two Separate CUDA Vector Addition Kernels on two grids of 2x2 tile groups.\n\n");
+	bsg_pr_test_info("Running Two Separate CUDA Vector Addition Kernels on two grids of 2x2 tile groups.\n\n");
 	int rc; 
 
 	srand(time); 
@@ -267,25 +267,17 @@ int kernel_vec_add_parallel_multi_grid () {
 	int mismatch = 0; 
 
 
-	fprintf (stderr, "\n\n\nGrid 1 Results:\n");
 	for (int i = 0; i < N; i++) {
-		if (A1_host[i] + B1_host[i] == C1_host[i]) {
-			fprintf(stderr, "Success -- C1[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A1_host[i], B1_host[i], C1_host[i], C1_expected[i]);
-		}
-		else {
-			fprintf(stderr, "Failed  -- C1[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A1_host[i], B1_host[i], C1_host[i], C1_expected[i]);
+		if (A1_host[i] + B1_host[i] != C1_host[i]) {
+			bsg_pr_err(BSG_RED("Mismatch: ") "C1[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A1_host[i], B1_host[i], C1_host[i], C1_expected[i]);
 			mismatch = 1;
 		}
 	} 
 
 
-	fprintf (stderr, "\n\n\nGrid 2 Results:\n");
 	for (int i = 0; i < M; i++) {
-		if (A2_host[i] + B2_host[i] == C2_host[i]) {
-			fprintf(stderr, "Success -- C2[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A2_host[i], B2_host[i], C2_host[i], C2_expected[i]);
-		}
-		else {
-			fprintf(stderr, "Failed  -- C2[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A2_host[i], B2_host[i], C2_host[i], C2_expected[i]);
+		if (A2_host[i] + B2_host[i] != C2_host[i]) {
+			bsg_pr_err(BSG_RED("Mismatch: ") "C2[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A2_host[i], B2_host[i], C2_host[i], C2_expected[i]);
 			mismatch = 1;
 		}
 	} 

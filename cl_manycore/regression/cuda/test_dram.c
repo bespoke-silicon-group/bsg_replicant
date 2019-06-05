@@ -11,7 +11,7 @@
 
 
 int kernel_dram () {
-	fprintf(stderr, "Running the CUDA Vector Addition Kernel on a grid of 2x2 tile groups.\n\n");
+	bsg_pr_test_info("Running the CUDA Vector Addition Kernel on a grid of 2x2 tile groups.\n\n");
 	int rc;
 
 	srand(time); 
@@ -126,11 +126,8 @@ int kernel_dram () {
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		if (A_host[i] == i) {
-			fprintf(stderr, "Success -- A[%d] = 0x%x\t Expected: 0x%x\n", i , A_host[i], i);
-		}
-		else {
-			fprintf(stderr, "Failed  -- A[%d] = 0x%x\t Expected: 0x%x\n", i , A_host[i], i);
+		if (A_host[i] != i) { 
+			bsg_pr_err(BSG_RED("Mismatch") ": -- A[%d] = 0x%x\t Expected: 0x%x\n", i , A_host[i], i);
 			mismatch = 1;
 		}
 	} 

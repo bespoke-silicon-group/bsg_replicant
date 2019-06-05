@@ -30,7 +30,7 @@ void matrix_mult (uint32_t *A, uint32_t *B, uint32_t *C, int M, int N, int P) {
 
 
 int kernel_matrix_mul_shared_mem () {
-	fprintf(stderr, "Running the CUDA Matrix Multiplication With Shared Memory Kernel on a grid of 4 2x2 tile groups.\n\n");
+	bsg_pr_test_info("Running the CUDA Matrix Multiplication With Shared Memory Kernel on a grid of 4 2x2 tile groups.\n\n");
 	int rc;
 
 	srand(time); 
@@ -193,36 +193,23 @@ int kernel_matrix_mul_shared_mem () {
 	matrix_mult (A_host, B_host, C_expected, M, N, P); 
 
 
-
 	int mismatch = 0; 
-	for (int i = 0; i < M * P; i++) {
-		if ( C_expected[i] != C_result[i]) {
-			mismatch = 1;
-			break; 
+
+	for (int y = 0; y < M; y ++) { 
+		for (int x = 0; x < P; x ++) { 
+			if (C_expected[y * P + x] != C_result[y * P + x]) {
+				bsg_pr_err(BSG_RED("Mismatch: ") "C[%d][%d]  =  %d\t Expected: %d.\n", y, x, C_result[y * P + x], C_expected[y * P + x]); 
+				mismatch = 1;
+			}
 		}
 	}
 
-	fprintf(stderr, "Expected Result:\n");
-	for (int y = 0; y < M; y++) { 
-		for (int x = 0; x < P; x++) {
-			fprintf(stderr, "%d\t", C_expected[y * P + x]);
-		}
-		fprintf(stderr, "\n");
-	}
-		
-	fprintf(stderr, "Manycore Result:\n");
-	for (int y = 0; y < M; y++) { 
-		for (int x = 0; x < P; x++) {
-			fprintf(stderr, "%d\t", C_result[y * P + x]);
-		}
-		fprintf(stderr, "\n");
-	}
 
 	if (mismatch) { 
-		fprintf(stderr, "Failed: matrix mismatch.\n");
+		bsg_pr_err(BSG_RED("Matrix Mismatch.\n"));
 		return HB_MC_FAIL;
 	}
-	fprintf(stderr, "Success: matrix match.\n");
+	bsg_pr_test_info(BSG_GREEN("Matrix Match.\n"));
 	return HB_MC_SUCCESS;
 }
 

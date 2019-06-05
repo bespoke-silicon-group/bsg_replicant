@@ -10,7 +10,7 @@
 */
 
 int kernel_empty () {
-	fprintf(stderr, "Running the CUDA Empty Kernel on a 2x2 tile group.\n\n");
+	bsg_pr_test_info("Running the CUDA Empty Kernel on a 2x2 tile group.\n\n");
 	int rc;
 
 	/*****************************************************************************************************************

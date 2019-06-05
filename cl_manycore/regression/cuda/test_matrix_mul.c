@@ -30,7 +30,7 @@ void matrix_mult (uint32_t *A, uint32_t *B, uint32_t *C, int M, int N, int P) {
 
 
 int kernel_matrix_mul () {
-	fprintf(stderr, "Running the CUDA Matrix Multiplication Kernel on a grid of 4 2x2 tile groups.\n\n");
+	bsg_pr_test_info("Running the CUDA Matrix Multiplication Kernel on a grid of 4 2x2 tile groups.\n\n");
 	int rc;
 
 	srand(time); 
@@ -199,8 +199,8 @@ int kernel_matrix_mul () {
 
 	for (int y = 0; y < M; y ++) { 
 		for (int x = 0; x < P; x ++) { 
-			if (C_expected[y * P + x] == C_result[y * P + x]) {
-				bsg_pr_err(BSG_RED("Mismatch: ") "C[%d][%d]   =   %d    --   Expected: %d.\n", y, x, C_result[y * P + x], C_expected[y * P + x]); 
+			if (C_expected[y * P + x] != C_result[y * P + x]) {
+				bsg_pr_err(BSG_RED("Mismatch: ") "C[%d][%d] = %d\t Expected: %d.\n", y, x, C_result[y * P + x], C_expected[y * P + x]); 
 				mismatch = 1;
 			}
 		}

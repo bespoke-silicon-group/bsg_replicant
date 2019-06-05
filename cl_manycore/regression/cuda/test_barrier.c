@@ -9,7 +9,7 @@
 */
 
 int kernel_barrier () {
-	fprintf(stderr, "Running the CUDA Barrier Kernel on a 2x2 tile group.\n\n");
+	bsg_pr_test_info("Running the CUDA Barrier Kernel on a 2x2 tile group.\n\n");
 	int rc;
 
 
