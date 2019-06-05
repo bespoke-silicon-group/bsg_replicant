@@ -593,8 +593,6 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
  */
 int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
 
-	hb_mc_fifo_init(&(device->fd));
-
 	device->mc = (hb_mc_manycore_t*) malloc (sizeof (hb_mc_manycore_t));
 	*(device->mc) = {0};
 	
@@ -1008,17 +1006,8 @@ int hb_mc_device_finish (device_t *device) {
 
 	hb_mc_manycore_exit(device->mc); 
 
-
-	error = hb_mc_fifo_finish(device->fd);
-	if (error != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to terminate host.\n", __func__);
-		return HB_MC_FAIL;
-	}
-
-
 	if (device->program->allocator->memory_manager)
 		delete((awsbwhal::MemoryManager*)device->program->allocator->memory_manager);
-	
 
 	free (device->mc); 
 	free (device->mesh);
