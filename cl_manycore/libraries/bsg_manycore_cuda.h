@@ -153,18 +153,6 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva);
 
 
 
-/**
- * Allocates memory on device DRAM
- * @param[in]  device        Pointer to device
- * @parma[in]  size          Size of requested memory
- * @param[out] eva           Eva address of the allocated memory
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-__attribute__((warn_unused_result)) __attribute__((deprecated))
-int hb_mc_device_malloc_dep (device_t *device, uint32_t size, eva_t *eva);
-
-
-
 
 /**
  * Frees memory on device DRAM
@@ -177,17 +165,6 @@ int hb_mc_device_free (device_t *device, hb_mc_eva_t eva);
 
 
 
-
-
-
-/*!
- * frees Hammerblade Manycore memory.
- *@param device pointer to the device.
- *@param eva address to free.
- *@return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function can fail if eva_id is invalid or of the memory manager corresponding to eva_id has not been initialized.
- */
-__attribute__((warn_unused_result)) __attribute__((deprecated))
-int hb_mc_device_free_dep (device_t *device, eva_t eva);
 
 
 
@@ -236,21 +213,6 @@ __attribute__((warn_unused_result))
 int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
 
-
-
-
-
-/**
- * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
- * @param[in]  device        Pointer to device
- * @parma[in]  src           EVA address of src 
- * @param[in]  name          EVA address of dst
- * @param[in]  count         Size of buffer to be copied
- * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-__attribute__((warn_unused_result)) __attribute__((deprecated))
-int hb_mc_device_memcpy_dep (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
 
 
