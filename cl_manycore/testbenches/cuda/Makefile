@@ -1,4 +1,4 @@
-include ../../../Makefile.environment
+include ../../Makefile.environment
 include $(CL_DIR)/Makefile.dimensions
 
 .DEFAULT_GOAL=cosim
@@ -11,8 +11,3 @@ include $(TESTS_PATH)/Makefile.tests
 # HDK_COMMON_DIR is set by running `source hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include ../Makefile.common
-
-$(SIM_LOG_TARGETS): test_%.cosim.log: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary
-
-$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary:
-	$(MAKE) -C $(TESTS_PATH) $@ 

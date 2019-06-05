@@ -6,7 +6,7 @@
 /*!
  * Runs the vector addition a one 2x2 tile groups. A[N] + B[N] --> C[N]
  * Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the BSG Manycore bitbucket repository.  
 */
 
 

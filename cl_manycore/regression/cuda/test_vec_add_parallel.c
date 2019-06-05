@@ -6,7 +6,7 @@
 /*!
  * Runs the vector addition a grid of 2x2 tile groups. A[N] + B[N] --> C[N]
  * Grid dimensions are determines by how much of a load we want for each tile group (block_size_x)
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_parallel/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_parallel/ Manycore binary in the BSG Manycore bitbucket repository.  
 */
 
 

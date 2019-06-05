@@ -6,7 +6,7 @@
 /*!
  * Runs two separate vector addition kernels sequentially a two grids of 2x2 tile groups. A1[N] + B1[N] --> C1[N], A2[M] + B2[M] --> C2[M]
  * Grid dimensions are determines by how much of a load we want for each tile group (block_size_x)
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_serial_multi_grid/ Manycore binary in the dev_cuda_v4 branch of the BSG Manycore bitbucket repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_serial_multi_grid/ Manycore binary in the BSG Manycore bitbucket repository.  
 */
 
 
