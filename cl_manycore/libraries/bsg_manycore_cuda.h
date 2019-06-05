@@ -78,7 +78,6 @@ typedef struct {
 
 typedef struct {
 	uint8_t fd;
-	eva_id_t eva_id; 
 	hb_mc_manycore_t *mc;
 	hb_mc_program_t *program;
 	mesh_t *mesh;
