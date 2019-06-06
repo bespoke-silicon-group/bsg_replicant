@@ -29,6 +29,7 @@ static hb_mc_idx_t hb_mc_coordinate_to_flat_index (hb_mc_coordinate_t coord, hb_
 
 static int  hb_mc_dimension_to_size (hb_mc_dimension_t dim); 
 
+static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
 
 
 
@@ -109,8 +110,7 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
 	tile_t* tiles = new tile_t [hb_mc_dimension_to_size (dim)];
 	for (int x = hb_mc_coordinate_get_x(default_origin); x < hb_mc_coordinate_get_x(default_origin) + hb_mc_dimension_get_x(dim); x++){
 		for (int y = hb_mc_coordinate_get_y(default_origin); y < hb_mc_coordinate_get_y(default_origin) + hb_mc_dimension_get_y(dim); y++){
-			hb_mc_coordinate_t relative_coord = hb_mc_get_relative_coordinate (default_origin, hb_mc_coordinate(x, y));
-			hb_mc_idx_t tile_id = hb_mc_coordinate_to_flat_index (relative_coord, dim); 
+			hb_mc_idx_t tile_id = hb_mc_get_tile_id (default_origin, dim, hb_mc_coordinate(x, y));	
 			tiles[tile_id].coord = hb_mc_coordinate(x, y);
 			tiles[tile_id].origin = default_origin;
 			tiles[tile_id].tile_group_id = hb_mc_coordinate(-1, -1); 
@@ -193,8 +193,7 @@ static int hb_mc_device_tiles_are_free (device_t *device, hb_mc_coordinate_t ori
 	// Iterate over a tg->dim.x * tg->dim.y square of tiles starting from the (org_x,org_y) checking to see if all tiles are free so they can be allocated to tile group
 	for (hb_mc_idx_t x = hb_mc_coordinate_get_x(origin); x < hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim); x++){
 		for (hb_mc_idx_t y = hb_mc_coordinate_get_y(origin); y < hb_mc_coordinate_get_y(origin) + hb_mc_dimension_get_y(dim); y++){
-			tile_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
-			tile_id = hb_mc_coordinate_to_flat_index (tile_coord, device->mesh->dim); 
+			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y)); 
 			if (!device->mesh->tiles[tile_id].free) 
 				return HB_MC_FAIL;
 		}
@@ -229,8 +228,7 @@ int hb_mc_tile_group_initialize_tiles (device_t *device, tile_group_t *tg, hb_mc
 
 	for (hb_mc_idx_t x = hb_mc_coordinate_get_x(origin); x < hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(tg->dim); x++){
 		for (hb_mc_idx_t y = hb_mc_coordinate_get_y(origin); y < hb_mc_coordinate_get_y(origin) + hb_mc_dimension_get_y(tg->dim); y++){
-			tile_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
-			tile_id = hb_mc_coordinate_to_flat_index (tile_coord, device->mesh->dim);
+			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y));
 
 			device->mesh->tiles[tile_id].origin = origin;
 			device->mesh->tiles[tile_id].tile_group_id = tg->id;
@@ -330,6 +328,7 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 			// Search if a tg->dim.x * tg->dim.y group of tiles starting from (org_x,org_y) are all free
 			if (hb_mc_device_tiles_are_free(device, hb_mc_coordinate(org_x, org_y), tg->dim) == HB_MC_SUCCESS) { 
 
+				// Found a free group of tiles at origin (org_x, org_y), now initialize all these tiles by sending packets and claiming them for this tile group
 				error = hb_mc_tile_group_initialize_tiles (device, tg, hb_mc_coordinate(org_x, org_y));
 				if (error != HB_MC_SUCCESS) { 
 					bsg_pr_err("%s: failed to initialize mesh tiles for grid %d tile group (%d,%d).\n", __func__, tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id)); 
@@ -448,15 +447,11 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	hb_mc_npa_t finish_signal_npa = hb_mc_npa(host_coordinate, tg->kernel->finish_signal_addr); 
 
 
-	hb_mc_coordinate_t relative_coord; 
 	hb_mc_idx_t tile_id;
 	for (int y = hb_mc_coordinate_get_y(tg->origin); y < hb_mc_coordinate_get_y(tg->origin) + hb_mc_dimension_get_y(tg->dim); y++){
 		for (int x = hb_mc_coordinate_get_x(tg->origin); x < hb_mc_coordinate_get_x(tg->origin) + hb_mc_dimension_get_x(tg->dim); x++){
 
-			relative_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
-			tile_id = hb_mc_coordinate_to_flat_index (relative_coord, device->mesh->dim); 
-
-
+			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y)); 
 
 
 			error = hb_mc_tile_write32(device->mc, &(device->mesh->tiles[tile_id].coord), &ARGC_REG, tg->kernel->argc); 
@@ -522,12 +517,10 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  */
 int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
-	hb_mc_coordinate_t relative_coord; 
 	hb_mc_idx_t tile_id; 
 	for (int x = hb_mc_coordinate_get_x(tg->origin); x < hb_mc_coordinate_get_x(tg->origin) + hb_mc_dimension_get_x(tg->dim); x++){
 		for (int y = hb_mc_coordinate_get_y(tg->origin); y < hb_mc_coordinate_get_y(tg->origin) + hb_mc_dimension_get_y(tg->dim); y++){
-			relative_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate (x, y)); 
-			tile_id = hb_mc_coordinate_to_flat_index (relative_coord, device->mesh->dim); 
+			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate (x, y));  
 			
 			device->mesh->tiles[tile_id].origin = device->mesh->origin;
 			device->mesh->tiles[tile_id].tile_group_id = hb_mc_coordinate( 0, 0);
@@ -1078,4 +1071,23 @@ static hb_mc_idx_t hb_mc_coordinate_to_flat_index (hb_mc_coordinate_t coord, hb_
 static int  hb_mc_dimension_to_size (hb_mc_dimension_t dim) { 
 	return (hb_mc_dimension_get_x(dim) * hb_mc_dimension_get_y(dim)); 
 } 
+
+
+
+
+/**
+ * Calculates and returns the flat index of a tile inside the mesh, based on the mesh origin, mesh dimensions and the tile coordinates. 
+ * @param[in]  origin        Mesh origin coordinates 
+ * @param[in]  dim           Mesh dimensions
+ * @parma[in]  coord         Absolute coordinates 
+ * @return     tile_id
+ */
+static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord) { 
+	hb_mc_coordinate_t relative_coord = hb_mc_get_relative_coordinate (origin, coord); 
+	hb_mc_idx_t tile_id = hb_mc_coordinate_to_flat_index (relative_coord, dim); 
+	return tile_id;
+}
+
+
+
 
