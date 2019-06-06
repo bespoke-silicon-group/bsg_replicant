@@ -137,13 +137,13 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_x", &org_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_x eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_y", &org_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_y eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 
@@ -200,13 +200,13 @@ int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, un
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_x", &bsg_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_x eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_y", &bsg_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_y eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 
@@ -268,7 +268,7 @@ int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsign
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_id", &bsg_id_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s:: failed to aquire __bsg_id eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 
@@ -311,13 +311,13 @@ int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t 
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_tile_group_id_x", &tg_id_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_tile_group_id_x eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_tile_group_id_y", &tg_id_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_tile_group_id_y eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 
@@ -374,13 +374,13 @@ int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map,
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grid_dim_x", &grid_dim_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_grid_dim_x eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grid_dim_y", &grid_dim_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to aquire __bsg_grid_dim_y eva.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOTFOUND;
 	}
 
 
