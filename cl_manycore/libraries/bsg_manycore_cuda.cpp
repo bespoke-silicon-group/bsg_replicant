@@ -101,11 +101,9 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
 	for (int x = hb_mc_coordinate_get_x(default_origin); x < hb_mc_coordinate_get_x(default_origin) + hb_mc_dimension_get_x(dim); x++){
 		for (int y = hb_mc_coordinate_get_y(default_origin); y < hb_mc_coordinate_get_y(default_origin) + hb_mc_dimension_get_y(dim); y++){
 			int tile_id = (y - hb_mc_coordinate_get_y(default_origin)) * hb_mc_dimension_get_x(dim) + (x - hb_mc_coordinate_get_x(default_origin));
-			tiles[tile_id].coord = hb_mc_coordinate_set_x(tiles[tile_id].coord, x);
-			tiles[tile_id].coord = hb_mc_coordinate_set_y(tiles[tile_id].coord, y);
+			tiles[tile_id].coord = hb_mc_coordinate(x, y);
 			tiles[tile_id].origin = default_origin;
-			tiles[tile_id].tile_group_id = hb_mc_coordinate_set_x(tiles[tile_id].tile_group_id, -1);
-			tiles[tile_id].tile_group_id = hb_mc_coordinate_set_y(tiles[tile_id].tile_group_id, -1);
+			tiles[tile_id].tile_group_id = hb_mc_coordinate(-1, -1); 
 			tiles[tile_id].free = 1;
 		}
 	}
@@ -141,7 +139,7 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
 			error = hb_mc_tile_group_enqueue(device, device->num_grids, tg_id, grid_dim, tg_dim, name, argc, argv); 
 			if (error != HB_MC_SUCCESS) { 
 				bsg_pr_err("%s: failed to initialize tile group (%d,%d) of grid %d.\n", __func__, tg_id_x, tg_id_y, device->num_grids);
-				return HB_MC_FAIL;
+				return HB_MC_UNINITIALIZED;
 			}
 		}
 	}
@@ -244,10 +242,7 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 					}
 				}
 		
-				tg->origin.x = org_x;
-				tg->origin.y = org_y;
-//				hb_mc_coordinate_set_x(tg->origin, org_x);
-//				hb_mc_coordinate_set_y(tg->origin, org_y);
+				tg->origin = hb_mc_coordinate(org_x, org_y);
 				tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
 
 
@@ -281,7 +276,7 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
 		device->tile_groups = (tile_group_t *) realloc (device->tile_groups, device->tile_group_capacity * sizeof(tile_group_t));
 		if (device->tile_groups == NULL) {
 			bsg_pr_err("%s: failed to allocate space for tile_group_t structs.\n", __func__);
-			return HB_MC_FAIL;
+			return HB_MC_NOMEM;
 		}
 	}
 	
@@ -297,19 +292,19 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
 	tg->map = (hb_mc_eva_map_t *) malloc (sizeof(hb_mc_eva_map_t)); 
 	if (tg->map == NULL) { 
 		bsg_pr_err ("%s: failed to allocate space for tile group hb_mc_eva_map_t struct map.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOMEM;
 	}
 	int error = hb_mc_origin_eva_map_init (tg->map, tg->origin); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to initialize grid %d tile group (%d,%d) eva map origin.\n", __func__, tg->grid_id, tg->id.x, tg->id.y); 
-		return HB_MC_FAIL;
+		return HB_MC_UNINITIALIZED;
 	}
 	
 
 	tg->kernel = (kernel_t *) malloc (sizeof(kernel_t));
 	if (tg->kernel == NULL) { 
 		bsg_pr_err("%s: failed to allocated space for kernel_t struct.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOMEM;
 	}
 	tg->kernel->name = name;
 	tg->kernel->argc = argc;
@@ -345,7 +340,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 	error = hb_mc_device_malloc (device, (tg->kernel->argc) * sizeof(uint32_t), &args_eva); /* allocate device memory for arguments */
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to allocate space on device for grid %d tile group (%d,%d) arguments.\n", __func__, tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
-		return HB_MC_FAIL;
+		return HB_MC_NOMEM;
 	}
 
 	error = hb_mc_device_memcpy(device, reinterpret_cast<void *>(args_eva), (void *) &(tg->kernel->argv[0]), (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device); /* transfer the arguments to dram */
@@ -466,14 +461,14 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
 	int error = hb_mc_manycore_init(device->mc, name, id); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to initialize manycore.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_UNINITIALIZED;
 	} 
 	
 
 	error = hb_mc_mesh_init(device, dim);
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_UNINITIALIZED;
 	}
 
 
@@ -481,7 +476,7 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
 	device->tile_groups = (tile_group_t *) malloc (device->tile_group_capacity * sizeof(tile_group_t));
 	if (device->tile_groups == NULL) {
 		bsg_pr_err("%s: failed to allocated space for list of tile groups.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOMEM;
 	}
 	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(tile_group_t));
 	device->num_tile_groups = 0;
@@ -507,10 +502,14 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 	device->program = (hb_mc_program_t *) malloc (sizeof (hb_mc_program_t));
 	if (device->program == NULL) { 
 		bsg_pr_err("%s: failed to allocate space on host for device hb_mc_program_t struct.\n", __func__);
-		return HB_MC_FAIL;
+		return HB_MC_NOMEM;
 	}
 
 	device->program->bin_name = strdup (bin_name);
+	if (!device->program->bin_name) { 
+		bsg_pr_err("%s: failed to copy binary name into program struct.\n", __func__); 
+		return HB_MC_NOMEM;
+	}
 
 	uint32_t num_tiles = device->mesh->dim.x * device->mesh->dim.y; 	
 
@@ -552,7 +551,7 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 	error = hb_mc_program_allocator_init (device->program, alloc_name, id); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to initialize memory allocator for program %s.\n", __func__, device->program->bin_name); 
-		return HB_MC_FAIL;
+		return HB_MC_UNINITIALIZED;
 	}
 
 
@@ -644,7 +643,11 @@ int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb
 		return HB_MC_FAIL;
 	}
 
-	program->allocator->name = strdup(name); 
+	program->allocator->name = strdup(name);
+	if (!program->allocator->name) { 
+		bsg_pr_err("%s: failed to copy allocator name to program->allocator struct.\n", __func__); 
+		return HB_MC_NOMEM;
+	} 
 	program->allocator->id = id; 
 
 	hb_mc_eva_t program_end_eva;
@@ -840,7 +843,7 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva) {
 	hb_mc_eva_t result = mem_manager->alloc(size);
 	if (result == awsbwhal::MemoryManager::mNull) {
 		bsg_pr_err("%s: failed to allocated memory.\n", __func__);	
-		return HB_MC_FAIL; 
+		return HB_MC_NOMEM; 
 	}
         *eva = result;
 	return HB_MC_SUCCESS;
