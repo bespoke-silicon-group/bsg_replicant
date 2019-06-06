@@ -368,13 +368,19 @@ module axil_to_mcl
   bsg_mcl_request_s [num_mcl_p-1:0] mc_req_cast;
   bsg_mcl_response_s [num_mcl_p-1:0] fifo_res_cast;
   bsg_mcl_response_s [num_mcl_p-1:0] mc_res_cast;
-  
+ 
+  // disable request to the manycore if:
+  // 1. manycore endpoint out credits == 0
+  // 2. host issues load request and the rcv fifo vacancy < max_out_credits_p (do not use 0 because of the network latency)
   logic [num_mcl_p-1:0] fifo_req_enable;
 
   for (genvar i=0; i<num_mcl_p; i=i+1) begin
 
     // fifo request to manycore
-    assign fifo_req_enable[i] = (fifo_req_cast[i].op==8'(`ePacketOp_remote_store)) || (rcv_fifo_vacancy_lo[2*i]>max_out_credits_p);
+    assign fifo_req_enable[i] = !(
+      (fifo_req_cast[i].op==8'(`ePacketOp_remote_load)) && (rcv_fifo_vacancy_lo[2*i]<max_out_credits_p)
+      || (out_credits_lo[i] == '0)
+    );
     assign endpoint_out_v_li[i] = fifo_v_lo[2*i] & fifo_req_enable[i];
     assign fifo_ready_li[2*i] = endpoint_out_ready_lo[i] & fifo_req_enable[i];
     assign fifo_req_cast[i]          = fifo_data_lo[2*i];
