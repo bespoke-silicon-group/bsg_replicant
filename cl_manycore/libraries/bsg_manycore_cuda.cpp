@@ -207,6 +207,102 @@ static int hb_mc_device_tiles_are_free (device_t *device, hb_mc_coordinate_t ori
 
 
 /**
+ * Takes in a device and tile group and an origin, initializes tile group and sends packets to all tiles in tile group to set their symbols. 
+ * @param[in]  device        Pointer to device
+ * @param[in]  tg            Pointer to tile group
+ * @param[in]  origin        Origin coordinates of tile group
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_tile_group_initialize_tiles (device_t *device, tile_group_t *tg, hb_mc_coordinate_t origin) { 
+
+	int error;
+	hb_mc_coordinate_t tile_coord;
+	hb_mc_idx_t tile_id;
+
+	tg->origin = origin;
+
+	error = hb_mc_origin_eva_map_init (tg->map, origin); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize grid %d tile group (%d,%d) eva map origin.\n", __func__, tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
+		return HB_MC_FAIL;
+	}
+
+	for (hb_mc_idx_t x = hb_mc_coordinate_get_x(origin); x < hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(tg->dim); x++){
+		for (hb_mc_idx_t y = hb_mc_coordinate_get_y(origin); y < hb_mc_coordinate_get_y(origin) + hb_mc_dimension_get_y(tg->dim); y++){
+			tile_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
+			tile_id = hb_mc_coordinate_to_flat_index (tile_coord, device->mesh->dim);
+
+			device->mesh->tiles[tile_id].origin = origin;
+			device->mesh->tiles[tile_id].tile_group_id = tg->id;
+			device->mesh->tiles[tile_id].free = 0;
+
+			hb_mc_coordinate_t coord_val = hb_mc_coordinate((x - hb_mc_coordinate_get_x(origin)), (y - hb_mc_coordinate_get_y(origin)));
+
+
+			error = hb_mc_tile_set_origin_registers(device->mc, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
+			if (error != HB_MC_SUCCESS) { 
+				 bsg_pr_err("%s: failed to set tile (%d,%d) tile group origin registers CSR_TGO_X/Y.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+				return HB_MC_FAIL;
+			}
+
+
+
+			error = hb_mc_tile_set_origin_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+				return HB_MC_FAIL;
+			}
+
+
+			error = hb_mc_tile_set_coord_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(coord_val));
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+				return HB_MC_FAIL;
+			}
+
+
+			error = hb_mc_tile_set_id_symbol(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(coord_val), &(tg->dim));
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to set tile (%d,%d) id symbol __bsg_id.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+				return HB_MC_FAIL;
+			}
+
+
+			error = hb_mc_tile_set_tile_group_id_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(tg->id));
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+				return HB_MC_FAIL;
+			}
+
+
+			error = hb_mc_tile_set_grid_dim_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(tg->grid_dim));
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to set tile (%d,%d) grid size symbol __bsg_grid_size.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+				return HB_MC_FAIL;
+			}
+		}
+	}
+
+	tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
+
+
+	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) allocated at origin (%d,%d).\n", 
+			_func__,
+			tg-> grid_id,
+			hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim),
+			hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id),
+			hb_mc_coordinate_get_x(tg->origin), hb_mc_coordinate_get_y(tg->origin));	
+
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+
+
+/**
  * Searches for a free tile group inside the device mesh and allocoates it, and sets the dimensions, origin, and id of tile group.
  * @param[in]  device        Pointer to device
  * @param[in]  tg            Pointer to tile group
@@ -234,80 +330,11 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 			// Search if a tg->dim.x * tg->dim.y group of tiles starting from (org_x,org_y) are all free
 			if (hb_mc_device_tiles_are_free(device, hb_mc_coordinate(org_x, org_y), tg->dim) == HB_MC_SUCCESS) { 
 
-				hb_mc_coordinate_t org = hb_mc_coordinate(org_x, org_y); 
-				error = hb_mc_origin_eva_map_init (tg->map, org); 
+				error = hb_mc_tile_group_initialize_tiles (device, tg, hb_mc_coordinate(org_x, org_y));
 				if (error != HB_MC_SUCCESS) { 
-					bsg_pr_err("%s: failed to initialize grid %d tile group (%d,%d) eva map origin.\n", __func__, tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
+					bsg_pr_err("%s: failed to initialize mesh tiles for grid %d tile group (%d,%d).\n", __func__, tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id)); 
 					return HB_MC_FAIL;
 				}
-				
-				for (hb_mc_idx_t x = org_x; x < org_x + hb_mc_dimension_get_x(tg->dim); x++){
-					for (hb_mc_idx_t y = org_y; y < org_y + hb_mc_dimension_get_y(tg->dim); y++){
-						tile_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
-						tile_id = hb_mc_coordinate_to_flat_index (tile_coord, device->mesh->dim);
- 
-						device->mesh->tiles[tile_id].origin = org;
-						device->mesh->tiles[tile_id].tile_group_id = tg->id;
-						device->mesh->tiles[tile_id].free = 0;
-
-						hb_mc_coordinate_t coord_val = hb_mc_coordinate((x - org_x), (y - org_y));
-
-
-						error = hb_mc_tile_set_origin_registers(device->mc, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
-						if (error != HB_MC_SUCCESS) { 
-							 bsg_pr_err("%s: failed to set tile (%d,%d) tile group origin registers CSR_TGO_X/Y.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
-							return HB_MC_FAIL;
-						}
-
-
-
-						error = hb_mc_tile_set_origin_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(device->mesh->tiles[tile_id].origin));
-						if (error != HB_MC_SUCCESS) { 
-							bsg_pr_err("%s: failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
-							return HB_MC_FAIL;
-						}
-
-
-						error = hb_mc_tile_set_coord_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(coord_val));
-						if (error != HB_MC_SUCCESS) { 
-							bsg_pr_err("%s: failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
-							return HB_MC_FAIL;
-						}
-
-
-						error = hb_mc_tile_set_id_symbol(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(coord_val), &(tg->dim));
-						if (error != HB_MC_SUCCESS) { 
-							bsg_pr_err("%s: failed to set tile (%d,%d) id symbol __bsg_id.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
-							return HB_MC_FAIL;
-						}
-
-
-						error = hb_mc_tile_set_tile_group_id_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(tg->id));
-						if (error != HB_MC_SUCCESS) { 
-							bsg_pr_err("%s: failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
-							return HB_MC_FAIL;
-						}
-
-
-						error = hb_mc_tile_set_grid_dim_symbols(device->mc, tg->map, device->program->bin, device->program->bin_size, &(device->mesh->tiles[tile_id].coord), &(tg->grid_dim));
-						if (error != HB_MC_SUCCESS) { 
-							bsg_pr_err("%s: failed to set tile (%d,%d) grid size symbol __bsg_grid_size.\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
-							return HB_MC_FAIL;
-						}
-					}
-				}
-		
-				tg->origin = hb_mc_coordinate(org_x, org_y);
-				tg->status = HB_MC_TILE_GROUP_STATUS_ALLOCATED;
-
-
-				bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) allocated at origin (%d,%d).\n", 
-						_func__,
-						tg-> grid_id,
-						hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim),
-						hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id),
-						hb_mc_coordinate_get_x(tg->origin), hb_mc_coordinate_get_y(tg->origin));	
-
 				return HB_MC_SUCCESS;
 			}
 		}
