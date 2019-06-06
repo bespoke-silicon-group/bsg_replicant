@@ -2,13 +2,10 @@ REGRESSION_TESTS_TYPE = library
 
 C_REGRESSION_TESTS = test_rom
 C_REGRESSION_TESTS += test_struct_size
-C_REGRESSION_TESTS += test_dmem_read_write
-C_REGRESSION_TESTS += test_packets
 C_REGRESSION_TESTS += test_vcache_flush
 C_REGRESSION_TESTS += test_vcache_simplified
 C_REGRESSION_TESTS += test_vcache_stride
 C_REGRESSION_TESTS += test_vcache_sequence
-C_REGRESSION_TESTS += test_dram_read_write
 C_REGRESSION_TESTS += test_printing
 #C_REGRESSION_TESTS += test_manycore_compile
 C_REGRESSION_TESTS += test_manycore_packets
