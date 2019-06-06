@@ -21,6 +21,7 @@ static const hb_mc_epa_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group
 
 static uint32_t const DRAM_SIZE = 0x80000000;
 
+static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(tile_group_t *tg);  
 
 
 
@@ -313,11 +314,15 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
 	tg->kernel->name = name;
 	tg->kernel->argc = argc;
 	tg->kernel->argv = argv;
-	tg->kernel->finish_signal_addr = FINISH_BASE_ADDR + ((tg->id.y * tg->grid_dim.x + tg->id.x) << 2); /* TODO: Hardcoded */
+	tg->kernel->finish_signal_addr = hb_mc_tile_group_get_finish_signal_addr(tg); 
 		
 	device->num_tile_groups += 1;
 	
-	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) initialized.\n", __func__, tg->grid_id, hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim), hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id)) ;
+	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) initialized.\n", 
+			_func__,
+			tg->grid_id,
+			hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim),
+			hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id)) ;
 
 	return HB_MC_SUCCESS;
 }
@@ -911,5 +916,22 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 
 	return HB_MC_SUCCESS;
 }
+
+
+
+
+
+/**
+ * Calculates and returns a tile group's finish signal address based on tile group id and grid dimension
+ * @param[in]  device        Pointer to device
+ * @parma[in]  tg            Pointer to tile group 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(tile_group_t *tg) { 
+	hb_mc_epa_t finish_addr = FINISH_BASE_ADDR + ((hb_mc_coordinate_get_y(tg->id) * hb_mc_dimension_get_x(tg->grid_dim) + hb_mc_coordinate_get_x(tg->id)) << 2); /* TODO: Hardcoded */
+	return finish_addr;
+}
+
+
 
 
