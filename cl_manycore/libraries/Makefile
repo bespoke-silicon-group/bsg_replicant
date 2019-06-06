@@ -30,7 +30,7 @@ HEADERS += bsg_manycore_packet.h
 HEADERS += bsg_manycore_response_packet.h
 HEADERS += bsg_manycore_request_packet.h
 HEADERS += bsg_manycore_fifo.h
-HEADERS += bsg_manycore_request_id.h
+HEADERS += bsg_manycore_request_packet_id.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
