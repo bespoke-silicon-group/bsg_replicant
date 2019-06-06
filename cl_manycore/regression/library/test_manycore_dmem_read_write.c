@@ -2,7 +2,7 @@
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_printing.h>
 #include <inttypes.h>
-#include "test_dmem_read_write.h"
+#include "test_manycore_dmem_read_write.h"
 
 #define TEST_NAME "test_manycore_dmem_read_write"
 
