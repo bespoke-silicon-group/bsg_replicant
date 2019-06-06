@@ -161,6 +161,52 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
 
 
 /**
+ * Checks if a groups of tiles starting from a specific origin are all free or not.
+ * @param[in]  device        Pointer to device
+ * @param[in]  origin        Origin of the group of tiles to check for availability
+ * @param[in]  dim           Dimension of the group of tiles in question
+ * @return HB_MC_SUCCESS if all tiles in the group are free  and HB_MC_FAIL otherwise. 
+ */
+static int hb_mc_device_tiles_are_free (device_t *device, hb_mc_coordinate_t origin, hb_mc_dimension_t dim) { 
+	if (hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim) > hb_mc_coordinate_get_x(device->mesh->origin) + hb_mc_dimension_get_x(device->mesh->dim)) { 
+		bsg_pr_err ("%s: a %dx%d tile group starting from origin (%d,%d) does not fit in %dx%d device mesh. Check X dimension or origin.\n",
+				__func__, 
+				hb_mc_dimension_get_x(dim), hb_mc_dimension_get_y(dim),
+				hb_mc_coordinate_get_x(origin), hb_mc_coordinate_get_y(origin), 
+				hb_mc_dimension_get_x(device->mesh->dim), hb_mc_dimension_get_y(device->mesh->dim)); 
+		return HB_MC_INVALID;
+	}
+				
+	if (hb_mc_coordinate_get_y(origin) + hb_mc_dimension_get_y(dim) > hb_mc_coordinate_get_y(device->mesh->origin) + hb_mc_dimension_get_y(device->mesh->dim)) { 
+		bsg_pr_err ("%s: a %dx%d tile group starting from origin (%d,%d) does not fit in %dx%d device mesh. Check Y dimension or origin.\n",
+				__func__, 
+				hb_mc_dimension_get_x(dim), hb_mc_dimension_get_y(dim),
+				hb_mc_coordinate_get_x(origin), hb_mc_coordinate_get_y(origin), 
+				hb_mc_dimension_get_x(device->mesh->dim), hb_mc_dimension_get_y(device->mesh->dim)); 
+		return HB_MC_INVALID;
+	}
+
+
+	hb_mc_coordinate_t tile_coord;
+	hb_mc_idx_t tile_id;
+			
+	// Iterate over a tg->dim.x * tg->dim.y square of tiles starting from the (org_x,org_y) checking to see if all tiles are free so they can be allocated to tile group
+	for (hb_mc_idx_t x = hb_mc_coordinate_get_x(origin); x < hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim); x++){
+		for (hb_mc_idx_t y = hb_mc_coordinate_get_y(origin); y < hb_mc_coordinate_get_y(origin) + hb_mc_dimension_get_y(dim); y++){
+			tile_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
+			tile_id = hb_mc_coordinate_to_flat_index (tile_coord, device->mesh->dim); 
+			if (!device->mesh->tiles[tile_id].free) 
+				return HB_MC_FAIL;
+		}
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/**
  * Searches for a free tile group inside the device mesh and allocoates it, and sets the dimensions, origin, and id of tile group.
  * @param[in]  device        Pointer to device
  * @param[in]  tg            Pointer to tile group
@@ -177,22 +223,17 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
 		return HB_MC_INVALID;
 	}
 
+	hb_mc_coordinate_t tile_coord;
+	hb_mc_idx_t tile_id; 
+
 	// Iterate over the entire mesh as tile (org_y, org_x) being the origin of the new tile group to allcoate 
 	for (hb_mc_idx_t org_y = hb_mc_coordinate_get_y(device->mesh->origin); org_y <= (hb_mc_coordinate_get_y(device->mesh->origin) + hb_mc_dimension_get_y(device->mesh->dim) - hb_mc_dimension_get_y(tg->dim)); org_y++){
 		for (hb_mc_idx_t org_x = hb_mc_coordinate_get_x(device->mesh->origin); org_x <= (hb_mc_coordinate_get_x(device->mesh->origin) + hb_mc_dimension_get_x(device->mesh->dim) - hb_mc_dimension_get_x(tg->dim)); org_x++){
-			int free = 1;
-			hb_mc_coordinate_t tile_coord;
-			hb_mc_idx_t tile_id;
-			
-			// Iterate over a tg->dim.x * tg->dim.y square of tiles starting from the (org_x,org_y) checking to see if all tiles are free so they can be allocated to tile group
-			for (hb_mc_idx_t x = org_x; x < org_x + hb_mc_dimension_get_x(tg->dim); x++){
-				for (hb_mc_idx_t y = org_y; y < org_y + hb_mc_dimension_get_y(tg->dim); y++){
-					tile_coord = hb_mc_get_relative_coordinate (device->mesh->origin, hb_mc_coordinate(x, y));
-					tile_id = hb_mc_coordinate_to_flat_index (tile_coord, device->mesh->dim); 
-					free = free & device->mesh->tiles[tile_id].free;
-				}
-			}
-			if (free){ // tg->dim.x * tg->dim.y group of free tiles are found at origin (org_x, org_y)
+
+
+			// Search if a tg->dim.x * tg->dim.y group of tiles starting from (org_x,org_y) are all free
+			if (hb_mc_device_tiles_are_free(device, hb_mc_coordinate(org_x, org_y), tg->dim) == HB_MC_SUCCESS) { 
+
 				hb_mc_coordinate_t org = hb_mc_coordinate(org_x, org_y); 
 				error = hb_mc_origin_eva_map_init (tg->map, org); 
 				if (error != HB_MC_SUCCESS) { 
