@@ -25,7 +25,7 @@ typedef enum {
 	HB_MC_TILE_GROUP_STATUS_ALLOCATED=1,
 	HB_MC_TILE_GROUP_STATUS_LAUNCHED=2,
 	HB_MC_TILE_GROUP_STATUS_FINISHED=3,
-} tile_group_status_t ;
+} hb_mc_tile_group_status_t ;
 
 
 typedef struct {
@@ -33,32 +33,32 @@ typedef struct {
 	hb_mc_coordinate_t origin;	
 	hb_mc_coordinate_t tile_group_id;
 	uint8_t free;
-} tile_t;
+} hb_mc_tile_t;
 
 typedef struct {
 	char *name;
 	uint32_t argc;
 	uint32_t *argv;
 	hb_mc_epa_t finish_signal_addr;
-} kernel_t;
+} hb_mc_kernel_t;
 
 typedef struct {
 	hb_mc_coordinate_t id;
 	grid_id_t grid_id;
 	hb_mc_dimension_t grid_dim;
-	tile_group_status_t status;
+	hb_mc_tile_group_status_t status;
 	hb_mc_coordinate_t origin;
 	hb_mc_dimension_t dim;
 	hb_mc_eva_map_t *map;
-	kernel_t *kernel;
-} tile_group_t;
+	hb_mc_kernel_t *kernel;
+} hb_mc_tile_group_t;
 
 
 typedef struct {
 	hb_mc_dimension_t dim;
 	hb_mc_coordinate_t origin;
-	tile_t* tiles;
-} mesh_t;
+	hb_mc_tile_t* tiles;
+} hb_mc_mesh_t;
 
 
 typedef struct {
@@ -80,12 +80,12 @@ typedef struct {
 	uint8_t fd;
 	hb_mc_manycore_t *mc;
 	hb_mc_program_t *program;
-	mesh_t *mesh;
-	tile_group_t *tile_groups;
+	hb_mc_mesh_t *mesh;
+	hb_mc_tile_group_t *tile_groups;
 	uint32_t num_tile_groups;
 	uint32_t tile_group_capacity;
 	uint8_t num_grids;
-} device_t; 
+} hb_mc_device_t; 
 
 
 enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
@@ -101,7 +101,7 @@ enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
+int hb_mc_device_init (hb_mc_device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
 
 
 
@@ -114,7 +114,7 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_program_init (device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id);
+int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id);
 
 
 
@@ -135,7 +135,7 @@ int hb_mc_program_allocator_init (hb_mc_program_t *allocator, const char *name, 
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_finish (device_t *device);
+int hb_mc_device_finish (hb_mc_device_t *device);
 
 
 
@@ -147,7 +147,7 @@ int hb_mc_device_finish (device_t *device);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva);
+int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva);
 
 
 
@@ -160,7 +160,7 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result)) 
-int hb_mc_device_free (device_t *device, hb_mc_eva_t eva);
+int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
 
 
 
@@ -174,7 +174,7 @@ int hb_mc_device_free (device_t *device, hb_mc_eva_t eva);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_tile_groups_execute (device_t *device);
+int hb_mc_device_tile_groups_execute (hb_mc_device_t *device);
 
 
 
@@ -184,7 +184,7 @@ int hb_mc_device_tile_groups_execute (device_t *device);
  * returns HB_MC_SUCCESS if all tile groups are finished, and HB_MC_FAIL otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_all_tile_groups_finished(device_t *device);
+int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device);
 
 
 
@@ -194,7 +194,7 @@ int hb_mc_device_all_tile_groups_finished(device_t *device);
  * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite look if no tile group finishes.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_wait_for_tile_group_finish_any(device_t *device);
+int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
 
 
 
@@ -209,7 +209,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
+int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
 
 
 
@@ -217,13 +217,13 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
 
 
 /**
- * Takes in a device_t struct and initializes a mesh of tile in the Manycore device.
+ * Takes in a hb_mc_device_t struct and initializes a mesh of tile in the Manycore device.
  * @param[in]  device        Pointer to device
  * @parma[in]  dim           X/Y dimensions of the tile pool (mesh) to be initialized
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim); 
+int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim); 
 
 
 
@@ -239,7 +239,7 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimension_t tg_dim, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_grid_init (hb_mc_device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimension_t tg_dim, char *name, uint32_t argc, uint32_t argv[]);
 
 
 
@@ -251,7 +251,7 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_group_allocate_tiles(device_t *device, tile_group_t *tg);  
+int hb_mc_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);  
 
 
 
@@ -269,7 +269,7 @@ int hb_mc_tile_group_allocate_tiles(device_t *device, tile_group_t *tg);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_group_enqueue(device_t *device, grid_id_t grid_id, hb_mc_coordinate_t tg_id, hb_mc_dimension_t grid_dim, hb_mc_dimension_t dim, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_tile_group_enqueue(hb_mc_device_t *device, grid_id_t grid_id, hb_mc_coordinate_t tg_id, hb_mc_dimension_t grid_dim, hb_mc_dimension_t dim, char *name, uint32_t argc, uint32_t argv[]);
 
 
 
@@ -281,7 +281,7 @@ int hb_mc_tile_group_enqueue(device_t *device, grid_id_t grid_id, hb_mc_coordina
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
+int hb_mc_tile_group_launch(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
 
 
 
@@ -293,7 +293,7 @@ int hb_mc_tile_group_launch(device_t *device, tile_group_t *tg);
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg);
+int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
 
 
 
