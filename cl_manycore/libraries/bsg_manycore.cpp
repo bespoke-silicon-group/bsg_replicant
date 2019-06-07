@@ -1181,7 +1181,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t
 
 	/* transmit the request to the hardware */
 	manycore_pr_dbg(mc, "Sending %d-byte read request to NPA "
-			"(x: %d, y: %d, 0x%x)\n",
+			"(x: %d, y: %d, 0x%08" PRIx32 ")\n",
 			sz,
 			hb_mc_npa_get_x(npa),
 			hb_mc_npa_get_y(npa),

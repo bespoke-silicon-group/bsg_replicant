@@ -127,7 +127,7 @@ int kernel_dram () {
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
 		if (A_host[i] != i) { 
-			bsg_pr_err(BSG_RED("Mismatch") ": -- A[%d] = 0x%x\t Expected: 0x%x\n", i , A_host[i], i);
+			bsg_pr_err(BSG_RED("Mismatch") ": -- A[%d] = 0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n", i , A_host[i], i);
 			mismatch = 1;
 		}
 	} 

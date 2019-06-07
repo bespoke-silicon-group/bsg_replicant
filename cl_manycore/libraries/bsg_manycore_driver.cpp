@@ -202,7 +202,7 @@ int hb_mc_fifo_drain (uint8_t fd, hb_mc_fifo_rx_t type) {
 			bsg_pr_err("%s: failed to read packet from fifo %d.\n", __func__, type); 
 			return HB_MC_FAIL;
 		}
-		bsg_pr_dbg("%s: Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", __func__, type, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);  
+		bsg_pr_dbg("%s: Packet drained from fifo %d: src (%d,%d), dst (%d,%d), addr: 0x%08" PRIx32 ", data: 0x%08" PRIx32 ".\n", __func__, type, recv.x_src, recv.y_src, recv.x_dst, recv.y_dst, recv.addr, recv.data);  
 	}
 
 	/* recheck occupancy to make sure all packets are drained. */
@@ -433,7 +433,7 @@ int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t 
 	// Write 1 to the Transmit Complete bit to clear it
 	hb_mc_fifo_set_ixr_bit(fd, dir, HB_MC_MMIO_FIFO_ISR_OFFSET, HB_MC_MMIO_FIFO_IXR_TC_BIT);
 
-	bsg_pr_dbg("%s: Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", __func__, packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
+	bsg_pr_dbg("%s: Fifo packet trasmitted: src (%d,%d), dst (%d,%d), addr: 0x%08" PRIx32 ", data: 0x%08" PRIx32 ".\n", __func__, packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
 
 	return HB_MC_SUCCESS;
 }
@@ -474,7 +474,7 @@ int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet
 		packet->words[i] = hb_mc_read32(fd, data_addr);
 	}
 
-	bsg_pr_dbg("%s: Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%x, data: 0x%x.\n", __func__, packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
+	bsg_pr_dbg("%s: Fifo packet received: src (%d,%d), dst (%d,%d), addr: 0x%08" PRIx32 ", data: 0x%08" PRIx32 ".\n", __func__, packet->request.x_src, packet->request.y_src, packet->request.x_dst, packet->request.y_dst, packet->request.addr, packet->request.data);
 
 	return HB_MC_SUCCESS;
 }
