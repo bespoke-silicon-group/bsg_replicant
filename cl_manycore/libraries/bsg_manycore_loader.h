@@ -38,6 +38,14 @@ int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
                                hb_mc_eva_t *eva);
 
 
+
+/**
+ * Takes in the path to a binary and loads it into a buffer and sets the binary size. 
+ * @param[in]  file_name A memory buffer containing a valid manycore binary.
+ * @param[out] file_data Pointer to the memory buffer to be loaded with a valid binary 
+ * @param[out] file_size Size of the binary in bytes.
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
 int hb_mc_loader_read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size);
 
 
