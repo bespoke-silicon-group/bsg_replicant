@@ -15,6 +15,15 @@
 extern "C" {
 #endif
 
+
+#define HB_MC_MMIO_TILE_KERNEL_PTR_EPA		0x1000	// EPA of pointer to kernel binary in tile. 
+#define HB_MC_MMIO_TILE_ARGC_PTR_EPA		0x1004  // EPA of argument count of kernel in tile.
+#define HB_MC_MMIO_TILE_ARGV_PTR_EPA		0x1008	// EPA of pointer to argument list of kernel in tile.
+#define HB_MC_MMIO_TILE_FINISH_SIGNAL_PTR_EPA	0x100C  // EPA of finish signal memory location in tile.
+#define HB_MC_MMIO_KERNEL_NOT_LOADED		0x0001	// Kernel is not loaded into tile if kernel poitner equals this value.
+
+
+
 typedef uint8_t tile_group_id_t;
 typedef uint8_t grid_id_t;
 typedef int hb_mc_allocator_id_t;
