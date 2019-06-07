@@ -1,9 +1,9 @@
 #ifndef BSG_MANYCORE_MEM_H
 #define BSG_MANYCORE_MEM_H
 
-#include "bsg_manycore_features.h"
-#include "bsg_manycore_driver.h"
-#include "bsg_manycore_printing.h"
+#include <bsg_manycore_features.h>
+#include <bsg_manycore_driver.h>
+#include <bsg_manycore_printing.h>
 
 #ifdef __cplusplus
 extern "C" {

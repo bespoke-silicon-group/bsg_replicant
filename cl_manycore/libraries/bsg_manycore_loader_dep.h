@@ -5,7 +5,6 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_coordinate.h>
-#include <stdint.h>
 
 #ifdef COSIM
 	#include <utils/sh_dpi_tasks.h>
@@ -18,6 +17,7 @@
 #include <unistd.h>
 
 #ifdef __cplusplus
+#include <cstdint>
 #include <cassert>
 #include <cstdlib>
 #include <cstring>
@@ -25,6 +25,7 @@
 #include <climits>
 #include <cstdbool>
 #else
+#include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>

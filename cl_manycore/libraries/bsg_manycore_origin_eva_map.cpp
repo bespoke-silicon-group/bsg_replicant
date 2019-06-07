@@ -1,8 +1,15 @@
 #include <bsg_manycore_origin_eva_map.h>
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_printing.h>
+
+
+#ifdef __cplusplus
 #include <cstring>
 #include <cstdlib>
+#else
+#include <string.h>
+#include <stdlib.h>
+#endif
 
 #define ORIGIN_EVA_MAP_MAX_NAME_SIZE 256
 
