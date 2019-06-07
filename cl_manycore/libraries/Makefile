@@ -48,12 +48,13 @@ OBJECTS += bsg_manycore.o
 OBJECTS += bsg_manycore_loader_dep.o
 OBJECTS += bsg_manycore_origin_eva_map.o
 OBJECTS += bsg_manycore_request_packet_id.o
-OBJECTS += bsg_manycore_uart_responder.o
 OBJECTS += bsg_manycore_responder.o
+OBJECTS += bsg_manycore_uart_responder.o
 
 # object that should be compiled for debugging
 DEBUG_OBJECTS  :=
 DEBUG_OBJECTS  += bsg_manycore_responder.o
+DEBUG_OBJECTS  += bsg_manycore_uart_responder.o
 
 # objects that should be compiled with strict compilation flags
 STRICT_OBJECTS :=

@@ -116,7 +116,7 @@ int hb_mc_responder_add(hb_mc_responder_t *responder)
 		responders = new responder_list;
 
 	if (responder->ids == nullptr)
-		return HB_MC_FAIL;
+		return HB_MC_INVALID;
 
 	responders->push_front(responder);
 	return HB_MC_SUCCESS;

@@ -62,21 +62,41 @@ int hb_mc_responder_add(hb_mc_responder_t *responder);
 __attribute__((warn_unused_result))
 int hb_mc_responder_del(hb_mc_responder_t *responder);
 
+#ifdef __cplusplus
+#define source_responder(rspdr)						\
+	namespace {							\
+		class __bsg_manycore_ ## rspdr ## _add_del {		\
+		public:							\
+			__bsg_manycore_ ## rspdr ## _add_del () {	\
+				int r = hb_mc_responder_add(&rspdr);	\
+				if (r != HB_MC_SUCCESS)			\
+					throw r;			\
+			}						\
+			~__bsg_manycore_ ## rspdr ## _add_del () {	\
+				int r = hb_mc_responder_del(&rspdr);	\
+				if (r != HB_MC_SUCCESS)			\
+					throw r;			\
+			}						\
+		};							\
+		__bsg_manycore_ ## rspdr ## _add_del add_ ## rspdr;	\
+	}
+#else
 #define source_responder(rspdr)                                         \
-        __attribute__((constructor, visibility("internal")))              \
-        void __bsg_manycore_ ## rspdr ## _add(void) {            \
+        __attribute__((constructor(65535), visibility("internal")))	\
+        void __bsg_manycore_ ## rspdr ## _add(void) {			\
                 int r = hb_mc_responder_add(&rspdr);                    \
                 if (r != HB_MC_SUCCESS)                                 \
                         bsg_pr_err("%s: failed to add responder %s: %s\n", \
                                    __FILE__, #rspdr, hb_mc_strerror(r)); \
         }                                                               \
-        __attribute__((destructor, visibility("internal")))             \
-        void __bsg_manycore_ ## rspdr ## _del(void) {            \
+        __attribute__((destructor(65535), visibility("internal")))	\
+        void __bsg_manycore_ ## rspdr ## _del(void) {			\
                 int r = hb_mc_responder_del(&rspdr);                    \
                 if (r != HB_MC_SUCCESS)                                 \
                         bsg_pr_err("%s: failed to remove responder %s: %s\n", \
                                    __FILE__, #rspdr, hb_mc_strerror(r)); \
         }
+#endif
 
 #ifdef __cplusplus
 }
