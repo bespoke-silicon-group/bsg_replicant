@@ -4,6 +4,7 @@
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_bits.h>
 #include <bsg_manycore_errno.h>
+#include <bsg_manycore_epa.h>
 #include <endian.h>
 #include <inttypes.h>
 #include <stdint.h>
@@ -199,7 +200,7 @@ static inline void hb_mc_request_packet_set_op(hb_mc_request_packet_t *packet, h
 /**
  * Set the addess in a request packet
  * @param[in] packet a request packet
- * @param[in] addr a valid manycore end point address (EPA)
+ * @param[in] addr a valid manycore end point word address
  */
 static inline void hb_mc_request_packet_set_addr(hb_mc_request_packet_t *packet, uint32_t addr)
 {
@@ -214,6 +215,30 @@ static inline void hb_mc_request_packet_set_addr(hb_mc_request_packet_t *packet,
 static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet, uint32_t data)
 {
         packet->data = htole32(data); // TODO: byte mask?
+}
+
+
+/**
+ * Get the EPA of a request packet.
+ * This function differs from hb_mc_request_packet_get_addr() in that it performs translation
+ * of the address field.
+ * @param[in] packet a request packet
+ * @return the EPA of the packet
+ */
+static inline hb_mc_epa_t hb_mc_request_packet_get_epa(const hb_mc_request_packet_t *packet)
+{
+	return hb_mc_request_packet_get_addr(packet) << 2;
+}
+
+/**
+ * Set the EPA of a request packet.
+ * @param[in] packet a request packet
+ * @param[in] addr a valid manycore end point address (EPA)
+ */
+static inline void hb_mc_request_packet_set_epa(hb_mc_request_packet_t *packet,
+						hb_mc_epa_t epa)
+{
+	hb_mc_request_packet_set_addr(packet, epa >> 2);
 }
 
 /**

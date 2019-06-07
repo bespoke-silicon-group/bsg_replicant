@@ -3,6 +3,8 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_request_packet.h>
+#include <bsg_manycore_epa.h>
+#include <bsg_manycore_coordinate.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -10,15 +12,16 @@ extern "C" {
 #endif
 
 typedef struct request_packet_id {
+	int init;
         /* matching with addresses */
         struct address_value_mask_pair
         {
-                uint32_t a_value;
-                uint32_t a_mask;
+                hb_mc_epa_t a_value;
+                hb_mc_epa_t a_mask;
 #ifdef __cplusplus
                 /* Needed to support initializers in C++ sources */
                 address_value_mask_pair(): a_value(0), a_mask(0){}
-                address_value_mask_pair(uint32_t v, uint32_t m):
+                address_value_mask_pair(hb_mc_epa_t v, hb_mc_epa_t m):
                         a_value(v), a_mask(m) {}
 #endif
         } id_addr; //!< matches addresses
@@ -48,14 +51,15 @@ typedef struct request_packet_id {
                         y_lo(lo), y_hi(hi) {}
 #endif
         } id_y_src; //!< matches source Y coordinates
-        
+
 #ifdef __cplusplus
         /* Needed to support initializers in C++ sources */
         request_packet_id() : id_addr(), id_x_src(), id_y_src() {}
         request_packet_id(address_value_mask_pair addr,
                           coordinate_x_lo_hi_pair x,
-                          coordinate_y_lo_hi_pair y):
-                id_addr(addr), id_x_src(x), id_y_src(y) {}
+                          coordinate_y_lo_hi_pair y,
+			  int init = 0):
+	init(init), id_addr(addr), id_x_src(x), id_y_src(y) {}
 #endif
 } hb_mc_request_packet_id_t;
 
@@ -85,18 +89,23 @@ typedef struct request_packet_id {
 #define RQST_ID_Y(yval)                         \
         RQST_ID_RANGE_Y(yval, yval)
 
+#ifdef __cplusplus
+#define RQST_ID(x, y, addr)                     \
+        request_packet_id(addr, x, y, 1)
+#else
 #define RQST_ID(x, y, addr)                                     \
-        { .id_x_src = x, .id_y_src = y, .id_addr = addr }
+        { .init = 1, .id_x_src = x, .id_y_src = y, .id_addr = addr }
+#endif
 
 /**
  * Query if a response packet matches an ID.
  * @param[in] pkt   A response packet. Behavior is undefined if this is not a valid pktid.
  * @param[in] pktid A response packet ID. Behavior is undefined if this is not a valid pktid.
- * @return 0 if there's no match, 1 if there is a match, and error code (see bsg_manycore_errno.h)
- * if there was an error.
+ * @return 0 if there's no match, 1 if there is a match.
  */
 int hb_mc_request_packet_is_match(const hb_mc_request_packet_t    *pkt,
                                   const hb_mc_request_packet_id_t *pktid);
+
 
 #ifdef __cplusplus
 }
