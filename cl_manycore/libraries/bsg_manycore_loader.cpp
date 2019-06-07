@@ -948,6 +948,16 @@ int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
 }
 
 
+
+
+
+/**
+ * Takes in the path to a binary and loads the binary into a buffer and set the binary size. 
+ * @param[in]  file_name  Path and name of the binary file 
+ * @param[out] file_data  Pointer to the memory buffer to be loaded with a valid binary 
+ * @param[out] file_size  Size of binary in bytes.
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
 int hb_mc_loader_read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
 {
 	struct stat st;
@@ -957,18 +967,18 @@ int hb_mc_loader_read_program_file(const char *file_name, unsigned char **file_d
 
 	if ((r = stat(file_name, &st)) != 0) {
 		bsg_pr_err("could not stat '%s': %m\n", file_name);
-		return HB_MC_FAIL;
+		return HB_MC_INVALID;
 	}
 
 	if (!(f = fopen(file_name, "rb"))) {
 		bsg_pr_err("failed to open '%s': %m\n", file_name);
-		return HB_MC_FAIL;
+		return HB_MC_INVALID;
 	}
 
 	if (!(data = (unsigned char *) malloc(st.st_size))) {
 		bsg_pr_err("failed to read '%s': %m\n", file_name);
 		fclose(f);
-		return HB_MC_FAIL;
+		return HB_MC_NOMEM;
 	}
 
 	if ((r = fread(data, st.st_size, 1, f)) != 1) {
