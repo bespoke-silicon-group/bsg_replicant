@@ -35,7 +35,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_init(&device, TEST_NAME, 0, mesh_dim);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -43,7 +43,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -57,21 +57,21 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device); /* allocate A[N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allcoate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B_device); /* allocate B[N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allcoate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &C_device); /* allocate C[N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allcoate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -96,7 +96,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -105,7 +105,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B to the device */ 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -132,7 +132,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_vec_add_shared_mem", 5, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -142,7 +142,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_tile_groups_execute(&device);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to execute tile groups.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -155,7 +155,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -165,7 +165,7 @@ int kernel_vec_add_shared_mem () {
 	rc = hb_mc_device_finish(&device); 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to de-initialize device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
