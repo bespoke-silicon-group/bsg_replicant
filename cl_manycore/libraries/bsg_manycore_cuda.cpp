@@ -21,13 +21,13 @@ static const hb_mc_epa_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group
 
 static uint32_t const DRAM_SIZE = 0x80000000;
 
-static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(tile_group_t *tg);  
+static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg);  
 
 static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord); 
 
-static hb_mc_idx_t hb_mc_coordinate_to_flat_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim); 
+static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim); 
 
-static int  hb_mc_dimension_to_size (hb_mc_dimension_t dim); 
+static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim); 
 
 static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
 
@@ -36,13 +36,13 @@ static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension
 
 
 /*!
- * Gets the x coordinates of a list of tile_t structs.
+ * Gets the x coordinates of a list of hb_mc_tile_t structs.
  * @param tiles array of tiles. Must be allocated by the caller.
  * @param x_list array of x coordinates. Must be allocated by the caller.
  * @param num_tiles array number of tiles.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
  */
-static int hb_mc_get_x(tile_t *tiles, uint8_t *x_list, uint32_t num_tiles) {
+static int hb_mc_get_x(hb_mc_tile_t *tiles, uint8_t *x_list, uint32_t num_tiles) {
 	if (!tiles || !x_list) {
 		return HB_MC_FAIL;
 	}
@@ -56,13 +56,13 @@ static int hb_mc_get_x(tile_t *tiles, uint8_t *x_list, uint32_t num_tiles) {
 
 
 /*!
- * Gets the x coordinates of a list of tile_t structs.
+ * Gets the x coordinates of a list of hb_mc_tile_t structs.
  * @param tiles array of tiles. Must be allocated by the caller.
  * @param x_list array of x coordinates. Must be allocated by the caller.
  * @param num_tiles array number of tiles.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
  */
-static int hb_mc_get_y(tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
+static int hb_mc_get_y(hb_mc_tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
 	if (!tiles || !y_list) {
 		return HB_MC_FAIL;
 	}
@@ -77,12 +77,12 @@ static int hb_mc_get_y(tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
 
 
 /**
- * Takes in a device_t struct and initializes a mesh of tile in the Manycore device.
+ * Takes in a hb_mc_device_t struct and initializes a mesh of tile in the Manycore device.
  * @param[in]  device        Pointer to device
  * @parma[in]  dim           X/Y dimensions of the tile pool (mesh) to be initialized
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){ 
+int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){ 
 
 	int error;
 
@@ -107,7 +107,7 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
 		return HB_MC_INVALID;
 	}
 
-	tile_t* tiles = new tile_t [hb_mc_dimension_to_size (dim)];
+	hb_mc_tile_t* tiles = new hb_mc_tile_t [hb_mc_dimension_to_length (dim)];
 	for (int x = hb_mc_coordinate_get_x(default_origin); x < hb_mc_coordinate_get_x(default_origin) + hb_mc_dimension_get_x(dim); x++){
 		for (int y = hb_mc_coordinate_get_y(default_origin); y < hb_mc_coordinate_get_y(default_origin) + hb_mc_dimension_get_y(dim); y++){
 			hb_mc_idx_t tile_id = hb_mc_get_tile_id (default_origin, dim, hb_mc_coordinate(x, y));	
@@ -118,10 +118,10 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
 		}
 	}
 
-	mesh_t *mesh = new mesh_t; 
+	hb_mc_mesh_t *mesh = new hb_mc_mesh_t; 
 	mesh->dim = dim;
 	mesh->origin = default_origin;
-	mesh->tiles= (tile_t*)tiles;
+	mesh->tiles= (hb_mc_tile_t*)tiles;
 
 	device->mesh = mesh;
 
@@ -141,7 +141,7 @@ int hb_mc_mesh_init (device_t *device, hb_mc_dimension_t dim){
  * @param[in]  argv          List of input arguments to kernel
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimension_t tg_dim, char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_grid_init (hb_mc_device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimension_t tg_dim, char* name, uint32_t argc, uint32_t argv[]) {
 	int error; 
 	for (hb_mc_idx_t tg_id_x = 0; tg_id_x < hb_mc_dimension_get_x(grid_dim); tg_id_x ++) { 
 		for (hb_mc_idx_t tg_id_y = 0; tg_id_y < hb_mc_dimension_get_y(grid_dim); tg_id_y ++) { 
@@ -167,7 +167,7 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
  * @param[in]  dim           Dimension of the group of tiles in question
  * @return HB_MC_SUCCESS if all tiles in the group are free  and HB_MC_FAIL otherwise. 
  */
-static int hb_mc_device_tiles_are_free (device_t *device, hb_mc_coordinate_t origin, hb_mc_dimension_t dim) { 
+static int hb_mc_device_tiles_are_free (hb_mc_device_t *device, hb_mc_coordinate_t origin, hb_mc_dimension_t dim) { 
 	if (hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim) > hb_mc_coordinate_get_x(device->mesh->origin) + hb_mc_dimension_get_x(device->mesh->dim)) { 
 		bsg_pr_err ("%s: a %dx%d tile group starting from origin (%d,%d) does not fit in %dx%d device mesh. Check X dimension or origin.\n",
 				__func__, 
@@ -212,7 +212,7 @@ static int hb_mc_device_tiles_are_free (device_t *device, hb_mc_coordinate_t ori
  * @param[in]  origin        Origin coordinates of tile group
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-static int hb_mc_tile_group_initialize_tiles (device_t *device, tile_group_t *tg, hb_mc_coordinate_t origin) { 
+static int hb_mc_tile_group_initialize_tiles (hb_mc_device_t *device, hb_mc_tile_group_t *tg, hb_mc_coordinate_t origin) { 
 
 	int error;
 	hb_mc_coordinate_t tile_coord;
@@ -306,7 +306,7 @@ static int hb_mc_tile_group_initialize_tiles (device_t *device, tile_group_t *tg
  * @param[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
+int hb_mc_tile_group_allocate_tiles (hb_mc_device_t *device, hb_mc_tile_group_t *tg){
 	int error;
 	if (hb_mc_dimension_get_x(tg->dim) > hb_mc_dimension_get_x(device->mesh->dim)){
 		bsg_pr_err("%s: tile group X dimension (%d) larger than mesh X dimension (%d).\n", __func__, hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_x(device->mesh->dim));
@@ -356,19 +356,19 @@ int hb_mc_tile_group_allocate_tiles (device_t *device, tile_group_t *tg){
  * @param[in]  argv          List of input arguments to the kernel
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordinate_t tg_id, hb_mc_dimension_t grid_dim, hb_mc_dimension_t dim, char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_tile_group_enqueue (hb_mc_device_t* device, grid_id_t grid_id, hb_mc_coordinate_t tg_id, hb_mc_dimension_t grid_dim, hb_mc_dimension_t dim, char* name, uint32_t argc, uint32_t argv[]) {
 
 	if (device->num_tile_groups == device->tile_group_capacity) { 
 		device->tile_group_capacity *= 2;
-		device->tile_groups = (tile_group_t *) realloc (device->tile_groups, device->tile_group_capacity * sizeof(tile_group_t));
+		device->tile_groups = (hb_mc_tile_group_t *) realloc (device->tile_groups, device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
 		if (device->tile_groups == NULL) {
-			bsg_pr_err("%s: failed to allocate space for tile_group_t structs.\n", __func__);
+			bsg_pr_err("%s: failed to allocate space for hb_mc_tile_group_t structs.\n", __func__);
 			return HB_MC_NOMEM;
 		}
 	}
 	
 
-	tile_group_t* tg = &device->tile_groups[device->num_tile_groups];
+	hb_mc_tile_group_t* tg = &device->tile_groups[device->num_tile_groups];
 	tg->dim = dim;
 	tg->origin = device->mesh->origin;
 	tg->id = tg_id;
@@ -388,9 +388,9 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
 	}
 	
 
-	tg->kernel = (kernel_t *) malloc (sizeof(kernel_t));
+	tg->kernel = (hb_mc_kernel_t *) malloc (sizeof(hb_mc_kernel_t));
 	if (tg->kernel == NULL) { 
-		bsg_pr_err("%s: failed to allocated space for kernel_t struct.\n", __func__);
+		bsg_pr_err("%s: failed to allocated space for hb_mc_kernel_t struct.\n", __func__);
 		return HB_MC_NOMEM;
 	}
 	tg->kernel->name = name;
@@ -418,7 +418,7 @@ int hb_mc_tile_group_enqueue (device_t* device, grid_id_t grid_id, hb_mc_coordin
  * @parma[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  */
-int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
+int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
@@ -516,7 +516,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
  * @parma[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
  */
-int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
+int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 	hb_mc_idx_t tile_id; 
 	for (int x = hb_mc_coordinate_get_x(tg->origin); x < hb_mc_coordinate_get_x(tg->origin) + hb_mc_dimension_get_x(tg->dim); x++){
 		for (int y = hb_mc_coordinate_get_y(tg->origin); y < hb_mc_coordinate_get_y(tg->origin) + hb_mc_dimension_get_y(tg->dim); y++){
@@ -550,7 +550,7 @@ int hb_mc_tile_group_deallocate_tiles(device_t *device, tile_group_t *tg) {
  * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
+int hb_mc_device_init (hb_mc_device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim) {
 
 	device->mc = (hb_mc_manycore_t*) malloc (sizeof (hb_mc_manycore_t));
 	*(device->mc) = {0};
@@ -570,12 +570,12 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
 
 
 	device->tile_group_capacity = 1;
-	device->tile_groups = (tile_group_t *) malloc (device->tile_group_capacity * sizeof(tile_group_t));
+	device->tile_groups = (hb_mc_tile_group_t *) malloc (device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
 	if (device->tile_groups == NULL) {
 		bsg_pr_err("%s: failed to allocated space for list of tile groups.\n", __func__);
 		return HB_MC_NOMEM;
 	}
-	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(tile_group_t));
+	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
 	device->num_tile_groups = 0;
 	device->num_grids = 0;
 
@@ -593,7 +593,7 @@ int hb_mc_device_init (device_t *device, char *name, hb_mc_manycore_id_t id, hb_
  * @param[in]  alloc_name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_program_init (device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id) {
+int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id) {
 	int error;
 	
 	device->program = (hb_mc_program_t *) malloc (sizeof (hb_mc_program_t));
@@ -608,7 +608,7 @@ int hb_mc_device_program_init (device_t *device, char *bin_name, const char *all
 		return HB_MC_NOMEM;
 	}
 
-	uint32_t num_tiles = hb_mc_dimension_to_size (device->mesh->dim);
+	uint32_t num_tiles = hb_mc_dimension_to_length (device->mesh->dim);
 
 	// Freeze all tiles 
 	for (int tile_id = 0; tile_id < num_tiles; tile_id++) { /* initialize tiles */
@@ -771,9 +771,9 @@ int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb
  * @param[in]  device        Pointer to device
  * returns HB_MC_SUCCESS if all tile groups are finished, and HB_MC_FAIL otherwise.
  */
-int hb_mc_device_all_tile_groups_finished(device_t *device) {
+int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device) {
 	
-	tile_group_t *tg = device->tile_groups; 
+	hb_mc_tile_group_t *tg = device->tile_groups; 
 	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
 		if (tg->status != HB_MC_TILE_GROUP_STATUS_FINISHED )
 			return HB_MC_FAIL; 
@@ -790,7 +790,7 @@ int hb_mc_device_all_tile_groups_finished(device_t *device) {
  * @param[in]  device        Pointer to device
  * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite look if no tile group finishes.
  */
-int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
+int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
 	int error; 
 
 	int tile_group_finished = 0;
@@ -806,7 +806,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 		}
 
 		/* Check all tile groups to see if the received packet is the finish packet from one of them */
-		tile_group_t *tg = device->tile_groups;
+		hb_mc_tile_group_t *tg = device->tile_groups;
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
 			if (tg->status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
 
@@ -853,13 +853,13 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_tile_groups_execute (device_t *device) {
+int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
 
 	int error ;
 	/* loop untill all tile groups have been allocated, launched and finished. */
 	while(hb_mc_device_all_tile_groups_finished(device) != HB_MC_SUCCESS) {
 		/* loop over all tile groups and try to launch as many as possible */
-		tile_group_t *tg = device->tile_groups;
+		hb_mc_tile_group_t *tg = device->tile_groups;
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) { 
 			if (tg->status == HB_MC_TILE_GROUP_STATUS_INITIALIZED) {
 				error = hb_mc_tile_group_allocate_tiles(device, tg) ;
@@ -893,11 +893,11 @@ int hb_mc_device_tile_groups_execute (device_t *device) {
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_finish (device_t *device) {
+int hb_mc_device_finish (hb_mc_device_t *device) {
 
 	int error;
 
-	for (int tile_id = 0; tile_id < hb_mc_dimension_to_size (device->mesh->dim); tile_id ++) {
+	for (int tile_id = 0; tile_id < hb_mc_dimension_to_length (device->mesh->dim); tile_id ++) {
 		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err("%s: failed to freeze tile.\n", __func__); 
@@ -928,7 +928,7 @@ int hb_mc_device_finish (device_t *device) {
  * @param[out] eva           Eva address of the allocated memory
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva) {
+int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva) {
         *eva = 0;
 
 	if (!device->program->allocator->memory_manager) {
@@ -955,7 +955,7 @@ int hb_mc_device_malloc (device_t *device, uint32_t size, hb_mc_eva_t *eva) {
  * @param[out] eva           Eva address of the memory to be freed
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_free (device_t *device, eva_t eva) {
+int hb_mc_device_free (hb_mc_device_t *device, eva_t eva) {
 
 
 	if (!device->program->allocator->memory_manager) {
@@ -981,7 +981,7 @@ int hb_mc_device_free (device_t *device, eva_t eva) {
  * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
+int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
 
 	int error;
 	
@@ -1026,7 +1026,7 @@ int hb_mc_device_memcpy (device_t *device, void *dst, const void *src, uint32_t 
  * @parma[in]  tg            Pointer to tile group 
  * @return     finish_signal_addr
  */
-static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(tile_group_t *tg) { 
+static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg) { 
 	hb_mc_epa_t finish_addr = FINISH_BASE_ADDR + ((hb_mc_coordinate_get_y(tg->id) * hb_mc_dimension_get_x(tg->grid_dim) + hb_mc_coordinate_get_x(tg->id)) << 2); /* TODO: Hardcoded */
 	return finish_addr;
 }
@@ -1053,22 +1053,22 @@ static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t orig
  * Calculates and returns a 1D flat index based on 2D coordinates and 2D dimensions 
  * @param[in]  coord         2D coordinates  
  * @parma[in]  dim           Dimensions 
- * @return     flat_idx
+ * @return     idx
  */
-static hb_mc_idx_t hb_mc_coordinate_to_flat_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim) {
-	hb_mc_idx_t flat_idx = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(dim) + hb_mc_coordinate_get_x(coord); 
-	return flat_idx;
+static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim) {
+	hb_mc_idx_t idx = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(dim) + hb_mc_coordinate_get_x(coord); 
+	return idx;
 } 
 
 
 
 
 /**
- * Calculates and returns a 1D size based on 2D dimensions 
+ * Calculates and returns a 1D length based on 2D dimensions 
  * @parma[in]  dim           Dimensions 
- * @return     1D flat size
+ * @return     1D flat length
  */
-static int  hb_mc_dimension_to_size (hb_mc_dimension_t dim) { 
+static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim) { 
 	return (hb_mc_dimension_get_x(dim) * hb_mc_dimension_get_y(dim)); 
 } 
 
@@ -1084,7 +1084,7 @@ static int  hb_mc_dimension_to_size (hb_mc_dimension_t dim) {
  */
 static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord) { 
 	hb_mc_coordinate_t relative_coord = hb_mc_get_relative_coordinate (origin, coord); 
-	hb_mc_idx_t tile_id = hb_mc_coordinate_to_flat_index (relative_coord, dim); 
+	hb_mc_idx_t tile_id = hb_mc_coordinate_to_index (relative_coord, dim); 
 	return tile_id;
 }
 
