@@ -21,7 +21,7 @@ extern "C" {
 #define HB_MC_MMIO_TILE_ARGV_PTR_EPA		0x1008	// EPA of pointer to argument list of kernel in tile.
 #define HB_MC_MMIO_TILE_FINISH_SIGNAL_PTR_EPA	0x100C  // EPA of finish signal memory location in tile.
 #define HB_MC_MMIO_KERNEL_NOT_LOADED		0x0001	// Kernel is not loaded into tile if kernel poitner equals this value.
-
+#define HB_MC_MMIO_HOST_FINISH_SIGNAL_BASE_ADDR	0xF000	// The begining of section in host memory intended for tile groups to write finish signals into
 
 
 typedef uint8_t tile_group_id_t;
@@ -134,7 +134,8 @@ int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const cha
  * @param[in]  name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_program_allocator_init (hb_mc_program_t *allocator, const char *name, hb_mc_allocator_id_t id);
+__attribute__((warn_unused_result))
+int hb_mc_program_allocator_init (const hb_mc_config_t *cfg, hb_mc_program_t *allocator, const char *name, hb_mc_allocator_id_t id);
 
 
 

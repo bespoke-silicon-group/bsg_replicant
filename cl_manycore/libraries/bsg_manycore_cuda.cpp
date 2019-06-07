@@ -13,11 +13,6 @@
 
 
 
-
-static const hb_mc_epa_t FINISH_BASE_ADDR = 0xF000; //!< EPA to which tile group sends a finish packet once it finishes executing a kernel  
-
-static uint32_t const DRAM_SIZE = 0x80000000;
-
 static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg);  
 
 static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord); 
@@ -27,8 +22,6 @@ static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_di
 static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim); 
 
 static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
-
-
 
 
 
@@ -645,7 +638,8 @@ int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const cha
 	
 
 	// Initialize program's memory allocator
-	error = hb_mc_program_allocator_init (device->program, alloc_name, id); 
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc); 
+	error = hb_mc_program_allocator_init (cfg, device->program, alloc_name, id); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to initialize memory allocator for program %s.\n", __func__, device->program->bin_name); 
 		return HB_MC_UNINITIALIZED;
@@ -732,7 +726,7 @@ int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const cha
  * @param[in]  name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb_mc_allocator_id_t id) {
+int hb_mc_program_allocator_init (const hb_mc_config_t *cfg, hb_mc_program_t *program, const char *name, hb_mc_allocator_id_t id) {
 	int error;
 
 	program->allocator = (hb_mc_allocator_t *) malloc (sizeof (hb_mc_allocator_t)); 
@@ -757,8 +751,8 @@ int hb_mc_program_allocator_init (hb_mc_program_t *program, const char *name, hb
 
 	uint32_t alignment = 32;
 	uint32_t start = program_end_eva + alignment - (program_end_eva % alignment); /* start at the next aligned block */
-	uint32_t size = DRAM_SIZE;
-	program->allocator->memory_manager = (awsbwhal::MemoryManager *) new awsbwhal::MemoryManager(DRAM_SIZE, start, alignment); 
+	size_t dram_size = hb_mc_config_get_dram_size(cfg); 
+	program->allocator->memory_manager = (awsbwhal::MemoryManager *) new awsbwhal::MemoryManager(dram_size, start, alignment); 
 
 	return HB_MC_SUCCESS;	
 }
@@ -1028,7 +1022,7 @@ int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uin
  * @return     finish_signal_addr
  */
 static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg) { 
-	hb_mc_epa_t finish_addr = FINISH_BASE_ADDR + ((hb_mc_coordinate_get_y(tg->id) * hb_mc_dimension_get_x(tg->grid_dim) + hb_mc_coordinate_get_x(tg->id)) << 2); /* TODO: Hardcoded */
+	hb_mc_epa_t finish_addr = HB_MC_MMIO_HOST_FINISH_SIGNAL_BASE_ADDR + ((hb_mc_coordinate_get_y(tg->id) * hb_mc_dimension_get_x(tg->grid_dim) + hb_mc_coordinate_get_x(tg->id)) << 2); /* TODO: Hardcoded */
 	return finish_addr;
 }
 
