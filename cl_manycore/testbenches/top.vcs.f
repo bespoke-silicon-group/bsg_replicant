@@ -99,6 +99,14 @@ ${BASEJUMP_STL_DIR}/bsg_misc/bsg_priority_encode_one_hot_out.v
 ${BASEJUMP_STL_DIR}/bsg_misc/bsg_scan.v
 ${BASEJUMP_STL_DIR}/bsg_misc/bsg_dlatch.v
 ${BASEJUMP_STL_DIR}/bsg_misc/bsg_clkgate_optional.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_less_than.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_dff_en_bypass.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_dff.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_mul_synth.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_priority_encode.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_reduce.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_encode_one_hot.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_abs.v
 
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_banked_crossbar.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
@@ -112,6 +120,17 @@ ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_1rw_sync_synth.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_2r1w_sync.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_2r1w_sync_synth.v
 
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_pkg.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_add_sub.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_classify.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_clz.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_cmp.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_f2i.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_i2f.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_mul.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_preprocess.v
+${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_sticky.v
+
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/bsg_manycore_proc_vanilla.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/alu.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/cl_decode.v
@@ -120,13 +139,18 @@ ${BSG_MANYCORE_DIR}/v/vanilla_bean/scoreboard.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/icache.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/imul_idiv_iterative.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/load_packer.v
-${BSG_MANYCORE_DIR}/v/vanilla_bean/hobbit.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/network_rx.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/network_tx.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/lsu.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/fpu_int.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/fpu_float.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/fpu_float_aux.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/vanilla_core.v
 
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint_standard.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_lock_ctrl.v
 ${BSG_MANYCORE_DIR}/v/bsg_1hold.v
-${BSG_MANYCORE_DIR}/v/bsg_manycore_pkt_encode.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_link_sif_tieoff.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_mesh_node.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
