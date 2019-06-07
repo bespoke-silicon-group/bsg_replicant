@@ -168,7 +168,6 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint_standard.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_lock_ctrl.v
 ${BSG_MANYCORE_DIR}/v/bsg_1hold.v
-${BSG_MANYCORE_DIR}/v/bsg_manycore_pkt_encode.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_link_sif_tieoff.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_mesh_node.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
