@@ -16,7 +16,7 @@ package cl_manycore_pkg;
   parameter num_tiles_y_p = CL_MANYCORE_DIM_Y;
   parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_x_p);
   parameter y_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_y_p+2);
-  parameter load_id_width_p = 11;
+  parameter load_id_width_p = 12;
   parameter dmem_size_p = 1024;
   parameter icache_entries_p = 1024;
   parameter icache_tag_width_p = 12;
@@ -27,6 +27,7 @@ package cl_manycore_pkg;
   parameter sets_p = 64;
   parameter ways_p = 2;
   parameter block_size_in_words_p = 16;
+  parameter vcache_size_p = sets_p * ways_p * block_size_in_words_p;
 
   parameter axi_id_width_p = 6;
   parameter axi_addr_width_p = 64;
