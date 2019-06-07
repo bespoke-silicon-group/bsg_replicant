@@ -143,68 +143,6 @@ static inline size_t hb_mc_tile_get_size_icache(const hb_mc_manycore_t *mc,
 
 
 
-
-/*! 
- * Writes a uint8_t into a tile given its coordinates and epa 
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] coord      Cooridnates of the destination tile
- * @param[in] epa        Epa address in desitnation tile to which the write occurs
- * @param[in] v          Variable to be written into tile 
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
-__attribute__((warn_unused_result))
-int hb_mc_tile_write8(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint8_t v); 
-
-
-
-
-/*! 
- * Writes a uint16_t into a tile given its coordinates and epa 
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] coord      Cooridnates of the destination tile
- * @param[in] epa        Epa address in desitnation tile to which the write occurs
- * @param[in] v         Variable to be written into tile 
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
-__attribute__((warn_unused_result))
-int hb_mc_tile_write16(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint16_t v); 
-
-
-
-
-/*! 
- * Writes a uint32_t into a tile given its coordinates and epa 
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] coord      Cooridnates of the destination tile
- * @param[in] epa        Epa address in desitnation tile to which the write occurs
- * @param[in] v         Variable to be written into tile 
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
-__attribute__((warn_unused_result))
-int hb_mc_tile_write32(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, uint32_t v); 
-
-
-
-
-/*! 
- * Writes a buffer into a tile given its coordinates and epa 
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] coord      Cooridnates of the destination tile
- * @param[in] epa        Epa address in desitnation tile to which the write occurs
- * @param[in] vp         Buffer to be written into tile 
- * @param[in] sz         Size of buffer to be written
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
-__attribute__((warn_unused_result))
-int hb_mc_tile_write(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_epa_t *epa, const void* vp, size_t sz); 
-
-
-
-
 /*!
  * Sets a Vanilla Core Endpoint's tile group's origin hardware registers CSR_TGO_X/Y.
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
