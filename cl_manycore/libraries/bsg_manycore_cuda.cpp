@@ -212,7 +212,7 @@ static int hb_mc_device_tiles_are_free (device_t *device, hb_mc_coordinate_t ori
  * @param[in]  origin        Origin coordinates of tile group
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_tile_group_initialize_tiles (device_t *device, tile_group_t *tg, hb_mc_coordinate_t origin) { 
+static int hb_mc_tile_group_initialize_tiles (device_t *device, tile_group_t *tg, hb_mc_coordinate_t origin) { 
 
 	int error;
 	hb_mc_coordinate_t tile_coord;

@@ -245,19 +245,6 @@ int hb_mc_grid_init (device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimensi
 
 
 /**
- * Takes in a device and a tile group and an origin, initializes the tile group and sends packets to all tiles in tile group to set their symbols. 
- * @param[in]  device        Pointer to device
- * @param[in]  tg            Pointer to tile group
- * @param[in]  origin        Origin coordinates of tile group
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
- */
-int hb_mc_tile_group_initialize_tiles(device_t *device, tile_group_t *tg, hb_mc_coordinate_t origin);
-
-
-
-
-
-/**
  * Searches for a free tile group inside the device mesh and allocoates it, and sets the dimensions, origin, and id of tile group.
  * @param[in]  device        Pointer to device
  * @param[in]  tg            Pointer to tile group
