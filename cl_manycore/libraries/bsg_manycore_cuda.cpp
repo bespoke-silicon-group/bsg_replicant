@@ -467,7 +467,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				bsg_pr_err("%s: failed to write argv pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord), tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
 				return HB_MC_FAIL;
 			}
-			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) argv to 0x%x.\n", __func__, tile_id, x, y, args_eva);
+			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) argv to 0x%08" PRIx32 ".\n", __func__, tile_id, x, y, args_eva);
 
 
 			hb_mc_eva_t finish_signal_eva;
@@ -484,7 +484,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				bsg_pr_err("%s: failed to write finish signal address to tile (%d,%d) for grid %d tile group (%d,%d).\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord), tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
 				return HB_MC_FAIL;
 			}
-			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) SIGNAL_REG to 0x%x.\n", __func__, tile_id, x, y, finish_signal_host_eva);
+			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) SIGNAL_REG to 0x%08" PRIx32 ".\n", __func__, tile_id, x, y, finish_signal_host_eva);
 
 
 
@@ -493,7 +493,7 @@ int hb_mc_tile_group_launch (device_t *device, tile_group_t *tg) {
 				bsg_pr_err("%s: failed to write kernel pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n", __func__, hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord), hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord), tg->grid_id, hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
 				return HB_MC_FAIL;
 			}
-			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) KERNEL_REG to 0x%x.\n", __func__, tile_id, x, y, kernel_eva); 
+			bsg_pr_dbg("%s: Setting tile[%d] (%d,%d) KERNEL_REG to 0x%08" PRIx32 ".\n", __func__, tile_id, x, y, kernel_eva); 
 		}
 	} 
 
@@ -821,7 +821,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(device_t *device) {
 
 				if (hb_mc_request_packet_equals(&recv, &finish) == HB_MC_SUCCESS) {
 		
-					bsg_pr_dbg("%s: Finish packet received for grid %d tile group (%d,%d): src (%d,%d), dst (%d,%d), addr: 0x%x, data: %d.\n", 
+					bsg_pr_dbg("%s: Finish packet received for grid %d tile group (%d,%d): src (%d,%d), dst (%d,%d), addr: 0x%08" PRIx32 ", data: %d.\n", 
 							__func__, 
 							tg->grid_id, 
 							hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id), 

@@ -72,7 +72,7 @@ static int default_eva_to_epa_tile(
 		*epa = eva_masked;
 		*sz = sizeof(uint32_t);
 	} else {
-		bsg_pr_err("%s: Invalid EVA Address 0x%x. Does not map to an"
+		bsg_pr_err("%s: Invalid EVA Address 0x%08" PRIx32 ". Does not map to an"
 			" addressible tile memory locatiion.\n",
 			__func__, hb_mc_eva_addr(eva));
 		*epa = 0;
@@ -111,7 +111,7 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
+	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
 		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
 		hb_mc_coordinate_get_y(*src),
@@ -179,7 +179,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
+	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
 		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
 		hb_mc_coordinate_get_y(*src),
@@ -227,7 +227,7 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
+	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
 		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
 		hb_mc_coordinate_get_y(*src),
@@ -324,7 +324,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	epa = (hb_mc_eva_addr(eva) & errmask);
 
 	if (epa >= maxsz){
-		bsg_pr_err("%s: Translation of EVA 0x%x failed. EPA requested is "
+		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. EPA requested is "
 			"outside of addressible range in DRAM.");
 		return HB_MC_INVALID;
 	}
@@ -332,7 +332,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	*sz = maxsz - epa;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
-	bsg_pr_dbg("%s: Translating EVA 0x%x for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%x}. \n",
+	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
 		__func__, hb_mc_eva_addr(eva),
 		hb_mc_coordinate_get_x(*src),
 		hb_mc_coordinate_get_y(*src),
@@ -373,7 +373,7 @@ int default_eva_to_npa(const hb_mc_config_t *cfg,
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
 
-	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n",
+	bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
 		hb_mc_eva_addr(eva), __func__);
 	return HB_MC_FAIL;
 }
@@ -693,7 +693,7 @@ static int default_eva_size(
 	if(default_eva_is_local(eva))
 		return default_eva_to_npa_local(cfg, o, o, eva, &npa, sz);
 
-	bsg_pr_err("%s: EVA 0x%x did not map to a known region\n",
+	bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
 		hb_mc_eva_addr(eva), __func__);
 	return HB_MC_FAIL;
 

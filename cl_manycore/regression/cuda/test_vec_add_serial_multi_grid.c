@@ -285,7 +285,7 @@ int kernel_vec_add_serial_multi_grid () {
 
 	for (int i = 0; i < N; i++) {
 		if (A1_host[i] + B1_host[i] != C1_host[i]) {
-			bsg_pr_err(BSG_RED("Mismatch: ") "C1[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A1_host[i], B1_host[i], C1_host[i], C1_expected[i]);
+			bsg_pr_err(BSG_RED("Mismatch: ") "C1[%d]:  0x%08" PRIx32 " + 0x%08" PRIx32 " = 0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n", i , A1_host[i], B1_host[i], C1_host[i], C1_expected[i]);
 			mismatch = 1;
 		}
 	} 
@@ -293,7 +293,7 @@ int kernel_vec_add_serial_multi_grid () {
 
 	for (int i = 0; i < M; i++) {
 		if (A2_host[i] + B2_host[i] != C2_host[i]) {
-			bsg_pr_err(BSG_RED("Mismatch: ") "C2[%d]:  0x%x + 0x%x = 0x%x\t Expected: 0x%x\n", i , A2_host[i], B2_host[i], C2_host[i], C2_expected[i]);
+			bsg_pr_err(BSG_RED("Mismatch: ") "C2[%d]:  0x%08" PRIx32 " + 0x%08" PRIx32 " = 0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n", i , A2_host[i], B2_host[i], C2_host[i], C2_expected[i]);
 			mismatch = 1;
 		}
 	} 
