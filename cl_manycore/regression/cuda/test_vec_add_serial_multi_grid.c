@@ -35,7 +35,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_init(&device, TEST_NAME, 0, mesh_dim);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -43,7 +43,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -56,21 +56,21 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A1_device); /* allocate A1[N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allcoate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B1_device); /* allocate B1[N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &C1_device); /* allocate C1[N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -83,21 +83,21 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_malloc(&device, M * sizeof(uint32_t), &A2_device); /* allocate A2[M] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
 	rc = hb_mc_device_malloc(&device, M * sizeof(uint32_t), &B2_device); /* allocate B2[M] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
 	rc = hb_mc_device_malloc(&device, M * sizeof(uint32_t), &C2_device); /* allocate C2[M] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -132,7 +132,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A1 to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -141,7 +141,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B1 to the device */ 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -153,7 +153,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_memcpy (&device, dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy A2 to the device  */	
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -162,7 +162,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_memcpy (&device, dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_device); /* Copy B2 to the device */ 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -196,7 +196,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_grid_init (&device, grid_dim_1, tg_dim_1, "kernel_vec_add_serial_multi_grid", 5, argv1);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -206,7 +206,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_tile_groups_execute(&device);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to execute tile groups.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -217,7 +217,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_grid_init (&device, grid_dim_2, tg_dim_2, "kernel_vec_add_serial_multi_grid", 5, argv2);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -228,7 +228,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_tile_groups_execute(&device);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to execute tile groups.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -242,7 +242,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C1 to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -255,7 +255,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_memcpy (&device, (void *) dst, src, M * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy C2 to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
@@ -265,7 +265,7 @@ int kernel_vec_add_serial_multi_grid () {
 	rc = hb_mc_device_finish(&device); 
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to de-initialize device.\n");
-		return HB_MC_FAIL;
+		return rc;
 	}
 
 
