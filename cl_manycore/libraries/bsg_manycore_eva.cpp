@@ -1,8 +1,16 @@
-#include <math.h>
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>
+
+
+#ifdef __cplusplus
+#include <cmath>
+#else
+#include <math.h>
+#endif
+
+
 
 #define MAKE_MASK(WIDTH) ((1ULL << WIDTH) - 1)
 
