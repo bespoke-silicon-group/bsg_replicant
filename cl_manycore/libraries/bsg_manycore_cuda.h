@@ -110,7 +110,8 @@ enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
 
 
 /**
- * Initializes the manycor struct, and a mesh structure inside device struct with list of all tiles and their cooridnates 
+ * Initializes the manycor struct, and a mesh structure inside
+ * device struct with list of all tiles and their cooridnates 
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
@@ -118,7 +119,10 @@ enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init (hb_mc_device_t *device, char *name, hb_mc_manycore_id_t id, hb_mc_dimension_t dim_x);
+int hb_mc_device_init (	hb_mc_device_t *device,
+			char *name,
+			hb_mc_manycore_id_t id,
+			hb_mc_dimension_t dim_x);
 
 
 
@@ -131,7 +135,10 @@ int hb_mc_device_init (hb_mc_device_t *device, char *name, hb_mc_manycore_id_t i
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const char *alloc_name, hb_mc_allocator_id_t id);
+int hb_mc_device_program_init (	hb_mc_device_t *device,
+				char *bin_name,
+				const char *alloc_name,
+				hb_mc_allocator_id_t id);
 
 
 
@@ -143,7 +150,10 @@ int hb_mc_device_program_init (hb_mc_device_t *device, char *bin_name, const cha
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_program_allocator_init (const hb_mc_config_t *cfg, hb_mc_program_t *allocator, const char *name, hb_mc_allocator_id_t id);
+int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
+					hb_mc_program_t *allocator,
+					const char *name,
+					hb_mc_allocator_id_t id);
 
 
 
@@ -186,8 +196,10 @@ int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
 
 
 /**
- * Iterates over all tile groups inside device, allocates those that fit in mesh and launches them. 
- * API remains in this function until all tile groups have successfully finished execution.
+ * Iterates over all tile groups inside device,
+ * allocates those that fit in mesh and launches them. 
+ * API remains in this function until all tile groups
+ * have successfully finished execution.
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
@@ -223,11 +235,15 @@ int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
  * @parma[in]  src           EVA address of src 
  * @param[in]  name          EVA address of dst
  * @param[in]  count         Size of buffer to be copied
- * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
+ * @param[in]  hb_mc_memcpy_kind  Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind);
+int hb_mc_device_memcpy (	hb_mc_device_t *device,
+				void *dst,
+				const void *src,
+				uint32_t count,
+				enum hb_mc_memcpy_kind kind);
 
 
 
@@ -247,7 +263,9 @@ int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim);
 
 
 /**
- * Takes the grid size, tile group dimensions, kernel name, argc, argv* and the finish signal address, calls hb_mc_tile_group_enqueue to initialize all tile groups for grid.
+ * Takes the grid size, tile group dimensions, kernel name, argc,
+ * argv* and the finish signal address, calls hb_mc_tile_group_enqueue
+ * to initialize all tile groups for grid.
  * @param[in]  device        Pointer to device
  * @param[in]  grid_dim      X/Y dimensions of the grid to be initialized
  * @param[in]  tg_dim        X/Y dimensions of tile groups in grid
@@ -257,13 +275,17 @@ int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim);
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_grid_init (hb_mc_device_t *device, hb_mc_dimension_t grid_dim, hb_mc_dimension_t tg_dim, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_grid_init (	hb_mc_device_t *device,
+			hb_mc_dimension_t grid_dim,
+			hb_mc_dimension_t tg_dim,
+			char *name, uint32_t argc, uint32_t argv[]);
 
 
 
 
 /**
- * Searches for a free tile group inside the device mesh and allocoates it, and sets the dimensions, origin, and id of tile group.
+ * Searches for a free tile group inside the device mesh and allocoates it,
+ * and sets the dimensions, origin, and id of tile group.
  * @param[in]  device        Pointer to device
  * @param[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
@@ -275,7 +297,8 @@ int hb_mc_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *
 
 
 /**
- * Takes the kernel name, argc, argv* and the finish signal address, and initializes a kernel and passes it to tilegroup.
+ * Takes the kernel name, argc, argv* and the finish signal address,
+ * and initializes a kernel and passes it to tilegroup.
  * @param[in]  device        Pointer to device
  * @parma[in]  grid_id       Id of grid to which the tile group belongs
  * @param[in]  tg_id         Id of tile group
@@ -287,13 +310,19 @@ int hb_mc_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_group_enqueue(hb_mc_device_t *device, grid_id_t grid_id, hb_mc_coordinate_t tg_id, hb_mc_dimension_t grid_dim, hb_mc_dimension_t dim, char *name, uint32_t argc, uint32_t argv[]);
+int hb_mc_tile_group_enqueue(	hb_mc_device_t *device,
+				grid_id_t grid_id,
+				hb_mc_coordinate_t tg_id,
+				hb_mc_dimension_t grid_dim,
+				hb_mc_dimension_t dim,
+				char *name, uint32_t argc, uint32_t argv[]);
 
 
 
 
 /**
- * Launches a tile group by sending packets to each tile in the tile group setting the argc, argv, finish_addr and kernel pointer.
+ * Launches a tile group by sending packets to each tile in the
+ * tile group setting the argc, argv, finish_addr and kernel pointer.
  * @param[in]  device        Pointer to device
  * @parma[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.

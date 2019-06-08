@@ -152,7 +152,9 @@ static inline size_t hb_mc_tile_get_size_icache(const hb_mc_manycore_t *mc,
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_origin_registers (hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin); 
+int hb_mc_tile_set_origin_registers (	hb_mc_manycore_t *mc,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_coordinate_t *origin); 
 
 
 
@@ -169,7 +171,12 @@ int hb_mc_tile_set_origin_registers (hb_mc_manycore_t *mc, const hb_mc_coordinat
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_origin_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char *bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin);
+int hb_mc_tile_set_origin_symbols(	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char *bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_coordinate_t *origin);
 
 
 
@@ -186,7 +193,12 @@ int hb_mc_tile_set_origin_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, un
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_coord_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val);
+int hb_mc_tile_set_coord_symbols(	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_coordinate_t *coord_val);
 
 
 
@@ -204,7 +216,13 @@ int hb_mc_tile_set_coord_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, uns
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_id_symbol(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val, const hb_mc_dimension_t *dim);
+int hb_mc_tile_set_id_symbol(	hb_mc_manycore_t *mc,
+				hb_mc_eva_map_t *map,
+				unsigned char* bin,
+				size_t bin_size,
+				const hb_mc_coordinate_t *coord,
+				const hb_mc_coordinate_t *coord_val,
+				const hb_mc_dimension_t *dim);
 
 
 
@@ -221,7 +239,12 @@ int hb_mc_tile_set_id_symbol(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigne
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_tile_group_id_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *tg_id);
+int hb_mc_tile_set_tile_group_id_symbols(	hb_mc_manycore_t *mc,
+						hb_mc_eva_map_t *map,
+						unsigned char* bin,
+						size_t bin_size,
+						const hb_mc_coordinate_t *coord,
+						const hb_mc_coordinate_t *tg_id);
 
 
 
@@ -238,7 +261,12 @@ int hb_mc_tile_set_tile_group_id_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_grid_dim_symbols(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_dimension_t *grid_dim);
+int hb_mc_tile_set_grid_dim_symbols(	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_dimension_t *grid_dim);
 
 
 
