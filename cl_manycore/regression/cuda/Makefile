@@ -6,7 +6,7 @@ $(TARGETS): test_%: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/bi
 
 $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary:
 	$(MAKE) -C $(dir $@) clean main.riscv \
-		bsg_tiles_X=2 \
-		bsg_tiles_Y=2
+		bsg_tiles_X=$(TILE_GROUP_DIM_X) \
+		bsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
 
