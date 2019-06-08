@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -57,10 +57,11 @@ extern "C" {
                 uint8_t  x_src; //!< x coordinate of the requester
                 uint8_t  y_src; //!< y coordinate of the requester
                 uint32_t data;  //!< packet's payload data
-                uint8_t  mask;  //!< 4-bit byte mask
+                uint8_t  reg_id; //!< 5-bit id for load or amo
+                uint8_t  op_ex;  //!< 4-bit byte mask
                 uint8_t  op;    //!< opcode
                 uint32_t addr;  //!< address field (EPA)
-                uint8_t  reserved[2];
+                uint8_t  reserved[1];
         }  __attribute__((packed)) hb_mc_request_packet_t;
 
 
@@ -130,7 +131,7 @@ extern "C" {
          */
         static inline uint8_t hb_mc_request_packet_get_mask(const hb_mc_request_packet_t *packet)
         {
-                return packet->mask;
+                return packet->op_ex;
         }
 
         /**
@@ -172,7 +173,7 @@ extern "C" {
         {
                 uint32_t valid = 0;
                 for (int i = 0; i < 4; i++) { /* TODO: hardcoded */
-                        if (hb_mc_get_bits(packet->mask, i, 1) == 1)
+                        if (hb_mc_get_bits(packet->op_ex, i, 1) == 1)
                                 valid |=  hb_mc_get_bits(packet->data, i*8, 8);
                 }
                 return le32toh(valid);
@@ -219,13 +220,23 @@ extern "C" {
         }
 
         /**
+         * Set the read id in a request packet
+         * @param[in] packet a request packet
+         * @param[in] rd for for amo and int/float load
+         */
+        static inline void hb_mc_request_packet_set_reg_id(hb_mc_request_packet_t *packet, uint8_t reg_id)
+        {
+                packet->reg_id = reg_id;
+        }
+
+        /**
          * Set the data mask in a request packet
          * @param[in] packet a request packet
-         * @param[in] mask a byte-mask value
+         * @param[in] mask a byte-mask value for remote store
          */
         static inline void hb_mc_request_packet_set_mask(hb_mc_request_packet_t *packet, hb_mc_packet_mask_t mask)
         {
-                packet->mask = mask;
+                packet->op_ex = mask;
         }
 
         /**
