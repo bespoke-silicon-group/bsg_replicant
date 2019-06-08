@@ -88,10 +88,6 @@ int hb_mc_tile_set_origin(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile,
 	return rc;
 }
 
-
-
-
-
 /*!
  * Sets a Vanilla Core Endpoint's tile group's origin hardware registers CSR_TGO_X/Y.
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
