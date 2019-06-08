@@ -125,6 +125,7 @@ ${BSG_IP_CORES_DIR}/bsg_misc/bsg_priority_encode.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_reduce.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_encode_one_hot.v
 ${BSG_IP_CORES_DIR}/bsg_misc/bsg_abs.v
+${BSG_IP_CORES_DIR}/bsg_misc/bsg_encode_one_hot.v
 
 ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_banked_crossbar.v
 ${BSG_IP_CORES_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
