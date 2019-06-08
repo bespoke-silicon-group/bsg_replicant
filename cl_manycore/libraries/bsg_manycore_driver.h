@@ -134,25 +134,32 @@ inline hb_mc_direction_t hb_mc_get_rx_direction(hb_mc_fifo_rx_t d){
 inline hb_mc_direction_t hb_mc_get_tx_direction(hb_mc_fifo_tx_t d){
 	return (hb_mc_direction_t)d;
 }
-
+__attribute__((deprecated))
 int hb_mc_fifo_transmit (uint8_t fd, hb_mc_fifo_tx_t type, const hb_mc_packet_t *packet);
+__attribute__((deprecated))
 int hb_mc_fifo_receive (uint8_t fd, hb_mc_fifo_rx_t type, hb_mc_packet_t *packet);
 
+__attribute__((deprecated))
 int hb_mc_get_host_credits (uint8_t fd);
+__attribute__((deprecated))
 int hb_mc_all_host_req_complete(uint8_t fd);
 
 int hb_mc_get_config(uint8_t fd, hb_mc_config_id_t id, uint32_t *cfg);
+__attribute__((deprecated))
 uint8_t hb_mc_get_manycore_dimension_x();
+__attribute__((deprecated))
 uint8_t hb_mc_get_manycore_dimension_y();
+__attribute__((deprecated))
 uint8_t hb_mc_get_host_intf_coord_x();
+__attribute__((deprecated))
 uint8_t hb_mc_get_host_intf_coord_y();
-
+__attribute__((deprecated))
 int hb_mc_fifo_finish(uint8_t fd);
-
+__attribute__((deprecated))
 int hb_mc_fifo_init(uint8_t *fd);
-
+__attribute__((deprecated))
 int hb_mc_fifo_check(uint8_t fd);
-
+__attribute__((deprecated))
 int hb_mc_get_recv_vacancy (uint8_t fd);
 
 static uint8_t num_dev = 0;
@@ -374,6 +381,7 @@ static int hb_mc_request_packet_equals(const hb_mc_request_packet_t *a, const hb
  * @param opcode operation type (e.g load, store, etc.)
  * assumes all fields are <= 32
  * */
+__attribute__((deprecated))
 static inline int hb_mc_format_request_packet(uint8_t fd, hb_mc_request_packet_t *packet, uint32_t addr, uint32_t data, uint8_t x, uint8_t y, hb_mc_packet_op_t opcode) {
         uint32_t intf_coord_x, intf_coord_y;
 
@@ -393,6 +401,7 @@ static inline int hb_mc_format_request_packet(uint8_t fd, hb_mc_request_packet_t
 
 /**
  */
+__attribute__((deprecated))
 static inline const char *hb_mc_request_packet_to_string(const hb_mc_request_packet_t *packet,
 							 char *buffer,
 							 size_t sz)
