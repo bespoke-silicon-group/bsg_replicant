@@ -21,6 +21,7 @@
  * @param size number of words to copy
  * @return whether or not transaction was successful
  * */
+__attribute__((deprecated))
 int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, uint32_t y, uint32_t epa, uint32_t size) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		bsg_pr_err("hb_mc_copy_from_epa(): device was not initialized.\n", __func__);
@@ -61,6 +62,7 @@ int hb_mc_copy_from_epa (uint8_t fd, hb_mc_response_packet_t *buf, uint32_t x, u
  * @param size number of words to copy
  * @return whether or not transaction was successful
  * */
+__attribute__((deprecated))
 int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_t *buf, uint32_t size) {
 	if (hb_mc_fifo_check(fd) != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: hb_xeon_to_epa_copy(): device was not initialized.\n", __func__);
@@ -89,6 +91,7 @@ int hb_mc_copy_to_epa (uint8_t fd, uint32_t x, uint32_t y, uint32_t epa, uint32_
 /*!
  * returns HB_MC_SUCCESS if eva is a global network address and HB_MC_FAIL if not.
  */
+__attribute__((deprecated))
 static int hb_mc_is_global_network (eva_t eva) {
 	if (hb_mc_get_bits(eva, 30, 2) == 0x1) 
 		return HB_MC_SUCCESS;
@@ -99,6 +102,7 @@ static int hb_mc_is_global_network (eva_t eva) {
 /*!
  * returns HB_MC_SUCCESS if eva is a DRAM address and HB_MC_FAIL if not.
  */
+__attribute__((deprecated))
 static int hb_mc_eva_is_dram (eva_t eva) {
 	if (hb_mc_get_bits(eva, 31, 1) == 0x1) 
 		return HB_MC_SUCCESS;
@@ -109,6 +113,7 @@ static int hb_mc_eva_is_dram (eva_t eva) {
 /*!
  * checks if NPA is in DRAM.
  */
+__attribute__((deprecated))
 static int hb_mc_npa_is_dram (npa_t *npa) {
 	uint8_t dim_y = hb_mc_get_manycore_dimension_y();
 	if (npa->y == (dim_y + 1))
@@ -120,6 +125,7 @@ static int hb_mc_npa_is_dram (npa_t *npa) {
 /*!
  * checks if NPA is in host endpoint.
  */
+__attribute__((deprecated))
 static int hb_mc_npa_is_host (npa_t *npa) {
 	uint8_t coord_x = hb_mc_get_host_intf_coord_x();
 	uint8_t coord_y = hb_mc_get_host_intf_coord_y();
@@ -133,6 +139,7 @@ static int hb_mc_npa_is_host (npa_t *npa) {
 /*!
  * checks if NPA is a tile.
  */
+__attribute__((deprecated))
 static int hb_mc_npa_is_tile (npa_t *npa) {
 	uint8_t dim_x = hb_mc_get_manycore_dimension_x();
 	uint8_t dim_y = hb_mc_get_manycore_dimension_y();
@@ -146,6 +153,7 @@ static int hb_mc_npa_is_tile (npa_t *npa) {
 /*
  * returns x coordinate of a global network address.
  */
+__attribute__((deprecated))
 static uint32_t hb_mc_global_network_get_x (eva_t eva) {
 	return hb_mc_get_bits(eva, 18, 6); /* TODO: hardcoded */	
 }
@@ -153,6 +161,7 @@ static uint32_t hb_mc_global_network_get_x (eva_t eva) {
 /*
  * returns y coordinate of a global network address.
  */
+__attribute__((deprecated))
 static uint32_t hb_mc_global_network_get_y (eva_t eva) {
 	return hb_mc_get_bits(eva, 24, 6); /* TODO: hardcoded */
 }
@@ -160,6 +169,7 @@ static uint32_t hb_mc_global_network_get_y (eva_t eva) {
 /*
  * returns x coordinate of a DRAM address.
  */
+__attribute__((deprecated))
 static uint32_t hb_mc_dram_get_x (eva_t eva) {
 	return hb_mc_get_bits(eva, 29, 2); /* TODO: hardcoded */
 }
@@ -167,6 +177,7 @@ static uint32_t hb_mc_dram_get_x (eva_t eva) {
 /*
  * returns y coordinate of a DRAM address.
  */
+__attribute__((deprecated))
 static uint32_t hb_mc_dram_get_y (eva_t eva) {
 	return hb_mc_get_manycore_dimension_y() + 1;
 }
@@ -175,6 +186,7 @@ static uint32_t hb_mc_dram_get_y (eva_t eva) {
 /*
  * returns EPA of a global network address.
  */
+__attribute__((deprecated))
 static uint32_t hb_mc_global_network_get_epa (eva_t eva) {
 	return hb_mc_get_bits(eva, 0, 18) >> 2; /* TODO: hardcoded */ 
 }
@@ -182,6 +194,7 @@ static uint32_t hb_mc_global_network_get_epa (eva_t eva) {
 /*
  * returns EPA of a DRAM address.
  */
+__attribute__((deprecated))
 static uint32_t hb_mc_dram_get_epa (eva_t eva) {
 	return hb_mc_get_bits(eva, 2, 27); /* TODO: hardcoded */ 
 }
@@ -194,6 +207,7 @@ static uint32_t hb_mc_dram_get_epa (eva_t eva) {
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  * This function only supports DRAM and Global Network Address EVAs.
  */
+__attribute__((deprecated))
 int hb_mc_eva_to_npa_deprecated (eva_id_t eva_id, eva_t eva, npa_t *npa) {
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* invalid eva_id */
@@ -222,6 +236,7 @@ int hb_mc_eva_to_npa_deprecated (eva_id_t eva_id, eva_t eva, npa_t *npa) {
  * @param epa.
  * @return HB_MC_SUCCESS if the EPA is valid and HB_MC_FAIL if the EPA is invalid.
  * */
+__attribute__((deprecated))
 static int hb_mc_valid_epa_tile (uint32_t epa) {
 	if (epa >= 0x1000 && epa <= 0x1FFF) /* TODO: hardcoded */
 		return HB_MC_SUCCESS; /* data memory */
@@ -240,6 +255,7 @@ static int hb_mc_valid_epa_tile (uint32_t epa) {
  * @param epa.
  * @return HB_MC_SUCCESS if the EPA is valid and HB_MC_FAIL if the EPA is invalid.
  * */
+__attribute__((deprecated))
 static int hb_mc_valid_epa_dram (uint32_t epa) {
 	uint32_t dram_size = (1 << 27) - 1; /* TODO: hardcoded */
 	uint32_t dram_size_words = dram_size >> 2;
@@ -253,6 +269,7 @@ static int hb_mc_valid_epa_dram (uint32_t epa) {
 /*!
  * checks if NPA has valid (x,y) coordinates. 
  */
+__attribute__((deprecated))
 static int hb_mc_npa_is_valid (npa_t *npa) {
 	if (hb_mc_npa_is_dram(npa) == HB_MC_SUCCESS && hb_mc_valid_epa_dram(npa->epa) == HB_MC_SUCCESS)
 		return HB_MC_SUCCESS; /* valid DRAM NPA */
@@ -267,6 +284,7 @@ static int hb_mc_npa_is_valid (npa_t *npa) {
 /*! creates a NPA to DRAM EVA.
  * @param[in] npa Caller should ensure that this is valid.
  */
+__attribute__((deprecated))
 static eva_t hb_mc_npa_to_eva_dram(const npa_t *npa) {
 	eva_t eva = 0;
 	eva |= (npa->epa << 2);
@@ -278,6 +296,7 @@ static eva_t hb_mc_npa_to_eva_dram(const npa_t *npa) {
 /*! converts NPA to Global Remote EVA.
  * @param[in] npa Caller should ensure that this is valid.
  */
+__attribute__((deprecated))
 static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
 	eva_t eva = 0;
 	eva |= (npa->epa << 2);
@@ -294,6 +313,7 @@ static eva_t hb_mc_npa_to_eva_global_remote(const npa_t *npa) {
  * @param eva pointer to an eva_t that this function should set.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. This function will fail if the NPA is invalid.
  */
+__attribute__((deprecated))
 int hb_mc_npa_to_eva_deprecated (eva_id_t eva_id, npa_t *npa, eva_t *eva) {
 	if (eva_id != 0) {
 		return HB_MC_FAIL; /* invalid eva_id */
