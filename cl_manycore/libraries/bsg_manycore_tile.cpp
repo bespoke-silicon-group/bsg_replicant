@@ -96,7 +96,9 @@ int hb_mc_tile_set_origin(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile,
  * @param[in] origin     Origin coordinates.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_registers(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin) {
+int hb_mc_tile_set_origin_registers(	hb_mc_manycore_t *mc,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_coordinate_t *origin) {
 	int error; 
 	hb_mc_npa_t org_x_npa = hb_mc_npa(*coord, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X);
 	hb_mc_npa_t org_y_npa = hb_mc_npa(*coord, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y);
@@ -104,17 +106,21 @@ int hb_mc_tile_set_origin_registers(hb_mc_manycore_t *mc, const hb_mc_coordinate
 	
 	error =  hb_mc_manycore_write32(mc, &org_x_npa, origin->x);
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to set tile (%d,%d) CSR_TGO_X register.\n", __func__, coord->x, coord->y); 
+		bsg_pr_err(	"%s: failed to set tile (%d,%d) CSR_TGO_X register.\n",
+				__func__, coord->x, coord->y); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_X to %d.\n", __func__, coord->x, coord->y, origin->x);
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) bsg_tiles_org_X to %d.\n",
+			__func__, coord->x, coord->y, origin->x);
 
 	error = hb_mc_manycore_write32(mc, &org_y_npa, origin->y); 
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to set tile (%d,%d) CSR_TGO_Y register.\n", __func__, coord->x, coord->y); 
+		bsg_pr_err(	"%s: failed to set tile (%d,%d) CSR_TGO_Y register.\n",
+				__func__, coord->x, coord->y); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n", __func__, coord->x, coord->y, origin->y);
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n",
+			__func__, coord->x, coord->y, origin->y);
 
 	return HB_MC_SUCCESS; 
 }
@@ -130,7 +136,12 @@ int hb_mc_tile_set_origin_registers(hb_mc_manycore_t *mc, const hb_mc_coordinate
  * @param[in] origin     Origin coordinates.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *origin){
+int hb_mc_tile_set_origin_symbols (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_coordinate_t *origin){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
@@ -138,13 +149,13 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
 	hb_mc_eva_t org_x_eva, org_y_eva;
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_x", &org_x_eva); 
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_x eva.\n", __func__);
+		bsg_pr_err("%s: failed to aquire __bsg_grp_org_x eva.\n", __func__);
 		return HB_MC_NOTFOUND;
 	}
 
 	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_y", &org_y_eva); 
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: hb_mc_tile_set_origin_symbols() --> symbol_to_eva(): failed to aquire __bsg_grp_org_y eva.\n", __func__);
+		bsg_pr_err("%s: failed to aquire __bsg_grp_org_y eva.\n", __func__);
 		return HB_MC_NOTFOUND;
 	}
 
@@ -166,18 +177,32 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
 
 	error = hb_mc_manycore_write32(mc, &org_x_npa, hb_mc_coordinate_get_x(*origin));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_grp_org_x to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_grp_org_x to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grp_org_x (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), org_x_npa.epa, hb_mc_coordinate_get_x(*origin));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_x (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord),
+			org_x_npa.epa, hb_mc_coordinate_get_x(*origin));
 
 
 	error = hb_mc_manycore_write32(mc, &org_y_npa, hb_mc_coordinate_get_y(*origin));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_grp_org_y to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_grp_org_y to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grp_org_y (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), org_y_npa.epa, hb_mc_coordinate_get_y(*origin));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_y (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			org_y_npa.epa,
+			hb_mc_coordinate_get_y(*origin));
 
 	return HB_MC_SUCCESS;
 }
@@ -193,7 +218,12 @@ int hb_mc_tile_set_origin_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, u
  * @param[in] coord_val  The coordinates to set the tile.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val){
+int hb_mc_tile_set_coord_symbols (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_coordinate_t *coord_val){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
@@ -229,18 +259,34 @@ int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, un
 
 	error = hb_mc_manycore_write32(mc, &bsg_x_npa, hb_mc_coordinate_get_x(*coord_val));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_x to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_x to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg__x (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), bsg_x_npa.epa, hb_mc_coordinate_get_x(*coord_val));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg__x (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			bsg_x_npa.epa,
+			hb_mc_coordinate_get_x(*coord_val));
 
 
 	error = hb_mc_manycore_write32(mc, &bsg_y_npa, hb_mc_coordinate_get_y(*coord_val));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_y to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_y to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_y (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), bsg_y_npa.epa, hb_mc_coordinate_get_y(*coord_val));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_y (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			bsg_y_npa.epa,
+			hb_mc_coordinate_get_y(*coord_val));
 
 	return HB_MC_SUCCESS;
 }
@@ -257,12 +303,19 @@ int hb_mc_tile_set_coord_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, un
  * @param[in] dim        Tile group dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *coord_val, const hb_mc_dimension_t *dim){
+int hb_mc_tile_set_id_symbol (	hb_mc_manycore_t *mc,
+				hb_mc_eva_map_t *map,
+				unsigned char* bin,
+				size_t bin_size,
+				const hb_mc_coordinate_t *coord,
+				const hb_mc_coordinate_t *coord_val,
+				const hb_mc_dimension_t *dim){
 
 
 	int error;
 
-	hb_mc_idx_t id = hb_mc_coordinate_get_y(*coord_val) * hb_mc_dimension_get_x(*dim) + hb_mc_coordinate_get_x(*coord_val); /* calculate tile's id */
+	// calculate tile's id 
+	hb_mc_idx_t id = hb_mc_coordinate_get_y(*coord_val) * hb_mc_dimension_get_x(*dim) + hb_mc_coordinate_get_x(*coord_val); 
 
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
 
@@ -285,10 +338,17 @@ int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsign
 
 	error = hb_mc_manycore_write32(mc, &bsg_id_npa, id);
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_id to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_id to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_id (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), bsg_id_npa.epa, id);
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_id (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			bsg_id_npa.epa, id);
 
 	return HB_MC_SUCCESS;
 }
@@ -304,7 +364,12 @@ int hb_mc_tile_set_id_symbol (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsign
  * @param[in] tg_id      Tile group id
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_coordinate_t *tg_id){
+int hb_mc_tile_set_tile_group_id_symbols (	hb_mc_manycore_t *mc,
+						hb_mc_eva_map_t *map,
+						unsigned char* bin,
+						size_t bin_size,
+						const hb_mc_coordinate_t *coord,
+						const hb_mc_coordinate_t *tg_id){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
@@ -340,18 +405,34 @@ int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t 
 
 	error = hb_mc_manycore_write32(mc, &tg_id_x_npa, hb_mc_coordinate_get_x(*tg_id));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_tile_group_id_x to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_tile_group_id_x to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_tile_group_id_x (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), tg_id_x_npa.epa, hb_mc_coordinate_get_x(*tg_id));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_x (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			tg_id_x_npa.epa,
+			hb_mc_coordinate_get_x(*tg_id));
 
 
 	error = hb_mc_manycore_write32(mc, &tg_id_y_npa, hb_mc_coordinate_get_y(*tg_id));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_tile_group_id_y to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_tile_group_id_y to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_tile_group_id_y (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), tg_id_y_npa.epa, hb_mc_coordinate_get_y(*tg_id));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_y (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			tg_id_y_npa.epa,
+			hb_mc_coordinate_get_y(*tg_id));
 
 	return HB_MC_SUCCESS;
 }
@@ -367,7 +448,12 @@ int hb_mc_tile_set_tile_group_id_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t 
  * @param[in] tg_id      Grid dimensions
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
 * */
-int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, unsigned char* bin, size_t bin_size, const hb_mc_coordinate_t *coord, const hb_mc_dimension_t *grid_dim){
+int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_dimension_t *grid_dim){
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
@@ -403,18 +489,34 @@ int hb_mc_tile_set_grid_dim_symbols (hb_mc_manycore_t *mc, hb_mc_eva_map_t *map,
 
 	error = hb_mc_manycore_write32(mc, &grid_dim_x_npa, hb_mc_dimension_get_x(*grid_dim));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_grid_dim_x to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_grid_dim_x to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_gird_dim_x (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), grid_dim_x_npa.epa, hb_mc_dimension_get_x(*grid_dim));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_gird_dim_x (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			grid_dim_x_npa.epa,
+			hb_mc_dimension_get_x(*grid_dim));
 
 
 	error = hb_mc_manycore_write32(mc, &grid_dim_y_npa, hb_mc_dimension_get_y(*grid_dim));
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to write __bsg_grid_dim_y to tile (%d,%d).\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord)); 
+		bsg_pr_err(	"%s: failed to write __bsg_grid_dim_y to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg("%s: Setting tile (%d,%d) __bsg_grid_dim_y (epa 0x%08" PRIx32 ") to %d.\n", __func__, hb_mc_coordinate_get_x(*coord), hb_mc_coordinate_get_y(*coord), grid_dim_y_npa.epa, hb_mc_dimension_get_y(*grid_dim));
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grid_dim_y (epa 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			grid_dim_y_npa.epa,
+			hb_mc_dimension_get_y(*grid_dim));
 
 	return HB_MC_SUCCESS;
 }
