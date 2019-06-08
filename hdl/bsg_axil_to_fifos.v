@@ -417,7 +417,7 @@ module bsg_axil_to_fifos #(
       case (rd_addr_r[0+:config_addr_width_lp])
         ofs_isr_lp  : reg_lo[i] = isr_r[i];
         ofs_tdfv_lp : reg_lo[i] = fifo_width_lp'(tx_vacancy_lo[i]);
-        ofs_rdfo_lp : reg_lo[i] = fifo_width_lp'(rx_occupancy_lo[i]);
+        ofs_rdfo_lp : reg_lo[i] = fifo_width_lp'({rx_occupancy_lo[i][fifo_ptr_width_lp-1:2],2'b00});
         ofs_rlr_lp  : reg_lo[i] = (rx_occupancy_lo[i] >= fifo_rlr_words_lp) ? (fifo_width_lp/8*fifo_rlr_words_lp): '0;
         default     : reg_lo[i] = fifo_width_lp'(32'hBEEF_DEAD);
       endcase
