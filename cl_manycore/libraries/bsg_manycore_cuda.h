@@ -16,12 +16,20 @@ extern "C" {
 #endif
 
 
-#define HB_MC_MMIO_TILE_KERNEL_PTR_EPA		0x1000	// EPA of pointer to kernel binary in tile. 
-#define HB_MC_MMIO_TILE_ARGC_PTR_EPA		0x1004  // EPA of argument count of kernel in tile.
-#define HB_MC_MMIO_TILE_ARGV_PTR_EPA		0x1008	// EPA of pointer to argument list of kernel in tile.
-#define HB_MC_MMIO_TILE_FINISH_SIGNAL_PTR_EPA	0x100C  // EPA of finish signal memory location in tile.
-#define HB_MC_MMIO_KERNEL_NOT_LOADED		0x0001	// Kernel is not loaded into tile if kernel poitner equals this value.
-#define HB_MC_MMIO_HOST_FINISH_SIGNAL_BASE_ADDR	0xF000	// The begining of section in host memory intended for tile groups to write finish signals into
+// Base EPA of all parameters for cuda lite runtime software
+#define HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA	0x1000
+// EPA of pointer to kernel binary in tile. 
+#define HB_MC_CUDA_TILE_KERNEL_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0000)
+// EPA of argument count of kernel in tile.
+#define HB_MC_CUDA_TILE_ARGC_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0004)  
+// EPA of pointer to argument list of kernel in tile.
+#define HB_MC_CUDA_TILE_ARGV_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0008)
+// EPA of finish signal memory location in tile.
+#define HB_MC_CUDA_TILE_FINISH_SIGNAL_PTR_EPA	(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x000C)  
+// Kernel is not loaded into tile if kernel poitner equals this value.
+#define HB_MC_CUDA_KERNEL_NOT_LOADED		0x0001	
+// The begining of section in host memory intended for tile groups to write finish signals into
+#define HB_MC_CUDA_HOST_FINISH_SIGNAL_BASE_ADDR	0xF000	
 
 
 typedef uint8_t tile_group_id_t;
