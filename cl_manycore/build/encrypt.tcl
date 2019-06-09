@@ -38,9 +38,9 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 # AWS source files.
 file copy -force $COMMON_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
 file copy -force $COMMON_DIR/axil_to_mcl.vh                                   $TARGET_DIR
-file copy -force $COMMON_DIR/axil_to_mcl.v                                    $TARGET_DIR
-file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $TARGET_DIR
-file copy -force $COMMON_DIR/axil_to_mem.sv                                   $TARGET_DIR
+file copy -force $COMMON_DIR/bsg_manycore_link_to_axil.v                      $TARGET_DIR
+file copy -force $COMMON_DIR/bsg_manycore_endpoint_to_fifos.v                 $TARGET_DIR
+file copy -force $COMMON_DIR/bsg_axil_to_fifos.v                              $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
 
