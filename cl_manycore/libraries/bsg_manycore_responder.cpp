@@ -7,7 +7,7 @@ typedef std::list<hb_mc_responder_t *> responder_list;
 
 static responder_list *responders = nullptr;
 
-static int hb_mc_responder_init(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
+int hb_mc_responder_init(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
 {
 	int err;
 	if (responder->init == nullptr)
@@ -37,7 +37,7 @@ int hb_mc_responders_init(hb_mc_manycore_t *mc)
 	return HB_MC_SUCCESS;
 }
 
-static int hb_mc_responder_quit(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
+int hb_mc_responder_quit(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
 {
 	int err;
 	if (responder->quit == nullptr)

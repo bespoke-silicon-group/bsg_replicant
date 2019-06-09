@@ -47,18 +47,68 @@ struct hb_mc_responder {
 #endif
 };
 
+/**
+ * Initialze all registered responders.
+ * This function is generally called from within the manycore init interface.
+ * @param[in] mc  A manycore.
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_responders_init(hb_mc_manycore_t *mc);
 
+/**
+ * Initialize a single responder.
+ * This function is generally called by hb_mc_responders_init() but should also be
+ * called by client code after it adds a responder with hb_mc_responder_add().
+ * @param[in] responder A responder to initialize.
+ * @param[in] mc        A manycore initialized with hb_mc_manycore_init().
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_responder_init(hb_mc_responder_t *responder, hb_mc_manycore_t *mc);
+
+/**
+ * Cleanup a single responder.
+ * This function is generally called by hb_mc_responders_quit() but should also be
+ * called by client code before it removes a responder with hb_mc_responder_del().
+ * @param[in] responder  A responder to cleanup.
+ * @Param[in] mc         A manycore initialized with hb_mc_manycore_init().
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_responder_quit(hb_mc_responder_t *responder, hb_mc_manycore_t *mc);
+
+/**
+ * Cleanup all responders.
+ * This function is generally called by hb_mc_manycore_exit().
+ * @param[in] mc  A manycore.
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_responders_quit(hb_mc_manycore_t *mc);
 
+/**
+ * Let all responders respond to a manycore request packet.
+ * @param[in] mc       A manycore.
+ * @param[in] request  A request packet.
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_responders_respond(hb_mc_manycore_t *mc, const hb_mc_request_packet_t *request);
 
+/**
+ * Add a responder to the global list of responders.
+ * @param[in] responder  A new responder. This should ** NOT ** be initialized with hb_mc_responder_init().
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_responder_add(hb_mc_responder_t *responder);
 
+/**
+ * Remove a responder from the global list of responders.
+ * @param[in] responder  A responder to remove. This ** MUST ** have been cleanuped up with hb_mc_responder_quit().
+ * @return HB_MC_SUCCESS if succesful. An error code otherwise.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_responder_del(hb_mc_responder_t *responder);
 

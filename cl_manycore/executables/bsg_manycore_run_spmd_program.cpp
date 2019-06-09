@@ -113,7 +113,7 @@ int wait_for_finish_packet(void)
 
 		bsg_pr_dbg("received packet %s\n", pkt_str);
 		
-		switch (hb_mc_request_packet_get_addr(&pkt.request) << 2) {
+		switch (hb_mc_request_packet_get_epa(&pkt.request)) {
 		case 0xEAD0:
 			bsg_pr_dbg("received finish packet\n");
 			return 0;
