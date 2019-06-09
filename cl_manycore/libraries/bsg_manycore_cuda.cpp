@@ -886,19 +886,25 @@ int hb_mc_device_program_load (hb_mc_device_t *device) {
 
 
 
+
 /**
- * Freezes tiles, loads program binary into all tiles and into dram,
- * and set the symbols and registers for each tile.
+ * Takes in a buffer containing binary and its size,
+ * freezes tiles, loads program binary into all tiles and into dram,
+ * and sets the symbols and registers for each tile.
  * @param[in]  device        Pointer to device
  * @parma[in]  bin_name      Name of binary elf file
+ * @param[in]  bin_data      Buffer containing binary
+ * @param[in]  bin_size      Size of binary to be loaded onto device
  * @param[in]  id            Id of program's meomry allocator
  * @param[in]  alloc_name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_program_init (	hb_mc_device_t *device,
-				char *bin_name,
-				const char *alloc_name,
-				hb_mc_allocator_id_t id) {
+int hb_mc_device_program_init_binary (	hb_mc_device_t *device, 
+					char *bin_name,
+					unsigned char* bin_data, 
+					size_t bin_size, 
+					const char* alloc_name, 
+					hb_mc_allocator_id_t id) { 
 	int error;
 	
 	device->program = (hb_mc_program_t *) malloc (sizeof (hb_mc_program_t));
@@ -913,14 +919,11 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
 		return HB_MC_NOMEM;
 	}
 
-	// Load binary from file into buffer
-	error = hb_mc_loader_read_program_file (device->program->bin_name,
-						&(device->program->bin),
-						&(device->program->bin_size));
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err ("%s: failed to read binary file.\n", __func__); 
-		return error;
-	}
+
+	device->program->bin = bin_data;
+
+	device->program->bin_size = bin_size;
+
 
 	// Initialize program's memory allocator
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc); 
@@ -934,6 +937,47 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
 	error = hb_mc_device_program_load (device); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to load program binary onto device tiles.\n", __func__);
+		return error;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+
+/**
+ * Takes in a binary name, loads the binary from file onto a buffer,
+ * freezes tiles, loads program binary into all tiles and into dram,
+ * and sets the symbols and registers for each tile.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  bin_name      Name of binary elf file
+ * @param[in]  id            Id of program's meomry allocator
+ * @param[in]  alloc_name    Unique name of program's memory allocator
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_program_init (	hb_mc_device_t *device,
+				char *bin_name,
+				const char *alloc_name,
+				hb_mc_allocator_id_t id) {
+	int error; 
+	
+	unsigned char* bin_data;
+	size_t bin_size;
+
+	error = hb_mc_loader_read_program_file (bin_name, &bin_data, &bin_size);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err ("%s: failed to read binary file.\n", __func__); 
+		return error;
+	}
+
+
+	error = hb_mc_device_program_init_binary (	device, bin_name, 
+							bin_data, bin_size, 
+							alloc_name, id); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize device with program binary.\n", __func__);
 		return error;
 	}
 

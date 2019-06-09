@@ -139,8 +139,36 @@ int hb_mc_device_program_load (hb_mc_device_t *device);
 
 
 
+
+
 /**
- * Initializes Manycore tiles so that they may run kernels.
+ * Takes in a buffer containing the binary and its size,
+ * freezes tiles, loads program binary into all tiles and into dram,
+ * and sets the symbols and registers for each tile.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  bin_name      Name of binary elf file
+ * @param[in]  bin_data      Buffer containing binary 
+ * @param[in]  bin_size      Size of the binary to be loaded onto device
+ * @param[in]  id            Id of program's memory allocator
+ * @param[in]  alloc_name    Unique name of program's memory allocator
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
+					char *bin_name,
+					char *bin_data,
+					size_t bin_size,
+					const char *alloc_name,
+					hb_mc_allocator_id_t id);
+
+
+
+
+
+/**
+ * Takes in a binary name, loads the binary from file onto a buffer,
+ * freezes tiles, loads program binary into all tiles and into dram,
+ * and sets the symbols and registers for each tile.
  * @param[in]  device        Pointer to device
  * @parma[in]  bin_name      Name of binary elf file
  * @param[in]  id            Id of program's memory allocator
