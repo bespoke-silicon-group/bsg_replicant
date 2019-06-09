@@ -55,9 +55,6 @@
 ${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
 ${CL_DIR}/hardware/bsg_bladerunner_configuration.v
-#${CL_DIR}/../hdl/axil_to_mcl.v
-#${CL_DIR}/../hdl/s_axil_mcl_adapter.v
-#${CL_DIR}/../hdl/axil_to_mem.sv
 ${CL_DIR}/../hdl/bsg_manycore_link_to_axil.v
 ${CL_DIR}/../hdl/bsg_manycore_endpoint_to_fifos.v
 ${CL_DIR}/../hdl/bsg_axil_to_fifos.v
