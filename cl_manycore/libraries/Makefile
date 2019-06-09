@@ -53,8 +53,8 @@ OBJECTS += bsg_manycore_uart_responder.o
 
 # object that should be compiled for debugging
 DEBUG_OBJECTS  :=
-DEBUG_OBJECTS  += bsg_manycore_responder.o
-DEBUG_OBJECTS  += bsg_manycore_uart_responder.o
+#DEBUG_OBJECTS  += bsg_manycore_responder.o
+#DEBUG_OBJECTS  += bsg_manycore_uart_responder.o
 
 # objects that should be compiled with strict compilation flags
 STRICT_OBJECTS :=

@@ -54,7 +54,7 @@ __attribute__((warn_unused_result))
 int hb_mc_responders_quit(hb_mc_manycore_t *mc);
 
 __attribute__((warn_unused_result))
-int hb_mc_responders_respond(hb_mc_manycore_t *mc);
+int hb_mc_responders_respond(hb_mc_manycore_t *mc, const hb_mc_request_packet_t *request);
 
 __attribute__((warn_unused_result))
 int hb_mc_responder_add(hb_mc_responder_t *responder);
