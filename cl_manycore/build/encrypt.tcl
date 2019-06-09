@@ -42,7 +42,6 @@ file copy -force $COMMON_DIR/bsg_manycore_link_to_axil.v                      $T
 file copy -force $COMMON_DIR/bsg_manycore_endpoint_to_fifos.v                 $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_axil_to_fifos.v                              $TARGET_DIR
 file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
-file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore_defines.vh                      $TARGET_DIR
@@ -139,6 +138,7 @@ file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_priority_encode_one_hot_out.v $T
 file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_scan.v                        $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_dlatch.v                      $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_clkgate_optional.v            $TARGET_DIR
+file copy -force $BSG_IP_CORES_DIR/bsg_misc/bsg_encode_one_hot.v              $TARGET_DIR
 
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_banked_crossbar.v          $TARGET_DIR
 file copy -force $BSG_IP_CORES_DIR/bsg_mem/bsg_mem_1r1w_synth.v               $TARGET_DIR
