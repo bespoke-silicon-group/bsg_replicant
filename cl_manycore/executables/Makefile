@@ -1,7 +1,7 @@
 CXXFLAGS := -std=c++11 -O3
 LDFLAGS  := -lbsg_manycore_runtime -lm
 EXCECUTABLES := bsg_manycore_spmd_loader
-DEBUG_OBJECTS:= bsg_manycore_run_spmd_program.o
+DEBUG_OBJECTS:= #bsg_manycore_run_spmd_program.o
 
 .PHONY: all clean
 

@@ -120,8 +120,6 @@ int wait_for_finish_packet(void)
 		case 0xEAD8:
 			bsg_pr_dbg("received fail packet\n");
 			return 1;
-		case 0xEADC:
-			putchar(hb_mc_request_packet_get_data(&pkt.request));
 		default: break;			
 		}
 	}
