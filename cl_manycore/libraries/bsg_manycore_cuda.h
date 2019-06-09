@@ -126,6 +126,19 @@ int hb_mc_device_init (	hb_mc_device_t *device,
 
 
 
+
+/**
+ * Loads the binary in a device's hb_mc_program_t struct onto
+ * all tiles in the device's hb_mc_mesh_t struct.
+ * device struct with list of all tiles and their cooridnates 
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_program_load (hb_mc_device_t *device);
+
+
+
+
 /**
  * Initializes Manycore tiles so that they may run kernels.
  * @param[in]  device        Pointer to device
