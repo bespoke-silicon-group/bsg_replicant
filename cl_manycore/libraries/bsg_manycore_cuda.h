@@ -389,24 +389,32 @@ int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t
 
 
 /**
- * Sends packets to all tiles in the device to freeze them
+ * Sends packets to all tiles in the list to freeze them
  * @param[in]  device        Pointer to device
+ * @param[in]  tiles         List of tile coordinates to freeze
+ * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_tiles_freeze(hb_mc_device_t *device); 
+int hb_mc_device_tiles_freeze(	hb_mc_device_t *device,
+				hb_mc_coordinate_t *tiles,
+				uint32_t num_tiles); 
 
 
 
 
 
 /**
- * Sends packets to all tiles in the device to set their kernel pointer to 1 and unfreeze them
+ * Sends packets to all tiles in the list to set their kernel pointer to 1 and unfreeze them
  * @param[in]  device        Pointer to device
+ * @param[in]  tiles         List of tile coordinates to unfreeze
+ * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_tiles_unfreeze(hb_mc_device_t *device); 
+int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
+					hb_mc_coordinate_t *tiles,
+					uint32_t num_tiles);
 
 
 

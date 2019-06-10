@@ -739,10 +739,15 @@ int hb_mc_device_init (	hb_mc_device_t *device,
 int hb_mc_device_program_load (hb_mc_device_t *device) { 
 	int error; 
 
+	// Create list of tile coordinates 
 	uint32_t num_tiles = hb_mc_dimension_to_length (device->mesh->dim);
+	hb_mc_coordinate_t tile_list[num_tiles];
+	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
+		tile_list[tile_id] = device->mesh->tiles[tile_id].coord;
+	}
 
 	// Freeze tiles
-	error = hb_mc_device_tiles_freeze(device);
+	error = hb_mc_device_tiles_freeze(device, tile_list, num_tiles);
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to freeze device tiles.\n", __func__); 
 		return error;
@@ -750,11 +755,6 @@ int hb_mc_device_program_load (hb_mc_device_t *device) {
 
 
 	// Load binary into all tiles 
-	hb_mc_coordinate_t tile_list[num_tiles];
-	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
-		tile_list[tile_id] = device->mesh->tiles[tile_id].coord;
-	}
-
 	error = hb_mc_loader_load (	device->program->bin,
 					device->program->bin_size,
 					device->mc,
@@ -850,7 +850,7 @@ int hb_mc_device_program_load (hb_mc_device_t *device) {
 	}
 
 
-	error = hb_mc_device_tiles_unfreeze(device); 
+	error = hb_mc_device_tiles_unfreeze(device, tile_list, num_tiles); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to unfreeze device tiles.\n", __func__); 
 		return error;
@@ -1145,7 +1145,15 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
 	int error;
 
 
-	error = hb_mc_device_tiles_freeze(device); 
+	// Create list of tile coordinates 
+	uint32_t num_tiles = hb_mc_dimension_to_length (device->mesh->dim);
+	hb_mc_coordinate_t tile_list[num_tiles];
+	for (int tile_id = 0; tile_id < num_tiles; tile_id ++) {
+		tile_list[tile_id] = device->mesh->tiles[tile_id].coord;
+	}
+
+
+	error = hb_mc_device_tiles_freeze(device, tile_list, num_tiles); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to freeze device tiles.\n", __func__); 
 		return error;
@@ -1342,19 +1350,23 @@ static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension
 
 
 /**
- * Sends packets to all tiles in the device to freeze them 
+ * Sends packets to all tiles in the list to freeze them 
  * @param[in]  device        Pointer to device
+ * @param[in]  tiles         List of tile coordinates to freeze
+ * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_tiles_freeze (hb_mc_device_t *device) { 
+int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
+				hb_mc_coordinate_t *tiles,
+				uint32_t num_tiles) { 
 	int error;
-	for (hb_mc_idx_t tile_id = 0; tile_id < hb_mc_dimension_to_length(device->mesh->dim); tile_id ++) { 
-		error = hb_mc_tile_freeze(device->mc, &(device->mesh->tiles[tile_id].coord));
+	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
+		error = hb_mc_tile_freeze(device->mc, &tiles[tile_id]); 
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err(	"%s: failed to freeze tile (%d,%d).\n",
 					__func__,
-					hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-					hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
 	}
@@ -1366,29 +1378,33 @@ int hb_mc_device_tiles_freeze (hb_mc_device_t *device) {
 
 
 /**
- * Sends packets to all tiles in the device to set their kernel pointer to 1 and unfreeze them  
+ * Sends packets to all tiles in the list to set their kernel pointer to 1 and unfreeze them  
  * @param[in]  device        Pointer to device
+ * @param[in]  tiles         List of tile coordinates to unfreeze
+ * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
-int hb_mc_device_tiles_unfreeze (hb_mc_device_t *device) { 
+int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
+					hb_mc_coordinate_t *tiles,
+					uint32_t num_tiles) { 
 	int error;
-	for (hb_mc_idx_t tile_id = 0; tile_id < hb_mc_dimension_to_length(device->mesh->dim); tile_id ++) {
-		hb_mc_npa_t kernel_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_KERNEL_PTR_EPA); 
+	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) {
+		hb_mc_npa_t kernel_ptr_npa = hb_mc_npa (tiles[tile_id], HB_MC_CUDA_TILE_KERNEL_PTR_EPA); 
 		error = hb_mc_manycore_write32(device->mc, &kernel_ptr_npa, HB_MC_CUDA_KERNEL_NOT_LOADED);
 		if (error != HB_MC_SUCCESS) {
 			bsg_pr_err(	"%s: failed to initialize kernel register to 0x1 in tile (%d,%d).\n",
 					__func__,
-					hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-					hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
 
-		error = hb_mc_tile_unfreeze(device->mc, &(device->mesh->tiles[tile_id].coord));
+		error = hb_mc_tile_unfreeze(device->mc, &tiles[tile_id]);
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err(	"%s: failed to unfreeze tile (%d,%d).\n",
 					__func__,
-					hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-					hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord));
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
 	}
@@ -1398,4 +1414,28 @@ int hb_mc_device_tiles_unfreeze (hb_mc_device_t *device) {
 
 
 
+
+
+
+int hb_mc_device_tiles_set_symbols (	hb_mc_device_t *device,
+					hb_mc_coordinate_t *tiles,
+					const hb_mc_eva_map_t *map, 
+					hb_mc_coordinate_t origin,
+					hb_mc_coordinate_t tg_id,
+					hb_mc_dimension_t tg_dim, 
+					hb_mc_dimension_t grid_dim) { 
+	return HB_MC_SUCCESS; 
+}
+					
+					
+
  
+
+
+
+
+
+
+
+
+
