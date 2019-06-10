@@ -108,25 +108,32 @@ int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){
 		return HB_MC_INVALID;
 	}
 
-	hb_mc_tile_t* tiles = new hb_mc_tile_t [hb_mc_dimension_to_length (dim)];
+
+	device->mesh = (hb_mc_mesh_t *) malloc (sizeof (hb_mc_mesh_t));
+	if (device->mesh == NULL) { 
+		bsg_pr_err("%s: failed to allocate space on host for hb_mc_mesh_t struct.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+	
+	device->mesh->dim = dim;
+	device->mesh->origin = default_origin;
+	device->mesh->tiles = (hb_mc_tile_t *) malloc ( hb_mc_dimension_to_length(dim) * sizeof (hb_mc_tile_t));
+	if (device->mesh->tiles == NULL) {
+		bsg_pr_err("%s: failed to allocate space on host for hb_mc_tile_t struct.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+	
 	for (int x = hb_mc_coordinate_get_x(default_origin);
 		 x < hb_mc_coordinate_get_x(default_origin) + hb_mc_dimension_get_x(dim); x++){
 		for (int y = hb_mc_coordinate_get_y(default_origin);
 			 y < hb_mc_coordinate_get_y(default_origin) + hb_mc_dimension_get_y(dim); y++){
 			hb_mc_idx_t tile_id = hb_mc_get_tile_id (default_origin, dim, hb_mc_coordinate(x, y));	
-			tiles[tile_id].coord = hb_mc_coordinate(x, y);
-			tiles[tile_id].origin = default_origin;
-			tiles[tile_id].tile_group_id = hb_mc_coordinate(-1, -1); 
-			tiles[tile_id].free = 1;
+			device->mesh->tiles[tile_id].coord = hb_mc_coordinate(x, y);
+			device->mesh->tiles[tile_id].origin = default_origin;
+			device->mesh->tiles[tile_id].tile_group_id = hb_mc_coordinate(-1, -1); 
+			device->mesh->tiles[tile_id].free = 1;
 		}
 	}
-
-	hb_mc_mesh_t *mesh = new hb_mc_mesh_t; 
-	mesh->dim = dim;
-	mesh->origin = default_origin;
-	mesh->tiles= (hb_mc_tile_t*)tiles;
-
-	device->mesh = mesh;
 
 	return HB_MC_SUCCESS;	
 }
@@ -656,6 +663,10 @@ int hb_mc_device_init (	hb_mc_device_t *device,
 			hb_mc_dimension_t dim) {
 
 	device->mc = (hb_mc_manycore_t*) malloc (sizeof (hb_mc_manycore_t));
+	if (device->mc == NULL) { 
+		bsg_pr_err("%s: failed to allocate space on host for hb_mc_manycore_t.\n", __func__);
+		return HB_MC_NOMEM;
+	}
 	*(device->mc) = {0};
 	
 	int error = hb_mc_manycore_init(device->mc, name, id); 
