@@ -52,24 +52,27 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 /**
  * Returns the EPA and number of contiguous bytes for an EVA in a tile,
  * regardless of the continuity of the underlying NPA.
+ * @param[in]  cfg    An initialized manycore configuration struct
  * @param[in]  eva    An Endpoint Virtual Address
  * @param[out] epa    An Endpoint Physical Address to be set by translating #eva
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 static int default_eva_to_epa_tile(
+	const hb_mc_config_t *cfg,
 	const hb_mc_eva_t *eva,
 	hb_mc_epa_t *epa,
 	size_t *sz)
 {
 	hb_mc_eva_t eva_masked, eva_dmem;
-
+	size_t dmem_size;
+	dmem_size = hb_mc_config_get_dmem_size(cfg);
 	eva_masked = hb_mc_eva_addr(eva) & MAKE_MASK(HB_MC_EPA_LOGSZ);
 	eva_dmem = eva_masked - HB_MC_TILE_EVA_DMEM_BASE;
 
-	if(eva_dmem < HB_MC_TILE_DMEM_SIZE){
+	if(eva_dmem < dmem_size){
 		*epa = eva_dmem + HB_MC_TILE_EPA_DMEM_BASE;
-		*sz = HB_MC_TILE_DMEM_SIZE - eva_dmem;
+		*sz = dmem_size - eva_dmem;
 	}else if(eva_masked == HB_MC_TILE_EPA_CSR_FREEZE){
 		*epa = eva_masked;
 		*sz = sizeof(uint32_t);
@@ -114,7 +117,7 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
 	x = hb_mc_coordinate_get_x(*src);
 	y = hb_mc_coordinate_get_y(*src);
 
-	rc = default_eva_to_epa_tile(eva, &epa, sz);
+	rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -182,7 +185,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 		return HB_MC_FAIL;
 	}
 
-	rc = default_eva_to_epa_tile(eva, &epa, sz);
+	rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -230,7 +233,7 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
 	y = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_Y_BITMASK) >> DEFAULT_GLOBAL_Y_BITIDX);
-	rc = default_eva_to_epa_tile(eva, &epa, sz);
+	rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -313,13 +316,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
 	y = hb_mc_dimension_get_y(dim) + hb_mc_config_get_vcore_base_y(cfg);
 
-	// The EVA size is determined y the address bits of the manycore
-	// network. The high-order bit of the network address is reserved for
-	// addressing tags in the victim cache and is not accessible to the EVA,
-	// so we subtract 1. The network address is a byte address, so we add
-	// two to make it a byte address.
-	addrbits = hb_mc_config_get_network_bitwidth_addr(cfg) - 1 +
-		log2(sizeof(uint32_t));
+	addrbits = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
 	maxsz = 1 << addrbits;
 
 	// The EPA portion of an EVA is technically determined by addrbits

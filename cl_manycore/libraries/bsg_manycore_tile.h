@@ -2,14 +2,10 @@
 #define BSG_MANYCORE_TILE_H
 
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_epa.h>
-#include <bsg_manycore_driver.h>
-#include <bsg_manycore.h>
-#include <bsg_manycore_mem.h>
-#include <bsg_manycore_elf.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore.h>
+#include <bsg_manycore_config.h>
 #include <bsg_manycore_eva.h>
-#include <bsg_manycore_loader.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -38,10 +34,6 @@ typedef enum __hb_mc_csr_freeze_t{
 #define HB_MC_TILE_EPA_CSR_FREEZE_OFFSET              0x00
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET 0x04
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET 0x08
-
-
-#define HB_MC_TILE_DMEM_LOGSZ 12
-#define HB_MC_TILE_DMEM_SIZE (1 << HB_MC_TILE_DMEM_LOGSZ)
 
 #define EPA_TILE_CSR_FROM_BYTE_OFFSET(offset)				\
 	EPA_FROM_BASE_AND_OFFSET(HB_MC_TILE_EPA_CSR_BASE, offset)
@@ -128,7 +120,7 @@ static inline size_t hb_mc_tile_get_size_dmem(const hb_mc_manycore_t *mc,
 }
 
 /**
- * Get the size of a tiles local data memory.
+ * Get the size of a tile's local icache.
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in]  tile   The coordinate tile to query for its instruction cache size.
@@ -137,7 +129,7 @@ static inline size_t hb_mc_tile_get_size_dmem(const hb_mc_manycore_t *mc,
 static inline size_t hb_mc_tile_get_size_icache(const hb_mc_manycore_t *mc,
 						const hb_mc_coordinate_t *tile)
 {
-	return 4 * (1<<10); //4K -- this might be later read from the config
+	return hb_mc_config_get_icache_size(hb_mc_manycore_get_config(mc));
 }
 
 

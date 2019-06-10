@@ -1,13 +1,23 @@
 #ifndef BSG_MANYCORE_CONFIG_H
 #define BSG_MANYCORE_CONFIG_H
 
+/* MAX AND DUSTIN'S RULE OF THUMB FOR WHAT GOES IN CONFIG
+ *
+ * An entity requires an accessor in config if: 
+ * 1. It is in the ROM (or other configuration register)
+ * 2. It is trivially derivable from data in the ROM
+ * 3. It is a top-level parameter that SHOULD BE in the ROM.
+ */
+
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_coordinate.h>
 
 #ifdef __cplusplus
 #include <cstdint>
+#include <cmath>
 #else
 #include <stdint.h>
+#include <math.h>
 #endif
 
 #ifdef __cplusplus
@@ -69,7 +79,6 @@ typedef enum __hb_mc_config_id_t {
 
 int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
                 
-
 static inline uint64_t hb_mc_config_id_to_addr(uint64_t addr, hb_mc_config_id_t id)
 {
         return (addr + (id << 2));
@@ -155,20 +164,62 @@ static inline hb_mc_idx_t hb_mc_config_get_vcore_base_x(const hb_mc_config_t *cf
         return HB_MC_CONFIG_VCORE_BASE_X; // TODO: These should be defined in the ROM?
 }
 
+static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
+{
+	// At the moment, the high-order bit in the network is used to address
+	// tags in the Victim Cache. All other bits are used for data
+        return 1;
+}
+
+static inline uint32_t hb_mc_config_get_vcache_bitwidth_data_addr(const hb_mc_config_t *cfg)
+{
+	// All network address bits are routed to the victim caches. Some
+	// high-order bits of the network address are reserved for addressing
+	// tags in the victim cache and are not accessible for data accesses, so
+	// we subtract them. The network address is also a word address, so we
+	// add two bits to make it a byte address.
+        return hb_mc_config_get_network_bitwidth_addr(cfg) -
+		hb_mc_config_get_vcache_bitwidth_tag_addr(cfg) +
+		log2(sizeof(uint32_t));
+}
+
+/* Returns the size of DRAM accessible to each manycore tile */
 static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
 {
-        return 4ul * (1ul<<30ul); // 4GB: TODO: should read out of the ROM
+	hb_mc_idx_t cols;
+	uint32_t awidth;
+	cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension(cfg));
+	awidth = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
+        return (cols * (1ull << awidth));
+}
+
+static inline uint8_t hb_mc_config_get_dmem_bitwidth_addr(const hb_mc_config_t *cfg)
+{
+        return 12; // 12 bits, this might be read from ROM
 }
 
 static inline size_t hb_mc_config_get_dmem_size(const hb_mc_config_t *cfg)
 {
-        return 4 * (1<<10); // 4K: this might be read from ROM if the value ever changes
+	// 4K: this might be read from ROM if the value ever changes
+        return (1 << hb_mc_config_get_dmem_bitwidth_addr(cfg)); 
+}
+
+static inline uint8_t hb_mc_config_get_icache_bitwidth_addr(const hb_mc_config_t *cfg)
+{
+        return 12; // 12 bits, this might be read from ROM
+}
+
+static inline size_t hb_mc_config_get_icache_size(const hb_mc_config_t *cfg)
+{
+	// 4K: this might be read from ROM if the value ever changes
+        return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg)); 
 }
 
 static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
 {
-	hb_mc_coordinate_t dims = hb_mc_config_get_dimension(cfg);
-	return hb_mc_coordinate_get_y(dims)+1;
+	hb_mc_coordinate_t dims;
+	dims = hb_mc_config_get_dimension(cfg);
+	return hb_mc_coordinate_get_y(dims) + 1;
 }
 
 
