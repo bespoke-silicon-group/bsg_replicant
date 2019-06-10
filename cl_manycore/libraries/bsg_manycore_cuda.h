@@ -422,6 +422,31 @@ int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
 
 
 
+
+/**
+ * Sends packets to all tiles in the list to set their configuration symbols in the binary
+ * @param[in]  device        Pointer to devicei
+ * @param[in]  map           EVA to NPA mapping for tiles
+ * @param[in]  origin        Origin coordinates of the tiles in the list
+ * @param[in]  tg_id         Tile group id of the tiles in the list
+ * @param[in]  tg_dim        Tile group dimensions of the tiles in the list
+ * @param[in]  grid_dim      Grid dimensions of the tiles in the list
+ * @param[in]  tiles         List of tile coordinates to unfreeze
+ * @param[in]  num_tiles     Number of tiles in the list
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+int hb_mc_device_tiles_set_symbols(	hb_mc_device_t *device, 
+					hb_mc_eva_map_t *map,
+					hb_mc_coordinate_t origin,
+					hb_mc_coordinate_t tg_id,
+					hb_mc_dimension_t tg_dim,
+					hb_mc_dimension_t grid_dim,
+					hb_mc_coordinate_t *tiles,
+					uint32_t num_tiles);
+
+
+
+
 #ifdef __cplusplus
 }
 #endif
