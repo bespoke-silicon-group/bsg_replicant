@@ -962,10 +962,10 @@ int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
 		for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
 			if (tg->status == HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
 
-				hb_mc_request_packet_set_x_dst(&finish, (uint8_t) hb_mc_coordinate_get_x(host_coordinate));
-				hb_mc_request_packet_set_y_dst(&finish, (uint8_t) hb_mc_coordinate_get_y(host_coordinate));
-				hb_mc_request_packet_set_x_src(&finish, (uint8_t) hb_mc_coordinate_get_x(tg->origin));
-				hb_mc_request_packet_set_y_src(&finish, (uint8_t) hb_mc_coordinate_get_y(tg->origin));
+				hb_mc_request_packet_set_x_dst(&finish, hb_mc_coordinate_get_x(host_coordinate));
+				hb_mc_request_packet_set_y_dst(&finish, hb_mc_coordinate_get_y(host_coordinate));
+				hb_mc_request_packet_set_x_src(&finish, hb_mc_coordinate_get_x(tg->origin));
+				hb_mc_request_packet_set_y_src(&finish, hb_mc_coordinate_get_y(tg->origin));
 				hb_mc_request_packet_set_data(&finish, 0x1 /* TODO: Hardcoded */);
 				hb_mc_request_packet_set_mask(&finish, HB_MC_PACKET_REQUEST_MASK_WORD);
 				hb_mc_request_packet_set_op(&finish, HB_MC_PACKET_OP_REMOTE_STORE);
