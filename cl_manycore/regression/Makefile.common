@@ -27,7 +27,7 @@ regression: $(TARGETS)
 	echo ""; \
 	echo ""; \
 	for target in $?; do \
-		sudo ./$$target | tee $$target.regression.log ; \
+		sudo ./$$target 2>&1 | tee $$target.regression.log ; \
 		if [ $${PIPESTATUS[0]} -ne 0 ] ; then \
 			echo "FAIL: Regression Test $$target failed!"; \
 			failed="$$failed $$target"; \
