@@ -547,7 +547,7 @@ done:
 
 static int run_npa_to_eva_tests()
 {
-	int rc, err;
+	int rc = HB_MC_SUCCESS, err;
 
 	bsg_pr_test_info("%s: " BSG_RED("RUNNING NPA TO EVA TESTS") "\n", SUITE_NAME);
 	for (int i = 0; i < array_size(npa_to_eva_tests); i++) {
