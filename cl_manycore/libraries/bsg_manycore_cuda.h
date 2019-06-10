@@ -134,6 +134,7 @@ int hb_mc_device_init (	hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
+__attribute__((warn_unused_result))
 int hb_mc_device_program_load (hb_mc_device_t *device);
 
 
@@ -382,6 +383,33 @@ int hb_mc_tile_group_launch(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
+
+
+
+
+
+/**
+ * Sends packets to all tiles in the device to freeze them
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_tiles_freeze(hb_mc_device_t *device); 
+
+
+
+
+
+/**
+ * Sends packets to all tiles in the device to set their kernel pointer to 1 and unfreeze them
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_tiles_unfreeze(hb_mc_device_t *device); 
+
+
+
 
 
 
