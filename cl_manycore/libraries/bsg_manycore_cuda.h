@@ -105,7 +105,10 @@ typedef struct {
 } hb_mc_device_t; 
 
 
-enum hb_mc_memcpy_kind {hb_mc_memcpy_to_device = 0, hb_mc_memcpy_to_host = 1};
+enum hb_mc_memcpy_kind {
+	HB_MC_MEMCPY_TO_DEVICE = 0,
+	HB_MC_MEMCPY_TO_HOST = 1,
+};
 
 
 
@@ -277,7 +280,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
  * @parma[in]  src           EVA address of src 
  * @param[in]  name          EVA address of dst
  * @param[in]  count         Size of buffer to be copied
- * @param[in]  hb_mc_memcpy_kind  Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
+ * @param[in]  hb_mc_memcpy_kind  Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 __attribute__((warn_unused_result))

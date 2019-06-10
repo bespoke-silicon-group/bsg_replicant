@@ -92,7 +92,7 @@ int kernel_shared_mem () {
 	uint32_t A_host[N];
 	void *src = (void *) ((intptr_t) A_device);
 	void *dst = (void *) &A_host[0];
-	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), hb_mc_memcpy_to_host); /* copy A to the host */
+	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST); /* copy A to the host */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory to device.\n");
 		return rc;

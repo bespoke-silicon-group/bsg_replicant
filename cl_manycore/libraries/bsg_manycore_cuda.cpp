@@ -485,7 +485,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 	// transfer the arguments to dram
 	error = hb_mc_device_memcpy(	device, reinterpret_cast<void *>(args_eva),
 					 (void *) &(tg->kernel->argv[0]),
-					 (tg->kernel->argc) * sizeof(uint32_t), hb_mc_memcpy_to_device);
+					 (tg->kernel->argc) * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err(	"%s: failed to copy grid %d tile group (%d,%d) arguments to device.\n",
 				__func__,
@@ -1142,7 +1142,7 @@ int hb_mc_device_free (hb_mc_device_t *device, eva_t eva) {
  * @parma[in]  src           EVA address of src 
  * @param[in]  name          EVA address of dst
  * @param[in]  count         Size of buffer to be copied
- * @param[in]  hb_mc_memcpy_kind         Direction of copy (hb_mc_memcpy_to_device / hb_mc_memcpy_to_host)
+ * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
 int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
@@ -1152,7 +1152,7 @@ int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uin
 	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
 	size_t sz = count / sizeof(uint8_t); 
 
-	if (kind == hb_mc_memcpy_to_device) {
+	if (kind == HB_MC_MEMCPY_TO_DEVICE) {
 		hb_mc_eva_t dst_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(dst);
 
 		error =  hb_mc_manycore_eva_write(device->mc, &default_map, &host_coordinate, &dst_eva, src, sz);
@@ -1162,7 +1162,7 @@ int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uin
 		}
 	}
 	
-	else if (kind == hb_mc_memcpy_to_host) { 
+	else if (kind == HB_MC_MEMCPY_TO_HOST) { 
 		hb_mc_eva_t src_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(src);
 
 		error = hb_mc_manycore_eva_read(device->mc, &default_map, &host_coordinate, &src_eva, dst, sz); 
@@ -1174,7 +1174,7 @@ int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uin
 	}
 
 	else {
-		bsg_pr_err("%s: invalid copy type. Copy type can be one of hb_mc_memcpy_to_device or hb_mc_memcpy_to_host.\n", __func__);
+		bsg_pr_err("%s: invalid copy type. Copy type can be one of HB_MC_MEMCPY_TO_DEVICE or HB_MC_MEMCPY_TO_HOST.\n", __func__);
 		return HB_MC_INVALID; 
 	}
 
