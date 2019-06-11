@@ -111,6 +111,11 @@ cleanup:
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test vcache simplified Regression Test (COSIMULATION)\n");
 	int rc = test_vcache_simplified();
 	*exit_code = rc;

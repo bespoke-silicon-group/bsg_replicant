@@ -154,6 +154,11 @@ int test_vcache_flush() {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_vcache_flush Regression Test (COSIMULATION)\n");
 	int rc = test_vcache_flush();
 	*exit_code = rc;

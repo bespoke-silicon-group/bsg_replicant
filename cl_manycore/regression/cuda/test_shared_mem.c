@@ -129,6 +129,11 @@ int kernel_shared_mem () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_shared_mem Regression Test (COSIMULATION)\n");
 	int rc = kernel_shared_mem();
 	*exit_code = rc;

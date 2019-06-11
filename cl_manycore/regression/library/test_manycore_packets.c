@@ -153,6 +153,11 @@ int test_manycore_packets() {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("%s Regression Test (COSIMULATION)\n", basename(__FILE__));
 	int rc = test_manycore_packets();
 	*exit_code = rc;

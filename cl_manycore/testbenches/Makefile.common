@@ -1,3 +1,8 @@
+HARDWARE_PATH=$(CL_DIR)/hardware/
+XILINX_IP=$(HDK_SHELL_DESIGN_DIR)/ip # common
+TESTBENCHES_PATH=$(CL_DIR)/testbenches
+include $(HARDWARE_PATH)/Makefile.include
+
 # HARDWARE_PATH, TESTS_PATH, CL_DIR, C_REGRESSION_TESTS, and
 # REGRESSION_TESTS_TYPE must be set by the including makefile
 
@@ -8,44 +13,20 @@ C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
 C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
 
-COSIM_DIR      = $(CL_DIR)/testbenches/
-RTL_TB_WORKLIB = cosimulation
-RTL_TB_TOP     = cosim_wrapper
-RTL_TB_LIBS    = axis_register_slice_v1_1_17 fifo_generator_v13_2_2
-RTL_TB_LIBS    += axis_data_fifo_v1_1_18 axis_dwidth_converter_v1_1_16
-RTL_TB_LIBS    += axi_fifo_mm_s_v4_1_14 axi_clock_converter_v2_1_11
-RTL_TB_LIBS    += axis_infrastructure_v1_1_0 generic_baseblocks_v2_1_0
-RTL_TB_LIBS    += axi_infrastructure_v1_1_0 axi_register_slice_v2_1_15
-RTL_TB_LIBS    += axi_register_slice_v2_1_12 fifo_generator_v13_2_1
-RTL_TB_LIBS    += fifo_generator_v13_1_4 axi_data_fifo_v2_1_11
-RTL_TB_LIBS    += axi_crossbar_v2_1_13 xil_defaultlib unisims_ver
-RTL_TB_LIBS    += unimacro_ver secureip xpm 
-
-XVLOG_OPTS += $(if $(AXI_PROT_CHECK),-d ENABLE_PROTOCOL_CHK,)
-XELOG_OPTS += $(if $(AXI_PROT_CHECK),-d ENABLE_PROTOCOL_CHK,)
-
-XSIM_OPTS += $(if $(DEBUG),-gui,)
-XSIM_OPTS += $(if $(DEBUG),-tclbatch waves.tcl,)
-
-AXI_MEMORY_MODEL ?= 1
-XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d AXI_MEMORY_MODEL=1,)
-XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d ECC_DIRECT_EN,)
-XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d RND_ECC_EN,)
-XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d ECC_ADDR_LO=0,)
-XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d ECC_ADDR_HI=0,)
-XVLOG_OPTS += $(if $(AXI_MEMORY_MODEL),-d RND_ECC_WEIGHT=0,)
+TESTBENCHES_PATH    = $(CL_DIR)/testbenches/
 
 C_DPI_SRC  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
 C_DPI_SRC += $(C_COMMON_DIR)/src/fpga_pci_sv.c
 
-C_LIB_SRC = $(CL_DIR)/libraries/bsg_manycore_bits.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_driver.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_elf.cpp
+C_LIB_SRC := $(CL_DIR)/libraries/bsg_manycore_driver.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp 
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_eva.cpp 
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_eva.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_tile.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_bits.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_elf.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_cuda.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_printing.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_config.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore.cpp
@@ -55,43 +36,18 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_uart_responder.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_request_packet_id.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_origin_eva_map.cpp
 
-CFLAGS   = -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
-INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
-INCLUDES += -I$(C_COMMON_DIR)/include -I$(TESTS_PATH) -I$(CL_DIR)/libraries -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
-
-XSC_INCLUDES = $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
-XSC_FLAGS    = $(foreach def,$(CFLAGS),--additional_option "$(def)")
+CFLAGS   := -std=c99 -std=c++11
+DEFINES  := -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
+DEFINES  += -D_BSD_SOURCE
+INCLUDES := -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
+INCLUDES += -I$(C_COMMON_DIR)/include -I$(SIM_PATH) -I$(CL_DIR)/libraries 
+INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 
 SIM_LOG_TARGETS  = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
 
 cosim: $(SIM_LOG_TARGETS)
 
-%.so: $(TESTS_PATH)/%.c $(C_DPI_SRC) $(C_LIB_SRC) 
-	xsc $? $(XSC_FLAGS) $(XSC_INCLUDES) -o $@
-
-# HARDWARE_PATH must be set by including makefile
-include $(HARDWARE_PATH)/Makefile.include
-# HARDWARE_TARGETS is set by $(HARDWARE_PATH)/Makefile.include
-xsim.dir/$(RTL_TB_WORKLIB): $(COSIM_DIR)/top.vivado.f 
-xsim.dir/$(RTL_TB_WORKLIB): $(COSIM_DIR)/cosim_wrapper.sv $(HARDWARE_TARGETS)
-	CL_DIR=$(CL_DIR) \
-	xvlog --sv -m64 $(XVLOG_OPTS) --work $(RTL_TB_WORKLIB) --relax  \
-		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
-		-f $(COSIM_DIR)/top.vivado.f $< 
-
-xsim.dir/%: %.so | xsim.dir/$(RTL_TB_WORKLIB) 
-	CL_DIR=$(CL_DIR) \
-	xelab -m64 $(XELOG_OPTS) --timescale 1ps/1ps --debug typical --relax \
-		--mt 8 --initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini \
-		$(foreach lib,$(RTL_TB_LIBS), -L $(lib)) $(RTL_TB_WORKLIB).tb \
-		$(RTL_TB_WORKLIB).glbl $(RTL_TB_WORKLIB).$(RTL_TB_TOP) \
-		--snapshot $(notdir $@) -sv_lib $(notdir $@)
-
-%.cosim.log: xsim.dir/%
-	CL_DIR=$(CL_DIR) \
-	xsim $(XSIM_OPTS) -R -log $@ $(notdir $<)
-
-$(C_REGRESSION_TESTS): %: %.cosim.log
+#$(C_REGRESSION_TESTS): %: %.cosim.log
 
 regression: $(SIM_LOG_TARGETS)
 	@pass=0;  total=0; \
@@ -126,6 +82,4 @@ regression: $(SIM_LOG_TARGETS)
 .PHONY: cosim regression clean
 .PRECIOUS: %.log xsim.dir %.so xsim.dir/%
 
-clean: hardware.clean
-	rm -rf .Xil xsim.dir
-	rm -rf *.log *.jou *.pb *.dat *.wdb *.so
+include $(TESTBENCHES_PATH)/Makefile.vcs

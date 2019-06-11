@@ -28,7 +28,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.dimension
                 bsg_f1@$(BSG_F1_COMMIT_ID) >> $@
 
 $(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.rom
-	python $(BSG_IP_CORES_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
+	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
                bsg_bladerunner_configuration >> $@
 
 $(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.template $(CL_DIR)/Makefile.dimensions

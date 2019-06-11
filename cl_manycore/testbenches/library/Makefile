@@ -5,6 +5,8 @@ include $(CL_DIR)/Makefile.dimensions
 
 # REGRESSION_PATH is set in Makefile.environment
 TESTS_PATH=$(REGRESSION_PATH)/library/
+SIM_PATH=$(CL_DIR)/testbenches/library/
+
 include $(TESTS_PATH)/Makefile.tests
 
 # The HDK Makefile must come before Makefile.common to override AWS' (broken) clean

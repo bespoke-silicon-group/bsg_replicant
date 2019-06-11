@@ -131,6 +131,11 @@ int kernel_stack_load () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_stack_load Regression Test (COSIMULATION)\n");
 	int rc = kernel_stack_load();
 	*exit_code = rc;

@@ -39,6 +39,11 @@ static int test_printing(void)
 }
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_printing Regression Test (COSIMULATION)\n");
 	int rc = test_printing();
 	*exit_code = rc;

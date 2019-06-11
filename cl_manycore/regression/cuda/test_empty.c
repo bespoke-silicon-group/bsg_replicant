@@ -84,6 +84,11 @@ int kernel_empty () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_empty Regression Test (COSIMULATION)\n");
 	int rc = kernel_empty();
 	*exit_code = rc;

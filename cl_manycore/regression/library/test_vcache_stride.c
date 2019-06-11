@@ -98,6 +98,11 @@ int test_vcache_stride() {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_vcache_stride Regression Test (COSIMULATION)\n");
 	int rc = test_vcache_stride();
 	*exit_code = rc;
@@ -108,7 +113,7 @@ void test_main(uint32_t *exit_code) {
 int main() {
 	bsg_pr_test_info("test_vcache_stride Regression Test (F1)\n");
 	int rc = test_vcache_stride();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+p	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
 #endif

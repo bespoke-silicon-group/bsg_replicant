@@ -217,6 +217,11 @@ int kernel_matrix_mul () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_matrix_mul Regression Test (COSIMULATION)\n");
 	int rc = kernel_matrix_mul();
 	*exit_code = rc;

@@ -194,6 +194,11 @@ int test_manycore_eva () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
         bsg_pr_test_info("test_manycore_eva Regression Test (COSIMULATION)\n");
         int rc = test_manycore_eva();
         *exit_code = rc;
