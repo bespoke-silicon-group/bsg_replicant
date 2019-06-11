@@ -305,7 +305,7 @@ static int hb_mc_tile_group_initialize_tiles (	hb_mc_device_t *device,
 
 
 	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) allocated at origin (%d,%d).\n", 
-			_func__,
+			__func__,
 			tg-> grid_id,
 			hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim),
 			hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id),
@@ -447,7 +447,7 @@ int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
 	device->num_tile_groups += 1;
 	
 	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) initialized.\n", 
-			_func__,
+			__func__,
 			tg->grid_id,
 			hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim),
 			hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id)) ;
@@ -578,7 +578,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 					__func__,
 					tile_id,
 					x, y,
-					finish_signal_host_eva);
+					finish_signal_eva);
 
 
 
@@ -636,7 +636,7 @@ int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t
 	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) de-allocated at origin (%d,%d).\n",
 			__func__,
 			tg->grid_id,
-			hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim.y),
+			hb_mc_dimension_get_x(tg->dim), hb_mc_dimension_get_y(tg->dim),
 			hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id),
 			hb_mc_coordinate_get_x(tg->origin), hb_mc_coordinate_get_y(tg->origin));
 	
