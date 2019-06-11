@@ -1254,8 +1254,8 @@ assign m_axi4_manycore_arregion = 4'b0;
 assign m_axi4_manycore_arqos = 4'b0;
 
 // manycore link
-logic [x_cord_width_p-1:0] mcl_x_cord_li = '0;
-logic [y_cord_width_p-1:0] mcl_y_cord_li = '0;
+wire [x_cord_width_p-1:0] mcl_x_cord_li = host_coord_x_p;
+wire [y_cord_width_p-1:0] mcl_y_cord_li = host_coord_y_p;
 
 <<<<<<< HEAD:hardware/cl_manycore.sv
 logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;

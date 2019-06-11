@@ -27,6 +27,8 @@ package cl_manycore_pkg;
   parameter load_id_width_p = 12;
   parameter request_op_width_p = 2;
   parameter max_out_credits_p = 16; // the max number of outstanding requests from the host endpoint to the manycore
+  parameter host_coord_x_p = 0;
+  parameter host_coord_y_p = 0;
 
   parameter dmem_size_p = 1024;
   parameter icache_entries_p = 1024;
