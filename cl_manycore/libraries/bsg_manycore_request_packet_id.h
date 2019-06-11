@@ -5,7 +5,11 @@
 #include <bsg_manycore_request_packet.h>
 #include <bsg_manycore_epa.h>
 #include <bsg_manycore_coordinate.h>
+#ifdef __cplusplus
+#include <cstdint>
+#else
 #include <stdint.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {

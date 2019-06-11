@@ -1,8 +1,8 @@
 #include "bsg_manycore_run_spmd_program.hpp"
 #include <bsg_manycore.h>
 #include <bsg_manycore_printing.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <getopt.h>
 
 #define pr_usage(fmt, ...)			\

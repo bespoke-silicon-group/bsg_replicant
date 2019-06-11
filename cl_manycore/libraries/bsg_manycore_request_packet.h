@@ -6,9 +6,15 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_epa.h>
 #include <endian.h>
+#ifdef __cplusplus
+#include <cinttypes>
+#include <cstdint>
+#include <cstdio>
+#else
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
