@@ -38,9 +38,11 @@ package cl_mcl_pkg;
   parameter axil_s_fifo_base_addr_p = 64'h00000000_00001000;
   parameter axil_mon_base_addr_p = 64'h00000000_00002000;
 
-  parameter HOST_RCV_VACANCY_MC_REQ = 32'h100;
-  parameter HOST_RCV_VACANCY_MC_RES = 32'h200;
-  parameter HOST_REQ_CREDITS = 32'h300;
+  parameter HOST_RCV_VACANCY_MC_REQ_p = 32'h100;
+  parameter HOST_RCV_VACANCY_MC_RES_p = 32'h200;
+  parameter HOST_REQ_CREDITS_p = 32'h300;
+
+	parameter FIFO_ISR_TC_BIT_p = 27;
 
 endpackage : cl_mcl_pkg
 
