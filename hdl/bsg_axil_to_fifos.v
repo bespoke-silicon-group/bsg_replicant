@@ -64,9 +64,9 @@ module bsg_axil_to_fifos #(
   localparam ofs_rdr_lp  = 8'h20; // Receive Data Destination Register
   localparam ofs_rlr_lp  = 8'h24; // Receive Length Register
 
-  localparam ofs_rsp_rcv_vacancy_lp = config_addr_width_lp'(HOST_RCV_VACANCY_MC_RES);
-  localparam ofs_req_rcv_vacancy_lp = config_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ);
-  localparam ofs_mc_out_credits_lp  = config_addr_width_lp'(HOST_REQ_CREDITS)       ;
+  localparam ofs_rsp_rcv_vacancy_lp = config_addr_width_lp'(HOST_RCV_VACANCY_MC_RES_p);
+  localparam ofs_req_rcv_vacancy_lp = config_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ_p);
+  localparam ofs_mc_out_credits_lp  = config_addr_width_lp'(HOST_REQ_CREDITS_p)       ;
 
   `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
   bsg_axil_mosi_bus_s s_axil_bus_i_cast;
@@ -261,10 +261,10 @@ module bsg_axil_to_fifos #(
     assign write_to_isr[i]  = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(ofs_isr_lp));
 
     always_ff @(posedge clk_i) begin : cfg_register
-      if (write_to_isr[i])
-        isr_r[i] <= wdata_li;
+      if (write_to_isr[i] & (wdata_li[FIFO_ISR_TC_BIT_p]))
+        isr_r[i][FIFO_ISR_TC_BIT_p] <= 1'b0;
       else if (tx_enqueue[i])
-        isr_r[i][27] <= 1'b1;
+        isr_r[i][FIFO_ISR_TC_BIT_p] <= 1'b1;
       else
         isr_r[i] <= isr_r[i];
     end
