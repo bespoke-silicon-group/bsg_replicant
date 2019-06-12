@@ -1,8 +1,9 @@
 #include <bsg_manycore.h>
-#include <bsg_manycore_driver.h>
+#include <bsg_manycore_fifo.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_tile.h>
+#include <bsg_manycore_responder.h>
 
 #ifndef COSIM
 #include <fpga_pci.h>
@@ -513,11 +514,16 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_init_fifos(mc)) != HB_MC_SUCCESS)
                 goto cleanup;
 
+	// initialize responders
+	if ((err = hb_mc_responders_init(mc)))
+		goto cleanup;
+
         r = HB_MC_SUCCESS;
         goto done;
 
 cleanup:
 	r = err;
+	hb_mc_manycore_cleanup_fifos(mc);
         hb_mc_manycore_cleanup_mmio(mc);
         hb_mc_manycore_cleanup_private_data(mc);
         free((void*)mc->name);
@@ -532,6 +538,12 @@ done:
  */
 void hb_mc_manycore_exit(hb_mc_manycore_t *mc)
 {
+	int err;
+	err = hb_mc_responders_quit(mc);
+	if (err != HB_MC_SUCCESS) {
+		bsg_pr_err("%s: failed to cleanup responders: %s\n",
+			   __func__, hb_mc_strerror(err));
+	}
         hb_mc_manycore_cleanup_fifos(mc);
         hb_mc_manycore_cleanup_mmio(mc);
         hb_mc_manycore_cleanup_private_data(mc);
@@ -1069,7 +1081,19 @@ int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
 			      hb_mc_request_packet_t *request,
 			      long timeout)
 {
-	return hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_RX_REQ, timeout);
+	int err;
+	err = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_RX_REQ, timeout);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	err = hb_mc_responders_respond(mc, request);
+	if (err != HB_MC_SUCCESS) {
+		char request_str[64];
+		hb_mc_request_packet_to_string(request, request_str, sizeof(request_str));
+		bsg_pr_err("responder failure to %s\n", request_str);
+	}
+
+	return HB_MC_SUCCESS;
 }
 
 /**
@@ -1085,7 +1109,12 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
                              hb_mc_fifo_tx_t type,
                              long timeout)
 {
-	return hb_mc_manycore_packet_tx_internal(mc, packet, type, timeout);
+	switch (type) {
+	case HB_MC_FIFO_TX_RSP:
+		return hb_mc_manycore_response_tx(mc, &packet->response, timeout);
+	case HB_MC_FIFO_TX_REQ:
+		return hb_mc_manycore_request_tx(mc, &packet->request, timeout);
+	}
 }
 
 /**
@@ -1101,7 +1130,12 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
                              hb_mc_fifo_rx_t type,
                              long timeout)
 {
-	return hb_mc_manycore_packet_rx_internal(mc, packet, type, timeout);
+	switch (type) {
+	case HB_MC_FIFO_RX_RSP:
+		return hb_mc_manycore_response_rx(mc, &packet->response, timeout);
+	case HB_MC_FIFO_RX_REQ:
+		return hb_mc_manycore_request_rx(mc, &packet->request, timeout);
+	}
 }
 
 /////////////////////////////

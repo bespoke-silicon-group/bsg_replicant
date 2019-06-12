@@ -1,6 +1,7 @@
 INCLUDES := -I$(SDK_DIR)/userspace/include
 INCLUDES += -I$(HDK_DIR)/common/software/include -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include -I.
 
+CFLAGS    := -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES)
 CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
 LDLIBS  := -lfpga_mgmt
 
@@ -25,6 +26,12 @@ HEADERS += bsg_manycore_npa.h
 HEADERS += bsg_manycore_epa.h
 HEADERS += bsg_manycore_loader_dep.h
 HEADERS += bsg_manycore_origin_eva_map.h
+HEADERS += bsg_manycore_packet.h
+HEADERS += bsg_manycore_response_packet.h
+HEADERS += bsg_manycore_request_packet.h
+HEADERS += bsg_manycore_fifo.h
+HEADERS += bsg_manycore_request_packet_id.h
+HEADERS += bsg_manycore_responder.h
 
 OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
@@ -40,15 +47,27 @@ OBJECTS += bsg_manycore_config.o
 OBJECTS += bsg_manycore.o
 OBJECTS += bsg_manycore_loader_dep.o
 OBJECTS += bsg_manycore_origin_eva_map.o
+OBJECTS += bsg_manycore_request_packet_id.o
+OBJECTS += bsg_manycore_responder.o
+OBJECTS += bsg_manycore_uart_responder.o
 
-DEBUG_OBJECTS :=
+# object that should be compiled for debugging
+DEBUG_OBJECTS  :=
+#DEBUG_OBJECTS  += bsg_manycore_responder.o
+#DEBUG_OBJECTS  += bsg_manycore_uart_responder.o
 
-bsg_manycore_loader.o: CXXFLAGS += -Wall -Werror
-bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-variable
-bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-function
-bsg_manycore_loader.o: CXXFLAGS += -Wno-unused-but-set-variable
+# objects that should be compiled with strict compilation flags
+STRICT_OBJECTS :=
+STRICT_OBJECTS += bsg_manycore_responder.o
+STRICT_OBJECTS += bsg_manycore_loader.o
+STRICT_OBJECTS += bsg_manycore_packet_id.o
 
-$(DEBUG_OBJECTS): CXXFLAGS += -DDEBUG
+$(STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
+$(STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable
+$(STRICT_OBJECTS): CXXFLAGS += -Wno-unused-function
+$(STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
+
+$(DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
