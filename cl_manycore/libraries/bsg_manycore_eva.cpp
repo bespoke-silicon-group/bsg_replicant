@@ -677,7 +677,7 @@ int default_npa_to_eva(const hb_mc_config_t *cfg,
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_size(
+int default_eva_size(
 	const hb_mc_config_t *cfg,
 	const void *priv,
 	const hb_mc_eva_t *eva,
@@ -817,6 +817,10 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 	config = hb_mc_manycore_get_config(mc);
 
 	err = hb_mc_eva_size(config, map, eva, &dest_sz);
+	if (err != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to acquire eva size.\n", __func__);
+		return err;
+	}
 	if (sz > dest_sz){
 		bsg_pr_err("%s: Error, requested copy to region that is smaller "
 			"than buffer\n", __func__);

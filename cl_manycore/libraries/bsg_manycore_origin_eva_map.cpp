@@ -44,6 +44,7 @@ int  hb_mc_origin_eva_map_init(hb_mc_eva_map_t *map, hb_mc_coordinate_t origin)
 	map->priv = (const void*)cpy;
 	map->eva_to_npa = default_eva_to_npa;
 	map->npa_to_eva = default_npa_to_eva;
+	map->eva_size = default_eva_size;
 	map->eva_map_name = name;
 
 	r = HB_MC_SUCCESS;
