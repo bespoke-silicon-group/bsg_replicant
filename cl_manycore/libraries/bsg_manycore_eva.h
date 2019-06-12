@@ -117,7 +117,7 @@ int default_npa_to_eva(const hb_mc_config_t *cfg,
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_size(
+int default_eva_size(
 	const hb_mc_config_t *cfg,
 	const void *priv,
 	const hb_mc_eva_t *eva,

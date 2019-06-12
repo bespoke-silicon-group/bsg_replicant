@@ -123,7 +123,7 @@ enum hb_mc_memcpy_kind {
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_init (	hb_mc_device_t *device,
-			char *name,
+			const char *name,
 			hb_mc_manycore_id_t id,
 			hb_mc_dimension_t dim_x);
 
@@ -435,6 +435,7 @@ int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
  * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
  */
+__attribute__((warn_unused_result))
 int hb_mc_device_tiles_set_symbols(	hb_mc_device_t *device, 
 					hb_mc_eva_map_t *map,
 					hb_mc_coordinate_t origin,
