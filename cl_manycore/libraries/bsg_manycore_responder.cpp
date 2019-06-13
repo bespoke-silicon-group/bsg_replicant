@@ -11,7 +11,7 @@ int hb_mc_responder_init(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
 {
 	int err;
 	if (responder->init == nullptr)
-		return HB_MC_INVALID;
+		return HB_MC_INVALID; // no init
 
 	err = responder->init(responder, mc);
 	if (err != HB_MC_SUCCESS)
@@ -23,7 +23,7 @@ int hb_mc_responder_init(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
 int hb_mc_responders_init(hb_mc_manycore_t *mc)
 {
 	if (responders == nullptr)
-		return HB_MC_FAIL;
+		return HB_MC_SUCCESS; //  no responders
 
 	for (auto it = responders->begin();
 	     it != responders->end();
@@ -40,7 +40,7 @@ int hb_mc_responders_init(hb_mc_manycore_t *mc)
 int hb_mc_responder_quit(hb_mc_responder_t *responder, hb_mc_manycore_t *mc)
 {
 	int err;
-	if (responder->quit == nullptr)
+	if (responder->quit == nullptr) // no quit
 		return HB_MC_INVALID;
 
 	err = responder->quit(responder, mc);
@@ -55,7 +55,7 @@ int hb_mc_responders_quit(hb_mc_manycore_t *mc)
 	int err;
 
 	if (responders == nullptr)
-		return HB_MC_FAIL;
+		return HB_MC_SUCCESS; // no responders
 
 	for (auto it = responders->begin();
 	     it != responders->end();
@@ -76,10 +76,10 @@ static int hb_mc_responder_respond(hb_mc_responder_t *responder,
 	int err;
 
 	if (responder->respond == nullptr)
-		return HB_MC_INVALID;
+		return HB_MC_INVALID; // no respond
 
 	if (responder->ids == nullptr)
-		return HB_MC_INVALID;
+		return HB_MC_SUCCESS; // no ids
 
 	for (hb_mc_request_packet_id_t *id = responder->ids;
 	     id->init != 0;
@@ -96,7 +96,7 @@ int hb_mc_responders_respond(hb_mc_manycore_t *mc, const hb_mc_request_packet_t 
 	int err;
 
 	if (responders == nullptr)
-		return HB_MC_FAIL;
+		return HB_MC_SUCCESS; // no responders
 
 	for (auto it = responders->begin();
 	     it != responders->end();
@@ -114,9 +114,6 @@ int hb_mc_responder_add(hb_mc_responder_t *responder)
 {
 	if (responders == nullptr)
 		responders = new responder_list;
-
-	if (responder->ids == nullptr)
-		return HB_MC_INVALID;
 
 	responders->push_front(responder);
 	return HB_MC_SUCCESS;
