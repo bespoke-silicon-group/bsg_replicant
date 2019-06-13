@@ -51,6 +51,9 @@ C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_config.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader_dep.cpp
 C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_cuda.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_responder.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_uart_responder.cpp
+C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_request_packet_id.cpp
 
 CFLAGS   = -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 INCLUDES = -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
