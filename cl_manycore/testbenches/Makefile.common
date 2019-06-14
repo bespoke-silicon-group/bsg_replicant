@@ -94,7 +94,7 @@ $(USER_RULES):
 
 # We build a list of COSIMULATION_TARGETS for the cosim and regression rules
 # (below)
-COSIMULATION_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+COSIMULATION_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
 $(COSIMULATION_TARGETS): %: $(SIM_PATH)/%
 
 cosim: $(COSIMULATION_TARGETS)

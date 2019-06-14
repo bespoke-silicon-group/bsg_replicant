@@ -2,24 +2,26 @@ CFLAGS   = -std=c11 -D_XOPEN_SOURCE=500 -D_BSD_SOURCE $(REGRESSION_DEFINES)
 CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
 LDFLAGS  = -lbsg_manycore_runtime -lm
 
-C_TARGETS   := $(C_REGRESSION_TESTS)
-$(C_TARGETS): %: %.h
+C_TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
 $(C_TARGETS): LD:=$(CC)
-CXX_TARGETS := $(CXX_REGRESSION_TESTS)
-$(CXX_TARGETS): %: %.hpp
-$(CXX_TARGETS): LD:=$(CXX)
 
-# TARGETS is a list of all tests to be run.
-TARGETS := $(C_TARGETS) $(CXX_TARGETS)
-# each target 't' in TARGETS relies on an object file 't.o'
-$(TARGETS): %: %.o
+%.o: %.c %.h
+	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) -c -o $@ $< 
+
+%.o: %.cpp %.hpp
+	$(CXX) $(CXXFLAGS) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $< 
+
+# each target '%' in INDEPENDENT_MAIN_TESTS relies on an object file '%.o'
+$(INDEPENDENT_MAIN_TESTS): %: %.o
+# each target '%' in UNIFIED_MAIN_TESTS relies on an object file 'test_unified_main.o'
+$(UNIFIED_MAIN_TESTS): %: test_unified_main.o
 # linking rule for all targets
-$(TARGETS):
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS) 
+$(REGRESSION_TESTS):
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
-all: $(TARGETS)
+all: $(REGRESSION_TESTS)
 
-regression: $(TARGETS)
+regression: $(REGRESSION_TESTS)
 	@pass=0; total=0; failed=""; passed=""; \
 	echo ""; \
 	echo ""; \
@@ -57,4 +59,4 @@ regression: $(TARGETS)
 .PHONY: regression all clean 
 
 clean:
-	rm -f *.o $(TARGETS) *.regression.log
+	rm -f *.o $(REGRESSION_TESTS) *.regression.log

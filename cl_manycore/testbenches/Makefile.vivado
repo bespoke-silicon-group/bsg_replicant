@@ -57,8 +57,16 @@ XSIM_FLAGS += $(if $(DEBUG),-tclbatch waves.tcl,)
 # attach test-specific makefile rules, each test has a corresponding
 # <test_name>.rule that can be called. This rule is typically specified in the
 # top-level makefile.
+#
+# These next two rules appear similar, but they are not! The first rule pattern
+# matches tests in $(INDEPENDENT_MAIN_TESTS), that have a matching top-level .c
+# with the same name as the test. The second one pattern matches tests in
+# $(UNIFIED_MAIN_TESTS) that use test_unified_main.c. 
 $(SIM_PATH)/%.so: $(TESTS_PATH)/%.c %.rule $(CSOURCES)
-	xsc $< $(CSOURCES) $(XSC_FLAGS) -o $@
+	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ -v
+
+$(SIM_PATH)/%.so: $(TESTS_PATH)/test_unified_main.c %.rule $(CSOURCES)
+	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ -v
 
 # The xsim.dir/$(RTL_TB_WORKLIB) directory contains the compiled verilog files
 $(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/$(V_TOP_SRC).sv 
