@@ -63,10 +63,15 @@ XSIM_FLAGS += $(if $(DEBUG),-tclbatch waves.tcl,)
 # with the same name as the test. The second one pattern matches tests in
 # $(UNIFIED_MAIN_TESTS) that use test_unified_main.c. 
 $(SIM_PATH)/%.so: $(TESTS_PATH)/%.c %.rule $(CSOURCES)
-	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ -v
+	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ -v \
+		--additional_option \
+			"-DBSG_TEST_NAME=$(patsubst %.so,%,$(notdir $@))"
 
 $(SIM_PATH)/%.so: $(TESTS_PATH)/test_unified_main.c %.rule $(CSOURCES)
-	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ -v
+	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ -v \
+		--additional_option \
+			"-DBSG_TEST_NAME=$(patsubst %.so,%,$(notdir $@))"
+
 
 # The xsim.dir/$(RTL_TB_WORKLIB) directory contains the compiled verilog files
 $(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/$(V_TOP_SRC).sv 
