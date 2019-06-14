@@ -52,7 +52,7 @@ $(SIM_PATH)/AN.DB: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST) $(SIM_PATH)/synopsys_s
 
 $(C_REGRESSION_TESTS): %: $(SIM_PATH)/%
 
-$(SIM_PATH)/%: $(TESTS_PATH)/%.c | $(SIM_PATH)/AN.DB
+$(SIM_PATH)/%: $(TESTS_PATH)/%.c $(CSOURCES) | $(SIM_PATH)/AN.DB
 	vcs tb $(V_TOP_SRC) $< $(VCS_CFLAGS) $(CSOURCES) $(VCS_VFLAGS) -o $@ -l compile.vcs.log
 
 $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/%
