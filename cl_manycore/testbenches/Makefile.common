@@ -60,8 +60,6 @@ CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_request_packet_id.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_origin_eva_map.cpp
 
-# CFLAGS, CDEFINES, and INCLUDES are used during library and test source
-# compilation
 CFLAGS   := -std=c99 -std=c++11
 CDEFINES  = -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
 CDEFINES += -D_BSD_SOURCE

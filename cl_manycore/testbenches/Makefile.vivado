@@ -45,6 +45,7 @@ CDEFINES    += -DVIVADO_SIM
 XSC_FLAGS   := $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
 XSC_FLAGS   += $(foreach def,$(CFLAGS),--additional_option "$(def)")
 XSC_FLAGS   += $(foreach def,$(CDEFINES),--additional_option "$(def)")
+XSC_FLAGS   += $(foreach def,$(LDFLAGS),--additional_option "$(def)")
 
 XSIM_FLAGS := $(if $(DEBUG),-gui,)
 XSIM_FLAGS += $(if $(DEBUG),-tclbatch waves.tcl,)

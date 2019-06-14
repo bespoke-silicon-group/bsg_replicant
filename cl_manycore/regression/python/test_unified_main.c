@@ -10,8 +10,7 @@ int test_python() {
 	Py_Initialize();
 	const char* test_name =
 		BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/"
-		BSG_STRINGIFY(BSG_PYTHON_TEST_NAME)".py";
-
+		BSG_STRINGIFY(BSG_TEST_NAME)".py";
 	PyObject *obj = Py_BuildValue("s", test_name);
 	FILE *fp = _Py_fopen_obj(obj, "r+");
 

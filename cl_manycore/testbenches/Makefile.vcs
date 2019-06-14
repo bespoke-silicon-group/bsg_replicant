@@ -73,7 +73,6 @@ SIMLIBS_PATH=$(TESTBENCH_PATH)/vcs_simlibs
 $(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && TESTBENCH_PATH=$(TESTBENCH_PATH) \
 	vivado -mode batch -source $<
-	mv synopsys_sim.setup $(TESTBENCHES_PATH)/synopsys_sim.setup
 
 
 # synopsys_sim.setup contains absolute paths to all the compiled Xilinx IP.
