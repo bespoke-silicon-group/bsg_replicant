@@ -27,7 +27,12 @@ VCS_VFLAGS := -debug_all -M -I +lint=TFIPC-L -debug_pp glbl \
 	-ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 	-sverilog -full64 +memcbk -licqueue -lca -v2005 
 
-.PHONY: simulator.clean squeakyclean
+VCS_VFLAGS += $(if $(DEBUG),-gui,)
+VCS_VFLAGS += $(if $(DEBUG),-R,)
+
+# TODO: Implement DEBUG flag for GUI
+
+.PHONY: simulator.clean squeakyclean 
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%
 
 $(TESTBENCH_PATH)/synopsys_sim.setup: | $(SIMLIBS_PATH)
@@ -38,8 +43,7 @@ $(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
 $(SIM_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
 	cp $< $@
 
-# Hardware Targets are defined by Makefile.include in hardware
-$(SIM_PATH)/AN.DB: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST) $(SIM_PATH)/synopsys_sim.setup | $(SIMLIBS_PATH)
+$(SIM_PATH)/AN.DB: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST) $(SIM_PATH)/synopsys_sim.setup 
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
@@ -47,15 +51,15 @@ $(SIM_PATH)/AN.DB: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST) $(SIM_PATH)/synopsys_s
 	vlogan $(VLOGAN_VFLAGS) -f $(VLOGAN_FILELIST) $(TESTBENCH_PATH)/$(V_TOP_SRC).sv $(VLOGAN_DEFINES) -l compile.vlogan.log
 
 $(C_REGRESSION_TESTS): %: $(SIM_PATH)/%
-$(SIM_PATH)/%: $(TESTS_PATH)/%.c $(SIM_PATH)/AN.DB
-	vcs tb $(V_TOP_SRC) $< $(VCS_CFLAGS) $(CSOURCES) $(VCS_VFLAGS) -o $@ -l compile.vcs.log 
 
-$(SIM_LOG_TARGETS): %: $(SIM_PATH)/%
-$(SIM_PATH)/%.cosim.log: %
-	./$< -l $@ +ntb_random_seed_automatic +vpdfile+$(SIM_PATH)/$<.vpd
+$(SIM_PATH)/%: $(TESTS_PATH)/%.c | $(SIM_PATH)/AN.DB
+	vcs tb $(V_TOP_SRC) $< $(VCS_CFLAGS) $(CSOURCES) $(VCS_VFLAGS) -o $@ -l compile.vcs.log
 
-simulator.clean: hardware.clean
-	rm -rf $(SIM_PATH)/AN.DB
+$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/%
+	$< -l $@ +ntb_random_seed_automatic +vpdfile+$<.vpd
+
+simulator.clean:
+	rm -rf $(SIM_PATH)/AN.DB $(SIM_PATH)/DVEfiles
 	rm -rf $(SIM_PATH)/*.daidir $(SIM_PATH)/csrc $(SIM_PATH)/64 $(SIM_PATH)/.cxl*
 	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou $(SIM_PATH)/synopsys_sim.setup 
 	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd $(SIM_PATH)/vc_hdrs.h

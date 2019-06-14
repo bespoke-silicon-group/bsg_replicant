@@ -39,13 +39,15 @@ INCLUDES := -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
 INCLUDES += -I$(C_COMMON_DIR)/include -I$(SIM_PATH) -I$(LIBRARIES_PATH) 
 INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 
-SIM_LOG_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+LOG_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+$(LOG_TARGETS): %: $(SIM_PATH)/%
 
-cosim: $(SIM_LOG_TARGETS)
+# Hardware Targets are defined by Makefile.include in hardware
+common.hardware: $(HARDWARE_TARGETS) 
 
-#$(C_REGRESSION_TESTS): %: %.cosim.log
+cosim: $(LOG_TARGETS)
 
-regression: $(SIM_LOG_TARGETS)
+regression: $(LOG_TARGETS)
 	@pass=0;  total=0; \
 	echo ""; \
 	echo ""; \
@@ -77,7 +79,7 @@ regression: $(SIM_LOG_TARGETS)
 
 .PHONY: cosim regression clean
 
-clean: simulator.clean
+clean: simulator.clean hardware.clean
 	@echo 
 
 

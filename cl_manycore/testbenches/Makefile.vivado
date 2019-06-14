@@ -34,12 +34,16 @@ XSC_FLAGS   += $(foreach def,$(DEFINES),--additional_option "$(def)")
 XSIM_FLAGS := $(if $(DEBUG),-gui,)
 XSIM_FLAGS += $(if $(DEBUG),-tclbatch waves.tcl,)
 
+.PHONY: simulator.clean $(C_REGRESSION_TESTS)
+.PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/xsim.dir $(SIM_PATH)/%.so $(SIM_PATH)/xsim.dir/% 
+
 $(C_REGRESSION_TESTS): %: $(SIM_PATH)/%.so
+
 $(SIM_PATH)/%.so: $(TESTS_PATH)/%.c $(CSOURCES)
 	xsc $? $(XSC_FLAGS) $(XSC_FLAGS) -o $@ 
 
-$(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/top.vivado.f 
-$(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/$(V_TOP_SRC).sv $(HARDWARE_TARGETS)
+$(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): 
+$(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/top.vivado.f $(TESTBENCH_PATH)/$(V_TOP_SRC).sv
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
@@ -59,7 +63,6 @@ $(SIM_PATH)/xsim.dir/%: $(SIM_PATH)/%.so | $(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB
 		$(RTL_TB_WORKLIB).glbl $(RTL_TB_WORKLIB).$(V_TOP_SRC) \
 		--snapshot $(notdir $@) -sv_lib $(notdir $@)
 
-$(SIM_LOG_TARGETS): %.cosim.log: $(SIM_PATH)/%.cosim.log
 $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/xsim.dir/%
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
@@ -67,10 +70,7 @@ $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/xsim.dir/%
 	XILINX_IP=$(XILINX_IP) \
 	xsim $(XSIM_FLAGS) -R -log $@ $(notdir $<)
 
-.PHONY: simulator.clean
-.PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/xsim.dir $(SIM_PATH)/%.so $(SIM_PATH)/xsim.dir/% 
-
-simulator.clean: hardware.clean
+simulator.clean: 
 	rm -rf $(SIM_PATH)/.Xil $(SIM_PATH)/xsim.dir
 	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou $(SIM_PATH)/*.pb 
 	rm -rf $(SIM_PATH)/*.dat $(SIM_PATH)/*.wdb $(SIM_PATH)/*.so
