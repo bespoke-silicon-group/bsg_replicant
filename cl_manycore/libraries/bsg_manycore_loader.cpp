@@ -344,7 +344,7 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 	  It's important that bits 10-21 are zero.
 	 */
 	if (((hb_mc_npa_get_epa(&icache_npa)) + sz - 1) & 0x00FFF000) {
-		bsg_pr_dbg("%s: Oops: ICACHE EPA 0x%08%" PRIx32 " sets tag bits\n",
+		bsg_pr_dbg("%s: Oops: ICACHE EPA 0x%08" PRIx32 " sets tag bits\n",
                            __func__, hb_mc_npa_get_epa(&icache_npa));
 		return HB_MC_FAIL;
 	}
