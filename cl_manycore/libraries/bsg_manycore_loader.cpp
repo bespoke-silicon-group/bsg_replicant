@@ -110,8 +110,8 @@ static size_t hb_mc_loader_get_tile_segment_capacity(hb_mc_manycore_t *mc,
 	  If the top bit is 1, then address is DRAM (
 	*/
 
-	/* if the EVA maps to DRAM */
-	if (RV32_Addr_to_host(phdr->p_vaddr) & (1<<31)) {
+	/* if the load EVA maps to DRAM */
+	if (RV32_Addr_to_host(phdr->p_paddr) & (1<<31)) {
 		return hb_mc_manycore_get_size_dram(mc);
 	} else {
 		return hb_mc_tile_get_size_dmem(mc, &tile);
@@ -253,7 +253,7 @@ static int hb_mc_loader_load_tile_segment(hb_mc_manycore_t *mc,
 	}
 
 	/* load initialized data */
-	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_vaddr); /* get the eva */
+	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_paddr); /* get the load eva */
 	size_t file_sz = RV32_Word_to_host(phdr->p_filesz); /* get the size of segdata */
 
 	rc = hb_mc_loader_eva_write(phdr, segdata, file_sz, eva, mc, map, tile);
@@ -344,7 +344,7 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
 	  It's important that bits 10-21 are zero.
 	 */
 	if (((hb_mc_npa_get_epa(&icache_npa)) + sz - 1) & 0x00FFF000) {
-		bsg_pr_dbg("%s: Oops: ICACHE EPA 0x%08%" PRIx32 " sets tag bits\n",
+		bsg_pr_dbg("%s: Oops: ICACHE EPA 0x%08" PRIx32 " sets tag bits\n",
                            __func__, hb_mc_npa_get_epa(&icache_npa));
 		return HB_MC_FAIL;
 	}
@@ -494,7 +494,7 @@ static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
 	/* but there's no function at the moment that maps NPAs to
 	   what the underlying hardware is */
 	/* for now, just check that the most significant bit of the EVA is 1 */
-	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_vaddr);
+	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_paddr);
 	return (eva & (1<<31) ? true : false);
 }
 
