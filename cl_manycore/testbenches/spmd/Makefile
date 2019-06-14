@@ -1,5 +1,6 @@
 include ../../Makefile.environment
 include $(CL_DIR)/Makefile.dimensions
+
 .DEFAULT_GOAL=cosim
 
 # REGRESSION_PATH is set in Makefile.environment
