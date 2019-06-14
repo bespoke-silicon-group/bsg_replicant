@@ -1,8 +1,7 @@
 SIMULATOR=VCS
-SIMLIBS_PATH=$(TESTBENCHES_PATH)/vcs_simlibs
+SIMLIBS_PATH=$(TESTBENCH_PATH)/vcs_simlibs
 
 AXI_MEMORY_MODEL ?= 1
-
 
 VLOGAN_DEFINES := +define+VCS
 VLOGAN_DEFINES += $(if $(AXI_PROT_CHECK),+define+ENABLE_PROTOCOL_CHK,)
@@ -14,7 +13,7 @@ VLOGAN_DEFINES += $(if $(AXI_MEMORY_MODEL),+define+ECC_ADDR_LO=0,)
 VLOGAN_DEFINES += $(if $(AXI_MEMORY_MODEL),+define+ECC_ADDR_HI=0,)
 VLOGAN_DEFINES += $(if $(AXI_MEMORY_MODEL),+define+RND_ECC_WEIGHT=0,)
 
-VLOGAN_FILELIST := $(TESTBENCHES_PATH)/top.vcs.f
+VLOGAN_FILELIST := $(TESTBENCH_PATH)/top.vcs.f
 VLOGAN_VFLAGS = -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps -sverilog \
 	+systemverilogext+.svh +systemverilogext+.sv \
 	+libext+.sv +libext+.v +libext+.vh +libext+.svh \
@@ -27,14 +26,16 @@ VCS_CFLAGS += $(foreach def,$(INCLUDES),-CFLAGS "$(def)")
 VCS_VFLAGS := -debug_all -M -I +lint=TFIPC-L -debug_pp glbl \
 	-ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 	-sverilog -full64 +memcbk -licqueue -lca -v2005 
-.PHONY: AN.DB compile
 
-$(TESTBENCHES_PATH)/synopsys_sim.setup: | $(SIMLIBS_PATH)
-$(SIMLIBS_PATH): $(TESTBENCHES_PATH)/gen_simlibs.tcl
-	TESTBENCHES_PATH=$(TESTBENCHES_PATH) \
+.PHONY: simulator.clean squeakyclean
+.PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%
+
+$(TESTBENCH_PATH)/synopsys_sim.setup: | $(SIMLIBS_PATH)
+$(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
+	cd $(TESTBENCH_PATH) && TESTBENCH_PATH=$(TESTBENCH_PATH) \
 	vivado -mode batch -source $<
 
-$(SIM_PATH)/synopsys_sim.setup: $(TESTBENCHES_PATH)/synopsys_sim.setup
+$(SIM_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
 	cp $< $@
 
 # Hardware Targets are defined by Makefile.include in hardware
@@ -43,22 +44,23 @@ $(SIM_PATH)/AN.DB: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST) $(SIM_PATH)/synopsys_s
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	XILINX_IP=$(XILINX_IP) \
-	vlogan $(VLOGAN_VFLAGS) -f $(VLOGAN_FILELIST) $(TESTBENCHES_PATH)/cosim_wrapper.sv $(VLOGAN_DEFINES) -l compile.vlogan.log
+	vlogan $(VLOGAN_VFLAGS) -f $(VLOGAN_FILELIST) $(TESTBENCH_PATH)/$(V_TOP_SRC).sv $(VLOGAN_DEFINES) -l compile.vlogan.log
 
 $(C_REGRESSION_TESTS): %: $(SIM_PATH)/%
 $(SIM_PATH)/%: $(TESTS_PATH)/%.c $(SIM_PATH)/AN.DB
-	vcs tb cosim_wrapper $< $(VCS_CFLAGS) $(C_DPI_SRC) $(C_LIB_SRC) $(VCS_VFLAGS) -o $@ -l compile.vcs.log 
+	vcs tb $(V_TOP_SRC) $< $(VCS_CFLAGS) $(CSOURCES) $(VCS_VFLAGS) -o $@ -l compile.vcs.log 
 
 $(SIM_LOG_TARGETS): %: $(SIM_PATH)/%
 $(SIM_PATH)/%.cosim.log: %
 	./$< -l $@ +ntb_random_seed_automatic +vpdfile+$(SIM_PATH)/$<.vpd
 
-clean: hardware.clean
+simulator.clean: hardware.clean
 	rm -rf $(SIM_PATH)/AN.DB
-	rm -rf *.daidir csrc 64 .cxl*
-	rm -rf *.log *.jou synopsys_sim.setup *.key *.vpd vc_hdrs.h
+	rm -rf $(SIM_PATH)/*.daidir $(SIM_PATH)/csrc $(SIM_PATH)/64 $(SIM_PATH)/.cxl*
+	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou $(SIM_PATH)/synopsys_sim.setup 
+	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd $(SIM_PATH)/vc_hdrs.h
 	rm -rf $(C_REGRESSION_TESTS) .vlogansetup* 
 
 squeakyclean:
-	rm -rf $(TESTBENCHES_PATH)/synopsys_sim.setup
+	rm -rf $(TESTBENCH_PATH)/synopsys_sim.setup
 	rm -rf $(SIMLIBS_PATH)

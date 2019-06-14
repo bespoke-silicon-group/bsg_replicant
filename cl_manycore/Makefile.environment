@@ -34,3 +34,5 @@ endif
 
 HARDWARE_PATH = $(CL_DIR)/hardware/
 REGRESSION_PATH = $(CL_DIR)/regression/
+TESTBENCH_PATH = $(CL_DIR)/testbenches/
+LIBRARIES_PATH = $(CL_DIR)/libraries/

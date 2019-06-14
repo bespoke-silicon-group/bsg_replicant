@@ -1,8 +1,3 @@
-HARDWARE_PATH=$(CL_DIR)/hardware/
-XILINX_IP=$(HDK_SHELL_DESIGN_DIR)/ip # common
-TESTBENCHES_PATH=$(CL_DIR)/testbenches
-include $(HARDWARE_PATH)/Makefile.include
-
 # HARDWARE_PATH, TESTS_PATH, CL_DIR, C_REGRESSION_TESTS, and
 # REGRESSION_TESTS_TYPE must be set by the including makefile
 
@@ -13,37 +8,38 @@ C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
 C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
 
-TESTBENCHES_PATH    = $(CL_DIR)/testbenches/
+include $(HARDWARE_PATH)/Makefile.include
 
-C_DPI_SRC  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
-C_DPI_SRC += $(C_COMMON_DIR)/src/fpga_pci_sv.c
+V_TOP_SRC = cosim_wrapper
 
-C_LIB_SRC := $(CL_DIR)/libraries/bsg_manycore_driver.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_loader.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_mem.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_eva.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_tile.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_bits.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_elf.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_memory_manager.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_cuda.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_printing.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_config.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_cuda.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_responder.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_uart_responder.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_request_packet_id.cpp
-C_LIB_SRC += $(CL_DIR)/libraries/bsg_manycore_origin_eva_map.cpp
+CSOURCES  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
+CSOURCES += $(C_COMMON_DIR)/src/fpga_pci_sv.c
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_driver.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_loader.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_mem.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_eva.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_elf.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_memory_manager.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_cuda.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_printing.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_config.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_responder.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_request_packet_id.cpp
+CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_origin_eva_map.cpp
 
 CFLAGS   := -std=c99 -std=c++11
-DEFINES  := -DVIVADO_SIM -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
+DEFINES   = -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
 DEFINES  += -D_BSD_SOURCE
 INCLUDES := -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
-INCLUDES += -I$(C_COMMON_DIR)/include -I$(SIM_PATH) -I$(CL_DIR)/libraries 
+
+INCLUDES += -I$(C_COMMON_DIR)/include -I$(SIM_PATH) -I$(LIBRARIES_PATH) 
 INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 
-SIM_LOG_TARGETS  = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+SIM_LOG_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
 
 cosim: $(SIM_LOG_TARGETS)
 
@@ -80,6 +76,14 @@ regression: $(SIM_LOG_TARGETS)
 	echo "===========================================================";
 
 .PHONY: cosim regression clean
-.PRECIOUS: %.log xsim.dir %.so xsim.dir/%
 
-include $(TESTBENCHES_PATH)/Makefile.vcs
+clean: simulator.clean
+	@echo 
+
+
+ifeq ($(USE_VIVADO),1)
+include $(TESTBENCH_PATH)/Makefile.vivado
+else
+include $(TESTBENCH_PATH)/Makefile.vcs
+endif
+
