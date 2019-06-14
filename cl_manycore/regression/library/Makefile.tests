@@ -16,8 +16,11 @@ C_REGRESSION_TESTS += test_manycore_dram_read_write
 C_REGRESSION_TESTS += test_manycore_eva
 C_REGRESSION_TESTS += test_manycore_credits
 C_REGRESSION_TESTS += test_manycore_eva_read_write
+C_REGRESSION_TESTS += test_foo
 
 CXX_REGRESSION_TESTS =
+
+DEFAULT_SOURCE = test_default.c
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	-DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) \
