@@ -17,7 +17,7 @@ extern "C" {
 
 
 // Base EPA of all parameters for cuda lite runtime software
-#define HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA	0x1000
+#define HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA	0x1100
 // EPA of pointer to kernel binary in tile. 
 #define HB_MC_CUDA_TILE_KERNEL_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0000)
 // EPA of argument count of kernel in tile.
