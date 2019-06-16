@@ -565,6 +565,53 @@ int hb_mc_tile_set_grid_dim_symbols(	hb_mc_manycore_t *mc,
 
 
 
+
+int hb_mc_tile_set_kernel_ptr_symbol(	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_eva_t *kernel_eva);
+
+
+
+
+
+
+int hb_mc_tile_set_argc_symbol	(	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const uint32_t *argc);
+
+
+
+
+
+
+int hb_mc_tile_set_argv_ptr_symbol(	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_eva_t *argv_eva);
+
+
+
+
+
+int hb_mc_tile_set_finish_signal_addr_symbol(	hb_mc_manycore_t *mc,
+						hb_mc_eva_map_t *map,
+						unsigned char* bin,
+						size_t bin_size,
+						const hb_mc_coordinate_t *coord,
+						const hb_mc_eva_t *finish_signal_addr_eva);
+
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

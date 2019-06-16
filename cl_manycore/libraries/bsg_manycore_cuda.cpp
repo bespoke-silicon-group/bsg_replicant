@@ -573,8 +573,11 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y)); 
 
 
-			hb_mc_npa_t argc_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_ARGC_PTR_EPA); 
-			error = hb_mc_manycore_write32(device->mc, &argc_ptr_npa, tg->kernel->argc);
+			error = hb_mc_tile_set_argc_symbol(	device->mc, tg->map, 
+								device->program->bin,
+								device->program->bin_size,
+								&(device->mesh->tiles[tile_id].coord),
+								&(tg->kernel->argc));
 			if (error != HB_MC_SUCCESS) { 
 				bsg_pr_err(	"%s: failed to write argc to tile (%d,%d) for grid %d tile group (%d,%d).\n",
 						__func__,
@@ -590,8 +593,12 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 					x, y,
 					tg->kernel->argc);
 
-			hb_mc_npa_t argv_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_ARGV_PTR_EPA); 
-			error = hb_mc_manycore_write32(device->mc, &argv_ptr_npa, args_eva);	
+
+			error = hb_mc_tile_set_argv_ptr_symbol(	device->mc, tg->map, 
+								device->program->bin,
+								device->program->bin_size,
+								&(device->mesh->tiles[tile_id].coord),
+								&args_eva);
 			if (error != HB_MC_SUCCESS) { 
 				bsg_pr_err(	"%s: failed to write argv pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n",
 						__func__,
@@ -608,6 +615,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 					args_eva);
 
 
+
 			hb_mc_eva_t finish_signal_eva;
 			size_t sz; 
 			error = hb_mc_npa_to_eva (cfg, tg->map, &(device->mesh->tiles[tile_id].coord), &(finish_signal_npa), &finish_signal_eva, &sz); 
@@ -617,8 +625,13 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 			}
 
 
-			hb_mc_npa_t finish_signal_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_FINISH_SIGNAL_PTR_EPA);
-			error = hb_mc_manycore_write32(device->mc, &finish_signal_ptr_npa, finish_signal_eva); 
+
+
+			error = hb_mc_tile_set_finish_signal_addr_symbol(	device->mc, tg->map, 
+										device->program->bin,
+										device->program->bin_size,
+										&(device->mesh->tiles[tile_id].coord),
+										&finish_signal_eva);
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err(	"%s: failed to write finish signal address to tile (%d,%d) for grid %d tile group (%d,%d).\n",
 						__func__,
@@ -637,8 +650,11 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 
 
 
-			hb_mc_npa_t kernel_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_KERNEL_PTR_EPA); 
-			error = hb_mc_manycore_write32(device->mc, &kernel_ptr_npa, kernel_eva); 
+			error = hb_mc_tile_set_kernel_ptr_symbol(	device->mc, tg->map, 
+									device->program->bin,
+									device->program->bin_size,
+									&(device->mesh->tiles[tile_id].coord),
+									&kernel_eva);
 			if (error != HB_MC_SUCCESS) {
 				bsg_pr_err(	"%s: failed to write kernel pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n",
 						__func__,
@@ -1937,10 +1953,206 @@ int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
 
 
 
+/*! 
+ * Sets a Vanilla Core's cuda_kernel_ptr symbol.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] map        Eva to npa mapping. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
+ * @param[in] coord      Tile coordinates to set the tile group id of.
+ * @param[in] kernel_eva EVA address of the kernel 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_kernel_ptr_symbol (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_eva_t *kernel_eva){
+
+	int error;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
+
+	hb_mc_eva_t kernel_ptr_eva;
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_kernel_ptr", &kernel_ptr_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to acquire cuda_kernel_ptr eva.\n", __func__);
+		return HB_MC_NOTFOUND;
+	}
+
+
+
+	error = hb_mc_manycore_eva_write (mc, map, coord, &kernel_ptr_eva, kernel_eva, 4);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err(	"%s: failed to write cuda_kernel_ptr to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
+		return error;
+	}
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_ptr (eva 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			kernel_ptr_eva,
+			*kernel_eva);
+
+	return HB_MC_SUCCESS;
+}
 
 
 
 
 
+/*! 
+ * Sets a Vanilla Core's cuda_argc symbol.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] map        Eva to npa mapping. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
+ * @param[in] coord      Tile coordinates to set the tile group id of.
+ * @param[in] argc       Argument count of the kernel, to be written into tile's argc symbol 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_argc_symbol (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const uint32_t *argc){
+
+	int error;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
+
+	hb_mc_eva_t argc_eva;
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_argc", &argc_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to acquire cuda_argc eva.\n", __func__);
+		return HB_MC_NOTFOUND;
+	}
+
+
+
+	error = hb_mc_manycore_eva_write (mc, map, coord, &argc_eva, argc, 4);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err(	"%s: failed to write cuda_argc to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
+		return error;
+	}
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argc (eva 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			argc_eva,
+			*argc);
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/*! 
+ * Sets a Vanilla Core's cuda_argv_ptr symbol.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] map        Eva to npa mapping. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
+ * @param[in] coord      Tile coordinates to set the tile group id of.
+ * @param[in] argv_eva   Pointer to argument list of the kernel, to be written into tile's argv_ptr symbol 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_argv_ptr_symbol (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const hb_mc_eva_t *argv_ptr){
+
+	int error;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
+
+	hb_mc_eva_t argv_ptr_eva;
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_argv_ptr", &argv_ptr_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to acquire cuda_argv_ptr eva.\n", __func__);
+		return HB_MC_NOTFOUND;
+	}
+
+
+
+	error = hb_mc_manycore_eva_write (mc, map, coord, &argv_ptr_eva, argv_ptr, 4);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err(	"%s: failed to write cuda_argv_ptr to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
+		return error;
+	}
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argv_ptr (eva 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			argv_ptr_eva,
+			*argv_ptr);
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/*! 
+ * Sets a Vanilla Core's cuda_finish_signal_addr symbol.
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] map        Eva to npa mapping. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
+ * @param[in] coord      Tile coordinates to set the tile group id of.
+ * @param[in] finish_signal_addr_eva   Pointer to argument list of the kernel, to be written into tile's argv_ptr symbol 
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+* */
+int hb_mc_tile_set_finish_signal_addr_symbol (	hb_mc_manycore_t *mc,
+						hb_mc_eva_map_t *map,
+						unsigned char* bin,
+						size_t bin_size,
+						const hb_mc_coordinate_t *coord,
+						const hb_mc_eva_t *finish_signal_addr_eva){
+
+	int error;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (mc); 
+
+	hb_mc_eva_t finish_signal_symbol_eva;
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_finish_signal_addr", &finish_signal_symbol_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to acquire cuda_finish_signal_addr eva.\n", __func__);
+		return HB_MC_NOTFOUND;
+	}
+
+
+
+	error = hb_mc_manycore_eva_write (mc, map, coord, &finish_signal_symbol_eva, finish_signal_addr_eva, 4);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err(	"%s: failed to write cuda_finish_signal_addr to tile (%d,%d).\n",
+				__func__,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
+		return error;
+	}
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_addr (eva 0x%08" PRIx32 ") to %d.\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			finish_signal_symbol_eva,
+			*finish_signal_addr_eva);
+
+	return HB_MC_SUCCESS;
+}
 
 
