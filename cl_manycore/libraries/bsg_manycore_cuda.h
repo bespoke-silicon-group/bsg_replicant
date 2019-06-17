@@ -16,16 +16,6 @@ extern "C" {
 #endif
 
 
-// Base EPA of all parameters for cuda lite runtime software
-#define HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA	0x1100
-// EPA of pointer to kernel binary in tile. 
-#define HB_MC_CUDA_TILE_KERNEL_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0000)
-// EPA of argument count of kernel in tile.
-#define HB_MC_CUDA_TILE_ARGC_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0004)  
-// EPA of pointer to argument list of kernel in tile.
-#define HB_MC_CUDA_TILE_ARGV_PTR_EPA		(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x0008)
-// EPA of finish signal memory location in tile.
-#define HB_MC_CUDA_TILE_FINISH_SIGNAL_PTR_EPA	(HB_MC_CUDA_TILE_PARAMETERS_BASE_EPA + 0x000C)  
 // Kernel is not loaded into tile if kernel poitner equals this value.
 #define HB_MC_CUDA_KERNEL_NOT_LOADED		0x0001	
 // The begining of section in host memory intended for tile groups to write finish signals into
@@ -410,12 +400,14 @@ int hb_mc_device_tiles_freeze(	hb_mc_device_t *device,
 /**
  * Sends packets to all tiles in the list to set their kernel pointer to 1 and unfreeze them
  * @param[in]  device        Pointer to device
+ * @param[in]  map           EVA to NPA mapping for the tiles
  * @param[in]  tiles         List of tile coordinates to unfreeze
  * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
+					hb_mc_eva_map_t *map,
 					hb_mc_coordinate_t *tiles,
 					uint32_t num_tiles);
 

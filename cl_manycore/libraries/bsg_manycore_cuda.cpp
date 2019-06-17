@@ -587,7 +587,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 						hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
 				return error;
 			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) argc to %d.\n",
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_argc symbol to 0x%08" PRIx32 ".\n",
 					__func__,
 					tile_id,
 					x, y,
@@ -608,7 +608,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 						hb_mc_coordinate_get_y(tg->id));
 				return error;
 			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) argv to 0x%08" PRIx32 ".\n",
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_argv_ptr symbol to 0x%08" PRIx32 ".\n",
 					__func__,
 					tile_id,
 					x, y,
@@ -623,9 +623,6 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 				bsg_pr_err("%s: failed to acquire finish signal address eva from npa.\n", __func__); 
 				return error;
 			}
-
-
-
 
 			error = hb_mc_tile_set_finish_signal_addr_symbol(	device->mc, tg->map, 
 										device->program->bin,
@@ -642,7 +639,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 						hb_mc_coordinate_get_y(tg->id));
 				return error;
 			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) HB_MC_CUDA_TILE_FINISH_SIGNAL_PTR_EPA to 0x%08" PRIx32 ".\n",
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_finish_signal_addr symbol to 0x%08" PRIx32 ".\n",
 					__func__,
 					tile_id,
 					x, y,
@@ -664,7 +661,7 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 						hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
 				return error;
 			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) HB_MC_CUDA_TILE_KERNEL_PTR_EPA to 0x%08" PRIx32 ".\n",
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_kernel_ptr symbol to 0x%08" PRIx32 ".\n",
 					__func__,
 					tile_id,
 					x, y,
@@ -915,7 +912,7 @@ int hb_mc_device_program_load (hb_mc_device_t *device) {
 
 
 	// Unfreeze all tiles 
-	error = hb_mc_device_tiles_unfreeze(device, tile_list, num_tiles); 
+	error = hb_mc_device_tiles_unfreeze(device, &default_map, tile_list, num_tiles); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to unfreeze device tiles.\n", __func__); 
 		return error;
@@ -1445,24 +1442,27 @@ int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
 /**
  * Sends packets to all tiles in the list to set their kernel pointer to 1 and unfreeze them  
  * @param[in]  device        Pointer to device
+ * @param[in]  map           EVA to NPA mapping for the tiles 
  * @param[in]  tiles         List of tile coordinates to unfreeze
  * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
+					hb_mc_eva_map_t *map,
 					hb_mc_coordinate_t *tiles,
 					uint32_t num_tiles) { 
 	int error;
+	hb_mc_eva_t kernel_eva = HB_MC_CUDA_KERNEL_NOT_LOADED;
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) {
-		hb_mc_npa_t kernel_ptr_npa = hb_mc_npa (tiles[tile_id], HB_MC_CUDA_TILE_KERNEL_PTR_EPA); 
-		error = hb_mc_manycore_write32(device->mc, &kernel_ptr_npa, HB_MC_CUDA_KERNEL_NOT_LOADED);
-		if (error != HB_MC_SUCCESS) {
-			bsg_pr_err(	"%s: failed to initialize kernel register to 0x1 in tile (%d,%d).\n",
-					__func__,
-					hb_mc_coordinate_get_x(tiles[tile_id]),
-					hb_mc_coordinate_get_y(tiles[tile_id]));
-			return error;
-		}
+
+
+		// Set the tile's cuda_kernel_ptr_eva symbol to HB_MC_CUDA_KERNEL_NOT_LOADED
+		error = hb_mc_tile_set_kernel_ptr_symbol(	device->mc, map, 
+								device->program->bin,
+								device->program->bin_size,
+								&(tiles[tile_id]),
+								&kernel_eva);
+
 
 		error = hb_mc_tile_unfreeze(device->mc, &tiles[tile_id]);
 		if (error != HB_MC_SUCCESS) { 
@@ -1637,7 +1637,7 @@ int hb_mc_tile_set_origin_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1654,7 +1654,7 @@ int hb_mc_tile_set_origin_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1713,7 +1713,7 @@ int hb_mc_tile_set_coord_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg__x (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg__x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1730,7 +1730,7 @@ int hb_mc_tile_set_coord_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_y (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1787,7 +1787,7 @@ int hb_mc_tile_set_id_symbol (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_id (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_id (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1845,7 +1845,7 @@ int hb_mc_tile_set_tile_group_id_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_x (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1862,7 +1862,7 @@ int hb_mc_tile_set_tile_group_id_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_y (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1922,7 +1922,7 @@ int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_gird_dim_x (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_gird_dim_x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1939,7 +1939,7 @@ int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grid_dim_y (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grid_dim_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -1991,7 +1991,7 @@ int hb_mc_tile_set_kernel_ptr_symbol (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_ptr (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_ptr (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -2043,7 +2043,7 @@ int hb_mc_tile_set_argc_symbol (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argc (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argc (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -2094,7 +2094,7 @@ int hb_mc_tile_set_argv_ptr_symbol (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argv_ptr (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argv_ptr (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
@@ -2145,7 +2145,7 @@ int hb_mc_tile_set_finish_signal_addr_symbol (	hb_mc_manycore_t *mc,
 				hb_mc_coordinate_get_y(*coord)); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_addr (eva 0x%08" PRIx32 ") to %d.\n",
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_addr (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
 			__func__,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
