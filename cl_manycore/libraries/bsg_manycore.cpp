@@ -174,7 +174,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
         uint32_t occupancy;
         int rc;
 
-	while (true) {		
+	for (int drains = 0; drains < 20; drains++) {
 		/* first check how many unread packets are currently in the FIFO */
 		rc = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
 		if (rc != HB_MC_SUCCESS)
