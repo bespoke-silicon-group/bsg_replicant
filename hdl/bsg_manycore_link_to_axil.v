@@ -3,7 +3,7 @@
 *
 *  This module converts the AXIL memory-mapped interface to the manycore network interface.
 *  It also reads from the ROM in the AXIL addres space. 
-*  TODO: factor a single link out using basejump_stl.
+*  TODO: factor a single link out, .
 *          ___________________      _______________                   ___________
 *         | bsg_axil_to_fifos | -> |  ser_i_par_o | ---------------> | manycore |
 *  AXIL<=>|                   | -> |______X2______| ---------------> | endpoint |  --> link_sif_o
@@ -39,10 +39,6 @@ module bsg_manycore_link_to_axil #(
   , parameter axil_base_addr_p = "inv"
   , parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   , parameter axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
-  , parameter mc_data_width_lp = 128  // fixed
-  , parameter axil_fifo_els_lp = 256
-  , parameter rcv_fifo_els_lp = 256/4  // make the rx fifo and rcv fifo have equal size
-  , parameter num_endpoint_lp = 1
 ) (
   input                               clk_i
   ,input                               reset_i
@@ -59,18 +55,20 @@ module bsg_manycore_link_to_axil #(
   // monitor signals
   logic [num_endpoint_lp-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] mc_out_credits_lo     ;
   logic [num_endpoint_lp-1:0][                             31:0] mc_out_credits_lo_cast;
-  logic [   num_slots_lp-1:0][  `BSG_WIDTH(rcv_fifo_els_lp)-1:0] rcv_vacancy_lo        ;
+  logic [   num_slots_lp-1:0][   `BSG_WIDTH(rcv_fifo_els_p)-1:0] rcv_vacancy_lo        ;
   logic [   num_slots_lp-1:0][                             31:0] rcv_vacancy_lo_cast   ;
 
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_li   ;
-  logic [num_endpoint_lp*2-1:0][mc_data_width_lp-1:0] mc_fifo_data_li;
+	logic [num_endpoint_lp*2-1:0][mc_fifo_width_lp-1:0] mc_fifo_data_li;
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_rdy_lo ;
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_lo   ;
-  logic [num_endpoint_lp*2-1:0][mc_data_width_lp-1:0] mc_fifo_data_lo;
+  logic [num_endpoint_lp*2-1:0][mc_fifo_width_lp-1:0] mc_fifo_data_lo;
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_rdy_li ;
 
   bsg_manycore_endpoint_to_fifos #(
     .num_endpoint_p   (num_endpoint_lp  )
+		,.fifo_width_p     (mc_fifo_width_lp )
+		,.rcv_fifo_els_p   (rcv_fifo_els_p   )
     ,.x_cord_width_p   (x_cord_width_p   )
     ,.y_cord_width_p   (y_cord_width_p   )
     ,.addr_width_p     (addr_width_p     )
@@ -90,7 +88,7 @@ module bsg_manycore_link_to_axil #(
     ,.link_sif_o        (link_sif_o        )
     ,.my_x_i            (my_x_i            )
     ,.my_y_i            (my_y_i            )
-    ,.rcv_fifo_vacancy_i(rcv_vacancy_lo_cast)
+    ,.rcv_fifo_vacancy_i(rcv_vacancy_lo    )
     ,.out_credits_o     (mc_out_credits_lo )
   );
 
@@ -111,7 +109,7 @@ module bsg_manycore_link_to_axil #(
 
   bsg_axil_to_fifos #(
     .num_slots_p     (num_slots_lp    )
-    ,.fifo_els_p      (axil_fifo_els_lp)
+    ,.fifo_els_p      (axil_fifo_els_p)
     ,.axil_base_addr_p(axil_base_addr_p)
   ) axil_to_fifos (
     .clk_i           (clk_i                 )
@@ -144,7 +142,7 @@ module bsg_manycore_link_to_axil #(
   // from receive fifo
   logic [num_slots_lp-1:0]                       rcv_fifo_v_lo;
   logic [num_slots_lp-1:0]                       rcv_fifo_r_li;
-  logic [num_slots_lp-1:0][mc_data_width_lp-1:0] rcv_fifo_lo  ;
+  logic [num_slots_lp-1:0][mc_fifo_width_lp-1:0] rcv_fifo_lo  ;
 
   wire [num_slots_lp-1:0] rcv_enqueue = mc_fifo_v_lo & mc_fifo_rdy_li;
   wire [num_slots_lp-1:0] rcv_dequeue = rcv_fifo_r_li & rcv_fifo_v_lo;
@@ -153,8 +151,8 @@ module bsg_manycore_link_to_axil #(
 
   for (genvar i=0; i<num_slots_lp; i++) begin : mc128_to_fifo32
     bsg_counter_up_down #(
-      .max_val_p (rcv_fifo_els_lp)
-      ,.init_val_p(rcv_fifo_els_lp)
+      .max_val_p (rcv_fifo_els_p)
+      ,.init_val_p(rcv_fifo_els_p)
       ,.max_step_p(1              )
     ) rcv_vacancy_cnt (
       .clk_i  (clk_i            )
@@ -166,8 +164,8 @@ module bsg_manycore_link_to_axil #(
     assign rcv_vacancy_lo_cast[i] = 32'(rcv_vacancy_lo[i]);
 
     bsg_fifo_1r1w_small #(
-      .width_p           (mc_data_width_lp),
-      .els_p             (rcv_fifo_els_lp ),
+      .width_p           (mc_fifo_width_lp),
+      .els_p             (rcv_fifo_els_p ),
       .ready_THEN_valid_p(0               )  // for input
     ) rcv_fifo (
       .clk_i  (clk_i             )
@@ -182,7 +180,7 @@ module bsg_manycore_link_to_axil #(
 
     bsg_parallel_in_serial_out #(
       .width_p(32                 )
-      ,.els_p  (mc_data_width_lp/32)
+      ,.els_p  (mc_fifo_width_lp/32)
     ) data_downsizer (
       .clk_i  (clk_i                )
       ,.reset_i(reset_i              )
@@ -196,7 +194,7 @@ module bsg_manycore_link_to_axil #(
   end
 
 
-  localparam valid_width_lp    = mc_data_width_lp/32     ;
+  localparam valid_width_lp    = mc_fifo_width_lp/32     ;
   localparam yumi_cnt_width_lp = $clog2(valid_width_lp+1);
 
   logic [num_slots_lp-1:0][   valid_width_lp-1:0] ser_to_par_valid_lo   ;
@@ -205,7 +203,7 @@ module bsg_manycore_link_to_axil #(
   for (genvar i=0; i<num_slots_lp; i++) begin : fifo32_to_mc128
     bsg_serial_in_parallel_out #(
       .width_p(32                 )
-      ,.els_p  (mc_data_width_lp/32)
+      ,.els_p  (mc_fifo_width_lp/32)
     ) data_deserialize (
       .clk_i     (clk_i                 )
       ,.reset_i   (reset_i               )

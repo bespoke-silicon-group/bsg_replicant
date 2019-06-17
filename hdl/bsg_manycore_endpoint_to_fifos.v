@@ -11,7 +11,8 @@ import cl_manycore_pkg::*;
 
 module bsg_manycore_endpoint_to_fifos #(
   parameter num_endpoint_p = "inv"
-  , parameter fifo_width_p = 128
+  , parameter fifo_width_p = "inv"
+  , parameter rcv_fifo_els_p = "inv"
   // these are endpoint parameters
   , parameter x_cord_width_p="inv"
   , parameter y_cord_width_p="inv"
@@ -19,10 +20,7 @@ module bsg_manycore_endpoint_to_fifos #(
   , parameter data_width_p = "inv"
   , parameter max_out_credits_p = "inv"
   , parameter load_id_width_p = "inv"
-  , parameter fifo_els_lp = 4
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
-  , parameter packet_width_lp = `bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
-  , parameter return_packet_width_lp =`bsg_manycore_return_packet_width(x_cord_width_p,y_cord_width_p,data_width_p,load_id_width_p)
 ) (
   input                                                            clk_i
   ,input                                                            reset_i
@@ -38,7 +36,7 @@ module bsg_manycore_endpoint_to_fifos #(
   ,output [  num_endpoint_p-1:0][            link_sif_width_lp-1:0] link_sif_o
   ,input  [  num_endpoint_p-1:0][               x_cord_width_p-1:0] my_x_i
   ,input  [  num_endpoint_p-1:0][               y_cord_width_p-1:0] my_y_i
-  ,input  [num_endpoint_p*2-1:0][                             31:0] rcv_fifo_vacancy_i
+  ,input  [num_endpoint_p*2-1:0][   `BSG_WIDTH(rcv_fifo_els_p)-1:0] rcv_fifo_vacancy_i
   ,output [  num_endpoint_p-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] out_credits_o
 );
 
@@ -73,6 +71,9 @@ module bsg_manycore_endpoint_to_fifos #(
     assign fifo_data_o[2*i+1] = mc_req_lo[i];
     assign mc_req_rdy_li[i]   = fifo_rdy_i[2*i+1];
   end
+
+
+  localparam packet_width_lp = `bsg_manycore_packet_width(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p, load_id_width_p);
 
   logic [num_endpoint_p-1:0]                        endpoint_in_v_lo   ;
   logic [num_endpoint_p-1:0]                        endpoint_in_yumi_li;
@@ -195,7 +196,7 @@ module bsg_manycore_endpoint_to_fifos #(
     bsg_manycore_endpoint_standard #(
       .x_cord_width_p   (x_cord_width_p   )
       ,.y_cord_width_p   (y_cord_width_p   )
-      ,.fifo_els_p       (fifo_els_lp      )
+      ,.fifo_els_p       (4                )
       ,.addr_width_p     (addr_width_p     )
       ,.data_width_p     (data_width_p     )
       ,.max_out_credits_p(max_out_credits_p)
