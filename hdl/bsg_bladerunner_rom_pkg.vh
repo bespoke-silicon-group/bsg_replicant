@@ -11,7 +11,7 @@ package bsg_bladerunner_rom_pkg;
 
   parameter rom_width_p = 32;
   parameter rom_els_p = 12;
-    
+
 endpackage
 
 `endif
