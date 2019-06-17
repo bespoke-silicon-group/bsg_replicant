@@ -571,8 +571,8 @@ assign m_axi4_manycore_arregion = 4'b0;
 assign m_axi4_manycore_arqos = 4'b0;
 
 // manycore link
-wire [x_cord_width_p-1:0] mcl_x_cord_li = host_coord_x_p;
-wire [y_cord_width_p-1:0] mcl_y_cord_li = host_coord_y_p;
+wire [x_cord_width_p-1:0] mcl_x_cord_li = x_cord_width_p'(host_cord_x_p);
+wire [y_cord_width_p-1:0] mcl_y_cord_li = y_cord_width_p'(host_cord_y_p);
 
 bsg_manycore_link_to_axil #(
   .axil_base_addr_p (axil_base_addr_p  )
