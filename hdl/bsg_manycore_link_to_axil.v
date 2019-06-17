@@ -26,11 +26,12 @@
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_manycore_packet.vh"
 `include "axil_to_mcl.vh"
-import cl_mcl_pkg::*;
 `include "bsg_bladerunner_rom_pkg.vh"
-import bsg_bladerunner_rom_pkg::*;
 
-module bsg_manycore_link_to_axil #(
+module bsg_manycore_link_to_axil
+  import cl_mcl_pkg::*;
+  import bsg_bladerunner_rom_pkg::*;
+#(
   // endpoint parameters
   parameter x_cord_width_p="inv"
   , parameter y_cord_width_p="inv"
