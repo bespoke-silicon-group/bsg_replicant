@@ -11,8 +11,8 @@
 * The host AXI-Lite write and read examples:
 * To write to a FIFO,
 * 1. set the isr[27] to 0
-* 2. write the data to base_addr + ofs_tdr_lp
-* 3. read the isr and check [27]=1 for successful write. Write again if fail
+* 2. write words to base_addr + ofs_tdr_lp
+* 3. read the isr and check [27]=1 for successful write (all the tx FIFO data has been dequeued). check again or reset if fail.
 * Read the transmit vacancy register at base_addr + ofs_tdfv_lp to get the current tx FIFO status
 * Note: if write to a full fifo, data will not be updated.
 *
@@ -264,7 +264,7 @@ module bsg_axil_to_fifos
     always_ff @(posedge clk_i) begin : cfg_register
       if (write_to_isr[i] & (wdata_li[FIFO_ISR_TC_BIT_p]))
         isr_r[i][FIFO_ISR_TC_BIT_p] <= 1'b0;
-      else if (tx_enqueue[i])
+        else if (tx_vacancy_lo==fifo_ptr_width_lp'(fifo_els_p))
         isr_r[i][FIFO_ISR_TC_BIT_p] <= 1'b1;
       else
         isr_r[i] <= isr_r[i];
