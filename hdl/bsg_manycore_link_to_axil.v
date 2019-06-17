@@ -2,19 +2,23 @@
 *  bsg_manycore_link_to_axil.v
 *
 *  This module converts the AXIL memory-mapped interface to the manycore network interface.
-*  It also reads from the ROM in the AXIL addres space. 
-*  TODO: factor a single link out, .
+*  It also reads from the ROM in the AXIL addres space; monitor the rcv fifo vacancy and out credits.
+*  Data flow diagram:
 *          ___________________      _______________                   ___________
 *         | bsg_axil_to_fifos | -> |  ser_i_par_o | ---------------> | manycore |
-*  AXIL<=>|                   | -> |______X2______| ---------------> | endpoint |  --> link_sif_o
-*         |                   |     _______________     _________    | standard |
+*         |                   | -> |______X2______| ---------------> | endpoint |  --> link_sif_o
+* AXIL => |                   |     _______________     _________    | to fifos |
 *         |                   | <- |  par_i_ser_o | <- |rcv fifo| <- |          |  <-- link_sif_i
-*         |___________________| <- |______X2______| <- |___X2___| <- |          |
-*                             |    .............                     |          |
-*                             | <-| config rom |                     |          |
-*                             |   `````````````                      |out credit|
-*                             | <----------------------------------- |__________|
-*                                                                    
+*         |                   | <- |______X2______| <- |___X2___| <- |          |
+*         |                   |                        |             |          |
+*         |                   | <----------------------|             |          |
+*         |                   |   .............                      |          |
+*         |                   | <-| config rom |                     |          |
+*         |                   |   `````````````                      |out credit|
+*         |___________________| <----------------------------------- |__________|
+*
+*  TODO: rcv vacancy registers will increase with the number of FIFO links, thus should use the same base addresses with fifo links.
+*        the same with out credits registers.
 * See https://docs.google.com/presentation/d/1srH52eYQnYlFdKQ5RnTwliF_OBiIewoYhc4CdA30Svo for detailed block diagram
 */
 
