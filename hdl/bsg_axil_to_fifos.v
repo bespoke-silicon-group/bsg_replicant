@@ -31,7 +31,7 @@ module bsg_axil_to_fifos #(
   parameter axil_base_addr_p = "inv"
   , parameter num_slots_p = 2
   , parameter fifo_els_p = "inv"
-  , parameter fifo_width_lp = 32
+  , parameter fifo_width_lp = axil_data_width_lp
   , parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   , parameter axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
 ) (
@@ -47,15 +47,15 @@ module bsg_axil_to_fifos #(
   ,input  [           num_slots_p-1:0]                    fifo_rdy_i
   ,output [                      31:0]                    rom_addr_o
   ,input  [                      31:0]                    rom_data_i
-  ,input  [           num_slots_p-1:0][             31:0] rcv_vacancy_i
-  ,input  [         num_slots_p/2-1:0][             31:0] mc_out_credits_i
+  ,input  [           num_slots_p-1:0][fifo_width_lp-1:0] rcv_vacancy_i
+  ,input  [         num_slots_p/2-1:0][fifo_width_lp-1:0] mc_out_credits_i
 );
 
-  localparam fifo_rlr_words_lp = 4                     ; // retuen RLR is fixed, 4x4 bytes
+  localparam fifo_rlr_words_lp = 4; // retuen RLR is fixed, 4x4 bytes
+
   localparam fifo_ptr_width_lp = `BSG_WIDTH(fifo_els_p);
 
-  localparam config_addr_width_lp = 12                       ;
-  localparam index_addr_width_lp  = (32-config_addr_width_lp);
+  localparam index_addr_width_lp  = (axil_addr_width_lp-base_addr_width_lp);
 
   localparam ofs_isr_lp  = 8'h0 ; // Interrupt Status Register
   localparam ofs_tdfv_lp = 8'hC ; // Transmit FIFO Vacancy
@@ -64,9 +64,9 @@ module bsg_axil_to_fifos #(
   localparam ofs_rdr_lp  = 8'h20; // Receive Data Destination Register
   localparam ofs_rlr_lp  = 8'h24; // Receive Length Register
 
-  localparam ofs_rsp_rcv_vacancy_lp = config_addr_width_lp'(HOST_RCV_VACANCY_MC_RES_p);
-  localparam ofs_req_rcv_vacancy_lp = config_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ_p);
-  localparam ofs_mc_out_credits_lp  = config_addr_width_lp'(HOST_REQ_CREDITS_p)       ;
+  localparam ofs_rsp_rcv_vacancy_lp = base_addr_width_lp'(HOST_RCV_VACANCY_MC_RES_p);
+  localparam ofs_req_rcv_vacancy_lp = base_addr_width_lp'(HOST_RCV_VACANCY_MC_REQ_p);
+  localparam ofs_mc_out_credits_lp  = base_addr_width_lp'(HOST_REQ_CREDITS_p)       ;
 
   `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
   bsg_axil_mosi_bus_s s_axil_bus_i_cast;
@@ -256,9 +256,9 @@ module bsg_axil_to_fifos #(
       ,.yumi_i (tx_dequeue[i])
     );
 
-    assign write_to_base[i] = (wr_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i+ (axil_base_addr_p>>config_addr_width_lp)));
-    assign write_to_fifo[i] = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(ofs_tdr_lp));
-    assign write_to_isr[i]  = write_to_base[i] && (wr_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(ofs_isr_lp));
+    assign write_to_base[i] = (wr_addr_r[base_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i+ (axil_base_addr_p>>base_addr_width_lp)));
+    assign write_to_fifo[i] = write_to_base[i] && (wr_addr_r[0+:base_addr_width_lp] == base_addr_width_lp'(ofs_tdr_lp));
+    assign write_to_isr[i]  = write_to_base[i] && (wr_addr_r[0+:base_addr_width_lp] == base_addr_width_lp'(ofs_isr_lp));
 
     always_ff @(posedge clk_i) begin : cfg_register
       if (write_to_isr[i] & (wdata_li[FIFO_ISR_TC_BIT_p]))
@@ -410,11 +410,11 @@ module bsg_axil_to_fifos #(
       ,.yumi_i (rx_dequeue[i])
     );
 
-    assign read_from_base[i] = (rd_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i + (axil_base_addr_p>>config_addr_width_lp)));
-    assign read_from_fifo[i] = read_from_base[i] && (rd_addr_r[0+:config_addr_width_lp] == config_addr_width_lp'(ofs_rdr_lp));
+    assign read_from_base[i] = (rd_addr_r[base_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(i + (axil_base_addr_p>>base_addr_width_lp)));
+    assign read_from_fifo[i] = read_from_base[i] && (rd_addr_r[0+:base_addr_width_lp] == base_addr_width_lp'(ofs_rdr_lp));
 
     always_comb begin : registers
-      case (rd_addr_r[0+:config_addr_width_lp])
+      case (rd_addr_r[0+:base_addr_width_lp])
         ofs_isr_lp  : reg_lo[i] = isr_r[i];
         ofs_tdfv_lp : reg_lo[i] = fifo_width_lp'(tx_vacancy_lo[i]);
         ofs_rdfo_lp : reg_lo[i] = fifo_width_lp'({rx_occupancy_lo[i][fifo_ptr_width_lp-1:2],2'b00});
@@ -425,12 +425,12 @@ module bsg_axil_to_fifos #(
   end
 
   // read from monitors
-  assign read_from_rom = (rd_addr_r[config_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(num_slots_p + (axil_base_addr_p>>config_addr_width_lp)));
+  assign read_from_rom = (rd_addr_r[base_addr_width_lp+:index_addr_width_lp] == index_addr_width_lp'(num_slots_p + (axil_base_addr_p>>base_addr_width_lp)));
   assign rom_addr_o    = rd_addr_r;
   always_comb begin : monitor_signals
     monitor_data_lo = '0;
     if (read_from_rom & rvalid_lo)
-      case (rd_addr_r[0+:config_addr_width_lp])
+      case (rd_addr_r[0+:base_addr_width_lp])
         ofs_rsp_rcv_vacancy_lp : monitor_data_lo = rcv_vacancy_i[0];  // TODO: these rcv vacancy can be merged to the rx fifo register address.
         ofs_req_rcv_vacancy_lp : monitor_data_lo = rcv_vacancy_i[1];
         ofs_mc_out_credits_lp  : monitor_data_lo = mc_out_credits_i[0];  // redefine this address to make the module parameterized!
