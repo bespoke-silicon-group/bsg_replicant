@@ -50,6 +50,9 @@ package cl_mcl_pkg;
   // local parameters that should not change for current design
   localparam num_endpoint_lp = 1;
   localparam mc_fifo_width_lp = 128;
+  localparam axil_data_width_lp = 32;
+  localparam axil_addr_width_lp = 32;
+  localparam base_addr_width_lp = 12;
 
 endpackage : cl_mcl_pkg
 
