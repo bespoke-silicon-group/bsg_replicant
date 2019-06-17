@@ -7,9 +7,10 @@
 `include "bsg_manycore_packet.vh"
 `include "axil_to_mcl.vh"
 `include "cl_manycore_pkg.v"
-import cl_manycore_pkg::*;
 
-module bsg_manycore_endpoint_to_fifos #(
+module bsg_manycore_endpoint_to_fifos 
+  import cl_manycore_pkg::*;
+#(
   parameter num_endpoint_p = "inv"
   , parameter fifo_width_p = "inv"
   , parameter rcv_fifo_els_p = "inv"

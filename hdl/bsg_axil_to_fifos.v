@@ -25,9 +25,10 @@
 `include "bsg_defines.v"
 `include "bsg_axi_bus_pkg.vh"
 `include "axil_to_mcl.vh"
-import cl_mcl_pkg::*;
 
-module bsg_axil_to_fifos #(
+module bsg_axil_to_fifos 
+  import cl_mcl_pkg::*;
+#(
   parameter axil_base_addr_p = "inv"
   , parameter num_slots_p = 2
   , parameter fifo_els_p = "inv"
