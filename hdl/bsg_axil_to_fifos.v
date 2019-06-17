@@ -431,9 +431,9 @@ module bsg_axil_to_fifos #(
     monitor_data_lo = '0;
     if (read_from_rom & rvalid_lo)
       case (rd_addr_r[0+:base_addr_width_lp])
-        ofs_rsp_rcv_vacancy_lp : monitor_data_lo = rcv_vacancy_i[0];  // TODO: these rcv vacancy can be merged to the rx fifo register address.
+        ofs_rsp_rcv_vacancy_lp : monitor_data_lo = rcv_vacancy_i[0];
         ofs_req_rcv_vacancy_lp : monitor_data_lo = rcv_vacancy_i[1];
-        ofs_mc_out_credits_lp  : monitor_data_lo = mc_out_credits_i[0];  // redefine this address to make the module parameterized!
+        ofs_mc_out_credits_lp  : monitor_data_lo = mc_out_credits_i[0];
         default                : monitor_data_lo = rom_data_i;
       endcase
   end
