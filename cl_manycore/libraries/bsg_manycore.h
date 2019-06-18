@@ -92,7 +92,7 @@ int hb_mc_manycore_response_rx(hb_mc_manycore_t *mc,
  * Transmit a response packet to manycore hardware
  * @param[in] mc        A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] response  A response packet to transmit to manycore hardware
- * @param[in] timeout   A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout A timeout counter in u-seconds. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
@@ -104,7 +104,7 @@ int hb_mc_manycore_response_tx(hb_mc_manycore_t *mc,
  * Receive a request packet from manycore hardware
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] request A packet into which data should be read
- * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout A timeout counter in u-seconds. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
@@ -117,7 +117,7 @@ int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] packet  A packet to transmit to manycore hardware
  * @param[in] type    Is this packet a request or response packet?
- * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout A timeout counter in u-seconds. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result, deprecated))
@@ -131,7 +131,7 @@ int hb_mc_manycore_packet_tx(hb_mc_manycore_t *mc,
  * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] packet A packet into which data should be read
  * @param[in] type   Is this packet a request or response packet?
- * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout A timeout counter in u-seconds. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result, deprecated))
