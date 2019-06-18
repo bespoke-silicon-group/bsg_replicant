@@ -10,6 +10,7 @@
 
 module bsg_manycore_endpoint_to_fifos 
   import cl_manycore_pkg::*;
+  import cl_mcl_pkg::*;
 #(
   parameter num_endpoint_p = "inv"
   , parameter fifo_width_p = "inv"
@@ -41,8 +42,6 @@ module bsg_manycore_endpoint_to_fifos
   ,output [  num_endpoint_p-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] out_credits_o
 );
 
-  `declare_bsg_mcl_request_s;
-  `declare_bsg_mcl_response_s;
   bsg_mcl_request_s  [num_endpoint_p-1:0] fifo_req_li, mc_req_lo;
   bsg_mcl_response_s [num_endpoint_p-1:0] fifo_rsp_li, mc_rsp_lo;
 
@@ -75,11 +74,12 @@ module bsg_manycore_endpoint_to_fifos
 
 
   localparam packet_width_lp = `bsg_manycore_packet_width(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p, load_id_width_p);
-
+  localparam data_mask_width_lp = (data_width_p>>3);
+  
   logic [num_endpoint_p-1:0]                        endpoint_in_v_lo   ;
   logic [num_endpoint_p-1:0]                        endpoint_in_yumi_li;
   logic [num_endpoint_p-1:0][     data_width_p-1:0] endpoint_in_data_lo;
-  logic [num_endpoint_p-1:0][(data_width_p>>3)-1:0] endpoint_in_mask_lo;
+  logic [num_endpoint_p-1:0][data_mask_width_lp-1:0] endpoint_in_mask_lo;
   logic [num_endpoint_p-1:0][     addr_width_p-1:0] endpoint_in_addr_lo;
   logic [num_endpoint_p-1:0]                        endpoint_in_we_lo  ;
   logic [num_endpoint_p-1:0][   x_cord_width_p-1:0] in_src_x_cord_lo   ;
@@ -98,17 +98,12 @@ module bsg_manycore_endpoint_to_fifos
   logic [num_endpoint_p-1:0][data_width_p-1:0] returning_data_li;
   logic [num_endpoint_p-1:0]                   returning_v_li   ;
 
-  logic [num_endpoint_p-1:0][`BSG_WIDTH(max_out_credits_p)-1:0] out_credits_lo;
-  logic [num_endpoint_p-1:0][               x_cord_width_p-1:0] my_x_li       ;
-  logic [num_endpoint_p-1:0][               y_cord_width_p-1:0] my_y_li       ;
-
-
 
   // manycore request to fifo
   logic [num_endpoint_p-1:0] timer_v_lo;
   logic [num_endpoint_p-1:0] timer_ready_li;
   logic [num_endpoint_p-1:0] [data_width_p-1:0] timer_data_lo;
-  logic [num_endpoint_p-1:0] [(data_width_p>>3)-1:0] timer_mask_lo;
+  logic [num_endpoint_p-1:0] [data_mask_width_lp-1:0] timer_mask_lo;
   logic [num_endpoint_p-1:0] [addr_width_p-1:0] timer_addr_lo;
   logic [num_endpoint_p-1:0] timer_we_lo;
   logic [num_endpoint_p-1:0] [x_cord_width_p-1:0] timer_src_x_cord_lo;
@@ -124,8 +119,8 @@ module bsg_manycore_endpoint_to_fifos
     assign mc_req_lo[i].payload.data = (32)'(endpoint_in_data_lo[i]);
     assign mc_req_lo[i].src_y_cord = (8)'(in_src_x_cord_lo[i]);
     assign mc_req_lo[i].src_x_cord = (8)'(in_src_y_cord_lo[i]);
-    assign mc_req_lo[i].y_cord = (8)'(my_y_li[i]);
-    assign mc_req_lo[i].x_cord = (8)'(my_x_li[i]);
+    assign mc_req_lo[i].y_cord = (8)'(my_y_i[i]);
+    assign mc_req_lo[i].x_cord = (8)'(my_x_i[i]);
   end
 
 
@@ -136,7 +131,7 @@ module bsg_manycore_endpoint_to_fifos
     assign endpoint_out_packet_li[i] = {
       (addr_width_p)'(fifo_req_li[i].addr)
       ,(request_op_width_p)'(fifo_req_li[i].op)
-      ,(data_width_p>>3)'(fifo_req_li[i].op_ex)
+      ,data_mask_width_lp'(fifo_req_li[i].op_ex)
       ,(data_width_p)'(fifo_req_li[i].payload.data)
       ,(y_cord_width_p)'(fifo_req_li[i].src_y_cord)
       ,(x_cord_width_p)'(fifo_req_li[i].src_x_cord)
@@ -149,7 +144,7 @@ module bsg_manycore_endpoint_to_fifos
     // 2. host issues load request and the rcv fifo vacancy < max_out_credits_p (not using 0 because of the network latency)
     assign fifo_req_enable[i] = !(
       (fifo_req_li[i].op==8'(`ePacketOp_remote_load)) && (rcv_fifo_vacancy_i[2*i]<max_out_credits_p)
-      || (out_credits_lo[i] == '0)
+      || (out_credits_o[i] == '0)
     );
     assign endpoint_out_v_li[i] = fifo_req_v_li[i] & fifo_req_enable[i];
 		assign fifo_req_ready_lo[i] = endpoint_out_ready_lo[i] & fifo_req_enable[i];
@@ -162,8 +157,8 @@ module bsg_manycore_endpoint_to_fifos
     assign mc_rsp_lo[i].pkt_type = 8'({`ePacketType_data});  // Curly braces must be kept!
     assign mc_rsp_lo[i].data = 32'(returned_data_r_lo[i]);
     assign mc_rsp_lo[i].load_id = 32'(returned_load_id_r_lo[i]);
-    assign mc_rsp_lo[i].y_cord = 8'(my_y_li[i]);
-    assign mc_rsp_lo[i].x_cord = 8'(my_x_li[i]);
+    assign mc_rsp_lo[i].y_cord = 8'(my_y_i[i]);
+    assign mc_rsp_lo[i].x_cord = 8'(my_x_i[i]);
   end
   assign returned_yumi_li = mc_rsp_ready_li & mc_rsp_v_lo;
 
@@ -179,13 +174,10 @@ module bsg_manycore_endpoint_to_fifos
 
   assign fifo_rsp_ready_lo = ~returning_wr_v_r;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
-    assign returning_data_li[i] = (data_width_p)'(fifo_rsp_li[i].data);
+    assign returning_data_li[i] = returning_wr_v_r[i] ? '0 : (data_width_p)'(fifo_rsp_li[i].data);
   end
   assign returning_v_li = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_ready_lo);
 
-  assign out_credits_o = out_credits_lo;
-  assign my_x_li       = my_x_i;
-  assign my_y_li       = my_y_i;
 
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     bsg_manycore_endpoint_standard #(
@@ -230,9 +222,9 @@ module bsg_manycore_endpoint_to_fifos
       ,.returning_data_i    (returning_data_li[i]     )
       ,.returning_v_i       (returning_v_li[i]        )
 
-      ,.out_credits_o       (out_credits_lo[i]        )
-      ,.my_x_i              (my_x_li[i]               )
-      ,.my_y_i              (my_y_li[i]               )
+      ,.out_credits_o       (out_credits_o[i]        )
+      ,.my_x_i              (my_x_i[i]               )
+      ,.my_y_i              (my_y_i[i]               )
     );
   end
 
