@@ -48,7 +48,7 @@ module bsg_axil_to_fifos_rx
       rd_state_r <= rd_state_n;
 
 
-  always_comb begin : rd_state_control
+  always_comb begin
 
     rd_state_n = rd_state_r;
 
