@@ -3,9 +3,9 @@
 *
 *
 */
-`include "bsg_defines.v"
-`include "axil_to_mcl.vh"
 
+`include "bsg_defines.v"
+`include "bsg_axil_to_mcl_pkg.vh"
 
 module bsg_axil_to_fifos_rx
   import cl_mcl_pkg::*; 
