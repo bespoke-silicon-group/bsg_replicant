@@ -13,6 +13,13 @@
 
 #define ORIGIN_EVA_MAP_MAX_NAME_SIZE 256
 
+
+/**
+ * Initialize an EVA map for tiles centered at an origin.
+ * @param[in] map     An EVA<->NPA map to initialize.
+ * @param[in] origin  An origin tile around which the map is centered.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
 int  hb_mc_origin_eva_map_init(hb_mc_eva_map_t *map, hb_mc_coordinate_t origin)
 {
 	hb_mc_coordinate_t *cpy;
@@ -57,7 +64,13 @@ done:
 	return r;
 }
 
-void hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map)
+
+/**
+ * Cleanup an EVA map for tiles centered at an origin.
+ * @param[in] map  An EVA<->NPA map initialized with hb_mc_origin_eva_map_init().
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map)
 {
 	hb_mc_coordinate_t *origin;
 	const char *name;
@@ -65,7 +78,7 @@ void hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map)
 	/* check that map is not null */
 	if (!map) {
 		bsg_pr_err("%s: Calling exit on null map\n", __func__);
-		return;
+		return HB_MC_INVALID;
 	}
 
 	/* free the private data */
@@ -73,6 +86,7 @@ void hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map)
 	if (!origin) {
 		bsg_pr_dbg("%s: Calling exit on map with null origin\n",
 			   __func__);
+		return HB_MC_INVALID;
 	} else {
 		free(origin);
 		map->priv = NULL;
@@ -83,10 +97,11 @@ void hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map)
 	if (!name) {
 		bsg_pr_dbg("%s: Calling exit on map with null name\n",
 			   __func__);
+		return HB_MC_INVALID;
 	} else {
 		free((void*)name);
 		map->eva_map_name = NULL;
 	}
 
-	return;
+	return HB_MC_SUCCESS;
 }

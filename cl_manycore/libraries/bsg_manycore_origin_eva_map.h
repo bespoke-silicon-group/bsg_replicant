@@ -24,8 +24,10 @@ int  hb_mc_origin_eva_map_init(hb_mc_eva_map_t *map, hb_mc_coordinate_t origin);
 /**
  * Cleanup an EVA map for tiles centered at an origin.
  * @param[in] map  An EVA<->NPA map initialized with hb_mc_origin_eva_map_init().
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-void hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map);
+__attribute__((warn_unused_result))
+int hb_mc_origin_eva_map_exit(hb_mc_eva_map_t *map);
 
 #ifdef __cplusplus
 }

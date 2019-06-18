@@ -119,7 +119,7 @@ enum hb_mc_memcpy_kind {
  * @param[in]  name          Device name
  * @param[in]  id            Device id
  * @param[in]  dim           Tile pool (mesh) dimensions
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_init (	hb_mc_device_t *device,
@@ -135,7 +135,7 @@ int hb_mc_device_init (	hb_mc_device_t *device,
  * all tiles in the device's hb_mc_mesh_t struct.
  * device struct with list of all tiles and their cooridnates 
  * @param[in]  device        Pointer to device
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_program_load (hb_mc_device_t *device);
@@ -155,7 +155,7 @@ int hb_mc_device_program_load (hb_mc_device_t *device);
  * @param[in]  bin_size      Size of the binary to be loaded onto device
  * @param[in]  id            Id of program's memory allocator
  * @param[in]  alloc_name    Unique name of program's memory allocator
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
@@ -177,7 +177,7 @@ int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
  * @parma[in]  bin_name      Name of binary elf file
  * @param[in]  id            Id of program's memory allocator
  * @param[in]  alloc_name    Unique name of program's memory allocator
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_program_init (	hb_mc_device_t *device,
@@ -192,7 +192,7 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
  * @param[in]  program       Pointer to program
  * @param[in]  id            Id of program's memory allocator
  * @param[in]  name    Unique name of program's memory allocator
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
@@ -205,7 +205,7 @@ int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
 /**
  * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
  * @param[in]  device        Pointer to device
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_finish (hb_mc_device_t *device);
@@ -217,7 +217,7 @@ int hb_mc_device_finish (hb_mc_device_t *device);
  * @param[in]  device        Pointer to device
  * @parma[in]  size          Size of requested memory
  * @param[out] eva           Eva address of the allocated memory
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva);
@@ -230,7 +230,7 @@ int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva
  * Frees memory on device DRAM
  * @param[in]  device        Pointer to device
  * @param[out] eva           Eva address of the memory to be freed
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result)) 
 int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
@@ -246,7 +246,7 @@ int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
  * API remains in this function until all tile groups
  * have successfully finished execution.
  * @param[in]  device        Pointer to device
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_tile_groups_execute (hb_mc_device_t *device);
@@ -266,7 +266,7 @@ int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device);
 /**
  * Waits for a tile group to send a finish packet to device.
  * @param[in]  device        Pointer to device
- * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite look if no tile group finishes.
+ * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite loop if no tile group finishes.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
@@ -281,7 +281,7 @@ int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
  * @param[in]  name          EVA address of dst
  * @param[in]  count         Size of buffer to be copied
  * @param[in]  hb_mc_memcpy_kind  Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_memcpy (	hb_mc_device_t *device,
@@ -299,7 +299,7 @@ int hb_mc_device_memcpy (	hb_mc_device_t *device,
  * Takes in a hb_mc_device_t struct and initializes a mesh of tile in the Manycore device.
  * @param[in]  device        Pointer to device
  * @parma[in]  dim           X/Y dimensions of the tile pool (mesh) to be initialized
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim); 
@@ -317,7 +317,7 @@ int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim);
  * @param[in]  name          Kernel name to be executed on tile groups in grid
  * @param[in]  argc          Number of input arguments to kernel
  * @param[in]  argv          List of input arguments to kernel
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_grid_init (	hb_mc_device_t *device,
@@ -333,7 +333,7 @@ int hb_mc_grid_init (	hb_mc_device_t *device,
  * and sets the dimensions, origin, and id of tile group.
  * @param[in]  device        Pointer to device
  * @param[in]  tg            Pointer to tile group
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);  
@@ -352,7 +352,7 @@ int hb_mc_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *
  * @param[in]  name          Kernel name that is to be executed on tile group
  * @param[in]  argc          Number of input arguments to the kernel
  * @param[in]  argv          List of input arguments to the kernel
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_group_enqueue(	hb_mc_device_t *device,
@@ -370,7 +370,7 @@ int hb_mc_tile_group_enqueue(	hb_mc_device_t *device,
  * tile group setting the argc, argv, finish_addr and kernel pointer.
  * @param[in]  device        Pointer to device
  * @parma[in]  tg            Pointer to tile group
- * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
+ * @return HB_MC_SUCCESS if tile group is launched successfully, otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_group_launch(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
@@ -382,7 +382,7 @@ int hb_mc_tile_group_launch(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
  * De-allocates all tiles in tile group, and resets their tile-group id and origin in the device book keeping.
  * @param[in]  device        Pointer to device
  * @parma[in]  tg            Pointer to tile group
- * @return HB_MC_SUCCESS if tile group is launched successfully and HB_MC_FAIL otherwise.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
@@ -396,7 +396,7 @@ int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t
  * @param[in]  device        Pointer to device
  * @param[in]  tiles         List of tile coordinates to freeze
  * @param[in]  num_tiles     Number of tiles in the list
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_tiles_freeze(	hb_mc_device_t *device,
@@ -412,7 +412,7 @@ int hb_mc_device_tiles_freeze(	hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @param[in]  tiles         List of tile coordinates to unfreeze
  * @param[in]  num_tiles     Number of tiles in the list
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
@@ -433,7 +433,7 @@ int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
  * @param[in]  grid_dim      Grid dimensions of the tiles in the list
  * @param[in]  tiles         List of tile coordinates to unfreeze
  * @param[in]  num_tiles     Number of tiles in the list
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_tiles_set_symbols(	hb_mc_device_t *device, 
@@ -457,7 +457,7 @@ int hb_mc_device_tiles_set_symbols(	hb_mc_device_t *device,
  * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the origin of.
  * @param[in] origin     Origin coordinates.
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_set_origin_symbols(	hb_mc_manycore_t *mc,
@@ -480,7 +480,7 @@ int hb_mc_tile_set_origin_symbols(	hb_mc_manycore_t *mc,
  * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the coordinates of.
  * @param[in] coord_val  The coordinates to set the tile.
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
 int hb_mc_tile_set_coord_symbols(	hb_mc_manycore_t *mc,
@@ -504,8 +504,8 @@ int hb_mc_tile_set_coord_symbols(	hb_mc_manycore_t *mc,
  * @param[in] coord      Tile coordinates to set the id of.
  * @param[in] coord_val  The coordinates to set the tile.
  * @param[in] dim        Tile group dimensions
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_tile_set_id_symbol(	hb_mc_manycore_t *mc,
 				hb_mc_eva_map_t *map,
@@ -528,8 +528,8 @@ int hb_mc_tile_set_id_symbol(	hb_mc_manycore_t *mc,
  * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the tile group id of.
  * @param[in] tg_id      Tile group id
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_tile_set_tile_group_id_symbols(	hb_mc_manycore_t *mc,
 						hb_mc_eva_map_t *map,
@@ -551,8 +551,8 @@ int hb_mc_tile_set_tile_group_id_symbols(	hb_mc_manycore_t *mc,
  * @param[in] bin_size   Size of binary file. 
  * @param[in] coord      Tile coordinates to set the tile group id of.
  * @param[in] tg_id      Grid dimensions
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
-* */
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
 __attribute__((warn_unused_result))
 int hb_mc_tile_set_grid_dim_symbols(	hb_mc_manycore_t *mc,
 					hb_mc_eva_map_t *map,
