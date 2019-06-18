@@ -1,5 +1,5 @@
-`ifndef AXIL_TO_MCL_VH
-`define AXIL_TO_MCL_VH
+`ifndef BSG_AXIL_TO_MCL_PKG_VH
+`define BSG_AXIL_TO_MCL_PKG_VH
 
 `define declare_bsg_mcl_response_s                          \
     typedef struct packed {                                 \
@@ -71,4 +71,4 @@ package cl_mcl_pkg;
 
 endpackage : cl_mcl_pkg
 
-`endif // AXIL_TO_MCL_VH
+`endif // BSG_AXIL_TO_MCL_PKG_VH
