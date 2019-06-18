@@ -5,7 +5,7 @@
 */
 
 `include "bsg_manycore_packet.vh"
-`include "axil_to_mcl.vh"
+`include "bsg_axil_to_mcl_pkg.vh"
 `include "cl_manycore_pkg.v"
 
 module bsg_manycore_endpoint_to_fifos 
