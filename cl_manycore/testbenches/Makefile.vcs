@@ -7,7 +7,7 @@
 # SIM_PATH: The path to the directory where the simulation is run
 # TESTS_PATH: The path to the directory containing the .c files for testing
 # TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
-# C_REGRESSION_TESTS: Names of all available regression tests.
+# COSIM_REGRESSION_TESTS: Names of all available regression tests.
 # XILINX_IP: Path to the Xilinx IP Directory
 # 
 # (These varibles are typically set by Makefile.common, or the Makefile that
@@ -124,7 +124,7 @@ simulator.clean:
 	rm -rf $(SIM_PATH)/synopsys_sim.setup 
 	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd 
 	rm -rf $(SIM_PATH)/vc_hdrs.h
-	rm -rf $(C_REGRESSION_TESTS) .vlogansetup* 
+	rm -rf $(COSIMULATION_TARGETS) .vlogansetup* 
 
 # squeakyclean removes any VCS outputs that can be reused betweeen cosimulation
 # invocations.

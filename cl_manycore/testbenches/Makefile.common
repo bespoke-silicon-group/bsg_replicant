@@ -6,7 +6,7 @@
 # SIM_PATH: The path to the directory where the simulation is run
 # TESTS_PATH: The path to the directory containing the .c files for testing
 # TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
-# C_REGRESSION_TESTS: Names of all available regression tests.
+# COSIM_REGRESSION_TESTS: Names of all available regression tests.
 # 
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
@@ -85,10 +85,10 @@ include $(HARDWARE_PATH)/Makefile.include
 common.hardware: $(HARDWARE_TARGETS) 
 
 # To include a test in cosimulation, the user defines a list of tests in
-# C_REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
+# COSIMULATION_TARGETS. Each test can also define a custom rule, <test_name>.rule
 # that is run during compilation. These custom rules are useful for building
 # spmd or cuda binaries, for example.
-USER_RULES=$(foreach tgt,$(C_REGRESSION_TESTS),$(tgt).rule)
+USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
 $(USER_RULES):
 
 
