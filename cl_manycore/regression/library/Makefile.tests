@@ -22,7 +22,7 @@ REGRESSION_TESTS = $(UNIFIED_MAIN_TESTS) $(INDEPENDENT_MAIN_TESTS)
 
 # Put regression tests that should be run in COSIM here, otherwise they will not
 # be run in the cosimulation sweep
-COSIM_REGRESSION_TESTS = test_rom test_unified_main
+COSIM_REGRESSION_TESTS = $(REGRESSION_TESTS)
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	-DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) \
