@@ -114,7 +114,7 @@ module bsg_manycore_link_to_axil
 
   bsg_axil_to_fifos #(
     .num_slots_p     (num_slots_lp    )
-    ,.fifo_els_p      (axil_fifo_els_p)
+    ,.fifo_els_p      (axil_fifo_els_p )
     ,.axil_base_addr_p(axil_base_addr_p)
   ) axil_to_fifos (
     .clk_i           (clk_i                 )
@@ -123,10 +123,10 @@ module bsg_manycore_link_to_axil
     ,.s_axil_bus_o    (s_axil_mcl_bus_o      )
     ,.fifo_v_i        (axil_fifo_v_li        )
     ,.fifo_data_i     (axil_fifo_data_li     )
-    ,.fifo_ready_o      (axil_fifo_ready_lo      )
+    ,.fifo_ready_o    (axil_fifo_ready_lo    )
     ,.fifo_v_o        (axil_fifo_v_lo        )
     ,.fifo_data_o     (axil_fifo_data_lo     )
-    ,.fifo_ready_i      (axil_fifo_ready_li      )
+    ,.fifo_ready_i    (axil_fifo_ready_li    )
     ,.rom_addr_o      (rom_addr_li           )
     ,.rom_data_i      (rom_data_lo           )
     ,.rcv_vacancy_i   (rcv_vacancy_lo_cast   )
@@ -152,7 +152,7 @@ module bsg_manycore_link_to_axil
   wire [num_slots_lp-1:0] rcv_enqueue = mc_fifo_v_lo & mc_fifo_ready_li;
   wire [num_slots_lp-1:0] rcv_dequeue = rcv_fifo_r_li & rcv_fifo_v_lo;
 
-  wire [num_slots_lp-1:0] par_to_ser_yumi_li = axil_fifo_ready_lo & axil_fifo_v_li;
+  wire [num_slots_lp-1:0] piso_yumi_li = axil_fifo_ready_lo & axil_fifo_v_li;
 
   for (genvar i=0; i<num_slots_lp; i++) begin : mc128_to_fifo32
     bsg_counter_up_down #(
@@ -184,17 +184,17 @@ module bsg_manycore_link_to_axil
     );
 
     bsg_parallel_in_serial_out #(
-      .width_p(axil_data_width_lp)
+      .width_p(axil_data_width_lp                 )
       ,.els_p  (mc_fifo_width_lp/axil_data_width_lp)
     ) data_downsizer (
-      .clk_i  (clk_i                )
-      ,.reset_i(reset_i              )
-      ,.valid_i(rcv_fifo_v_lo[i]     )
-      ,.data_i (rcv_fifo_lo[i]       )
-      ,.ready_o(rcv_fifo_r_li[i]     )
-      ,.valid_o(axil_fifo_v_li[i]    )
-      ,.data_o (axil_fifo_data_li[i] )
-      ,.yumi_i (par_to_ser_yumi_li[i])
+      .clk_i  (clk_i               )
+      ,.reset_i(reset_i             )
+      ,.valid_i(rcv_fifo_v_lo[i]    )
+      ,.data_i (rcv_fifo_lo[i]      )
+      ,.ready_o(rcv_fifo_r_li[i]    )
+      ,.valid_o(axil_fifo_v_li[i]   )
+      ,.data_o (axil_fifo_data_li[i])
+      ,.yumi_i (piso_yumi_li[i]     )
     );
   end
 
@@ -202,26 +202,26 @@ module bsg_manycore_link_to_axil
   localparam valid_width_lp    = mc_fifo_width_lp/axil_data_width_lp;
   localparam yumi_cnt_width_lp = $clog2(valid_width_lp+1);
 
-  logic [num_slots_lp-1:0][   valid_width_lp-1:0] ser_to_par_valid_lo   ;
-  logic [num_slots_lp-1:0][yumi_cnt_width_lp-1:0] ser_to_par_yumi_cnt_li;
+  logic [num_slots_lp-1:0][   valid_width_lp-1:0] sipo_valid_lo   ;
+  logic [num_slots_lp-1:0][yumi_cnt_width_lp-1:0] sipo_yumi_cnt_li;
 
   for (genvar i=0; i<num_slots_lp; i++) begin : fifo32_to_mc128
     bsg_serial_in_parallel_out #(
-      .width_p(axil_data_width_lp)
+      .width_p(axil_data_width_lp                 )
       ,.els_p  (mc_fifo_width_lp/axil_data_width_lp)
     ) data_deserialize (
-      .clk_i     (clk_i                 )
-      ,.reset_i   (reset_i               )
-      ,.valid_i   (axil_fifo_v_lo[i]     )
-      ,.data_i    (axil_fifo_data_lo[i]  )
-      ,.ready_o   (axil_fifo_ready_li[i]   )
-      ,.valid_o   (ser_to_par_valid_lo[i])
-      ,.data_o    (mc_fifo_data_li[i]    )
-      ,.yumi_cnt_i(ser_to_par_yumi_cnt_li[i])
+      .clk_i     (clk_i                )
+      ,.reset_i   (reset_i              )
+      ,.valid_i   (axil_fifo_v_lo[i]    )
+      ,.data_i    (axil_fifo_data_lo[i] )
+      ,.ready_o   (axil_fifo_ready_li[i])
+      ,.valid_o   (sipo_valid_lo[i]     )
+      ,.data_o    (mc_fifo_data_li[i]   )
+      ,.yumi_cnt_i(sipo_yumi_cnt_li[i]  )
     );
 
-    assign mc_fifo_v_li[i]           = &ser_to_par_valid_lo[i];
-    assign ser_to_par_yumi_cnt_li[i] = (mc_fifo_v_li[i] & mc_fifo_ready_lo[i]) ? (yumi_cnt_width_lp)'(valid_width_lp) :'0;
+    assign mc_fifo_v_li[i]     = &sipo_valid_lo[i];
+    assign sipo_yumi_cnt_li[i] = (mc_fifo_v_li[i] & mc_fifo_ready_lo[i]) ? (yumi_cnt_width_lp)'(valid_width_lp) :'0;
   end
 
 endmodule
