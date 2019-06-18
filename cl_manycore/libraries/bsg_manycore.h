@@ -68,7 +68,7 @@ void hb_mc_manycore_exit(hb_mc_manycore_t *mc);
  * Transmit a request packet to manycore hardware
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] request A request packet to transmit to manycore hardware
- * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout A timeout counter in u-seconds. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
@@ -80,7 +80,7 @@ int hb_mc_manycore_request_tx(hb_mc_manycore_t *mc,
  * Receive a response packet from manycore hardware
  * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] response A packet into which data should be read
- * @param[in] timeout  A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout A timeout counter in u-seconds. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 __attribute__((warn_unused_result))
