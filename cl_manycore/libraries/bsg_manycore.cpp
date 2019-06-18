@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <climits>
 #include <cstdbool>
+#include <ctime>
 #else
 #include <inttypes>
 #include <stdint.h>
@@ -29,6 +30,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <time.h>
 #endif
 
 #include <vector>
@@ -855,8 +857,8 @@ static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
         uint32_t vacancy, tx_complete;
         int err;
 
-        if (timeout != -1) {
-                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
+        if (timeout < -1) {
+                manycore_pr_err(mc, "%s: Only timeout values >= 0 are supported\n",
                                 __func__);
                 return HB_MC_INVALID;
         }
@@ -903,6 +905,11 @@ static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
 		}
 	}
 
+	/* get the time */
+	clock_t start;
+	if (timeout != -1)
+		start = clock();
+
 	do { //	wait until transmit is complete: continuously write a packet length until done
 		err = hb_mc_manycore_mmio_write32(mc, len_addr, sizeof(*packet));
 		if (err != HB_MC_SUCCESS) {
@@ -921,6 +928,14 @@ static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
 					hb_mc_direction_to_string(dir), hb_mc_strerror(err));
 			return err;
 		}
+
+		/* should we timeout? */
+		if (timeout != -1) {
+			double elapsed_us = ((clock() - start)/CLOCKS_PER_SEC) * 1e6;
+			if (elapsed_us > timeout)
+				return HB_MC_TIMEOUT;
+		}
+
 	} while (!tx_complete);
 
 	// clear the Transmit Complete bit
@@ -956,14 +971,20 @@ static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
         uint32_t occupancy, length;
         int err;
 
-        if (timeout != -1) {
-                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
+	if (timeout < -1) {
+                manycore_pr_err(mc, "%s: Only timeout values >= 0 are supported\n",
                                 __func__);
                 return HB_MC_INVALID;
         }
 
         length_addr = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_RX_LENGTH_OFFSET);
         data_addr   = hb_mc_mmio_fifo_get_reg_addr(type, HB_MC_MMIO_FIFO_RX_DATA_OFFSET);
+
+	/* get the time */
+	clock_t start;
+	if (timeout != -1)
+		start = clock();
+
 
         /* wait for a packet */
         do {
@@ -973,6 +994,13 @@ static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
                                         __func__, typestr, hb_mc_strerror(err));
                         return err;
                 }
+
+		/* should we timeout? */
+		if (timeout != -1) {
+			double elapsed_us = ((clock() - start)/CLOCKS_PER_SEC) * 1e6;
+			if (elapsed_us > timeout)
+				return HB_MC_TIMEOUT;
+		}
 
         } while (occupancy < 1);
 
