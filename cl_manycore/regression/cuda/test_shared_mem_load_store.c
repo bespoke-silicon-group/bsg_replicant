@@ -165,6 +165,11 @@ int kernel_shared_mem_load_store () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_shared_mem_load_store Regression Test (COSIMULATION)\n");
 	int rc = kernel_shared_mem_load_store();
 	*exit_code = rc;

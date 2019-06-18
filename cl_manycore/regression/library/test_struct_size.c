@@ -12,6 +12,11 @@ int test_struct_size() {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_struct_size Regression Test (COSIMULATION)\n");
 	int rc = test_struct_size();
 	*exit_code = rc;

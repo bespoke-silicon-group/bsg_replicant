@@ -140,6 +140,11 @@ int kernel_dram () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_dram Regression Test (COSIMULATION)\n");
 	int rc = kernel_dram();
 	*exit_code = rc;

@@ -1,0 +1,100 @@
+# This Makefile Fragment enables Vivado Cosimulation. This file is included
+# by Makefile.common in this directory.
+
+# NOTE: This file REQUIRES several variables to be set: 
+# 
+# SIM_PATH: The path to the directory where the simulation is run
+# TESTS_PATH: The path to the directory containing the .c files for testing
+# TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
+# C_REGRESSION_TESTS: Names of all available regression tests.
+# XILINX_IP: Path to the Xilinx IP Directory
+# 
+# (These varibles are typically set by Makefile.common, or the Makefile that
+# includes Makefile.common.)
+#
+# BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
+# BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
+# CL_DIR: Path to the directory of this AWS F1 Project
+#
+# (These varibles are typically set by Makefile.environment, which is included
+# by the top-level makefile.)
+#
+
+SIMULATOR=vivado
+
+# RTL_TB_WORKLIB is the name of the library Xilinx is compiling
+RTL_TB_WORKLIB = cosimulation
+
+# RTL_TB_LIBS is a list of Verilog libraries Vivado should "link" against when
+# compiling
+RTL_TB_LIBS    = axis_register_slice_v1_1_17 fifo_generator_v13_2_2
+RTL_TB_LIBS    += axis_data_fifo_v1_1_18 axis_dwidth_converter_v1_1_16
+RTL_TB_LIBS    += axi_fifo_mm_s_v4_1_14 axi_clock_converter_v2_1_11
+RTL_TB_LIBS    += axis_infrastructure_v1_1_0 generic_baseblocks_v2_1_0
+RTL_TB_LIBS    += axi_infrastructure_v1_1_0 axi_register_slice_v2_1_15
+RTL_TB_LIBS    += axi_register_slice_v2_1_12 fifo_generator_v13_2_1
+RTL_TB_LIBS    += fifo_generator_v13_1_4 axi_data_fifo_v2_1_11
+RTL_TB_LIBS    += axi_crossbar_v2_1_13 xil_defaultlib unisims_ver
+RTL_TB_LIBS    += unimacro_ver secureip xpm
+
+XVLOG_FLAGS = $(foreach def,$(VDEFINES),-d "$(def)")
+
+XELAB_FLAGS += $(XVLOG_FLAGS)
+
+CDEFINES    += -DVIVADO_SIM
+XSC_FLAGS   := $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
+XSC_FLAGS   += $(foreach def,$(CFLAGS),--additional_option "$(def)")
+XSC_FLAGS   += $(foreach def,$(CDEFINES),--additional_option "$(def)")
+
+XSIM_FLAGS := $(if $(DEBUG),-gui,)
+XSIM_FLAGS += $(if $(DEBUG),-tclbatch waves.tcl,)
+
+.PHONY: simulator.clean
+.PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/xsim.dir $(SIM_PATH)/%.so $(SIM_PATH)/xsim.dir/%
+
+# Vivado Generates an shared object file by compiling the $(TESTS_PATH).c. This
+# shared object file is used by xsim when running simulation. To allow users to
+# attach test-specific makefile rules, each test has a corresponding
+# <test_name>.rule that can be called. This rule is typically specified in the
+# top-level makefile.
+$(SIM_PATH)/%.so: $(TESTS_PATH)/%.c %.rule $(CSOURCES)
+	xsc $< $(CSOURCES) $(XSC_FLAGS) -o $@
+
+# The xsim.dir/$(RTL_TB_WORKLIB) directory contains the compiled verilog files
+$(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/$(V_TOP_SRC).sv 
+$(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB): $(TESTBENCH_PATH)/top.vivado.f $(HARDWARE_TARGETS) 
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	XILINX_IP=$(XILINX_IP) \
+	xvlog --sv -m64 $(XVLOG_FLAGS) --work $(RTL_TB_WORKLIB) --relax  \
+		--initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini  \
+		-f $(TESTBENCH_PATH)/top.vivado.f $<
+
+# Elaboration stitches together all of the compiled verilog files and the shared
+# object file.
+$(SIM_PATH)/xsim.dir/%: $(SIM_PATH)/%.so | $(SIM_PATH)/xsim.dir/$(RTL_TB_WORKLIB) 
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	XILINX_IP=$(XILINX_IP) \
+	xelab -m64 $(XELAB_FLAGS) --timescale 1ps/1ps --debug typical --relax \
+		--mt 8 --initfile $(XILINX_VIVADO)/data/xsim/ip/xsim_ip.ini \
+		$(foreach lib,$(RTL_TB_LIBS), -L $(lib)) $(RTL_TB_WORKLIB).tb \
+		$(RTL_TB_WORKLIB).glbl $(RTL_TB_WORKLIB).$(V_TOP_SRC) \
+		--snapshot $(notdir $@) -sv_lib $(notdir $@)
+
+# Run xsim to generate the log file.
+$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/xsim.dir/%
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	XILINX_IP=$(XILINX_IP) \
+	xsim $(XSIM_FLAGS) -R -log $@ $(notdir $<)
+
+# simulator.clean shouldn't be called directly. Makefile.common will call this
+# rule when `make clean` is called.
+simulator.clean:
+	rm -rf $(SIM_PATH)/.Xil $(SIM_PATH)/xsim.dir
+	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou $(SIM_PATH)/*.pb 
+	rm -rf $(SIM_PATH)/*.dat $(SIM_PATH)/*.wdb $(SIM_PATH)/*.so

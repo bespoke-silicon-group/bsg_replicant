@@ -1,6 +1,9 @@
 #ifndef _CL_MANYCORE_REGRESSION_H
 #define _CL_MANYCORE_REGRESSION_H
 #include <stdio.h>
+#ifdef VCS
+#include "svdpi.h"
+#endif
 #define BSG_RED(x) "\033[31m" x "\033[0m"
 #define BSG_GREEN(x) "\033[32m" x "\033[0m"
 #define BSG_YELLOW(x) "\033[33m" x "\033[0m"

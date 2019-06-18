@@ -191,6 +191,11 @@ int kernel_vec_add () {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_vec_add Regression Test (COSIMULATION)\n");
 	int rc = kernel_vec_add();
 	*exit_code = rc;

@@ -593,6 +593,11 @@ int test_loader_suite (void) {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info(SUITE_NAME " Regression Test (COSIMULATION)\n");
 	int rc = test_loader_suite();
 	*exit_code = rc;

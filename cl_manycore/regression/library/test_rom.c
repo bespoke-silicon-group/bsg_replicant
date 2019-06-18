@@ -1,5 +1,4 @@
 #include "test_rom.h"
-
 int test_rom () {
         int rc = 0, fail = 0;
         uint32_t unexpected, expected, minexpected, maxexpected, result;
@@ -146,6 +145,11 @@ cleanup:
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
         bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
         int rc = test_rom();
         *exit_code = rc;

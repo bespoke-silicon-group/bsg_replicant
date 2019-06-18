@@ -6,7 +6,7 @@ include ../Makefile.common
 
 autorebuild:
 
-$(TARGETS): test_%: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
+$(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary: autorebuild
 	$(MAKE) -C $(dir $@) clean main.riscv \

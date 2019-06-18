@@ -6,9 +6,10 @@
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
 #include "test_manycore_parameters.h"
+#include "svdpi.h"
 
 #define TEST_NAME "test_manycore_eva_read_write"
-#define DATA_WORDS 16
+#define DATA_WORDS 1024
 #define TEST_BASE_EVA 0x1000
 
 
@@ -308,6 +309,11 @@ cleanup:
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info(TEST_NAME " Regression Test (COSIMULATION)\n");
 	int rc = test_manycore_eva_read_write();
 	*exit_code = rc;

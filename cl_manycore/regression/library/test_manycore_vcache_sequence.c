@@ -103,6 +103,11 @@ cleanup:
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info(TEST_NAME " Regression Test (COSIMULATION)\n");
 	int rc = test_manycore_vcache_sequence();
 	*exit_code = rc;

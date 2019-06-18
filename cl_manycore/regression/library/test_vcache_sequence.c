@@ -71,6 +71,11 @@ int test_vcache_sequence() {
 
 #ifdef COSIM
 void test_main(uint32_t *exit_code) {	
+#ifdef VCS
+	svScope scope;
+	scope = svGetScopeFromName("tb");
+	svSetScope(scope);
+#endif
 	bsg_pr_test_info("test_vcache_sequence Regression Test (COSIMULATION)\n");
 	int rc = test_vcache_sequence();
 	*exit_code = rc;
