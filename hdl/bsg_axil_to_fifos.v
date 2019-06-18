@@ -254,7 +254,7 @@ module bsg_axil_to_fifos
     );
 
     // read from registers
-    always_comb begin : registers
+    always_comb begin
       case (rd_addr_lo[0+:base_addr_width_p])
         ofs_isr_lp  : mon_data_li[i] = isr_r[i];
         ofs_tdfv_lp : mon_data_li[i] = fifo_width_lp'(tx_vacancy_lo[i]);
@@ -267,7 +267,7 @@ module bsg_axil_to_fifos
 
   // read from rom and monitors
   assign rom_addr_o = rd_addr_lo;
-  always_comb begin : monitor
+  always_comb begin
     case (rd_addr_lo[0+:base_addr_width_p])
       ofs_rsp_rcv_vacancy_lp : rom_data_li = rcv_vacancy_i[0];
       ofs_req_rcv_vacancy_lp : rom_data_li = rcv_vacancy_i[1];
