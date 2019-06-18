@@ -65,10 +65,10 @@ module bsg_manycore_link_to_axil
 
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_li   ;
 	logic [num_endpoint_lp*2-1:0][mc_fifo_width_lp-1:0] mc_fifo_data_li;
-  logic [num_endpoint_lp*2-1:0]                       mc_fifo_rdy_lo ;
+  logic [num_endpoint_lp*2-1:0]                       mc_fifo_ready_lo ;
   logic [num_endpoint_lp*2-1:0]                       mc_fifo_v_lo   ;
   logic [num_endpoint_lp*2-1:0][mc_fifo_width_lp-1:0] mc_fifo_data_lo;
-  logic [num_endpoint_lp*2-1:0]                       mc_fifo_rdy_li ;
+  logic [num_endpoint_lp*2-1:0]                       mc_fifo_ready_li ;
 
   bsg_manycore_endpoint_to_fifos #(
     .num_endpoint_p   (num_endpoint_lp  )
@@ -85,10 +85,10 @@ module bsg_manycore_link_to_axil
     ,.reset_i           (reset_i           )
     ,.fifo_v_i          (mc_fifo_v_li      )
     ,.fifo_data_i       (mc_fifo_data_li   )
-    ,.fifo_rdy_o        (mc_fifo_rdy_lo    )
+    ,.fifo_ready_o        (mc_fifo_ready_lo    )
     ,.fifo_v_o          (mc_fifo_v_lo      )
     ,.fifo_data_o       (mc_fifo_data_lo   )
-    ,.fifo_rdy_i        (mc_fifo_rdy_li    )
+    ,.fifo_ready_i        (mc_fifo_ready_li    )
     ,.link_sif_i        (link_sif_i        )
     ,.link_sif_o        (link_sif_o        )
     ,.my_x_i            (my_x_i            )
@@ -100,10 +100,10 @@ module bsg_manycore_link_to_axil
   // receive fifo to axil_to_fifos
   logic [num_slots_lp-1:0]         axil_fifo_v_li   ;
   logic [num_slots_lp-1:0][axil_data_width_lp-1:0] axil_fifo_data_li;
-  logic [num_slots_lp-1:0]         axil_fifo_rdy_lo ;
+  logic [num_slots_lp-1:0]         axil_fifo_ready_lo ;
   logic [num_slots_lp-1:0]         axil_fifo_v_lo   ;
   logic [num_slots_lp-1:0][axil_data_width_lp-1:0] axil_fifo_data_lo;
-  logic [num_slots_lp-1:0]         axil_fifo_rdy_li ;
+  logic [num_slots_lp-1:0]         axil_fifo_ready_li ;
 
   logic [axil_addr_width_lp-1:0] rom_addr_li;
   logic [axil_data_width_lp-1:0] rom_data_lo;
@@ -123,10 +123,10 @@ module bsg_manycore_link_to_axil
     ,.s_axil_bus_o    (s_axil_mcl_bus_o      )
     ,.fifo_v_i        (axil_fifo_v_li        )
     ,.fifo_data_i     (axil_fifo_data_li     )
-    ,.fifo_rdy_o      (axil_fifo_rdy_lo      )
+    ,.fifo_ready_o      (axil_fifo_ready_lo      )
     ,.fifo_v_o        (axil_fifo_v_lo        )
     ,.fifo_data_o     (axil_fifo_data_lo     )
-    ,.fifo_rdy_i      (axil_fifo_rdy_li      )
+    ,.fifo_ready_i      (axil_fifo_ready_li      )
     ,.rom_addr_o      (rom_addr_li           )
     ,.rom_data_i      (rom_data_lo           )
     ,.rcv_vacancy_i   (rcv_vacancy_lo_cast   )
@@ -149,10 +149,10 @@ module bsg_manycore_link_to_axil
   logic [num_slots_lp-1:0]                       rcv_fifo_r_li;
   logic [num_slots_lp-1:0][mc_fifo_width_lp-1:0] rcv_fifo_lo  ;
 
-  wire [num_slots_lp-1:0] rcv_enqueue = mc_fifo_v_lo & mc_fifo_rdy_li;
+  wire [num_slots_lp-1:0] rcv_enqueue = mc_fifo_v_lo & mc_fifo_ready_li;
   wire [num_slots_lp-1:0] rcv_dequeue = rcv_fifo_r_li & rcv_fifo_v_lo;
 
-  wire [num_slots_lp-1:0] par_to_ser_yumi_li = axil_fifo_rdy_lo & axil_fifo_v_li;
+  wire [num_slots_lp-1:0] par_to_ser_yumi_li = axil_fifo_ready_lo & axil_fifo_v_li;
 
   for (genvar i=0; i<num_slots_lp; i++) begin : mc128_to_fifo32
     bsg_counter_up_down #(
@@ -176,7 +176,7 @@ module bsg_manycore_link_to_axil
       .clk_i  (clk_i             )
       ,.reset_i(reset_i           )
       ,.v_i    (mc_fifo_v_lo[i]   )
-      ,.ready_o(mc_fifo_rdy_li[i] )
+      ,.ready_o(mc_fifo_ready_li[i] )
       ,.data_i (mc_fifo_data_lo[i])
       ,.v_o    (rcv_fifo_v_lo[i]  )
       ,.data_o (rcv_fifo_lo[i]    )
@@ -214,14 +214,14 @@ module bsg_manycore_link_to_axil
       ,.reset_i   (reset_i               )
       ,.valid_i   (axil_fifo_v_lo[i]     )
       ,.data_i    (axil_fifo_data_lo[i]  )
-      ,.ready_o   (axil_fifo_rdy_li[i]   )
+      ,.ready_o   (axil_fifo_ready_li[i]   )
       ,.valid_o   (ser_to_par_valid_lo[i])
       ,.data_o    (mc_fifo_data_li[i]    )
       ,.yumi_cnt_i(ser_to_par_yumi_cnt_li[i])
     );
 
     assign mc_fifo_v_li[i]           = &ser_to_par_valid_lo[i];
-    assign ser_to_par_yumi_cnt_li[i] = (mc_fifo_v_li[i] & mc_fifo_rdy_lo[i]) ? (yumi_cnt_width_lp)'(valid_width_lp) :'0;
+    assign ser_to_par_yumi_cnt_li[i] = (mc_fifo_v_li[i] & mc_fifo_ready_lo[i]) ? (yumi_cnt_width_lp)'(valid_width_lp) :'0;
   end
 
 endmodule

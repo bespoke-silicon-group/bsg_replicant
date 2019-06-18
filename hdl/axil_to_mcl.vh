@@ -52,7 +52,22 @@ package cl_mcl_pkg;
   localparam mc_fifo_width_lp = 128;
   localparam axil_data_width_lp = 32;
   localparam axil_addr_width_lp = 32;
-  localparam base_addr_width_lp = 12;
+  localparam base_addr_width_p = 12;
+
+  localparam axil_base_addr_p = axil_addr_width_lp'(axil_m_fifo_base_addr_p);
+
+  localparam ofs_isr_lp  = 8'h0 ; // Interrupt Status Register
+  localparam ofs_tdfv_lp = 8'hC ; // Transmit FIFO Vacancy
+  localparam ofs_tdr_lp  = 8'h10; // Transmit Data Destination Register
+  localparam ofs_rdfo_lp = 8'h1C; // Receive Data FIFO occupancy
+  localparam ofs_rdr_lp  = 8'h20; // Receive Data Destination Register
+  localparam ofs_rlr_lp  = 8'h24; // Receive Length Register
+  localparam fifo_rlr_words_lp = 4; // retuen RLR is fixed, 4x4 bytes
+
+  localparam index_addr_width_lp = (axil_addr_width_lp-base_addr_width_p);
+
+  localparam ofs_rsp_rcv_vacancy_lp = base_addr_width_p'(HOST_RCV_VACANCY_MC_RES_p);
+  localparam ofs_req_rcv_vacancy_lp = base_addr_width_p'(HOST_RCV_VACANCY_MC_REQ_p);
 
 endpackage : cl_mcl_pkg
 

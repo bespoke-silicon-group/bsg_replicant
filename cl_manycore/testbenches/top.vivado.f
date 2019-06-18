@@ -58,6 +58,8 @@ ${CL_DIR}/hardware/bsg_bladerunner_configuration.v
 ${CL_DIR}/../hdl/bsg_manycore_link_to_axil.v
 ${CL_DIR}/../hdl/bsg_manycore_endpoint_to_fifos.v
 ${CL_DIR}/../hdl/bsg_axil_to_fifos.v
+${CL_DIR}/../hdl/bsg_axil_to_fifos_rx.v
+${CL_DIR}/../hdl/bsg_axil_to_fifos_tx.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_noc_pkg.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_stitch.v
 ${BSG_IP_CORES_DIR}/bsg_noc/bsg_mesh_router_buffered.v

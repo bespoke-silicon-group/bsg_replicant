@@ -28,11 +28,11 @@ module bsg_manycore_endpoint_to_fifos
   // fifo to endpoint
   ,input  [num_endpoint_p*2-1:0]                                    fifo_v_i
   ,input  [num_endpoint_p*2-1:0][                 fifo_width_p-1:0] fifo_data_i
-  ,output [num_endpoint_p*2-1:0]                                    fifo_rdy_o
+  ,output [num_endpoint_p*2-1:0]                                    fifo_ready_o
   // endpoint to fifo
   ,output [num_endpoint_p*2-1:0]                                    fifo_v_o
   ,output [num_endpoint_p*2-1:0][                 fifo_width_p-1:0] fifo_data_o
-  ,input  [num_endpoint_p*2-1:0]                                    fifo_rdy_i
+  ,input  [num_endpoint_p*2-1:0]                                    fifo_ready_i
   ,input  [  num_endpoint_p-1:0][            link_sif_width_lp-1:0] link_sif_i
   ,output [  num_endpoint_p-1:0][            link_sif_width_lp-1:0] link_sif_o
   ,input  [  num_endpoint_p-1:0][               x_cord_width_p-1:0] my_x_i
@@ -46,31 +46,31 @@ module bsg_manycore_endpoint_to_fifos
   bsg_mcl_request_s  [num_endpoint_p-1:0] fifo_req_li, mc_req_lo;
   bsg_mcl_response_s [num_endpoint_p-1:0] fifo_rsp_li, mc_rsp_lo;
 
-  logic [num_endpoint_p-1:0] fifo_req_v_li, fifo_req_rdy_lo;
-  logic [num_endpoint_p-1:0] fifo_rsp_v_li, fifo_rsp_rdy_lo;
-  logic [num_endpoint_p-1:0] mc_req_v_lo, mc_req_rdy_li;
-  logic [num_endpoint_p-1:0] mc_rsp_v_lo, mc_rsp_rdy_li;
+  logic [num_endpoint_p-1:0] fifo_req_v_li, fifo_req_ready_lo;
+  logic [num_endpoint_p-1:0] fifo_rsp_v_li, fifo_rsp_ready_lo;
+  logic [num_endpoint_p-1:0] mc_req_v_lo, mc_req_ready_li;
+  logic [num_endpoint_p-1:0] mc_rsp_v_lo, mc_rsp_ready_li;
 
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     // fifo request to manycore
     assign fifo_req_v_li[i] = fifo_v_i[2*i];
     assign fifo_req_li[i]  = fifo_data_i[2*i];
-    assign fifo_rdy_o[2*i] = fifo_req_rdy_lo[i];
+    assign fifo_ready_o[2*i] = fifo_req_ready_lo[i];
 
     // fifo response to manycore
     assign fifo_rsp_v_li[i]  = fifo_v_i[2*i+1];
     assign fifo_rsp_li[i]    = fifo_data_i[2*i+1];
-    assign fifo_rdy_o[2*i+1] = fifo_rsp_rdy_lo[i];
+    assign fifo_ready_o[2*i+1] = fifo_rsp_ready_lo[i];
 
     // manycore response to fifo
     assign fifo_v_o[2*i]    = mc_rsp_v_lo[i];
     assign fifo_data_o[2*i] = mc_rsp_lo[i];
-    assign mc_rsp_rdy_li[i] = fifo_rdy_i[2*i];
+    assign mc_rsp_ready_li[i] = fifo_ready_i[2*i];
 
     // manycore request to fifo
     assign fifo_v_o[2*i+1]    = mc_req_v_lo[i];
     assign fifo_data_o[2*i+1] = mc_req_lo[i];
-    assign mc_req_rdy_li[i]   = fifo_rdy_i[2*i+1];
+    assign mc_req_ready_li[i]   = fifo_ready_i[2*i+1];
   end
 
 
@@ -106,7 +106,7 @@ module bsg_manycore_endpoint_to_fifos
 
   // manycore request to fifo
   logic [num_endpoint_p-1:0] timer_v_lo;
-  logic [num_endpoint_p-1:0] timer_rdy_li;
+  logic [num_endpoint_p-1:0] timer_ready_li;
   logic [num_endpoint_p-1:0] [data_width_p-1:0] timer_data_lo;
   logic [num_endpoint_p-1:0] [(data_width_p>>3)-1:0] timer_mask_lo;
   logic [num_endpoint_p-1:0] [addr_width_p-1:0] timer_addr_lo;
@@ -115,7 +115,7 @@ module bsg_manycore_endpoint_to_fifos
   logic [num_endpoint_p-1:0] [y_cord_width_p-1:0] timer_src_y_cord_lo;
 
   assign mc_req_v_lo         = endpoint_in_v_lo;
-  assign endpoint_in_yumi_li = mc_req_rdy_li & mc_req_v_lo;
+  assign endpoint_in_yumi_li = mc_req_ready_li & mc_req_v_lo;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     assign mc_req_lo[i].padding = '0;
     assign mc_req_lo[i].addr = (32)'(endpoint_in_addr_lo[i]);
@@ -152,7 +152,7 @@ module bsg_manycore_endpoint_to_fifos
       || (out_credits_lo[i] == '0)
     );
     assign endpoint_out_v_li[i] = fifo_req_v_li[i] & fifo_req_enable[i];
-		assign fifo_req_rdy_lo[i] = endpoint_out_ready_lo[i] & fifo_req_enable[i];
+		assign fifo_req_ready_lo[i] = endpoint_out_ready_lo[i] & fifo_req_enable[i];
   end
 
   // manycore response to fifo
@@ -165,7 +165,7 @@ module bsg_manycore_endpoint_to_fifos
     assign mc_rsp_lo[i].y_cord = 8'(my_y_li[i]);
     assign mc_rsp_lo[i].x_cord = 8'(my_x_li[i]);
   end
-  assign returned_yumi_li = mc_rsp_rdy_li & mc_rsp_v_lo;
+  assign returned_yumi_li = mc_rsp_ready_li & mc_rsp_v_lo;
 
   // fifo response to manycore
   logic [num_endpoint_p-1:0] returning_wr_v_r;
@@ -177,7 +177,7 @@ module bsg_manycore_endpoint_to_fifos
         returning_wr_v_r <= endpoint_in_v_lo & endpoint_in_we_lo;
     end
 
-  assign fifo_rsp_rdy_lo = ~returning_wr_v_r;
+  assign fifo_rsp_ready_lo = ~returning_wr_v_r;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
     assign returning_data_li[i] = returning_wr_v_r[i] ? '0 : {
       (`return_packet_type_width)'(fifo_rsp_li[i].pkt_type)
@@ -187,7 +187,7 @@ module bsg_manycore_endpoint_to_fifos
       ,(x_cord_width_p)'(fifo_rsp_li[i].x_cord)
     };
   end
-  assign returning_v_li = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_rdy_lo);
+  assign returning_v_li = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_ready_lo);
 
   assign out_credits_o = out_credits_lo;
   assign my_x_li       = my_x_i;
