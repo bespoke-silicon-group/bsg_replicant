@@ -179,13 +179,7 @@ module bsg_manycore_endpoint_to_fifos
 
   assign fifo_rsp_ready_lo = ~returning_wr_v_r;
   for (genvar i=0; i<num_endpoint_p; i=i+1) begin
-    assign returning_data_li[i] = returning_wr_v_r[i] ? '0 : {
-      (`return_packet_type_width)'(fifo_rsp_li[i].pkt_type)
-      ,(data_width_p)'(fifo_rsp_li[i].data)
-      ,(load_id_width_p)'(fifo_rsp_li[i].load_id)
-      ,(y_cord_width_p)'(fifo_rsp_li[i].y_cord)
-      ,(x_cord_width_p)'(fifo_rsp_li[i].x_cord)
-    };
+    assign returning_data_li[i] = (data_width_p)'(fifo_rsp_li[i].data);
   end
   assign returning_v_li = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_ready_lo);
 
