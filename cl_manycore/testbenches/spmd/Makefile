@@ -4,7 +4,7 @@ include $(CL_DIR)/Makefile.dimensions
 
 # REGRESSION_PATH is set in Makefile.environment
 TESTS_PATH=$(REGRESSION_PATH)/spmd/
-SIM_PATH=$(CL_DIR)/testbenches/library/
+SIM_PATH=$(TESTBENCH_PATH)/spmd/
 
 include $(TESTS_PATH)/Makefile.tests
 
@@ -13,7 +13,7 @@ include $(TESTS_PATH)/Makefile.tests
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include ../Makefile.common
 
-$(SIM_LOG_TARGETS): test_%.cosim.log: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
+$(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary:
 	$(MAKE) -C $(TESTS_PATH) $@ IGNORE_CADENV=1

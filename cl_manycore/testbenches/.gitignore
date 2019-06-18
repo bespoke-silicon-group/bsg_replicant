@@ -1,1 +1,13 @@
 synopsys_sim.setup*
+vcs_simlibs
+.cxl.*
+.vlogan*
+AN.DB
+ucli.key
+csrc
+vc_hdrs.h
+*.jou
+*.daidir
+*.vpd
+checkpoints
+*.log

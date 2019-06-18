@@ -1,17 +1,46 @@
-# HARDWARE_PATH, TESTS_PATH, CL_DIR, C_REGRESSION_TESTS, and
-# REGRESSION_TESTS_TYPE must be set by the including makefile
+# This Makefile Fragment enables cosimulation. Cosimulation defaults to VCS, but
+# Vivado can be used by setting USE_VIVADO=1 in the environment.
 
-# AWS Paths (Don't modify - variables are set by hdk_setup.sh in aws-fpga)
-export XILINX_IP    = $(HDK_SHELL_DESIGN_DIR)/ip
+# NOTE: This file REQUIRES several variables to be set: 
+# 
+# SIM_PATH: The path to the directory where the simulation is run
+# TESTS_PATH: The path to the directory containing the .c files for testing
+# TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
+# C_REGRESSION_TESTS: Names of all available regression tests.
+# 
+# BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
+# BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
+# CL_DIR: Path to the directory of this AWS F1 Project
+#
+# (These varibles are typically set by Makefile.environment, which is included
+# by the top-level makefile.)
+#
+# HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
+# AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
+# HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
+# SDK_DIR: Path to the SDK directory in the aws-fpga repo
+#
+#
+# NOTE: This file has several optional "arguments" that are passed as Variables
+#
+#
+# AXI_MEMORY_MODEL: Use an SRAM-like Memory that increases simulation speed. Default: 1
+# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: Not Defined
+# DEBUG: Opens the GUI during cosimulation. Default: Not Defined
+AXI_MEMORY_MODEL ?= 1
+
+# AWS Paths (Don't modify - HDK_SHELL_DESIGN_DIR, AWS_FPGA_REPO_DIR,
+# HDK_COMMON_DIR, and SDK_DIR variables are set by hdk_setup.sh in aws-fpga)
+XILINX_IP           = $(HDK_SHELL_DESIGN_DIR)/ip
 SDK_DIR             = $(AWS_FPGA_REPO_DIR)/sdk
 C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
 C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
 C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils
 
-include $(HARDWARE_PATH)/Makefile.include
+# Name of the cosimulation wrapper system verilog file.
+WRAPPER_NAME = cosim_wrapper
 
-V_TOP_SRC = cosim_wrapper
-
+# Manycore Library sources (TODO: Refactor list into a single source)
 CSOURCES  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
 CSOURCES += $(C_COMMON_DIR)/src/fpga_pci_sv.c
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_driver.cpp
@@ -31,23 +60,46 @@ CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_request_packet_id.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_origin_eva_map.cpp
 
+# CFLAGS, CDEFINES, and INCLUDES are used during library and test source
+# compilation
 CFLAGS   := -std=c99 -std=c++11
-DEFINES   = -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
-DEFINES  += -D_BSD_SOURCE
+CDEFINES  = -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
+CDEFINES += -D_BSD_SOURCE
 INCLUDES := -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
-
 INCLUDES += -I$(C_COMMON_DIR)/include -I$(SIM_PATH) -I$(LIBRARIES_PATH) 
 INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 
-LOG_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
-$(LOG_TARGETS): %: $(SIM_PATH)/%
+# VDEFINES are used during Verilog compilation
+VDEFINES += $(if $(AXI_PROT_CHECK),ENABLE_PROTOCOL_CHK,)
+VDEFINES += $(if $(AXI_MEMORY_MODEL),AXI_MEMORY_MODEL=1,)
+VDEFINES += $(if $(AXI_MEMORY_MODEL),ECC_DIRECT_EN,)
+VDEFINES += $(if $(AXI_MEMORY_MODEL),RND_ECC_EN,)
+VDEFINES += $(if $(AXI_MEMORY_MODEL),ECC_ADDR_LO=0,)
+VDEFINES += $(if $(AXI_MEMORY_MODEL),ECC_ADDR_HI=0,)
+VDEFINES += $(if $(AXI_MEMORY_MODEL),RND_ECC_WEIGHT=0,)
 
-# Hardware Targets are defined by Makefile.include in hardware
+# $(HARDWARE_TARGETS) is defined by Makefile.include in the #(HARDWARE_PATH)
+# directory. This rule generates all of the hardware files necessary for
+# simulation
+include $(HARDWARE_PATH)/Makefile.include
 common.hardware: $(HARDWARE_TARGETS) 
 
-cosim: $(LOG_TARGETS)
+# To include a test in cosimulation, the user defines a list of tests in
+# C_REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
+# that is run during compilation. These custom rules are useful for building
+# spmd or cuda binaries, for example.
+USER_RULES=$(foreach tgt,$(C_REGRESSION_TESTS),$(tgt).rule)
+$(USER_RULES):
 
-regression: $(LOG_TARGETS)
+
+# We build a list of COSIMULATION_TARGETS for the cosim and regression rules
+# (below)
+COSIMULATION_TARGETS = $(foreach test,$(C_REGRESSION_TESTS),$(test).cosim.log)
+$(COSIMULATION_TARGETS): %: $(SIM_PATH)/%
+
+cosim: $(COSIMULATION_TARGETS)
+
+regression: $(COSIMULATION_TARGETS)
 	@pass=0;  total=0; \
 	echo ""; \
 	echo ""; \
@@ -77,11 +129,10 @@ regression: $(LOG_TARGETS)
 	echo ""; \
 	echo "===========================================================";
 
-.PHONY: cosim regression clean
+.PHONY: cosim regression clean common.hardware %.rule
 
 clean: simulator.clean hardware.clean
 	@echo 
-
 
 ifeq ($(USE_VIVADO),1)
 include $(TESTBENCH_PATH)/Makefile.vivado
