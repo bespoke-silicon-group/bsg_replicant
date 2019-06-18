@@ -441,7 +441,12 @@ int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
 	}
 	tg->kernel->name = name;
 	tg->kernel->argc = argc;
-	tg->kernel->argv = argv;
+	tg->kernel->argv = (uint32_t *) malloc (tg->kernel->argc * sizeof(uint32_t)); 
+	if (tg->kernel->argv == NULL) { 
+		bsg_pr_err("%s: failed to allocate space on devcie for kernel's argument list.\n", __func__); 
+		return HB_MC_NOMEM;
+	}
+	memcpy (tg->kernel->argv, argv, argc * sizeof(uint32_t) / sizeof(uint8_t)); 	
 	tg->kernel->finish_signal_addr = hb_mc_tile_group_get_finish_signal_addr(tg); 
 		
 	device->num_tile_groups += 1;
