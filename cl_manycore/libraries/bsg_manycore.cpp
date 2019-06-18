@@ -35,6 +35,10 @@
 
 #include <vector>
 
+/* set to one second */
+#define INTERNAL_MANYCORE_LIBRARY_TIMEOUT	\
+	(1000)
+
 #define array_size(x)                           \
         (sizeof(x)/sizeof(x[0]))
 
@@ -188,7 +192,8 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 	
 		/* Read stale packets from fifo */
 		for (unsigned i = 0; i < occupancy; i++){
-			rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type, -1);
+			rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type,
+                                                               INTERNAL_MANYCORE_LIBRARY_TIMEOUT);
 			if (rc != HB_MC_SUCCESS) {
 				manycore_pr_err(mc, "%s: Failed to read packet from %s fifo\n",
 						__func__, typestr);
@@ -1281,7 +1286,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t
 			hb_mc_npa_get_y(npa),
 			hb_mc_npa_get_epa(npa));
 
-	err = hb_mc_manycore_request_tx(mc, &rqst.request, -1);
+	err = hb_mc_manycore_request_tx(mc, &rqst.request, INTERNAL_MANYCORE_LIBRARY_TIMEOUT);
 	if (err == HB_MC_BUSY)
 		return err; // omit the error message if just busy
 
@@ -1301,7 +1306,7 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, const hb_mc_npa_t 
 	int err;
 
 	/* receive a packet from the hardware */
-	err = hb_mc_manycore_response_rx(mc, &rsp.response, -1);
+	err = hb_mc_manycore_response_rx(mc, &rsp.response, INTERNAL_MANYCORE_LIBRARY_TIMEOUT);
 	if (err != HB_MC_SUCCESS) {
 		manycore_pr_err(mc, "%s: Failed to read response packet: %s\n",
 				__func__, hb_mc_strerror(err));
@@ -1370,7 +1375,8 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
 			hb_mc_npa_get_y(npa),
 			hb_mc_npa_get_epa(npa));
 
-	return hb_mc_manycore_request_tx(mc, &rqst.request, -1);
+	return hb_mc_manycore_request_tx(mc, &rqst.request,
+					 INTERNAL_MANYCORE_LIBRARY_TIMEOUT);
 }
 
 /* checks that the arguments of read/write_mem are supported */
