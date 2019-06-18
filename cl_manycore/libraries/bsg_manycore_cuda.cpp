@@ -29,6 +29,12 @@ static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim);
 static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
 
 
+static int hb_mc_tile_group_kernel_initialize (	hb_mc_tile_group_t *tg, 
+						char* name, 
+						uint32_t argc, 
+						uint32_t argv[]); 
+
+
 
 /*!
  * Gets the x coordinates of a list of hb_mc_tile_t structs.
@@ -434,21 +440,13 @@ int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
 	}
 	
 
-	tg->kernel = (hb_mc_kernel_t *) malloc (sizeof(hb_mc_kernel_t));
-	if (tg->kernel == NULL) { 
-		bsg_pr_err("%s: failed to allocated space for hb_mc_kernel_t struct.\n", __func__);
-		return HB_MC_NOMEM;
+	error = hb_mc_tile_group_kernel_initialize (tg, name, argc, argv); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize tile group's kernel\n", __func__);
+		return error;
 	}
-	tg->kernel->name = name;
-	tg->kernel->argc = argc;
-	tg->kernel->argv = (uint32_t *) malloc (tg->kernel->argc * sizeof(uint32_t)); 
-	if (tg->kernel->argv == NULL) { 
-		bsg_pr_err("%s: failed to allocate space on devcie for kernel's argument list.\n", __func__); 
-		return HB_MC_NOMEM;
-	}
-	memcpy (tg->kernel->argv, argv, argc * sizeof(uint32_t) / sizeof(uint8_t)); 	
-	tg->kernel->finish_signal_addr = hb_mc_tile_group_get_finish_signal_addr(tg); 
-		
+
+			
 	device->num_tile_groups += 1;
 	
 	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) initialized.\n", 
@@ -459,6 +457,49 @@ int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
 
 	return HB_MC_SUCCESS;
 }
+
+
+
+
+/**
+ * Takes in a kernel name, argument count and list of arguments 
+ * and initializes a hb_mc_kernel_t struct for the tile group.
+ * @param[in]  tg            Pointer to tile group. 
+ * @param[in]  name          Kernel name that is to be executed on tile group
+ * @param[in]  argc          Number of input arguments to the kernel
+ * @param[in]  argv          List of input arguments to the kernel
+ * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure. 
+ */
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_kernel_initialize (	hb_mc_tile_group_t *tg, 
+						char* name, 
+						uint32_t argc, 
+						uint32_t argv[]) {
+	int error;
+	tg->kernel = (hb_mc_kernel_t *) malloc (sizeof(hb_mc_kernel_t));
+	if (tg->kernel == NULL) { 
+		bsg_pr_err("%s: failed to allocated space for hb_mc_kernel_t struct.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+	tg->kernel->name = strdup (name); 
+	if (tg->kernel->name == NULL) { 
+		bsg_pr_err("%s: failed to allocate space on device for tile group's kernel's name.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+	tg->kernel->argc = argc;
+	tg->kernel->argv = (uint32_t *) malloc (tg->kernel->argc * sizeof(uint32_t)); 
+	if (tg->kernel->argv == NULL) { 
+		bsg_pr_err("%s: failed to allocate space on devcie for kernel's argument list.\n", __func__); 
+		return HB_MC_NOMEM;
+	}
+	memcpy (tg->kernel->argv, argv, argc * sizeof(uint32_t) / sizeof(uint8_t)); 	
+	tg->kernel->finish_signal_addr = hb_mc_tile_group_get_finish_signal_addr(tg); 
+
+	return HB_MC_SUCCESS;
+}
+
+
+
 
 
 
