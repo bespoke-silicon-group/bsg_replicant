@@ -203,7 +203,7 @@ static int run_finish_packet_test(test_t *test)
 
         /* wait for the finish packet */
 	hb_mc_packet_t finish;
-	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, -1);
+	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, 1000);
 	if (err != HB_MC_SUCCESS) {
 		pr_test_failed(test, "failed to receive packet: %s\n",
                                hb_mc_strerror(err));
@@ -460,7 +460,7 @@ static int run_npa_to_eva_test(test_t *test)
 		bsg_pr_dbg("%s: Waiting for write packet from V-Core\n", test_name);
 
 		hb_mc_packet_t rqst;
-		err = hb_mc_manycore_packet_rx(mc, &rqst, HB_MC_FIFO_RX_REQ, -1);
+		err = hb_mc_manycore_packet_rx(mc, &rqst, HB_MC_FIFO_RX_REQ, 1000);
 		if (err != HB_MC_SUCCESS) {
 			pr_test_failed(test, "failed to receive write packet: %s\n",
 				       hb_mc_strerror(err));
@@ -484,7 +484,7 @@ static int run_npa_to_eva_test(test_t *test)
 	bsg_pr_dbg("%s: Waiting for finish packet\n", test_name);
 
 	hb_mc_packet_t finish;
-	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, -1);
+	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, 1000);
 	if (err != HB_MC_SUCCESS) {
 		pr_test_failed(test, "failed to receive packet: %s\n",
                                hb_mc_strerror(err));

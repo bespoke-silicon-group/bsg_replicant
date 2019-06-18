@@ -121,7 +121,7 @@ int test_loopback () {
 	bsg_pr_test_info("Checking receive packet...\n");
 
 	hb_mc_packet_t finish;
-	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, -1);
+	err = hb_mc_manycore_packet_rx(mc, &finish, HB_MC_FIFO_RX_REQ, 1000);
 	if (err != HB_MC_SUCCESS) {
 		bsg_pr_err("failed to receive packet: %s\n",
 			   hb_mc_strerror(err));
