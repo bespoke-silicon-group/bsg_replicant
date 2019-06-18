@@ -17,8 +17,6 @@
 *         |                   |   `````````````                      |out credit|
 *         |___________________| <----------------------------------- |__________|
 *
-*  TODO: rcv vacancy registers will increase with the number of FIFO links, thus should use the same base addresses with fifo links.
-*        the same with out credits registers.
 * See https://docs.google.com/presentation/d/1srH52eYQnYlFdKQ5RnTwliF_OBiIewoYhc4CdA30Svo for detailed block diagram
 */
 

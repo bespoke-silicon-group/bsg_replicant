@@ -20,6 +20,9 @@
 * 1. read the Receive Length Reigster, RLR = fifo_width_lp/8 * fifo_rlr_words_lp if rx_FIFO >= fifo_rlr_words_lp, else 0
 * 2. read RLR data from Receive Destination Register RDR,
 * if read from a empty fifo, you will get stale data
+*
+* TODO: to make this module fully parameterized with num_slots_p, monitor register address should be remapped
+*
 */
 
 `include "bsg_defines.v"
@@ -278,7 +281,7 @@ module bsg_axil_to_fifos
 
   // synopsys translate_off
   initial begin
-    assert (num_slots_p >= 2)
+    assert (num_slots_p == 2)
       else
         $fatal("## only support axis fifo slot == 2!");
   end
