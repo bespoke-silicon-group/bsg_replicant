@@ -157,7 +157,7 @@ import cl_mcl_pkg::*;
   assign tx_v_o    = {num_fifos_p{wvalid_i&wready_o}} & fifo_addr_v;
   assign tx_data_o = {num_fifos_p{wdata_i}};
 
-  assign clear_isr_o = isr_addr_v & wdata_i[FIFO_ISR_TC_BIT_p];
+  assign clear_isr_tc_o = {num_fifos_p{wdata_i[FIFO_ISR_TC_BIT_p]}} & isr_addr_v;
 
 endmodule
 
