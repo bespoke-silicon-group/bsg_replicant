@@ -25,7 +25,7 @@
 `include "bsg_defines.v"
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_manycore_packet.vh"
-`include "axil_to_mcl.vh"
+`include "bsg_axil_to_mcl_pkg.vh"
 `include "bsg_bladerunner_rom_pkg.vh"
 
 module bsg_manycore_link_to_axil

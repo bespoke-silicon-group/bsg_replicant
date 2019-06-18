@@ -3,7 +3,8 @@
 *
 *
 */
-`include "axil_to_mcl.vh"
+
+`include "bsg_axil_to_mcl_pkg.vh"
 
 module bsg_axil_to_fifos_tx
 import cl_mcl_pkg::*;
