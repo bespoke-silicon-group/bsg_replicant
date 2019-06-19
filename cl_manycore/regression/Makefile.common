@@ -16,8 +16,15 @@ $(INDEPENDENT_MAIN_TESTS): %: %.o
 # each target '%' in UNIFIED_MAIN_TESTS relies on an object file 'test_unified_main.o'
 $(UNIFIED_MAIN_TESTS): %: test_unified_main.o
 # linking rule for all targets
-$(REGRESSION_TESTS):
+$(REGRESSION_TESTS): % : %.rule
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+
+# To include a test in regression, the user defines a list of tests in
+# REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
+# that is run during compilation. These custom rules are useful for building
+# spmd or cuda binaries, for example.
+USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
+$(USER_RULES):
 
 all: $(REGRESSION_TESTS)
 
