@@ -4,14 +4,18 @@ LDFLAGS  += -lbsg_manycore_runtime -lm
 
 C_TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
 
-%.o: %.c %.h
+# each target in INDEPENDENT_MAIN_TESTS needs to build its .o from a .c and .h of the same name
+$(foreach tgt, $(INDEPENDENT_MAIN_TESTS), $(tgt).o): %.o: %.c %.h
 	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) -c -o $@ $< 
 
-%.o: test_unified_main.c test_unified_main.h
-	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $< 
+# ... or a .cpp and .hpp of the same name
+# $(foreach tgt, $(INDEPENDENT_MAIN_TESTS), $(tgt).o): %.o: %.cpp %.hpp
+# 	$(CXX) $(CXXFLAGS) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $<
 
-%.o: %.cpp %.hpp
-	$(CXX) $(CXXFLAGS) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $< 
+# each target in UNIFIED_MAIN_TESTS meeds to build its .o from
+# test_unified_main.c and test_unified_main.h
+$(foreach tgt, $(UNIFIED_MAIN_TESTS), $(tgt).o): %.o: test_unified_main.c test_unified_main.h
+	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $< 
 
 # each target '%' in INDEPENDENT_MAIN_TESTS relies on an object file '%.o'
 $(INDEPENDENT_MAIN_TESTS): %: %.o
