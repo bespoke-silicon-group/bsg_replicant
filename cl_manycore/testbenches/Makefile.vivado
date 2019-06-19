@@ -46,8 +46,9 @@ XSC_FLAGS   := $(foreach inc,$(INCLUDES),--additional_option "$(inc)")
 XSC_FLAGS   += $(foreach def,$(CFLAGS),--additional_option "$(def)")
 XSC_FLAGS   += $(foreach def,$(CDEFINES),--additional_option "$(def)")
 
-XSIM_FLAGS := $(if $(DEBUG),-gui,)
-XSIM_FLAGS += $(if $(DEBUG),-tclbatch waves.tcl,)
+ifeq ($(DEBUG), 1)
+XSIM_FLAGS := -gui -tclbatch waves.tcl
+endif
 
 .PHONY: simulator.clean
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/xsim.dir $(SIM_PATH)/%.so $(SIM_PATH)/xsim.dir/%
