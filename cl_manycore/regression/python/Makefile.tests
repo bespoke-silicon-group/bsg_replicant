@@ -10,7 +10,7 @@ COSIM_REGRESSION_TESTS = $(REGRESSION_TESTS)
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR)) \
 	-DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) \
 	-DCL_MANYCORE_DIM_Y=$(CL_MANYCORE_DIM_Y) \
-	-DBSG_PYTHON_TEST_PATH=$(abspath $(REGRESSION_PATH)/python/)
+	-DBSG_PYTHON_TEST_PATH=$(abspath $(BSG_F1_DIR)/cl_manycore/regression/python/)
 
 CFLAGS   += $(shell python3.6-config --cflags)
 LDFLAGS  += $(shell python3.6-config --ldflags)
