@@ -1142,9 +1142,36 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
 // Packet Helper Functions //
 /////////////////////////////
 
+static bool hb_mc_manycore_dst_npa_is_valid(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
+{
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension(cfg);
+
+	if (hb_mc_npa_get_x(npa) >= hb_mc_dimension_get_x(dim)) {
+		char npa_str[256];
+		manycore_pr_dbg(mc, "%s: %s is not a valid destination\n",
+				__func__,
+				hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+		return false;
+	}
+
+	if ((hb_mc_npa_get_y(npa) >= hb_mc_dimension_get_y(dim)) &&
+	    (hb_mc_npa_get_y(npa) != hb_mc_config_get_dram_y(cfg))) {
+		char npa_str[256];
+		manycore_pr_dbg(mc, "%s: %s is not a valid destination\n",
+				hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+		return false;
+	}
+
+	return true;
+}
+
 static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_request_packet_t *pkt, const hb_mc_npa_t *npa)
 {
         hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(mc);
+
+	if (!hb_mc_manycore_dst_npa_is_valid(mc, npa))
+		return HB_MC_INVALID;
 
         hb_mc_request_packet_set_x_dst(pkt, hb_mc_npa_get_x(npa));
         hb_mc_request_packet_set_y_dst(pkt, hb_mc_npa_get_y(npa));
