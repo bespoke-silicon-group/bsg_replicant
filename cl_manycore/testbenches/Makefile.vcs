@@ -134,7 +134,7 @@ simulator.clean:
 	rm -rf $(SIM_PATH)/synopsys_sim.setup 
 	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd 
 	rm -rf $(SIM_PATH)/vc_hdrs.h
-	rm -rf $(COSIMULATION_TARGETS) .vlogansetup* 
+	rm -rf $(REGRESSION_TESTS) .vlogansetup* 
 
 # squeakyclean removes any VCS outputs that can be reused betweeen cosimulation
 # invocations.
