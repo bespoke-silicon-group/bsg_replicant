@@ -17,9 +17,12 @@ extern "C" {
 
 
 // Kernel is not loaded into tile if kernel poitner equals this value.
-#define HB_MC_CUDA_KERNEL_NOT_LOADED		0x0001	
-// The begining of section in host memory intended for tile groups to write finish signals into
+#define HB_MC_CUDA_KERNEL_NOT_LOADED_VAL	0x0001
+// The value that is written on to finish_signal_addr to show that tile group execution is done.
+#define HB_MC_CUDA_FINISH_SIGNAL_VAL		0x0001	
+// The begining of section in host memory intended for tile groups to write finish signals into.
 #define HB_MC_CUDA_HOST_FINISH_SIGNAL_BASE_ADDR	0xF000	
+
 
 
 typedef uint8_t tile_group_id_t;
@@ -437,168 +440,6 @@ int hb_mc_device_tiles_set_symbols(	hb_mc_device_t *device,
 					hb_mc_coordinate_t *tiles,
 					uint32_t num_tiles);
 
-
-
-
-/*!
- * Sets a Vanilla Core Endpoint's tile group's origin symbols __bsg_grp_org_x/y.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file.
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the origin of.
- * @param[in] origin     Origin coordinates.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_set_origin_symbols(	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char *bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_coordinate_t *origin);
-
-
-
-
-
-/*!
- * Sets a Vanilla Core Endpoint's tile group's coordinate symbols __bsg_x/y.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the coordinates of.
- * @param[in] coord_val  The coordinates to set the tile.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_set_coord_symbols(	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_coordinate_t *coord_val);
-
-
-
-
-
-/*! 
- * Sets a Vanilla Core Endpoint's tile's __bsg_id symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the id of.
- * @param[in] coord_val  The coordinates to set the tile.
- * @param[in] dim        Tile group dimensions
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_set_id_symbol(	hb_mc_manycore_t *mc,
-				hb_mc_eva_map_t *map,
-				unsigned char* bin,
-				size_t bin_size,
-				const hb_mc_coordinate_t *coord,
-				const hb_mc_coordinate_t *coord_val,
-				const hb_mc_dimension_t *dim);
-
-
-
-
-
-/*! 
- * Sets a Vanilla Core Endpoint's tile's __bsg_tile_group_id_x/y symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] tg_id      Tile group id
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_set_tile_group_id_symbols(	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_coordinate_t *tg_id);
-
-
-
-
-
-/*! 
- * Sets a Vanilla Core Endpoint's tile's __bsg_grid_dim_x/y symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] tg_id      Grid dimensions
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_set_grid_dim_symbols(	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_dimension_t *grid_dim);
-
-
-
-
-
-
-int hb_mc_tile_set_kernel_ptr_symbol(	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_eva_t *kernel_eva);
-
-
-
-
-
-
-int hb_mc_tile_set_argc_symbol	(	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const uint32_t *argc);
-
-
-
-
-
-
-int hb_mc_tile_set_argv_ptr_symbol(	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_eva_t *argv_eva);
-
-
-
-
-
-int hb_mc_tile_set_finish_signal_addr_symbol(	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_eva_t *finish_signal_addr_eva);
 
 
 
