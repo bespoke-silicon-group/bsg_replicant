@@ -53,10 +53,17 @@ VCS_VFLAGS := -M -I +lint=TFIPC-L \
 	-ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 	-sverilog -full64 +memcbk -licqueue -lca -v2005 
 
-VCS_VFLAGS += $(if $(TURBO),+rad +NO_WAVES,-debug_pp)
-VCS_VFLAGS += $(if $(DEBUG),-gui,)
-VCS_VFLAGS += $(if $(DEBUG),-R,)
-VCS_VFLAGS += $(if $(DEBUG),-debug_all,)
+ifeq ($(TURBO), 1)
+VCS_VFLAGS += +rad +NO_WAVES,-debug_pp
+else 
+VCS_VFLAGS += -debug_pp
+endif
+
+ifeq ($(DEBUG), 1)
+VCS_VFLAGS += -gui
+VCS_VFLAGS += -R
+VCS_VFLAGS += -debug_all
+endif
 
 .PHONY: simulator.clean squeakyclean 
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%

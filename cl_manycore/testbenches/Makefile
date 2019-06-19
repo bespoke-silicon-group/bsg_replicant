@@ -1,5 +1,9 @@
 TARGETS = library spmd cuda python
 
+DEBUG ?= 0
+AXI_MEMORY_MODEL ?= 1
+AXI_PROT_CHECK ?= 0
+
 all: cosim
 cosim: $(TARGETS)
 
