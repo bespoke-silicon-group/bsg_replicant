@@ -1,4 +1,4 @@
-TARGETS = library spmd cuda
+TARGETS = library spmd cuda python
 
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
 clean: $(CLEAN_TARGETS)
