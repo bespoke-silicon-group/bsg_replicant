@@ -1,11 +1,14 @@
-CFLAGS   = -std=c11 -D_XOPEN_SOURCE=500 -D_BSD_SOURCE $(REGRESSION_DEFINES)
-CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
-LDFLAGS  = -lbsg_manycore_runtime -lm
+CFLAGS   += -std=c11 -D_XOPEN_SOURCE=500 -D_BSD_SOURCE $(REGRESSION_DEFINES)
+CXXFLAGS += -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
+LDFLAGS  += -lbsg_manycore_runtime -lm
 
 C_TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
 
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) -c -o $@ $< 
+	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $<
+
+%.o: test_unified_main.c test_unified_main.h
+	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $<
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $< 
@@ -13,7 +16,7 @@ C_TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
 # each target '%' in INDEPENDENT_MAIN_TESTS relies on an object file '%.o'
 $(INDEPENDENT_MAIN_TESTS): %: %.o
 # each target '%' in UNIFIED_MAIN_TESTS relies on an object file 'test_unified_main.o'
-$(UNIFIED_MAIN_TESTS): %: test_unified_main.o
+$(UNIFIED_MAIN_TESTS): %: %.o
 # linking rule for all targets
 $(REGRESSION_TESTS): LD:=$(CC)
 $(REGRESSION_TESTS): % : %.rule
