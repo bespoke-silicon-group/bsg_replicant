@@ -1,6 +1,6 @@
-#ifndef __TEST_STRUCT_SIZE_H
-#define __TEST_STRUCT_SIZE_H
+#ifndef __TEST_UNIFIED_MAIN_H
+#define __TEST_UNIFIED_MAIN_H
 
 #include "python_tests.h"
 
-#endif // __TEST_STRUCT_SIZE_H
+#endif // __TEST_UNIFIED_MAIN_H
