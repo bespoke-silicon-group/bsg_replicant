@@ -6,7 +6,6 @@
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
 #include "test_manycore_parameters.h"
-#include "svdpi.h"
 
 #define TEST_NAME "test_manycore_eva_read_write"
 #define DATA_WORDS 1024
