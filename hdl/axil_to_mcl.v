@@ -423,15 +423,7 @@ module axil_to_mcl
     // fifo response to manycore
     assign fifo_ready_li[2*i+1] = ~returning_wr_v_r[i];
     assign fifo_res_cast[i]     = fifo_data_lo[2*i+1];
-    assign returning_data_li[i] = returning_wr_v_r[i]
-      ? '0
-        : {
-          (`return_packet_type_width)'(fifo_res_cast[i].pkt_type)
-          ,(data_width_p)'(fifo_res_cast[i].data)
-          ,(load_id_width_p)'(fifo_res_cast[i].load_id)
-          ,(y_cord_width_p)'(fifo_res_cast[i].y_cord)
-          ,(x_cord_width_p)'(fifo_res_cast[i].x_cord)
-        };
+    assign returning_data_li[i] = returning_wr_v_r[i] ? '0 : (data_width_p)'(fifo_res_cast[i].data);
 
     assign returning_v_li[i] = returning_wr_v_r[i] | (fifo_v_lo[2*i+1] & fifo_ready_li[2*i+1]);
 
