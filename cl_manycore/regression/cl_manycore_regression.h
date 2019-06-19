@@ -1,6 +1,7 @@
 #ifndef _CL_MANYCORE_REGRESSION_H
 #define _CL_MANYCORE_REGRESSION_H
 #include <stdio.h>
+#include <stdint.h>
 #include <bsg_manycore_errno.h>
 #ifdef VCS
 #include "svdpi.h"
