@@ -5,10 +5,10 @@ LDFLAGS  += -lbsg_manycore_runtime -lm
 C_TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
 
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $<
+	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) -c -o $@ $< 
 
 %.o: test_unified_main.c test_unified_main.h
-	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $<
+	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $< 
 
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $< 
@@ -26,8 +26,8 @@ $(REGRESSION_TESTS): % : %.rule
 # REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
 # that is run during compilation. These custom rules are useful for building
 # spmd or cuda binaries, for example.
-USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
-$(USER_RULES):
+USER_RULES=$(foreach tgt,$(REGRESSION_TESTS),$(tgt).rule)
+.PHONY: $(USER_RULES)
 
 all: $(REGRESSION_TESTS)
 
