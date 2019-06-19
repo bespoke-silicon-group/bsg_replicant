@@ -3,7 +3,6 @@ CXXFLAGS = -std=c++11 -pthread -O0 $(REGRESSION_DEFINES)
 LDFLAGS  = -lbsg_manycore_runtime -lm
 
 C_TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
-$(C_TARGETS): LD:=$(CC)
 
 %.o: %.c %.h
 	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) -c -o $@ $< 
@@ -16,6 +15,7 @@ $(INDEPENDENT_MAIN_TESTS): %: %.o
 # each target '%' in UNIFIED_MAIN_TESTS relies on an object file 'test_unified_main.o'
 $(UNIFIED_MAIN_TESTS): %: test_unified_main.o
 # linking rule for all targets
+$(REGRESSION_TESTS): LD:=$(CC)
 $(REGRESSION_TESTS): % : %.rule
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
