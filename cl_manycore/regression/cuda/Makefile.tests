@@ -1,25 +1,30 @@
-REGRESSION_TESTS_TYPE = cuda
+INDEPENDENT_MAIN_TESTS_TYPE = cuda
 
+UNIFIED_MAIN_TESTS = 
 # For F1, only run one test at a time, and reload the agfi image in between runs. To be fixed.
-C_REGRESSION_TESTS = test_empty
+INDEPENDENT_MAIN_TESTS = test_empty
 
-#C_REGRESSION_TESTS = test_empty 
-#C_REGRESSION_TESTS += test_empty_parallel 
-#C_REGRESSION_TESTS += test_barrier
-#C_REGRESSION_TESTS += test_packet 
-#C_REGRESSION_TESTS += test_stack_load
-#C_REGRESSION_TESTS += test_dram
-#C_REGRESSION_TESTS += test_vec_add
-#C_REGRESSION_TESTS += test_vec_add_parallel
-#C_REGRESSION_TESTS += test_vec_add_parallel_multi_grid 
-#C_REGRESSION_TESTS += test_vec_add_serial_multi_grid
-#C_REGRESSION_TESTS += test_vec_add_shared_mem
-#C_REGRESSION_TESTS += test_shared_mem
-#C_REGRESSION_TESTS += test_shared_mem_load_store
-#C_REGRESSION_TESTS += test_matrix_mul
-#C_REGRESSION_TESTS += test_matrix_mul_shared_mem
+#INDEPENDENT_MAIN_TESTS = test_empty 
+#INDEPENDENT_MAIN_TESTS += test_empty_parallel 
+#INDEPENDENT_MAIN_TESTS += test_barrier
+#INDEPENDENT_MAIN_TESTS += test_packet 
+#INDEPENDENT_MAIN_TESTS += test_stack_load
+#INDEPENDENT_MAIN_TESTS += test_dram
+#INDEPENDENT_MAIN_TESTS += test_vec_add
+#INDEPENDENT_MAIN_TESTS += test_vec_add_parallel
+#INDEPENDENT_MAIN_TESTS += test_vec_add_parallel_multi_grid 
+#INDEPENDENT_MAIN_TESTS += test_vec_add_serial_multi_grid
+#INDEPENDENT_MAIN_TESTS += test_vec_add_shared_mem
+#INDEPENDENT_MAIN_TESTS += test_shared_mem
+#INDEPENDENT_MAIN_TESTS += test_shared_mem_load_store
+#INDEPENDENT_MAIN_TESTS += test_matrix_mul
+#INDEPENDENT_MAIN_TESTS += test_matrix_mul_shared_mem
 
-CXX_REGRESSION_TESTS = 
+REGRESSION_TESTS = $(UNIFIED_MAIN_TESTS) $(INDEPENDENT_MAIN_TESTS)
+
+# Put regression tests that should be run in COSIM here, otherwise they will not
+# be run in the cosimulation sweep
+COSIM_REGRESSION_TESTS = $(REGRESSION_TESTS)
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR)) \
 	-DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) \

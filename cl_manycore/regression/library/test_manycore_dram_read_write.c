@@ -3,7 +3,6 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_coordinate.h>
 #include "test_manycore_dram_read_write.h"
-#include "svdpi.h"
 
 #define TEST_NAME "test_manycore_dram_read_write"
 

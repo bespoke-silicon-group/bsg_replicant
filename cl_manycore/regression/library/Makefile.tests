@@ -1,23 +1,28 @@
 REGRESSION_TESTS_TYPE = library
 
-C_REGRESSION_TESTS = test_rom
-C_REGRESSION_TESTS += test_struct_size
-C_REGRESSION_TESTS += test_vcache_flush
-C_REGRESSION_TESTS += test_vcache_simplified
-C_REGRESSION_TESTS += test_vcache_stride
-C_REGRESSION_TESTS += test_vcache_sequence
-C_REGRESSION_TESTS += test_printing
-#C_REGRESSION_TESTS += test_manycore_compile
-C_REGRESSION_TESTS += test_manycore_packets
-C_REGRESSION_TESTS += test_manycore_init
-C_REGRESSION_TESTS += test_manycore_dmem_read_write
-C_REGRESSION_TESTS += test_manycore_vcache_sequence
-C_REGRESSION_TESTS += test_manycore_dram_read_write
-C_REGRESSION_TESTS += test_manycore_eva
-C_REGRESSION_TESTS += test_manycore_credits
-C_REGRESSION_TESTS += test_manycore_eva_read_write
+UNIFIED_MAIN_TESTS = test_unified_main
 
-CXX_REGRESSION_TESTS =
+INDEPENDENT_MAIN_TESTS = test_rom
+INDEPENDENT_MAIN_TESTS += test_struct_size
+INDEPENDENT_MAIN_TESTS += test_vcache_flush
+INDEPENDENT_MAIN_TESTS += test_vcache_simplified
+INDEPENDENT_MAIN_TESTS += test_vcache_stride
+INDEPENDENT_MAIN_TESTS += test_vcache_sequence
+INDEPENDENT_MAIN_TESTS += test_printing
+INDEPENDENT_MAIN_TESTS += test_manycore_packets
+INDEPENDENT_MAIN_TESTS += test_manycore_init
+INDEPENDENT_MAIN_TESTS += test_manycore_dmem_read_write
+INDEPENDENT_MAIN_TESTS += test_manycore_vcache_sequence
+INDEPENDENT_MAIN_TESTS += test_manycore_dram_read_write
+INDEPENDENT_MAIN_TESTS += test_manycore_eva
+INDEPENDENT_MAIN_TESTS += test_manycore_credits
+INDEPENDENT_MAIN_TESTS += test_manycore_eva_read_write
+
+REGRESSION_TESTS = $(UNIFIED_MAIN_TESTS) $(INDEPENDENT_MAIN_TESTS)
+
+# Put regression tests that should be run in COSIM here, otherwise they will not
+# be run in the cosimulation sweep
+COSIM_REGRESSION_TESTS = $(REGRESSION_TESTS)
 
 REGRESSION_DEFINES = -DBSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	-DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) \
