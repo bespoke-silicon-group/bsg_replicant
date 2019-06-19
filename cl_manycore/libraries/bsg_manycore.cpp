@@ -174,33 +174,39 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
         uint32_t occupancy;
         int rc;
 
-        /* first check how many unread packets are currently in the FIFO */
-        rc = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
-        if (rc != HB_MC_SUCCESS)
-                return rc;
+	for (int drains = 0; drains < 20; drains++) {
+		/* first check how many unread packets are currently in the FIFO */
+		rc = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
+		if (rc != HB_MC_SUCCESS)
+			return rc;
 
-	/* Read stale packets from fifo */
-	for (unsigned i = 0; i < occupancy; i++){
-                rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type, -1);
-                if (rc != HB_MC_SUCCESS) {
-                        manycore_pr_err(mc, "%s: Failed to read packet from %s fifo\n",
-                                        __func__, typestr);
-                        return HB_MC_FAIL;
-                }
+		/* break if occupancy is zero */
+		if (occupancy == 0)
+			break;
+	
+		/* Read stale packets from fifo */
+		for (unsigned i = 0; i < occupancy; i++){
+			rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type, -1);
+			if (rc != HB_MC_SUCCESS) {
+				manycore_pr_err(mc, "%s: Failed to read packet from %s fifo\n",
+						__func__, typestr);
+				return HB_MC_FAIL;
+			}
 
-                manycore_pr_dbg(mc,
-                                "%s: packet drained from %s fifo: "
-                                "src (%d,%d), "
-                                "dst (%d,%d), "
-                                "addr: 0x%08x, "
-                                "data: 0x%08x\n",
-                                __func__, typestr,
-                                recv.x_src, recv.y_src,
-                                recv.x_dst, recv.y_dst,
-                                recv.addr,
-                                recv.data);
-        }
-
+			manycore_pr_dbg(mc,
+					"%s: packet drained from %s fifo: "
+					"src (%d,%d), "
+					"dst (%d,%d), "
+					"addr: 0x%08x, "
+					"data: 0x%08x\n",
+					__func__, typestr,
+					recv.x_src, recv.y_src,
+					recv.x_dst, recv.y_dst,
+					recv.addr,
+					recv.data);
+		}
+	}
+	
         /* recheck occupancy to make sure all packets are drained. */
         rc = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
         if (rc != HB_MC_SUCCESS)
