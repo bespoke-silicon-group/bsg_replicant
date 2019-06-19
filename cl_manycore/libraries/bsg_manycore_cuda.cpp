@@ -42,6 +42,16 @@ static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg,
 						uint32_t argv[]); 
 
 __attribute__((warn_unused_result))
+static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
+							hb_mc_eva_map_t *map, 
+							hb_mc_coordinate_t origin,
+							hb_mc_coordinate_t tg_id,
+							hb_mc_dimension_t tg_dim, 
+							hb_mc_dimension_t grid_dim,
+							hb_mc_coordinate_t *tiles,
+							uint32_t num_tiles);
+
+__attribute__((warn_unused_result))
 static int hb_mc_tile_set_origin_symbols (	hb_mc_manycore_t *mc,
 						hb_mc_eva_map_t *map,
 						unsigned char* bin,
@@ -81,6 +91,16 @@ static int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
 						size_t bin_size,
 						const hb_mc_coordinate_t *coord,
 						const hb_mc_dimension_t *grid_dim);
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
+							hb_mc_eva_map_t *map, 
+							uint32_t argc, 
+							hb_mc_eva_t args_eva,
+							hb_mc_npa_t finish_signal_npa, 
+							hb_mc_eva_t kernel_eva,	
+							hb_mc_coordinate_t *tiles,
+							uint32_t num_tiles); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_tile_set_kernel_ptr_symbol (	hb_mc_manycore_t *mc,
@@ -123,19 +143,12 @@ static int hb_mc_tile_set_finish_signal_val_symbol (	hb_mc_manycore_t *mc,
 							uint32_t finish_signal_val);
 
 __attribute__((warn_unused_result))
-static int hb_mc_tile_set_kernel_not_loaded_val_symbol (hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							uint32_t kernel_not_loaded_val);
-
-__attribute__((warn_unused_result))
 static int hb_mc_tile_set_kernel_not_loaded_val_symbol (	hb_mc_manycore_t *mc,
 								hb_mc_eva_map_t *map,
 								unsigned char* bin,
 								size_t bin_size,
-								const hb_mc_coordinate_t *coord);
+								const hb_mc_coordinate_t *coord,
+								uint32_t kernel_not_loaded_val);
 
 
 
@@ -392,14 +405,14 @@ static int hb_mc_tile_group_initialize_tiles (	hb_mc_device_t *device,
 
 
 	// Set the configuration symbols of all tiles inside tile group
-	error = hb_mc_device_tiles_set_symbols(	device,
-						tg->map,
-						tg->origin,
-						tg->id,
-						tg->dim,
-						tg->grid_dim,
-						tile_list,
-						num_tiles);
+	error = hb_mc_device_tiles_set_config_symbols(	device,
+							tg->map,
+							tg->origin,
+							tg->id,
+							tg->dim,
+							tg->grid_dim,
+							tile_list,
+							num_tiles);
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to set grid %d tile group (%d,%d) tiles configuration symbols.\n", 
 				__func__,
@@ -658,109 +671,41 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 	hb_mc_npa_t finish_signal_npa = hb_mc_npa(host_coordinate, tg->kernel->finish_signal_addr); 
 
 
-	hb_mc_idx_t tile_id;
-	for (	int y = hb_mc_coordinate_get_y(tg->origin);
+	// Create a list of tile coordinates for tiles inside tile group 
+	uint32_t num_tiles = hb_mc_dimension_to_length(tg->dim); 
+	hb_mc_coordinate_t tile_list[num_tiles];
+
+	int tg_tile_id = 0;
+	for (	hb_mc_idx_t y = hb_mc_coordinate_get_y(tg->origin);
 		y < hb_mc_coordinate_get_y(tg->origin) + hb_mc_dimension_get_y(tg->dim); y++){
-		for (	int x = hb_mc_coordinate_get_x(tg->origin);
+		for (	hb_mc_idx_t x = hb_mc_coordinate_get_x(tg->origin);
 			x < hb_mc_coordinate_get_x(tg->origin) + hb_mc_dimension_get_x(tg->dim); x++){
-
-			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y)); 
-
-
-			error = hb_mc_tile_set_argc_symbol(	device->mc, tg->map, 
-								device->program->bin,
-								device->program->bin_size,
-								&(device->mesh->tiles[tile_id].coord),
-								&(tg->kernel->argc));
-			if (error != HB_MC_SUCCESS) { 
-				bsg_pr_err(	"%s: failed to write argc to tile (%d,%d) for grid %d tile group (%d,%d).\n",
-						__func__,
-						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
-						tg->grid_id,
-						hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
-				return error;
-			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_argc symbol to 0x%08" PRIx32 ".\n",
-					__func__,
-					tile_id,
-					x, y,
-					tg->kernel->argc);
-
-
-			error = hb_mc_tile_set_argv_ptr_symbol(	device->mc, tg->map, 
-								device->program->bin,
-								device->program->bin_size,
-								&(device->mesh->tiles[tile_id].coord),
-								&args_eva);
-			if (error != HB_MC_SUCCESS) { 
-				bsg_pr_err(	"%s: failed to write argv pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n",
-						__func__,
-						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
-						tg->grid_id, hb_mc_coordinate_get_x(tg->id),
-						hb_mc_coordinate_get_y(tg->id));
-				return error;
-			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_argv_ptr symbol to 0x%08" PRIx32 ".\n",
-					__func__,
-					tile_id,
-					x, y,
-					args_eva);
-
-
-
-			hb_mc_eva_t finish_signal_eva;
-			size_t sz; 
-			error = hb_mc_npa_to_eva (cfg, tg->map, &(device->mesh->tiles[tile_id].coord), &(finish_signal_npa), &finish_signal_eva, &sz); 
-			if (error != HB_MC_SUCCESS) { 
-				bsg_pr_err("%s: failed to acquire finish signal address eva from npa.\n", __func__); 
-				return error;
-			}
-
-			error = hb_mc_tile_set_finish_signal_addr_symbol(	device->mc, tg->map, 
-										device->program->bin,
-										device->program->bin_size,
-										&(device->mesh->tiles[tile_id].coord),
-										&finish_signal_eva);
-			if (error != HB_MC_SUCCESS) {
-				bsg_pr_err(	"%s: failed to write finish signal address to tile (%d,%d) for grid %d tile group (%d,%d).\n",
-						__func__,
-						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
-						tg->grid_id,
-						hb_mc_coordinate_get_x(tg->id),
-						hb_mc_coordinate_get_y(tg->id));
-				return error;
-			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_finish_signal_addr symbol to 0x%08" PRIx32 ".\n",
-					__func__,
-					tile_id,
-					x, y,
-					finish_signal_eva);
-
-
-			error = hb_mc_tile_set_kernel_ptr_symbol(	device->mc, tg->map, 
-									device->program->bin,
-									device->program->bin_size,
-									&(device->mesh->tiles[tile_id].coord),
-									&kernel_eva);
-			if (error != HB_MC_SUCCESS) {
-				bsg_pr_err(	"%s: failed to write kernel pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n",
-						__func__,
-						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
-						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
-						tg->grid_id,
-						hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
-				return error;
-			}
-			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) cuda_kernel_ptr symbol to 0x%08" PRIx32 ".\n",
-					__func__,
-					tile_id,
-					x, y,
-					kernel_eva); 
+			tile_list[tg_tile_id] = hb_mc_coordinate (x, y); 
+			tg_tile_id ++;
 		}
-	} 
+	}
+	
+
+	// Set the runtime symbols of all tiles inside tile group
+	error = hb_mc_device_tiles_set_runtime_symbols(	device,
+							tg->map,
+							tg->kernel->argc,
+							args_eva,
+							finish_signal_npa, 
+							kernel_eva,
+							tile_list,
+							num_tiles);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to set grid %d tile group (%d,%d) tiles runtime symbols.\n", 
+				__func__,
+				tg->grid_id,
+				hb_mc_coordinate_get_x (tg->id),
+				hb_mc_coordinate_get_y (tg->id));
+		return error;
+	}
+
+
+
 
 	tg->status=HB_MC_TILE_GROUP_STATUS_LAUNCHED;
 	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) launched at origin (%d,%d).\n",
@@ -988,14 +933,14 @@ int hb_mc_device_program_load (hb_mc_device_t *device) {
 	hb_mc_coordinate_t tg_dim = hb_mc_coordinate (1, 1); 
 	hb_mc_coordinate_t grid_dim = hb_mc_coordinate (1, 1); 
 
-	error = hb_mc_device_tiles_set_symbols(	device,
-						&default_map,
-						device->mesh->origin,
-						tg_id,
-						tg_dim, 
-						grid_dim,
-						tile_list,
-						num_tiles);
+	error = hb_mc_device_tiles_set_config_symbols(	device,
+							&default_map,
+							device->mesh->origin,
+							tg_id,
+							tg_dim, 
+							grid_dim,
+							tile_list,
+							num_tiles);
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to set tiles configuration symbols.\n", __func__);
 		return error;
@@ -1589,14 +1534,14 @@ int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
  * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_tiles_set_symbols (	hb_mc_device_t *device,
-					hb_mc_eva_map_t *map, 
-					hb_mc_coordinate_t origin,
-					hb_mc_coordinate_t tg_id,
-					hb_mc_dimension_t tg_dim, 
-					hb_mc_dimension_t grid_dim,
-					hb_mc_coordinate_t *tiles,
-					uint32_t num_tiles) { 
+static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
+							hb_mc_eva_map_t *map, 
+							hb_mc_coordinate_t origin,
+							hb_mc_coordinate_t tg_id,
+							hb_mc_dimension_t tg_dim, 
+							hb_mc_dimension_t grid_dim,
+							hb_mc_coordinate_t *tiles,
+							uint32_t num_tiles) { 
 
 	int error;
 
@@ -2068,6 +2013,124 @@ static int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
 
 	return HB_MC_SUCCESS;
 }
+
+
+
+
+
+/**
+ * Sends packets to all tiles in the list to set their runtime symbols in binary 
+ * Symbols include: cuda_kernel_ptr, cuda_argc, cuda_argv_ptr, cuda_finish_signal_addr
+ * @param[in]  device        Pointer to device
+ * @param[in]  map           EVA to NPA mapping for tiles 
+ * @param[in]  argc          Kernel's argument count for cuda_argc symbol
+ * @param[in]  args_eva      Kernel's pointer to argument list for cuda_argv_ptr symbol
+ * @param[in]  finish_signal_npa   Kernel's finish signal npa
+ * @param[in]  kernel_eva    EVA address of kernel on DRAM for cuda_kernel_ptr symbols
+ * @param[in]  tiles         List of tile coordinates to set symbols 
+ * @param[in]  num_tiles     Number of tiles in the list
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
+							hb_mc_eva_map_t *map, 
+							uint32_t argc, 
+							hb_mc_eva_t args_eva,
+							hb_mc_npa_t finish_signal_npa, 
+							hb_mc_eva_t kernel_eva,	
+							hb_mc_coordinate_t *tiles,
+							uint32_t num_tiles) { 
+	int error;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
+
+
+	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
+		error = hb_mc_tile_set_argc_symbol(	device->mc, map, 
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							&argc);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to write argc to tile (%d,%d).\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argc symbol to 0x%08" PRIx32 ".\n",
+				__func__,
+				hb_mc_coordinate_get_x(tiles[tile_id]),
+				hb_mc_coordinate_get_y(tiles[tile_id]), 
+				argc);
+
+
+		error = hb_mc_tile_set_argv_ptr_symbol(	device->mc, map, 
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							&args_eva);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to write argv pointer to tile (%d,%d).\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argv_ptr symbol to 0x%08" PRIx32 ".\n",
+				__func__,
+				hb_mc_coordinate_get_x(tiles[tile_id]),
+				hb_mc_coordinate_get_y(tiles[tile_id]),
+				args_eva);
+
+
+		hb_mc_eva_t finish_signal_eva;
+		size_t sz; 
+		error = hb_mc_npa_to_eva (cfg, map, &(tiles[tile_id]), &(finish_signal_npa), &finish_signal_eva, &sz); 
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to acquire finish signal address eva from npa.\n", __func__); 
+			return error;
+		}
+
+		error = hb_mc_tile_set_finish_signal_addr_symbol(	device->mc, map, 
+									device->program->bin,
+									device->program->bin_size,
+									&(tiles[tile_id]),
+									&finish_signal_eva);
+		if (error != HB_MC_SUCCESS) {
+			bsg_pr_err(	"%s: failed to write finish signal address to tile (%d,%d).\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_addr symbol to 0x%08" PRIx32 ".\n",
+				__func__,
+				hb_mc_coordinate_get_x(tiles[tile_id]),
+				hb_mc_coordinate_get_y(tiles[tile_id]),
+				finish_signal_eva);
+
+
+		error = hb_mc_tile_set_kernel_ptr_symbol(	device->mc, map, 
+								device->program->bin,
+								device->program->bin_size,
+								&(tiles[tile_id]),
+								&kernel_eva);
+		if (error != HB_MC_SUCCESS) {
+		bsg_pr_err(	"%s: failed to write kernel pointer to tile (%d,%d).\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_ptr symbol to 0x%08" PRIx32 ".\n",
+				__func__,
+				hb_mc_coordiante_get_x(tiles[tile_id]),
+				hb_mc_coordinate_get_y(tiles[tile_id]),
+				kernel_eva); 
+	}
+
+	return HB_MC_SUCCESS;
+}
+
 
 
 
