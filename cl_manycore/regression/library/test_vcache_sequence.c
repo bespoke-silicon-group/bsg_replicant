@@ -17,12 +17,12 @@ int test_vcache_sequence() {
 	
 
 	const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-	uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension(config));
-	uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension(config));
+	uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
+	uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
 
 
  	uint32_t dram_coord_x = 0;
-	uint32_t dram_coord_y = manycore_dim_y + 1;
+	uint32_t dram_coord_y = hb_mc_config_get_dram_y(config);
 	int mismatch = 0; 
 
 

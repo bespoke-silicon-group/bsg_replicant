@@ -62,7 +62,7 @@ int test_manycore_eva () {
         }
 
         config = hb_mc_manycore_get_config(&mc);
-        dim = hb_mc_config_get_dimension(config);
+        dim = hb_mc_config_get_dimension_network(config);
 	dim_x = hb_mc_dimension_get_x(dim);
 	dram_x_offset = NETWORK_ADDRESS_BITS - DRAM_INDICATOR_WIDTH - ceil(log2(dim_x));
 
