@@ -472,6 +472,7 @@ bsg_manycore_wrapper #(
   ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
   ,.load_id_width_p(load_id_width_p)
   ,.num_cache_p(num_cache_p)
+  ,.vcache_size_p(vcache_size_p)
 ) manycore_wrapper (
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
