@@ -132,20 +132,20 @@ int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){
 	}
 	
 	device->mesh->dim = dim;
-	device->mesh->origin = default_origin;
+	device->mesh->origin = hb_mc_config_get_origin_vcore(cfg); 
 	device->mesh->tiles = (hb_mc_tile_t *) malloc ( hb_mc_dimension_to_length(dim) * sizeof (hb_mc_tile_t));
 	if (device->mesh->tiles == NULL) {
 		bsg_pr_err("%s: failed to allocate space on host for hb_mc_tile_t struct.\n", __func__);
 		return HB_MC_NOMEM;
 	}
 	
-	for (int x = hb_mc_coordinate_get_x(default_origin);
-		 x < hb_mc_coordinate_get_x(default_origin) + hb_mc_dimension_get_x(dim); x++){
-		for (int y = hb_mc_coordinate_get_y(default_origin);
-			 y < hb_mc_coordinate_get_y(default_origin) + hb_mc_dimension_get_y(dim); y++){
-			hb_mc_idx_t tile_id = hb_mc_get_tile_id (default_origin, dim, hb_mc_coordinate(x, y));	
+	for (int x = hb_mc_coordinate_get_x(device->mesh->origin);
+		 x < hb_mc_coordinate_get_x(device->mesh->origin) + hb_mc_dimension_get_x(dim); x++){
+		for (int y = hb_mc_coordinate_get_y(device->mesh->origin);
+			 y < hb_mc_coordinate_get_y(device->mesh->origin) + hb_mc_dimension_get_y(dim); y++){
+			hb_mc_idx_t tile_id = hb_mc_get_tile_id (device->mesh->origin, dim, hb_mc_coordinate(x, y));	
 			device->mesh->tiles[tile_id].coord = hb_mc_coordinate(x, y);
-			device->mesh->tiles[tile_id].origin = default_origin;
+			device->mesh->tiles[tile_id].origin = device->mesh->origin;
 			device->mesh->tiles[tile_id].tile_group_id = hb_mc_coordinate(-1, -1); 
 			device->mesh->tiles[tile_id].free = 1;
 		}
@@ -884,7 +884,7 @@ int hb_mc_device_program_load (hb_mc_device_t *device) {
 
 	error = hb_mc_device_tiles_set_symbols(	device,
 						&default_map,
-						default_origin,
+						device->mesh->origin,
 						tg_id,
 						tg_dim, 
 						grid_dim,
