@@ -162,7 +162,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	hb_mc_idx_t x, y, ox, oy, dim_x, dim_y;
 	hb_mc_epa_t epa;
 
-	dim = hb_mc_config_get_dimension(cfg);
+	dim = hb_mc_config_get_dimension_vcore(cfg);
 	dim_x = hb_mc_dimension_get_x(dim);
 	dim_y = hb_mc_dimension_get_y(dim);
 	ox = hb_mc_coordinate_get_x(*o);
@@ -260,7 +260,7 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
 {
-	hb_mc_dimension_t dim = hb_mc_config_get_dimension(cfg);
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
 	return ceil(log2(hb_mc_dimension_get_x(dim)));
 }
 
@@ -307,7 +307,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	hb_mc_epa_t epa;
 	hb_mc_dimension_t dim;
 
-	dim = hb_mc_config_get_dimension(cfg);
+	dim = hb_mc_config_get_dimension_network(cfg);
 
 	xdimlog = default_get_x_dimlog(cfg);
 	xmask   = default_get_dram_x_bitidx(cfg);
@@ -491,10 +491,11 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
                                   const hb_mc_npa_t *npa,
                                   const hb_mc_coordinate_t *tgt)
 {
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(config);
         hb_mc_idx_t base_x = 0;
         hb_mc_idx_t base_y = 0;
-        hb_mc_idx_t ceil_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension(config));
-        hb_mc_idx_t ceil_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension(config));
+        hb_mc_idx_t ceil_x = hb_mc_coordinate_get_x(dim);
+        hb_mc_idx_t ceil_y = hb_mc_coordinate_get_y(dim);
 
         // does your coordinate map to any v-core and is your epa valid?
         return (hb_mc_npa_get_x(npa) >= base_x) && (hb_mc_npa_get_x(npa) <= ceil_x) &&

@@ -53,7 +53,7 @@ typedef struct __hb_mc_config_t{
         hb_mc_date_t timestamp;
         uint32_t network_bitwidth_addr;
         uint32_t network_bitwidth_data;
-        hb_mc_dimension_t dimension;
+        hb_mc_dimension_t vcore_dimensions;
         hb_mc_coordinate_t host_interface;
         hb_mc_githash_t basejump;
         hb_mc_githash_t manycore;
@@ -152,8 +152,8 @@ static inline hb_mc_coordinate_t hb_mc_config_get_host_interface(const hb_mc_con
         return cfg->host_interface;
 }
 
-static inline hb_mc_dimension_t hb_mc_config_get_dimension(const hb_mc_config_t *cfg){
-        return cfg->dimension;
+static inline hb_mc_dimension_t hb_mc_config_get_dimension_vcore(const hb_mc_config_t *cfg){
+        return cfg->vcore_dimensions;
 }
 
 static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cfg){
@@ -162,6 +162,22 @@ static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cf
 
 static inline hb_mc_idx_t hb_mc_config_get_vcore_base_x(const hb_mc_config_t *cfg){
         return HB_MC_CONFIG_VCORE_BASE_X; // TODO: These should be defined in the ROM?
+}
+
+static inline hb_mc_coordinate_t hb_mc_config_get_origin_vcore(const hb_mc_config_t *cfg){
+        return hb_mc_coordinate(hb_mc_config_get_vcore_base_x(cfg),
+				hb_mc_config_get_vcore_base_y(cfg));
+}
+
+static inline hb_mc_coordinate_t hb_mc_config_get_origin_network(const hb_mc_config_t *cfg){
+        return hb_mc_coordinate(0, 0);
+}
+
+static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+	// The Network has two additional Y rows: An IO Row, and a DRAM/Cache Row
+	return hb_mc_dimension(hb_mc_dimension_get_x(dim), 
+			hb_mc_dimension_get_y(dim) + 2);
 }
 
 static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
@@ -188,7 +204,8 @@ static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
 {
 	hb_mc_idx_t cols;
 	uint32_t awidth;
-	cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension(cfg));
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
+	cols = hb_mc_dimension_get_x(dim);
 	awidth = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
         return (cols * (1ull << awidth));
 }
@@ -218,8 +235,8 @@ static inline size_t hb_mc_config_get_icache_size(const hb_mc_config_t *cfg)
 static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
 {
 	hb_mc_coordinate_t dims;
-	dims = hb_mc_config_get_dimension(cfg);
-	return hb_mc_coordinate_get_y(dims) + 1;
+	dims = hb_mc_config_get_dimension_network(cfg);
+	return hb_mc_coordinate_get_y(dims) - 1;
 }
 
 

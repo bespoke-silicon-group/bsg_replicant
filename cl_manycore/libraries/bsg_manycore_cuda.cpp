@@ -99,8 +99,7 @@ int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){
 	int error;
 
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
-	hb_mc_dimension_t device_dim = cfg->dimension;
-
+	hb_mc_dimension_t device_dim = hb_mc_config_get_dimension_vcore(cfg);
 	
 	if (hb_mc_dimension_get_x(dim) <= 0){
 		bsg_pr_err("%s: Mesh X dimension (%d) not valid.\n", __func__, hb_mc_dimension_get_x(dim)); 
