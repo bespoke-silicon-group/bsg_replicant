@@ -163,8 +163,8 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
 	hb_mc_epa_t epa;
 
 	dim = hb_mc_config_get_dimension_vcore(cfg);
-	dim_x = hb_mc_dimension_get_x(dim);
-	dim_y = hb_mc_dimension_get_y(dim);
+	dim_x = hb_mc_dimension_get_x(dim) + hb_mc_config_get_vcore_base_x(cfg);
+	dim_y = hb_mc_dimension_get_y(dim) + hb_mc_config_get_vcore_base_y(cfg);
 	ox = hb_mc_coordinate_get_x(*o);
 	oy = hb_mc_coordinate_get_y(*o);
 	x = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_X_BITMASK) >> DEFAULT_GROUP_X_BITIDX);
@@ -314,7 +314,7 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	shift   = default_get_dram_x_shift(cfg);
 
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
-	y = hb_mc_dimension_get_y(dim) + hb_mc_config_get_vcore_base_y(cfg);
+	y = hb_mc_config_get_dram_y(cfg);
 
 	addrbits = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
 	maxsz = 1 << addrbits;
@@ -491,11 +491,11 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
                                   const hb_mc_npa_t *npa,
                                   const hb_mc_coordinate_t *tgt)
 {
-	hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(config);
-        hb_mc_idx_t base_x = 0;
-        hb_mc_idx_t base_y = 0;
-        hb_mc_idx_t ceil_x = hb_mc_coordinate_get_x(dim);
-        hb_mc_idx_t ceil_y = hb_mc_coordinate_get_y(dim);
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(config);
+        hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(config);
+        hb_mc_idx_t base_y = hb_mc_config_get_vcore_base_y(config);
+        hb_mc_idx_t ceil_x = base_x + hb_mc_coordinate_get_x(dim);
+        hb_mc_idx_t ceil_y = base_y + hb_mc_coordinate_get_y(dim);
 
         // does your coordinate map to any v-core and is your epa valid?
         return (hb_mc_npa_get_x(npa) >= base_x) && (hb_mc_npa_get_x(npa) <= ceil_x) &&
