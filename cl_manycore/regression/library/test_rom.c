@@ -89,11 +89,11 @@ int test_rom () {
 		fail = 1;
         }
 
-        dim = hb_mc_config_get_dimension(config);
+        dim = hb_mc_config_get_dimension_vcore(config);
         minexpected = 1; maxexpected = 64;
 
         result = hb_mc_dimension_get_y(dim);
-        bsg_pr_test_info("Checking that the Manycore Y Dimension is "
+        bsg_pr_test_info("Checking that the Vanilla Core Y Dimension is "
                         "between %d and %d\n", minexpected, maxexpected);
         if((result <= minexpected) || (result >= maxexpected)){
                 bsg_pr_test_err("Unexpected value for Network Y Dimension. "
@@ -104,12 +104,40 @@ int test_rom () {
 
 
         result = hb_mc_dimension_get_x(dim);
-        bsg_pr_test_info("Checking that the Manycore X Dimension is "
+        bsg_pr_test_info("Checking that the Vanilla Core X Dimension is "
                         "between %d and %d\n", minexpected, maxexpected);
         if((result <= minexpected) || (result >= maxexpected)){
                 bsg_pr_test_err("Unexpected value for Network X Dimension. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
+		fail = 1;
+        }
+
+        dim = hb_mc_config_get_dimension_vcore(config);
+        expected = hb_mc_dimension_get_y(dim) + 2;
+
+        dim = hb_mc_config_get_dimension_network(config);
+
+        result = hb_mc_dimension_get_y(dim);
+        bsg_pr_test_info("Checking that the Network Y Dimension is %d\n",
+                        expected);
+        if(result != expected){
+                bsg_pr_test_err("Incorrect Network dimension. "
+                                "Got: %d, expected %d\n", result, expected);
+		fail = 1;
+        }
+
+        dim = hb_mc_config_get_dimension_vcore(config);
+        expected = hb_mc_dimension_get_x(dim);
+
+        dim = hb_mc_config_get_dimension_network(config);
+
+        result = hb_mc_dimension_get_x(dim);
+        bsg_pr_test_info("Checking that the Network X Dimension is %d\n",
+                        expected);
+        if(result != expected){
+                bsg_pr_test_err("Incorrect Network dimension. "
+                                "Got: %d, expected %d\n", result, expected);
 		fail = 1;
         }
 

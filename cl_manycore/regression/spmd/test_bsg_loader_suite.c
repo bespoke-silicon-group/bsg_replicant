@@ -307,8 +307,8 @@ static test_t npa_to_eva_tests [] = {
 
 static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc)
 {
-	hb_mc_coordinate_t dim = hb_mc_config_get_dimension(hb_mc_manycore_get_config(mc));
-	return hb_mc_coordinate_get_y(dim)+1;
+	hb_mc_coordinate_t dim = hb_mc_config_get_dimension_network(hb_mc_manycore_get_config(mc));
+	return hb_mc_coordinate_get_y(dim) - 1;
 }
 
 static int run_npa_to_eva_test(test_t *test)

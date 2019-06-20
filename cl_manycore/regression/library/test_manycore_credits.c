@@ -33,11 +33,9 @@ int test_manycore_credits() {
 	}
 
 	const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-	hb_mc_idx_t dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension(config));
-	hb_mc_idx_t dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension(config));
-	hb_mc_idx_t x = 1;
-	hb_mc_idx_t y = 1;
-	hb_mc_coordinate_t target;
+	hb_mc_idx_t dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
+	hb_mc_idx_t dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
+	hb_mc_coordinate_t target = hb_mc_config_get_origin_vcore(config);
 
 	hb_mc_eva_t eva;
 	size_t dmem_size = hb_mc_tile_get_size_dmem(mc, &target); 
@@ -48,7 +46,6 @@ int test_manycore_credits() {
 	/**************************************************************/
 	/* Perform an EVA write that fills DMEM of a single tile.     */
 	/**************************************************************/
-	target = hb_mc_coordinate(x, y);
 	eva = 0x1000;
 
 	for (i = 0; i < dmem_words; ++i){
@@ -58,15 +55,22 @@ int test_manycore_credits() {
 				
 	if (rc != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to write buffer to EVA 0x%x of coord (%d,%d)\n",
-			__func__, eva, x, y);
+			__func__, eva,
+			hb_mc_coordinate_get_x(target), 
+			hb_mc_coordinate_get_y(target));
 		goto cleanup;
 	}
-	bsg_pr_info("Successfully fill DMEM of tile (%d, %d)\n", x, y);
+	bsg_pr_info("Successfully fill DMEM of tile (%d, %d)\n",
+		hb_mc_coordinate_get_x(target), 
+		hb_mc_coordinate_get_y(target));
+
 	rc = hb_mc_manycore_eva_read(mc, &default_map, &target, &eva, read_data, dmem_size);
 				
 	if (rc != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to read buffer to EVA 0x%x of coord (%d,%d)\n",
-			__func__, eva, x, y);
+			__func__, eva,
+			hb_mc_coordinate_get_x(target),
+			hb_mc_coordinate_get_y(target));
 		goto cleanup;
 	}
 

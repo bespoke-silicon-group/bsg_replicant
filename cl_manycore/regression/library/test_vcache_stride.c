@@ -30,7 +30,7 @@ int test_vcache_stride() {
 	host_x = hb_mc_coordinate_get_x(host);
 	host_y = hb_mc_coordinate_get_y(host);
 
-	dim = hb_mc_config_get_dimension(config);
+	dim = hb_mc_config_get_dimension_network(config);
 	dim_x = hb_mc_dimension_get_x(dim);
 	dim_y = hb_mc_dimension_get_y(dim);
 
@@ -39,7 +39,7 @@ int test_vcache_stride() {
 	int dram = 0, ndrams = 1;
 	hb_mc_idx_t dram_xs[dim_x];
 	dram_xs[0] = 0;
-	hb_mc_idx_t dram_coord_y = dim_y + 1;
+	hb_mc_idx_t dram_coord_y = hb_mc_config_get_dram_y(config);
 	hb_mc_idx_t dram_coord_x = -1;
 	hb_mc_epa_t epa;
 	hb_mc_npa_t npa;
