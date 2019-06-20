@@ -62,7 +62,7 @@ int test_manycore_eva () {
         }
 
         config = hb_mc_manycore_get_config(&mc);
-        dim = hb_mc_config_get_dimension_network(config);
+        dim = hb_mc_config_get_dimension_vcore(config);
 	dim_x = hb_mc_dimension_get_x(dim);
 	dram_x_offset = NETWORK_ADDRESS_BITS - DRAM_INDICATOR_WIDTH - ceil(log2(dim_x));
 
@@ -86,8 +86,8 @@ int test_manycore_eva () {
 
 	bsg_pr_test_info("Testing Random Manycore EVAs\n");
 	// This is the origin of the Default EVA ID
-	origin_x = 0;
-	origin_y = 1;
+	origin_x = hb_mc_config_get_vcore_base_x(config);
+	origin_y = hb_mc_config_get_vcore_base_y(config);
 	origin = hb_mc_coordinate(origin_x, origin_y);
 
 	src_x = 1;
@@ -123,7 +123,7 @@ int test_manycore_eva () {
 			tgt_epa = eva + DMEM_EPA_OFFSET;
 			eva = eva + DMEM_EVA_OFFSET;
 
-			tgt_x = (rand() % (dim_x - 1)) + 1;
+			tgt_x = (rand() % (dim_x - 1)) + origin_x;
 			tgt_y = rand() % dim_y;
 
 			eva = (GLOBAL_INDICATOR) | (tgt_x << GLOBAL_X_OFFSET) | 
@@ -134,8 +134,8 @@ int test_manycore_eva () {
 			eva = rand() % DRAM_EPA_SIZE; // Small, but we'll deal.
 			tgt_epa = eva;
 
-			tgt_x = (rand() % (dim_x - 1)) + 1;
-			tgt_y = dim_y + 1;
+			tgt_x = (rand() % (dim_x - 1)) + origin_x;
+			tgt_y = hb_mc_config_get_dram_y(config);
 
 			eva = DRAM_INDICATOR | (tgt_x << dram_x_offset) | (eva);
 
