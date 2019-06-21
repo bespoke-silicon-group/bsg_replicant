@@ -1,7 +1,12 @@
 #include "test_rom.h"
+#include <inttypes.h>
+
 int test_rom () {
         int rc = 0, fail = 0;
         uint32_t unexpected, expected, minexpected, maxexpected, result;
+        uint32_t vcache_assoc, vcache_sets, vcache_block_words;
+        uint32_t vcache_assoc_expect = 2, vcache_sets_expect = 64, vcache_block_words_expect = 16;
+
         hb_mc_dimension_t dim;
         hb_mc_coordinate_t host;
         const hb_mc_config_t *config;
@@ -163,6 +168,31 @@ int test_rom () {
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
 		fail = 1;
+        }
+
+        vcache_assoc       = hb_mc_config_get_vcache_ways(config);
+        bsg_pr_test_info("Checking that V-Cache associativity is %" PRIu32 "\n", vcache_assoc_expect);
+        if (vcache_assoc != vcache_assoc_expect) {
+                bsg_pr_test_err("Unexpected associativity value: Got %" PRIu32 ". Expected %" PRIu32 "\n",
+                                vcache_assoc, vcache_assoc_expect);
+                fail = 1;
+        }
+
+        vcache_sets        = hb_mc_config_get_vcache_sets(config);
+        bsg_pr_test_info("Checking that V-Cache number of sets is %" PRIu32 "\n", vcache_sets_expect);
+        if (vcache_sets != vcache_sets_expect) {
+                bsg_pr_test_err("Unexpected V-Cache set number: Got %" PRIu32 ". Expected %" PRIu32 "\n",
+                                vcache_sets, vcache_sets_expect);
+                fail = 1;
+        }
+
+        vcache_block_words = hb_mc_config_get_vcache_block_words(config);
+        bsg_pr_test_info("Checking that V-Cache block size in words is %" PRIu32 "\n", vcache_block_words_expect);
+        if (vcache_block_words != vcache_block_words_expect) {
+                bsg_pr_test_err("Unexpected V-Cache block size: "
+                                "Got %" PRIu32 " words, "
+                                "Expected %" PRIu32 " words\n");
+                fail = 1;
         }
 
 cleanup:
