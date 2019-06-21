@@ -185,7 +185,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 		/* break if occupancy is zero */
 		if (occupancy == 0)
 			break;
-	
+
 		/* Read stale packets from fifo */
 		for (unsigned i = 0; i < occupancy; i++){
 			rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type, -1);
@@ -208,7 +208,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 					recv.data);
 		}
 	}
-	
+
         /* recheck occupancy to make sure all packets are drained. */
         rc = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
         if (rc != HB_MC_SUCCESS)
@@ -468,7 +468,6 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
-
         return HB_MC_SUCCESS;
 }
 
@@ -524,6 +523,10 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
 
 	// initialize responders
 	if ((err = hb_mc_responders_init(mc)))
+		goto cleanup;
+
+	// enable dram
+	if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS)
 		goto cleanup;
 
         r = HB_MC_SUCCESS;
@@ -1350,11 +1353,12 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
 
 	/* transmit the request */
 	manycore_pr_dbg(mc, "Sending %d-byte write request to NPA "
-			"(x: %d, y: %d, 0x%08x)\n",
+			"(x: %d, y: %d, 0x%08x) (data = 0x%08" PRIx32 ")\n",
 			sz,
 			hb_mc_npa_get_x(npa),
 			hb_mc_npa_get_y(npa),
-			hb_mc_npa_get_epa(npa));
+			hb_mc_npa_get_epa(npa),
+			hb_mc_request_packet_get_data(&rqst.request));
 
 	return hb_mc_manycore_request_tx(mc, &rqst.request, -1);
 }
@@ -1707,4 +1711,59 @@ int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_
 int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v)
 {
 	return hb_mc_manycore_write(mc, npa, &v, 4);
+}
+
+
+/**
+ * Enable DRAM mode on the manycore instance.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DRAM is enabled. Zero otherwise.
+ */
+int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc)
+{
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+	/* for each tile */
+	hb_mc_idx_t
+		n_rows = hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg)),
+		n_cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
+
+	for (hb_mc_idx_t row = 0; row < n_rows; row++) {
+		for (hb_mc_idx_t col = 0; col < n_cols; col++) {
+			hb_mc_idx_t x = col + hb_mc_config_get_vcore_base_x(cfg);
+			hb_mc_idx_t y = row + hb_mc_config_get_vcore_base_y(cfg);
+			hb_mc_coordinate_t tile = hb_mc_coordinate(x,y);
+			int err = hb_mc_tile_set_dram_enabled(mc, &tile);
+			if (err != HB_MC_SUCCESS)
+				return err;
+		}
+	}
+        mc->dram_enabled = 1;
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Disable DRAM mode on the manycore instance.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DRAM is enabled. Zero otherwise.
+ */
+int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc)
+{
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+	/* for each tile */
+	hb_mc_idx_t
+		n_rows = hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg)),
+		n_cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
+
+	for (hb_mc_idx_t row = 0; row < n_rows; row++) {
+		for (hb_mc_idx_t col = 0; col < n_cols; col++) {
+			hb_mc_idx_t x = col + hb_mc_config_get_vcore_base_x(cfg);
+			hb_mc_idx_t y = row + hb_mc_config_get_vcore_base_y(cfg);
+			hb_mc_coordinate_t tile = hb_mc_coordinate(x,y);
+			int err = hb_mc_tile_clear_dram_enabled(mc, &tile);
+			if (err != HB_MC_SUCCESS)
+				return err;
+		}
+	}
+        mc->dram_enabled = 0;
+	return HB_MC_SUCCESS;
 }
