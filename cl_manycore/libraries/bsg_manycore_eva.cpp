@@ -276,12 +276,7 @@ static uint32_t default_get_dram_x_bitidx(const hb_mc_config_t *cfg)
 
 static uint32_t default_get_dram_x_shift(const hb_mc_config_t *cfg)
 {
-	uint32_t xdimlog;
-        // The location of the x index in the eva is determined by the x
-	// dimension of the network, and uses the high-order bits after the
-	// High-Order bit that indicates a DRAM access.
-	xdimlog = default_get_x_dimlog(cfg);
-	return DEFAULT_DRAM_BITIDX - xdimlog;
+        return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
 }
 
 /**
