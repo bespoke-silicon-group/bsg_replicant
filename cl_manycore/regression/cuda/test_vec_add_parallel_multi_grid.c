@@ -180,7 +180,7 @@ int kernel_vec_add_parallel_multi_grid () {
 
 
 	hb_mc_dimension_t grid_dim_1 = { .x = N / block_size_x1, .y = 1 }; 
-	hb_mc_dimension_t grid_dim_2 = { .x = M / block_size_x2, .y = 2 };
+	hb_mc_dimension_t grid_dim_2 = { .x = M / block_size_x2, .y = 1 };
 
 
 
