@@ -30,6 +30,7 @@ typedef struct hb_mc_manycore {
         hb_mc_config_t config;   //!< configuration of the manycore
         void    *private_data;   //!< implementation private data
 	unsigned htod_requests;  //!< outstanding host requests
+        int dram_enabled;        //!< operating in no-dram mode?
 } hb_mc_manycore_t;
 
 #define HB_MC_MANYCORE_INIT {0}
@@ -320,6 +321,31 @@ int hb_mc_manycore_mmio_write32(hb_mc_manycore_t *mc, uintptr_t offset, uint32_t
 // Address Translation API //
 /////////////////////////////
 
+/**
+ * Query if we are operating in no DRAM mode.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DRAM is enabled. Zero otherwise.
+ */
+static inline int hb_mc_manycore_dram_is_enabled(const hb_mc_manycore_t *mc)
+{
+	// at the moment we set this at compile time
+	// TODO: maybe make this a runtime setting
+	return mc->dram_enabled;
+}
+
+/**
+ * Enable DRAM mode on the manycore instance.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DRAM is enabled. Zero otherwise.
+ */
+int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc);
+
+/**
+ * Disable DRAM mode on the manycore instance.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DRAM is enabled. Zero otherwise.
+ */
+int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc);
 
 /**
  * Get a pointer to the configuration struct
