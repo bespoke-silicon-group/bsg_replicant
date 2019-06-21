@@ -54,6 +54,7 @@ file copy -force $CL_DIR/hardware/bsg_bladerunner_configuration.v             $T
 file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_manycore_wrapper.v       $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_cache_wrapper_axi.v      $TARGET_DIR
 
+file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_links.vh                   $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v                      $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_stitch.v                  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router_buffered.v         $TARGET_DIR
@@ -209,7 +210,7 @@ file copy -force $UNUSED_TEMPLATES_DIR/unused_flr_template.inc                $T
 exec chmod +w {*}[glob $TARGET_DIR/*]
 
 # encrypt .v/.sv/.vh/inc as verilog files
-encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_keyfile.txt -lang verilog  [glob -nocomplain -- $TARGET_DIR/*.?v] [glob -nocomplain -- $TARGET_DIR/*.vh] [glob -nocomplain -- $TARGET_DIR/*.inc]
+#encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_keyfile.txt -lang verilog  [glob -nocomplain -- $TARGET_DIR/*.?v] [glob -nocomplain -- $TARGET_DIR/*.vh] [glob -nocomplain -- $TARGET_DIR/*.inc]
 
 # encrypt *vhdl files
 encrypt -k $HDK_SHELL_DIR/build/scripts/vivado_vhdl_keyfile.txt -lang vhdl -quiet [ glob -nocomplain -- $TARGET_DIR/*.vhd? ]
