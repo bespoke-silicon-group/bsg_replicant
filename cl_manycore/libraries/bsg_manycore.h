@@ -318,6 +318,21 @@ int hb_mc_manycore_mmio_write32(hb_mc_manycore_t *mc, uintptr_t offset, uint32_t
 // Address Translation API //
 /////////////////////////////
 
+#ifndef HB_MC_NO_DRAM_MODE
+#define HB_MC_NO_DRAM_MODE (0)
+#endif
+
+/**
+ * Query if we are operating in no DRAM mode.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DRAM is enabled. Zero otherwise.
+ */
+static inline int hb_mc_manycore_dram_is_enabled(const hb_mc_manycore_t *mc)
+{
+	// at the moment we set this at compile time
+	// TODO: maybe make this a runtime setting
+	return HB_MC_NO_DRAM_MODE ? 0 : 1;
+}
 
 /**
  * Get a pointer to the configuration struct
