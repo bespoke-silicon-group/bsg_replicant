@@ -2,10 +2,11 @@ INDEPENDENT_MAIN_TESTS_TYPE = cuda
 
 UNIFIED_MAIN_TESTS = 
 # For F1, only run one test at a time, and reload the agfi image in between runs. To be fixed.
-INDEPENDENT_MAIN_TESTS = test_empty
+INDEPENDENT_MAIN_TESTS = test_multiple_binary_load
 
 #INDEPENDENT_MAIN_TESTS = test_empty 
 #INDEPENDENT_MAIN_TESTS += test_empty_parallel 
+#INDEPENDENT_MAIN_TESTS += test_multiple_binary_load
 #INDEPENDENT_MAIN_TESTS += test_barrier
 #INDEPENDENT_MAIN_TESTS += test_packet 
 #INDEPENDENT_MAIN_TESTS += test_stack_load
