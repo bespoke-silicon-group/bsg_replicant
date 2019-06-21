@@ -59,6 +59,8 @@ file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_stitch.v                  $T
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router_buffered.v         $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router.v                  $TARGET_DIR
 
+file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt.vh                 $TARGET_DIR
+file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_pkt.vh             $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v                  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt_decode.v           $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_manycore_link_to_cache.v     $TARGET_DIR
@@ -140,6 +142,8 @@ file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_mul.v                        
 file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_preprocess.v                     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_sticky.v                         $TARGET_DIR
 
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/parameters.vh                     $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/definitions.vh                    $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_manycore_proc_vanilla.v       $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/alu.v                             $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/cl_decode.v                       $TARGET_DIR
@@ -156,6 +160,8 @@ file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/fpu_float.v                   
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/fpu_float_aux.v                   $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/vanilla_core.v                    $TARGET_DIR
 
+file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_addr.vh                           $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_packet.vh                         $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_endpoint_standard.v               $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_endpoint.v                        $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_lock_ctrl.v                       $TARGET_DIR

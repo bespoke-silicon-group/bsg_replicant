@@ -52,10 +52,13 @@ read_vhdl -library lib_fifo_v1_0_11 $ENC_SRC_DIR/lib_fifo_v1_0_rfs.vhd
 
 set_param synth.elaboration.rodinMoreOptions "rt::set_parameter var_size_limit 4194304"
 
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/axil_to_mcl.vh]
+
 set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_defines.v]
 set_property is_global_include true [get_files $ENC_SRC_DIR/bsg_defines.v]
 
 set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_cache_pkt.vh]
+set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_manycore_packet.vh]
 
 set_property file_type "Verilog Header" [get_files $ENC_SRC_DIR/bsg_cache_dma_pkt.vh]
 
