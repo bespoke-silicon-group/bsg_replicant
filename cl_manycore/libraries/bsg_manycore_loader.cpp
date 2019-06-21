@@ -695,9 +695,9 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 
 	/* set/clear DRAM enabled */
 	if (hb_mc_manycore_dram_is_enabled(mc)) {
-		rc = hb_mc_set_dram_enabled(mc, &tile);
+		rc = hb_mc_tile_set_dram_enabled(mc, &tile);
 	} else {
-		rc = hb_mc_clear_dram_enabled(mc, &tile);
+		rc = hb_mc_tile_clear_dram_enabled(mc, &tile);
 	}
 
 	if (rc != HB_MC_SUCCESS) {
