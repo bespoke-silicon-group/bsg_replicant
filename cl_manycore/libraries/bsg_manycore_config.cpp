@@ -100,5 +100,10 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];
 
+        /* set the victim cache parameters from the values in the ROM */
+        config->vcache_ways        = raw[HB_MC_CONFIG_VCACHE_WAYS];
+        config->vcache_sets        = raw[HB_MC_CONFIG_VCACHE_SETS];
+        config->vcache_block_words = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
+
         return HB_MC_SUCCESS;
 }
