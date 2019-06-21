@@ -80,7 +80,7 @@ file copy -force $BASEJUMP_STL_DIR/bsg_dataflow/bsg_two_fifo.v                $T
 file copy -force $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1r1w_large.v         $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_dataflow/bsg_fifo_1rw_large.v          $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_dataflow/bsg_round_robin_2_to_2.v      $TARGET_DIR
-
+file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_defines.v                     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_decode.v                      $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_decode_with_v.v               $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_counter_clear_up.v            $TARGET_DIR
