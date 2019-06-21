@@ -693,6 +693,22 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
 		return rc;
 	}
 
+	/* set/clear DRAM enabled */
+	if (hb_mc_manycore_dram_is_enabled(mc)) {
+		rc = hb_mc_tile_set_dram_enabled(mc, &tile);
+	} else {
+		rc = hb_mc_tile_clear_dram_enabled(mc, &tile);
+	}
+
+	if (rc != HB_MC_SUCCESS) {
+		char tile_str[32];
+		bsg_pr_dbg("%s: failed to %s DRAM-enabled for %s: %s\n",
+			   __func__,
+			   hb_mc_manycore_dram_is_enabled(mc) ? "set" : "clear",
+			   hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)));
+		return rc;
+	}
+
 	return HB_MC_SUCCESS;
 }
 
