@@ -30,6 +30,10 @@ extern "C" {
 #define HB_MC_VCACHE_EPA_TAG						\
 	EPA_VCACHE_FROM_BYTE_OFFSET(HB_MC_VCACHE_EPA_OFFSET_TAG)
 
+/* Victim Cache Data Bits */
+#define HB_MC_VCACHE_VALID_BITIDX 31
+#define HB_MC_VCACHE_VALID (1 << HB_MC_VCACHE_VALID_BITIDX)
+
 #ifdef __cplusplus
 };
 #endif
