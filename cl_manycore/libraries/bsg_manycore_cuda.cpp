@@ -42,6 +42,15 @@ static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg,
 						uint32_t argv[]); 
 
 __attribute__((warn_unused_result))
+static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const char* symbol,
+					const uint32_t *val);
+
+__attribute__((warn_unused_result))
 static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 							hb_mc_eva_map_t *map, 
 							hb_mc_coordinate_t origin,
@@ -52,47 +61,6 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 							uint32_t num_tiles);
 
 __attribute__((warn_unused_result))
-static int hb_mc_tile_set_origin_symbols (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_coordinate_t *origin);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_coord_symbols (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_coordinate_t *coord_val);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_id_symbol (		hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_coordinate_t *coord_val,
-						const hb_mc_dimension_t *dim);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_tile_group_id_symbols (	hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							const hb_mc_coordinate_t *tg_id);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_dimension_t *grid_dim);
-
-__attribute__((warn_unused_result))
 static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 							hb_mc_eva_map_t *map, 
 							uint32_t argc, 
@@ -101,54 +69,6 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 							hb_mc_eva_t kernel_eva,	
 							hb_mc_coordinate_t *tiles,
 							uint32_t num_tiles); 
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_kernel_ptr_symbol (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_eva_t *kernel_eva);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_argc_symbol (		hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const uint32_t *argc);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_argv_ptr_symbol (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_eva_t *argv_ptr);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_finish_signal_addr_symbol (	hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							const hb_mc_eva_t *finish_signal_addr_eva);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_finish_signal_val_symbol (	hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							uint32_t finish_signal_val);
-
-__attribute__((warn_unused_result))
-static int hb_mc_tile_set_kernel_not_loaded_val_symbol (	hb_mc_manycore_t *mc,
-								hb_mc_eva_map_t *map,
-								unsigned char* bin,
-								size_t bin_size,
-								const hb_mc_coordinate_t *coord,
-								uint32_t kernel_not_loaded_val);
 
 
 
@@ -1495,12 +1415,20 @@ int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
 
 
 		// Set the tile's cuda_kernel_ptr_eva symbol to HB_MC_CUDA_KERNEL_NOT_LOADED_VAL
-		error = hb_mc_tile_set_kernel_ptr_symbol(	device->mc, map, 
-								device->program->bin,
-								device->program->bin_size,
-								&(tiles[tile_id]),
-								&kernel_eva);
-
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"cuda_kernel_ptr",
+							&kernel_eva);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_kernel_ptr symbol.\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
 
 		error = hb_mc_tile_unfreeze(device->mc, &tiles[tile_id]);
 		if (error != HB_MC_SUCCESS) { 
@@ -1515,6 +1443,64 @@ int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
 }
 
 
+
+
+
+/*! 
+ * Sets a Vanilla Core's binary symbol to the desired value
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] map        Eva to npa mapping. 
+ * @param[in] bin        Binary elf file. 
+ * @param[in] bin_size   Size of binary file. 
+ * @param[in] coord      Tile coordinates to set the tile group id of.
+ * @param[in] symbol     Symbol to be set in tile's binary
+ * @param[in] val        Val to set the symbol 
+ * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
+ */
+static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
+					hb_mc_eva_map_t *map,
+					unsigned char* bin,
+					size_t bin_size,
+					const hb_mc_coordinate_t *coord,
+					const char* symbol,
+					const uint32_t *val) {
+
+	int error;
+
+	hb_mc_eva_t symbol_eva;
+	error = hb_mc_loader_symbol_to_eva(bin, bin_size, symbol, &symbol_eva); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err(	"%s: failed to acquire %s symbol's eva.\n",
+				__func__,
+				symbol);
+		return HB_MC_NOTFOUND;
+	}
+
+
+	error = hb_mc_manycore_eva_write (	mc,
+						map,
+						coord,
+						&symbol_eva,
+						val, 4);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err(	"%s: failed to set %s symbol for tile (%d,%d).\n",
+				__func__,
+				symbol,
+				hb_mc_coordinate_get_x(*coord),
+				hb_mc_coordinate_get_y(*coord)); 
+		return error;
+	}
+	bsg_pr_dbg(	"%s: Setting tile (%d,%d) %s symbol (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
+			__func__,
+			hb_mc_coordinate_get_x(*coord),
+			hb_mc_coordinate_get_y(*coord),
+			symbol,
+			kernel_not_loaded_val_eva,
+			kernel_not_loaded_val);
+
+	return HB_MC_SUCCESS;
+}
 
 
 
@@ -1562,12 +1548,18 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 
 
 
-		error = hb_mc_tile_set_origin_symbols(	device->mc, map, device->program->bin,
+		// Set tile's tile group origin __bsg_grp_org_x/y symbols.
+		hb_mc_idx_t origin_x = hb_mc_coordinate_get_x (origin); 
+		hb_mc_idx_t origin_y = hb_mc_coordinate_get_y (origin); 
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
 							device->program->bin_size,
 							&(tiles[tile_id]),
-							&origin);
+							"__bsg_grp_org_x",
+							&origin_x);
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) tile group origin symbols __bsg_grp_org_x/y.\n",
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_grp_org_x symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
@@ -1575,24 +1567,15 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 		}
 
 
-		error = hb_mc_tile_set_coord_symbols(	device->mc, map,
-							device->program->bin, device->program->bin_size,
-							&(tiles[tile_id]), &coord);
-		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) coordinate symbols __bsg_x/y.\n",
-					__func__,
-					hb_mc_coordinate_get_x(tiles[tile_id]),
-					hb_mc_coordinate_get_y(tiles[tile_id]));
-			return error;
-		}
-
-
-		error = hb_mc_tile_set_id_symbol(	device->mc, map,
-							device->program->bin, device->program->bin_size,
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
 							&(tiles[tile_id]),
-							&(coord), &(tg_dim));
+							"__bsg_grp_org_y",
+							&origin_y);
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) id symbol __bsg_id.\n",
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_grp_org_y symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
@@ -1600,11 +1583,20 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 		}
 
 
-		error = hb_mc_tile_set_tile_group_id_symbols(	device->mc, map,
-								device->program->bin, device->program->bin_size,
-								&(tiles[tile_id]), &(tg_id));
+
+
+		// Set tile's index __bsg_x/y symbols.
+		hb_mc_idx_t coord_x = hb_mc_coordinate_get_x (coord); 
+		hb_mc_idx_t coord_y = hb_mc_coordinate_get_y (coord); 
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_x",
+							&coord_x);
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) tile group id symbold __bsg_tile_group_id.\n",
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_x symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
@@ -1612,11 +1604,15 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 		}
 
 
-		error = hb_mc_tile_set_grid_dim_symbols(device->mc, map,
-							device->program->bin, device->program->bin_size,
-							&(tiles[tile_id]), &(grid_dim));
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_y",
+							&coord_y);
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) grid size symbol __bsg_grid_size.\n",
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_y symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
@@ -1624,11 +1620,112 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 		}
 
 
-		error = hb_mc_tile_set_finish_signal_val_symbol(	device->mc, map, 
-									device->program->bin,
-									device->program->bin_size,
-									&(tiles[tile_id]),
-									HB_MC_CUDA_FINISH_SIGNAL_VAL);
+
+
+		// Set tile's id __bsg_id symbol.
+		// calculate tile's id 
+		hb_mc_idx_t id = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(tg_dim) + hb_mc_coordinate_get_x(coord); 
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_id",
+							&id);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_id symbol.\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+	
+
+
+
+		// Set tile's tile group index  __bsg_tile_group_id_x/y symbol.
+		hb_mc_idx_t tg_id_x = hb_mc_coordinate_get_x (tg_id); 
+		hb_mc_idx_t tg_id_y = hb_mc_coordinate_get_y (tg_id);
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_tile_group_id_x",
+							&tg_id_x);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_tile_group_id_x symbol.\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+
+
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_tile_group_id_y",
+							&tg_id_y);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_tile_group_id_y symbol.\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+
+
+
+
+
+		// Set tile's grid dimension __bsg_grid_dim_x/y symbol.
+		hb_mc_idx_t grid_dim_x = hb_mc_dimension_get_x (grid_dim); 
+		hb_mc_idx_t grid_dim_y = hb_mc_dimension_get_y (grid_dim);
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_grid_dim_x",
+							&grid_dim_x);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_grid_dim_x symbol.\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+
+
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"__bsg_grid_dim_y",
+							&grid_dim_y);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) __bsg_grid_dim_y symbol.\n",
+					__func__,
+					hb_mc_coordinate_get_x(tiles[tile_id]),
+					hb_mc_coordinate_get_y(tiles[tile_id]));
+			return error;
+		}
+
+
+
+		// Set tile's finish signal value  cuda_finish_signal_val symbol.
+		uint32_t finish_signal_val = HB_MC_CUDA_FINISH_SIGNAL_VAL;
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"cuda_finish_signal_val",
+							&finish_signal_val);
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_finish_signal_val symbol.\n",
 					__func__,
@@ -1638,11 +1735,17 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 		}
 
 
-		error = hb_mc_tile_set_kernel_not_loaded_val_symbol(	device->mc, map, 
-									device->program->bin,
-									device->program->bin_size,
-									&(tiles[tile_id]),
-									HB_MC_CUDA_KERNEL_NOT_LOADED_VAL);
+
+
+		// Set tile's kernel not loaded value  cuda_kernel_not_loaded_val symbol.
+		uint32_t kernel_not_loaded_val = HB_MC_CUDA_KERNEL_NOT_LOADED_VAL;
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"cuda_kernel_not_loaded_val",
+							&kernel_not_loaded_val);
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_kernel_not_loaded_val symbol.\n",
 					__func__,
@@ -1650,371 +1753,12 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
-
-
 	}
 
 	return HB_MC_SUCCESS; 
 }
 					
 					
-
- 
-
-/*!
- * Sets a Vanilla Core Endpoint's tile group's origin symbols __bsg_grp_org_x/y.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file.
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the origin of.
- * @param[in] origin     Origin coordinates.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-static int hb_mc_tile_set_origin_symbols (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_coordinate_t *origin){
-
-	int error;
-
-	hb_mc_eva_t org_x_eva, org_y_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_x", &org_x_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_grp_org_x eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grp_org_y", &org_y_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_grp_org_y eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	hb_mc_idx_t origin_x = hb_mc_coordinate_get_x(*origin); 
-	hb_mc_idx_t origin_y = hb_mc_coordinate_get_y(*origin); 
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &org_x_eva, &origin_x, 4); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_grp_org_x to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			org_x_eva,
-			hb_mc_coordinate_get_x(*origin));
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &org_y_eva, &origin_y, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_grp_org_y to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grp_org_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			org_y_eva,
-			hb_mc_coordinate_get_y(*origin));
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*!
- * Sets a Vanilla Core Endpoint's tile group's coordinate symbols __bsg_x/y.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the coordinates of.
- * @param[in] coord_val  The coordinates to set the tile.
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-static int hb_mc_tile_set_coord_symbols (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_coordinate_t *coord_val){
-
-	int error;
-
-	hb_mc_eva_t bsg_x_eva, bsg_y_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_x", &bsg_x_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_x eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_y", &bsg_y_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_y eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	hb_mc_idx_t coord_val_x = hb_mc_coordinate_get_x (*coord_val);
-	hb_mc_idx_t coord_val_y = hb_mc_coordinate_get_y (*coord_val);
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &bsg_x_eva, &coord_val_x, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_x to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg__x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			bsg_x_eva,
-			hb_mc_coordinate_get_x(*coord_val));
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &bsg_y_eva, &coord_val_y, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_y to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			bsg_y_eva,
-			hb_mc_coordinate_get_y(*coord_val));
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core Endpoint's tile's __bsg_id symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the id of.
- * @param[in] coord_val  The coordinates to set the tile.
- * @param[in] dim        Tile group dimensions
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-static int hb_mc_tile_set_id_symbol (	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_coordinate_t *coord_val,
-					const hb_mc_dimension_t *dim){
-
-
-	int error;
-
-	// calculate tile's id 
-	hb_mc_idx_t id = hb_mc_coordinate_get_y(*coord_val) * hb_mc_dimension_get_x(*dim) + hb_mc_coordinate_get_x(*coord_val); 
-
-
-	hb_mc_eva_t bsg_id_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_id", &bsg_id_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s:: failed to acquire __bsg_id eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &bsg_id_eva, &id, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_id to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_id (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			bsg_id_eva, id);
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core Endpoint's tile's __bsg_tile_group_id_x/y symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] tg_id      Tile group id
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-static int hb_mc_tile_set_tile_group_id_symbols (	hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							const hb_mc_coordinate_t *tg_id){
-
-	int error;
-
-	hb_mc_eva_t tg_id_x_eva, tg_id_y_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_tile_group_id_x", &tg_id_x_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_tile_group_id_x eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_tile_group_id_y", &tg_id_y_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_tile_group_id_y eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	hb_mc_idx_t tg_id_x = hb_mc_coordinate_get_x (*tg_id); 
-	hb_mc_idx_t tg_id_y = hb_mc_coordinate_get_y (*tg_id); 
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &tg_id_x_eva, &tg_id_x, 4); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_tile_group_id_x to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			tg_id_x_eva,
-			hb_mc_coordinate_get_x(*tg_id));
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &tg_id_y_eva, &tg_id_y, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_tile_group_id_y to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_tile_group_id_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			tg_id_y_eva,
-			hb_mc_coordinate_get_y(*tg_id));
-
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core Endpoint's tile's __bsg_grid_dim_x/y symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] tg_id      Grid dimensions
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-static int hb_mc_tile_set_grid_dim_symbols (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_dimension_t *grid_dim){
-
-	int error;
-
-	hb_mc_eva_t grid_dim_x_eva, grid_dim_y_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grid_dim_x", &grid_dim_x_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_grid_dim_x eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "__bsg_grid_dim_y", &grid_dim_y_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire __bsg_grid_dim_y eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	hb_mc_idx_t grid_dim_x = hb_mc_dimension_get_x (*grid_dim); 
-	hb_mc_idx_t grid_dim_y = hb_mc_dimension_get_y (*grid_dim); 
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &grid_dim_x_eva, &grid_dim_x, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_grid_dim_x to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_gird_dim_x (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			grid_dim_x_eva,
-			hb_mc_dimension_get_x(*grid_dim));
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &grid_dim_y_eva, &grid_dim_y, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write __bsg_grid_dim_y to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) __bsg_grid_dim_y (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			grid_dim_y_eva,
-			hb_mc_dimension_get_y(*grid_dim));
-
-	return HB_MC_SUCCESS;
-}
-
-
 
 
 
@@ -2044,44 +1788,48 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 
 
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
-		error = hb_mc_tile_set_argc_symbol(	device->mc, map, 
+
+
+		// Set tile's argument count cuda_argc symbol.
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
 							device->program->bin,
 							device->program->bin_size,
 							&(tiles[tile_id]),
+							"cuda_argc",
 							&argc);
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to write argc to tile (%d,%d).\n",
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_argc symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
-		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argc symbol to 0x%08" PRIx32 ".\n",
-				__func__,
-				hb_mc_coordinate_get_x(tiles[tile_id]),
-				hb_mc_coordinate_get_y(tiles[tile_id]), 
-				argc);
 
 
-		error = hb_mc_tile_set_argv_ptr_symbol(	device->mc, map, 
+
+
+		// Set tile's pointer to argument list cuda_argv_ptr symbol.
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
 							device->program->bin,
 							device->program->bin_size,
 							&(tiles[tile_id]),
+							"cuda_argv_ptr",
 							&args_eva);
 		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to write argv pointer to tile (%d,%d).\n",
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_argv_ptr symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
-		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argv_ptr symbol to 0x%08" PRIx32 ".\n",
-				__func__,
-				hb_mc_coordinate_get_x(tiles[tile_id]),
-				hb_mc_coordinate_get_y(tiles[tile_id]),
-				args_eva);
 
 
+
+
+		// Set tile's pointer to argument list cuda_argv_ptr symbol.
+		// Calculate the eva address to which the tile is supposed to send it's finish signal
 		hb_mc_eva_t finish_signal_eva;
 		size_t sz; 
 		error = hb_mc_npa_to_eva (cfg, map, &(tiles[tile_id]), &(finish_signal_npa), &finish_signal_eva, &sz); 
@@ -2090,42 +1838,39 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 			return error;
 		}
 
-		error = hb_mc_tile_set_finish_signal_addr_symbol(	device->mc, map, 
-									device->program->bin,
-									device->program->bin_size,
-									&(tiles[tile_id]),
-									&finish_signal_eva);
-		if (error != HB_MC_SUCCESS) {
-			bsg_pr_err(	"%s: failed to write finish signal address to tile (%d,%d).\n",
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"cuda_finish_signal_addr",
+							&finish_signal_eva);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_finish_signal_addr symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
-		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_addr symbol to 0x%08" PRIx32 ".\n",
-				__func__,
-				hb_mc_coordinate_get_x(tiles[tile_id]),
-				hb_mc_coordinate_get_y(tiles[tile_id]),
-				finish_signal_eva);
 
 
-		error = hb_mc_tile_set_kernel_ptr_symbol(	device->mc, map, 
-								device->program->bin,
-								device->program->bin_size,
-								&(tiles[tile_id]),
-								&kernel_eva);
-		if (error != HB_MC_SUCCESS) {
-		bsg_pr_err(	"%s: failed to write kernel pointer to tile (%d,%d).\n",
+
+
+		// Finally, set tile's pointer to kernel cuda_kernel_ptr symbol.
+		error = hb_mc_tile_set_symbol_val(	device->mc,
+							map,
+							device->program->bin,
+							device->program->bin_size,
+							&(tiles[tile_id]),
+							"cuda_kernel_ptr",
+							&kernel_eva);
+		if (error != HB_MC_SUCCESS) { 
+			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_kernel_ptr symbol.\n",
 					__func__,
 					hb_mc_coordinate_get_x(tiles[tile_id]),
 					hb_mc_coordinate_get_y(tiles[tile_id]));
 			return error;
 		}
-		bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_ptr symbol to 0x%08" PRIx32 ".\n",
-				__func__,
-				hb_mc_coordiante_get_x(tiles[tile_id]),
-				hb_mc_coordinate_get_y(tiles[tile_id]),
-				kernel_eva); 
 	}
 
 	return HB_MC_SUCCESS;
@@ -2135,300 +1880,4 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 
 
 
-
-/*! 
- * Sets a Vanilla Core's cuda_kernel_ptr symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] kernel_eva EVA address of the kernel 
- * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
- */
-static int hb_mc_tile_set_kernel_ptr_symbol (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_eva_t *kernel_eva){
-
-	int error;
-
-	hb_mc_eva_t kernel_ptr_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_kernel_ptr", &kernel_ptr_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire cuda_kernel_ptr eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &kernel_ptr_eva, kernel_eva, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write cuda_kernel_ptr to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_ptr (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			kernel_ptr_eva,
-			*kernel_eva);
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-
-/*! 
- * Sets a Vanilla Core's cuda_argc symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] argc       Argument count of the kernel, to be written into tile's argc symbol 
- * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
- */
-static int hb_mc_tile_set_argc_symbol (	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
-					size_t bin_size,
-					const hb_mc_coordinate_t *coord,
-					const uint32_t *argc){
-
-	int error;
-
-	hb_mc_eva_t argc_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_argc", &argc_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire cuda_argc eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &argc_eva, argc, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write cuda_argc to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argc (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			argc_eva,
-			*argc);
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core's cuda_argv_ptr symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] argv_eva   Pointer to argument list of the kernel, to be written into tile's argv_ptr symbol 
- * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
- */
-static int hb_mc_tile_set_argv_ptr_symbol (	hb_mc_manycore_t *mc,
-						hb_mc_eva_map_t *map,
-						unsigned char* bin,
-						size_t bin_size,
-						const hb_mc_coordinate_t *coord,
-						const hb_mc_eva_t *argv_ptr){
-
-	int error;
-
-	hb_mc_eva_t argv_ptr_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_argv_ptr", &argv_ptr_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire cuda_argv_ptr eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &argv_ptr_eva, argv_ptr, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write cuda_argv_ptr to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_argv_ptr (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			argv_ptr_eva,
-			*argv_ptr);
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core's cuda_finish_signal_addr symbol.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] finish_signal_addr_eva   Pointer to argument list of the kernel, to be written into tile's argv_ptr symbol 
- * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
- */
-static int hb_mc_tile_set_finish_signal_addr_symbol (	hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							const hb_mc_eva_t *finish_signal_addr_eva){
-
-	int error;
-
-	hb_mc_eva_t finish_signal_symbol_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_finish_signal_addr", &finish_signal_symbol_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire cuda_finish_signal_addr eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &finish_signal_symbol_eva, finish_signal_addr_eva, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write cuda_finish_signal_addr to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_addr (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			finish_signal_symbol_eva,
-			*finish_signal_addr_eva);
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core's cuda_finish_signal_val symbol to HB_MC_CUDA_FINISH_SIGNAL_VAL
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] finish_signal_val Value to be set for finish_signal_val symbol.
- * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
- */
-static int hb_mc_tile_set_finish_signal_val_symbol (	hb_mc_manycore_t *mc,
-							hb_mc_eva_map_t *map,
-							unsigned char* bin,
-							size_t bin_size,
-							const hb_mc_coordinate_t *coord,
-							uint32_t finish_signal_val ) {
-
-	int error;
-
-	hb_mc_eva_t finish_signal_val_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_finish_signal_val", &finish_signal_val_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire cuda_finish_signal_val eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &finish_signal_val_eva, &finish_signal_val, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write cuda_finish_signal_val to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_finish_signal_val (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			finish_signal_val_eva,
-			finish_signal_val);
-
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*! 
- * Sets a Vanilla Core's cuda_kernel_not_loaded_val symbol to HB_MC_CUDA_KERNEL_NOT_LOADED_VAL
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc         A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] map        Eva to npa mapping. 
- * @param[in] bin        Binary elf file. 
- * @param[in] bin_size   Size of binary file. 
- * @param[in] coord      Tile coordinates to set the tile group id of.
- * @param[in] kernel_not_loaded_val Value to be set for kernel_not_loaded_val symbol.
- * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
- */
-static int hb_mc_tile_set_kernel_not_loaded_val_symbol (	hb_mc_manycore_t *mc,
-								hb_mc_eva_map_t *map,
-								unsigned char* bin,
-								size_t bin_size,
-								const hb_mc_coordinate_t *coord,
-								uint32_t kernel_not_loaded_val) {
-
-	int error;
-
-	hb_mc_eva_t kernel_not_loaded_val_eva;
-	error = hb_mc_loader_symbol_to_eva(bin, bin_size, "cuda_kernel_not_loaded_val", &kernel_not_loaded_val_eva); 
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to acquire cuda_kernel_not_loaded_val eva.\n", __func__);
-		return HB_MC_NOTFOUND;
-	}
-
-
-	error = hb_mc_manycore_eva_write (mc, map, coord, &kernel_not_loaded_val_eva, &kernel_not_loaded_val, 4);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to write cuda_kernel_not_loaded_val to tile (%d,%d).\n",
-				__func__,
-				hb_mc_coordinate_get_x(*coord),
-				hb_mc_coordinate_get_y(*coord)); 
-		return error;
-	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) cuda_kernel_not_loaded_val (eva 0x%08" PRIx32 ") to 0x%08" PRIx32 ".\n",
-			__func__,
-			hb_mc_coordinate_get_x(*coord),
-			hb_mc_coordinate_get_y(*coord),
-			kernel_not_loaded_val_eva,
-			kernel_not_loaded_val);
-
-	return HB_MC_SUCCESS;
-}
 
