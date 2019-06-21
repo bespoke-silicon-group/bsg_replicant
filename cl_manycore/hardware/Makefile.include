@@ -10,6 +10,11 @@ CL_MANYCORE_HOST_COORD_X       := 0
 CL_MANYCORE_HOST_COORD_Y       := 0
 CL_MANYCORE_RELEASE_VERSION    ?= 00ffddee
 CL_MANYCORE_COMPILATION_DATE   ?= $(shell date +%m%d%Y)
+CL_MANYCORE_VCACHE_WAYS        ?= $(shell sed -n "s/ *parameter ways_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
+CL_MANYCORE_VCACHE_SETS        ?= $(shell sed -n "s/ *parameter sets_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
+CL_MANYCORE_VCACHE_BLOCK_SIZE_IN_WORDS ?= \
+	$(shell sed -n "s/ *parameter block_size_in_words_p = \([0-9]*\);/\1/p" $(TEMPLATE_FILE))
+
 HARDWARE_TARGETS = $(HARDWARE_PATH)/bsg_bladerunner_configuration.v \
 	$(HARDWARE_PATH)/cl_manycore_pkg.v
 
