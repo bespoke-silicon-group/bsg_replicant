@@ -125,7 +125,7 @@ file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v               $T
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v                     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v $TARGET_DIR
-file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v        $TARGET_DIR
+file copy -force $BSG_IP_CORES_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v       $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v                       $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v                 $TARGET_DIR
