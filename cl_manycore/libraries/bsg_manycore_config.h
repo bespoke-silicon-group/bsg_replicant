@@ -58,6 +58,9 @@ typedef struct __hb_mc_config_t{
         hb_mc_githash_t basejump;
         hb_mc_githash_t manycore;
         hb_mc_githash_t f1;
+        uint32_t vcache_ways;
+        uint32_t vcache_sets;
+        uint32_t vcache_block_words;
 } hb_mc_config_t;
 
 typedef enum __hb_mc_config_id_t {
@@ -74,7 +77,10 @@ typedef enum __hb_mc_config_id_t {
         HB_MC_CONFIG_REPO_BASEJUMP_HASH = 9,
         HB_MC_CONFIG_REPO_MANYCORE_HASH = 10,
         HB_MC_CONFIG_REPO_F1_HASH = 11,
-        HB_MC_CONFIG_MAX = 12
+        HB_MC_CONFIG_VCACHE_WAYS = 12,
+        HB_MC_CONFIG_VCACHE_SETS = 13,
+        HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 14,
+        HB_MC_CONFIG_MAX = 15
 } hb_mc_config_id_t;
 
 int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -99,6 +105,9 @@ static inline const char *hb_mc_config_id_to_string(hb_mc_config_id_t id)
         [HB_MC_CONFIG_REPO_BASEJUMP_HASH] = "BLADERUNNER REPO BASEJUMP HASH",
         [HB_MC_CONFIG_REPO_MANYCORE_HASH] = "BLADERUNNER REPO MANYCORE HASH",
         [HB_MC_CONFIG_REPO_F1_HASH] = "BLADERUNNER REPO F1 HASH",
+        [HB_MC_CONFIG_VCACHE_WAYS]  = "BLADERUNNER VCACHE WAYS",
+        [HB_MC_CONFIG_VCACHE_SETS]  = "BLADERUNNER VCACHE SETS",
+        [HB_MC_CONFIG_VCACHE_BLOCK_WORDS] = "BLADERUNNER VCACHE BLOCK SIZE IN WORDS",
     };
     return strtab[id];
 }
@@ -239,6 +248,35 @@ static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
 	return hb_mc_coordinate_get_y(dims) - 1;
 }
 
+/**
+ * Return the associativity of the victim cache from the configuration.
+ * @param[in] cfg A configuration initialized from the manycore ROM.
+ * @return the number of ways per set in the victim cache.
+ */
+static inline uint32_t hb_mc_config_get_vcache_ways(const hb_mc_config_t *cfg)
+{
+        return cfg->vcache_ways;
+}
+
+/**
+ * Return the number of sets in the victim cache from the configuration.
+ * @param[in] cfg A configuration initialized from the manycore ROM.
+ * @return the number of sets in the manycore victim cache.
+ */
+static inline uint32_t hb_mc_config_get_vcache_sets(const hb_mc_config_t *cfg)
+{
+        return cfg->vcache_sets;
+}
+
+/**
+ * Return the number of words in a victim cache block.
+ * @param[in] cfg A configuration initialized from the manycore ROM.
+ * @return the number of words in a victim cache block.
+ */
+static inline uint32_t hb_mc_config_get_vcache_block_words(const hb_mc_config_t *cfg)
+{
+        return cfg->vcache_block_words;
+}
 
 #ifdef __cplusplus
 }
