@@ -278,6 +278,17 @@ static inline uint32_t hb_mc_config_get_vcache_block_words(const hb_mc_config_t 
         return cfg->vcache_block_words;
 }
 
+/**
+ * Return the number of bytes in a victim cache block.
+ * @param[in] cfg A configuration initialized from the manycore ROM.
+ * @return the number of words in a victim cache block.
+ */
+static inline uint32_t hb_mc_config_get_vcache_block_size(const hb_mc_config_t *cfg)
+{
+        return cfg->vcache_block_words * sizeof(uint32_t); // words are four bytes
+}
+
+
 #ifdef __cplusplus
 }
 #endif
