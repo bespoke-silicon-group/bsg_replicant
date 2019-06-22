@@ -385,7 +385,7 @@ static int run_npa_to_eva_test(test_t *test)
 	 */
 	hb_mc_eva_t addr;
 	size_t addr_bytes;
-	err = hb_mc_npa_to_eva(hb_mc_manycore_get_config(mc),
+	err = hb_mc_npa_to_eva(mc,
 			       &default_map,
 			       &target,
 			       &npa,
