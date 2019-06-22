@@ -12,7 +12,7 @@
 
 
 
-#define MAKE_MASK(WIDTH) ((1ULL << WIDTH) - 1)
+#define MAKE_MASK(WIDTH) ((1ULL << (WIDTH)) - 1)
 
 #define DEFAULT_GROUP_X_LOGSZ 6
 #define DEFAULT_GROUP_X_BITIDX HB_MC_EPA_LOGSZ
@@ -326,7 +326,8 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 
 	if (epa >= maxsz){
 		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. EPA requested is "
-			"outside of addressible range in DRAM.");
+                           "outside of addressible range in DRAM.",
+                           __func__, hb_mc_eva_addr(eva));
 		return HB_MC_INVALID;
 	}
 
@@ -375,7 +376,7 @@ int default_eva_to_npa(const hb_mc_config_t *cfg,
 		return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
 
 	bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
-		hb_mc_eva_addr(eva), __func__);
+                   __func__, hb_mc_eva_addr(eva));
 	return HB_MC_FAIL;
 }
 
@@ -696,7 +697,7 @@ int default_eva_size(
 		return default_eva_to_npa_local(cfg, o, o, eva, &npa, sz);
 
 	bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
-		hb_mc_eva_addr(eva), __func__);
+                   __func__, hb_mc_eva_addr(eva));
 	return HB_MC_FAIL;
 
 }
