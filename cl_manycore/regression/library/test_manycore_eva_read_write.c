@@ -56,10 +56,8 @@ int check_npa_read(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, hb_mc_coordinate_
 	int err, errors, i;
 	size_t sz;
 	hb_mc_npa_t npa;
-	const hb_mc_config_t *cfg;
 
-	cfg = hb_mc_manycore_get_config(mc);
-	err = hb_mc_eva_to_npa(cfg, map, target, eva, &npa, &sz);
+	err = hb_mc_eva_to_npa(mc, map, target, eva, &npa, &sz);
 	if (err != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to translate EVA 0x%x to NPA: %s\n",
 			__func__,
