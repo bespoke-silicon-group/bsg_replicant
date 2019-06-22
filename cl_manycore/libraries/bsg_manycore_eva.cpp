@@ -274,8 +274,9 @@ static uint32_t default_get_dram_x_bitidx(const hb_mc_config_t *cfg)
 	return MAKE_MASK(xdimlog);
 }
 
-static uint32_t default_get_dram_x_shift(const hb_mc_config_t *cfg)
+static uint32_t default_get_dram_x_shift(const hb_mc_manycore_t *mc)
 {
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
 }
 
@@ -290,7 +291,7 @@ static uint32_t default_get_dram_x_shift(const hb_mc_config_t *cfg)
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
+static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 				const hb_mc_coordinate_t *o,
 				const hb_mc_coordinate_t *src,
 				const hb_mc_eva_t *eva,
@@ -301,12 +302,12 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	hb_mc_dimension_t dim;
-
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	dim = hb_mc_config_get_dimension_network(cfg);
 
 	xdimlog = default_get_x_dimlog(cfg);
 	xmask   = default_get_dram_x_bitidx(cfg);
-	shift   = default_get_dram_x_shift(cfg);
+	shift   = default_get_dram_x_shift(mc);
 
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
 	y = hb_mc_config_get_dram_y(cfg);
@@ -366,7 +367,7 @@ int default_eva_to_npa(hb_mc_manycore_t *mc,
 	origin = (const hb_mc_coordinate_t *) priv;
 
 	if(default_eva_is_dram(eva))
-		return default_eva_to_npa_dram(cfg, origin, src, eva, npa, sz);
+		return default_eva_to_npa_dram(mc, origin, src, eva, npa, sz);
 	if(default_eva_is_global(eva))
 		return default_eva_to_npa_global(cfg, origin, src, eva, npa, sz);
 	if(default_eva_is_group(eva))
@@ -510,7 +511,7 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
  * @param[out] sz       The size in bytes of the EVA segment for the #npa
  * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
  */
-static int default_npa_to_eva_dram(const hb_mc_config_t *cfg,
+static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
                                    const hb_mc_coordinate_t *origin,
                                    const hb_mc_coordinate_t *tgt,
                                    const hb_mc_npa_t *npa,
@@ -519,7 +520,7 @@ static int default_npa_to_eva_dram(const hb_mc_config_t *cfg,
 {
         // build the eva
         hb_mc_eva_t addr = 0;
-	hb_mc_eva_t xshift = default_get_dram_x_shift(cfg);
+	hb_mc_eva_t xshift = default_get_dram_x_shift(mc);
 
         addr |= hb_mc_npa_get_epa(npa); // set the byte address
         addr |= hb_mc_npa_get_x(npa) << xshift; // set the x coordinate
@@ -652,7 +653,7 @@ int default_npa_to_eva(hb_mc_manycore_t *mc,
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
         if(default_npa_is_dram(cfg, npa, tgt))
-                return default_npa_to_eva_dram(cfg, origin, tgt, npa, eva, sz);
+                return default_npa_to_eva_dram(mc, origin, tgt, npa, eva, sz);
 
         if(default_npa_is_host(cfg, npa, tgt))
                 return default_npa_to_eva_host(cfg, origin, tgt, npa, eva, sz);
@@ -688,7 +689,7 @@ int default_eva_size(
 	o = (const hb_mc_coordinate_t *) priv;
 
 	if(default_eva_is_dram(eva))
-		return default_eva_to_npa_dram(cfg, o, o, eva, &npa, sz);
+		return default_eva_to_npa_dram(mc, o, o, eva, &npa, sz);
 	if(default_eva_is_global(eva))
 		return default_eva_to_npa_global(cfg, o, o, eva, &npa, sz);
 	if(default_eva_is_group(eva))
