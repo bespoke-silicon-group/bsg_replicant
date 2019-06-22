@@ -34,11 +34,11 @@ typedef struct __hb_mc_eva_map_t{
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-	int (*eva_to_npa)(const hb_mc_config_t *cfg, 
-			const void *priv,
-			const hb_mc_coordinate_t *src, 
-			const hb_mc_eva_t *eva, 
-			hb_mc_npa_t *npa, size_t *sz);
+        int (*eva_to_npa)(hb_mc_manycore_t *mc,
+                          const void *priv,
+                          const hb_mc_coordinate_t *src,
+                          const hb_mc_eva_t *eva,
+                          hb_mc_npa_t *npa, size_t *sz);
 
 /**
  * Returns the number of contiguous bytes following an EVA, regardless of
@@ -49,7 +49,7 @@ typedef struct __hb_mc_eva_map_t{
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-	int (*eva_size)(const hb_mc_config_t *cfg, 
+	int (*eva_size)(hb_mc_manycore_t *mc,
 			const void *priv,
 			const hb_mc_eva_t *eva, 
 			size_t *sz);
@@ -66,11 +66,11 @@ typedef struct __hb_mc_eva_map_t{
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-	int (*npa_to_eva)(const hb_mc_config_t *cfg, 
-			const void *priv,
-			const hb_mc_coordinate_t *tgt, 
-			const hb_mc_npa_t *npa, 
-			hb_mc_eva_t *eva, size_t *sz);
+	int (*npa_to_eva)(hb_mc_manycore_t *mc,
+                          const void *priv,
+                          const hb_mc_coordinate_t *tgt,
+                          const hb_mc_npa_t *npa,
+                          hb_mc_eva_t *eva, size_t *sz);
 } hb_mc_eva_map_t;
 
 /**
@@ -84,7 +84,7 @@ typedef struct __hb_mc_eva_map_t{
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int default_eva_to_npa(const hb_mc_config_t *cfg, 
+int default_eva_to_npa(hb_mc_manycore_t *mc,
 		const void *priv,
 		const hb_mc_coordinate_t *src, 
 		const hb_mc_eva_t *eva,
@@ -102,11 +102,11 @@ int default_eva_to_npa(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int default_npa_to_eva(const hb_mc_config_t *cfg,
-		const void *priv,
-		const hb_mc_coordinate_t *tgt, 
-		const hb_mc_npa_t *npa, 
-		hb_mc_eva_t *eva, size_t *sz);
+int default_npa_to_eva(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *tgt,
+                       const hb_mc_npa_t *npa,
+                       hb_mc_eva_t *eva, size_t *sz);
 
 /**
  * Returns the number of contiguous bytes following an EVA, regardless of
@@ -118,7 +118,7 @@ int default_npa_to_eva(const hb_mc_config_t *cfg,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int default_eva_size(
-	const hb_mc_config_t *cfg,
+        hb_mc_manycore_t *mc,
 	const void *priv,
 	const hb_mc_eva_t *eva,
 	size_t *sz);
@@ -149,10 +149,10 @@ static inline const char *hb_mc_eva_map_get_name(const hb_mc_eva_map_t *map)
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_npa_to_eva(const hb_mc_config_t *cfg, 
-		const hb_mc_eva_map_t *map, 
+int hb_mc_npa_to_eva(hb_mc_manycore_t *mc,
+		const hb_mc_eva_map_t *map,
 		const hb_mc_coordinate_t *tgt,
-		const hb_mc_npa_t *npa, 
+		const hb_mc_npa_t *npa,
 		hb_mc_eva_t *eva, size_t *sz);
 
 /**
@@ -167,10 +167,10 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 __attribute__((warn_unused_result))
-int hb_mc_eva_to_npa(const hb_mc_config_t *cfg, 
-		const hb_mc_eva_map_t *map, 
-		const hb_mc_coordinate_t *src, 
-		const hb_mc_eva_t *eva, 
+int hb_mc_eva_to_npa(hb_mc_manycore_t *mc,
+		const hb_mc_eva_map_t *map,
+		const hb_mc_coordinate_t *src,
+		const hb_mc_eva_t *eva,
 		hb_mc_npa_t *npa, size_t *sz);
 
 /**

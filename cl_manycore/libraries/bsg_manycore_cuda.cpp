@@ -606,23 +606,70 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
 	}
 	
 
-	// Set the runtime symbols of all tiles inside tile group
-	error = hb_mc_device_tiles_set_runtime_symbols(	device,
-							tg->map,
-							tg->kernel->argc,
-							args_eva,
-							finish_signal_npa, 
-							kernel_eva,
-							tile_list,
-							num_tiles);
-	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to set grid %d tile group (%d,%d) tiles runtime symbols.\n", 
-				__func__,
-				tg->grid_id,
-				hb_mc_coordinate_get_x (tg->id),
-				hb_mc_coordinate_get_y (tg->id));
-		return error;
-	}
+			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y)); 
+
+
+			hb_mc_npa_t argc_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_ARGC_PTR_EPA); 
+			error = hb_mc_manycore_write32(device->mc, &argc_ptr_npa, tg->kernel->argc);
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err(	"%s: failed to write argc to tile (%d,%d) for grid %d tile group (%d,%d).\n",
+						__func__,
+						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
+						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
+						tg->grid_id,
+						hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id));
+				return error;
+			}
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) argc to %d.\n",
+					__func__,
+					tile_id,
+					x, y,
+					tg->kernel->argc);
+
+			hb_mc_npa_t argv_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_ARGV_PTR_EPA); 
+			error = hb_mc_manycore_write32(device->mc, &argv_ptr_npa, args_eva);	
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err(	"%s: failed to write argv pointer to tile (%d,%d) for grid %d tile group (%d,%d).\n",
+						__func__,
+						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
+						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
+						tg->grid_id, hb_mc_coordinate_get_x(tg->id),
+						hb_mc_coordinate_get_y(tg->id));
+				return error;
+			}
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) argv to 0x%08" PRIx32 ".\n",
+					__func__,
+					tile_id,
+					x, y,
+					args_eva);
+
+
+			hb_mc_eva_t finish_signal_eva;
+			size_t sz; 
+			error = hb_mc_npa_to_eva (device->mc, tg->map, &(device->mesh->tiles[tile_id].coord), &(finish_signal_npa), &finish_signal_eva, &sz);
+			if (error != HB_MC_SUCCESS) { 
+				bsg_pr_err("%s: failed to acquire finish signal address eva from npa.\n", __func__); 
+				return error;
+			}
+
+
+			hb_mc_npa_t finish_signal_ptr_npa = hb_mc_npa (device->mesh->tiles[tile_id].coord, HB_MC_CUDA_TILE_FINISH_SIGNAL_PTR_EPA);
+			error = hb_mc_manycore_write32(device->mc, &finish_signal_ptr_npa, finish_signal_eva); 
+			if (error != HB_MC_SUCCESS) {
+				bsg_pr_err(	"%s: failed to write finish signal address to tile (%d,%d) for grid %d tile group (%d,%d).\n",
+						__func__,
+						hb_mc_coordinate_get_x(device->mesh->tiles[tile_id].coord),
+						hb_mc_coordinate_get_y(device->mesh->tiles[tile_id].coord),
+						tg->grid_id,
+						hb_mc_coordinate_get_x(tg->id),
+						hb_mc_coordinate_get_y(tg->id));
+				return error;
+			}
+			bsg_pr_dbg(	"%s: Setting tile[%d] (%d,%d) HB_MC_CUDA_TILE_FINISH_SIGNAL_PTR_EPA to 0x%08" PRIx32 ".\n",
+					__func__,
+					tile_id,
+					x, y,
+					finish_signal_eva);
 
 
 
