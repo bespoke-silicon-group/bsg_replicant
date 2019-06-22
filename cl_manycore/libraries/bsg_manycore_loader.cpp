@@ -756,7 +756,7 @@ static int hb_mc_loader_column_validate_victim_cache(hb_mc_manycore_t *mc,
 	int rc;
 
 	/* for each cache line... */
-	for (uint32_t cache_way = 0; cache_way = n_ways; cache_way++) {
+	for (uint32_t cache_way = 0; cache_way < n_ways; cache_way++) {
 		for (uint32_t cache_set = 0; cache_set < n_sets; cache_set++) {
 			/* set the tag to the way index and set the valid bit */
 			rc = hb_mc_manycore_write32(mc, &tag_addr,
