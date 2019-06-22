@@ -61,6 +61,8 @@ STRICT_OBJECTS :=
 STRICT_OBJECTS += bsg_manycore_responder.o
 STRICT_OBJECTS += bsg_manycore_loader.o
 STRICT_OBJECTS += bsg_manycore_packet_id.o
+STRICT_OBJECTS += bsg_manycore_eva.o
+STRICT_OBJECTS += bsg_manycore_origin_eva_map.o
 
 $(STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
 $(STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable
