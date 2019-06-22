@@ -355,14 +355,14 @@ static int default_eva_to_npa_dram(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int default_eva_to_npa(const hb_mc_config_t *cfg,
-		const void *priv,
-		const hb_mc_coordinate_t *src,
-		const hb_mc_eva_t *eva,
-		hb_mc_npa_t *npa, size_t *sz)
+int default_eva_to_npa(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *src,
+                       const hb_mc_eva_t *eva,
+                       hb_mc_npa_t *npa, size_t *sz)
 {
 	const hb_mc_coordinate_t *origin;
-
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	origin = (const hb_mc_coordinate_t *) priv;
 
 	if(default_eva_is_dram(eva))
@@ -642,13 +642,14 @@ static int default_npa_to_eva_global(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int default_npa_to_eva(const hb_mc_config_t *cfg,
-		const void *priv,
-		const hb_mc_coordinate_t *tgt,
-		const hb_mc_npa_t *npa,
-		hb_mc_eva_t *eva, size_t *sz)
+int default_npa_to_eva(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *tgt,
+                       const hb_mc_npa_t *npa,
+                       hb_mc_eva_t *eva, size_t *sz)
 {
 	const hb_mc_coordinate_t *origin = (const hb_mc_coordinate_t*)priv;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
         if(default_npa_is_dram(cfg, npa, tgt))
                 return default_npa_to_eva_dram(cfg, origin, tgt, npa, eva, sz);
@@ -675,7 +676,7 @@ int default_npa_to_eva(const hb_mc_config_t *cfg,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int default_eva_size(
-	const hb_mc_config_t *cfg,
+        hb_mc_manycore_t *mc,
 	const void *priv,
 	const hb_mc_eva_t *eva,
 	size_t *sz)
@@ -683,7 +684,7 @@ int default_eva_size(
 	hb_mc_npa_t npa;
 	hb_mc_epa_t epa;
 	const hb_mc_coordinate_t *o;
-
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	o = (const hb_mc_coordinate_t *) priv;
 
 	if(default_eva_is_dram(eva))
@@ -722,15 +723,15 @@ hb_mc_eva_map_t default_map = {
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
-		const hb_mc_eva_map_t *map,
-		const hb_mc_coordinate_t *tgt,
-		const hb_mc_npa_t *npa,
-		hb_mc_eva_t *eva, size_t *sz)
+int hb_mc_npa_to_eva(hb_mc_manycore_t *mc,
+                     const hb_mc_eva_map_t *map,
+                     const hb_mc_coordinate_t *tgt,
+                     const hb_mc_npa_t *npa,
+                     hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
 
-	err = map->npa_to_eva(cfg, map->priv, tgt, npa, eva, sz);
+	err = map->npa_to_eva(mc, map->priv, tgt, npa, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -748,15 +749,15 @@ int hb_mc_npa_to_eva(const hb_mc_config_t *cfg,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
-		const hb_mc_eva_map_t *map,
-		const hb_mc_coordinate_t *src,
-		const hb_mc_eva_t *eva,
-		hb_mc_npa_t *npa, size_t *sz)
+int hb_mc_eva_to_npa(hb_mc_manycore_t *mc,
+                     const hb_mc_eva_map_t *map,
+                     const hb_mc_coordinate_t *src,
+                     const hb_mc_eva_t *eva,
+                     hb_mc_npa_t *npa, size_t *sz)
 {
 	int err;
 
-	err = map->eva_to_npa(cfg, map->priv, src, eva, npa, sz);
+	err = map->eva_to_npa(mc, map->priv, src, eva, npa, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -771,13 +772,13 @@ int hb_mc_eva_to_npa(const hb_mc_config_t *cfg,
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int hb_mc_eva_size(const hb_mc_config_t *cfg,
-		const hb_mc_eva_map_t *map,
-		const hb_mc_eva_t *eva, size_t *sz)
+int hb_mc_eva_size(hb_mc_manycore_t *mc,
+                   const hb_mc_eva_map_t *map,
+                   const hb_mc_eva_t *eva, size_t *sz)
 {
 	int err;
 
-	err = map->eva_size(cfg, map->priv, eva, sz);
+	err = map->eva_size(mc, map->priv, eva, sz);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -807,14 +808,12 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 			const void *data, size_t sz)
 {
 	int err;
-	const hb_mc_config_t* config;
 	size_t dest_sz, xfer_sz;
 	hb_mc_npa_t dest_npa;
 	char *destp;
-	config = hb_mc_manycore_get_config(mc);
 
-	err = hb_mc_eva_size(config, map, eva, &dest_sz);
-	if (err != HB_MC_SUCCESS) { 
+	err = hb_mc_eva_size(mc, map, eva, &dest_sz);
+	if (err != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to acquire eva size.\n", __func__);
 		return err;
 	}
@@ -826,7 +825,7 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
 
 	destp = (char *)data;
 	while(sz > 0){
-		err = hb_mc_eva_to_npa(config, map, tgt, eva, &dest_npa, &dest_sz);
+		err = hb_mc_eva_to_npa(mc, map, tgt, eva, &dest_npa, &dest_sz);
 		if(err != HB_MC_SUCCESS){
 			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
 				__func__);
@@ -866,14 +865,11 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 			void *data, size_t sz)
 {
 	int err;
-	const hb_mc_config_t* config;
 	size_t src_sz, xfer_sz;
 	hb_mc_npa_t src_npa;
 	char *srcp;
 
-	config = hb_mc_manycore_get_config(mc);
-
-	err = hb_mc_eva_size(config, map, eva, &src_sz);
+	err = hb_mc_eva_size(mc, map, eva, &src_sz);
 	if (sz > src_sz){
 		bsg_pr_err("%s: Error, requested read from region that is smaller "
 			"than buffer\n", __func__);
@@ -882,7 +878,7 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
 
 	srcp = (char *)data;
 	while(sz > 0){
-		err = hb_mc_eva_to_npa(config, map, tgt, eva, &src_npa, &src_sz);
+		err = hb_mc_eva_to_npa(mc, map, tgt, eva, &src_npa, &src_sz);
 		if(err != HB_MC_SUCCESS){
 			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
 				__func__);
@@ -922,12 +918,10 @@ int hb_mc_manycore_eva_memset(hb_mc_manycore_t *mc,
 			uint8_t val, size_t sz)
 {
 	int err;
-	const hb_mc_config_t* config;
 	size_t dest_sz, xfer_sz;
 	hb_mc_npa_t dest_npa;
-	config = hb_mc_manycore_get_config(mc);
 
-	err = hb_mc_eva_size(config, map, eva, &dest_sz);
+	err = hb_mc_eva_size(mc, map, eva, &dest_sz);
 	if (sz > dest_sz){
 		bsg_pr_err("%s: Error, requested copy to region that is smaller "
 			"than buffer\n", __func__);
@@ -935,7 +929,7 @@ int hb_mc_manycore_eva_memset(hb_mc_manycore_t *mc,
 	}
 
 	while(sz > 0){
-		err = hb_mc_eva_to_npa(config, map, tgt, eva, &dest_npa, &dest_sz);
+		err = hb_mc_eva_to_npa(mc, map, tgt, eva, &dest_npa, &dest_sz);
 		if(err != HB_MC_SUCCESS){
 			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
 				__func__);
