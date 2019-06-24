@@ -391,11 +391,16 @@ int default_eva_to_npa(hb_mc_manycore_t *mc,
  * @param[in] tgt     Coordinates of the target tile
  * @return true if the EPA is valid, false otherwise.
  */
-static bool default_dram_epa_is_valid(const hb_mc_config_t *cfg,
+static bool default_dram_epa_is_valid(const hb_mc_manycore_t *mc,
                                       hb_mc_epa_t epa,
                                       const hb_mc_coordinate_t *tgt)
 {
-        return epa < hb_mc_config_get_dram_size(cfg);
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        if (hb_mc_manycore_dram_is_enabled(mc)) {
+                return epa < hb_mc_config_get_dram_size(cfg);
+        } else {
+                return epa < hb_mc_config_get_vcache_size(cfg);
+        }
 }
 
 
@@ -422,13 +427,14 @@ static bool default_local_epa_is_valid(const hb_mc_config_t *config,
  * @param[in] tgt     Coordinates of the target tile
  * @return true if the NPA is DRAM, false otherwise.
  */
-static bool default_npa_is_dram(const hb_mc_config_t *config,
+static bool default_npa_is_dram(const hb_mc_manycore_t *mc,
                                 const hb_mc_npa_t *npa,
                                 const hb_mc_coordinate_t *tgt)
 {
 	char npa_str[64];
+        const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
 	bool is_dram = (hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_y(config))
-                && default_dram_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
+                && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt);
 
 	bsg_pr_dbg("%s: npa %s %s DRAM\n",
 		   __func__,
@@ -656,7 +662,7 @@ int default_npa_to_eva(hb_mc_manycore_t *mc,
 	const hb_mc_coordinate_t *origin = (const hb_mc_coordinate_t*)priv;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
-        if(default_npa_is_dram(cfg, npa, tgt))
+        if(default_npa_is_dram(mc, npa, tgt))
                 return default_npa_to_eva_dram(mc, origin, tgt, npa, eva, sz);
 
         if(default_npa_is_host(cfg, npa, tgt))
