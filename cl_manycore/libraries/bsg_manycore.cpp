@@ -183,7 +183,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 		/* break if occupancy is zero */
 		if (occupancy == 0)
 			break;
-	
+
 		/* Read stale packets from fifo */
 		for (unsigned i = 0; i < occupancy; i++){
 			rc = hb_mc_manycore_packet_rx_internal(mc, (hb_mc_packet_t*) &recv, type, -1);
@@ -206,7 +206,7 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 					recv.data);
 		}
 	}
-	
+
         /* recheck occupancy to make sure all packets are drained. */
         rc = hb_mc_manycore_rx_fifo_get_occupancy(mc, type, &occupancy);
         if (rc != HB_MC_SUCCESS)
@@ -466,6 +466,7 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 	if (rc != HB_MC_SUCCESS)
 		return rc;
 
+        mc->dram_enabled = 1;
 
         return HB_MC_SUCCESS;
 }
