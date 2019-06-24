@@ -1250,13 +1250,18 @@ int hb_mc_device_free (hb_mc_device_t *device, eva_t eva) {
 /**
  * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
  * @param[in]  device        Pointer to device
- * @parma[in]  src           EVA address of src 
+ * @parma[in]  src           EVA address of source to be copied from
+ * @parma[in]  dst           EVA address of destination to be copied into
  * @param[in]  name          EVA address of dst
- * @param[in]  count         Size of buffer to be copied
+ * @param[in]  count         Size of buffer (number of words) to be copied
  * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uint32_t count, enum hb_mc_memcpy_kind kind) {
+int hb_mc_device_memcpy (	hb_mc_device_t *device,
+				void *dst,
+				const void *src,
+				uint32_t count,
+				enum hb_mc_memcpy_kind kind) {
 
 	int error;
 	
@@ -1287,6 +1292,40 @@ int hb_mc_device_memcpy (hb_mc_device_t *device, void *dst, const void *src, uin
 	else {
 		bsg_pr_err("%s: invalid copy type. Copy type can be one of HB_MC_MEMCPY_TO_DEVICE or HB_MC_MEMCPY_TO_HOST.\n", __func__);
 		return HB_MC_INVALID; 
+	}
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/**
+ * Sets memory to a give value starting from an address in device's DRAM.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  eva           EVA address of destination 
+ * @param[in]  val           Value to be written out
+ * @param[in]  sz            The number of bytes to write into device DRAM
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_memset (	hb_mc_device_t *device,
+				const hb_mc_eva_t *eva,
+				uint8_t val,
+				size_t sz) {
+
+	int error;
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
+	hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc); 
+
+	error = hb_mc_manycore_eva_memset (	device->mc, 
+						&default_map, 
+						&host_coordinate, 
+						eva,
+						val,
+						sz);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to set memory.\n", __func__);
+		return error;
 	}
 
 	return HB_MC_SUCCESS;
