@@ -270,10 +270,11 @@ int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
 /**
  * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
  * @param[in]  device        Pointer to device
- * @parma[in]  src           EVA address of src 
+ * @parma[in]  src           EVA address of source to be copied from
+ * @parma[in]  dst           EVA address of destination to be copied into
  * @param[in]  name          EVA address of dst
- * @param[in]  count         Size of buffer to be copied
- * @param[in]  hb_mc_memcpy_kind  Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
+ * @param[in]  count         Size of buffer (number of words) to be copied
+ * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
@@ -283,6 +284,22 @@ int hb_mc_device_memcpy (	hb_mc_device_t *device,
 				uint32_t count,
 				enum hb_mc_memcpy_kind kind);
 
+
+
+
+
+/**
+ * Sets memory to a give value starting from an address in device's DRAM.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  eva           EVA address of destination 
+ * @param[in]  val           Value to be written out
+ * @param[in]  sz            The number of bytes to write into device DRAM
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_memset (	hb_mc_device_t *device,
+				const hb_mc_eva_t *eva,
+				uint8_t data,
+				size_t sz); 
 
 
 
