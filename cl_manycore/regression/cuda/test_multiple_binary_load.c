@@ -15,13 +15,11 @@ int kernel_multiple_binary_load () {
 
 	bsg_pr_test_info("PART 1 -- Kernel: empty -- Tile gourp: 2x2.\n");
 	/*****************************************************************************************************************
-	* Define the dimension of tile pool.
 	* Define path to binary.
 	* Initialize device, load binary and unfreeze tiles.
 	******************************************************************************************************************/
 	hb_mc_device_t device;
-	hb_mc_dimension_t mesh_dim = {.x = 4, .y = 4};
-	rc = hb_mc_device_init(&device, TEST_NAME, 0,  mesh_dim);
+	rc = hb_mc_device_init(&device, TEST_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize device.\n");
 		return rc;
@@ -85,12 +83,10 @@ int kernel_multiple_binary_load () {
 
 	bsg_pr_test_info("PART 2 -- Kernel: empty -- Tile gourp: 2x2.\n");
 	/*****************************************************************************************************************
-	* Define the dimension of tile pool.
 	* Define path to binary.
 	* Initialize device, load binary and unfreeze tiles.
 	******************************************************************************************************************/
-	mesh_dim = hb_mc_dimension (4, 4);
-	rc = hb_mc_device_init(&device, TEST_NAME, 0,  mesh_dim);
+	rc = hb_mc_device_init(&device, TEST_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize device.\n");
 		return rc;

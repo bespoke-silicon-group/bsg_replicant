@@ -28,6 +28,12 @@ static int hb_mc_mesh_init (	hb_mc_device_t *device,
 				hb_mc_dimension_t dim);
 
 __attribute__((warn_unused_result))
+static int hb_mc_device_tile_groups_init (hb_mc_device_t *device); 
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_tile_groups_exit (hb_mc_device_t *device); 
+
+__attribute__((warn_unused_result))
 static int hb_mc_device_tiles_are_free (hb_mc_device_t *device,
 					hb_mc_coordinate_t origin,
 					hb_mc_dimension_t dim);
@@ -249,6 +255,58 @@ int hb_mc_grid_init (	hb_mc_device_t *device,
 	device->num_grids ++;
 	return HB_MC_SUCCESS;
 }
+
+
+
+
+
+/**
+ * Initializes the tile group structure of a device 
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+static int hb_mc_device_tile_groups_init (hb_mc_device_t *device) { 
+	
+	device->tile_group_capacity = 1;
+	device->tile_groups = (hb_mc_tile_group_t *) malloc (device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
+	if (device->tile_groups == NULL) {
+		bsg_pr_err("%s: failed to allocated space for list of tile groups.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
+	device->num_tile_groups = 0;
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/**
+ * Destructs the tile group structure of a device 
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+static int hb_mc_device_tile_groups_exit (hb_mc_device_t *device) { 
+	int error;
+
+	if (!device->tile_groups) { 
+		bsg_pr_err("%s: calling exit on null tile group list.\n", __func__); 
+		return HB_MC_INVALID;
+	}
+
+
+	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num++) { 
+		error = hb_mc_tile_group_exit(&(device->tile_groups[tg_num])); 
+		if ( error != HB_MC_SUCCESS) { 
+			bsg_pr_err("%s: failed to remove tile group struct.\n", __func__);
+			return error;
+		}
+	}
+	device->tile_groups = NULL;
+
+	return HB_MC_SUCCESS;
+}
+
 
 
 
@@ -709,12 +767,6 @@ static int hb_mc_tile_group_deallocate_tiles(	hb_mc_device_t *device,
 	
 	tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
 
-	error = hb_mc_tile_group_exit(tg); 
-	if ( error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to remove tile group struct.\n", __func__);
-		return error;
-	}
-
 	return HB_MC_SUCCESS;
 }
 
@@ -747,6 +799,7 @@ static int hb_mc_tile_group_exit (hb_mc_tile_group_t *tg) {
 		bsg_pr_err ("%s: failed to delete tile group's map object.\n", __func__);
 		return error;
 	}
+	tg = NULL;
 
 	return HB_MC_SUCCESS;
 }
@@ -790,6 +843,7 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
 		free (argv); 
 		kernel->argv = NULL;
 	}
+	kernel = NULL;
 	
 	return HB_MC_SUCCESS;
 }
@@ -798,10 +852,9 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
 
 
 
-
 /**
- * Initializes the manycore struct, and a mesh structure inside
- * device struct with list of tiles and their coordinates 
+ * Initializes the manycore struct, and a mesh structure with default (maximum)
+ * dimensions inside device struct with list of tiles and their coordinates 
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
@@ -810,8 +863,57 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
  */
 int hb_mc_device_init (	hb_mc_device_t *device,
 			const char *name,
-			hb_mc_manycore_id_t id,
-			hb_mc_dimension_t dim) {
+			hb_mc_manycore_id_t id){
+	device->mc = (hb_mc_manycore_t*) malloc (sizeof (hb_mc_manycore_t));
+	if (device->mc == NULL) { 
+		bsg_pr_err("%s: failed to allocate space on host for hb_mc_manycore_t.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+	*(device->mc) = {0};
+	
+	int error = hb_mc_manycore_init(device->mc, name, id); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize manycore.\n", __func__);
+		return HB_MC_UNINITIALIZED;
+	} 
+
+
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
+	hb_mc_dimension_t max_dim = hb_mc_config_get_dimension_vcore(cfg); 	 
+
+	error = hb_mc_mesh_init(device, max_dim);
+	if (error != HB_MC_SUCCESS) {
+		bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
+		return HB_MC_UNINITIALIZED;
+	}
+
+	error = hb_mc_device_tile_groups_init (device); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize device's tile group structure.\n", __func__);
+		return error; 
+	}
+
+	device->num_grids = 0;
+
+	return HB_MC_SUCCESS;
+
+}
+
+
+
+
+/**
+ * Initializes the manycore struct, and a mesh structure with custom 
+ * dimensions inside device struct with list of tiles and their coordinates 
+ * @param[in]  device        Pointer to device
+ * @param[in]  name          Device name
+ * @param[in]  id            Device id
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned. 
+ */
+int hb_mc_device_init_custom_dimensions (	hb_mc_device_t *device,
+						const char *name,
+						hb_mc_manycore_id_t id,
+						hb_mc_dimension_t dim) {
 
 	device->mc = (hb_mc_manycore_t*) malloc (sizeof (hb_mc_manycore_t));
 	if (device->mc == NULL) { 
@@ -833,15 +935,12 @@ int hb_mc_device_init (	hb_mc_device_t *device,
 		return HB_MC_UNINITIALIZED;
 	}
 
-
-	device->tile_group_capacity = 1;
-	device->tile_groups = (hb_mc_tile_group_t *) malloc (device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
-	if (device->tile_groups == NULL) {
-		bsg_pr_err("%s: failed to allocated space for list of tile groups.\n", __func__);
-		return HB_MC_NOMEM;
+	error = hb_mc_device_tile_groups_init (device); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to initialize device's tile group structure.\n", __func__);
+		return error; 
 	}
-	memset (device->tile_groups, 0, device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
-	device->num_tile_groups = 0;
+
 	device->num_grids = 0;
 
 	return HB_MC_SUCCESS;
@@ -1225,9 +1324,14 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
 	if (device->program->allocator->memory_manager)
 		delete((awsbwhal::MemoryManager*)device->program->allocator->memory_manager);
 
+	error = hb_mc_device_tile_groups_exit(device); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to destruct device's tile group struct.\n", __func__);
+		return error;
+	}
+
 	free (device->mc); 
 	free (device->mesh);
-	free (device->tile_groups);
 	free (device->program);
 
 	return HB_MC_SUCCESS;
