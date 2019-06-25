@@ -2127,23 +2127,9 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
 
+
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
 
-		// Set tile's argument count cuda_argc symbol.
-		error = hb_mc_tile_set_symbol_val(	device->mc,
-							map,
-							device->program->bin,
-							device->program->bin_size,
-							&(tiles[tile_id]),
-							"cuda_argc",
-							&argc);
-		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_argc symbol.\n",
-					__func__,
-					hb_mc_coordinate_get_x(tiles[tile_id]),
-					hb_mc_coordinate_get_y(tiles[tile_id]));
-			return error;
-		}
 
 		// Set tile's argument count cuda_argc symbol.
 		error = hb_mc_tile_set_symbol_val(device->mc,
@@ -2163,21 +2149,6 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 
 
 
-		// Set tile's pointer to argument list cuda_argv_ptr symbol.
-		error = hb_mc_tile_set_symbol_val(	device->mc,
-							map,
-							device->program->bin,
-							device->program->bin_size,
-							&(tiles[tile_id]),
-							"cuda_argv_ptr",
-							&args_eva);
-		if (error != HB_MC_SUCCESS) { 
-			bsg_pr_err(	"%s: failed to set tile (%d,%d) cuda_argv_ptr symbol.\n",
-					__func__,
-					hb_mc_coordinate_get_x(tiles[tile_id]),
-					hb_mc_coordinate_get_y(tiles[tile_id]));
-			return error;
-		}
 
 		// Set tile's pointer to argument list cuda_argv_ptr symbol.
 		error = hb_mc_tile_set_symbol_val(device->mc,
@@ -2202,7 +2173,7 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 		// Calculate the eva address to which the tile is supposed to send it's finish signal
 		hb_mc_eva_t finish_signal_eva;
 		size_t sz; 
-		error = hb_mc_npa_to_eva (cfg, map, &(tiles[tile_id]), &(finish_signal_npa), &finish_signal_eva, &sz); 
+		error = hb_mc_npa_to_eva (device->mc, map, &(tiles[tile_id]), &(finish_signal_npa), &finish_signal_eva, &sz); 
 		if (error != HB_MC_SUCCESS) { 
 			bsg_pr_err("%s: failed to acquire finish signal address eva from npa.\n", __func__); 
 			return error;
