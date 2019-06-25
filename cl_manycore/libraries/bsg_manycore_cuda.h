@@ -2,8 +2,6 @@
 #define BSG_MANYCORE_CUDA_H
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_eva.h>
-#include <bsg_manycore_driver.h>
-#include <bsg_manycore_mem.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -93,7 +91,6 @@ typedef struct {
 
 
 typedef struct {
-	uint8_t fd;
 	hb_mc_manycore_t *mc;
 	hb_mc_program_t *program;
 	hb_mc_mesh_t *mesh;

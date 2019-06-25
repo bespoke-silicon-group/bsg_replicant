@@ -1,7 +1,5 @@
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_driver.h>
 #include <bsg_manycore_errno.h>
-#include <bsg_manycore_mem.h>
 #include <bsg_manycore_elf.h>
 #include <bsg_manycore_printing.h>
 

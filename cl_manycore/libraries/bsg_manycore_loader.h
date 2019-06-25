@@ -2,9 +2,9 @@
 #define BSG_MANYCORE_LOADER_H
 
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_driver.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_eva.h>
+#include <bsg_manycore_errno.h>
 
 #ifdef __cplusplus
 extern "C" {

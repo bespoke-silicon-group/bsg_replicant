@@ -5,11 +5,9 @@ CFLAGS    := -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES)
 CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
 LDLIBS  := -lfpga_mgmt
 
-HEADERS := bsg_manycore_driver.h
 HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_tile.h
 HEADERS += bsg_manycore_vcache.h
-HEADERS += bsg_manycore_mem.h
 HEADERS += bsg_manycore_eva.h
 HEADERS += bsg_manycore_mmio.h
 HEADERS += bsg_manycore_errno.h
@@ -24,7 +22,6 @@ HEADERS += bsg_manycore_coordinate.h
 HEADERS += bsg_manycore.h
 HEADERS += bsg_manycore_npa.h
 HEADERS += bsg_manycore_epa.h
-HEADERS += bsg_manycore_loader_dep.h
 HEADERS += bsg_manycore_origin_eva_map.h
 HEADERS += bsg_manycore_packet.h
 HEADERS += bsg_manycore_response_packet.h
@@ -33,9 +30,7 @@ HEADERS += bsg_manycore_fifo.h
 HEADERS += bsg_manycore_request_packet_id.h
 HEADERS += bsg_manycore_responder.h
 
-OBJECTS := bsg_manycore_driver.o
 OBJECTS += bsg_manycore_loader.o
-OBJECTS += bsg_manycore_mem.o
 OBJECTS += bsg_manycore_eva.o
 OBJECTS += bsg_manycore_tile.o
 OBJECTS += bsg_manycore_bits.o
@@ -45,7 +40,6 @@ OBJECTS += bsg_manycore_cuda.o
 OBJECTS += bsg_manycore_printing.o
 OBJECTS += bsg_manycore_config.o
 OBJECTS += bsg_manycore.o
-OBJECTS += bsg_manycore_loader_dep.o
 OBJECTS += bsg_manycore_origin_eva_map.o
 OBJECTS += bsg_manycore_request_packet_id.o
 OBJECTS += bsg_manycore_responder.o
