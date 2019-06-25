@@ -23,7 +23,7 @@
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_mesh_init (	hb_mc_device_t *device,
-				hb_mc_dimension_t dim);
+					hb_mc_dimension_t dim);
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh); 
@@ -54,15 +54,15 @@ static int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
 					hb_mc_coordinate_t tg_id,
 					hb_mc_dimension_t grid_dim,
 					hb_mc_dimension_t dim,
-					char* name,
+					const char* name,
 					uint32_t argc,
-					uint32_t argv[]);
+					const uint32_t *argv);
 
 __attribute__((warn_unused_result))
 static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg, 
-						char* name, 
+						const char* name, 
 						uint32_t argc, 
-						uint32_t argv[]); 
+						const uint32_t *argv); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_tile_group_launch (	hb_mc_device_t *device,
@@ -119,19 +119,19 @@ static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
-					hb_mc_coordinate_t *tiles,
+					const hb_mc_coordinate_t *tiles,
 					uint32_t num_tiles); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
-						hb_mc_eva_map_t *map,
-						hb_mc_coordinate_t *tiles,
+						const hb_mc_eva_map_t *map,
+						const hb_mc_coordinate_t *tiles,
 						uint32_t num_tiles); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
+					const hb_mc_eva_map_t *map,
+					const unsigned char* bin,
 					size_t bin_size,
 					const hb_mc_coordinate_t *coord,
 					const char* symbol,
@@ -139,22 +139,22 @@ static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
-							hb_mc_eva_map_t *map, 
+							const hb_mc_eva_map_t *map, 
 							hb_mc_coordinate_t origin,
 							hb_mc_coordinate_t tg_id,
 							hb_mc_dimension_t tg_dim, 
 							hb_mc_dimension_t grid_dim,
-							hb_mc_coordinate_t *tiles,
+							const hb_mc_coordinate_t *tiles,
 							uint32_t num_tiles);
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
-							hb_mc_eva_map_t *map, 
+							const hb_mc_eva_map_t *map, 
 							uint32_t argc, 
 							hb_mc_eva_t args_eva,
 							hb_mc_npa_t finish_signal_npa, 
 							hb_mc_eva_t kernel_eva,	
-							hb_mc_coordinate_t *tiles,
+							const hb_mc_coordinate_t *tiles,
 							uint32_t num_tiles); 
 
 
@@ -279,7 +279,9 @@ static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh) {
 int hb_mc_application_init (	hb_mc_device_t *device,
 				hb_mc_dimension_t grid_dim,
 				hb_mc_dimension_t tg_dim,
-				char* name, uint32_t argc, uint32_t argv[]) {
+				const char* name,
+				uint32_t argc,
+				const uint32_t *argv) {
 	int error; 
 	for (hb_mc_idx_t tg_id_x = 0; tg_id_x < hb_mc_dimension_get_x(grid_dim); tg_id_x ++) { 
 		for (hb_mc_idx_t tg_id_y = 0; tg_id_y < hb_mc_dimension_get_y(grid_dim); tg_id_y ++) { 
@@ -595,9 +597,9 @@ static int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
 					hb_mc_coordinate_t tg_id,
 					hb_mc_dimension_t grid_dim,
 					hb_mc_dimension_t dim,
-					char* name,
+					const char* name,
 					uint32_t argc,
-					uint32_t argv[]) {
+					const uint32_t *argv) {
 
 	if (device->num_tile_groups == device->tile_group_capacity) { 
 		device->tile_group_capacity *= 2;
@@ -664,9 +666,9 @@ static int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
  */
 __attribute__((warn_unused_result))
 static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg, 
-						char* name, 
+						const char* name, 
 						uint32_t argc, 
-						uint32_t argv[]) {
+						const uint32_t *argv) {
 	tg->kernel = (hb_mc_kernel_t *) malloc (sizeof(hb_mc_kernel_t));
 	if (tg->kernel == NULL) { 
 		bsg_pr_err("%s: failed to allocated space for hb_mc_kernel_t struct.\n", __func__);
@@ -678,12 +680,13 @@ static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg,
 		return HB_MC_NOMEM;
 	}
 	tg->kernel->argc = argc;
-	tg->kernel->argv = (uint32_t *) malloc (tg->kernel->argc * sizeof(uint32_t)); 
-	if (tg->kernel->argv == NULL) { 
+	uint32_t *cpy = (uint32_t *) malloc (tg->kernel->argc * sizeof(uint32_t)); 
+	if (cpy == NULL) { 
 		bsg_pr_err("%s: failed to allocate space on devcie for kernel's argument list.\n", __func__); 
 		return HB_MC_NOMEM;
 	}
-	memcpy (tg->kernel->argv, argv, argc * sizeof(uint32_t)); 	
+	memcpy (cpy, argv, argc * sizeof(uint32_t)); 	
+	tg->kernel->argv = (const uint32_t *) cpy;
 	tg->kernel->finish_signal_addr = hb_mc_tile_group_get_finish_signal_addr(tg); 
 
 	return HB_MC_SUCCESS;
@@ -893,13 +896,13 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
 
 
 	// Free argv
-	uint32_t *argv;
+	const uint32_t *argv;
 	argv = kernel->argv;
 	if (!argv) { 
 		bsg_pr_err("%s: calling exit on kernel with null argument list.\n", __func__);
 		return HB_MC_INVALID;
 	} else { 
-		free (argv); 
+		free ((void*)argv); 
 		kernel->argv = NULL;
 	}
 	free(kernel);
@@ -1094,8 +1097,8 @@ static int hb_mc_device_program_load (hb_mc_device_t *device) {
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 int hb_mc_device_program_init_binary (	hb_mc_device_t *device, 
-					char *bin_name,
-					unsigned char* bin_data, 
+					const char *bin_name,
+					const unsigned char* bin_data, 
 					size_t bin_size, 
 					const char* alloc_name, 
 					hb_mc_allocator_id_t id) { 
@@ -1152,7 +1155,7 @@ int hb_mc_device_program_init_binary (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 int hb_mc_device_program_init (	hb_mc_device_t *device,
-				char *bin_name,
+				const char *bin_name,
 				const char *alloc_name,
 				hb_mc_allocator_id_t id) {
 	int error; 
@@ -1763,7 +1766,7 @@ static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 static int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
-					hb_mc_coordinate_t *tiles,
+					const hb_mc_coordinate_t *tiles,
 					uint32_t num_tiles) { 
 	int error;
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
@@ -1792,8 +1795,8 @@ static int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 static int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
-						hb_mc_eva_map_t *map,
-						hb_mc_coordinate_t *tiles,
+						const hb_mc_eva_map_t *map,
+						const hb_mc_coordinate_t *tiles,
 						uint32_t num_tiles) { 
 	int error;
 	hb_mc_eva_t kernel_eva = HB_MC_CUDA_KERNEL_NOT_LOADED_VAL;
@@ -1845,8 +1848,8 @@ static int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
  */
 static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
-					hb_mc_eva_map_t *map,
-					unsigned char* bin,
+					const hb_mc_eva_map_t *map,
+					const unsigned char* bin,
 					size_t bin_size,
 					const hb_mc_coordinate_t *coord,
 					const char* symbol,
@@ -1907,12 +1910,12 @@ static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
-							hb_mc_eva_map_t *map, 
+							const hb_mc_eva_map_t *map, 
 							hb_mc_coordinate_t origin,
 							hb_mc_coordinate_t tg_id,
 							hb_mc_dimension_t tg_dim, 
 							hb_mc_dimension_t grid_dim,
-							hb_mc_coordinate_t *tiles,
+							const hb_mc_coordinate_t *tiles,
 							uint32_t num_tiles) { 
 
 	int error;
@@ -2162,12 +2165,12 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
-							hb_mc_eva_map_t *map, 
+							const hb_mc_eva_map_t *map, 
 							uint32_t argc, 
 							hb_mc_eva_t args_eva,
 							hb_mc_npa_t finish_signal_npa, 
 							hb_mc_eva_t kernel_eva,	
-							hb_mc_coordinate_t *tiles,
+							const hb_mc_coordinate_t *tiles,
 							uint32_t num_tiles) { 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 

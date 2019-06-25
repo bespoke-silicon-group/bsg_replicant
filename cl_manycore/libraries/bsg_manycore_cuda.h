@@ -50,9 +50,9 @@ typedef struct {
 } hb_mc_tile_t;
 
 typedef struct {
-	char *name;
+	const char *name;
 	uint32_t argc;
-	uint32_t *argv;
+	const uint32_t *argv;
 	hb_mc_epa_t finish_signal_addr;
 } hb_mc_kernel_t;
 
@@ -83,8 +83,8 @@ typedef struct {
 
 
 typedef struct {
-	char* bin_name;
-	unsigned char* bin;
+	const char* bin_name;
+	const unsigned char* bin;
 	size_t bin_size;
 	hb_mc_allocator_t *allocator;
 } hb_mc_program_t;
@@ -158,8 +158,8 @@ int hb_mc_device_init_custom_dimensions (	hb_mc_device_t *device,
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
-					char *bin_name,
-					char *bin_data,
+					const char *bin_name,
+					const unsigned char *bin_data,
 					size_t bin_size,
 					const char *alloc_name,
 					hb_mc_allocator_id_t id);
@@ -180,7 +180,7 @@ int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_program_init (	hb_mc_device_t *device,
-				char *bin_name,
+				const char *bin_name,
 				const char *alloc_name,
 				hb_mc_allocator_id_t id);
 
@@ -272,7 +272,9 @@ __attribute__((warn_unused_result))
 int hb_mc_application_init (	hb_mc_device_t *device,
 				hb_mc_dimension_t grid_dim,
 				hb_mc_dimension_t tg_dim,
-				char *name, uint32_t argc, uint32_t argv[]);
+				const char *name,
+				const uint32_t argc,
+				const uint32_t *argv);
 
 
 
