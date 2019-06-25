@@ -544,18 +544,20 @@ done:
  * Cleanup an initialized manycore instance
  * @param[in] mc   A manycore instance that has been initialized with hb_mc_manycore_init()
  */
-void hb_mc_manycore_exit(hb_mc_manycore_t *mc)
+int hb_mc_manycore_exit(hb_mc_manycore_t *mc)
 {
 	int err;
 	err = hb_mc_responders_quit(mc);
 	if (err != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to cleanup responders: %s\n",
 			   __func__, hb_mc_strerror(err));
+		return err;
 	}
         hb_mc_manycore_cleanup_fifos(mc);
         hb_mc_manycore_cleanup_mmio(mc);
         hb_mc_manycore_cleanup_private_data(mc);
         free((void*)mc->name);
+	return HB_MC_SUCCESS;
 }
 
 /************/

@@ -24,7 +24,7 @@
 
 
 __attribute__((warn_unused_result))
-static int hb_mc_mesh_init (	hb_mc_device_t *device,
+static int hb_mc_device_mesh_init (	hb_mc_device_t *device,
 				hb_mc_dimension_t dim);
 
 __attribute__((warn_unused_result))
@@ -79,6 +79,9 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel);
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_program_load (hb_mc_device_t *device);
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_manycore_exit (hb_mc_manycore_t *mc); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_program_exit (hb_mc_program_t *program); 
@@ -166,7 +169,7 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
  * @parma[in]  dim           X/Y dimensions of the tile pool (mesh) to be initialized
  * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
  */
-static int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){ 
+static int hb_mc_device_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){ 
 
 	int error;
 
@@ -308,7 +311,7 @@ static int hb_mc_device_tile_groups_exit (hb_mc_device_t *device) {
 			return error;
 		}
 	}
-	device->tile_groups = NULL;
+	free(device->tile_groups);
 
 	return HB_MC_SUCCESS;
 }
@@ -805,7 +808,7 @@ static int hb_mc_tile_group_exit (hb_mc_tile_group_t *tg) {
 		bsg_pr_err ("%s: failed to delete tile group's map object.\n", __func__);
 		return error;
 	}
-	tg = NULL;
+	tg = NULL;	
 
 	return HB_MC_SUCCESS;
 }
@@ -887,7 +890,7 @@ int hb_mc_device_init (	hb_mc_device_t *device,
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
 	hb_mc_dimension_t max_dim = hb_mc_config_get_dimension_vcore(cfg); 	 
 
-	error = hb_mc_mesh_init(device, max_dim);
+	error = hb_mc_device_mesh_init(device, max_dim);
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
 		return HB_MC_UNINITIALIZED;
@@ -935,7 +938,7 @@ int hb_mc_device_init_custom_dimensions (	hb_mc_device_t *device,
 	} 
 	
 
-	error = hb_mc_mesh_init(device, dim);
+	error = hb_mc_device_mesh_init(device, dim);
 	if (error != HB_MC_SUCCESS) {
 		bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
 		return HB_MC_UNINITIALIZED;
@@ -1130,6 +1133,32 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
 
 
 /**
+ * Frees memroy and removes device's manycore object
+ * @param[in]  mc        Pointer to manycore struct
+ * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
+ */
+static int hb_mc_device_manycore_exit (hb_mc_manycore_t *mc) { 
+	int error;
+
+	if (!mc) { 
+		bsg_pr_err("%s: calling exit on null manycore.\n", __func__); 
+		return HB_MC_INVALID;
+	}
+
+	error = hb_mc_manycore_exit(mc); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to exit manycore.\n", __func__);
+		return error;
+	}
+	free(mc);
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/**
  * Frees memroy and removes program object
  * @param[in]  program   Pointer to program struct
  * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
@@ -1173,7 +1202,7 @@ static int hb_mc_device_program_exit (hb_mc_program_t *program) {
 		bsg_pr_err("%s: failed to destruct program's allocator struct.\n", __func__); 
 		return error;
 	}
-	program = NULL;
+	free(program);
 
 	return HB_MC_SUCCESS;
 }
@@ -1266,7 +1295,7 @@ static int hb_mc_program_allocator_exit (hb_mc_allocator_t *allocator) {
 		free ((awsbwhal::MemoryManager *) memory_manager); 
 		allocator->memory_manager = NULL;
 	}
-	allocator = NULL;
+	free(allocator);
 
 	return HB_MC_SUCCESS;
 }
@@ -1428,21 +1457,25 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
 	}
 	
 
-	hb_mc_manycore_exit(device->mc); 
+	error = hb_mc_device_manycore_exit (device->mc); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to destruct device's manycore struct.\n", __func__);
+		return error;
+	}
+
 
 	error = hb_mc_device_program_exit (device->program); 
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to destruct program_t struct.\n", __func__);
+		bsg_pr_err("%s: failed to destruct device's program struct.\n", __func__);
 		return error;
 	}
 	
 	error = hb_mc_device_tile_groups_exit(device); 
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err("%s: failed to destruct device's tile group struct.\n", __func__);
+		bsg_pr_err("%s: failed to destruct device's tile group list struct.\n", __func__);
 		return error;
 	}
 
-	free (device->mc); 
 	free (device->mesh);
 	free (device->program);
 

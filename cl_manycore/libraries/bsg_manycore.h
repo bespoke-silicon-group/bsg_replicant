@@ -58,7 +58,8 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
  * Cleanup an initialized manycore instance
  * @param[in] mc   A manycore instance that has been initialized with hb_mc_manycore_init()
  */
-void hb_mc_manycore_exit(hb_mc_manycore_t *mc);
+__attribute__((warn_unused_result))
+int hb_mc_manycore_exit(hb_mc_manycore_t *mc);
 
 ////////////////
 // Packet API //
