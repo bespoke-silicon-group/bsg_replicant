@@ -14,13 +14,11 @@ int kernel_packet () {
 
 
 	/*****************************************************************************************************************
-	* Define the dimension of tile pool.
 	* Define path to binary.
 	* Initialize device, load binary and unfreeze tiles.
 	******************************************************************************************************************/
 	hb_mc_device_t device;
-	hb_mc_dimension_t mesh_dim = { .x = 4, .y = 4 };
-	rc = hb_mc_device_init(&device, TEST_NAME, 0, mesh_dim);
+	rc = hb_mc_device_init(&device, TEST_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize device.\n");
 		return rc;

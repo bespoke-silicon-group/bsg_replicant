@@ -111,9 +111,27 @@ enum hb_mc_memcpy_kind {
 
 
 
+
 /**
- * Initializes the manycor struct, and a mesh structure inside
- * device struct with list of all tiles and their cooridnates 
+ * Initializes the manycor struct, and a mesh structure with default (maximum)
+ * diemsnions inside device struct with list of all tiles and their cooridnates 
+ * @param[in]  device        Pointer to device
+ * @param[in]  name          Device name
+ * @param[in]  id            Device id
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_init (	hb_mc_device_t *device,
+			const char *name,
+			hb_mc_manycore_id_t id);
+
+
+
+
+
+/**
+ * Initializes the manycor struct, and a mesh structure with custom
+ * diemsnions inside device struct with list of all tiles and their cooridnates 
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
@@ -121,10 +139,10 @@ enum hb_mc_memcpy_kind {
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init (	hb_mc_device_t *device,
-			const char *name,
-			hb_mc_manycore_id_t id,
-			hb_mc_dimension_t dim_x);
+int hb_mc_device_init_custom_dimensions (	hb_mc_device_t *device,
+						const char *name,
+						hb_mc_manycore_id_t id,
+						hb_mc_dimension_t dim);
 
 
 
