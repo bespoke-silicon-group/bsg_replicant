@@ -191,7 +191,7 @@ int kernel_vec_add_serial_multi_grid () {
 	/*****************************************************************************************************************
 	* Enquque grid 1 of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	rc = hb_mc_grid_init (&device, grid_dim_1, tg_dim_1, "kernel_vec_add_serial_multi_grid", 5, argv1);
+	rc = hb_mc_application_init (&device, grid_dim_1, tg_dim_1, "kernel_vec_add_serial_multi_grid", 5, argv1);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -212,7 +212,7 @@ int kernel_vec_add_serial_multi_grid () {
 	/*****************************************************************************************************************
 	* Enquque grid 2 of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	rc = hb_mc_grid_init (&device, grid_dim_2, tg_dim_2, "kernel_vec_add_serial_multi_grid", 5, argv2);
+	rc = hb_mc_application_init (&device, grid_dim_2, tg_dim_2, "kernel_vec_add_serial_multi_grid", 5, argv2);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;

@@ -65,7 +65,7 @@ int kernel_stack_load () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	rc = hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_stack_load", NUM_ARGS + 1, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_stack_load", NUM_ARGS + 1, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
