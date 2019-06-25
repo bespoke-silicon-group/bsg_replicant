@@ -78,13 +78,19 @@ __attribute__((warn_unused_result))
 static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel); 
 
 __attribute__((warn_unused_result))
-static int hb_mc_device_program_load (hb_mc_device_t *device); 
+static int hb_mc_device_program_load (hb_mc_device_t *device);
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_program_exit (hb_mc_program_t *program); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
 						hb_mc_program_t *program,
 						const char *name,
 						hb_mc_allocator_id_t id);
+
+__attribute__((warn_unused_result))
+static int hb_mc_program_allocator_exit (hb_mc_allocator_t *allocator); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device);
@@ -1124,6 +1130,60 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
 
 
 /**
+ * Frees memroy and removes program object
+ * @param[in]  program   Pointer to program struct
+ * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
+ */
+static int hb_mc_device_program_exit (hb_mc_program_t *program) { 
+	int error;
+
+	if (!program) { 
+		bsg_pr_err("%s: calling exit on null program.\n", __func__); 
+		return HB_MC_INVALID;
+	}
+
+
+	const char* bin_name;
+	const unsigned char* bin;
+
+	// Free name
+	bin_name = program->bin_name;
+	if (!bin_name) { 
+		bsg_pr_err("%s: calling exit on program with null binary name.\n", __func__);
+		return HB_MC_INVALID;
+	} else {
+		free ((void *) bin_name); 
+		program->bin_name = NULL;
+	}
+
+
+	// Free binary
+	bin = program->bin;
+	if (!bin) { 
+		bsg_pr_err("%s: calling exit on program with null binary.\n", __func__);
+		return HB_MC_INVALID;
+	} else {
+		free ((void *) bin); 
+		program->bin = NULL;
+	}
+
+	// Free allocator
+	error = hb_mc_program_allocator_exit (program->allocator); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to destruct program's allocator struct.\n", __func__); 
+		return error;
+	}
+	program = NULL;
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+
+
+/**
  * Initializes program's memory allocator and creates a memory manager
  * @param[in]  program       Pointer to program
  * @param[in]  id            Id of program's meomry allocator
@@ -1163,6 +1223,55 @@ static int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
 
 	return HB_MC_SUCCESS;	
 }
+
+
+
+
+
+
+/**
+ * Frees memroy and removes allocator object
+ * @param[in]  allcator   Pointer to allocator struct
+ * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
+ */
+static int hb_mc_program_allocator_exit (hb_mc_allocator_t *allocator) { 
+	int error;
+
+	if (!allocator) { 
+		bsg_pr_err("%s: calling exit on null allocator.\n", __func__); 
+		return HB_MC_INVALID;
+	}
+
+
+	const char* name;
+	const awsbwhal::MemoryManager *memory_manager;
+
+	// Free name
+	name = allocator->name;
+	if (!name) { 
+		bsg_pr_err("%s: calling exit on allocator with null name.\n", __func__);
+		return HB_MC_INVALID;
+	} else {
+		free ((void *) name); 
+		allocator->name = NULL;
+	}
+
+
+	// Free memory manager
+	memory_manager = (awsbwhal::MemoryManager *) allocator->memory_manager; 
+	if (!memory_manager) { 
+		bsg_pr_err("%s: calling exit on allocator with null memory manager.\n", __func__);
+		return HB_MC_INVALID;
+	} else {
+		free ((awsbwhal::MemoryManager *) memory_manager); 
+		allocator->memory_manager = NULL;
+	}
+	allocator = NULL;
+
+	return HB_MC_SUCCESS;
+}
+
+
 
 
 
@@ -1321,9 +1430,12 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
 
 	hb_mc_manycore_exit(device->mc); 
 
-	if (device->program->allocator->memory_manager)
-		delete((awsbwhal::MemoryManager*)device->program->allocator->memory_manager);
-
+	error = hb_mc_device_program_exit (device->program); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to destruct program_t struct.\n", __func__);
+		return error;
+	}
+	
 	error = hb_mc_device_tile_groups_exit(device); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to destruct device's tile group struct.\n", __func__);
