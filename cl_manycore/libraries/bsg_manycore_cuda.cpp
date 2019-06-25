@@ -28,6 +28,9 @@ static int hb_mc_device_mesh_init (	hb_mc_device_t *device,
 				hb_mc_dimension_t dim);
 
 __attribute__((warn_unused_result))
+static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh); 
+
+__attribute__((warn_unused_result))
 static int hb_mc_device_tile_groups_init (hb_mc_device_t *device); 
 
 __attribute__((warn_unused_result))
@@ -233,6 +236,37 @@ static int hb_mc_device_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim
 
 
 /**
+ * Frees memroy and removes device's mesh (tile pool) object
+ * @param[in]  mesh   Pointer to mesh struct
+ * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
+ */
+static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh) { 
+	int error;
+
+	if (!mesh) { 
+		bsg_pr_err("%s: calling exit on null mesh.\n", __func__); 
+		return HB_MC_INVALID;
+	}
+
+	// Free tile list 
+	const hb_mc_tile_t *tiles;
+	tiles = mesh->tiles;
+	if (!tiles) { 
+		bsg_pr_err("%s: calling exit on mesh with null tile list.\n", __func__);
+		return HB_MC_INVALID;
+	} else {
+		free ((hb_mc_tile_t *) tiles); 
+		mesh->tiles = NULL;
+	}
+	free(mesh);
+
+	return HB_MC_SUCCESS;
+}
+
+
+
+
+/**
  * Takes the grid size, tile group dimensions, kernel name, argc, argv* and the
  * finish signal address, calls hb_mc_tile_group_enqueue to initialize all tile groups for grid.
  * @param[in]  device        Pointer to device
@@ -298,6 +332,12 @@ static int hb_mc_device_tile_groups_init (hb_mc_device_t *device) {
 static int hb_mc_device_tile_groups_exit (hb_mc_device_t *device) { 
 	int error;
 
+	if (!device) { 
+		bsg_pr_err("%s: calling exit on tile group list in null device.\n", __func__); 
+		return HB_MC_INVALID;
+	}
+
+
 	if (!device->tile_groups) { 
 		bsg_pr_err("%s: calling exit on null tile group list.\n", __func__); 
 		return HB_MC_INVALID;
@@ -311,7 +351,18 @@ static int hb_mc_device_tile_groups_exit (hb_mc_device_t *device) {
 			return error;
 		}
 	}
-	free(device->tile_groups);
+
+
+	// Free tile group list 
+	const hb_mc_tile_group_t *tile_groups;
+	tile_groups = device->tile_groups;
+	if (!tile_groups) { 
+		bsg_pr_err("%s: calling exit on device with null tile group list.\n", __func__);
+		return HB_MC_INVALID;
+	} else {
+		free ((hb_mc_tile_group_t *) tile_groups); 
+		device->tile_groups = NULL;
+	}
 
 	return HB_MC_SUCCESS;
 }
@@ -829,10 +880,9 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
 		return HB_MC_INVALID;
 	}
 
-	const char* name;
-	uint32_t *argv;
 
 	// Free name
+	const char* name;
 	name = kernel->name;
 	if (!name) { 
 		bsg_pr_err("%s: calling exit on kernel with null name.\n", __func__);
@@ -844,15 +894,16 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
 
 
 	// Free argv
+	uint32_t *argv;
 	argv = kernel->argv;
 	if (!argv) { 
-		bsg_pr_err("%s: calling exit on kernel with null argv.\n", __func__);
+		bsg_pr_err("%s: calling exit on kernel with null argument list.\n", __func__);
 		return HB_MC_INVALID;
 	} else { 
 		free (argv); 
 		kernel->argv = NULL;
 	}
-	kernel = NULL;
+	free(kernel);
 	
 	return HB_MC_SUCCESS;
 }
@@ -1272,10 +1323,8 @@ static int hb_mc_program_allocator_exit (hb_mc_allocator_t *allocator) {
 	}
 
 
-	const char* name;
-	const awsbwhal::MemoryManager *memory_manager;
-
 	// Free name
+	const char* name;
 	name = allocator->name;
 	if (!name) { 
 		bsg_pr_err("%s: calling exit on allocator with null name.\n", __func__);
@@ -1287,6 +1336,7 @@ static int hb_mc_program_allocator_exit (hb_mc_allocator_t *allocator) {
 
 
 	// Free memory manager
+	const awsbwhal::MemoryManager *memory_manager;
 	memory_manager = (awsbwhal::MemoryManager *) allocator->memory_manager; 
 	if (!memory_manager) { 
 		bsg_pr_err("%s: calling exit on allocator with null memory manager.\n", __func__);
@@ -1469,15 +1519,20 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
 		bsg_pr_err("%s: failed to destruct device's program struct.\n", __func__);
 		return error;
 	}
+
+
+	error = hb_mc_device_mesh_exit (device->mesh); 
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to destruct device's mesh struct.\n", __func__);
+		return error;
+	}
+
 	
 	error = hb_mc_device_tile_groups_exit(device); 
 	if (error != HB_MC_SUCCESS) { 
 		bsg_pr_err("%s: failed to destruct device's tile group list struct.\n", __func__);
 		return error;
 	}
-
-	free (device->mesh);
-	free (device->program);
 
 	return HB_MC_SUCCESS;
 }
