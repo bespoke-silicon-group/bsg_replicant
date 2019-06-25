@@ -38,11 +38,17 @@ typedef enum {
 } hb_mc_tile_group_status_t ;
 
 
+typedef enum {
+	HB_MC_TILE_STATUS_FREE=0,
+	HB_MC_TILE_STATUS_BUSY=1,
+} hb_mc_tile_status_t;
+
+
 typedef struct {
 	hb_mc_coordinate_t coord;
 	hb_mc_coordinate_t origin;	
 	hb_mc_coordinate_t tile_group_id;
-	uint8_t free;
+	hb_mc_tile_status_t status;
 } hb_mc_tile_t;
 
 typedef struct {
