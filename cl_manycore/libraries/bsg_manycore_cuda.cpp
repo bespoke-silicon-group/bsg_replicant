@@ -18,16 +18,52 @@
 #endif
 
 
-static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg);  
 
-static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord); 
 
-static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim); 
 
-static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim); 
 
-static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
 
+__attribute__((warn_unused_result))
+static int hb_mc_mesh_init (	hb_mc_device_t *device,
+				hb_mc_dimension_t dim);
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_tiles_are_free (hb_mc_device_t *device,
+					hb_mc_coordinate_t origin,
+					hb_mc_dimension_t dim);
+
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_initialize_tiles (	hb_mc_device_t *device,
+						hb_mc_tile_group_t *tg,
+						hb_mc_coordinate_t origin); 
+
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_allocate_tiles (	hb_mc_device_t *device,
+						hb_mc_tile_group_t *tg);
+
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
+					grid_id_t grid_id,
+					hb_mc_coordinate_t tg_id,
+					hb_mc_dimension_t grid_dim,
+					hb_mc_dimension_t dim,
+					char* name,
+					uint32_t argc,
+					uint32_t argv[]);
+
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg, 
+						char* name, 
+						uint32_t argc, 
+						uint32_t argv[]); 
+
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_launch (	hb_mc_device_t *device,
+					hb_mc_tile_group_t *tg);
+
+__attribute__((warn_unused_result))
+static int hb_mc_tile_group_deallocate_tiles(	hb_mc_device_t *device,
+						hb_mc_tile_group_t *tg);
 
 __attribute__((warn_unused_result))
 static int hb_mc_tile_group_exit (hb_mc_tile_group_t *tg); 
@@ -36,10 +72,45 @@ __attribute__((warn_unused_result))
 static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel); 
 
 __attribute__((warn_unused_result))
-static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg, 
-						char* name, 
-						uint32_t argc, 
-						uint32_t argv[]); 
+static int hb_mc_device_program_load (hb_mc_device_t *device); 
+
+__attribute__((warn_unused_result))
+static int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
+						hb_mc_program_t *program,
+						const char *name,
+						hb_mc_allocator_id_t id);
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device);
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
+
+__attribute__((warn_unused_result))
+static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg);  
+
+__attribute__((warn_unused_result))
+static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord); 
+
+__attribute__((warn_unused_result))
+static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim); 
+
+__attribute__((warn_unused_result))
+static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim); 
+
+__attribute__((warn_unused_result))
+static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
+					hb_mc_coordinate_t *tiles,
+					uint32_t num_tiles); 
+
+__attribute__((warn_unused_result))
+static int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
+						hb_mc_eva_map_t *map,
+						hb_mc_coordinate_t *tiles,
+						uint32_t num_tiles); 
 
 __attribute__((warn_unused_result))
 static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
@@ -74,44 +145,6 @@ static int hb_mc_device_tiles_set_runtime_symbols (	hb_mc_device_t *device,
 
 
 
-/*!
- * Gets the x coordinates of a list of hb_mc_tile_t structs.
- * @param tiles array of tiles. Must be allocated by the caller.
- * @param x_list array of x coordinates. Must be allocated by the caller.
- * @param num_tiles array number of tiles.
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
- */
-static int hb_mc_get_x(hb_mc_tile_t *tiles, uint8_t *x_list, uint32_t num_tiles) {
-	if (!tiles || !x_list) {
-		return HB_MC_FAIL;
-	}
-	for (int i = 0; i < num_tiles; i++) {
-		x_list[i] = hb_mc_coordinate_get_x(tiles[i].coord);
-	}
-	return HB_MC_SUCCESS;
-}
-
-
-
-
-/*!
- * Gets the x coordinates of a list of hb_mc_tile_t structs.
- * @param tiles array of tiles. Must be allocated by the caller.
- * @param x_list array of x coordinates. Must be allocated by the caller.
- * @param num_tiles array number of tiles.
- * @return HB_MC_SUCCESS on success and HB_MC_FAIL otherwise. 
- */
-static int hb_mc_get_y(hb_mc_tile_t *tiles, uint8_t *y_list, uint32_t num_tiles) {
-	if (!tiles || !y_list) {
-		return HB_MC_FAIL;
-	}
-	for (int i = 0; i < num_tiles; i++) {
-		y_list[i] = hb_mc_coordinate_get_y(tiles[i].coord);
-	}
-	return HB_MC_SUCCESS;
-}
-
-
 
 
 
@@ -121,7 +154,7 @@ static int hb_mc_get_y(hb_mc_tile_t *tiles, uint8_t *y_list, uint32_t num_tiles)
  * @parma[in]  dim           X/Y dimensions of the tile pool (mesh) to be initialized
  * @return HB_MC_SUCCESS if successful, otherwise an error code is returned. 
  */
-int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){ 
+static int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){ 
 
 	int error;
 
@@ -227,7 +260,9 @@ int hb_mc_grid_init (	hb_mc_device_t *device,
  * @param[in]  dim           Dimension of the group of tiles in question
  * @return HB_MC_SUCCESS if all tiles in the group are free, otherwise an error code is returned. 
  */
-static int hb_mc_device_tiles_are_free (hb_mc_device_t *device, hb_mc_coordinate_t origin, hb_mc_dimension_t dim) { 
+static int hb_mc_device_tiles_are_free (hb_mc_device_t *device,
+					hb_mc_coordinate_t origin,
+					hb_mc_dimension_t dim) { 
 	if (	hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim) > 
 		hb_mc_coordinate_get_x(device->mesh->origin) + hb_mc_dimension_get_x(device->mesh->dim)) { 
 		bsg_pr_err (	"%s: a %dx%d tile group starting from origin (%d,%d) \
@@ -370,7 +405,8 @@ static int hb_mc_tile_group_initialize_tiles (	hb_mc_device_t *device,
  * @param[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_tile_group_allocate_tiles (hb_mc_device_t *device, hb_mc_tile_group_t *tg){
+static int hb_mc_tile_group_allocate_tiles (	hb_mc_device_t *device,
+						hb_mc_tile_group_t *tg){
 	int error;
 	if (hb_mc_dimension_get_x(tg->dim) > hb_mc_dimension_get_x(device->mesh->dim)){
 		bsg_pr_err(	"%s: tile group X dimension (%d) larger than mesh X dimension (%d).\n",
@@ -437,12 +473,14 @@ int hb_mc_tile_group_allocate_tiles (hb_mc_device_t *device, hb_mc_tile_group_t 
  * @param[in]  argv          List of input arguments to the kernel
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
-				grid_id_t grid_id,
-				hb_mc_coordinate_t tg_id,
-				hb_mc_dimension_t grid_dim,
-				hb_mc_dimension_t dim,
-				char* name, uint32_t argc, uint32_t argv[]) {
+static int hb_mc_tile_group_enqueue (	hb_mc_device_t* device,
+					grid_id_t grid_id,
+					hb_mc_coordinate_t tg_id,
+					hb_mc_dimension_t grid_dim,
+					hb_mc_dimension_t dim,
+					char* name,
+					uint32_t argc,
+					uint32_t argv[]) {
 
 	if (device->num_tile_groups == device->tile_group_capacity) { 
 		device->tile_group_capacity *= 2;
@@ -547,7 +585,8 @@ static int hb_mc_tile_group_kernel_init (	hb_mc_tile_group_t *tg,
  * @parma[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if tile group is launched successfully, otherwise an error code is returned.
  */
-int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
+static int hb_mc_tile_group_launch (	hb_mc_device_t *device,
+					hb_mc_tile_group_t *tg) {
 
 	int error;
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config (device->mc); 
@@ -646,7 +685,8 @@ int hb_mc_tile_group_launch (hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
  * @parma[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg) {
+static int hb_mc_tile_group_deallocate_tiles(	hb_mc_device_t *device,
+						hb_mc_tile_group_t *tg) {
 	int error;
 	hb_mc_idx_t tile_id; 
 	for (	int x = hb_mc_coordinate_get_x(tg->origin);
@@ -816,7 +856,7 @@ int hb_mc_device_init (	hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_program_load (hb_mc_device_t *device) { 
+static int hb_mc_device_program_load (hb_mc_device_t *device) { 
 	int error; 
 
 	// Create list of tile coordinates 
@@ -991,10 +1031,10 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
  * @param[in]  name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
-					hb_mc_program_t *program,
-					const char *name,
-					hb_mc_allocator_id_t id) {
+static int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
+						hb_mc_program_t *program,
+						const char *name,
+						hb_mc_allocator_id_t id) {
 	int error;
 
 	program->allocator = (hb_mc_allocator_t *) malloc (sizeof (hb_mc_allocator_t)); 
@@ -1034,7 +1074,7 @@ int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
  * @param[in]  device        Pointer to device
  * returns HB_MC_SUCCESS if all tile groups are finished, and HB_MC_FAIL otherwise.
  */
-int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device) {
+static int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device) {
 	
 	hb_mc_tile_group_t *tg = device->tile_groups; 
 	for (int tg_num = 0; tg_num < device->num_tile_groups; tg_num ++, tg ++) {
@@ -1053,7 +1093,7 @@ int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device) {
  * @param[in]  device        Pointer to device
  * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite loop if no tile group finishes.
  */
-int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
+static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
 	int error; 
 
 	int tile_group_finished = 0;
@@ -1415,9 +1455,9 @@ static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension
  * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
-				hb_mc_coordinate_t *tiles,
-				uint32_t num_tiles) { 
+static int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
+					hb_mc_coordinate_t *tiles,
+					uint32_t num_tiles) { 
 	int error;
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
 		error = hb_mc_tile_freeze(device->mc, &tiles[tile_id]); 
@@ -1444,10 +1484,10 @@ int hb_mc_device_tiles_freeze (	hb_mc_device_t *device,
  * @param[in]  num_tiles     Number of tiles in the list
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
-					hb_mc_eva_map_t *map,
-					hb_mc_coordinate_t *tiles,
-					uint32_t num_tiles) { 
+static int hb_mc_device_tiles_unfreeze (	hb_mc_device_t *device,
+						hb_mc_eva_map_t *map,
+						hb_mc_coordinate_t *tiles,
+						uint32_t num_tiles) { 
 	int error;
 	hb_mc_eva_t kernel_eva = HB_MC_CUDA_KERNEL_NOT_LOADED_VAL;
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) {
