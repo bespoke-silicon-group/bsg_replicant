@@ -323,20 +323,14 @@ static inline int hb_mc_manycore_dram_is_enabled(const hb_mc_manycore_t *mc)
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @return One if DRAM is enabled. Zero otherwise.
  */
-static inline void hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc)
-{
-        mc->dram_enabled = 1;
-}
+int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc);
 
 /**
  * Disable DRAM mode on the manycore instance.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @return One if DRAM is enabled. Zero otherwise.
  */
-static inline void hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc)
-{
-        mc->dram_enabled = 0;
-}
+int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc);
 
 /**
  * Get a pointer to the configuration struct
