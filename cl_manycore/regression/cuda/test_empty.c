@@ -51,7 +51,7 @@ int kernel_empty () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	rc = hb_mc_grid_init (&device, grid_dim, tg_dim, "kernel_empty", 0, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_empty", 0, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;

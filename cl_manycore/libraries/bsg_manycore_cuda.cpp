@@ -265,6 +265,7 @@ static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh) {
 
 
 /**
+ * Enqueues and schedules an application to be run on device
  * Takes the grid size, tile group dimensions, kernel name, argc, argv* and the
  * finish signal address, calls hb_mc_tile_group_enqueue to initialize all tile groups for grid.
  * @param[in]  device        Pointer to device
@@ -275,10 +276,10 @@ static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh) {
  * @param[in]  argv          List of input arguments to kernel
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_grid_init (	hb_mc_device_t *device,
-			hb_mc_dimension_t grid_dim,
-			hb_mc_dimension_t tg_dim,
-			char* name, uint32_t argc, uint32_t argv[]) {
+int hb_mc_application_init (	hb_mc_device_t *device,
+				hb_mc_dimension_t grid_dim,
+				hb_mc_dimension_t tg_dim,
+				char* name, uint32_t argc, uint32_t argv[]) {
 	int error; 
 	for (hb_mc_idx_t tg_id_x = 0; tg_id_x < hb_mc_dimension_get_x(grid_dim); tg_id_x ++) { 
 		for (hb_mc_idx_t tg_id_y = 0; tg_id_y < hb_mc_dimension_get_y(grid_dim); tg_id_y ++) { 
@@ -1540,6 +1541,8 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
 
 /**
  * Allocates memory on device DRAM
+ * hb_mc_device_program_init() or hb_mc_device_program_init_binary() should
+ * have been called before calling this function to set up a memory allocator
  * @param[in]  device        Pointer to device
  * @parma[in]  size          Size of requested memory
  * @param[out] eva           Eva address of the allocated memory
@@ -1568,6 +1571,8 @@ int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva
 
 /**
  * Frees memory on device DRAM
+ * hb_mc_device_program_init() or hb_mc_device_program_init_binary() should
+ * have been called before calling this function to set up a memory allocator
  * @param[in]  device        Pointer to device
  * @param[out] eva           Eva address of the memory to be freed
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
