@@ -5,7 +5,8 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_epa.h>
-#include <bsg_manycore_driver.h>
+#include <bsg_manycore_packet.h>
+#include <bsg_manycore_fifo.h>
 
 #ifdef __cplusplus
 #include <cstdint>

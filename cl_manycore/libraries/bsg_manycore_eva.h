@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 typedef uint32_t hb_mc_eva_t;
+typedef hb_mc_eva_t eva_t;
 
 typedef struct __hb_mc_eva_map_t{
 	const char *eva_map_name;

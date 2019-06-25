@@ -1,8 +1,7 @@
 #ifndef BSG_MANYCORE_ELF_H
 #define BSG_MANYCORE_ELF 
 #include <bsg_manycore_features.h>
-#include <bsg_manycore_mem.h>
-
+#include <bsg_manycore_eva.h>
 #ifdef __cplusplus 
 extern "C" {
 #endif

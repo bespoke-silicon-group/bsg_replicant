@@ -43,9 +43,7 @@ WRAPPER_NAME = cosim_wrapper
 # Manycore Library sources (TODO: Refactor list into a single source)
 CSOURCES  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
 CSOURCES += $(C_COMMON_DIR)/src/fpga_pci_sv.c
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_driver.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_loader.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_mem.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_eva.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
