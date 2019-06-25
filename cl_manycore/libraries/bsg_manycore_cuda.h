@@ -124,21 +124,6 @@ int hb_mc_device_init (	hb_mc_device_t *device,
 
 
 /**
- * Loads the binary in a device's hb_mc_program_t struct onto
- * all tiles in the device's hb_mc_mesh_t struct.
- * device struct with list of all tiles and their cooridnates 
- * @param[in]  device        Pointer to device
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_program_load (hb_mc_device_t *device);
-
-
-
-
-
-
-/**
  * Takes in a buffer containing the binary and its size,
  * freezes tiles, loads program binary into all tiles and into dram,
  * and sets the symbols and registers for each tile.
@@ -180,20 +165,6 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
 
 
 
-/**
- * Initializes a program's memory allcoator and creates a memroy manager
- * @param[in]  program       Pointer to program
- * @param[in]  id            Id of program's memory allocator
- * @param[in]  name    Unique name of program's memory allocator
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_program_allocator_init (	const hb_mc_config_t *cfg,
-					hb_mc_program_t *allocator,
-					const char *name,
-					hb_mc_allocator_id_t id);
-
-
 
 /**
  * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
@@ -232,7 +203,6 @@ int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
 
 
 
-
 /**
  * Iterates over all tile groups inside device,
  * allocates those that fit in mesh and launches them. 
@@ -244,25 +214,6 @@ int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
 __attribute__((warn_unused_result))
 int hb_mc_device_tile_groups_execute (hb_mc_device_t *device);
 
-
-
-/**
- * Checks to see if all tile groups in a device are finished.
- * @param[in]  device        Pointer to device
- * returns HB_MC_SUCCESS if all tile groups are finished, and HB_MC_FAIL otherwise.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_all_tile_groups_finished(hb_mc_device_t *device);
-
-
-
-/**
- * Waits for a tile group to send a finish packet to device.
- * @param[in]  device        Pointer to device
- * return HB_MC_SUCCESS after a tile group is finished, gets stuck in infinite loop if no tile group finishes.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device);
 
 
 
@@ -306,18 +257,6 @@ int hb_mc_device_memset (	hb_mc_device_t *device,
 
 
 /**
- * Takes in a hb_mc_device_t struct and initializes a mesh of tile in the Manycore device.
- * @param[in]  device        Pointer to device
- * @parma[in]  dim           X/Y dimensions of the tile pool (mesh) to be initialized
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim); 
-
-
-
-
-/**
  * Takes the grid size, tile group dimensions, kernel name, argc,
  * argv* and the finish signal address, calls hb_mc_tile_group_enqueue
  * to initialize all tile groups for grid.
@@ -334,102 +273,6 @@ int hb_mc_grid_init (	hb_mc_device_t *device,
 			hb_mc_dimension_t grid_dim,
 			hb_mc_dimension_t tg_dim,
 			char *name, uint32_t argc, uint32_t argv[]);
-
-
-
-
-/**
- * Searches for a free tile group inside the device mesh and allocoates it,
- * and sets the dimensions, origin, and id of tile group.
- * @param[in]  device        Pointer to device
- * @param[in]  tg            Pointer to tile group
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);  
-
-
-
-
-/**
- * Takes the kernel name, argc, argv* and the finish signal address,
- * and initializes a kernel and passes it to tilegroup.
- * @param[in]  device        Pointer to device
- * @parma[in]  grid_id       Id of grid to which the tile group belongs
- * @param[in]  tg_id         Id of tile group
- * @param[in]  grid_dim      X/Y dimensions of grid to which tile group belongs
- * @parma[in]  dim           X/Y dimensions of tie pool (mesh)
- * @param[in]  name          Kernel name that is to be executed on tile group
- * @param[in]  argc          Number of input arguments to the kernel
- * @param[in]  argv          List of input arguments to the kernel
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_group_enqueue(	hb_mc_device_t *device,
-				grid_id_t grid_id,
-				hb_mc_coordinate_t tg_id,
-				hb_mc_dimension_t grid_dim,
-				hb_mc_dimension_t dim,
-				char *name, uint32_t argc, uint32_t argv[]);
-
-
-
-
-/**
- * Launches a tile group by sending packets to each tile in the
- * tile group setting the argc, argv, finish_addr and kernel pointer.
- * @param[in]  device        Pointer to device
- * @parma[in]  tg            Pointer to tile group
- * @return HB_MC_SUCCESS if tile group is launched successfully, otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_group_launch(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
-
-
-
-
-/**
- * De-allocates all tiles in tile group, and resets their tile-group id and origin in the device book keeping.
- * @param[in]  device        Pointer to device
- * @parma[in]  tg            Pointer to tile group
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_tile_group_t *tg);
-
-
-
-
-
-/**
- * Sends packets to all tiles in the list to freeze them
- * @param[in]  device        Pointer to device
- * @param[in]  tiles         List of tile coordinates to freeze
- * @param[in]  num_tiles     Number of tiles in the list
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_tiles_freeze(	hb_mc_device_t *device,
-				hb_mc_coordinate_t *tiles,
-				uint32_t num_tiles); 
-
-
-
-
-
-/**
- * Sends packets to all tiles in the list to set their kernel pointer to 1 and unfreeze them
- * @param[in]  device        Pointer to device
- * @param[in]  map           EVA to NPA mapping for the tiles
- * @param[in]  tiles         List of tile coordinates to unfreeze
- * @param[in]  num_tiles     Number of tiles in the list
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_tiles_unfreeze(	hb_mc_device_t *device,
-					hb_mc_eva_map_t *map,
-					hb_mc_coordinate_t *tiles,
-					uint32_t num_tiles);
 
 
 
