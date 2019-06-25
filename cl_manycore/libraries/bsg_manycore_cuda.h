@@ -186,17 +186,6 @@ int hb_mc_device_program_init (	hb_mc_device_t *device,
 
 
 
-
-/**
- * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
- * @param[in]  device        Pointer to device
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_finish (hb_mc_device_t *device);
-
-
-
 /**
  * Allocates memory on device DRAM
  * hb_mc_device_program_init() or hb_mc_device_program_init_binary() should
@@ -208,36 +197,6 @@ int hb_mc_device_finish (hb_mc_device_t *device);
  */
 __attribute__((warn_unused_result))
 int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva);
-
-
-
-
-
-/**
- * Frees memory on device DRAM
- * hb_mc_device_program_init() or hb_mc_device_program_init_binary() should
- * have been called before calling this function to set up a memory allocator.
- * @param[in]  device        Pointer to device
- * @param[out] eva           Eva address of the memory to be freed
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result)) 
-int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
-
-
-
-
-
-/**
- * Iterates over all tile groups inside device,
- * allocates those that fit in mesh and launches them. 
- * API remains in this function until all tile groups
- * have successfully finished execution.
- * @param[in]  device        Pointer to device
- * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
- */
-__attribute__((warn_unused_result))
-int hb_mc_device_tile_groups_execute (hb_mc_device_t *device);
 
 
 
@@ -282,6 +241,21 @@ int hb_mc_device_memset (	hb_mc_device_t *device,
 
 
 /**
+ * Frees memory on device DRAM
+ * hb_mc_device_program_init() or hb_mc_device_program_init_binary() should
+ * have been called before calling this function to set up a memory allocator.
+ * @param[in]  device        Pointer to device
+ * @param[out] eva           Eva address of the memory to be freed
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+__attribute__((warn_unused_result)) 
+int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
+
+
+
+
+
+/**
  * Enqueues and schedules an application to be run on device
  * Takes the grid size, tile group dimensions, kernel name, argc,
  * argv* and the finish signal address, calls hb_mc_tile_group_enqueue
@@ -299,6 +273,32 @@ int hb_mc_application_init (	hb_mc_device_t *device,
 				hb_mc_dimension_t grid_dim,
 				hb_mc_dimension_t tg_dim,
 				char *name, uint32_t argc, uint32_t argv[]);
+
+
+
+
+/**
+ * Iterates over all tile groups inside device,
+ * allocates those that fit in mesh and launches them. 
+ * API remains in this function until all tile groups
+ * have successfully finished execution.
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_tile_groups_execute (hb_mc_device_t *device);
+
+
+
+
+
+/**
+ * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_device_finish (hb_mc_device_t *device);
 
 
 
