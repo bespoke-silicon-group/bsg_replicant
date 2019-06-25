@@ -1037,9 +1037,9 @@ int hb_mc_loader_symbol_to_eva(const void *bin, size_t sz, const char *symbol,
 
 
 /**
- * Takes in the path to a binary and loads the binary into a buffer and set the binary size. 
- * @param[in]  file_name  Path and name of the binary file 
- * @param[out] file_data  Pointer to the memory buffer to be loaded with a valid binary 
+ * Takes in the path to a binary and loads the binary into a buffer and set the binary size.
+ * @param[in]  file_name  Path and name of the binary file
+ * @param[out] file_data  Pointer to the memory buffer to be loaded with a valid binary
  * @param[out] file_size  Size of binary in bytes.
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
