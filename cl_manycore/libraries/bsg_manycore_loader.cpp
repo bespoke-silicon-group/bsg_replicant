@@ -749,11 +749,22 @@ static int hb_mc_loader_column_validate_victim_cache(hb_mc_manycore_t *mc,
 {
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	hb_mc_idx_t x = hb_mc_config_get_vcore_base_x(cfg) + col;
+	hb_mc_idx_t y = hb_mc_config_get_dram_y(cfg);
 	uint32_t n_ways = hb_mc_config_get_vcache_ways(cfg);
 	uint32_t n_sets = hb_mc_config_get_vcache_sets(cfg);
 	uint32_t line_size = hb_mc_config_get_vcache_block_size(cfg);
-	hb_mc_npa_t tag_addr = hb_mc_npa_from_x_y(x, 0, HB_MC_VCACHE_EPA_TAG);
+	hb_mc_npa_t tag_addr = hb_mc_npa_from_x_y(x, y, HB_MC_VCACHE_EPA_TAG);
 	int rc;
+
+	bsg_pr_dbg("validating victim cache "
+		   "(%" PRIu32 " ways, "
+		   "%" PRIu32 " sets, "
+		   "line size = %" PRIu32 ") "
+		   "for column %" PRIu8 "\n",
+		   n_ways,
+		   n_sets,
+		   line_size,
+		   x);
 
 	/* for each cache line... */
 	for (uint32_t cache_way = 0; cache_way < n_ways; cache_way++) {
