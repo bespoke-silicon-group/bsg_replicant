@@ -207,7 +207,7 @@ static int hb_mc_mesh_init (hb_mc_device_t *device, hb_mc_dimension_t dim){
 			device->mesh->tiles[tile_id].coord = hb_mc_coordinate(x, y);
 			device->mesh->tiles[tile_id].origin = device->mesh->origin;
 			device->mesh->tiles[tile_id].tile_group_id = hb_mc_coordinate(-1, -1); 
-			device->mesh->tiles[tile_id].free = 1;
+			device->mesh->tiles[tile_id].status = HB_MC_TILE_STATUS_FREE;
 		}
 	}
 
@@ -296,7 +296,7 @@ static int hb_mc_device_tiles_are_free (hb_mc_device_t *device,
 		for (hb_mc_idx_t y = hb_mc_coordinate_get_y(origin);
 				 y < hb_mc_coordinate_get_y(origin) + hb_mc_dimension_get_y(dim); y++){
 			tile_id = hb_mc_get_tile_id (device->mesh->origin, device->mesh->dim, hb_mc_coordinate(x, y)); 
-			if (!device->mesh->tiles[tile_id].free) 
+			if (device->mesh->tiles[tile_id].status != HB_MC_TILE_STATUS_FREE) 
 				return HB_MC_FAIL;
 		}
 	}
@@ -348,7 +348,7 @@ static int hb_mc_tile_group_initialize_tiles (	hb_mc_device_t *device,
 
 			device->mesh->tiles[device_tile_id].origin = origin;
 			device->mesh->tiles[device_tile_id].tile_group_id = tg->id;
-			device->mesh->tiles[device_tile_id].free = 0;
+			device->mesh->tiles[device_tile_id].status = HB_MC_TILE_STATUS_BUSY;
 
 
 			tile_list[tg_tile_id] = hb_mc_coordinate (x, y); 
@@ -697,7 +697,7 @@ static int hb_mc_tile_group_deallocate_tiles(	hb_mc_device_t *device,
 			
 			device->mesh->tiles[tile_id].origin = device->mesh->origin;
 			device->mesh->tiles[tile_id].tile_group_id = hb_mc_coordinate( 0, 0);
-			device->mesh->tiles[tile_id].free = 1;
+			device->mesh->tiles[tile_id].status = HB_MC_TILE_STATUS_FREE;
 		}
 	}
 	bsg_pr_dbg("%s: Grid %d: %dx%d tile group (%d,%d) de-allocated at origin (%d,%d).\n",
