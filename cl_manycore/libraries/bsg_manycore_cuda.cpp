@@ -106,15 +106,6 @@ __attribute__((warn_unused_result))
 static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *tg);  
 
 __attribute__((warn_unused_result))
-static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord); 
-
-__attribute__((warn_unused_result))
-static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim); 
-
-__attribute__((warn_unused_result))
-static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim); 
-
-__attribute__((warn_unused_result))
 static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord); 
 
 __attribute__((warn_unused_result))
@@ -1701,47 +1692,6 @@ static hb_mc_epa_t hb_mc_tile_group_get_finish_signal_addr(hb_mc_tile_group_t *t
 
 
 /**
- * Calculates and returns the relative coordinates based on absolute coordinates and origin coordinates 
- * @param[in]  origin        Origin coordinates 
- * @parma[in]  coord         Absolute coordinates 
- * @return     relative_coord
- */
-static hb_mc_coordinate_t hb_mc_get_relative_coordinate (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord) {
-	hb_mc_coordinate_t relative_coord = hb_mc_coordinate ( 	hb_mc_coordinate_get_x (coord) - hb_mc_coordinate_get_x (origin) , 
-								hb_mc_coordinate_get_y (coord) - hb_mc_coordinate_get_y (origin) );
-	return relative_coord;
-}
-
-
-
-
-/**
- * Calculates and returns a 1D flat index based on 2D coordinates and 2D dimensions 
- * @param[in]  coord         2D coordinates  
- * @parma[in]  dim           Dimensions 
- * @return     idx
- */
-static hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim) {
-	hb_mc_idx_t idx = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(dim) + hb_mc_coordinate_get_x(coord); 
-	return idx;
-} 
-
-
-
-
-/**
- * Calculates and returns a 1D length based on 2D dimensions 
- * @parma[in]  dim           Dimensions 
- * @return     1D flat length
- */
-static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim) { 
-	return (hb_mc_dimension_get_x(dim) * hb_mc_dimension_get_y(dim)); 
-} 
-
-
-
-
-/**
  * Calculates and returns the flat index of a tile inside the mesh,
  * based on the mesh origin, mesh dimensions and the tile coordinates. 
  * @param[in]  origin        Mesh origin coordinates 
@@ -1750,7 +1700,7 @@ static int  hb_mc_dimension_to_length (hb_mc_dimension_t dim) {
  * @return     tile_id
  */
 static hb_mc_idx_t hb_mc_get_tile_id (hb_mc_coordinate_t origin, hb_mc_dimension_t dim, hb_mc_coordinate_t coord) { 
-	hb_mc_coordinate_t relative_coord = hb_mc_get_relative_coordinate (origin, coord); 
+	hb_mc_coordinate_t relative_coord = hb_mc_coordinate_get_relative (origin, coord); 
 	hb_mc_idx_t tile_id = hb_mc_coordinate_to_index (relative_coord, dim); 
 	return tile_id;
 }
@@ -1922,7 +1872,7 @@ static int hb_mc_device_tiles_set_config_symbols (	hb_mc_device_t *device,
 
 	for (hb_mc_idx_t tile_id = 0; tile_id < num_tiles; tile_id ++) { 
 		
-		hb_mc_coordinate_t coord = hb_mc_get_relative_coordinate (origin, tiles[tile_id]); 
+		hb_mc_coordinate_t coord = hb_mc_coordinate_get_relative (origin, tiles[tile_id]); 
 
 		error = hb_mc_tile_set_origin_registers(device->mc,
 							&(tiles[tile_id]),

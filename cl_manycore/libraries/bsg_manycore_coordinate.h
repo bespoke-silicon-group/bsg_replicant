@@ -102,6 +102,62 @@ static inline const char *hb_mc_coordinate_to_string(hb_mc_coordinate_t coordina
 	return buf;
 }
 
+/**
+ * Calculates and returns the relative coordinates based on absolute coordinates and origin coordinates 
+ * @param[in]  origin        Origin coordinates 
+ * @parma[in]  coord         Absolute coordinates 
+ * @return     relative_coord
+ */
+__attribute__((warn_unused_result))
+static hb_mc_coordinate_t hb_mc_coordinate_get_relative (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord) {
+	hb_mc_coordinate_t relative_coord = hb_mc_coordinate ( 	hb_mc_coordinate_get_x (coord) - hb_mc_coordinate_get_x (origin) , 
+								hb_mc_coordinate_get_y (coord) - hb_mc_coordinate_get_y (origin) );
+	return relative_coord;
+}
+
+/**
+ * Calculates and returns the absolute coordinates based on relative coordinates and origin coordinates 
+ * @param[in]  origin        Origin coordinates 
+ * @parma[in]  coord         Relative coordinates 
+ * @return     absolute_coord
+ */
+__attribute__((warn_unused_result))
+static hb_mc_coordinate_t hb_mc_coordinate_get_absolute (hb_mc_coordinate_t origin, hb_mc_coordinate_t coord) {
+	hb_mc_coordinate_t absolute_coord = hb_mc_coordinate ( 	hb_mc_coordinate_get_x (coord) + hb_mc_coordinate_get_x (origin) , 
+								hb_mc_coordinate_get_y (coord) + hb_mc_coordinate_get_y (origin) );
+	return absolute_coord;
+}
+
+/**
+ * Calculates and returns a 1D flat index based on 2D coordinates and 2D dimensions 
+ * @param[in]  coord         2D coordinates  
+ * @parma[in]  dim           Dimensions 
+ * @return     idx
+ */
+__attribute__((warn_unused_result))
+static inline hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim) {
+	hb_mc_idx_t idx = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(dim) + hb_mc_coordinate_get_x(coord); 
+	return idx;
+} 
+
+/**
+ * Calculates and returns a 1D length based on 2D dimensions 
+ * @parma[in]  dim           Dimensions 
+ * @return     1D flat length
+ */
+__attribute__((warn_unused_result))
+static inline int  hb_mc_dimension_to_length (hb_mc_dimension_t dim) { 
+	return (hb_mc_dimension_get_x(dim) * hb_mc_dimension_get_y(dim)); 
+} 
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 }
 #endif
