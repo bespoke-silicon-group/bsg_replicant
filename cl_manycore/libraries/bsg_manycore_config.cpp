@@ -62,7 +62,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 	/* The maximum X dimension of the network is limited by the network
 	 * address bitwidth */
 	xlogsz_max = HB_MC_CONFIG_MAX_BITWIDTH_ADDR - config->network_bitwidth_addr;
-	xdim_max = (xlogsz_max - 1) << 1;
+	xdim_max = (1 << xlogsz_max);
 
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
