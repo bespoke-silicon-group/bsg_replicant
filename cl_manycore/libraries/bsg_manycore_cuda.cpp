@@ -1835,8 +1835,8 @@ static int hb_mc_tile_set_symbol_val (	hb_mc_manycore_t *mc,
 			hb_mc_coordinate_get_x(*coord),
 			hb_mc_coordinate_get_y(*coord),
 			symbol,
-			kernel_not_loaded_val_eva,
-			kernel_not_loaded_val);
+			symbol_eva,
+			*val);
 
 	return HB_MC_SUCCESS;
 }
