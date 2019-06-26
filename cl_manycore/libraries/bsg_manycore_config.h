@@ -26,7 +26,7 @@ extern "C" {
 
 // We expect a 32-bit bus for Addresses, but the top bit is reserved for the
 // victim cache tag.
-#define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 31
+#define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
 #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
 #define HB_MC_CONFIG_VCORE_BASE_X 0
