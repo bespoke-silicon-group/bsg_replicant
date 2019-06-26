@@ -115,7 +115,7 @@ int kernel_stack_load () {
 		for (int x = 0; x < tg_dim.x; x ++) { 
 			if (sum_host[y * tg_dim.x + x] != SUM_ARGS) { 
 				bsg_pr_err(BSG_RED("Mismatch: ") "sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
-				mismatch = 0; 
+				mismatch = 1; 
 			}
 		}
 	}
