@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #endif
 
+#include <stack>
 #include <queue>
 #include <vector>
 
@@ -1475,13 +1476,13 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 		return err;
 
 	/* ids and id_to_rsp_i to track requests and responses */
-	std::priority_queue <uint32_t> ids;
+	std::stack <uint32_t, std::vector<uint32_t> > ids;
 	for (int i = n_ids - 1; i >= 0; i--)
 		ids.push(static_cast<uint32_t>(i));
 
 	int id_to_rsp_i [n_ids];
 
-
+	/* until we've received all responses... */
 	while (rsp_i < words) {
 
 		/* try to request as many words as we have left */
@@ -1489,19 +1490,24 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 			hb_mc_npa_t rqst_addr = npa[rqst_i];
 			uint32_t id = ids.top();
 
+			// if we're out of load ids, break to start reading requests
 			if (ids.empty())
-				break; // we're out of load_ids, break to start reading requests
+				break;
 
 			// save which request this is
 			id_to_rsp_i[id] = rqst_i;
 
+			// send a load request
 			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4, id);
 			if (err == HB_MC_SUCCESS) {
+				// success; increment succesful requests and pop the load id
 				rqst_i++;
 				ids.pop();
 			} else if (err == HB_MC_BUSY) {
-				break; // if we're busy, break to start reading requests
+				// if we're busy, break to start reading requests
+				break;
 			} else {
+				// we've hit some other error: abort with an error message
 				manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
 						__func__, hb_mc_strerror(err));
 				return err;
@@ -1509,8 +1515,8 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 		}
 
 		/* read a response and write it back to the location marked by load_id */
-		uint32_t tmp, load_id;
-		err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &tmp, 4, &load_id);
+		uint32_t read_data, load_id;
+		err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, 4, &load_id);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
 					__func__, hb_mc_strerror(err));
@@ -1520,8 +1526,18 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 		manycore_pr_dbg(mc, "%s: Received response for load_id = %" PRIu32 "\n",
 				__func__, load_id);
 
-		data[id_to_rsp_i[load_id]] = tmp;
+		// this should never happen unless something is messed up in hardware
+		if (load_id >= n_ids) {
+			manycore_pr_err(mc, "%s: Bad load id = %" PRIu32 "\n",
+					__func__, load_id);
+			return HB_MC_FAIL;
+		}
+
+		// write 'read_data' back to the correct location
+		data[id_to_rsp_i[load_id]] = read_data;
+		// increment succesful responses
 		rsp_i++;
+		// push the load id onto the stack so we can use it again
 		ids.push(load_id);
 	}
 
