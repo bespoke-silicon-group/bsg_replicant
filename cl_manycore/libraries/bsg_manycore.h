@@ -239,6 +239,19 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 __attribute__((warn_unused_result))
 int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                             void *data, size_t sz);
+
+
+/**
+ * Read memory from a vector of NPAs
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A vector of valid hb_mc_npa_t of length <= #words
+ * @param[out] data   A word vector into which data will be read
+ * @param[in]  words  The number of words to read from manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+					   uint32_t *data, size_t words);
 /************/
 /* MMIO API */
 /************/
