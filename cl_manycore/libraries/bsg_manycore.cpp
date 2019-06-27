@@ -1457,6 +1457,109 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 }
 
 /**
+ * Perform #cnt loads from a series of NPAs and return results in an associative container #data.
+ * @tparam UINT               The unsigned integer type for data loads.
+ * @tparam UINTV              An associative container of UNT words (indexed by i).
+ * @tparam NPA_OF_I_FUNCTION  Returns an NPA given an index i.
+ *
+ * @param[in]  mc    A manycore instance.
+ * @param[in]  npa   A function that takes an index i and returns an NPA.
+ * @param[out] data  A mutable associative container by which load data is returned.
+ * @param[in]  cnt   The number of loads to perform.
+ *
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+template <typename UINT, typename UINTV, typename NPA_OF_I_FUNCTION>
+static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
+                                            NPA_OF_I_FUNCTION npa,
+                                            UINTV & data, size_t cnt)
+{
+        size_t rsp_i = 0, rqst_i = 0;
+        unsigned n_ids;
+        int err;
+
+        /* cap the number of load ids to the maximum number of pending requests */
+        err = hb_mc_manycore_get_host_requests_cap(mc, &n_ids);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+
+        /* track requests and responses with ids and id_to_rsp_i */
+        std::stack <uint32_t, std::vector<uint32_t> > ids;
+        for (int i = n_ids - 1; i >= 0; i--)
+                ids.push(static_cast<uint32_t>(i));
+
+        int id_to_rsp_i [n_ids];
+
+        /* until we've received all responses... */
+        while (rsp_i < cnt) {
+
+                /* try to request as many words as we have left */
+                while (rqst_i < cnt) {
+                        // get the NPA of the next load address
+                        hb_mc_npa_t rqst_addr = npa(rqst_i);
+                        // get an available load id for this load request
+                        uint32_t rqst_load_id = ids.top();
+
+                        // if we're out of load ids, break to start reading requests
+                        if (ids.empty())
+                                break;
+
+                        // save which request this is
+                        id_to_rsp_i[rqst_load_id] = rqst_i;
+
+                        // send a load request
+                        err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, sizeof(UINT),
+                                                            rqst_load_id);
+                        if (err == HB_MC_SUCCESS) {
+                                // success; increment succesful requests and pop the load id
+                                rqst_i++;
+                                ids.pop();
+                        } else if (err == HB_MC_BUSY) {
+                                // if we're busy, break to start reading requests
+                                break;
+                        } else {
+                                // we've hit some other error: abort with an error message
+                                manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
+                                                __func__, hb_mc_strerror(err));
+                                return err;
+                        }
+                }
+
+                /* read a response and write it back to the location marked by load_id */
+                uint32_t read_data, load_id;
+                err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, sizeof(UINT),
+                                                   &load_id);
+                if (err != HB_MC_SUCCESS) {
+                        manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
+                                        __func__, hb_mc_strerror(err));
+                        return err;
+                }
+
+                manycore_pr_dbg(mc, "%s: Received response for load_id = %" PRIu32 "\n",
+                                __func__, load_id);
+
+                // this should never happen unless something is messed up in hardware
+                if (load_id >= n_ids) {
+                        manycore_pr_err(mc, "%s: Bad load id = %" PRIu32 "\n",
+                                        __func__, load_id);
+                        return HB_MC_FAIL;
+                }
+
+                // write 'read_data' back to the correct location
+                data[id_to_rsp_i[load_id]] = static_cast<UINT>(read_data);
+
+                // increment succesful responses
+                rsp_i++;
+
+                // push the load id onto the stack so we can use it again
+                ids.push(load_id);
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+/**
  * Read memory from a vector of NPAs
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in]  npa    A vector of valid hb_mc_npa_t of length <= #words
