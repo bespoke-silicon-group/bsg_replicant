@@ -1506,12 +1506,13 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                 while (rqst_i < cnt) {
                         // get the NPA of the next load address
                         hb_mc_npa_t rqst_addr = npa(rqst_i);
-                        // get an available load id for this load request
-                        uint32_t rqst_load_id = ids.top();
 
                         // if we're out of load ids, break to start reading requests
                         if (ids.empty())
                                 break;
+
+                        // get an available load id for this load request
+                        uint32_t rqst_load_id = ids.top();
 
                         // save which request this is
                         id_to_rsp_i[rqst_load_id] = rqst_i;
@@ -1533,9 +1534,17 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                 return err;
                         }
                 }
+                // get occupancy
+                err = hb_mc_manycore_rx_fifo_get_occupancy(mc, HB_MC_FIFO_RX_RSP,
+                                                           &occupancy);
+                if (err != HB_MC_SUCCESS) {
+                        manycore_pr_err(mc, "%s: Failed to get occupancy: %s\n",
+                                        __func__, hb_mc_strerror(err));
+                        return err;
+                }
 
                 /* read all available response packets */
-                do {
+                while (occupancy-- > 0 && rsp_i < cnt) {
                         /* read a response and write it back to the location marked by load_id */
                         uint32_t read_data, load_id;
                         err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, sizeof(UINT),
@@ -1566,16 +1575,9 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                         ids.push(load_id);
 
 
-                        // get occupancy
-                        err = hb_mc_manycore_rx_fifo_get_occupancy(mc, HB_MC_FIFO_RX_RSP,
-                                                                   &occupancy);
-                        if (err != HB_MC_SUCCESS) {
-                                manycore_pr_err(mc, "%s: Failed to get occupancy: %s\n",
-                                                __func__, hb_mc_strerror(err));
-                                return err;
-                        }
 
-                } while (occupancy > 0 && rsp_i < cnt);
+
+                }
         }
 
         return HB_MC_SUCCESS;
