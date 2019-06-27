@@ -1462,6 +1462,9 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
 /**
  * Perform #cnt loads from a series of NPAs and return results in an associative container #data.
+ * After returning success, #data[i] shall be the data read from the NPA given by #npa(i)
+ * for i >= 0 and i < cnt.
+ *
  * @tparam UINT               The unsigned integer type for data loads.
  * @tparam UINTV              An associative container of UNT words (indexed by i).
  * @tparam NPA_OF_I_FUNCTION  Returns an NPA given an index i.
@@ -1479,6 +1482,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                             UINTV & data, size_t cnt)
 {
         size_t rsp_i = 0, rqst_i = 0;
+        uint32_t occupancy;
         unsigned n_ids;
         int err;
 
@@ -1530,34 +1534,48 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                         }
                 }
 
-                /* read a response and write it back to the location marked by load_id */
-                uint32_t read_data, load_id;
-                err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, sizeof(UINT),
-                                                   &load_id);
-                if (err != HB_MC_SUCCESS) {
-                        manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
-                                        __func__, hb_mc_strerror(err));
-                        return err;
-                }
+                /* read all available response packets */
+                do {
+                        /* read a response and write it back to the location marked by load_id */
+                        uint32_t read_data, load_id;
+                        err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, sizeof(UINT),
+                                                           &load_id);
+                        if (err != HB_MC_SUCCESS) {
+                                manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
+                                                __func__, hb_mc_strerror(err));
+                                return err;
+                        }
 
-                manycore_pr_dbg(mc, "%s: Received response for load_id = %" PRIu32 "\n",
-                                __func__, load_id);
-
-                // this should never happen unless something is messed up in hardware
-                if (load_id >= n_ids) {
-                        manycore_pr_err(mc, "%s: Bad load id = %" PRIu32 "\n",
+                        manycore_pr_dbg(mc, "%s: Received response for load_id = %" PRIu32 "\n",
                                         __func__, load_id);
-                        return HB_MC_FAIL;
-                }
 
-                // write 'read_data' back to the correct location
-                data[id_to_rsp_i[load_id]] = static_cast<UINT>(read_data);
+                        // this should never happen unless something is messed up in hardware
+                        if (load_id >= n_ids) {
+                                manycore_pr_err(mc, "%s: Bad load id = %" PRIu32 "\n",
+                                                __func__, load_id);
+                                return HB_MC_FAIL;
+                        }
 
-                // increment succesful responses
-                rsp_i++;
+                        // write 'read_data' back to the correct location
+                        data[id_to_rsp_i[load_id]] = static_cast<UINT>(read_data);
 
-                // push the load id onto the stack so we can use it again
-                ids.push(load_id);
+                        // increment succesful responses
+                        rsp_i++;
+
+                        // push the load id onto the stack so we can use it again
+                        ids.push(load_id);
+
+
+                        // get occupancy
+                        err = hb_mc_manycore_rx_fifo_get_occupancy(mc, HB_MC_FIFO_RX_RSP,
+                                                                   &occupancy);
+                        if (err != HB_MC_SUCCESS) {
+                                manycore_pr_err(mc, "%s: Failed to get occupancy: %s\n",
+                                                __func__, hb_mc_strerror(err));
+                                return err;
+                        }
+
+                } while (occupancy > 0 && rsp_i < cnt);
         }
 
         return HB_MC_SUCCESS;
