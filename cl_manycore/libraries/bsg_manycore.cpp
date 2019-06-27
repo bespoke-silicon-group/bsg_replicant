@@ -31,6 +31,7 @@
 #include <stdbool.h>
 #endif
 
+#include <stack>
 #include <vector>
 
 #define array_size(x)                           \
@@ -1219,7 +1220,9 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 ////////////////
 
 /* send a read request and don't wait for the return packet */
-static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz)
+static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
+					 const hb_mc_npa_t *npa, size_t sz,
+					 uint32_t id = 0)
 {
 	hb_mc_packet_t rqst;
 	int err;
@@ -1231,6 +1234,9 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t
 				__func__, hb_mc_strerror(err));
 		return err;
 	}
+
+	// mark request with id
+	hb_mc_request_packet_set_data(&rqst.request, id);
 
 	/* set the byte mask */
 	switch (sz) {
@@ -1267,7 +1273,9 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc, const hb_mc_npa_t
 }
 
 /* read a response packet for a read request to an npa */
-static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, void *vp, size_t sz)
+static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
+					const hb_mc_npa_t *npa, void *vp, size_t sz,
+					uint32_t *id = nullptr)
 {
 	hb_mc_packet_t rsp;
 	int err;
@@ -1294,6 +1302,9 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc, const hb_mc_npa_t 
 	default:
 		return HB_MC_INVALID;
 	}
+
+	if (id != nullptr)
+		*id = hb_mc_response_packet_get_load_id(&rsp.response);
 
 	return HB_MC_SUCCESS;
 }
@@ -1444,7 +1455,6 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	return HB_MC_SUCCESS;
 }
 
-
 /**
  * Read memory from a vector of NPAs
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
@@ -1458,16 +1468,37 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 {
 	int err;
 	size_t rsp_i = 0, rqst_i = 0;
+	unsigned n_ids;
+
+	err = hb_mc_manycore_get_host_requests_cap(mc, &n_ids);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	/* ids and id_to_rsp_i to track requests and responses */
+	std::stack <uint32_t> ids;
+	for (int i = n_ids - 1; i >= 0; i--)
+		ids.push(static_cast<uint32_t>(i));
+
+	int id_to_rsp_i [n_ids];
+
 
 	while (rsp_i < words) {
 
 		/* try to request as many words as we have left */
 		while (rqst_i < words) {
 			hb_mc_npa_t rqst_addr = npa[rqst_i];
+			uint32_t id = ids.top();
 
-			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4);
+			if (ids.empty())
+				break; // we're out of load_ids, break to start reading requests
+
+			// save which request this is
+			id_to_rsp_i[id] = rqst_i;
+
+			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4, id);
 			if (err == HB_MC_SUCCESS) {
 				rqst_i++;
+				ids.pop();
 			} else if (err == HB_MC_BUSY) {
 				break; // if we're busy, break to start reading requests
 			} else {
@@ -1477,16 +1508,21 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 			}
 		}
 
-		/* read as many responses as we have occupancy */
-		hb_mc_npa_t rsp_addr = npa[rsp_i];
-
-		err = hb_mc_manycore_recv_read_rsp(mc, &rsp_addr, &data[rsp_i], 4);
+		/* read a response and write it back to the location marked by load_id */
+		uint32_t tmp, load_id;
+		err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &tmp, 4, &load_id);
 		if (err != HB_MC_SUCCESS) {
 			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
 					__func__, hb_mc_strerror(err));
 			return err;
 		}
+
+		manycore_pr_dbg(mc, "%s: Received response for load_id = %" PRIu32 "\n",
+				__func__, load_id);
+
+		data[id_to_rsp_i[load_id]] = tmp;
 		rsp_i++;
+		ids.push(load_id);
 	}
 
 	return HB_MC_SUCCESS;
