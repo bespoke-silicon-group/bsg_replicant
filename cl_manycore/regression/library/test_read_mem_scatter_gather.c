@@ -86,7 +86,7 @@ static int compare(void)
         int i;
 
         for (i = 0; i < WORDS; i++)
-                bsg_pr_info("out[%d] = %08" PRIx32 ", in[%d] = %08" PRIx32 "\n",
+                bsg_pr_info("out[%2d] = %08" PRIx32 ", in[%2d] = %08" PRIx32 "\n",
                             i, out[i], i, in[i]);
 
         if (memcmp(out, in, sizeof(in)) == 0) {
