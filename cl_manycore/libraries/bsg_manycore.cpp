@@ -31,7 +31,7 @@
 #include <stdbool.h>
 #endif
 
-#include <stack>
+#include <queue>
 #include <vector>
 
 #define array_size(x)                           \
@@ -1475,7 +1475,7 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
 		return err;
 
 	/* ids and id_to_rsp_i to track requests and responses */
-	std::stack <uint32_t> ids;
+	std::priority_queue <uint32_t> ids;
 	for (int i = n_ids - 1; i >= 0; i--)
 		ids.push(static_cast<uint32_t>(i));
 
