@@ -1592,81 +1592,14 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
 int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 					   uint32_t *data, size_t words)
 {
-	int err;
-	size_t rsp_i = 0, rqst_i = 0;
-	unsigned n_ids;
+	/* ith NPA => npa[i] */
+	struct npa_function {
+		const hb_mc_npa_t *npa;
+		npa_function(const hb_mc_npa_t *npa) : npa(npa) {}
+		hb_mc_npa_t operator()(size_t i) { return npa[i]; }
+	};
 
-	err = hb_mc_manycore_get_host_requests_cap(mc, &n_ids);
-	if (err != HB_MC_SUCCESS)
-		return err;
-
-	/* ids and id_to_rsp_i to track requests and responses */
-	std::stack <uint32_t, std::vector<uint32_t> > ids;
-	for (int i = n_ids - 1; i >= 0; i--)
-		ids.push(static_cast<uint32_t>(i));
-
-	int id_to_rsp_i [n_ids];
-
-	/* until we've received all responses... */
-	while (rsp_i < words) {
-
-		/* try to request as many words as we have left */
-		while (rqst_i < words) {
-			hb_mc_npa_t rqst_addr = npa[rqst_i];
-			uint32_t id = ids.top();
-
-			// if we're out of load ids, break to start reading requests
-			if (ids.empty())
-				break;
-
-			// save which request this is
-			id_to_rsp_i[id] = rqst_i;
-
-			// send a load request
-			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4, id);
-			if (err == HB_MC_SUCCESS) {
-				// success; increment succesful requests and pop the load id
-				rqst_i++;
-				ids.pop();
-			} else if (err == HB_MC_BUSY) {
-				// if we're busy, break to start reading requests
-				break;
-			} else {
-				// we've hit some other error: abort with an error message
-				manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
-						__func__, hb_mc_strerror(err));
-				return err;
-			}
-		}
-
-		/* read a response and write it back to the location marked by load_id */
-		uint32_t read_data, load_id;
-		err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, 4, &load_id);
-		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
-					__func__, hb_mc_strerror(err));
-			return err;
-		}
-
-		manycore_pr_dbg(mc, "%s: Received response for load_id = %" PRIu32 "\n",
-				__func__, load_id);
-
-		// this should never happen unless something is messed up in hardware
-		if (load_id >= n_ids) {
-			manycore_pr_err(mc, "%s: Bad load id = %" PRIu32 "\n",
-					__func__, load_id);
-			return HB_MC_FAIL;
-		}
-
-		// write 'read_data' back to the correct location
-		data[id_to_rsp_i[load_id]] = read_data;
-		// increment succesful responses
-		rsp_i++;
-		// push the load id onto the stack so we can use it again
-		ids.push(load_id);
-	}
-
-	return HB_MC_SUCCESS;
+	return hb_mc_manycore_read_mem_internal<uint32_t>(mc, npa_function(npa), data, words);
 }
 
 /**
@@ -1686,44 +1619,22 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	if (err != HB_MC_SUCCESS)
 		return err;
 
-	uint32_t *words = (uint32_t*)data;
+	uint32_t *words = static_cast<uint32_t*>(data);
 	size_t n_words = sz >> 2;
-	hb_mc_npa_t  addr = *npa;
-	size_t rsp_i = 0, rqst_i = 0;
 
-	while (rsp_i < n_words) {
-
-		/* try to request as many words as we have left */
-		while (rqst_i < n_words) {
-			hb_mc_npa_t rqst_addr = addr;
-			hb_mc_npa_set_epa(&rqst_addr, hb_mc_npa_get_epa(&addr) + rqst_i*sizeof(uint32_t));
-
-			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4);
-			if (err == HB_MC_SUCCESS) {
-				rqst_i++;
-			} else if (err == HB_MC_BUSY) {
-				break; // if we're busy, break to start reading requests
-			} else {
-				manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
-						__func__, hb_mc_strerror(err));
-				return err;
-			}
+	/* ith NPA => first NPA + i words */
+	struct npa_function {
+		const hb_mc_npa_t *npa;
+		npa_function(const hb_mc_npa_t *npa) : npa(npa) {}
+		hb_mc_npa_t operator()(size_t i) {
+			return hb_mc_npa_from_x_y(hb_mc_npa_get_x(npa),
+						  hb_mc_npa_get_y(npa),
+						  hb_mc_npa_get_epa(npa) +
+						  i*sizeof(uint32_t));
 		}
+	};
 
-		/* read as many responses as we have occupancy */
-		hb_mc_npa_t rsp_addr = addr;
-		hb_mc_npa_set_epa(&rsp_addr, hb_mc_npa_get_epa(&rsp_addr) + rsp_i*sizeof(uint32_t));
-
-		err = hb_mc_manycore_recv_read_rsp(mc, &rsp_addr, &words[rsp_i], 4);
-		if (err != HB_MC_SUCCESS) {
-			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
-					__func__, hb_mc_strerror(err));
-			return err;
-		}
-		rsp_i++;
-	}
-
-	return HB_MC_SUCCESS;
+	return hb_mc_manycore_read_mem_internal<uint32_t>(mc, npa_function(npa), words, n_words);
 }
 
 /**
