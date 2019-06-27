@@ -1444,6 +1444,54 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	return HB_MC_SUCCESS;
 }
 
+
+/**
+ * Read memory from a vector of NPAs
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A vector of valid hb_mc_npa_t of length <= #words
+ * @param[out] data   A word vector into which data will be read
+ * @param[in]  words  The number of words to read from manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+					   uint32_t *data, size_t words)
+{
+	int err;
+	size_t rsp_i = 0, rqst_i = 0;
+
+	while (rsp_i < words) {
+
+		/* try to request as many words as we have left */
+		while (rqst_i < words) {
+			hb_mc_npa_t rqst_addr = npa[rqst_i];
+
+			err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, 4);
+			if (err == HB_MC_SUCCESS) {
+				rqst_i++;
+			} else if (err == HB_MC_BUSY) {
+				break; // if we're busy, break to start reading requests
+			} else {
+				manycore_pr_err(mc, "%s: Failed to send read request: %s\n",
+						__func__, hb_mc_strerror(err));
+				return err;
+			}
+		}
+
+		/* read as many responses as we have occupancy */
+		hb_mc_npa_t rsp_addr = npa[rsp_i];
+
+		err = hb_mc_manycore_recv_read_rsp(mc, &rsp_addr, &data[rsp_i], 4);
+		if (err != HB_MC_SUCCESS) {
+			manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
+					__func__, hb_mc_strerror(err));
+			return err;
+		}
+		rsp_i++;
+	}
+
+	return HB_MC_SUCCESS;
+}
+
 /**
  * Read memory from manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
