@@ -3,6 +3,7 @@
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_printing.h>
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 #define TEST_NAME "test_read_mem_scatter_gather"
@@ -53,7 +54,7 @@ static int write_out_data(void)
                 err = hb_mc_manycore_write32(mc, &target_npas[i], out[i]);
                 if (err != HB_MC_SUCCESS) {
                         char npa_str[256];
-                        hb_mc_npa_to_string(npa_str, sizeof(npa_str), &target_npas[i]);
+                        hb_mc_npa_to_string(&target_npas[i], npa_str, sizeof(npa_str));
                         test_pr_err("failed to write word %d to %s: %s\n",
                                     i, npa_str, hb_mc_strerror(err));
                         return err;
@@ -73,7 +74,7 @@ static int read_in_data(void)
         err = hb_mc_manycore_read_mem_scatter_gather(mc, target_npas, in, WORDS);
         if (err != HB_MC_SUCCESS) {
                 char npa_str[256];
-                hb_mc_npa_to_string(npa_str, sizeof(npa_str), &target_npas[i]);
+                hb_mc_npa_to_string(&target_npas[i], npa_str, sizeof(npa_str));
                 test_pr_err("failed to scatter-gather read: %s\n",
                             hb_mc_strerror(err));
                 return err;
