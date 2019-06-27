@@ -1592,16 +1592,16 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
-					   uint32_t *data, size_t words)
+                                           uint32_t *data, size_t words)
 {
-	/* ith NPA => npa[i] */
-	struct npa_function {
-		const hb_mc_npa_t *npa;
-		npa_function(const hb_mc_npa_t *npa) : npa(npa) {}
-		hb_mc_npa_t operator()(size_t i) { return npa[i]; }
-	};
+        /* ith NPA => npa[i] */
+        struct npa_function {
+                const hb_mc_npa_t *npa;
+                npa_function(const hb_mc_npa_t *npa) : npa(npa) {}
+                hb_mc_npa_t operator()(size_t i) { return npa[i]; }
+        };
 
-	return hb_mc_manycore_read_mem_internal<uint32_t>(mc, npa_function(npa), data, words);
+        return hb_mc_manycore_read_mem_internal<uint32_t>(mc, npa_function(npa), data, words);
 }
 
 /**
@@ -1613,30 +1613,30 @@ int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
-			    void *data, size_t sz)
+                            void *data, size_t sz)
 {
-	int err;
+        int err;
 
-	err = hb_mc_manycore_read_write_mem_check_args(mc, __func__, data, sz);
-	if (err != HB_MC_SUCCESS)
-		return err;
+        err = hb_mc_manycore_read_write_mem_check_args(mc, __func__, data, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
 
-	uint32_t *words = static_cast<uint32_t*>(data);
-	size_t n_words = sz >> 2;
+        uint32_t *words = static_cast<uint32_t*>(data);
+        size_t n_words = sz >> 2;
 
-	/* ith NPA => first NPA + i words */
-	struct npa_function {
-		const hb_mc_npa_t *npa;
-		npa_function(const hb_mc_npa_t *npa) : npa(npa) {}
-		hb_mc_npa_t operator()(size_t i) {
-			return hb_mc_npa_from_x_y(hb_mc_npa_get_x(npa),
-						  hb_mc_npa_get_y(npa),
-						  hb_mc_npa_get_epa(npa) +
-						  i*sizeof(uint32_t));
-		}
-	};
+        /* ith NPA => first NPA + i words */
+        struct npa_function {
+                const hb_mc_npa_t *npa;
+                npa_function(const hb_mc_npa_t *npa) : npa(npa) {}
+                hb_mc_npa_t operator()(size_t i) {
+                        return hb_mc_npa_from_x_y(hb_mc_npa_get_x(npa),
+                                                  hb_mc_npa_get_y(npa),
+                                                  hb_mc_npa_get_epa(npa) +
+                                                  i*sizeof(uint32_t));
+                }
+        };
 
-	return hb_mc_manycore_read_mem_internal<uint32_t>(mc, npa_function(npa), words, n_words);
+        return hb_mc_manycore_read_mem_internal<uint32_t>(mc, npa_function(npa), words, n_words);
 }
 
 /**
