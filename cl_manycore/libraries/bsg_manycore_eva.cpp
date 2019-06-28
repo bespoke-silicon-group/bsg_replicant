@@ -316,7 +316,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
 	y = hb_mc_config_get_dram_y(cfg);
 
-	addrbits = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
+	addrbits = shift;
 	maxsz = 1 << addrbits;
 
 	// The EPA portion of an EVA is technically determined by addrbits
@@ -324,7 +324,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 	// xdimlog) != DEFAULT_DRAM_BITIDX, since there are unused bits between
 	// the x index and EPA.  To avoid really awful debugging, we check this
 	// situation.
-	errmask = MAKE_MASK(DEFAULT_DRAM_BITIDX - xdimlog);
+	errmask = MAKE_MASK(addrbits);
 
 	epa = (hb_mc_eva_addr(eva) & errmask);
 
@@ -338,13 +338,14 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 	*sz = maxsz - epa;
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
-	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
-		__func__, hb_mc_eva_addr(eva),
-		hb_mc_coordinate_get_x(*src),
-		hb_mc_coordinate_get_y(*src),
-		hb_mc_npa_get_x(npa),
-		hb_mc_npa_get_y(npa),
-		hb_mc_npa_get_epa(npa));
+	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "} sz = %08x. \n",
+		   __func__, hb_mc_eva_addr(eva),
+		   hb_mc_coordinate_get_x(*src),
+		   hb_mc_coordinate_get_y(*src),
+		   hb_mc_npa_get_x(npa),
+		   hb_mc_npa_get_y(npa),
+		   hb_mc_npa_get_epa(npa),
+		   *sz);
 
 	return HB_MC_SUCCESS;
 }
@@ -813,50 +814,46 @@ static size_t min_size_t(size_t x, size_t y)
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
-			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *tgt,
-			const hb_mc_eva_t *eva,
-			const void *data, size_t sz)
+                        const hb_mc_eva_map_t *map,
+                        const hb_mc_coordinate_t *tgt,
+                        const hb_mc_eva_t *eva,
+                        const void *data, size_t sz)
 {
-	int err;
-	size_t dest_sz, xfer_sz;
-	hb_mc_npa_t dest_npa;
-	char *destp;
+        int err;
+        size_t dest_sz, xfer_sz;
+        hb_mc_npa_t dest_npa;
+        char *destp;
+        hb_mc_eva_t curr_eva = *eva;
 
-	err = hb_mc_eva_size(mc, map, eva, &dest_sz);
-	if (err != HB_MC_SUCCESS) {
-		bsg_pr_err("%s: failed to acquire eva size.\n", __func__);
-		return err;
-	}
-	if (sz > dest_sz){
-		bsg_pr_err("%s: Error, requested copy to region that is smaller "
-			"than buffer\n", __func__);
-		return HB_MC_FAIL;
-	}
+        destp = (char *)data;
+        while(sz > 0){
+                err = hb_mc_eva_to_npa(mc, map, tgt, &curr_eva, &dest_npa, &dest_sz);
+                if(err != HB_MC_SUCCESS){
+                        bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
+                                __func__);
+                        return err;
+                }
+                xfer_sz = min_size_t(sz, dest_sz);
 
-	destp = (char *)data;
-	while(sz > 0){
-		err = hb_mc_eva_to_npa(mc, map, tgt, eva, &dest_npa, &dest_sz);
-		if(err != HB_MC_SUCCESS){
-			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
-				__func__);
-			return err;
-		}
-		xfer_sz = min_size_t(sz, dest_sz);
+                char npa_str[256];
+                bsg_pr_dbg("writing %zd bytes to eva %08x (%s)\n",
+                           xfer_sz,
+                           curr_eva,
+                           hb_mc_npa_to_string(&dest_npa, npa_str, sizeof(npa_str)));
 
-		err = hb_mc_manycore_write_mem(mc, &dest_npa, destp, xfer_sz);
-		if(err != HB_MC_SUCCESS){
-			bsg_pr_err("%s: Failed to copy data from host to NPA\n",
-				__func__);
-			return err;
-		}
+                err = hb_mc_manycore_write_mem(mc, &dest_npa, destp, xfer_sz);
+                if(err != HB_MC_SUCCESS){
+                        bsg_pr_err("%s: Failed to copy data from host to NPA\n",
+                                __func__);
+                        return err;
+                }
 
-		destp += xfer_sz;
-		sz -= xfer_sz;
-		eva += xfer_sz;
-	}
+                destp += xfer_sz;
+                sz -= xfer_sz;
+                curr_eva += xfer_sz;
+        }
 
-	return HB_MC_SUCCESS;
+        return HB_MC_SUCCESS;
 }
 
 /**
@@ -870,46 +867,46 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
-			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *tgt,
-			const hb_mc_eva_t *eva,
-			void *data, size_t sz)
+                        const hb_mc_eva_map_t *map,
+                        const hb_mc_coordinate_t *tgt,
+                        const hb_mc_eva_t *eva,
+                        void *data, size_t sz)
 {
-	int err;
-	size_t src_sz, xfer_sz;
-	hb_mc_npa_t src_npa;
-	char *srcp;
+        int err;
+        size_t src_sz, xfer_sz;
+        hb_mc_npa_t src_npa;
+        char *srcp;
+        hb_mc_eva_t curr_eva = *eva;
 
-	err = hb_mc_eva_size(mc, map, eva, &src_sz);
-	if (sz > src_sz){
-		bsg_pr_err("%s: Error, requested read from region that is smaller "
-			"than buffer\n", __func__);
-		return HB_MC_FAIL;
-	}
+        srcp = (char *)data;
+        while(sz > 0){
+                err = hb_mc_eva_to_npa(mc, map, tgt, &curr_eva, &src_npa, &src_sz);
+                if(err != HB_MC_SUCCESS){
+                        bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
+                                __func__);
+                        return err;
+                }
 
-	srcp = (char *)data;
-	while(sz > 0){
-		err = hb_mc_eva_to_npa(mc, map, tgt, eva, &src_npa, &src_sz);
-		if(err != HB_MC_SUCCESS){
-			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
-				__func__);
-			return err;
-		}
+                xfer_sz = min_size_t(sz, src_sz);
 
-		xfer_sz = min_size_t(sz, src_sz);
+                char npa_str[256];
+                bsg_pr_dbg("read %zd bytes from eva %08x (%s)\n",
+                           xfer_sz,
+                           curr_eva,
+                           hb_mc_npa_to_string(&src_npa, npa_str, sizeof(npa_str)));
 
-		err = hb_mc_manycore_read_mem(mc, &src_npa, srcp, xfer_sz);
-		if(err != HB_MC_SUCCESS){
-			bsg_pr_err("%s: Failed to copy data from host to NPA\n",
-				__func__);
-			return err;
-		}
+                err = hb_mc_manycore_read_mem(mc, &src_npa, srcp, xfer_sz);
+                if(err != HB_MC_SUCCESS){
+                        bsg_pr_err("%s: Failed to copy data from host to NPA\n",
+                                __func__);
+                        return err;
+                }
 
-		srcp += xfer_sz;
-		sz -= xfer_sz;
-		eva += xfer_sz;
-	}
-	return HB_MC_SUCCESS;
+                srcp += xfer_sz;
+                sz -= xfer_sz;
+                curr_eva += xfer_sz;
+        }
+        return HB_MC_SUCCESS;
 }
 
 /**
@@ -923,41 +920,42 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_memset(hb_mc_manycore_t *mc,
-			const hb_mc_eva_map_t *map,
-			const hb_mc_coordinate_t *tgt,
-			const hb_mc_eva_t *eva,
-			uint8_t val, size_t sz)
+                        const hb_mc_eva_map_t *map,
+                        const hb_mc_coordinate_t *tgt,
+                        const hb_mc_eva_t *eva,
+                        uint8_t val, size_t sz)
 {
-	int err;
-	size_t dest_sz, xfer_sz;
-	hb_mc_npa_t dest_npa;
+        int err;
+        size_t dest_sz, xfer_sz;
+        hb_mc_npa_t dest_npa;
+        hb_mc_eva_t curr_eva = *eva;
 
-	err = hb_mc_eva_size(mc, map, eva, &dest_sz);
-	if (sz > dest_sz){
-		bsg_pr_err("%s: Error, requested copy to region that is smaller "
-			"than buffer\n", __func__);
-		return HB_MC_FAIL;
-	}
+        while(sz > 0){
+                err = hb_mc_eva_to_npa(mc, map, tgt, &curr_eva, &dest_npa, &dest_sz);
+                if(err != HB_MC_SUCCESS){
+                        bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
+                                __func__);
+                        return err;
+                }
+                xfer_sz = min_size_t(sz, dest_sz);
 
-	while(sz > 0){
-		err = hb_mc_eva_to_npa(mc, map, tgt, eva, &dest_npa, &dest_sz);
-		if(err != HB_MC_SUCCESS){
-			bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
-				__func__);
-			return err;
-		}
-		xfer_sz = min_size_t(sz, dest_sz);
 
-		err = hb_mc_manycore_memset(mc, &dest_npa, val, xfer_sz);
-		if(err != HB_MC_SUCCESS){
-			bsg_pr_err("%s: Failed to set NPA region to value\n",
-				__func__);
-			return err;
-		}
+                char npa_str[256];
+                bsg_pr_dbg("read %zd bytes from eva %08x (%s)\n",
+                           xfer_sz,
+                           curr_eva,
+                           hb_mc_npa_to_string(&dest_npa, npa_str, sizeof(npa_str)));
 
-		sz -= xfer_sz;
-		eva += xfer_sz;
-	}
+                err = hb_mc_manycore_memset(mc, &dest_npa, val, xfer_sz);
+                if(err != HB_MC_SUCCESS){
+                        bsg_pr_err("%s: Failed to set NPA region to value\n",
+                                __func__);
+                        return err;
+                }
 
-	return HB_MC_SUCCESS;
+                sz -= xfer_sz;
+                curr_eva += xfer_sz;
+        }
+
+        return HB_MC_SUCCESS;
 }
