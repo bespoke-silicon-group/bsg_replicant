@@ -49,6 +49,12 @@ int kernel_matrix_mul () {
 		return rc;
 	}
 
+	// Disable DRAM.
+	rc = hb_mc_manycore_disable_dram(device.mc);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to disable device's DRAM.\n", __func__);
+		return rc;
+	}
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/matrix_mul/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);

@@ -30,6 +30,12 @@ int kernel_stack_load () {
 		return rc;
 	}
 
+	// Disable DRAM.
+	rc = hb_mc_manycore_disable_dram(device.mc);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to disable device's DRAM.\n", __func__);
+		return rc;
+	}
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/stack_load/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
@@ -117,7 +123,7 @@ int kernel_stack_load () {
 		for (int x = 0; x < tg_dim.x; x ++) { 
 			if (sum_host[y * tg_dim.x + x] != SUM_ARGS) { 
 				bsg_pr_err(BSG_RED("Mismatch: ") "sum[%d][%d] = %d\tExpected %d.\n", y, x, sum_host[y * tg_dim.x + x], SUM_ARGS);
-				mismatch = 0; 
+				mismatch = 1; 
 			}
 		}
 	}
