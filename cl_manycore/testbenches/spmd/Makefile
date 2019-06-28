@@ -17,4 +17,10 @@ include ../Makefile.common
 $(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary:
-	$(MAKE) -C $(TESTS_PATH) $@ IGNORE_CADENV=1 LINK_SCRIPT=$(BSG_MANYCORE_DIR)/software/spmd/common/link_dmem2.ld
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
+	$(MAKE) -C $(dir $@) clean main.riscv \
+		IGNORE_CADENV=1 \
+		BSG_MACHINE_PATH=$(SIM_PATH)
