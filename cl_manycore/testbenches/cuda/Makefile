@@ -21,8 +21,12 @@ autorebuild:
 $(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary: autorebuild
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	$(MAKE) -C $(dir $@) clean main.riscv \
 		bsg_tiles_X=$(TILE_GROUP_DIM_X) \
 		bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 		IGNORE_CADENV=1 \
-		LINK_SCRIPT=$(BSG_MANYCORE_DIR)/software/spmd/common/link_dmem2.ld
+		BSG_MACHINE_PATH=$(SIM_PATH)
