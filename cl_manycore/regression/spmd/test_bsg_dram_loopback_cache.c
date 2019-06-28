@@ -69,6 +69,14 @@ int test_loopback () {
 		return err;
 	}
 
+	// Disable DRAM
+	err = hb_mc_manycore_disable_dram(&manycore);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to disable device's DRAM.\n", __func__);
+		return err;
+	}
+
+
 	/* initialize the tile */
 	hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
 	hb_mc_coordinate_t origin = hb_mc_coordinate(0,1);

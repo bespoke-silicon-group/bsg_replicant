@@ -571,6 +571,14 @@ int test_loader_suite (void) {
                 return HB_MC_FAIL;
         }
 
+	// Disable DRAM
+	err = hb_mc_manycore_disable_dram(&manycore);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to disable device's DRAM.\n", __func__);
+		return err;
+	}
+
+
 	/***************************/
 	/* Run finish packet tests */
 	/***************************/
