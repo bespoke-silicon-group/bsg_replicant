@@ -1,0 +1,11 @@
+ifndef HDK_DIR
+$(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
+endif
+
+# AWS Paths (Don't modify - HDK_SHELL_DESIGN_DIR, AWS_FPGA_REPO_DIR,
+# HDK_COMMON_DIR, and SDK_DIR variables are set by hdk_setup.sh in aws-fpga)
+XILINX_IP           = $(HDK_SHELL_DESIGN_DIR)/ip
+SDK_DIR             = $(AWS_FPGA_REPO_DIR)/sdk
+C_COMMON_DIR        = $(HDK_COMMON_DIR)/software
+C_SDK_USR_INC_DIR   = $(SDK_DIR)/userspace/include
+C_SDK_USR_UTILS_DIR = $(SDK_DIR)/userspace/utils

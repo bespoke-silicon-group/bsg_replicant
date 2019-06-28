@@ -1,16 +1,29 @@
+include ../../Makefile.environment
 include Makefile.tests
-include ../../Makefile.dimensions
-include ../Makefile.common
-
-.PHONY: autorebuild
-
-autorebuild:
+include $(CL_DIR)/Makefile.machine.include
+include $(REGRESSION_PATH)/Makefile.common
 
 $(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary
 
-$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary: autorebuild
-	$(MAKE) -C $(dir $@) clean main.riscv \
-		bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-		bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-		IGNORE_CADENV=1
+$(USER_CLEAN_RULES): test_%.clean: %.clean
+%.clean:
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
+	IGNORE_CADENV=1 \
+	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/$(subst .clean,,$@) clean
+
+$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/cuda/%/main.riscv: test_%.clean
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
+	IGNORE_CADENV=1 \
+	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
+	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
+	$(MAKE) -C $(dir $@) $(notdir $@)
+
 

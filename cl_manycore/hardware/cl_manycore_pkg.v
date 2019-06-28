@@ -9,11 +9,12 @@
 package cl_manycore_pkg;
 
   `include "bsg_defines.v"
+  `include "f1_parameters.vh"
 
-  parameter addr_width_p = 28;
-  parameter data_width_p = 32;
-  parameter num_tiles_x_p = CL_MANYCORE_DIM_X;
-  parameter num_tiles_y_p = CL_MANYCORE_DIM_Y;
+  parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
+  parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;
+  parameter num_tiles_x_p = `CL_MANYCORE_DIM_X;
+  parameter num_tiles_y_p = `CL_MANYCORE_DIM_Y;
   parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_x_p);
   parameter y_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_y_p+2);
   parameter load_id_width_p = 12;
@@ -23,10 +24,10 @@ package cl_manycore_pkg;
   parameter dram_ch_addr_width_p = 27;
   parameter epa_byte_addr_width_p = 18;
 
-  parameter num_cache_p = 4;
-  parameter sets_p = 64;
-  parameter ways_p = 2;
-  parameter block_size_in_words_p = 16;
+  parameter num_cache_p = `CL_MANYCORE_DIM_X;
+  parameter sets_p = `CL_MANYCORE_VCACHE_SETS;
+  parameter ways_p = `CL_MANYCORE_VCACHE_WAYS;
+  parameter block_size_in_words_p = `CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS;
   parameter vcache_size_p = sets_p * ways_p * block_size_in_words_p;
 
   parameter axi_id_width_p = 6;

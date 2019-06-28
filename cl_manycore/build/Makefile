@@ -1,4 +1,5 @@
 include ../Makefile.environment
+include $(CL_DIR)/Makefile.hdk
 include $(HARDWARE_PATH)/Makefile.include
 
 .DEFAULT_GOAL=build

@@ -31,7 +31,8 @@ $(REGRESSION_TESTS): % : %.rule
 # that is run during compilation. These custom rules are useful for building
 # spmd or cuda binaries, for example.
 USER_RULES=$(foreach tgt,$(REGRESSION_TESTS),$(tgt).rule)
-.PHONY: $(USER_RULES)
+USER_CLEAN_RULES=$(foreach tgt,$(REGRESSION_TESTS),$(tgt).clean)
+.PHONY: $(USER_RULES) $(USER_CLEAN_RULES)
 
 all: $(REGRESSION_TESTS)
 
@@ -72,5 +73,5 @@ regression: $(REGRESSION_TESTS)
 
 .PHONY: regression all clean 
 
-clean:
+clean: $(USER_CLEAN_RULES)
 	rm -f *.o $(REGRESSION_TESTS) *.regression.log
