@@ -1,7 +1,3 @@
-ifndef HDK_DIR
-$(error "HDK variables undefined. Run `source hdk_setup.sh` in aws-fpga")
-endif
-
 ORANGE=\033[0;33m
 NC=\033[0m
 
@@ -36,3 +32,5 @@ HARDWARE_PATH = $(CL_DIR)/hardware/
 REGRESSION_PATH = $(CL_DIR)/regression/
 TESTBENCH_PATH = $(CL_DIR)/testbenches/
 LIBRARIES_PATH = $(CL_DIR)/libraries/
+BSG_MACHINE_PATH=$(CL_DIR)
+

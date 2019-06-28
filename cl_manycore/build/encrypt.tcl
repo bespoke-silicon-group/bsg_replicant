@@ -46,6 +46,7 @@ file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $T
 file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
+file copy -force $CL_DIR/hardware/f1_defines.vh                               $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore_defines.vh                      $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_id_defines.vh                            $TARGET_DIR
 file copy -force $CL_DIR/hardware/cl_manycore.sv                              $TARGET_DIR

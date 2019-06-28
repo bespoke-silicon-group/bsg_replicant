@@ -1,3 +1,4 @@
+include ../../Makefile.environment
 include Makefile.tests
-include ../../Makefile.dimensions
-include ../Makefile.common
+include $(CL_DIR)/Makefile.machine.include
+include $(REGRESSION_PATH)/Makefile.common
