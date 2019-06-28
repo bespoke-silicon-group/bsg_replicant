@@ -17,4 +17,4 @@ include ../Makefile.common
 $(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/%/binary
 
 $(BSG_MANYCORE_DIR)/software/spmd/%/binary:
-	$(MAKE) -C $(TESTS_PATH) $@ IGNORE_CADENV=1
+	$(MAKE) -C $(TESTS_PATH) $@ IGNORE_CADENV=1 LINK_SCRIPT=$(BSG_MANYCORE_DIR)/software/spmd/common/link_dmem2.ld

@@ -12,6 +12,7 @@ $(BSG_MANYCORE_DIR)/software/spmd/%/binary: autorebuild
 	$(MAKE) -C $(dir $@) clean main.riscv \
 		bsg_tiles_X=$(CL_MANYCORE_DIM_X) \
 		bsg_tiles_Y=$(CL_MANYCORE_DIM_Y) \
-		IGNORE_CADENV=1
+		IGNORE_CADENV=1 \
+		LINK_SCRIPT=$(BSG_MANYCORE_DIR)/software/spmd/common/link_dmem2.ld
 
 
