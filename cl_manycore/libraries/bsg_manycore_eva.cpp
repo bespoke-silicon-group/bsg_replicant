@@ -12,7 +12,7 @@
 
 
 
-#define MAKE_MASK(WIDTH) ((1ULL << (WIDTH)) - 1)
+#define MAKE_MASK(WIDTH) ((1ULL << (WIDTH)) - 1ULL)
 
 #define DEFAULT_GROUP_X_LOGSZ 6
 #define DEFAULT_GROUP_X_BITIDX HB_MC_EPA_LOGSZ
