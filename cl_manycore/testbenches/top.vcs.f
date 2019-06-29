@@ -157,6 +157,8 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_tile.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
 
+${BSG_MANYCORE_DIR}/testbenches/common/v/vanilla_core_trace.v
+
 ${BSG_MANYCORE_DIR}/v/bladerunner/bsg_manycore_wrapper.v
 ${BSG_MANYCORE_DIR}/v/bladerunner/bsg_cache_wrapper_axi.v
 
