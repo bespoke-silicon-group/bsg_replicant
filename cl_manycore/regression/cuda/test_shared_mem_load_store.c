@@ -53,7 +53,7 @@ int kernel_shared_mem_load_store () {
 	}
 
 
-	rc = hb_mc_device_malloc(&device, N * N * sizeof(uint32_t), &A_out_device); /* allocate A_out[M][N] on the device */
+	rc = hb_mc_device_malloc(&device, M * N * sizeof(uint32_t), &A_out_device); /* allocate A_out[M][N] on the device */
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
 		return rc;
