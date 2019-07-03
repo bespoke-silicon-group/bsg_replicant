@@ -666,7 +666,7 @@ cl_debug_bridge CL_DEBUG_BRIDGE (
 
 `endif //  `ifndef DISABLE_VJTAG_DEBUG
 
-
+// synopsys translate off
 bind vanilla_core vanilla_core_trace #(
   .x_cord_width_p(x_cord_width_p)
   ,.y_cord_width_p(y_cord_width_p)
@@ -677,6 +677,6 @@ bind vanilla_core vanilla_core_trace #(
 ) vtrace (
   .*
 );
-
+// synopsys translate on
 
 endmodule
