@@ -144,9 +144,9 @@ static inline size_t hb_mc_tile_get_size_icache(const hb_mc_manycore_t *mc,
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
 __attribute__((warn_unused_result))
-int hb_mc_tile_set_origin_registers (	hb_mc_manycore_t *mc,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_coordinate_t *origin); 
+int hb_mc_tile_set_origin_registers (hb_mc_manycore_t *mc,
+                                     const hb_mc_coordinate_t *coord,
+                                     const hb_mc_coordinate_t *origin); 
 
 
 

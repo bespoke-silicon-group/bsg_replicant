@@ -118,9 +118,9 @@ enum hb_mc_memcpy_kind {
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init (	hb_mc_device_t *device,
-			const char *name,
-			hb_mc_manycore_id_t id);
+int hb_mc_device_init (hb_mc_device_t *device,
+                       const char *name,
+                       hb_mc_manycore_id_t id);
 
 
 
@@ -136,10 +136,10 @@ int hb_mc_device_init (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_init_custom_dimensions (	hb_mc_device_t *device,
-						const char *name,
-						hb_mc_manycore_id_t id,
-						hb_mc_dimension_t dim);
+int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
+                                         const char *name,
+                                         hb_mc_manycore_id_t id,
+                                         hb_mc_dimension_t dim);
 
 
 
@@ -157,12 +157,12 @@ int hb_mc_device_init_custom_dimensions (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
-					const char *bin_name,
-					const unsigned char *bin_data,
-					size_t bin_size,
-					const char *alloc_name,
-					hb_mc_allocator_id_t id);
+int hb_mc_device_program_init_binary (hb_mc_device_t *device,
+                                      const char *bin_name,
+                                      const unsigned char *bin_data,
+                                      size_t bin_size,
+                                      const char *alloc_name,
+                                      hb_mc_allocator_id_t id);
 
 
 
@@ -179,10 +179,10 @@ int hb_mc_device_program_init_binary  (	hb_mc_device_t *device,
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_program_init (	hb_mc_device_t *device,
-				const char *bin_name,
-				const char *alloc_name,
-				hb_mc_allocator_id_t id);
+int hb_mc_device_program_init (hb_mc_device_t *device,
+                               const char *bin_name,
+                               const char *alloc_name,
+                               hb_mc_allocator_id_t id);
 
 
 
@@ -213,11 +213,11 @@ int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_device_memcpy (	hb_mc_device_t *device,
-				void *dst,
-				const void *src,
-				uint32_t count,
-				enum hb_mc_memcpy_kind kind);
+int hb_mc_device_memcpy (hb_mc_device_t *device,
+                         void *dst,
+                         const void *src,
+                         uint32_t count,
+                         enum hb_mc_memcpy_kind kind);
 
 
 
@@ -231,10 +231,10 @@ int hb_mc_device_memcpy (	hb_mc_device_t *device,
  * @param[in]  sz            The number of bytes to write into device DRAM
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_memset (	hb_mc_device_t *device,
-				const hb_mc_eva_t *eva,
-				uint8_t data,
-				size_t sz); 
+int hb_mc_device_memset (hb_mc_device_t *device,
+                         const hb_mc_eva_t *eva,
+                         uint8_t data,
+                         size_t sz); 
 
 
 
@@ -269,12 +269,12 @@ int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva);
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
 __attribute__((warn_unused_result))
-int hb_mc_application_init (	hb_mc_device_t *device,
-				hb_mc_dimension_t grid_dim,
-				hb_mc_dimension_t tg_dim,
-				const char *name,
-				const uint32_t argc,
-				const uint32_t *argv);
+int hb_mc_application_init (hb_mc_device_t *device,
+                            hb_mc_dimension_t grid_dim,
+                            hb_mc_dimension_t tg_dim,
+                            const char *name,
+                            const uint32_t argc,
+                            const uint32_t *argv);
 
 
 
