@@ -96,9 +96,9 @@ int hb_mc_tile_set_origin(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile,
  * @param[in] origin     Origin coordinates.
  * @return HB_MC_SUCCESS on success and HB_MC_FAIL on failure.
  */
-int hb_mc_tile_set_origin_registers(	hb_mc_manycore_t *mc,
-					const hb_mc_coordinate_t *coord,
-					const hb_mc_coordinate_t *origin) {
+int hb_mc_tile_set_origin_registers(hb_mc_manycore_t *mc,
+                                    const hb_mc_coordinate_t *coord,
+                                    const hb_mc_coordinate_t *origin) {
 	int error; 
 	hb_mc_npa_t org_x_npa = hb_mc_npa(*coord, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X);
 	hb_mc_npa_t org_y_npa = hb_mc_npa(*coord, HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y);
@@ -106,21 +106,21 @@ int hb_mc_tile_set_origin_registers(	hb_mc_manycore_t *mc,
 	
 	error =  hb_mc_manycore_write32(mc, &org_x_npa, origin->x);
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to set tile (%d,%d) CSR_TGO_X register.\n",
-				__func__, coord->x, coord->y); 
+		bsg_pr_err("%s: failed to set tile (%d,%d) CSR_TGO_X register.\n",
+                            __func__, coord->x, coord->y); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) bsg_tiles_org_X to %d.\n",
-			__func__, coord->x, coord->y, origin->x);
+	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_X to %d.\n",
+                    __func__, coord->x, coord->y, origin->x);
 
 	error = hb_mc_manycore_write32(mc, &org_y_npa, origin->y); 
 	if (error != HB_MC_SUCCESS) { 
-		bsg_pr_err(	"%s: failed to set tile (%d,%d) CSR_TGO_Y register.\n",
-				__func__, coord->x, coord->y); 
+		bsg_pr_err("%s: failed to set tile (%d,%d) CSR_TGO_Y register.\n",
+                            __func__, coord->x, coord->y); 
 		return error;
 	}
-	bsg_pr_dbg(	"%s: Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n",
-			__func__, coord->x, coord->y, origin->y);
+	bsg_pr_dbg("%s: Setting tile (%d,%d) bsg_tiles_org_Y to %d.\n",
+                    __func__, coord->x, coord->y, origin->y);
 
 	return HB_MC_SUCCESS; 
 }
