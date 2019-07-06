@@ -3,7 +3,13 @@ include Makefile.tests
 include $(CL_DIR)/Makefile.machine.include
 include $(REGRESSION_PATH)/Makefile.common
 
-$(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/binary
+.PHONY: help
+.DEFAULT_GOAL =  help
+
+help:
+	@echo "To make a specific test run: make <testname> and then execute the resulting binary"
+
+$(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/main.riscv
 
 $(USER_CLEAN_RULES): test_%.clean: %.clean
 %.clean:
@@ -15,7 +21,7 @@ $(USER_CLEAN_RULES): test_%.clean: %.clean
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/$(subst .clean,,$@) clean
 
-$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/cuda/%/main.riscv: test_%.clean
+$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/main.riscv: test_%.clean
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
