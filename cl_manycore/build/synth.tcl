@@ -15,6 +15,7 @@
 
 #Param needed to avoid clock name collisions
 set_param sta.enableAutoGenClkNamePersistence 0
+set_param hd.clockRoutingWireReduction false
 set CL_MODULE $::env(CL_TOP_MODULE)
 
 create_project -in_memory -part [DEVICE_TYPE] -force
