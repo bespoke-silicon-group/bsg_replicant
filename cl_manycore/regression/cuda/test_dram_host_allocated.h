@@ -1,5 +1,5 @@
-#ifndef TEST_DRAM_H
-#define TEST_DRAM_H
+#ifndef TEST_DRAM_HOST_ALLOCATED_H
+#define TEST_DRAM_HOST_ALLOCATED_H
 
 
 #include <stdio.h>
