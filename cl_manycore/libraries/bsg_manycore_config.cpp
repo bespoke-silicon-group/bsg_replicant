@@ -47,7 +47,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         if (idx > HB_MC_CONFIG_MAX_BITWIDTH_DATA){
                 bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d: %s\n",
                            __func__, idx, error_init_help);
-                return HB_MC_FAIL;
+                return HB_MC_INVALID;
         }
         config->network_bitwidth_data = idx;
 
@@ -55,7 +55,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         if (idx > HB_MC_CONFIG_MAX_BITWIDTH_ADDR){
                 bsg_pr_err("%s: Invalid Network Address Bitwidth %d: %s\n",
                            __func__, idx, error_init_help);
-                return HB_MC_FAIL;
+                return HB_MC_INVALID;
         }
         config->network_bitwidth_addr = idx;
 
@@ -68,7 +68,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
                 bsg_pr_err("%s: Invalid Device Dimension X %d: %s\n",
                            __func__, idx, error_init_help);
-                return HB_MC_FAIL;
+                return HB_MC_INVALID;
         }
         config->vcore_dimensions.x = idx;
 
@@ -76,7 +76,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
                 bsg_pr_err("%s: Invalid Device Dimension Y %d: %s\n",
                            __func__, idx, error_init_help);
-                return HB_MC_FAIL;
+                return HB_MC_INVALID;
         }
         config->vcore_dimensions.y = idx;
 
@@ -84,7 +84,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.x)){
                 bsg_pr_err("%s: Invalid Host Interface index X %d: %s\n",
                            __func__, idx, error_init_help);
-                return HB_MC_FAIL;
+                return HB_MC_INVALID;
         }
         config->host_interface.x = idx;
 
@@ -92,7 +92,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.y)){
                 bsg_pr_err("%s: Invalid Host Interface index Y %d: %s\n",
                            __func__, idx, error_init_help);
-                return HB_MC_FAIL;
+                return HB_MC_INVALID;
         }
         config->host_interface.y = idx;
 
@@ -101,9 +101,18 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];
 
         /* set the victim cache parameters from the values in the ROM */
-        config->vcache_ways        = raw[HB_MC_CONFIG_VCACHE_WAYS];
-        config->vcache_sets        = raw[HB_MC_CONFIG_VCACHE_SETS];
-        config->vcache_block_words = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
+        config->vcache_ways         = raw[HB_MC_CONFIG_VCACHE_WAYS];
+        config->vcache_sets         = raw[HB_MC_CONFIG_VCACHE_SETS];
+        config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
+
+        idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
+        if (idx < config->vcache_block_words) { 
+                bsg_pr_err("%s: Invalid vcache stripe size %d: stripe size "
+                           "cannot be smaller than vcache block size %d: %s\n",
+                           __func__, idx, config->vcache_block_words, error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->vcache_stripe_words = idx;
 
         return HB_MC_SUCCESS;
 }
