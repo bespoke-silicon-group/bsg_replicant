@@ -21,13 +21,13 @@ std::vector<hb_mc_coordinate_t> create_tile_list(void)
 {
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	hb_mc_idx_t base_x, base_y, ceil_x, ceil_y;
-	hb_mc_dimension_t dim = hb_mc_config_get_dimension(cfg);
-	std::vector<hb_mc_coordinate_t> tiles;
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+        std::vector<hb_mc_coordinate_t> tiles;
 	
 	base_x = hb_mc_config_get_vcore_base_x(cfg);
 	base_y = hb_mc_config_get_vcore_base_y(cfg);
-	ceil_x = hb_mc_dimension_get_x(dim);
-	ceil_y = hb_mc_dimension_get_y(dim);
+        ceil_x = base_x + hb_mc_dimension_get_x(dim);
+        ceil_y = base_y + hb_mc_dimension_get_y(dim);
 
 	for (hb_mc_idx_t y = base_y; y < ceil_y; y++)
 		for (hb_mc_idx_t x = base_x; x < ceil_x; x++)
