@@ -49,7 +49,7 @@ VCS_CFLAGS += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
 VCS_CFLAGS += $(foreach def,$(INCLUDES),-CFLAGS "$(def)")
 VCS_CFLAGS += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
 VCS_LDFLAGS = $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS := -M -I +lint=TFIPC-L \
+VCS_VFLAGS := -M +lint=TFIPC-L \
 	-ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 	-sverilog -full64 +memcbk -licqueue -lca -v2005 
 
