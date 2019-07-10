@@ -61,6 +61,7 @@ typedef struct __hb_mc_config_t{
         uint32_t vcache_ways;
         uint32_t vcache_sets;
         uint32_t vcache_block_words;
+        uint32_t vcache_stripe_words;
 } hb_mc_config_t;
 
 typedef enum __hb_mc_config_id_t {
@@ -80,7 +81,8 @@ typedef enum __hb_mc_config_id_t {
         HB_MC_CONFIG_VCACHE_WAYS = 12,
         HB_MC_CONFIG_VCACHE_SETS = 13,
         HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 14,
-        HB_MC_CONFIG_MAX = 15
+        HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 15,
+        HB_MC_CONFIG_MAX = 16
 } hb_mc_config_id_t;
 
 int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -108,6 +110,7 @@ static inline const char *hb_mc_config_id_to_string(hb_mc_config_id_t id)
         [HB_MC_CONFIG_VCACHE_WAYS]  = "BLADERUNNER VCACHE WAYS",
         [HB_MC_CONFIG_VCACHE_SETS]  = "BLADERUNNER VCACHE SETS",
         [HB_MC_CONFIG_VCACHE_BLOCK_WORDS] = "BLADERUNNER VCACHE BLOCK SIZE IN WORDS",
+        [HB_MC_CONFIG_VCACHE_STRIPE_WORDS] = "BLADERUNNER VCACHE STRIPE SIZE IN WORDS",
     };
     return strtab[id];
 }
@@ -276,6 +279,16 @@ static inline uint32_t hb_mc_config_get_vcache_sets(const hb_mc_config_t *cfg)
 static inline uint32_t hb_mc_config_get_vcache_block_words(const hb_mc_config_t *cfg)
 {
         return cfg->vcache_block_words;
+}
+
+/**
+ * Return the victim cache stripe size in words.
+ * @param[in] cfg A configuration initialized from the manycore ROM.
+ * @return the victim cache stripe size in words.
+ */
+static inline uint32_t hb_mc_config_get_vcache_stripe_words(const hb_mc_config_t *cfg)
+{
+        return cfg->vcache_stripe_words;
 }
 
 /**

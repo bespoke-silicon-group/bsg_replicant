@@ -14,6 +14,7 @@ NETWORK_DIMENSION_Y = 5
 VCACHE_ASSOCIATIVITY=2
 VCACHE_SETS=64
 VCACHE_BLOCK_SIZE_IN_WORDS=16
+VCACHE_STRIPE_SIZE_IN_WORDS=16
 
 REPOS = ["bsg_manycore", "bsg_f1", "bsg_ip_cores"]
 
@@ -51,6 +52,8 @@ def parse_args():
                         help="Number of sets in the victim cache")
     parser.add_argument("--vcache-block-size-in-words", default=VCACHE_BLOCK_SIZE_IN_WORDS, type=int,
                         help="Block size in words of the victim cache")
+    parser.add_argument("--vcache-stripe-size-in-words", default=VCACHE_STRIPE_SIZE_IN_WORDS, type=int,
+                        help="Stripe size in words of the victim cache")
     parser.add_argument("release", nargs=3, action=ReleaseRepoAction,
                         help='Repositories that this release is based on as repo_name@commit_id')
 
@@ -77,6 +80,7 @@ def main():
     print_item(args.vcache_associativity)
     print_item(args.vcache_sets)
     print_item(args.vcache_block_size_in_words)
+    print_item(args.vcache_stripe_size_in_words)
 
 if __name__ == "__main__":
     main()
