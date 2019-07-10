@@ -282,6 +282,16 @@ static inline uint32_t hb_mc_config_get_vcache_block_words(const hb_mc_config_t 
 }
 
 /**
+ * Return the number of bytes in a victim cache block.
+ * @param[in] cfg A configuration initialized from the manycore ROM.
+ * @return the number of words in a victim cache block.
+ */
+static inline uint32_t hb_mc_config_get_vcache_block_size(const hb_mc_config_t *cfg)
+{
+        return cfg->vcache_block_words * sizeof(uint32_t); // words are four bytes
+}
+
+/**
  * Return the victim cache stripe size in words.
  * @param[in] cfg A configuration initialized from the manycore ROM.
  * @return the victim cache stripe size in words.
@@ -292,13 +302,13 @@ static inline uint32_t hb_mc_config_get_vcache_stripe_words(const hb_mc_config_t
 }
 
 /**
- * Return the number of bytes in a victim cache block.
+ * Return the victim cache stripe size in bytes.
  * @param[in] cfg A configuration initialized from the manycore ROM.
- * @return the number of words in a victim cache block.
+ * @return the victim cache stripe size in bytes.
  */
-static inline uint32_t hb_mc_config_get_vcache_block_size(const hb_mc_config_t *cfg)
+static inline uint32_t hb_mc_config_get_vcache_stripe_size(const hb_mc_config_t *cfg)
 {
-        return cfg->vcache_block_words * sizeof(uint32_t); // words are four bytes
+        return cfg->vcache_stripe_words * sizeof(uint32_t);
 }
 
 /**
