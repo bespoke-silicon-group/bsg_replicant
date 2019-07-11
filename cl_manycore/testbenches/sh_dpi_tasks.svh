@@ -18,7 +18,7 @@
 
 import tb_type_defines_pkg::*;
 
-   import "DPI-C" context task test_main(output int unsigned exit_code);
+   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args);
    import "DPI-C" context task int_handler(input int unsigned int_num);
    import "DPI-C" context function void  host_memory_putc(input longint unsigned addr, byte data);         // even though a int is used, only the lower 8b are used
    import "DPI-C" context function byte  host_memory_getc(input longint unsigned addr);

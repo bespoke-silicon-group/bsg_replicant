@@ -14,8 +14,8 @@ int test_rom () {
 
         rc = hb_mc_manycore_init(&mc, "manycore@test_rom", 0);
         if(rc != HB_MC_SUCCESS){
-		bsg_pr_test_err("Failed to initialize manycore device: %s\n",
-				hb_mc_strerror(rc));
+                bsg_pr_test_err("Failed to initialize manycore device: %s\n",
+                                hb_mc_strerror(rc));
                 return HB_MC_FAIL;
         }
 
@@ -28,10 +28,10 @@ int test_rom () {
         if(result != expected){
                 bsg_pr_test_err("Incorrect number of host credits. "
                                 "Got: %d, expected %d\n", result, expected);
-		bsg_pr_test_err("Have you programed your FPGA"
-				" (fpga-load-local-image)\n");
-		fail = 1;
-		goto cleanup; // Considered harmful
+                bsg_pr_test_err("Have you programed your FPGA"
+                                " (fpga-load-local-image)\n");
+                fail = 1;
+                goto cleanup; // Considered harmful
         }
 
         /* Read configuration and test values */
@@ -42,7 +42,7 @@ int test_rom () {
         if(result != expected){
                 bsg_pr_test_err("(COSIM) Incorrect Major Version Number. "
                                 "Got: %d, expected %d\n", result, expected);
-		fail = 1;
+                fail = 1;
         }
 #else
         minexpected = 0; maxexpected = 3;
@@ -53,13 +53,13 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for Major Version Number. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
-		fail = 1;
+                fail = 1;
         }
 #endif
-	bsg_pr_test_info("Read Major Version = %" PRIu32 ", "
-			 "Minor Version = %" PRIu32 "\n",
-			 hb_mc_config_get_version_major(config),
-			 hb_mc_config_get_version_minor(config));
+        bsg_pr_test_info("Read Major Version = %" PRIu32 ", "
+                         "Minor Version = %" PRIu32 "\n",
+                         hb_mc_config_get_version_major(config),
+                         hb_mc_config_get_version_minor(config));
 
         unexpected = 0;
         bsg_pr_test_info("Checking that the BaseJump STL Hash is not "
@@ -69,7 +69,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for BaseJump STL Hash. "
                                 "Got: 0x%x. (Should not be this value)\n",
                                 unexpected);
-		fail = 1;
+                fail = 1;
         }
 
         unexpected = 0;
@@ -80,7 +80,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for BSG Manycore Hash. "
                                 "Got: 0x%x. (Should not be this value)\n",
                                 unexpected);
-		fail = 1;
+                fail = 1;
         }
 
         unexpected = 0;
@@ -91,7 +91,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for BSG F1 Hash. "
                                 "Got: 0x%x. (Should not be this value)\n",
                                 unexpected);
-		fail = 1;
+                fail = 1;
         }
 
         dim = hb_mc_config_get_dimension_vcore(config);
@@ -104,7 +104,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for Network Y Dimension. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
-		fail = 1;
+                fail = 1;
         }
 
 
@@ -115,7 +115,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for Network X Dimension. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
-		fail = 1;
+                fail = 1;
         }
 
         dim = hb_mc_config_get_dimension_vcore(config);
@@ -129,7 +129,7 @@ int test_rom () {
         if(result != expected){
                 bsg_pr_test_err("Incorrect Network dimension. "
                                 "Got: %d, expected %d\n", result, expected);
-		fail = 1;
+                fail = 1;
         }
 
         dim = hb_mc_config_get_dimension_vcore(config);
@@ -143,7 +143,7 @@ int test_rom () {
         if(result != expected){
                 bsg_pr_test_err("Incorrect Network dimension. "
                                 "Got: %d, expected %d\n", result, expected);
-		fail = 1;
+                fail = 1;
         }
 
         host = hb_mc_config_get_host_interface(config);
@@ -156,7 +156,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for Host Interface Y Coordinate. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
-		fail = 1;
+                fail = 1;
         }
 
         minexpected = 0; maxexpected = hb_mc_dimension_get_x(dim) - 1;
@@ -167,7 +167,7 @@ int test_rom () {
                 bsg_pr_test_err("Unexpected value for Host Interface X Coordinate. "
                                 "Got: %d. Expected at least %d, at most %d\n",
                                 result, minexpected, maxexpected);
-		fail = 1;
+                fail = 1;
         }
 
         vcache_assoc       = hb_mc_config_get_vcache_ways(config);
@@ -202,11 +202,19 @@ cleanup:
 }
 
 #ifdef COSIM
-void test_main(uint32_t *exit_code) {
+void cosim_main(uint32_t *exit_code, char * args) {
+        // We aren't passed command line arguments directly so we parse them
+        // from *args. args is a string from VCS - to pass a string of arguments
+        // to args, pass c_args to VCS as follows: +c_args="<space separated
+        // list of args>"
+        int argc = get_argc(args);
+        char *argv[argc];
+        get_argv(args, argc, argv);
+
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
         bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
         int rc = test_rom();
@@ -215,7 +223,7 @@ void test_main(uint32_t *exit_code) {
         return;
 }
 #else
-int main() {
+int main(int argc, char **argv) {
         bsg_pr_test_info("test_rom Regression Test (F1)\n");
         int rc = test_rom();
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
