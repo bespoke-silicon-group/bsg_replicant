@@ -9,7 +9,6 @@ include $(REGRESSION_PATH)/spmd/Makefile.tests
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include $(TESTBENCH_PATH)/Makefile.common
 
-
 .DEFAULT_GOAL=cosim
 
 $(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv
@@ -24,7 +23,7 @@ $(USER_CLEAN_RULES): test_%.clean: %.clean
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .clean,,$@) clean
 
-$(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv: %.clean
+$(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv: $(CL_DIR)/Makefile.machine.include
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
@@ -33,4 +32,4 @@ $(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv: %.clean
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(dir $@) $(notdir $@)
+	$(MAKE) -C clean $(dir $@) $(notdir $@)

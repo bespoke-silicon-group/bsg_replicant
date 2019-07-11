@@ -89,7 +89,6 @@ int get_argc(char * args){
         while(*cur != '\0'){
                 if((last == ' ') && (last != *cur)){
                         count ++;
-                        printf("%s\n", cur);
                 }
                 last = *cur;
                 ++cur;

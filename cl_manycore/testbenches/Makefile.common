@@ -1,6 +1,8 @@
 # This Makefile Fragment enables cosimulation. Cosimulation defaults to VCS, but
 # Vivado can be used by setting USE_VIVADO=1 in the environment.
 
+.PHONY: cosim regression clean $(USER_RULES) $(USER_CLEAN_RULES)
+
 # NOTE: This file REQUIRES several variables to be set: 
 # 
 # SIM_PATH: The path to the directory where the simulation is run
@@ -80,21 +82,23 @@ include $(HARDWARE_PATH)/Makefile.include
 common.hardware: $(HARDWARE_TARGETS) 
 
 # To include a test in cosimulation, the user defines a list of tests in
-# COSIMULATION_TARGETS. Each test can also define a custom rule, <test_name>.rule
+# COSIMULATION_LOG_TARGETS. Each test can also define a custom rule, <test_name>.rule
 # that is run during compilation. These custom rules are useful for building
 # spmd or cuda binaries, for example.
 USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
 $(USER_RULES):
 
-
-# We build a list of COSIMULATION_TARGETS for the cosim and regression rules
+# We build a list of COSIMULATION_LOG_TARGETS for the cosim and regression rules
 # (below)
-COSIMULATION_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
+COSIMULATION_LOG_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
+$(COSIMULATION_LOG_TARGETS): %: $(SIM_PATH)/% 
+
+COSIMULATION_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test))
 $(COSIMULATION_TARGETS): %: $(SIM_PATH)/%
 
-cosim: $(COSIMULATION_TARGETS)
+cosim: $(COSIMULATION_LOG_TARGETS)
 
-regression: $(COSIMULATION_TARGETS)
+regression: $(COSIMULATION_LOG_TARGETS)
 	@pass=0;  total=0; \
 	echo ""; \
 	echo ""; \
@@ -124,14 +128,9 @@ regression: $(COSIMULATION_TARGETS)
 	echo ""; \
 	echo "===========================================================";
 
-.PHONY: cosim regression clean common.hardware %.rule
 
 clean: simulator.clean hardware.clean
 	@echo 
 
-ifeq ($(USE_VIVADO),1)
-include $(TESTBENCH_PATH)/Makefile.vivado
-else
 include $(TESTBENCH_PATH)/Makefile.vcs
-endif
 

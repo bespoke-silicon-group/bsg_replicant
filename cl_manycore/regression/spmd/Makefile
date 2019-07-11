@@ -21,7 +21,7 @@ $(USER_CLEAN_RULES): test_%.clean: %.clean
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .clean,,$@) clean
 
-$(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv: test_%.clean
+$(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv: $(CL_DIR)/Makefile.machine.include
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
