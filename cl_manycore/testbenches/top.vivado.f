@@ -69,7 +69,6 @@ ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_pkt_decode.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_manycore_link_to_cache.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_to_axi_rx.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_to_axi_tx.v
-${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_to_axi.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_dma.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_miss.v
 ${BSG_IP_CORES_DIR}/bsg_cache/bsg_cache_sbuf.v
@@ -163,6 +162,9 @@ ${BSG_MANYCORE_DIR}/v/vanilla_bean/fpu_int.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/fpu_float.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/fpu_float_aux.v
 ${BSG_MANYCORE_DIR}/v/vanilla_bean/vanilla_core.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/hash_function.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/hash_function_reverse.v
+${BSG_MANYCORE_DIR}/v/vanilla_bean/bsg_cache_to_axi_hashed.v
 
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint_standard.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_endpoint.v
@@ -174,8 +176,8 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_hetero_socket.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore_tile.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
 
-${BSG_MANYCORE_DIR}/v/bladerunner/bsg_manycore_wrapper.v
-${BSG_MANYCORE_DIR}/v/bladerunner/bsg_cache_wrapper_axi.v
+${CL_DIR}/hardware/bsg_manycore_wrapper.v
+${CL_DIR}/hardware/bsg_cache_wrapper_axi.v
 
 # Vivado library files
 #${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v

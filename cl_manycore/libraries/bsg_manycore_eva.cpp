@@ -258,6 +258,12 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 	return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
 }
 
+static uint32_t default_get_dram_max_x_coord(const hb_mc_config_t *cfg)
+{
+	hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
+        return hb_mc_dimension_get_x(dim);
+}
+
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
 {
 	hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
@@ -316,8 +322,8 @@ static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
  * Section                DRAM bit    -    EPA_top    -    X coord   -     block_offset   -     word_addressable
  * # of bits                 1                        -<---xdimlog-->-<-------------stripe_log----------------->
  * # of bits                          -<---------->         +         <----------------------------------------> = addrbits     
- * Stripe size (32)         [32]      -    [31:7]     -     [6:5]    -        [4:2]       -         [1:0]
- * No stripe                [32]      -       x       -    [31:30]   -        [29:2]      -         [1:0]
+ * Stripe size (32)         [31]      -    [30:7]     -     [6:5]    -        [4:2]       -         [1:0]
+ * No stripe (deprecated)   [31]      -      N/A      -    [30:29]   -        [28:2]      -         [1:0]
  * (i.e. stripe size = dram bank size = 0x800_0000)
  *
  * DRAM EPA  =  EPA_top + block_offset + word_addressible  
@@ -329,46 +335,63 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 				const hb_mc_eva_t *eva,
 				hb_mc_npa_t *npa, size_t *sz)
 {
-	uint32_t xmask, xdimlog, addrbits, shift, stripe_log, errmask;
-	size_t maxsz;
+	uint32_t xmask, xdimlog, dram_max_x_coord;
+        uint32_t  addrbits, shift, stripe_log, errmask;
+	size_t max_dram_sz, max_striped_block_size;
 	hb_mc_idx_t x, y;
 	hb_mc_epa_t epa;
 	hb_mc_dimension_t dim;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	dim = hb_mc_config_get_dimension_network(cfg);
 
-	xdimlog    = default_get_x_dimlog(cfg);
-	xmask      = default_get_dram_x_bitidx(cfg);
-        stripe_log = default_get_dram_stripe_size_log(mc);
-	shift = stripe_log + xdimlog;
+        xdimlog           = default_get_x_dimlog(cfg);
+	xmask             = default_get_dram_x_bitidx(cfg);
+        dram_max_x_coord  = default_get_dram_max_x_coord(cfg);
+        stripe_log        = default_get_dram_stripe_size_log(mc);
+	shift             = stripe_log + xdimlog;
 
+        // Calculate X coordinate of NPA
 	x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
+        if ( x > dram_max_x_coord) { 
+		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
+                           "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
+                           __func__, hb_mc_eva_addr(eva),
+                           x, dram_max_x_coord);
+		return HB_MC_INVALID;
+	}
+
+        // Calculate Y coordinate of NPA
+        // Y dimension is fixed at the cottom column
 	y = hb_mc_config_get_dram_y(cfg);
 
-	addrbits = default_get_dram_bitwidth(mc);
-	maxsz = 1 << addrbits;
+        
+        // Calculate the EPA portion of NPA
+        epa = (  (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log)) 
+                |(((hb_mc_eva_addr(eva) & MAKE_MASK(DEFAULT_DRAM_BITIDX)) >> shift ) << stripe_log));
 
-	// The EPA portion of an EVA is technically determined by addrbits
-	// above.  However, this creates undefined behavior when (addrbits + 1 +
+
+	// The EPA portion of an EVA is technically determined by EPA_top + 
+	// block_offset + word_addressible (refer to the comments above this function).
+	// However, this creates undefined behavior when (addrbits + 1 +
 	// xdimlog) != DEFAULT_DRAM_BITIDX, since there are unused bits between
 	// the x index and EPA.  To avoid really awful debugging, we check this
 	// situation.
+	addrbits = default_get_dram_bitwidth(mc);
+	max_dram_sz = 1 << addrbits;
 	errmask = MAKE_MASK(addrbits);
 
-	//epa = (hb_mc_eva_addr(eva) & errmask);
-
-	epa = (     (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log)) 
-                  | (((hb_mc_eva_addr(eva) >> (shift)) & MAKE_MASK(addrbits-stripe_log)) << stripe_log) );
-
-
-	if (epa >= maxsz){
+	if (epa >= max_dram_sz){
 		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. EPA requested is "
                            "outside of addressible range in DRAM.",
                            __func__, hb_mc_eva_addr(eva));
 		return HB_MC_INVALID;
 	}
 
-	*sz = maxsz - epa;
+
+        // Maximum permitted size to write starting from this epa is from 
+        // the block offset until the end of the striped block.
+        max_striped_block_size = 1 << stripe_log;
+        *sz = max_striped_block_size - (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log));
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "} sz = %08x. \n",
@@ -378,7 +401,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 		   hb_mc_npa_get_x(npa),
 		   hb_mc_npa_get_y(npa),
 		   hb_mc_npa_get_epa(npa),
-		   *sz);
+		   uint32_t(*sz));
 
 	return HB_MC_SUCCESS;
 }
@@ -445,7 +468,7 @@ static int default_eva_to_npa_dram_dep(const hb_mc_manycore_t *mc,
 		   hb_mc_npa_get_x(npa),
 		   hb_mc_npa_get_y(npa),
 		   hb_mc_npa_get_epa(npa),
-		   *sz);
+		   uint32_t(*sz));
 
 	return HB_MC_SUCCESS;
 }
@@ -623,6 +646,46 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
  * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
  */
 static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
+                                   const hb_mc_coordinate_t *origin,
+                                   const hb_mc_coordinate_t *tgt,
+                                   const hb_mc_npa_t *npa,
+                                   hb_mc_eva_t *eva,
+                                   size_t *sz)
+{
+        // build the eva
+        hb_mc_eva_t addr = 0;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        uint32_t stripe_log, xdimlog;
+
+        stripe_log = default_get_dram_stripe_size_log(mc); 
+        xdimlog    = default_get_x_dimlog(cfg);
+
+        // See comments on default_eva_to_npa_dram for clarification
+        addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
+        addr |= (hb_mc_npa_get_x(npa) << stripe_log); // Set the x coordinate
+        addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog)); // Set the EPA section
+        addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
+        *eva  = addr;
+
+        // this is lame but we are basically saying "you can write to this word only"
+        *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
+
+        return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Translate a global NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
+__attribute__((deprecated))
+static int default_npa_to_eva_dram_dep(hb_mc_manycore_t *mc,
                                    const hb_mc_coordinate_t *origin,
                                    const hb_mc_coordinate_t *tgt,
                                    const hb_mc_npa_t *npa,
