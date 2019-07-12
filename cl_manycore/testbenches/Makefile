@@ -14,6 +14,6 @@ $(TARGETS):
 
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
 clean: $(CLEAN_TARGETS)
-	rm *.log *.jou
+	rm -rf *.log *.jou
 $(CLEAN_TARGETS):
 	$(MAKE) -C $(basename $@) clean

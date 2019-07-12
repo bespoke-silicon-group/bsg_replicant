@@ -88,13 +88,18 @@ common.hardware: $(HARDWARE_TARGETS)
 USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
 $(USER_RULES):
 
+USER_CLEAN_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).clean)
+$(USER_CLEAN_RULES):
+
 # We build a list of COSIMULATION_LOG_TARGETS for the cosim and regression rules
 # (below)
 COSIMULATION_LOG_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
 $(COSIMULATION_LOG_TARGETS): %: $(SIM_PATH)/% 
+%.cosim.log: $(SIM_PATH)/%.cosim.log
 
 COSIMULATION_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test))
 $(COSIMULATION_TARGETS): %: $(SIM_PATH)/%
+test_unified_main: %: $(SIM_PATH)/%
 
 cosim: $(COSIMULATION_LOG_TARGETS)
 
@@ -129,7 +134,7 @@ regression: $(COSIMULATION_LOG_TARGETS)
 	echo "===========================================================";
 
 
-clean: simulator.clean hardware.clean
+clean: simulator.clean hardware.clean $(USER_CLEAN_RULES)
 	@echo 
 
 include $(TESTBENCH_PATH)/Makefile.vcs
