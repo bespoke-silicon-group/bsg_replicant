@@ -65,7 +65,9 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 	xdim_max = (1 << xlogsz_max);
 
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
+	//Temporarily removed this condition until it is cleared up. TODO: Fix.
+        //if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
+        if ((idx < HB_MC_COORDINATE_MIN)){
                 bsg_pr_err("%s: Invalid Device Dimension X %d: %s\n",
                            __func__, idx, error_init_help);
                 return HB_MC_INVALID;
