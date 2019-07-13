@@ -7,21 +7,45 @@
 #include "python_tests.h"
 
 int test_python(int argc, char **argv) {
-	Py_Initialize();
-	const char* test_name =
-		BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/"
-		BSG_STRINGIFY(BSG_TEST_NAME)".py";
-	PyObject *obj = Py_BuildValue("s", test_name);
-	FILE *fp = _Py_fopen_obj(obj, "r+");
+        int len;
+        const char *python_path = BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/";
+        char *test_name;
 
-	PyRun_SimpleFileEx(fp, test_name, 0);
+        struct arguments args = {NULL};
 
-	if (Py_FinalizeEx() < 0) {
-		exit(120);
-	}
-	fclose(fp);
+        argp_parse (&argp_name, argc, argv, 0, 0, &args);
+        test_name = args.testname;
+        bsg_pr_test_info("%s Regression Test\n", test_name);
 
-	return 0;
+        len = strlen(python_path) + strlen(test_name) + strlen(".py");
+
+        char program_path[len + 1], *ptr;
+        program_path[len] = '\0';
+        ptr = program_path;
+
+        strcpy(ptr, python_path);
+        ptr += strlen(python_path);
+
+        strcpy(ptr, test_name);
+        ptr += strlen(test_name);
+
+        strcpy(ptr, ".py");
+        ptr += strlen(".py");
+        *ptr = '\0';
+
+        Py_Initialize();
+
+        PyObject *obj = Py_BuildValue("s", program_path);
+        FILE *fp = _Py_fopen_obj(obj, "r+");
+
+        PyRun_SimpleFileEx(fp, program_path, 0);
+
+        if (Py_FinalizeEx() < 0) {
+                exit(120);
+        }
+        fclose(fp);
+
+        return 0;
 }
 
 #ifdef COSIM
@@ -35,21 +59,21 @@ void cosim_main(uint32_t *exit_code, char * args) {
         get_argv(args, argc, argv);
 
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_python Regression Test (COSIMULATION)\n");
-	int rc = test_python(argc, argv);
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+        bsg_pr_test_info("test_python Regression Test (COSIMULATION)\n");
+        int rc = test_python(argc, argv);
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main(int argc, char **argv) {
-	bsg_pr_test_info("test_python Regression Test (F1)\n");
-	int rc = test_python(argc, argv);
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("test_python Regression Test (F1)\n");
+        int rc = test_python(argc, argv);
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
