@@ -64,7 +64,7 @@ int test_manycore_eva () {
         config = hb_mc_manycore_get_config(&mc);
         dim = hb_mc_config_get_dimension_vcore(config);
 	dim_x = hb_mc_dimension_get_x(dim);
-	dram_x_offset = NETWORK_ADDRESS_BITS - DRAM_INDICATOR_WIDTH - ceil(log2(dim_x));
+	dram_x_offset = DRAM_STRIPE_WIDTH;
 
 	if(dim_x > GROUP_X_MAX){
 		bsg_pr_test_err("Manycore X dimension is larger than GROUP_X_MAX");
@@ -131,16 +131,18 @@ int test_manycore_eva () {
 
 			bsg_pr_test_info("Creating GLOBAL EVA: 0x%x\n", eva);
 		} else if (region == DRAM){
-			eva = rand() % DRAM_EPA_SIZE; // Small, but we'll deal.
-			tgt_epa = eva;
+			tgt_epa = rand() % DRAM_EPA_SIZE; // Small, but we'll deal.
 
 			tgt_x = (rand() % (dim_x - 1)) + origin_x;
 			tgt_y = hb_mc_config_get_dram_y(config);
 
-			eva = DRAM_INDICATOR | (tgt_x << dram_x_offset) | (eva);
+			eva = 	(  (tgt_epa & DRAM_STRIPE_MASK)
+				 | (tgt_x << dram_x_offset)
+				 | ((tgt_epa >> dram_x_offset) << ((int)(dram_x_offset + ceil(log2(dim_x)))))
+				 | DRAM_INDICATOR );
 
 			bsg_pr_test_info("Creating DRAM EVA: 0x%x\n", eva);
-			tgt_sz = (1 << dram_x_offset) - tgt_epa;
+			tgt_sz = (1 << dram_x_offset) - (tgt_epa & DRAM_STRIPE_MASK);
 		} else {
 			bsg_pr_test_err("Invalid Region number %d\n", region);
 			return HB_MC_FAIL;

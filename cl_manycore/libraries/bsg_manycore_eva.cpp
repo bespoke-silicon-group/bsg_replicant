@@ -381,9 +381,13 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 	errmask = MAKE_MASK(addrbits);
 
 	if (epa >= max_dram_sz){
-		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. EPA requested is "
-                           "outside of addressible range in DRAM.",
-                           __func__, hb_mc_eva_addr(eva));
+		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. "
+                           "Requested EPA 0x%08" PRIx32 " is outside of "
+                           "DRAM's addressable range 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva),
+                           epa,
+                           uint32_t(max_dram_sz));
 		return HB_MC_INVALID;
 	}
 
