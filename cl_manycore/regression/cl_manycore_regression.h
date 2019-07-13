@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <bsg_manycore_errno.h>
 #include <unistd.h>
+#include <argp.h>
 #ifdef VCS
 #include "svdpi.h"
 #endif
@@ -15,13 +16,13 @@
  * bsg_pr_test_info() a version of printf. All regression tests should prefer this function over direct stdio calls.
  */
 #define bsg_pr_test_info(fmt, ...)                                      \
-    do { printf("BSG INFO: " fmt, ##__VA_ARGS__); fflush(NULL); } while (0)
+        do { printf("BSG INFO: " fmt, ##__VA_ARGS__); fflush(NULL); } while (0)
 
 /**
  * bsg_pr_test_info() a version of printf(stderr,...). All regression tests should prefer this function over direct stdio calls.
  */
-#define bsg_pr_test_err(fmt, ...)                                      \
-    fprintf(stderr, BSG_RED("BSG ERR: " fmt), ##__VA_ARGS__)
+#define bsg_pr_test_err(fmt, ...)                                       \
+        fprintf(stderr, BSG_RED("BSG ERR: " fmt), ##__VA_ARGS__)
 
 /**
  * bsg_pr_test_pass_fail() prints a success/fail message depending on a test condition
@@ -84,13 +85,13 @@ void cosim_main(uint32_t *exit_code, char * args);
 // Given a string, determine the number of space-separated arguments
 static
 int get_argc(char * args){
-        char *cur = args, last=' ';
+        char *cur = args, prev=' ';
         int count = 1;
         while(*cur != '\0'){
-                if((last == ' ') && (last != *cur)){
+                if((prev == ' ') && (prev != *cur)){
                         count ++;
                 }
-                last = *cur;
+                prev = *cur;
                 ++cur;
         }
         return count;
@@ -106,7 +107,7 @@ void get_argv(char * args, int argc, char **argv){
         // with an extra null character for safety
         static char path[1025] = {'\0'};
 
-        readlink("/proc/self/exe", path, sizeof(path));
+        readlink("/proc/self/exe", path, sizeof(path) - 1);
         argv[0] = path;
         count ++;
 
@@ -119,13 +120,79 @@ void get_argv(char * args, int argc, char **argv){
         // libraries)
         while(*cur != '\0'){
                 if((prev == ' ') && (prev != *cur)){
-                    argv[count] = cur;
-                    count++;
+                        argv[count] = cur;
+                        count++;
                 }
                 prev = *cur;
                 if(*cur == ' ')
                         *cur = '\0';
                 cur++;
-        }       
+        }
 }
+
+static char doc[] = "A regression test for BSG Manycore on F1";
+
+struct arguments{
+        char *testname; // Path to RISC-V Manycore Binary
+};
+
+/*
+  args_doc: A description of the non-option command-line arguments that we
+  accept.
+*/
+static char desc_name[] = "<Test Name>";
+static char desc_none[] = "";
+static struct argp_option opts_name[] = {
+        {0, 'b', "TEST", 0, "Name of Manycore Test to Run"},
+        {0}};
+static struct argp_option opts_none[] = {{0}};
+
+static error_t parse_name (int key, char *arg, struct argp_state *state){
+        struct arguments *args = state->input;
+ 
+        switch (key) 
+                {
+                case 'b':
+                        args->testname = arg;
+                        break;
+                case ARGP_KEY_ARG:
+                        if (state->arg_num == 0){
+                                args->testname = arg;
+                        }
+                        if (state->arg_num > 1){
+                                bsg_pr_test_err("Too Many Arguments provided!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                case ARGP_KEY_END:
+                        if (!args->testname){
+                                bsg_pr_test_err("Executable path not provided!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                default:
+                        return ARGP_ERR_UNKNOWN;
+                }
+        return 0;
+}
+
+static error_t parse_none (int key, char *arg, struct argp_state *state){
+        struct arguments *args = state->input;
+ 
+        switch (key) 
+                {
+                case ARGP_KEY_ARG:
+                        bsg_pr_test_err("Too Many Arguments provided!\n");
+                        argp_usage(state);
+                        break;
+                default:
+                        return ARGP_ERR_UNKNOWN;
+                }
+        return 0;
+}
+
+static struct argp argp_name = {opts_name, parse_name, desc_name, doc};
+static struct argp argp_none = {opts_none, parse_none, desc_none, doc};
+
+
 #endif

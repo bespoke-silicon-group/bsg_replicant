@@ -55,7 +55,7 @@ CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_request_packet_id.cpp
 CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_origin_eva_map.cpp
 
 LDFLAGS  +=
-CFLAGS   += -std=c99 -std=c++11
+CFLAGS   += -std=c99 -g -std=c++11
 CDEFINES += -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
 CDEFINES += -D_BSD_SOURCE
 INCLUDES += -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)

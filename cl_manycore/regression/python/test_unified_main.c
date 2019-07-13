@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "python_tests.h"
 
-int test_python() {
+int test_python(int argc, char **argv) {
 	Py_Initialize();
 	const char* test_name =
 		BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/"
@@ -40,15 +40,15 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	svSetScope(scope);
 #endif
 	bsg_pr_test_info("test_python Regression Test (COSIMULATION)\n");
-	int rc = test_python();
+	int rc = test_python(argc, argv);
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
-int main(int argc, char ** argv) {
+int main(int argc, char **argv) {
 	bsg_pr_test_info("test_python Regression Test (F1)\n");
-	int rc = test_python();
+	int rc = test_python(argc, argv);
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }

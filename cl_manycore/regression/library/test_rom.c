@@ -1,7 +1,7 @@
 #include "test_rom.h"
 #include <inttypes.h>
 
-int test_rom () {
+int test_rom (int argc, char **argv) {
         int rc = 0, fail = 0;
         uint32_t unexpected, expected, minexpected, maxexpected, result;
         uint32_t vcache_assoc, vcache_sets, vcache_block_words;
@@ -11,6 +11,15 @@ int test_rom () {
         hb_mc_coordinate_t host;
         const hb_mc_config_t *config;
         hb_mc_manycore_t mc = {0};
+
+        char *path;
+        struct arguments args = {NULL};
+
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+
+        if(rc != HB_MC_SUCCESS){
+                return rc;
+        }
 
         rc = hb_mc_manycore_init(&mc, "manycore@test_rom", 0);
         if(rc != HB_MC_SUCCESS){
@@ -196,7 +205,7 @@ int test_rom () {
         }
 
 cleanup:
-        hb_mc_manycore_exit(&mc);
+        rc = hb_mc_manycore_exit(&mc);
 
         return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
@@ -208,16 +217,18 @@ void cosim_main(uint32_t *exit_code, char * args) {
         // to args, pass c_args to VCS as follows: +c_args="<space separated
         // list of args>"
         int argc = get_argc(args);
-        char *argv[argc];
+        char *argv[argc + 1];
         get_argv(args, argc, argv);
+        argv[argc] = NULL;
 
 #ifdef VCS
+
         svScope scope;
         scope = svGetScopeFromName("tb");
         svSetScope(scope);
 #endif
         bsg_pr_test_info("test_rom Regression Test (COSIMULATION)\n");
-        int rc = test_rom();
+        int rc = test_rom(argc, argv);
         *exit_code = rc;
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return;
@@ -225,7 +236,7 @@ void cosim_main(uint32_t *exit_code, char * args) {
 #else
 int main(int argc, char **argv) {
         bsg_pr_test_info("test_rom Regression Test (F1)\n");
-        int rc = test_rom();
+        int rc = test_rom(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }

@@ -37,7 +37,7 @@ static int read_program_file(const char *file_name, unsigned char **file_data, s
 	return HB_MC_SUCCESS;
 }
 
-int test_unified_main (char * test_name) {
+int test_unified_main (int argc, char **argv) {
 	unsigned char *program_data;
 	size_t program_size;
 	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
@@ -45,6 +45,13 @@ int test_unified_main (char * test_name) {
 
 	const char *spmd_path = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/";
 	const char *spmd_name = "/main.riscv";
+        char *test_name;
+        struct arguments args = {NULL};
+
+        argp_parse (&argp_name, argc, argv, 0, 0, &args);
+        test_name = args.testname;
+        bsg_pr_test_info("%s Regression Test\n", test_name);
+
 	len = strlen(spmd_path) + strlen(test_name) + strlen(spmd_name);
 
 	char program_path[len + 1], *ptr;
@@ -170,23 +177,19 @@ void cosim_main(uint32_t *exit_code, char * args) {
         char *argv[argc];
         get_argv(args, argc, argv);
 
-	char * test_name = argv[1];
 #ifdef VCS
 	svScope scope;
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-        bsg_pr_test_info("%s Regression Test (COSIMULATION)\n", test_name);
-	int rc = test_unified_main(test_name);
+	int rc = test_unified_main(argc, argv);
         *exit_code = rc;
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return;
 }
 #else
 int main(int argc, char ** argv) {
-	char * test_name = argv[1];
-        bsg_pr_test_info("%s Regression Test (F1)\n", test_name);
-	int rc = test_unified_main(test_name);
+	int rc = test_unified_main(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }
