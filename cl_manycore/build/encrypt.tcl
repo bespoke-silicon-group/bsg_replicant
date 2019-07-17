@@ -52,8 +52,8 @@ file copy -force $CL_DIR/hardware/cl_id_defines.vh                            $T
 file copy -force $CL_DIR/hardware/cl_manycore.sv                              $TARGET_DIR
 file copy -force $CL_DIR/hardware/bsg_bladerunner_configuration.v             $TARGET_DIR
 
-file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_manycore_wrapper.v       $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_cache_wrapper_axi.v      $TARGET_DIR
+file copy -force $CL_DIR/hardware/bsg_manycore_wrapper.v                      $TARGET_DIR
+file copy -force $CL_DIR/hardware/bsg_cache_wrapper_axi.v                     $TARGET_DIR
 
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_links.vh                   $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v                      $TARGET_DIR
@@ -68,7 +68,6 @@ file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt_decode.v           $T
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_manycore_link_to_cache.v     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi_rx.v            $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi_tx.v            $TARGET_DIR
-file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi.v               $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v                  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_miss.v                 $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_sbuf.v                 $TARGET_DIR
@@ -161,6 +160,9 @@ file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/fpu_int.v                     
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/fpu_float.v                       $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/fpu_float_aux.v                   $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/vanilla_core.v                    $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hash_function.v                   $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hash_function_reverse.v           $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_cache_to_axi_hashed.v         $TARGET_DIR
 
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_addr.vh                           $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_packet.vh                         $TARGET_DIR
@@ -173,9 +175,6 @@ file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_mesh_node.v                   
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_hetero_socket.v                   $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_tile.v                            $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore.v                                 $TARGET_DIR
-
-file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_manycore_wrapper.v             $TARGET_DIR
-file copy -force $BSG_MANYCORE_DIR/v/bladerunner/bsg_cache_wrapper_axi.v            $TARGET_DIR
 
 file copy -force $VIVADO_IP_DIR/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v        $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v        $TARGET_DIR

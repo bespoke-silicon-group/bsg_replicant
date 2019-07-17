@@ -436,9 +436,9 @@ static int default_eva_to_npa_dram_dep(const hb_mc_manycore_t *mc,
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 	dim = hb_mc_config_get_dimension_network(cfg);
 
-	xdimlog    = default_get_x_dimlog(cfg);
-	xmask      = default_get_dram_x_bitidx(cfg);
-	shift      = default_get_dram_x_shift_dep(mc);
+	xdimlog = default_get_x_dimlog(cfg);
+	xmask   = default_get_dram_x_bitidx(cfg);
+	shift   = default_get_dram_x_shift_dep(mc);
 
 	x = (hb_mc_eva_addr(eva) >> shift) & xmask;
 	y = hb_mc_config_get_dram_y(cfg);
