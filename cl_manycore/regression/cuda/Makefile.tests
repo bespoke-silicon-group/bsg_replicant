@@ -23,6 +23,7 @@ INDEPENDENT_MAIN_TESTS += test_vec_add_shared_mem
 INDEPENDENT_MAIN_TESTS += test_shared_mem
 INDEPENDENT_MAIN_TESTS += test_shared_mem_load_store
 INDEPENDENT_MAIN_TESTS += test_matrix_mul
+INDEPENDENT_MAIN_TESTS += test_scalar_print 
 #INDEPENDENT_MAIN_TESTS += test_matrix_mul_shared_mem
 
 ## Floating Point Tests
