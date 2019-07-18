@@ -306,6 +306,88 @@ static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
         }
 }
 
+// See comments on default_eva_to_npa_dram 
+static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
+                                        const hb_mc_config_t *cfg,
+                                        const hb_mc_eva_t *eva,
+                                        hb_mc_idx_t *x) { 
+        uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+        uint32_t xmask = default_get_dram_x_bitidx(cfg);
+        uint32_t dram_max_x_coord = default_get_dram_max_x_coord(cfg);
+
+        *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
+        if ( *x > dram_max_x_coord) { 
+                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
+                           "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
+                           __func__, hb_mc_eva_addr(eva),
+                           *x, dram_max_x_coord);
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}
+
+// See comments on default_eva_to_npa_dram 
+static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
+                                        const hb_mc_config_t *cfg,
+                                        const hb_mc_eva_t *eva,
+                                        hb_mc_idx_t *y) { 
+        // Y dimension is fixed at the bottom column
+        *y = hb_mc_config_get_dram_y(cfg);
+        return HB_MC_SUCCESS;
+}
+
+// See comments on default_eva_to_npa_dram 
+static int default_eva_get_epa_dram (const hb_mc_manycore_t *mc,
+                                     const hb_mc_config_t *cfg,
+                                     const hb_mc_eva_t *eva,
+                                     hb_mc_epa_t *epa,
+                                     size_t *sz) { 
+ 
+        uint32_t xdimlog    = default_get_x_dimlog(cfg);
+        uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+	uint32_t shift      = stripe_log + xdimlog;
+
+        // Refer to comments on default_eva_to_npa_dram for more clarification
+        // DRAM EPA  =  EPA_top + block_offset + word_addressible  
+        // Construct (block_offset + word_addressible) portion of EPA
+        // i.e. the <stripe_log> lower bits of the EVA 
+        *epa = (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log));
+        // Construct the EPA_top portion of EPA and append to lower bits  
+        // Shift right by (stripe_log + x_dimlog) and shift left by stripe_log
+        // to remove the X_coord porition of EVA 
+        *epa |= (((hb_mc_eva_addr(eva) & MAKE_MASK(DEFAULT_DRAM_BITIDX)) >> shift ) << stripe_log);
+
+
+	// The EPA portion of an EVA is technically determined by EPA_top + 
+	// block_offset + word_addressible (refer to the comments above this function).
+	// However, this creates undefined behavior when (addrbits + 1 +
+	// xdimlog) != DEFAULT_DRAM_BITIDX, since there are unused bits between
+	// the x index and EPA.  To avoid really awful debugging, we check this
+	// situation.
+	uint32_t addrbits = default_get_dram_bitwidth(mc);
+	uint32_t errmask = MAKE_MASK(addrbits);
+	size_t max_dram_sz = 1 << addrbits;
+
+	if (*epa >= max_dram_sz){
+		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. "
+                           "Requested EPA 0x%08" PRIx32 " is outside of "
+                           "DRAM's addressable range 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva),
+                           *epa,
+                           uint32_t(max_dram_sz));
+		return HB_MC_INVALID;
+	}
+
+
+        // Maximum permitted size to write starting from this epa is from 
+        // the block offset until the end of the striped block.
+        uint32_t max_striped_block_size = 1 << stripe_log;
+        *sz = max_striped_block_size - (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log));
+
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
  * size (contiguous bytes following the specified EVA)
@@ -330,72 +412,45 @@ static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
  * DRAM NPA  =  <Y coord, X coord, DRAM EPA>
  */
 static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
-				const hb_mc_coordinate_t *o,
-				const hb_mc_coordinate_t *src,
-				const hb_mc_eva_t *eva,
-				hb_mc_npa_t *npa, size_t *sz)
+                                   const hb_mc_coordinate_t *o,
+                                   const hb_mc_coordinate_t *src,
+                                   const hb_mc_eva_t *eva,
+                                   hb_mc_npa_t *npa,
+                                   size_t *sz)
 {
-	uint32_t xmask, xdimlog, dram_max_x_coord;
-        uint32_t  addrbits, shift, stripe_log, errmask;
-	size_t max_dram_sz, max_striped_block_size;
-	hb_mc_idx_t x, y;
-	hb_mc_epa_t epa;
-	hb_mc_dimension_t dim;
+        int rc;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-	dim = hb_mc_config_get_dimension_network(cfg);
+        hb_mc_idx_t x,y;
+        hb_mc_epa_t epa;
 
-        xdimlog           = default_get_x_dimlog(cfg);
-	xmask             = default_get_dram_x_bitidx(cfg);
-        dram_max_x_coord  = default_get_dram_max_x_coord(cfg);
-        stripe_log        = default_get_dram_stripe_size_log(mc);
-	shift             = stripe_log + xdimlog;
-
-        // Calculate X coordinate of NPA
-	x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
-        if ( x > dram_max_x_coord) { 
-		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
-                           "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
-                           __func__, hb_mc_eva_addr(eva),
-                           x, dram_max_x_coord);
-		return HB_MC_INVALID;
-	}
-
-        // Calculate Y coordinate of NPA
-        // Y dimension is fixed at the cottom column
-	y = hb_mc_config_get_dram_y(cfg);
-
-        
-        // Calculate the EPA portion of NPA
-        epa = (  (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log)) 
-                |(((hb_mc_eva_addr(eva) & MAKE_MASK(DEFAULT_DRAM_BITIDX)) >> shift ) << stripe_log));
-
-
-	// The EPA portion of an EVA is technically determined by EPA_top + 
-	// block_offset + word_addressible (refer to the comments above this function).
-	// However, this creates undefined behavior when (addrbits + 1 +
-	// xdimlog) != DEFAULT_DRAM_BITIDX, since there are unused bits between
-	// the x index and EPA.  To avoid really awful debugging, we check this
-	// situation.
-	addrbits = default_get_dram_bitwidth(mc);
-	max_dram_sz = 1 << addrbits;
-	errmask = MAKE_MASK(addrbits);
-
-	if (epa >= max_dram_sz){
-		bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. "
-                           "Requested EPA 0x%08" PRIx32 " is outside of "
-                           "DRAM's addressable range 0x%08" PRIx32 ".\n",
+        // Calculate X coordinate of NPA from EVA
+        rc = default_eva_get_x_coord_dram (mc, cfg, eva, &x); 
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("%s: failed to generate x coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
-                           hb_mc_eva_addr(eva),
-                           epa,
-                           uint32_t(max_dram_sz));
-		return HB_MC_INVALID;
-	}
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        // Calculate Y coordinate of NPA from EVA
+        rc = default_eva_get_y_coord_dram (mc, cfg, eva, &y);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("%s: failed to generate y coordinate from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
 
 
-        // Maximum permitted size to write starting from this epa is from 
-        // the block offset until the end of the striped block.
-        max_striped_block_size = 1 << stripe_log;
-        *sz = max_striped_block_size - (hb_mc_eva_addr(eva) & MAKE_MASK(stripe_log));
+        // Calculate EPA Portion of NPA from EVA
+        rc = default_eva_get_epa_dram (mc, cfg, eva, &epa, sz);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("%s: failed to generate npa from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
 	*npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
 	bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "} sz = %08x. \n",
@@ -410,6 +465,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
 	return HB_MC_SUCCESS;
 }
 
+ 
 /**
  * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
  * size (contiguous bytes following the specified EVA)
