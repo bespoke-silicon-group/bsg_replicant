@@ -1,5 +1,5 @@
-#ifndef TEST_PACKET_H
-#define TEST_PACKET_H
+#ifndef TEST_TILE_INFO_H
+#define TEST_TILE_INFO_H
 
 
 #include <stdio.h>
