@@ -18,11 +18,13 @@ module cosim_wrapper();
 
    initial begin
       int exit_code;
+      string args;
       longint t;
+      $value$plusargs("c_args=%s", args);
       
       tb.power_up();
 
-      tb.test_main(exit_code);
+      tb.cosim_main(exit_code, args);
       
       #50ns;
        
@@ -32,8 +34,6 @@ module cosim_wrapper();
       else 
           $display("BSG COSIM PASS: Test passed!");
           
-       $display(t);
-      
       $finish;
    end
 
