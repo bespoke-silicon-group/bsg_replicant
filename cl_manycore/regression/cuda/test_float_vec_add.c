@@ -221,7 +221,7 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	return;
 }
 #else
-int main() {
+int main(int argc, char ** argv) {
 	bsg_pr_test_info("test_float_vec_add Regression Test (F1)\n");
 	int rc = kernel_float_vec_add();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
