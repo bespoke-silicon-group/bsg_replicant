@@ -3,7 +3,12 @@ INCLUDES += -I$(HDK_DIR)/common/software/include -I$(AWS_FPGA_REPO_DIR)/SDAccel/
 
 CFLAGS    := -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES)
 CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
-LDLIBS  := -lfpga_mgmt
+ifeq ($(COSIM), 1)
+CXXFLAGS  += -DCOSIM
+CFLAGS    += -DCOSIM
+else
+LDLIBS    := -lfpga_mgmt
+endif
 
 HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_tile.h

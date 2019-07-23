@@ -15,5 +15,11 @@ $(TARGETS):
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
 clean: $(CLEAN_TARGETS)
 	rm -rf *.log *.jou
+	rm -rf .cxl*
+	rm -rf *.bak
+
 $(CLEAN_TARGETS):
 	$(MAKE) -C $(basename $@) clean
+
+squeakyclean: clean
+	$(MAKE) -C library squeakyclean
