@@ -11,3 +11,5 @@ vc_hdrs.h
 *.vpd
 checkpoints
 *.log
+*.bak
+*.so
