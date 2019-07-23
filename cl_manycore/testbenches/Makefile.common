@@ -42,7 +42,7 @@ LDFLAGS  += -Wl,-rpath=$(TESTBENCH_PATH)
 LDFLAGS  += -L$(LIBRARIES_PATH) -lbsg_manycore_runtime
 LDFLAGS  += -Wl,-rpath=$(LIBRARIES_PATH)
 
-CFLAGS   += -g -std=c99 -Wall -Werror
+CFLAGS   += -g -std=c99 -Wall -Werror -O1
 CDEFINES += -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
 CDEFINES += -D_BSD_SOURCE -DVCS
 
