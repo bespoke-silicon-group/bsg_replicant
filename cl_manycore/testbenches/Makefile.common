@@ -66,8 +66,6 @@ VDEFINES += ECC_ADDR_HI=0
 VDEFINES += RND_ECC_WEIGHT=0
 endif
 
-
-VDEFINES+=VCS
 VLOGAN_DEFINES = $(foreach def,$(VDEFINES),+define+"$(def)")
 
 VLOGAN_FILELIST := $(TESTBENCH_PATH)/top.vcs.f
@@ -86,8 +84,12 @@ VCS_VFLAGS := -M +lint=TFIPC-L \
 	-ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 	-sverilog -full64 +memcbk -licqueue -lca -v2005 
 
+# NOTE: undef_vcs_macro is a HACK!!!
+# The only place where `ifdef VCS is used is in tb.sv in the aws-fpga repository.
+# This macro guards against generating vpd files, which slow down simulation.
 ifeq ($(TURBO), 1)
-VCS_VFLAGS += +rad +NO_WAVES,-debug_pp
+VCS_VFLAGS += +rad -undef_vcs_macro
+VLOGAN_VFLAGS += -undef_vcs_macro
 else 
 VCS_VFLAGS += -debug_pp
 endif
