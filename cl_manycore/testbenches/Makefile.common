@@ -41,6 +41,9 @@ AXI_PROT_CHECK   ?= 0
 TURBO            ?= 0
 DEBUG            ?= 0
 
+# We parallelize VCS compilation, but we leave a few cores on the table.
+NPROCS = `nproc --ignore 8`
+
 # Makefile.hdk defines HDK-specific variables (and causes an error if
 # hdk_setup.sh has not been sourced from aws-fpga)
 include $(CL_DIR)/Makefile.hdk
@@ -64,6 +67,7 @@ INCLUDES   += -I$(LIBRARIES_PATH)
 
 CDEFINES   += -DCOSIM -DVCS
 CXXDEFINES += -DCOSIM -DVCS
+CXXFLAGS   += -lstdc++
 
 # VDEFINES are used during Verilog compilation
 ifeq ($(AXI_PROT_CHECK),1)
@@ -87,10 +91,10 @@ VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
                    -full64 -lca -v2005 +v2k +lint=TFIPC-L -assert svaext
 
 VCS_CFLAGS   += $(foreach def,$(CFLAGS),-CFLAGS "$(def)")
-VCS_CFLAGS   += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
+VCS_CDEFINES += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
 VCS_INCLUDES += $(foreach def,$(INCLUDES),-CFLAGS "$(def)")
 VCS_CXXFLAGS += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
-VCS_CXXFLAGS += $(foreach def,$(CXXDEFINES),-CFLAGS "$(def)")
+VCS_CXXDEFINES += $(foreach def,$(CXXDEFINES),-CFLAGS "$(def)")
 VCS_LDFLAGS  += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS   += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
                 -timescale=1ps/1ps -sverilog -full64 +memcbk -licqueue
@@ -153,7 +157,8 @@ $(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
 	XILINX_IP=$(XILINX_IP) \
 	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
 		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
-		-l $@
+		-l $@.prelim
+	mv $@.prelim $@
 
 # The applications link against the BSG Manycore Libraries, and the FPGA
 # Management libaries, so we build them as necessary. They should not need to be
@@ -184,13 +189,13 @@ $(TESTBENCH_PATH)/libfpga_mgmt.so:
 # dependencies
 $(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log \
 		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-	vcs tb glbl -j8 $(WRAPPER_NAME) $< \
+	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
-		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
+		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
 
 $(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log \
 		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-	vcs tb glbl -j8 $(WRAPPER_NAME) $< \
+	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp -cpp \
 		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
 
@@ -263,13 +268,13 @@ regression: $(COSIMULATION_LOG_TARGETS)
 
 clean: $(HARDWARE_CLEANS) $(USER_CLEAN_RULES)
 	rm -rf $(SIM_PATH)/AN.DB $(SIM_PATH)/DVEfiles
-	rm -rf $(SIM_PATH)/*.daidir $(SIM_PATH)/csrc 
+	rm -rf $(SIM_PATH)/*.daidir $(SIM_PATH)/*.tmp
 	rm -rf $(SIM_PATH)/64 $(SIM_PATH)/.cxl*
 	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou 
 	rm -rf $(SIM_PATH)/synopsys_sim.setup 
 	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd 
 	rm -rf $(SIM_PATH)/vc_hdrs.h
-	rm -rf .vlogansetup*
+	rm -rf .vlogansetup* stack.info*
 	rm -rf $(REGRESSION_TESTS) test_unified_main
 
 # squeakyclean removes any VCS outputs that can be reused between cosimulation
