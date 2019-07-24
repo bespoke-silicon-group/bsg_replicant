@@ -7,6 +7,7 @@ CL_MANYCORE_RELEASE_VERSION  ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0
 DEBUG ?= 
 AXI_MEMORY_MODEL ?= 1
 AXI_PROT_CHECK ?=
+TURBO ?= 1
 
 all: $(SIM_TARGETS) $(BUILD_TARGETS)
 
@@ -22,7 +23,7 @@ hardware:
 	$(MAKE) -C hardware $@ 
 
 cosim: 
-	$(MAKE) -C testbenches $@ DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) AXI_PROT_CHECK=$(AXI_PROT_CHECK)
+	$(MAKE) -C testbenches $@ DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO)
 
 clean:
 	$(MAKE) -C testbenches clean 
