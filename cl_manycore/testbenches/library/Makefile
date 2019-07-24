@@ -7,7 +7,9 @@ include $(REGRESSION_PATH)/library/Makefile.tests
 # The HDK Makefile must come before Makefile.common to override AWS' (broken) clean
 # HDK_COMMON_DIR is set by running `source hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
-
 include $(TESTBENCH_PATH)/Makefile.common
+# Makefile.rules must come after Makefile.common so that <test_name>.rule and
+# <test_name>.clean are not overwritten.
+include $(REGRESSION_PATH)/library/Makefile.rules
 
 .DEFAULT_GOAL=regression

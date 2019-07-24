@@ -131,7 +131,7 @@ int test_unified_main (int argc, char **argv) {
 
 	usleep(100);
 
-	while (true) {
+	while (1) {
 		hb_mc_packet_t pkt;
 		int err;
 		bsg_pr_dbg("Waiting for finish packet\n");

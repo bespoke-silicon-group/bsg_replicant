@@ -31,8 +31,11 @@
 #                   speed. Default: 1
 # AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: Not Defined
 # DEBUG: Opens the GUI during cosimulation. Default: Not Defined
-# TURBO: Disables VPD generation, and enables optimizations to improve
-#        runtime. Default: 0
+# TURBO: Disables VPD generation. Default: 0
+# 
+# If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
+# This is a COMPILATION ONLY option. Any subsequent runs, without compilation
+# will retain this setting
 AXI_MEMORY_MODEL ?= 1
 AXI_PROT_CHECK   ?= 0
 TURBO            ?= 0
@@ -95,11 +98,17 @@ VCS_VFLAGS   += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
 # NOTE: undef_vcs_macro is a HACK!!! 
 # `ifdef VCS is only used is in tb.sv top-level in the aws-fpga repository. This
 # macro guards against generating vpd files, which slow down simulation.
-ifeq ($(TURBO), 1)
+ifeq ($(EXTRA_TURBO), 1)
 VCS_VFLAGS    += +rad -undef_vcs_macro
 VLOGAN_VFLAGS += -undef_vcs_macro
 else 
 VCS_VFLAGS    += -debug_pp
+endif
+
+ifeq ($(TURBO), 1)
+SIM_ARGS += +NO_WAVES
+else 
+SIM_ARGS +=
 endif
 
 ifeq ($(DEBUG), 1)
@@ -210,11 +219,11 @@ $(USER_CLEAN_RULES):
 # all rules in UNIFIED_MAIN_TESTS
 INDEPENDENT_MAIN_RULES=$(foreach tgt,$(INDEPENDENT_MAIN_TESTS),$(SIM_PATH)/$(tgt).cosim.log)
 $(INDEPENDENT_MAIN_RULES): $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/% %.rule .FORCE
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd \
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
 		+c_args="$(C_ARGS)" | tee $@
 
 $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/test_unified_main %.rule .FORCE
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd \
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
 		+c_args="$(subst .cosim.log,,$(notdir $@))" | tee $@
 
 # We build a list of COSIMULATION_LOG_TARGETS for the regression rule (below)

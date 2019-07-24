@@ -8,5 +8,8 @@ include $(REGRESSION_PATH)/python/Makefile.tests
 # HDK_COMMON_DIR is set by running `source hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include $(TESTBENCH_PATH)/Makefile.common
+# Makefile.rules must come after Makefile.common so that <test_name>.rule and
+# <test_name>.clean are not overwritten.
+include $(REGRESSION_PATH)/python/Makefile.rules
 
 .DEFAULT_GOAL=regression
