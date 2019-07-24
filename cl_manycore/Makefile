@@ -23,8 +23,8 @@ regression:
 hardware:
 	$(MAKE) -C hardware $@ 
 
-cosim: 
-	$(MAKE) -C testbenches $@ DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) \
+cosim: hardware
+	$(MAKE) -C testbenches regression DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) \
 		AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO) EXTRA_TURBO=$(EXTRA_TURBO)
 
 clean:

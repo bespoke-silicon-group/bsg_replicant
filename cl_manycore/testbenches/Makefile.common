@@ -164,10 +164,6 @@ $(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
 # Management libaries, so we build them as necessary. They should not need to be
 # re-built every time a regression test is compiled, so they are cleaned with
 # `squeakyclean` 
-#
-# TODO: LIBRARIES_PATH should have a Makefile.common that defines a
-# libary.targets that we could call. Of course, that's a lot of effort and this
-# works...
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so: $(TESTBENCH_PATH)/libfpga_mgmt.so
 	CFLAGS="-DCOSIM" CXXFLAGS="-DCOSIM" LDFLAGS="$(LIBFPGA_LDFLAGS)" \
 		$(MAKE) -C $(LIBRARIES_PATH) build 
@@ -223,11 +219,11 @@ $(USER_CLEAN_RULES):
 # matches with all tests in INDEPENDENT_MAIN_TESTS, and the second matches with
 # all rules in UNIFIED_MAIN_TESTS
 INDEPENDENT_MAIN_RULES=$(foreach tgt,$(INDEPENDENT_MAIN_TESTS),$(SIM_PATH)/$(tgt).cosim.log)
-$(INDEPENDENT_MAIN_RULES): $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/% %.rule .FORCE
+$(INDEPENDENT_MAIN_RULES): $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/% %.rule #.FORCE
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
 		+c_args="$(C_ARGS)" | tee $@
 
-$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/test_unified_main %.rule .FORCE
+$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/test_unified_main %.rule #.FORCE
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
 		+c_args="$(subst .cosim.log,,$(notdir $@))" | tee $@
 
@@ -236,35 +232,37 @@ COSIMULATION_LOG_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosi
 $(COSIMULATION_LOG_TARGETS): %: $(SIM_PATH)/% 
 %.cosim.log: $(SIM_PATH)/%.cosim.log
 
-regression: $(COSIMULATION_LOG_TARGETS)
-	@pass=0;  total=0; \
-	echo ""; \
-	echo ""; \
-	echo "Parsing $(REGRESSION_TESTS_TYPE) Regression Test results..."; \
-	echo ""; \
-	echo ""; \
+regression: $(SIM_PATH)/regression.log 
+
+$(SIM_PATH)/regression.log: $(COSIMULATION_LOG_TARGETS) 
+	@pass=0; total=0; \
+	echo ""| tee $@; \
+	echo ""| tee -a $@; \
+	echo "Parsing $(REGRESSION_TESTS_TYPE) Regression Test results..."| tee -a $@; \
+	echo ""| tee -a $@; \
+	echo ""| tee -a $@; \
 	for target in $(basename $(basename $?)); do \
 		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
-			echo "FAIL: Regression Test $$target failed!"; \
+			echo "FAIL: Regression Test $$target failed!"| tee -a $@; \
 		else \
-			echo "PASS: Regression Test $$target passed!"; \
+			echo "PASS: Regression Test $$target passed!"| tee -a $@; \
 			let "pass+=1"; \
 		fi; \
 		let "total+=1"; \
 	done; \
 	if [ ! $$pass == $$total ]; then \
-		echo "==================================================="; \
-		echo "" ; \
-		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"; \
-		echo "" ; \
-		echo "==================================================="; \
-		exit 1; \
+		echo "==================================================="| tee -a $@; \
+		echo "" | tee -a $@; \
+		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"| tee -a $@; \
+		echo "" | tee -a $@; \
+		echo "==================================================="| tee -a $@; \
+		exit 1| tee -a $@; \
 	fi; \
-	echo "==========================================================="; \
-	echo ""; \
-	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"; \
-	echo ""; \
-	echo "===========================================================";
+	echo "==========================================================="| tee -a $@; \
+	echo ""| tee -a $@; \
+	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"| tee -a $@; \
+	echo ""| tee -a $@; \
+	echo "==========================================================="| tee -a $@;
 
 clean: $(HARDWARE_CLEANS) $(USER_CLEAN_RULES)
 	rm -rf $(SIM_PATH)/AN.DB $(SIM_PATH)/DVEfiles

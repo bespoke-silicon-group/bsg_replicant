@@ -13,3 +13,4 @@ checkpoints
 *.log
 *.bak
 *.so
+*.tmp
