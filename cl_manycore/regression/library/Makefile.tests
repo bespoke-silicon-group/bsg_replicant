@@ -34,4 +34,9 @@ CXXDEFINES += $(DEFINES)
 FLAGS     = -g -Wall -Werror
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS)
-LDFLAGS  += -lbsg_manycore_runtime -lfpga_mgmt -lm
+LDFLAGS  += -lbsg_manycore_runtime -lm
+
+.PHONY: help
+
+help:
+	@echo "To make a specific test run: make <testname> and then execute the resulting binary"

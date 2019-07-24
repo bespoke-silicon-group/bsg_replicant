@@ -8,7 +8,4 @@
 
 #include "../cl_manycore_regression.h"
 
-#define __BSG_STRINGIFY(arg) #arg
-#define BSG_STRINGIFY(arg) __BSG_STRINGIFY(arg)
-
 #endif // __CUDA_TESTS_H

@@ -9,4 +9,4 @@ include $(REGRESSION_PATH)/python/Makefile.tests
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include $(TESTBENCH_PATH)/Makefile.common
 
-.DEFAULT_GOAL=cosim
+.DEFAULT_GOAL=regression

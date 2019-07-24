@@ -194,5 +194,7 @@ static error_t parse_none (int key, char *arg, struct argp_state *state){
 static struct argp argp_name = {opts_name, parse_name, desc_name, doc};
 static struct argp argp_none = {opts_none, parse_none, desc_none, doc};
 
+#define __BSG_STRINGIFY(arg) #arg
+#define BSG_STRINGIFY(arg) __BSG_STRINGIFY(arg)
 
 #endif

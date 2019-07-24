@@ -9,26 +9,4 @@ include $(REGRESSION_PATH)/spmd/Makefile.tests
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include $(TESTBENCH_PATH)/Makefile.common
 
-.DEFAULT_GOAL=cosim
-
-$(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv
-
-test_%.clean:
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/$(subst .clean,,$(subst test_,,$@)) clean
-
-$(BSG_MANYCORE_DIR)/software/spmd/%/main.riscv: $(CL_DIR)/Makefile.machine.include
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(dir $@) clean $(notdir $@)
+.DEFAULT_GOAL=regression
