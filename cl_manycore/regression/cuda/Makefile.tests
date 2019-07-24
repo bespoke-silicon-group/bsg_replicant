@@ -20,6 +20,7 @@ INDEPENDENT_MAIN_TESTS += test_vec_add_parallel
 INDEPENDENT_MAIN_TESTS += test_vec_add_parallel_multi_grid
 INDEPENDENT_MAIN_TESTS += test_vec_add_serial_multi_grid
 INDEPENDENT_MAIN_TESTS += test_vec_add_shared_mem
+INDEPENDENT_MAIN_TESTS += test_max_pool2d
 INDEPENDENT_MAIN_TESTS += test_shared_mem
 INDEPENDENT_MAIN_TESTS += test_shared_mem_load_store
 INDEPENDENT_MAIN_TESTS += test_matrix_mul
