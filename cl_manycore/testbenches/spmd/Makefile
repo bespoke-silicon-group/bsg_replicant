@@ -1,5 +1,5 @@
 include ../../Makefile.environment
-TESTS_PATH=$(REGRESSION_PATH)/spmd
+SRC_PATH=$(REGRESSION_PATH)/spmd
 SIM_PATH=$(TESTBENCH_PATH)/spmd
 
 include $(CL_DIR)/Makefile.machine.include

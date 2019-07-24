@@ -2,135 +2,223 @@
 #
 # NOTE: This file REQUIRES several variables to be set: 
 # 
-# SIM_PATH: The path to the directory where the simulation is run
-# TESTS_PATH: The path to the directory containing the .c files for testing
-# TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
 # COSIM_REGRESSION_TESTS: Names of all available regression tests.
-# 
+#
+# (The following variables are typically set by the including Makefile)
+#
+# SIM_PATH: The path to the directory where the simulation is run
+# SRC_PATH: The path to the directory containing the .c or cpp test files
+#
+# (The following variables are typically set by Makefile.environment, which is
+# included by the top-level makefile.)
+#
+# TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
 #
-# (These varibles are typically set by Makefile.environment, which is included
-# by the top-level makefile.)
+# (The following are set by $(CL_DIR)/Makefile.hdk, which will fail if
+# hdk_setup.sh has not been run)
 #
 # HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
 # AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
 # HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 #
-#
 # NOTE: This file has several optional "arguments" that are passed as Variables
 #
-#
-# AXI_MEMORY_MODEL: Use an SRAM-like Memory that increases simulation speed. Default: 1
+# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
+#                   speed. Default: 1
 # AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: Not Defined
 # DEBUG: Opens the GUI during cosimulation. Default: Not Defined
+# TURBO: Disables VPD generation, and enables optimizations to improve
+#        runtime. Default: 0
 AXI_MEMORY_MODEL ?= 1
+AXI_PROT_CHECK   ?= 0
+TURBO            ?= 0
+DEBUG            ?= 0
 
-SIMULATOR = VCS
-
-# Makefile.hdk defines HDK-specific variables (and causes an error if hdk_setup.sh 
-# has not been sourced)
+# Makefile.hdk defines HDK-specific variables (and causes an error if
+# hdk_setup.sh has not been sourced from aws-fpga)
 include $(CL_DIR)/Makefile.hdk
+
+# $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
+# of rules that generate hardware for cosimulation and computation. It also defines
+# $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
+include $(HARDWARE_PATH)/Makefile.include
 
 # Name of the cosimulation wrapper system verilog file.
 WRAPPER_NAME = cosim_wrapper
 
-LDFLAGS  += -L$(TESTBENCH_PATH) -lfpga_mgmt
-LDFLAGS  += -Wl,-rpath=$(TESTBENCH_PATH)
-LDFLAGS  += -L$(LIBRARIES_PATH) -lbsg_manycore_runtime
-LDFLAGS  += -Wl,-rpath=$(LIBRARIES_PATH)
+# libfpga_mgmt will be compiled in $(TESTBENCH_PATH)
+LDFLAGS    += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH)
 
-CFLAGS   += -g -std=c99 -Wall -Werror -O1
-CDEFINES += -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
-CDEFINES += -D_BSD_SOURCE -DVCS
+# libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
+LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
+# The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
+INCLUDES   += -I$(LIBRARIES_PATH) 
 
-CXXFLAGS += -g -std=c++11 -Wall -Werror
-CXXDEFINES += $(CDEFINES)
-
-INCLUDES += -I$(C_SDK_USR_INC_DIR) -I$(C_SDK_USR_UTILS_DIR)
-INCLUDES += -I$(C_COMMON_DIR)/include -I$(SIM_PATH) -I$(LIBRARIES_PATH) 
-INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
+CDEFINES   += -DCOSIM -DVCS
+CXXDEFINES += -DCOSIM -DVCS
 
 # VDEFINES are used during Verilog compilation
 ifeq ($(AXI_PROT_CHECK),1)
-VDEFINES += ENABLE_PROTOCOL_CHK
+VDEFINES   += ENABLE_PROTOCOL_CHK
 endif
+
 ifeq ($(AXI_MEMORY_MODEL),1)
-VDEFINES += AXI_MEMORY_MODEL=1
-VDEFINES += ECC_DIRECT_EN
-VDEFINES += RND_ECC_EN
-VDEFINES += ECC_ADDR_LO=0
-VDEFINES += ECC_ADDR_HI=0
-VDEFINES += RND_ECC_WEIGHT=0
+VDEFINES   += AXI_MEMORY_MODEL=1
+VDEFINES   += ECC_DIRECT_EN
+VDEFINES   += RND_ECC_EN
+VDEFINES   += ECC_ADDR_LO=0
+VDEFINES   += ECC_ADDR_HI=0
+VDEFINES   += RND_ECC_WEIGHT=0
 endif
 
-VLOGAN_DEFINES = $(foreach def,$(VDEFINES),+define+"$(def)")
+VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
+VLOGAN_FILELIST += $(TESTBENCH_PATH)/top.vcs.f
+VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
+                   -sverilog +systemverilogext+.svh +systemverilogext+.sv \
+                   +libext+.sv +libext+.v +libext+.vh +libext+.svh \
+                   -full64 -lca -v2005 +v2k +lint=TFIPC-L -assert svaext
 
-VLOGAN_FILELIST := $(TESTBENCH_PATH)/top.vcs.f
-VLOGAN_VFLAGS = -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps -sverilog \
-	+systemverilogext+.svh +systemverilogext+.sv \
-	+libext+.sv +libext+.v +libext+.vh +libext+.svh \
-	-full64 -lca -v2005 +v2k +lint=TFIPC-L -assert svaext 
-
-VCS_CFLAGS = $(foreach def,$(CFLAGS),-CFLAGS "$(def)")
-VCS_CFLAGS += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
+VCS_CFLAGS   += $(foreach def,$(CFLAGS),-CFLAGS "$(def)")
+VCS_CFLAGS   += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
 VCS_INCLUDES += $(foreach def,$(INCLUDES),-CFLAGS "$(def)")
 VCS_CXXFLAGS += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
 VCS_CXXFLAGS += $(foreach def,$(CXXDEFINES),-CFLAGS "$(def)")
-VCS_LDFLAGS = $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS := -M +lint=TFIPC-L \
-	-ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
-	-sverilog -full64 +memcbk -licqueue -lca -v2005 
+VCS_LDFLAGS  += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
+VCS_VFLAGS   += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
+                -timescale=1ps/1ps -sverilog -full64 +memcbk -licqueue
 
-# NOTE: undef_vcs_macro is a HACK!!!
-# The only place where `ifdef VCS is used is in tb.sv in the aws-fpga repository.
-# This macro guards against generating vpd files, which slow down simulation.
+# NOTE: undef_vcs_macro is a HACK!!! 
+# `ifdef VCS is only used is in tb.sv top-level in the aws-fpga repository. This
+# macro guards against generating vpd files, which slow down simulation.
 ifeq ($(TURBO), 1)
-VCS_VFLAGS += +rad -undef_vcs_macro
+VCS_VFLAGS    += +rad -undef_vcs_macro
 VLOGAN_VFLAGS += -undef_vcs_macro
 else 
-VCS_VFLAGS += -debug_pp
+VCS_VFLAGS    += -debug_pp
 endif
 
 ifeq ($(DEBUG), 1)
-VCS_VFLAGS += -gui
-VCS_VFLAGS += -R
-VCS_VFLAGS += -debug_all
+VCS_VFLAGS    += -gui
+VCS_VFLAGS    += -R
+VCS_VFLAGS    += -debug_all
 endif
 
-.PHONY: cosim regression clean $(USER_RULES) $(USER_CLEAN_RULES)
-.PHONY: simulator.clean squeakyclean .FORCE
+.PHONY: regression clean squeakyclean .FORCE $(USER_RULES) $(USER_CLEAN_RULES)
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%
 
-# $(HARDWARE_TARGETS) is defined by Makefile.include in the #(HARDWARE_PATH)
+# vcs_simlibs is generated by running Vivado. It contains all of the hardware
+# Xilinx hardware library files necessary for simulation. This rule also
+# generates synopsys_sim.setup, but it generates it in the run directory, so we
+# cd to $(TESTBENCH_PATH) so that vcs_simlibs can be reused across invocations
+# of cosimulation.
+#
+# Since this output is reused between cosimulation invocations (spmd, library,
+# cuda, etc), it must be removed with `make squeakyclean`
+SIMLIBS_PATH=$(TESTBENCH_PATH)/vcs_simlibs
+$(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
+	cd $(TESTBENCH_PATH) && TESTBENCH_PATH=$(TESTBENCH_PATH) \
+	vivado -mode batch -source $<
+
+# synopsys_sim.setup contains absolute paths to all the compiled Xilinx IP.
+# It gets generated by the $(SIMLIBS_PATH) rule, so we just copy it.
+$(TESTBENCH_PATH)/synopsys_sim.setup: | $(SIMLIBS_PATH)
+$(SIM_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
+	cp $< $@
+
+
+# $(HARDWARE_TARGETS) is defined by Makefile.include in the $(HARDWARE_PATH)
 # directory. This rule generates all of the hardware files necessary for
 # simulation
-include $(HARDWARE_PATH)/Makefile.include
-common.hardware: $(HARDWARE_TARGETS) 
+# TODO: It is possible to compile these once.
+$(SIM_PATH)/compile.vlogan.log: $(SIM_PATH)/synopsys_sim.setup
+$(SIM_PATH)/compile.vlogan.log: $(CL_DIR)/Makefile.machine.include
+$(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	XILINX_IP=$(XILINX_IP) \
+	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
+		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
+		-l $@
+
+# The applications link against the BSG Manycore Libraries, and the FPGA
+# Management libaries, so we build them as necessary. They should not need to be
+# re-built every time a regression test is compiled, so they are cleaned with
+# `squeakyclean` 
+#
+# TODO: LIBRARIES_PATH should have a Makefile.common that defines a
+# libary.targets that we could call. Of course, that's a lot of effort and this
+# works...
+$(LIBRARIES_PATH)/libbsg_manycore_runtime.so: $(TESTBENCH_PATH)/libfpga_mgmt.so
+	$(MAKE) -C $(LIBRARIES_PATH) build COSIM=1
+	ln -s $@.1.0 $@.1
+	ln -s $@.1.0 $@
+
+$(TESTBENCH_PATH)/libfpga_mgmt.so:
+	$(CC) -std=c11 -D_GNU_SOURCE -fPIC -I$(C_SDK_USR_INC_DIR) \
+		-I$(C_SDK_USR_UTILS_DIR) -I$(C_COMMON_DIR)/include \
+		-I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include \
+		$(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
+		$(C_COMMON_DIR)/src/fpga_pci_sv.c    \
+		-shared -Wl,-soname,$(notdir $@) -o $@ 
+
+# VCS Generates an executable file by compiling the $(SRC_PATH)/%.c or
+# $(SRC_PATH)/%.cpp file that corresponds to the target test in the
+# $(SRC_PATH) directory. To allow users to attach test-specific makefile
+# rules, each test has a corresponding <test_name>.rule that can have additional
+# dependencies
+$(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log \
+		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
+	vcs tb glbl -j8 $(WRAPPER_NAME) $< \
+		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
+		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
+
+$(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log \
+		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
+	vcs tb glbl -j8 $(WRAPPER_NAME) $< \
+		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
+		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
+
+$(COSIM_REGRESSION_TESTS): %: $(SIM_PATH)/%
+test_unified_main: %: $(SIM_PATH)/%
 
 # To include a test in cosimulation, the user defines a list of tests in
-# COSIMULATION_LOG_TARGETS. Each test can also define a custom rule, <test_name>.rule
-# that is run during compilation. These custom rules are useful for building
-# spmd or cuda binaries, for example.
+# COSIMULATION_REGRESSION_TESTS. The following two lines defines a rule named
+# <test_name>.rule that is a dependency in <test_name>.cosim.log. These custom
+# rules can be used to build RISC-V binaries for SPMD or CUDA tests.
 USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
 $(USER_RULES):
 
+# Likewise - we define a custom rule for <test_name>.clean
 USER_CLEAN_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).clean)
 $(USER_CLEAN_RULES):
 
-# We build a list of COSIMULATION_LOG_TARGETS for the cosim and regression rules
-# (below)
+# .FORCE is used to ensure that the <test_name>.cosim.log rules are always re-run.
+.FORCE:
+
+# The following rules generate the <test_name>.cosim.log file by running the
+# <test_name> executable. The output .vpd file will be named <test_name>.vpd.
+#
+# The two following rules appear similar but they are not! The first rule
+# matches with all tests in INDEPENDENT_MAIN_TESTS, and the second matches with
+# all rules in UNIFIED_MAIN_TESTS
+INDEPENDENT_MAIN_RULES=$(foreach tgt,$(INDEPENDENT_MAIN_TESTS),$(SIM_PATH)/$(tgt).cosim.log)
+$(INDEPENDENT_MAIN_RULES): $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/% %.rule .FORCE
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd \
+		+c_args="$(C_ARGS)" | tee $@
+
+$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/test_unified_main %.rule .FORCE
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd \
+		+c_args="$(subst .cosim.log,,$(notdir $@))" | tee $@
+
+# We build a list of COSIMULATION_LOG_TARGETS for the regression rule (below)
 COSIMULATION_LOG_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
 $(COSIMULATION_LOG_TARGETS): %: $(SIM_PATH)/% 
 %.cosim.log: $(SIM_PATH)/%.cosim.log
-
-COSIMULATION_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test))
-$(COSIMULATION_TARGETS): %: $(SIM_PATH)/%
-test_unified_main: %: $(SIM_PATH)/%
-
-cosim: $(COSIMULATION_LOG_TARGETS)
 
 regression: $(COSIMULATION_LOG_TARGETS)
 	@pass=0;  total=0; \
@@ -162,93 +250,7 @@ regression: $(COSIMULATION_LOG_TARGETS)
 	echo ""; \
 	echo "===========================================================";
 
-# vcs_simlibs is generated by running Vivado. It contains all of the hardware
-# Xilinx hardware library files necessary for simulation. This rule also
-# generates synopsys_sim.setup, but it generates it in the run directory, so we
-# cd to $(TESTBENCH_PATH) so that vcs_simlibs can be reused across invocations
-# of cosimulation.
-#
-# Since this output is reused between cosimulation invocations (spmd, library,
-# cuda, etc), it must be removed with `make squeakyclean`
-SIMLIBS_PATH=$(TESTBENCH_PATH)/vcs_simlibs
-$(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
-	cd $(TESTBENCH_PATH) && TESTBENCH_PATH=$(TESTBENCH_PATH) \
-	vivado -mode batch -source $<
-
-# synopsys_sim.setup contains absolute paths to all the compiled Xilinx IP.
-# It gets generated by the $(SIMLIBS_PATH) rule, so we just copy it.
-$(TESTBENCH_PATH)/synopsys_sim.setup: | $(SIMLIBS_PATH)
-$(SIM_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
-	cp $< $@
-
-# TODO: It is possible to compile these once.
-$(SIM_PATH)/compile.vlogan.log: $(SIM_PATH)/synopsys_sim.setup
-$(SIM_PATH)/compile.vlogan.log: $(CL_DIR)/Makefile.machine.include
-$(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	XILINX_IP=$(XILINX_IP) \
-	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
-		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
-		-l $@
-
-# The applications link against the BSG Manycore Libraries, and the FPGA
-# Management libaries, so we build them as necessary. They should not need to be
-# re-built every time a regression test is compiled, so they are cleaned with
-# `squeakyclean` 
-#
-# TODO: LIBRARIES_PATH should have a Makefile.common that defines a
-# libary.targets that we could call. Of course, that's a lot of effort and this
-# works...
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so: $(TESTBENCH_PATH)/libfpga_mgmt.so
-	$(MAKE) -C $(LIBRARIES_PATH) build COSIM=1
-	ln -s $@.1.0 $@.1
-	ln -s $@.1.0 $@
-
-$(TESTBENCH_PATH)/libfpga_mgmt.so:
-	$(CC) -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES) \
-		$(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
-		$(C_COMMON_DIR)/src/fpga_pci_sv.c -shared \
-		-Wl,-soname,$(notdir $@) -o $@ \
-		$(OBJECTS) $(LDLIBS)
-
-# VCS Generates an executable file by compiling the $(TESTS_PATH)/%.c or
-# $(TESTS_PATH)/%.cpp file that corresponds to the target test in the
-# $(TESTS_PATH) directory. To allow users to attach test-specific makefile
-# rules, each test has a corresponding <test_name>.rule that can be called.
-$(SIM_PATH)/%: $(TESTS_PATH)/%.c $(CSOURCES) $(SIM_PATH)/compile.vlogan.log \
-		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-	vcs tb glbl -j8 $(WRAPPER_NAME) $< $(CSOURCES) \
-		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
-		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
-
-$(SIM_PATH)/%: $(TESTS_PATH)/%.cpp $(CSOURCES) $(SIM_PATH)/compile.vlogan.log \
-		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-	vcs tb glbl -j8 $(WRAPPER_NAME) $< $(CSOURCES) \
-		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
-		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
-
-# Run the executable to generate the log file. The output vpd file will be named
-# <test_name>.vpd. 
-#
-# The two following rules appear similar but they are not! The first rule
-# matches with all tests in INDEPENDENT_MAIN_TESTS, and the second matches with
-# all rules in UNIFIED_MAIN_TESTS
-#
-# .FORCE is used to ensure that the cosim.log rules are always re-run.
-.FORCE: 
-
-INDEPENDENT_MAIN_RULES=$(foreach tgt,$(INDEPENDENT_MAIN_TESTS),$(SIM_PATH)/$(tgt).cosim.log)
-$(INDEPENDENT_MAIN_RULES): $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/% %.rule .FORCE
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd \
-		+c_args="$(C_ARGS)" | tee $@
-
-$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/test_unified_main %.rule .FORCE
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd \
-		+c_args="$(subst .cosim.log,,$(notdir $@))" | tee $@
-
-clean: hardware.clean $(USER_CLEAN_RULES)
+clean: $(HARDWARE_CLEANS) $(USER_CLEAN_RULES)
 	rm -rf $(SIM_PATH)/AN.DB $(SIM_PATH)/DVEfiles
 	rm -rf $(SIM_PATH)/*.daidir $(SIM_PATH)/csrc 
 	rm -rf $(SIM_PATH)/64 $(SIM_PATH)/.cxl*
@@ -259,7 +261,7 @@ clean: hardware.clean $(USER_CLEAN_RULES)
 	rm -rf .vlogansetup*
 	rm -rf $(REGRESSION_TESTS) test_unified_main
 
-# squeakyclean removes any VCS outputs that can be reused betweeen cosimulation
+# squeakyclean removes any VCS outputs that can be reused between cosimulation
 # invocations.
 squeakyclean:
 	rm -rf $(TESTBENCH_PATH)/synopsys_sim.setup

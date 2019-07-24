@@ -1,5 +1,5 @@
 include ../../Makefile.environment
-TESTS_PATH=$(REGRESSION_PATH)/cuda/
+SRC_PATH=$(REGRESSION_PATH)/cuda/
 SIM_PATH=$(TESTBENCH_PATH)/cuda/
 
 include $(CL_DIR)/Makefile.machine.include
