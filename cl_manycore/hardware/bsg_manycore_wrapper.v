@@ -20,6 +20,7 @@ module bsg_manycore_wrapper
     , parameter load_id_width_p="inv"
     , parameter vcache_size_p="inv"
     , parameter vcache_block_size_in_words_p="inv"
+    , parameter vcache_sets_p="inv"
  
     , parameter num_cache_p="inv"
 
@@ -74,6 +75,7 @@ module bsg_manycore_wrapper
     ,.load_id_width_p(load_id_width_p)
     ,.vcache_size_p(vcache_size_p)
     ,.vcache_block_size_in_words_p(vcache_block_size_in_words_p)
+    ,.vcache_sets_p(vcache_sets_p)
   ) manycore (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
