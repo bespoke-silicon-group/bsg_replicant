@@ -1,76 +1,80 @@
 TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
 
-CFLAGS += -Werror
-CXXFLAGS += -Werror
-# each target in INDEPENDENT_MAIN_TESTS needs to build its .o from a .c and .h of the same name
+# each target in INDEPENDENT_MAIN_TESTS needs to build its .o from a
+# .c and .h of the same name
 OBJECTS = $(foreach tgt, $(INDEPENDENT_MAIN_TESTS), $(tgt).o)
 %.o: %.c %.h
-	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) -c -o $@ $< 
+	$(CC) -c $< -o $@ $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
 
 # ... or a .cpp and .hpp of the same name
 %.o: %.cpp %.hpp
-	$(CXX) $(CXXFLAGS) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $<
 
-# each target in UNIFIED_MAIN_TESTS meeds to build its .o from
-# test_unified_main.c and test_unified_main.h
-$(foreach tgt, $(UNIFIED_MAIN_TESTS), $(tgt).o): %.o: test_unified_main.c test_unified_main.h
-	$(CC) $(CFLAGS) -DBSG_TEST_NAME=$(patsubst %.o,%,$@) -c -o $@ $< 
+$(UNIFIED_MAIN_TESTS): %: test_unified_main
+test_unified_main: LD=$(CC)
+test_unified_main: %: %.o
+	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
 
-# each target '%' in INDEPENDENT_MAIN_TESTS relies on an object file '%.o'
+# each target '%' in INDEPENDENT_MAIN_TESTS relies on an object file
+# '%.o'
+$(INDEPENDENT_MAIN_TESTS): LD=$(CC)
 $(INDEPENDENT_MAIN_TESTS): %: %.o
-# each target '%' in UNIFIED_MAIN_TESTS relies on an object file 'test_unified_main.o'
-$(UNIFIED_MAIN_TESTS): %: %.o
-# linking rule for all targets
-$(REGRESSION_TESTS): LD:=$(CC)
-$(REGRESSION_TESTS): % : %.rule
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+
+build.clean: 
+	rm -rf *.o $(INDEPENDENT_MAIN_TESTS) test_unified_main
 
 # To include a test in regression, the user defines a list of tests in
 # REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
 # that is run during compilation. These custom rules are useful for building
 # spmd or cuda binaries, for example.
-USER_RULES=$(foreach tgt,$(REGRESSION_TESTS),$(tgt).rule)
-USER_CLEAN_RULES=$(foreach tgt,$(REGRESSION_TESTS),$(tgt).clean)
-.PHONY: $(USER_RULES) $(USER_CLEAN_RULES)
+USER_RULES:=$(addsuffix .rule,$(REGRESSION_TESTS))
+$(USER_RULES):
+USER_CLEAN_RULES:=$(addsuffix .clean,$(REGRESSION_TESTS))
+$(USER_CLEAN_RULES):
 
-all: $(REGRESSION_TESTS)
+.PHONY: build.clean
+.PHONY: $(USER_RULES) $(USER_CLEAN_RULES) regression regression.clean
 
-regression: $(REGRESSION_TESTS)
-	@pass=0; total=0; failed=""; passed=""; \
-	echo ""; \
-	echo ""; \
-	echo "Running $(REGRESSION_TESTS_TYPE) Regression Tests..."; \
-	echo ""; \
-	echo ""; \
-	for target in $?; do \
-		sudo ./$$target 2>&1 | tee $$target.regression.log ; \
-		if [ $${PIPESTATUS[0]} -ne 0 ] ; then \
-			echo "FAIL: Regression Test $$target failed!"; \
-			failed="$$failed $$target"; \
-		else \
-			echo "PASS: Regression Test $$target passed!"; \
-			passed="$$passed $$target"; \
+$(addsuffix .log,$(INDEPENDENT_MAIN_TESTS)): %.log: % %.rule
+	sudo ./$< | tee $@
+
+%.log: test_unified_main %.rule
+	sudo ./$< $(basename $@) | tee $@
+
+regression.clean: $(USER_CLEAN_RULES)
+	rm -f *.log
+
+clean: regression.clean build.clean
+
+regression: regression.log
+regression.log: $(addsuffix .log, $(REGRESSION_TESTS))
+	@pass=0; total=0; \
+	echo ""| tee $@; \
+	echo ""| tee -a $@; \
+	echo "Parsing $(REGRESSION_TESTS_TYPE) Regression Test results..."| tee -a $@; \
+	echo ""| tee -a $@; \
+	echo ""| tee -a $@; \
+	for target in $(basename $(basename $?)); do \
+		if grep "BSG REGRESSION TEST .*PASSED.*" $$target.log > /dev/null; then \
+			echo "PASS: Regression Test $$target passed!"| tee -a $@; \
 			let "pass+=1"; \
+		else \
+			echo "FAIL: Regression Test $$target failed!"| tee -a $@; \
 		fi; \
 		let "total+=1"; \
 	done; \
 	if [ ! $$pass == $$total ]; then \
-		echo "==================================================="; \
-		echo "" ; \
-		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"; \
-		echo "     Passed Tests: $$passed"; \
-		echo "     Failed Tests: $$failed"; \
-		echo "" ; \
-		echo "==================================================="; \
+		echo "==================================================="| tee -a $@; \
+		echo "" | tee -a $@; \
+		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) tests passed"| tee -a $@; \
+		echo "" | tee -a $@; \
+		echo "==================================================="| tee -a $@; \
 		exit 1; \
 	fi; \
-	echo "==========================================================="; \
-	echo ""; \
-	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"; \
-	echo ""; \
-	echo "===========================================================";
+	echo "==========================================================="| tee -a $@; \
+	echo ""| tee -a $@; \
+	echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"| tee -a $@; \
+	echo ""| tee -a $@; \
+	echo "==========================================================="| tee -a $@;
 
-.PHONY: regression all clean 
-
-clean: $(USER_CLEAN_RULES)
-	rm -f *.o $(REGRESSION_TESTS) *.regression.log
