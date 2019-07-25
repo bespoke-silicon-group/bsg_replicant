@@ -1,8 +1,8 @@
 REGRESSION_TESTS_TYPE = library
 
-UNIFIED_MAIN_TESTS = test_unified_main
+UNIFIED_MAIN_TESTS = 
 
-INDEPENDENT_MAIN_TESTS = test_rom
+INDEPENDENT_MAIN_TESTS += test_rom
 INDEPENDENT_MAIN_TESTS += test_struct_size
 INDEPENDENT_MAIN_TESTS += test_vcache_flush
 INDEPENDENT_MAIN_TESTS += test_vcache_simplified
@@ -32,6 +32,6 @@ CDEFINES   += $(DEFINES)
 CXXDEFINES += $(DEFINES)
 
 FLAGS     = -g -Wall
-CFLAGS   += -std=c99 $(FLAGS) -Werror # Don't put in CXX because of VCS...
+CFLAGS   += -std=c99 $(FLAGS) 
 CXXFLAGS += -std=c++11 $(FLAGS)
-LDFLAGS  += -lbsg_manycore_runtime -lm
+LDFLAGS  += -lbsg_manycore_runtime -lm 

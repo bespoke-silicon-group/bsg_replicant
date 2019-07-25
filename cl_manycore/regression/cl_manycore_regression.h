@@ -86,6 +86,8 @@ extern "C" {
 void cosim_main(uint32_t *exit_code, char * args);
 }
 #endif
+
+#ifdef COSIM
 // Given a string, determine the number of space-separated arguments
 static
 int get_argc(char * args){
@@ -100,6 +102,7 @@ int get_argc(char * args){
         }
         return count;
 }
+
 static
 void get_argv(char * args, int argc, char **argv){
         int count = 0;
@@ -133,7 +136,7 @@ void get_argv(char * args, int argc, char **argv){
                 cur++;
         }
 }
-
+#endif // COSIM
 static char doc[] = "A regression test for BSG Manycore on F1";
 
 struct arguments{
@@ -181,7 +184,6 @@ static error_t parse_name (int key, char *arg, struct argp_state *state){
 }
 
 static error_t parse_none (int key, char *arg, struct argp_state *state){
-        struct arguments *args = (struct arguments *)state->input;
  
         switch (key) 
                 {

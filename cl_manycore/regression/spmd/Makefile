@@ -1,6 +1,6 @@
 include ../../Makefile.environment
-include Makefile.tests
 include $(CL_DIR)/Makefile.machine.include
+include Makefile.tests
 include $(REGRESSION_PATH)/Makefile.common
 include Makefile.rules
 
