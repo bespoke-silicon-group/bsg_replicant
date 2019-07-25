@@ -474,6 +474,7 @@ bsg_manycore_wrapper #(
   ,.num_cache_p(num_cache_p)
   ,.vcache_size_p(vcache_size_p)
   ,.vcache_block_size_in_words_p(block_size_in_words_p)
+  ,.vcache_sets_p(sets_p)
 ) manycore_wrapper (
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
