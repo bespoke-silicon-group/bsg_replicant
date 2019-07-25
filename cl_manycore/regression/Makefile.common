@@ -30,7 +30,7 @@ build.clean:
 # spmd or cuda binaries, for example.
 USER_RULES:=$(addsuffix .rule,$(REGRESSION_TESTS))
 $(USER_RULES):
-USER_CLEAN_RULES:=$(addsuffix .clean,$(REGRESSION_TESTS))
+USER_CLEAN_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).clean)
 $(USER_CLEAN_RULES):
 
 .PHONY: build.clean
