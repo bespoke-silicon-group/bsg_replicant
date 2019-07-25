@@ -152,7 +152,7 @@ static struct argp_option opts_name[] = {
 static struct argp_option opts_none[] = {{0}};
 
 static error_t parse_name (int key, char *arg, struct argp_state *state){
-        struct arguments *args = (arguments *)state->input;
+        struct arguments *args = (struct arguments *)state->input;
  
         switch (key) 
                 {
@@ -181,7 +181,7 @@ static error_t parse_name (int key, char *arg, struct argp_state *state){
 }
 
 static error_t parse_none (int key, char *arg, struct argp_state *state){
-        struct arguments *args = (arguments *)state->input;
+        struct arguments *args = (struct arguments *)state->input;
  
         switch (key) 
                 {
