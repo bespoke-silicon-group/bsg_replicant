@@ -1,5 +1,5 @@
 include ../../Makefile.environment
-TESTS_PATH=$(REGRESSION_PATH)/cuda/
+SRC_PATH=$(REGRESSION_PATH)/cuda/
 SIM_PATH=$(TESTBENCH_PATH)/cuda/
 
 include $(CL_DIR)/Makefile.machine.include
@@ -8,27 +8,8 @@ include $(REGRESSION_PATH)/cuda/Makefile.tests
 # HDK_COMMON_DIR is set by running `source hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 include $(TESTBENCH_PATH)/Makefile.common
+# Makefile.rules must come after Makefile.common so that <test_name>.rule and
+# <test_name>.clean are not overwritten.
+include $(REGRESSION_PATH)/cuda/Makefile.rules
 
-.DEFAULT_GOAL=cosim
-
-$(USER_RULES): test_%.rule: $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/main.riscv
-
-test_%.clean:
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/$(subst .clean,,$(subst test_,,$@)) clean
-
-$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/%/main.riscv: $(CL_DIR)/Makefile.machine.include
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	$(MAKE) -C $(dir $@) clean $(notdir $@)
+.DEFAULT_GOAL=regression

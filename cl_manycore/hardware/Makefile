@@ -6,6 +6,6 @@ all: $(HARDWARE_TARGETS)
 hardware:all
 
 .PHONY: clean all hardware
-clean: hardware.clean
+clean: $(HARDWARE_CLEANS)
 
 

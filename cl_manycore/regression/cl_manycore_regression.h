@@ -1,5 +1,6 @@
 #ifndef _CL_MANYCORE_REGRESSION_H
 #define _CL_MANYCORE_REGRESSION_H
+
 #include <stdio.h>
 #include <stdint.h>
 #include <bsg_manycore_errno.h>
@@ -80,8 +81,11 @@ int compare_results(int num_fields, const char *desc[], const uint32_t *expected
         }
         return success ? HB_MC_SUCCESS : HB_MC_FAIL;
 }
-
+#ifdef __cplusplus
+extern "C" {
 void cosim_main(uint32_t *exit_code, char * args);
+}
+#endif
 // Given a string, determine the number of space-separated arguments
 static
 int get_argc(char * args){
@@ -148,7 +152,7 @@ static struct argp_option opts_name[] = {
 static struct argp_option opts_none[] = {{0}};
 
 static error_t parse_name (int key, char *arg, struct argp_state *state){
-        struct arguments *args = state->input;
+        struct arguments *args = (struct arguments *)state->input;
  
         switch (key) 
                 {
@@ -177,7 +181,7 @@ static error_t parse_name (int key, char *arg, struct argp_state *state){
 }
 
 static error_t parse_none (int key, char *arg, struct argp_state *state){
-        struct arguments *args = state->input;
+        struct arguments *args = (struct arguments *)state->input;
  
         switch (key) 
                 {
@@ -194,5 +198,7 @@ static error_t parse_none (int key, char *arg, struct argp_state *state){
 static struct argp argp_name = {opts_name, parse_name, desc_name, doc};
 static struct argp argp_none = {opts_none, parse_none, desc_none, doc};
 
+#define __BSG_STRINGIFY(arg) #arg
+#define BSG_STRINGIFY(arg) __BSG_STRINGIFY(arg)
 
 #endif

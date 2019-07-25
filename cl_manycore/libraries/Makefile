@@ -1,14 +1,10 @@
-INCLUDES := -I$(SDK_DIR)/userspace/include
-INCLUDES += -I$(HDK_DIR)/common/software/include -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include -I.
+INCLUDES += -I$(SDK_DIR)/userspace/include
+INCLUDES += -I$(HDK_DIR)/common/software/include 
+INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include -I.
 
-CFLAGS    := -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES)
-CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES)
-ifeq ($(COSIM), 1)
-CXXFLAGS  += -DCOSIM
-CFLAGS    += -DCOSIM
-else
-LDLIBS    := -lfpga_mgmt
-endif
+CFLAGS   += -std=c11 -D_GNU_SOURCE -fPIC $(INCLUDES)
+CXXFLAGS += -std=c++11 -fPIC $(INCLUDES)
+LDFLAGS  += -lfpga_mgmt
 
 HEADERS += bsg_manycore_loader.h
 HEADERS += bsg_manycore_tile.h
@@ -74,7 +70,7 @@ $(DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
 
 # This script builds and installs the BSG Manycore Runtime API
 build: $(OBJECTS)
-	$(CXX) $(CFLAGS) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0 $(OBJECTS) $(LDLIBS)
+	$(CXX) $(CFLAGS) -shared -Wl,-soname,libbsg_manycore_runtime.so.1 -o libbsg_manycore_runtime.so.1.0 $(OBJECTS) $(LDFLAGS)
 
 install: build
 	mv libbsg_manycore_runtime.so.1.0 /usr/lib64/
