@@ -486,7 +486,7 @@ module axil_to_mcl
 
   for (genvar k = 0; k < num_mcl_p; k++) begin
     assign print_stat_v_o[k] = endpoint_in_v_lo[k] & endpoint_in_we_lo[k]
-      & ({endpoint_in_we_addr_lo[k][13:0], 2'b00} == 16'h0D0C);
+      & ({endpoint_in_addr_lo[k][13:0], 2'b00} == 16'h0D0C);
     assign print_stat_tag_o[k] = endpoint_in_data_lo[k];
   end
 

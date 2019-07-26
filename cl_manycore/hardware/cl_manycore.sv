@@ -518,9 +518,6 @@ memory_system #(
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
 
-  ,.my_x_i(cache_x_lo)
-  ,.my_y_i(cache_y_lo)
-
   ,.link_sif_i(cache_link_sif_lo)
   ,.link_sif_o(cache_link_sif_li)
 
@@ -622,7 +619,7 @@ axil_to_mcl #(
   ,.my_y_i            (mcl_y_cord_lp     )
 
   ,.print_stat_v_o(print_stat_v_lo)
-  ,.print_stat_tag_lo(print_stat_tag_lo)
+  ,.print_stat_tag_o(print_stat_tag_lo)
 );
 
 //-----------------------------------------------
@@ -691,6 +688,7 @@ bind vanilla_core vanilla_core_trace #(
   ,.dmem_size_p(dmem_size_p)
 ) vtrace (
   .*
+  ,.trace_en_i(1'b1)
 );
 
 
@@ -711,9 +709,9 @@ bind vanilla_core vanilla_core_profiler #(
   ,.data_width_p(data_width_p)
 ) vcore_prof (
   .*
-  ,.global_ctr_i($root.spmd_testbench.global_ctr)
-  ,.print_stat_v_i($root.spmd_testbench.print_stat_v_lo)
-  ,.print_stat_tag_i($root.spmd_testbench.print_stat_tag_lo)
+  ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+  ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+  ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
 );
 
 if (mem_cfg_p == e_mem_cfg_default) begin
@@ -722,9 +720,9 @@ if (mem_cfg_p == e_mem_cfg_default) begin
     .data_width_p(data_width_p)
   ) vcache_prof (
     .*
-    ,.global_ctr_i($root.spmd_testbench.global_ctr)
-    ,.print_stat_v_i($root.spmd_testbench.print_stat_v_lo)
-    ,.print_stat_tag_i($root.spmd_testbench.print_stat_tag_lo)
+    ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+    ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+    ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
   );
 
 end

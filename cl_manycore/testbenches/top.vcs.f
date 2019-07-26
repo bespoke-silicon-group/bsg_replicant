@@ -38,6 +38,7 @@
 
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/bsg_bladerunner_configuration.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/bsg_mem_cfg_pkg.v
 ${CL_DIR}/hardware/cl_manycore_pkg.v
 ${CL_DIR}/hardware/cl_manycore.sv
 ${CL_DIR}/../hdl/bsg_bladerunner_rom.v
@@ -106,6 +107,7 @@ ${BASEJUMP_STL_DIR}/bsg_misc/bsg_priority_encode.v
 ${BASEJUMP_STL_DIR}/bsg_misc/bsg_reduce.v
 ${BASEJUMP_STL_DIR}/bsg_misc/bsg_encode_one_hot.v
 ${BASEJUMP_STL_DIR}/bsg_misc/bsg_abs.v
+${BASEJUMP_STL_DIR}/bsg_misc/bsg_cycle_counter.v
 
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_banked_crossbar.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_1r1w_synth.v
@@ -118,6 +120,8 @@ ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_1rw_sync.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_1rw_sync_synth.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_2r1w_sync.v
 ${BASEJUMP_STL_DIR}/bsg_mem/bsg_mem_2r1w_sync_synth.v
+${BASEJUMP_STL_DIR}/bsg_mem/bsg_nonsynth_mem_1rw_sync_assoc.v
+${BASEJUMP_STL_DIR}/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_assoc.v
 
 ${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_pkg.v
 ${BASEJUMP_STL_DIR}/bsg_fpu/bsg_fpu_add_sub.v
@@ -160,9 +164,14 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore_tile.v
 ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
 
 ${BSG_MANYCORE_DIR}/testbenches/common/v/vanilla_core_trace.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/vanilla_core_profiler.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/vcache_profiler.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/memory_system.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/bsg_nonsynth_mem_infinite.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/bsg_cache_wrapper_axi.v
+
 
 ${CL_DIR}/hardware/bsg_manycore_wrapper.v
-${CL_DIR}/hardware/bsg_cache_wrapper_axi.v
 
 # Vivado library files
 #${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v
