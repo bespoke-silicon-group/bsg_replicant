@@ -697,8 +697,8 @@ bind vanilla_core vanilla_core_trace #(
 logic [31:0] global_ctr;
 
 bsg_cycle_counter global_cc (
-  .clk_i(clk)
-  ,.reset_i(reset)
+  .clk_i(clk_main_a0)
+  ,.reset_i(~rst_main_n_sync)
   ,.ctr_r_o(global_ctr)
 );
 
