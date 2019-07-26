@@ -53,7 +53,6 @@ file copy -force $CL_DIR/hardware/cl_manycore.sv                              $T
 file copy -force $CL_DIR/hardware/bsg_bladerunner_configuration.v             $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/bsg_manycore_wrapper.v                      $TARGET_DIR
-file copy -force $CL_DIR/hardware/bsg_cache_wrapper_axi.v                     $TARGET_DIR
 
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_links.vh                   $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_noc_pkg.v                      $TARGET_DIR
@@ -119,6 +118,7 @@ file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_priority_encode.v             $T
 file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_reduce.v                      $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_encode_one_hot.v              $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_abs.v                         $TARGET_DIR
+file copy -force $BASEJUMP_STL_DIR/bsg_misc/bsg_cycle_counter.v               $TARGET_DIR
 
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_banked_crossbar.v          $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v               $TARGET_DIR
@@ -131,6 +131,9 @@ file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v                   
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v                 $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync.v                      $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_2r1w_sync_synth.v                $TARGET_DIR
+
+file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_assoc.v                 $TARGET_DIR
+file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_assoc.v $TARGET_DIR
 
 file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_pkg.v                            $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_add_sub.v                        $TARGET_DIR
@@ -163,6 +166,14 @@ file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/vanilla_core.v                
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hash_function.v                   $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hash_function_reverse.v           $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_cache_to_axi_hashed.v         $TARGET_DIR
+
+file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/bsg_mem_cfg_pkg.v           $TARGET_DIR
+
+file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/vanilla_core_profiler.v     $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/vcache_profiler.v           $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/memory_system.v             $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/bsg_nonsynth_mem_infinite.v $TARGET_DIR
+file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/bsg_cache_wrapper_axi.v     $TARGET_DIR
 
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_addr.vh                           $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_packet.vh                         $TARGET_DIR
