@@ -6,6 +6,7 @@ CL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 ifneq ("$(wildcard $(CL_DIR)/../../bsg_cadenv/cadenv.mk)","")
 $(warning $(shell echo -e "\t\n\t$(ORANGE)Found bsg_cadenv. Including cadenv.mk.$(NC)"))
 include $(CL_DIR)/../../bsg_cadenv/cadenv.mk
+export VCS_HOME=$(VCS_MX_HOME)
 endif
 
 ifneq ("$(wildcard $(CL_DIR)/../../Makefile.deps)","")
