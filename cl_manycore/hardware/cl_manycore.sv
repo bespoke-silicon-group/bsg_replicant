@@ -7,6 +7,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_bladerunner_rom_pkg::*;
+  import bsg_mem_cfg_pkg::*;
   (
     `include "cl_ports.vh"
   );
@@ -490,12 +491,20 @@ bsg_manycore_wrapper #(
 );
 
 
-// cache_wrapper
+// configurable memory system
 //
-bsg_cache_wrapper_axi #(
-  .num_cache_p(num_cache_p)
+memory_system #(
+  .mem_cfg_p(mem_cfg_p)
+  
+  ,.bsg_global_x_p(num_tiles_x_p)
+  ,.bsg_global_y_p(num_tiles_y_p)
+
   ,.data_width_p(data_width_p)
   ,.addr_width_p(addr_width_p)
+  ,.x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
+  ,.load_id_width_p(load_id_width_p)
+
   ,.block_size_in_words_p(block_size_in_words_p)
   ,.sets_p(sets_p)
   ,.ways_p(ways_p)
@@ -505,15 +514,9 @@ bsg_cache_wrapper_axi #(
   ,.axi_data_width_p(axi_data_width_p)
   ,.axi_burst_len_p(axi_burst_len_p)
 
-  ,.x_cord_width_p(x_cord_width_p)
-  ,.y_cord_width_p(y_cord_width_p)
-  ,.load_id_width_p(load_id_width_p)
-) cache_wrapper (
+) memsys (
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
-
-  ,.my_x_i(cache_x_lo)
-  ,.my_y_i(cache_y_lo)
 
   ,.link_sif_i(cache_link_sif_lo)
   ,.link_sif_o(cache_link_sif_li)
@@ -573,6 +576,9 @@ assign m_axi4_manycore_arqos = 4'b0;
 logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;
 logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
 
+logic print_stat_v_lo;
+logic [data_width_p-1:0] print_stat_tag_lo;
+
 axil_to_mcl #(
   .num_mcl_p        (1                )
   ,.num_tiles_x_p    (num_tiles_x_p    )
@@ -611,6 +617,9 @@ axil_to_mcl #(
   ,.link_sif_o        (loader_link_sif_li)
   ,.my_x_i            (mcl_x_cord_lp     )
   ,.my_y_i            (mcl_y_cord_lp     )
+
+  ,.print_stat_v_o(print_stat_v_lo)
+  ,.print_stat_tag_o(print_stat_tag_lo)
 );
 
 //-----------------------------------------------
@@ -669,6 +678,7 @@ cl_debug_bridge CL_DEBUG_BRIDGE (
 `endif //  `ifndef DISABLE_VJTAG_DEBUG
 
 // synopsys translate off
+
 bind vanilla_core vanilla_core_trace #(
   .x_cord_width_p(x_cord_width_p)
   ,.y_cord_width_p(y_cord_width_p)
@@ -678,7 +688,45 @@ bind vanilla_core vanilla_core_trace #(
   ,.dmem_size_p(dmem_size_p)
 ) vtrace (
   .*
+  ,.trace_en_i(1'b1)
 );
+
+
+// profilers
+//
+logic [31:0] global_ctr;
+
+bsg_cycle_counter global_cc (
+  .clk_i(clk_main_a0)
+  ,.reset_i(~rst_main_n_sync)
+  ,.ctr_r_o(global_ctr)
+);
+
+
+bind vanilla_core vanilla_core_profiler #(
+  .x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
+  ,.data_width_p(data_width_p)
+) vcore_prof (
+  .*
+  ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+  ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+  ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+);
+
+if (mem_cfg_p == e_mem_cfg_default) begin
+
+  bind bsg_cache vcache_profiler #(
+    .data_width_p(data_width_p)
+  ) vcache_prof (
+    .*
+    ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+    ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+    ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+  );
+
+end
+
 // synopsys translate on
 
 endmodule

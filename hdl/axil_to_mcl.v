@@ -68,6 +68,10 @@ module axil_to_mcl
   , output [link_sif_width_lp*num_mcl_p-1:0] link_sif_o
   , input  [   x_cord_width_p*num_mcl_p-1:0] my_x_i
   , input  [   y_cord_width_p*num_mcl_p-1:0] my_y_i
+
+  // print stat
+  , output logic [num_mcl_p-1:0] print_stat_v_o
+  , output logic [num_mcl_p-1:0][data_width_p-1:0] print_stat_tag_o
 );
 
   localparam axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1);
@@ -477,6 +481,13 @@ module axil_to_mcl
       ,.my_x_i              (my_x_li[i]               )
       ,.my_y_i              (my_y_li[i]               )
     );
+  end
+
+
+  for (genvar k = 0; k < num_mcl_p; k++) begin
+    assign print_stat_v_o[k] = endpoint_in_v_lo[k] & endpoint_in_we_lo[k]
+      & ({endpoint_in_addr_lo[k][13:0], 2'b00} == 16'h0D0C);
+    assign print_stat_tag_o[k] = endpoint_in_data_lo[k];
   end
 
 
