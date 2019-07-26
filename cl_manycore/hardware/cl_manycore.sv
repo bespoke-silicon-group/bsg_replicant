@@ -7,6 +7,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_bladerunner_rom_pkg::*;
+  //import bsg_mem_cfg_pkg::*;
   (
     `include "cl_ports.vh"
   );
@@ -490,12 +491,20 @@ bsg_manycore_wrapper #(
 );
 
 
-// cache_wrapper
+// configurable memory system
 //
-bsg_cache_wrapper_axi #(
-  .num_cache_p(num_cache_p)
+memory_system #(
+  .mem_cfg_p(mem_cfg_p)
+  
+  ,.bsg_global_x_p(num_tiles_x_p)
+  ,.bsg_global_y_p(num_tiles_y_p)
+
   ,.data_width_p(data_width_p)
   ,.addr_width_p(addr_width_p)
+  ,.x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
+  ,.load_id_width_p(load_id_width_p)
+
   ,.block_size_in_words_p(block_size_in_words_p)
   ,.sets_p(sets_p)
   ,.ways_p(ways_p)
@@ -505,10 +514,7 @@ bsg_cache_wrapper_axi #(
   ,.axi_data_width_p(axi_data_width_p)
   ,.axi_burst_len_p(axi_burst_len_p)
 
-  ,.x_cord_width_p(x_cord_width_p)
-  ,.y_cord_width_p(y_cord_width_p)
-  ,.load_id_width_p(load_id_width_p)
-) cache_wrapper (
+) memsys (
   .clk_i(clk_main_a0)
   ,.reset_i(~rst_main_n_sync)
 

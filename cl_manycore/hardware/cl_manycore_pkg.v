@@ -10,7 +10,9 @@ package cl_manycore_pkg;
 
   `include "bsg_defines.v"
   `include "f1_parameters.vh"
-
+  import bsg_mem_cfg_pkg::*;
+  
+  parameter mem_cfg_p = e_mem_cfg_default;
   parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
   parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;
   parameter num_tiles_x_p = `CL_MANYCORE_DIM_X;
