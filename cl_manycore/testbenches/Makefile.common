@@ -44,10 +44,6 @@ DEBUG            ?= 0
 # We parallelize VCS compilation, but we leave a few cores on the table.
 NPROCS = `nproc --ignore 8`
 
-# Makefile.hdk defines HDK-specific variables (and causes an error if
-# hdk_setup.sh has not been sourced from aws-fpga)
-include $(CL_DIR)/Makefile.hdk
-
 # $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
 # of rules that generate hardware for cosimulation and computation. It also defines
 # $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
@@ -155,6 +151,10 @@ $(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	XILINX_IP=$(XILINX_IP) \
+	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
+	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
+	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
+	XILINX_VIVADO=$(XILINX_VIVADO) \
 	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
 		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
 		-l $@.prelim

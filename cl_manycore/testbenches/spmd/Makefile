@@ -1,4 +1,5 @@
 include ../../Makefile.environment
+include $(CL_DIR)/Makefile.hdk
 SRC_PATH=$(REGRESSION_PATH)/spmd
 SIM_PATH=$(TESTBENCH_PATH)/spmd
 
