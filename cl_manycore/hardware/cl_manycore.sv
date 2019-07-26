@@ -7,7 +7,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_bladerunner_rom_pkg::*;
-  //import bsg_mem_cfg_pkg::*;
+  import bsg_mem_cfg_pkg::*;
   (
     `include "cl_ports.vh"
   );
@@ -579,6 +579,9 @@ assign m_axi4_manycore_arqos = 4'b0;
 logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;
 logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
 
+logic print_stat_v_lo;
+logic [data_width_p-1:0] print_stat_tag_lo;
+
 axil_to_mcl #(
   .num_mcl_p        (1                )
   ,.num_tiles_x_p    (num_tiles_x_p    )
@@ -617,6 +620,9 @@ axil_to_mcl #(
   ,.link_sif_o        (loader_link_sif_li)
   ,.my_x_i            (mcl_x_cord_lp     )
   ,.my_y_i            (mcl_y_cord_lp     )
+
+  ,.print_stat_v_o(print_stat_v_lo)
+  ,.print_stat_tag_lo(print_stat_tag_lo)
 );
 
 //-----------------------------------------------
@@ -675,6 +681,7 @@ cl_debug_bridge CL_DEBUG_BRIDGE (
 `endif //  `ifndef DISABLE_VJTAG_DEBUG
 
 // synopsys translate off
+
 bind vanilla_core vanilla_core_trace #(
   .x_cord_width_p(x_cord_width_p)
   ,.y_cord_width_p(y_cord_width_p)
@@ -685,6 +692,43 @@ bind vanilla_core vanilla_core_trace #(
 ) vtrace (
   .*
 );
+
+
+// profilers
+//
+logic [31:0] global_ctr;
+
+bsg_cycle_counter global_cc (
+  .clk_i(clk)
+  ,.reset_i(reset)
+  ,.ctr_r_o(global_ctr)
+);
+
+
+bind vanilla_core vanilla_core_profiler #(
+  .x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
+  ,.data_width_p(data_width_p)
+) vcore_prof (
+  .*
+  ,.global_ctr_i($root.spmd_testbench.global_ctr)
+  ,.print_stat_v_i($root.spmd_testbench.print_stat_v_lo)
+  ,.print_stat_tag_i($root.spmd_testbench.print_stat_tag_lo)
+);
+
+if (mem_cfg_p == e_mem_cfg_default) begin
+
+  bind bsg_cache vcache_profiler #(
+    .data_width_p(data_width_p)
+  ) vcache_prof (
+    .*
+    ,.global_ctr_i($root.spmd_testbench.global_ctr)
+    ,.print_stat_v_i($root.spmd_testbench.print_stat_v_lo)
+    ,.print_stat_tag_i($root.spmd_testbench.print_stat_tag_lo)
+  );
+
+end
+
 // synopsys translate on
 
 endmodule
