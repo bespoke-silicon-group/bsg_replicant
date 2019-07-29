@@ -1,4 +1,5 @@
 include ../Makefile.environment 
+include ../Makefile.hdk
 # $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
 # of rules that generate hardware for cosimulation and computation. It also defines
 # $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
@@ -28,7 +29,26 @@ $(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && TESTBENCH_PATH=$(TESTBENCH_PATH) \
 	vivado -mode batch -source $<
 
-$(TARGETS): $(HARDWARE_TARGETS) | $(SIMLIBS_PATH)
+# The applications link against the BSG Manycore Libraries, and the FPGA
+# Management libaries, so we build them as necessary. They should not need to be
+# re-built every time a regression test is compiled, so they are cleaned with
+# `squeakyclean` 
+LIBFPGA_LDFLAGS = -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH)
+$(LIBRARIES_PATH)/libbsg_manycore_runtime.so: $(TESTBENCH_PATH)/libfpga_mgmt.so
+	CFLAGS="-DCOSIM" CXXFLAGS="-DCOSIM" LDFLAGS="$(LIBFPGA_LDFLAGS)" \
+		$(MAKE) -C $(LIBRARIES_PATH) build 
+	ln -s $@.1.0 $@.1
+	ln -s $@.1.0 $@
+
+$(TESTBENCH_PATH)/libfpga_mgmt.so:
+	$(CC) -std=c11 -D_GNU_SOURCE -fPIC -I$(C_SDK_USR_INC_DIR) \
+		-I$(C_SDK_USR_UTILS_DIR) -I$(C_COMMON_DIR)/include \
+		-I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include \
+		$(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
+		$(C_COMMON_DIR)/src/fpga_pci_sv.c    \
+		-shared -Wl,-soname,$(notdir $@) -o $@ 
+
+$(TARGETS): $(HARDWARE_TARGETS) $(LIBRARIES_PATH)/libbsg_manycore_runtime.so | $(SIMLIBS_PATH)
 	$(MAKE) -C $@ regression DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) \
 		AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO) EXTRA_TURBO=$(EXTRA_TURBO)
 
