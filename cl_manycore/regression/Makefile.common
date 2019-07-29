@@ -1,8 +1,8 @@
-TARGETS   := $(INDEPENDENT_MAIN_TESTS) test_unified_main
+TARGETS   := $(INDEPENDENT_TESTS) test_unified_main
 
-# each target in INDEPENDENT_MAIN_TESTS needs to build its .o from a
+# each target in INDEPENDENT_TESTS needs to build its .o from a
 # .c and .h of the same name
-OBJECTS = $(foreach tgt, $(INDEPENDENT_MAIN_TESTS), $(tgt).o)
+OBJECTS = $(foreach tgt, $(INDEPENDENT_TESTS), $(tgt).o)
 %.o: %.c %.h
 	$(CC) -c $< -o $@ $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
 
@@ -10,19 +10,19 @@ OBJECTS = $(foreach tgt, $(INDEPENDENT_MAIN_TESTS), $(tgt).o)
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $<
 
-$(UNIFIED_MAIN_TESTS): %: test_unified_main
+$(UNIFIED_TESTS): %: test_unified_main
 test_unified_main: LD=$(CC)
 test_unified_main: %: %.o
 	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
 
-# each target '%' in INDEPENDENT_MAIN_TESTS relies on an object file
+# each target '%' in INDEPENDENT_TESTS relies on an object file
 # '%.o'
-$(INDEPENDENT_MAIN_TESTS): LD=$(CC)
-$(INDEPENDENT_MAIN_TESTS): %: %.o
+$(INDEPENDENT_TESTS): LD=$(CC)
+$(INDEPENDENT_TESTS): %: %.o
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
 build.clean: 
-	rm -rf *.o $(INDEPENDENT_MAIN_TESTS) test_unified_main
+	rm -rf *.o $(INDEPENDENT_TESTS) test_unified_main
 
 # To include a test in regression, the user defines a list of tests in
 # REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
@@ -30,13 +30,13 @@ build.clean:
 # spmd or cuda binaries, for example.
 USER_RULES:=$(addsuffix .rule,$(REGRESSION_TESTS))
 $(USER_RULES):
-USER_CLEAN_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).clean)
+USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
 $(USER_CLEAN_RULES):
 
 .PHONY: build.clean
 .PHONY: $(USER_RULES) $(USER_CLEAN_RULES) regression regression.clean
 
-$(addsuffix .log,$(INDEPENDENT_MAIN_TESTS)): %.log: % %.rule
+$(addsuffix .log,$(INDEPENDENT_TESTS)): %.log: % %.rule
 	sudo ./$< | tee $@
 
 %.log: test_unified_main %.rule

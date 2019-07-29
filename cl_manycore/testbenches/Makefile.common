@@ -1,51 +1,50 @@
 # This Makefile Fragment enables cosimulation
 #
-# NOTE: This file REQUIRES several variables to be set: 
-# 
-# COSIM_REGRESSION_TESTS: Names of all available regression tests.
-#
-# (The following variables are typically set by the including Makefile)
-#
-# SIM_PATH: The path to the directory where the simulation is run
-# SRC_PATH: The path to the directory containing the .c or cpp test files
-#
-# (The following variables are typically set by Makefile.environment, which is
-# included by the top-level makefile.)
+# Makefile.environment verifies the build environment and sets the following
+# variables
 #
 # TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
+# LIBRAIRES_PATH: The path to the libraries directory in the bsg_f1 repository
+# HARDARE_PATH: The path to the hardware directory in the bsg_f1 repository
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
+include ../../Makefile.environment 
+
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
+
+# This file REQUIRES several variables to be set: 
+# 
+# REGRESSION_TESTS: Names of all available regression tests.
+ifndef REGRESSION_TESTS
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
+endif
+
+# The following variables are typically set by the including Makefile:
 #
-# (The following are set by $(CL_DIR)/Makefile.hdk, which will fail if
-# hdk_setup.sh has not been run)
+# SIM_PATH: The path to the directory where the simulation is run
+ifndef SIM_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: SIM_PATH is not defined$(NC)"))
+endif
+
+# SRC_PATH: The path to the directory containing the .c or cpp test files
+ifndef SRC_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: SRC_PATH is not defined$(NC)"))
+endif
+
+# The following makefile fragment verifies that the tools and CAD environment is
+# configured correctly. Makefile.environment must be included before this line
+include $(TESTBENCH_PATH)/Makefile.cadenv
+
+# The following variables are set by $(CL_DIR)/Makefile.hdk, which will fail if
+# Makefile.environment is not included hdk_setup.sh has not been run, or
 #
 # HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
 # AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
 # HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
-#
-# NOTE: This file has several optional "arguments" that are passed as Variables
-#
-# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
-#                   speed. Default: 1
-# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: Not Defined
-# DEBUG: Opens the GUI during cosimulation. Default: Not Defined
-# TURBO: Disables VPD generation. Default: 0
-# 
-# If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
-# This is a COMPILATION ONLY option. Any subsequent runs, without compilation
-# will retain this setting
-AXI_MEMORY_MODEL ?= 1
-AXI_PROT_CHECK   ?= 0
-TURBO            ?= 0
-DEBUG            ?= 0
-
-# We parallelize VCS compilation, but we leave a few cores on the table.
-NPROCS = `nproc --ignore 8`
-
-# Makefile.hdk defines HDK-specific variables (and causes an error if
-# hdk_setup.sh has not been sourced from aws-fpga)
 include $(CL_DIR)/Makefile.hdk
 
 # $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
@@ -53,12 +52,42 @@ include $(CL_DIR)/Makefile.hdk
 # $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
 include $(HARDWARE_PATH)/Makefile.include
 
+# Makefile.libraries defines build rules for hardware and software libraries
+# that are necessary for running cosimulation. These are dependencies for
+# regression since running $(MAKE) recursively does not prevent parallel builds
+# of identical rules -- which causes errors.
+#
+# Makefile.libraries defines $(LIBRARY_TARGETS) and $(LIBRARY_CLEANS)
+include $(TESTBENCH_PATH)/Makefile.libraries
+
+# -------------------- Arguments --------------------
+# This Makefile has several optional "arguments" that are passed as Variables
+#
+# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
+#                   speed. Default: 1
+# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: 0
+# DEBUG: Opens the GUI during cosimulation. Default: 0
+# TURBO: Disables VPD generation. Default: 0
+# EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
+# 
+# If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
+# This is a COMPILATION ONLY option. Any subsequent runs, without compilation
+# will retain this setting
+AXI_MEMORY_MODEL ?= 1
+AXI_PROT_CHECK   ?= 0
+DEBUG            ?= 0
+TURBO            ?= 0
+EXTRA_TURBO      ?= 0
+
+# -------------------- VARIABLES --------------------
+# We parallelize VCS compilation, but we leave a few cores on the table.
+NPROCS = $(shell echo "(`nproc`/4 + 1)" | bc)
+
 # Name of the cosimulation wrapper system verilog file.
 WRAPPER_NAME = cosim_wrapper
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH)
-LIBFPGA_LDFLAGS = -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH)
-LDFLAGS    += $(LIBFPGA_LDFLAGS)
+LDFLAGS    += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH)
 
 # libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
 LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
@@ -90,13 +119,13 @@ VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
                    +libext+.sv +libext+.v +libext+.vh +libext+.svh \
                    -full64 -lca -v2005 +v2k +lint=TFIPC-L -assert svaext
 
-VCS_CFLAGS   += $(foreach def,$(CFLAGS),-CFLAGS "$(def)")
-VCS_CDEFINES += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
-VCS_INCLUDES += $(foreach def,$(INCLUDES),-CFLAGS "$(def)")
-VCS_CXXFLAGS += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
+VCS_CFLAGS     += $(foreach def,$(CFLAGS),-CFLAGS "$(def)")
+VCS_CDEFINES   += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
+VCS_INCLUDES   += $(foreach def,$(INCLUDES),-CFLAGS "$(def)")
+VCS_CXXFLAGS   += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
 VCS_CXXDEFINES += $(foreach def,$(CXXDEFINES),-CFLAGS "$(def)")
-VCS_LDFLAGS  += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS   += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
+VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
+VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
                 -timescale=1ps/1ps -sverilog -full64 +memcbk -licqueue
 
 # NOTE: undef_vcs_macro is a HACK!!! 
@@ -121,33 +150,15 @@ VCS_VFLAGS    += -R
 VCS_VFLAGS    += -debug_all
 endif
 
-.PHONY: regression clean squeakyclean .FORCE $(USER_RULES) $(USER_CLEAN_RULES)
+# -------------------- TARGETS --------------------
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%
 
-# vcs_simlibs is generated by running Vivado. It contains all of the hardware
-# Xilinx hardware library files necessary for simulation. This rule also
-# generates synopsys_sim.setup, but it generates it in the run directory, so we
-# cd to $(TESTBENCH_PATH) so that vcs_simlibs can be reused across invocations
-# of cosimulation.
-#
-# Since this output is reused between cosimulation invocations (spmd, library,
-# cuda, etc), it must be removed with `make squeakyclean`
-SIMLIBS_PATH=$(TESTBENCH_PATH)/vcs_simlibs
-$(SIMLIBS_PATH): $(TESTBENCH_PATH)/gen_simlibs.tcl
-	cd $(TESTBENCH_PATH) && TESTBENCH_PATH=$(TESTBENCH_PATH) \
-	vivado -mode batch -source $<
-
-# synopsys_sim.setup contains absolute paths to all the compiled Xilinx IP.
-# It gets generated by the $(SIMLIBS_PATH) rule, so we just copy it.
-$(TESTBENCH_PATH)/synopsys_sim.setup: | $(SIMLIBS_PATH)
 $(SIM_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
 	cp $< $@
-
 
 # $(HARDWARE_TARGETS) is defined by Makefile.include in the $(HARDWARE_PATH)
 # directory. This rule generates all of the hardware files necessary for
 # simulation
-# TODO: It is possible to compile these once.
 $(SIM_PATH)/compile.vlogan.log: $(SIM_PATH)/synopsys_sim.setup
 $(SIM_PATH)/compile.vlogan.log: $(CL_DIR)/Makefile.machine.include
 $(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
@@ -155,28 +166,14 @@ $(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	XILINX_IP=$(XILINX_IP) \
+	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
+	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
+	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
+	XILINX_VIVADO=$(XILINX_VIVADO) \
 	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
 		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
 		-l $@.prelim
 	mv $@.prelim $@
-
-# The applications link against the BSG Manycore Libraries, and the FPGA
-# Management libaries, so we build them as necessary. They should not need to be
-# re-built every time a regression test is compiled, so they are cleaned with
-# `squeakyclean` 
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so: $(TESTBENCH_PATH)/libfpga_mgmt.so
-	CFLAGS="-DCOSIM" CXXFLAGS="-DCOSIM" LDFLAGS="$(LIBFPGA_LDFLAGS)" \
-		$(MAKE) -C $(LIBRARIES_PATH) build 
-	ln -s $@.1.0 $@.1
-	ln -s $@.1.0 $@
-
-$(TESTBENCH_PATH)/libfpga_mgmt.so:
-	$(CC) -std=c11 -D_GNU_SOURCE -fPIC -I$(C_SDK_USR_INC_DIR) \
-		-I$(C_SDK_USR_UTILS_DIR) -I$(C_COMMON_DIR)/include \
-		-I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include \
-		$(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c \
-		$(C_COMMON_DIR)/src/fpga_pci_sv.c    \
-		-shared -Wl,-soname,$(notdir $@) -o $@ 
 
 # VCS Generates an executable file by compiling the $(SRC_PATH)/%.c or
 # $(SRC_PATH)/%.cpp file that corresponds to the target test in the
@@ -184,57 +181,56 @@ $(TESTBENCH_PATH)/libfpga_mgmt.so:
 # rules, each test has a corresponding <test_name>.rule that can have additional
 # dependencies
 $(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log \
-		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
+		$(LIBRARIES_TARGETS)
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
 
 $(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log \
-		$(LIBRARIES_PATH)/libbsg_manycore_runtime.so
+		$(LIBRARIES_TARGETS)
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l compile.vcs.log
 
-$(COSIM_REGRESSION_TESTS): %: $(SIM_PATH)/%
+$(REGRESSION_TESTS): %: $(SIM_PATH)/%
 test_unified_main: %: $(SIM_PATH)/%
 
 # To include a test in cosimulation, the user defines a list of tests in
 # COSIMULATION_REGRESSION_TESTS. The following two lines defines a rule named
-# <test_name>.rule that is a dependency in <test_name>.cosim.log. These custom
+# <test_name>.rule that is a dependency in <test_name>.log. These custom
 # rules can be used to build RISC-V binaries for SPMD or CUDA tests.
-USER_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).rule)
+USER_RULES=$(addsuffix .rule,$(REGRESSION_TESTS))
 $(USER_RULES):
 
 # Likewise - we define a custom rule for <test_name>.clean
-USER_CLEAN_RULES=$(foreach tgt,$(COSIM_REGRESSION_TESTS),$(tgt).clean)
+USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
 $(USER_CLEAN_RULES):
 
-# .FORCE is used to ensure that the <test_name>.cosim.log rules are always re-run.
+# .FORCE is used to ensure that the <test_name>.log rules are always re-run.
 .FORCE:
 
-# The following rules generate the <test_name>.cosim.log file by running the
+# The following rules generate the <test_name>.log file by running the
 # <test_name> executable. The output .vpd file will be named <test_name>.vpd.
 #
 # The two following rules appear similar but they are not! The first rule
-# matches with all tests in INDEPENDENT_MAIN_TESTS, and the second matches with
-# all rules in UNIFIED_MAIN_TESTS
-INDEPENDENT_MAIN_RULES=$(foreach tgt,$(INDEPENDENT_MAIN_TESTS),$(SIM_PATH)/$(tgt).cosim.log)
-$(INDEPENDENT_MAIN_RULES): $(SIM_PATH)/%.cosim.log: $(SIM_PATH)/% %.rule #.FORCE
+# matches with all tests in INDEPENDENT_TESTS, and the second matches with
+# all rules in UNIFIED_TESTS
+INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(SIM_PATH)/$(tgt).log)
+$(INDEPENDENT_LOGS): $(SIM_PATH)/%.log: $(SIM_PATH)/% %.rule #.FORCE
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
 		+c_args="$(C_ARGS)" | tee $@
 
-$(SIM_PATH)/%.cosim.log: $(SIM_PATH)/test_unified_main %.rule #.FORCE
+$(SIM_PATH)/%.log: $(SIM_PATH)/test_unified_main %.rule #.FORCE
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
-		+c_args="$(subst .cosim.log,,$(notdir $@))" | tee $@
+		+c_args="$(subst .log,,$(notdir $@))" | tee $@
 
-# We build a list of COSIMULATION_LOG_TARGETS for the regression rule (below)
-COSIMULATION_LOG_TARGETS = $(foreach test,$(COSIM_REGRESSION_TESTS),$(test).cosim.log)
-$(COSIMULATION_LOG_TARGETS): %: $(SIM_PATH)/% 
-%.cosim.log: $(SIM_PATH)/%.cosim.log
+# We build a list of LOG_RULES for the regression rule (below)
+LOG_RULES = $(addsuffix .log,$(REGRESSION_TESTS))
+$(LOG_RULES): %: $(SIM_PATH)/%
 
 regression: $(SIM_PATH)/regression.log 
 
-$(SIM_PATH)/regression.log: $(COSIMULATION_LOG_TARGETS) 
+$(SIM_PATH)/regression.log: $(LOG_RULES) 
 	@pass=0; total=0; \
 	echo ""| tee $@; \
 	echo ""| tee -a $@; \
@@ -242,7 +238,7 @@ $(SIM_PATH)/regression.log: $(COSIMULATION_LOG_TARGETS)
 	echo ""| tee -a $@; \
 	echo ""| tee -a $@; \
 	for target in $(basename $(basename $?)); do \
-		if grep "BSG COSIM FAIL" $$target.cosim.log > /dev/null; then \
+		if grep "BSG COSIM FAIL" $$target.log > /dev/null; then \
 			echo "FAIL: Regression Test $$target failed!"| tee -a $@; \
 		else \
 			echo "PASS: Regression Test $$target passed!"| tee -a $@; \
@@ -264,23 +260,18 @@ $(SIM_PATH)/regression.log: $(COSIMULATION_LOG_TARGETS)
 	echo ""| tee -a $@; \
 	echo "==========================================================="| tee -a $@;
 
-clean: $(HARDWARE_CLEANS) $(USER_CLEAN_RULES)
+clean: $(USER_CLEAN_RULES)
 	rm -rf $(SIM_PATH)/AN.DB $(SIM_PATH)/DVEfiles
 	rm -rf $(SIM_PATH)/*.daidir $(SIM_PATH)/*.tmp
 	rm -rf $(SIM_PATH)/64 $(SIM_PATH)/.cxl*
-	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou 
-	rm -rf $(SIM_PATH)/synopsys_sim.setup 
-	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd 
+	rm -rf $(SIM_PATH)/*.log $(SIM_PATH)/*.jou
+	rm -rf $(SIM_PATH)/synopsys_sim.setup
+	rm -rf $(SIM_PATH)/*.key $(SIM_PATH)/*.vpd
 	rm -rf $(SIM_PATH)/vc_hdrs.h
 	rm -rf .vlogansetup* stack.info*
 	rm -rf $(REGRESSION_TESTS) test_unified_main
 
-# squeakyclean removes any VCS outputs that can be reused between cosimulation
-# invocations.
-squeakyclean:
-	rm -rf $(TESTBENCH_PATH)/synopsys_sim.setup
-	rm -rf $(SIMLIBS_PATH) $(TESTBENCH_PATH)/libfpga_mgmt.so
-	$(MAKE) -C $(LIBRARIES_PATH) clean COSIM=1
-	rm -rf $(LIBRARIES_PATH)/*.1
-	rm -rf $(LIBRARIES_PATH)/*.1.0
+# squeakyclean removes any outputs that can be reused between regression suites
+squeakyclean: $(LIBRARIES_CLEANS) $(HARDWARE_CLEANS) 
 
+.PHONY: regression clean squeakyclean .FORCE $(USER_RULES) $(USER_CLEAN_RULES)

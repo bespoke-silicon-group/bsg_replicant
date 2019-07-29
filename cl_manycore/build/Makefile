@@ -8,6 +8,15 @@ include $(HARDWARE_PATH)/Makefile.include
 build: checkpoints/to_aws/$(PROJECT).Developer_CL.tar
 
 checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(HARDWARE_TARGETS)
+	CL_DIR=$(CL_DIR) \
+	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
+	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	XILINX_IP=$(XILINX_IP) \
+	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
+	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
+	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
+	HDK_DIR=$(HDK_DIR) \
+	XILINX_VIVADO=$(XILINX_VIVADO) \
 	CL_TOP_MODULE=$(PROJECT) CL_DIR=$(CL_DIR) ./aws_build_dcp_from_cl.sh \
 		-foreground -design $(PROJECT)
 
