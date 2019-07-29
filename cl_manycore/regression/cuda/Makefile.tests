@@ -2,35 +2,34 @@ REGRESSION_TESTS_TYPE = cuda
 TILE_GROUP_DIM_X = 2
 TILE_GROUP_DIM_Y = 2
 
-UNIFIED_MAIN_TESTS = 
+UNIFIED_TESTS = 
 
-INDEPENDENT_MAIN_TESTS += test_scalar_print
-INDEPENDENT_MAIN_TESTS += test_tile_info
-INDEPENDENT_MAIN_TESTS += test_empty
-INDEPENDENT_MAIN_TESTS += test_empty_parallel
-INDEPENDENT_MAIN_TESTS += test_multiple_binary_load
-INDEPENDENT_MAIN_TESTS += test_memset
-INDEPENDENT_MAIN_TESTS += test_barrier
-INDEPENDENT_MAIN_TESTS += test_stack_load
-INDEPENDENT_MAIN_TESTS += test_dram_load_store
-INDEPENDENT_MAIN_TESTS += test_dram_host_allocated
-INDEPENDENT_MAIN_TESTS += test_dram_device_allocated
-INDEPENDENT_MAIN_TESTS += test_vec_add
-INDEPENDENT_MAIN_TESTS += test_vec_add_parallel
-INDEPENDENT_MAIN_TESTS += test_vec_add_parallel_multi_grid
-INDEPENDENT_MAIN_TESTS += test_vec_add_serial_multi_grid
-INDEPENDENT_MAIN_TESTS += test_vec_add_shared_mem
-INDEPENDENT_MAIN_TESTS += test_max_pool2d
-INDEPENDENT_MAIN_TESTS += test_shared_mem
-INDEPENDENT_MAIN_TESTS += test_shared_mem_load_store
-INDEPENDENT_MAIN_TESTS += test_matrix_mul
-#INDEPENDENT_MAIN_TESTS += test_matrix_mul_shared_mem
+INDEPENDENT_TESTS += test_scalar_print
+INDEPENDENT_TESTS += test_tile_info
+INDEPENDENT_TESTS += test_empty
+INDEPENDENT_TESTS += test_empty_parallel
+INDEPENDENT_TESTS += test_multiple_binary_load
+INDEPENDENT_TESTS += test_memset
+INDEPENDENT_TESTS += test_barrier
+INDEPENDENT_TESTS += test_stack_load
+INDEPENDENT_TESTS += test_dram_load_store
+INDEPENDENT_TESTS += test_dram_host_allocated
+INDEPENDENT_TESTS += test_dram_device_allocated
+INDEPENDENT_TESTS += test_vec_add
+INDEPENDENT_TESTS += test_vec_add_parallel
+INDEPENDENT_TESTS += test_vec_add_parallel_multi_grid
+INDEPENDENT_TESTS += test_vec_add_serial_multi_grid
+INDEPENDENT_TESTS += test_vec_add_shared_mem
+INDEPENDENT_TESTS += test_max_pool2d
+INDEPENDENT_TESTS += test_shared_mem
+INDEPENDENT_TESTS += test_shared_mem_load_store
+INDEPENDENT_TESTS += test_matrix_mul
+#INDEPENDENT_TESTS += test_matrix_mul_shared_mem
 
-INDEPENDENT_MAIN_TESTS += test_float_vec_add
-INDEPENDENT_MAIN_TESTS += test_float_vec_add_shared_mem
+INDEPENDENT_TESTS += test_float_vec_add
+INDEPENDENT_TESTS += test_float_vec_add_shared_mem
 
-REGRESSION_TESTS = $(UNIFIED_MAIN_TESTS) $(INDEPENDENT_MAIN_TESTS)
-COSIM_REGRESSION_TESTS = $(REGRESSION_TESTS)
+REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
 DEFINES += -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR))
 DEFINES += -DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) 

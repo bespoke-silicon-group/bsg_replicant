@@ -1,16 +1,14 @@
 REGRESSION_TESTS_TYPE = spmd
 
-UNIFIED_MAIN_TESTS = test_fib 
-UNIFIED_MAIN_TESTS += test_bsg_print_stat
+UNIFIED_TESTS = test_fib 
+UNIFIED_TESTS += test_bsg_print_stat
 
+INDEPENDENT_TESTS := test_bsg_dram_loopback_cache
+INDEPENDENT_TESTS += test_symbol_to_eva
+INDEPENDENT_TESTS += test_bsg_loader_suite
+INDEPENDENT_TESTS += test_bsg_scalar_print
 
-INDEPENDENT_MAIN_TESTS := test_bsg_dram_loopback_cache
-INDEPENDENT_MAIN_TESTS += test_symbol_to_eva
-INDEPENDENT_MAIN_TESTS += test_bsg_loader_suite
-INDEPENDENT_MAIN_TESTS += test_bsg_scalar_print
-
-REGRESSION_TESTS = $(UNIFIED_MAIN_TESTS) $(INDEPENDENT_MAIN_TESTS)
-COSIM_REGRESSION_TESTS = $(REGRESSION_TESTS)
+REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
 DEFINES += -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR))
 DEFINES += -DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) 
