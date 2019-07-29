@@ -11,7 +11,11 @@
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
 include ../Makefile.environment 
-#
+
+# The following makefile fragment verifies that the tools and CAD environment is
+# configured correctly. Makefile.environment must be included before this line
+include $(TESTBENCH_PATH)/Makefile.cadenv
+
 # $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
 # of rules that generate hardware for cosimulation and computation. It also defines
 # $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
@@ -60,13 +64,10 @@ $(TARGETS): $(HARDWARE_TARGETS) $(LIBRARIES_TARGETS)
 		AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO) EXTRA_TURBO=$(EXTRA_TURBO)
 
 CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
-clean: $(CLEAN_TARGETS) 
+clean: $(CLEAN_TARGETS) $(HARDWARE_CLEANS) $(LIBRARY_CLEANS)
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak
 
 $(CLEAN_TARGETS):
 	$(MAKE) -C $(basename $@) clean
-
-squeakyclean: clean $(HARDWARE_CLEANS) $(LIBRARY_CLEANS)
-	$(MAKE) -C library squeakyclean
