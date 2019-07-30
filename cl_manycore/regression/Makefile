@@ -1,13 +1,12 @@
 TARGETS = library spmd cuda python
 
-CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
-clean: $(CLEAN_TARGETS)
-$(CLEAN_TARGETS):
+.PHONY: clean %.clean regression $(TARGETS)
+
+clean: $(addsuffix .clean,$(TARGETS))
+%.clean:
 	$(MAKE) -C $(basename $@) clean
 
-REGRESSION_TARGETS := $(addsuffix .regression,$(TARGETS))
-regression: $(REGRESSION_TARGETS)
-$(REGRESSION_TARGETS):
-	$(MAKE) -C $(basename $@) regression
+regression: $(TARGETS)
+$(TARGETS): 
+	$(MAKE) -C $@ regression
 
-.PHONY: clean $(CLEAN_TARGETS) regression $(REGRESSION_TARGETS) 
