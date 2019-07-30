@@ -14,3 +14,4 @@ checkpoints
 *.bak
 *.so
 *.tmp
+*.prelim
