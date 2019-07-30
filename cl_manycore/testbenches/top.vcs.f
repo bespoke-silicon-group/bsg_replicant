@@ -166,6 +166,7 @@ ${BSG_MANYCORE_DIR}/v/bsg_manycore.v
 ${BSG_MANYCORE_DIR}/testbenches/common/v/vanilla_core_trace.v
 ${BSG_MANYCORE_DIR}/testbenches/common/v/vanilla_core_profiler.v
 ${BSG_MANYCORE_DIR}/testbenches/common/v/vcache_profiler.v
+${BSG_MANYCORE_DIR}/testbenches/common/v/infinite_mem_profiler.v
 ${BSG_MANYCORE_DIR}/testbenches/common/v/memory_system.v
 ${BSG_MANYCORE_DIR}/testbenches/common/v/bsg_nonsynth_mem_infinite.v
 ${BSG_MANYCORE_DIR}/testbenches/common/v/bsg_cache_wrapper_axi.v

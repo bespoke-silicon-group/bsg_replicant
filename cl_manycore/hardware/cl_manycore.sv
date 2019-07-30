@@ -726,6 +726,18 @@ if (mem_cfg_p == e_mem_cfg_default) begin
   );
 
 end
+else if (mem_cfg_p == e_mem_cfg_infinite) begin
+  bind bsg_nonsynth_mem_infinite infinite_mem_profiler #(
+    .data_width_p(data_width_p)
+    ,.x_cord_width_p(x_cord_width_p)
+    ,.y_cord_width_p(y_cord_width_p)
+  ) infty_mem_prof (
+    .*
+    ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+    ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+    ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+  );
+end
 
 // synopsys translate on
 
