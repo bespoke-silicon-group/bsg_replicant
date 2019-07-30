@@ -54,20 +54,22 @@ EXTRA_TURBO ?= 0 # Use at your own risk.
 # The TARGETS are the subdirectories containing regression tests
 TARGETS = library spmd cuda python
 
-.PHONY: clean $(CLEAN_TARGETS) cosimulation $(TARGETS)
+.PHONY: clean %.clean regression $(TARGETS)
 
 all: regression
+
 regression: $(TARGETS)
-
 $(TARGETS): $(HARDWARE_TARGETS) $(LIBRARIES_TARGETS)
-	$(MAKE) -C $@ regression DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) \
-		AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO) EXTRA_TURBO=$(EXTRA_TURBO)
+	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
+		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
+		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
-CLEAN_TARGETS := $(addsuffix .clean,$(TARGETS))
-clean: $(CLEAN_TARGETS) $(HARDWARE_CLEANS) $(LIBRARY_CLEANS)
+clean: $(addsuffix .clean,$(TARGETS)) $(HARDWARE_CLEANS) $(LIBRARY_CLEANS)
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak
 
-$(CLEAN_TARGETS):
+%.clean:
 	$(MAKE) -C $(basename $@) clean
+	rm -rf .Xil
+
