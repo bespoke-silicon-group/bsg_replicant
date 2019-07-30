@@ -16,4 +16,4 @@ CL_MANYCORE_HOST_COORD_Y             := 0
 CL_MANYCORE_DIM_X                    := $(BSG_MACHINE_GLOBAL_X)
 CL_MANYCORE_DIM_Y                    := $(shell expr $(BSG_MACHINE_GLOBAL_Y) - 1)
 
-CL_MANYCORE_MEM_CFG                  := e_mem_cfg_default
+CL_MANYCORE_MEM_CFG                  := e_mem_cfg_infinite
