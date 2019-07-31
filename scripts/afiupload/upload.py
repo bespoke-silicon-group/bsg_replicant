@@ -8,7 +8,7 @@ import json
 from TarAction import TarAction
 from NameAction import NameAction
 from BucketAction import BucketAction
-from CommitIDAction import CommitIDAction
+from RepoAction import RepoAction
 from PathAction import PathAction
 from VersionAction import VersionAction
 
@@ -30,8 +30,8 @@ def setup_argparse():
     parser.add_argument('-c', '--configuration', type=str, nargs=1, 
                         default=["Not-Provided"],
                         help='String describing the FPGA image configuration')
-    parser.add_argument('-r', action=CommitIDAction, nargs='+',
-                        help='A string with a repo name and commit id: git_repo@commit_id')
+    parser.add_argument('-r', action=RepoAction, nargs='+',
+                        help='A repository directory name in the Build Directory')
     parser.add_argument('-d', '--dryrun', action='store_const', const=True,default=False,
                         help='Upload the image, but do not process it (dry run)')
     return parser

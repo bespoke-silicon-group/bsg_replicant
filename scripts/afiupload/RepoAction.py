@@ -1,8 +1,9 @@
 import os
 import git
+from git.exc import CacheError
 from argparse import Action, ArgumentTypeError
 
-class CommitIDAction(Action):
+class RepoAction(Action):
         def __call__(self, parser, namespace, repo_at_commit_id, option_string=None):
                 build_dir = getattr(namespace, "BuildDirectory")
                 if(build_dir) is None:
@@ -17,10 +18,9 @@ class CommitIDAction(Action):
                 repo_ids[repo] = {"commit": commit, "path":path}
                 setattr(namespace, self.dest, repo_ids)
         
-        def validate(self, build_dir, repo_at_commit_id):
-                [name, commit] = repo_at_commit_id.split('@')
-                short = os.path.join(build_dir, name)
-                long = os.path.join(build_dir, name) + '_' + commit
+        def validate(self, build_dir, repo):
+                short = os.path.join(build_dir, repo)
+                long = os.path.join(build_dir, repo)
 
                 if os.path.isdir(short):
                         d = short
@@ -31,8 +31,13 @@ class CommitIDAction(Action):
                                                 "Searched for {} and {}".format(short, long))
 
                 r = git.Repo(d)
-                sha = r.head.object.hexsha
+                i = r.index
+                if len(i.diff(None)) != 0:
+                        raise CacheError(f"Local {repo} repository differs " +
+                                         "from remote. Have you committed " +
+                                         "and pushed your changes?")
 
-                if(not sha.startswith(commit)):
-                        raise ValueError("Commit ID argument {} does not match current commit {} of {}: ".format(commit[0:7], sha[0:7], d))
-                return (name, commit, d)
+                sha = r.head.object.hexsha
+                sha = sha[0:7]
+                
+                return (repo, sha, d)
