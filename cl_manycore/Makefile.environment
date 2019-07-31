@@ -7,10 +7,10 @@ __MAKEFILE_ENVIRONMENT = 1
 CL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 # Check if we are running inside of the BSG Bladerunner repository by searching
-# for Makefile.deps. If Makefile.deps is found, then we are and we should use
+# for Makefile.common. If Makefile.common is found, then we are and we should use
 # that to define BSG_IP_CORES_DIR/BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR and
 # override previous settings. Warn, to provide feedback.
-ifneq ("$(wildcard $(CL_DIR)/../../Makefile.deps)","")
+ifneq ("$(wildcard $(CL_DIR)/../../Makefile.common)","")
 
 # Override BSG_IP_CORES_DIR and BSG_MANYCORE_DIR and warn if there is a
 # mismatch. := is critical here since it assigns the value of the variable
