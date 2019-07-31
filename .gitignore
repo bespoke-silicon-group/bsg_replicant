@@ -3,3 +3,5 @@
 *.str
 *.log
 *~
+__pycache__
+.Xil
