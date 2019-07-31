@@ -2,6 +2,10 @@ include ../Makefile.environment
 include $(CL_DIR)/Makefile.hdk
 include $(HARDWARE_PATH)/Makefile.include
 
+# The following makefile fragment verifies that the tools and CAD environment is
+# configured correctly. Makefile.environment must be included before this line
+include $(TESTBENCH_PATH)/Makefile.cadenv
+
 .DEFAULT_GOAL=build
 .PHONY: clean build
 
