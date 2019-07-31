@@ -6,11 +6,11 @@ include $(HARDWARE_PATH)/Makefile.include
 .PHONY: clean build
 
 build: checkpoints/to_aws/$(PROJECT).Developer_CL.tar
-
 checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(HARDWARE_TARGETS)
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	XILINX_IP=$(XILINX_IP) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
 	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
