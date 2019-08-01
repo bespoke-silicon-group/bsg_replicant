@@ -1,10 +1,13 @@
 REGRESSION_TESTS_TYPE = cuda
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
+TILE_GROUP_DIM_X ?= 2
+TILE_GROUP_DIM_Y ?= 2
 
 UNIFIED_TESTS = 
 
-INDEPENDENT_TESTS += test_scalar_print
+INDEPENDENT_TESTS += test_brg_addmm
+INDEPENDENT_TESTS += test_brg_sum_out
+INDEPENDENT_TESTS += test_brg_embedding
+INDEPENDENT_TESTS += test_brg_embedding_backward
 INDEPENDENT_TESTS += test_tile_info
 INDEPENDENT_TESTS += test_empty
 INDEPENDENT_TESTS += test_empty_parallel
