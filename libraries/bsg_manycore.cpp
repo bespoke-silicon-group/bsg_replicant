@@ -1481,6 +1481,10 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	size_t n_words = sz >> 2;
 	hb_mc_npa_t addr = *npa;
 
+#ifdef COSIM
+        sv_set_virtual_dip_switch(0, 1);
+#endif
+
 	/* send store requests one word at a time */
 	for (size_t i = 0; i < n_words; i++) {
 
@@ -1494,6 +1498,10 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 		// increment EPA by 1: (EPA's address words)
 		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + sizeof(uint32_t));
 	}
+
+#ifdef COSIM
+        sv_set_virtual_dip_switch(0, 0);
+#endif
 
 	return HB_MC_SUCCESS;
 }
@@ -1529,6 +1537,9 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         if (err != HB_MC_SUCCESS)
                 return err;
 
+#ifdef COSIM
+        sv_set_virtual_dip_switch(0, 1);
+#endif
 
         /* track requests and responses with ids and id_to_rsp_i */
         std::stack <uint32_t, std::vector<uint32_t> > ids;
@@ -1617,6 +1628,9 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
 
                 }
         }
+#ifdef COSIM
+        sv_set_virtual_dip_switch(0, 0);
+#endif
 
         return HB_MC_SUCCESS;
 }
