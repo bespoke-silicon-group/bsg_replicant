@@ -31,6 +31,7 @@
 
 `include "bsg_bladerunner_rom_pkg.vh"
 
+`define COSIM
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_bladerunner_rom_pkg::*;
@@ -291,6 +292,44 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
   );
 
 // manycore wrapper
+
+
+
+`ifdef COSIM
+
+logic ns_core_clk;
+
+bsg_nonsynth_clock_gen #(
+  .cycle_time_p(40000)
+) core_clk_gen (
+  .o(ns_core_clk)
+);
+
+logic ns_core_reset;
+bsg_nonsynth_reset_gen #(
+  .num_clocks_p(1)
+  ,.reset_cycles_lo_p(0)
+  ,.reset_cycles_hi_p(16)
+) core_reset_gen (
+  .clk_i(ns_core_clk)
+  ,.async_reset_o(ns_core_reset)
+);
+
+`endif
+
+
+logic core_clk;
+logic core_reset;
+
+`ifdef COSIM
+  assign core_clk = ns_core_clk;
+  assign core_reset = ns_core_reset;
+`else
+  assign core_clk = clk_main_a0;
+  assign core_reset = ~rst_main_n_sync;
+`endif
+
+
 `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p, load_id_width_p);
 
 bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
@@ -320,8 +359,8 @@ bsg_manycore_wrapper #(
   ,.vcache_sets_p(sets_p)
   ,.branch_trace_en_p(branch_trace_en_p)
 ) manycore_wrapper (
-  .clk_i(clk_main_a0)
-  ,.reset_i(~rst_main_n_sync)
+  .clk_i(core_clk)
+  ,.reset_i(core_reset)
 
   ,.cache_link_sif_i(cache_link_sif_li)
   ,.cache_link_sif_o(cache_link_sif_lo)
@@ -333,6 +372,34 @@ bsg_manycore_wrapper #(
   ,.loader_link_sif_o(loader_link_sif_lo)
 );
 
+`ifdef COSIM
+
+bsg_manycore_link_sif_s async_link_sif_li;
+bsg_manycore_link_sif_s async_link_sif_lo;
+
+bsg_manycore_link_sif_async_buffer #(
+  .addr_width_p(addr_width_p)
+  ,.data_width_p(data_width_p)
+  ,.x_cord_width_p(x_cord_width_p)
+  ,.y_cord_width_p(y_cord_width_p)
+  ,.load_id_width_p(load_id_width_p)
+  ,.fifo_els_p(16)
+) async_buf (
+
+  // core side
+  .L_clk_i(core_clk)
+  ,.L_reset_i(core_reset)
+  ,.L_link_sif_i(loader_link_sif_lo)
+  ,.L_link_sif_o(loader_link_sif_li)
+
+  // AXI-L side
+  ,.R_clk_i(clk_main_a0)
+  ,.R_reset_i(~rst_main_n_sync)
+  ,.R_link_sif_i(async_link_sif_li)
+  ,.R_link_sif_o(async_link_sif_lo)
+);
+
+`endif
 
 // configurable memory system
 //
@@ -358,8 +425,8 @@ memory_system #(
   ,.axi_burst_len_p(axi_burst_len_p)
 
 ) memsys (
-  .clk_i(clk_main_a0)
-  ,.reset_i(~rst_main_n_sync)
+  .clk_i(core_clk)
+  ,.reset_i(core_reset)
 
   ,.link_sif_i(cache_link_sif_lo)
   ,.link_sif_o(cache_link_sif_li)
@@ -422,6 +489,9 @@ logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
 logic print_stat_v_lo;
 logic [data_width_p-1:0] print_stat_tag_lo;
 
+bsg_manycore_link_sif_s axil_link_sif_li;
+bsg_manycore_link_sif_s axil_link_sif_lo;
+
 axil_to_mcl #(
   .num_mcl_p        (1                )
   ,.num_tiles_x_p    (num_tiles_x_p    )
@@ -433,8 +503,8 @@ axil_to_mcl #(
   ,.load_id_width_p  (load_id_width_p  )
   ,.max_out_credits_p(max_out_credits_p)
 ) axil_to_mcl_inst (
-  .clk_i             (clk_main_a0       )
-  ,.reset_i           (~rst_main_n_sync  )
+  .clk_i             (clk_main_a0)
+  ,.reset_i           (~rst_main_n_sync)
 
   // axil slave interface
   ,.s_axil_mcl_awvalid(m_axil_ocl_awvalid)
@@ -456,14 +526,22 @@ axil_to_mcl #(
   ,.s_axil_mcl_rready (m_axil_ocl_rready )
 
   // manycore link
-  ,.link_sif_i        (loader_link_sif_lo)
-  ,.link_sif_o        (loader_link_sif_li)
+  ,.link_sif_i        (axil_link_sif_li)
+  ,.link_sif_o        (axil_link_sif_lo)
   ,.my_x_i            (mcl_x_cord_lp     )
   ,.my_y_i            (mcl_y_cord_lp     )
 
   ,.print_stat_v_o(print_stat_v_lo)
   ,.print_stat_tag_o(print_stat_tag_lo)
 );
+
+`ifdef COSIM
+  assign axil_link_sif_li = async_link_sif_lo;
+  assign async_link_sif_li = axil_link_sif_lo;
+`else
+  assign axil_link_sif_li = loader_link_sif_li;
+  assign loader_link_sif_lo = axil_link_sif_lo;
+`endif
 
 //-----------------------------------------------
 // Debug bridge, used if need Virtual JTAG
@@ -540,8 +618,8 @@ bind vanilla_core vanilla_core_trace #(
 logic [31:0] global_ctr;
 
 bsg_cycle_counter global_cc (
-  .clk_i(clk_main_a0)
-  ,.reset_i(~rst_main_n_sync)
+  .clk_i(core_clk)
+  ,.reset_i(core_reset)
   ,.ctr_r_o(global_ctr)
 );
 
