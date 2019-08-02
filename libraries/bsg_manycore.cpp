@@ -1430,6 +1430,12 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 	if (err != HB_MC_SUCCESS)
 		return err;
 
+        // This pair of matching function calls changes the clock period of the
+        // manycore during data transfer to accelerate simulation
+#ifdef COSIM
+        sv_set_virtual_dip_switch(0, 1);
+#endif
+
 	const uint32_t *words = (const uint32_t*)data;
 	size_t n_words = sz >> 2;
 	hb_mc_npa_t addr = *npa;
@@ -1448,6 +1454,9 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 		hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + 4);
 	}
 
+#ifdef COSIM
+        sv_set_virtual_dip_switch(0, 0);
+#endif
 	return HB_MC_SUCCESS;
 }
 

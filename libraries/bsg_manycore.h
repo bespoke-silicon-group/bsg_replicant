@@ -47,6 +47,10 @@
 extern "C" {
 #endif
 
+#ifdef COSIM
+extern void sv_set_virtual_dip_switch(int, int);
+#endif
+
 typedef int hb_mc_manycore_id_t;
 #define HB_MC_MANYCORE_ID_ANY -1
 
