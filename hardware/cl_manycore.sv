@@ -300,7 +300,7 @@ axi_register_slice_light AXIL_OCL_REG_SLC (
 logic ns_core_clk;
 
 bsg_nonsynth_clock_gen #(
-  .cycle_time_p(40000)
+  .cycle_time_p(400000)
 ) core_clk_gen (
   .o(ns_core_clk)
 );
@@ -322,7 +322,9 @@ logic core_clk;
 logic core_reset;
 
 `ifdef COSIM
-  assign core_clk = ns_core_clk;
+  assign core_clk = sh_cl_status_vdip_q2[0]
+    ? ns_core_clk;
+    : clk_main_a0
   assign core_reset = ns_core_reset;
 `else
   assign core_clk = clk_main_a0;
