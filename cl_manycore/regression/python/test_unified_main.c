@@ -7,7 +7,7 @@
 #include "python_tests.h"
 
 int test_python(int argc, char **argv) {
-        int len;
+        int len, err;
         const char *python_path = BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/";
         char *test_name;
 
@@ -38,14 +38,14 @@ int test_python(int argc, char **argv) {
         PyObject *obj = Py_BuildValue("s", program_path);
         FILE *fp = _Py_fopen_obj(obj, "r+");
 
-        PyRun_SimpleFileEx(fp, program_path, 0);
+        err = PyRun_SimpleFileEx(fp, program_path, 0);
 
         if (Py_FinalizeEx() < 0) {
                 exit(120);
         }
         fclose(fp);
 
-        return 0;
+        return err;
 }
 
 #ifdef COSIM
