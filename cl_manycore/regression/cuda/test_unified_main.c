@@ -1,41 +1,35 @@
-/******************************************************************************/
-/* Runs the scalar printing kernel on a 2x2 tile group.                       */
-/* Each tile prints specific values using bsg_print_int, bsg_print_unsined,   */
-/* bsg_print_hexadecimal, bsg_print_float, bsg_print_float_scientific.        */
-/* Grid dimensions are prefixed at 1x1.                                       */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/scalar_print/      */
-/* manycore binary in the BSG Manycore repository.                            */
-/******************************************************************************/
+#include "test_unified_main.h"
+#include <sys/stat.h>
 
-
-#include "test_scalar_print.h"
-
-#define TEST_NAME "test_scalar_print"
 #define ALLOC_NAME "default_allocator"
 
-
-int kernel_scalar_print () {
-	bsg_pr_test_info("Running the CUDA Scalar Print Kernel "
-                         "on a grid of 2x2 tile groups.\n\n");
+int test_unified_main (int argc, char **argv) {
+        struct arguments args = {};
+        argp_parse(&argp_name, argc, argv, 0, 0, &args);	
+        char *test_name = args.testname;
+        char banner_message[256];
+        bsg_pr_test_info("Running the CUDA Unified Main %s "
+                         "on a grid of 2x2 tile groups\n\n", test_name);
 	int rc;
 
-	srand(time); 
-
-
+	srand(time);
 
         /**********************************************************************/
         /* Define path to binary.                                             */
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
 	hb_mc_device_t device;
-	rc = hb_mc_device_init(&device, TEST_NAME, 0);
+	rc = hb_mc_device_init(&device, test_name, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize device.\n");
 		return rc;
 	}
 
-	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/scalar_print/main.riscv";
+        char elf[256];
+        snprintf(elf, sizeof(elf),
+                 BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime/%s/main.riscv",
+                 test_name + sizeof("test_") - 1);
+        
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -50,21 +44,21 @@ int kernel_scalar_print () {
         /* tile groups needed based on block_size_x/y                         */
         /**********************************************************************/
 	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
-
 	hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
 
 
         /**********************************************************************/
 	/* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-	int argv[1] = {};
+	int kernel_argv[1] = {};
 
-
+        char kernel_name[256];
+        snprintf(kernel_name, sizeof(kernel_name), "kernel_%s", test_name + sizeof("test_") - 1);
         /**********************************************************************/
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_scalar_print", 0, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, kernel_name, 0, kernel_argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -108,18 +102,18 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_scalar_print Regression Test (COSIMULATION)\n");
-	int rc = kernel_scalar_print();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+        bsg_pr_test_info("Unified Main Regression Test (COSIMULATION)\n");
+	int rc = test_unified_main(argc, argv);
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_scalar_print Regression Test (F1)\n");
-	int rc = kernel_scalar_print();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("Unified Main CUDA Regression Test (F1)\n");
+	int rc = test_unified_main(argc, argv);
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
 
