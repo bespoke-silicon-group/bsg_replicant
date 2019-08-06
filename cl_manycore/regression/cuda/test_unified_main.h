@@ -1,5 +1,5 @@
-#ifndef TEST_TILE_INFO_H
-#define TEST_TILE_INFO_H
+#ifndef TEST_UNIFIED_MAIN_H
+#define TEST_UNIFIED_MAIN_H
 
 
 #include <stdio.h>
