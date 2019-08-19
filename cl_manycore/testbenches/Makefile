@@ -14,7 +14,7 @@ include ../Makefile.environment
 
 # The following makefile fragment verifies that the tools and CAD environment is
 # configured correctly. Makefile.environment must be included before this line
-include $(TESTBENCH_PATH)/Makefile.cadenv
+include $(CL_DIR)/Makefile.cadenv
 
 # $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
 # of rules that generate hardware for cosimulation and computation. It also defines

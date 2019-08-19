@@ -36,7 +36,7 @@ endif
 
 # The following makefile fragment verifies that the tools and CAD environment is
 # configured correctly. Makefile.environment must be included before this line
-include $(TESTBENCH_PATH)/Makefile.cadenv
+include $(CL_DIR)/Makefile.cadenv
 
 # The following variables are set by $(CL_DIR)/Makefile.hdk, which will fail if
 # Makefile.environment is not included hdk_setup.sh has not been run, or
