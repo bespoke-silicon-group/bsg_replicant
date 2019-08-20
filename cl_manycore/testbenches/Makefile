@@ -64,7 +64,7 @@ $(TARGETS): $(HARDWARE_TARGETS) $(LIBRARIES_TARGETS)
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
-clean: $(addsuffix .clean,$(TARGETS)) $(HARDWARE_CLEANS) $(LIBRARY_CLEANS)
+clean: $(addsuffix .clean,$(TARGETS)) $(HARDWARE_CLEANS) $(LIBRARIES_CLEANS)
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak
