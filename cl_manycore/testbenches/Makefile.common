@@ -99,6 +99,7 @@ CXXDEFINES += -DCOSIM -DVCS
 CXXFLAGS   += -lstdc++
 
 # VDEFINES are used during Verilog compilation
+VDEFINES   += VCS_SIM
 ifeq ($(AXI_PROT_CHECK),1)
 VDEFINES   += ENABLE_PROTOCOL_CHK
 endif
@@ -112,6 +113,13 @@ VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 endif
 
+VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_misc
+VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_cache
+VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_noc
+VINCLUDES += $(BSG_MANYCORE_DIR)/v
+VINCLUDES += $(BSG_MANYCORE_DIR)/v/vanilla_bean
+
+VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VLOGAN_FILELIST += $(TESTBENCH_PATH)/top.vcs.f
 VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
@@ -172,7 +180,7 @@ $(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
 	XILINX_VIVADO=$(XILINX_VIVADO) \
 	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
 		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
-		-l $@.prelim
+		$(VLOGAN_INCLUDES) -l $@.prelim
 	mv $@.prelim $@
 
 # VCS Generates an executable file by compiling the $(SRC_PATH)/%.c or
