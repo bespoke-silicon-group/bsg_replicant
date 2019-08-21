@@ -32,7 +32,7 @@ logic rst_main_n_sync;
 `include "unused_ddr_a_b_d_template.inc"
 //`include "unused_ddr_c_template.inc"
 `include "unused_pcim_template.inc"
-//`include "unused_dma_pcis_template.inc"
+`include "unused_dma_pcis_template.inc"
 `include "unused_cl_sda_template.inc"
 `include "unused_sh_bar1_template.inc"
 `include "unused_apppf_irq_template.inc"
@@ -173,240 +173,55 @@ logic m_axi4_manycore_rvalid;
 logic m_axi4_manycore_rready;
 
 //--------------------------------------------
-// Concatenated Signals
+// AXI4 Manycore System
 //---------------------------------------------
-logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_awid;
-logic [`axi4_to_sh_ddr_num*64-1:0] m_axi4_concat_awaddr;
-logic [`axi4_to_sh_ddr_num*8-1:0] m_axi4_concat_awlen;
-logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_awsize;
-logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_awburst;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_awlock;
-logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_awcache;
-logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_awprot;
-logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_awregion;
-logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_awqos;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_awvalid;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_awready;
+assign m_axi4_manycore_rid = sh_cl_ddr_rid;
+assign m_axi4_manycore_rdata = sh_cl_ddr_rdata;
+assign m_axi4_manycore_rresp = sh_cl_ddr_rresp;
+assign m_axi4_manycore_rlast = sh_cl_ddr_rlast;
+assign m_axi4_manycore_rvalid = sh_cl_ddr_rvalid;
+assign cl_sh_ddr_rready = m_axi4_manycore_rready;
 
-logic [`axi4_to_sh_ddr_num*512-1:0] m_axi4_concat_wdata;
-logic [`axi4_to_sh_ddr_num*64-1:0] m_axi4_concat_wstrb;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_wlast;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_wvalid;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_wready;
+assign cl_sh_ddr_awid = m_axi4_manycore_awid;
+assign cl_sh_ddr_awaddr = m_axi4_manycore_awaddr;
+assign cl_sh_ddr_awlen = m_axi4_manycore_awlen;
+assign cl_sh_ddr_awsize = m_axi4_manycore_awsize;
+assign cl_sh_ddr_awburst = m_axi4_manycore_awburst;
+assign cl_sh_ddr_awlock = m_axi4_manycore_awlock;
+assign cl_sh_ddr_awcache = m_axi4_manycore_awcache;
+assign cl_sh_ddr_awprot = m_axi4_manycore_awprot;
+assign cl_sh_ddr_awregion = m_axi4_manycore_awregion;
+assign cl_sh_ddr_awqos = m_axi4_manycore_awqos;
+assign cl_sh_ddr_awvalid = m_axi4_manycore_awvalid;
+assign m_axi4_manycore_awready = sh_cl_ddr_awready;
 
-logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_bid;
-logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_bresp;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_bvalid;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_bready;
+assign cl_sh_ddr_wdata = m_axi4_manycore_wdata;
+assign cl_sh_ddr_wstrb = m_axi4_manycore_wstrb;
+assign cl_sh_ddr_wlast = m_axi4_manycore_wlast;
+assign cl_sh_ddr_wvalid = m_axi4_manycore_wvalid;
+assign m_axi4_manycore_wready = sh_cl_ddr_wready;
 
-logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_arid;
-logic [`axi4_to_sh_ddr_num*64-1:0] m_axi4_concat_araddr;
-logic [`axi4_to_sh_ddr_num*8-1:0] m_axi4_concat_arlen;
-logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_arsize;
-logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_arburst;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_arlock;
-logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_arcache;
-logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_arprot;
-logic [`axi4_to_sh_ddr_num*3-1:0] m_axi4_concat_arregion;
-logic [`axi4_to_sh_ddr_num*4-1:0] m_axi4_concat_arqos;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_arvalid;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_arready;
+assign m_axi4_manycore_bid = sh_cl_ddr_bid;
+assign m_axi4_manycore_bresp = sh_cl_ddr_bresp;
+assign m_axi4_manycore_bvalid = sh_cl_ddr_bvalid;
+assign cl_sh_ddr_bready = m_axi4_manycore_bready;
 
-logic [`axi4_to_sh_ddr_num*6-1:0] m_axi4_concat_rid;
-logic [`axi4_to_sh_ddr_num*512-1:0] m_axi4_concat_rdata;
-logic [`axi4_to_sh_ddr_num*2-1:0] m_axi4_concat_rresp;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_rlast;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_rvalid;
-logic [`axi4_to_sh_ddr_num*1-1:0] m_axi4_concat_rready;
-
-//--------------------------------------------
-// AXI4 DMA/Manycore System
-//---------------------------------------------
-
-//--------------------------------------------
-// Concatenate Manycore and DMA Signals for the Crossbar
-//---------------------------------------------
-assign {m_axi4_manycore_rid, cl_sh_dma_pcis_rid} = m_axi4_concat_rid;
-assign {m_axi4_manycore_rdata, cl_sh_dma_pcis_rdata} = m_axi4_concat_rdata;
-assign {m_axi4_manycore_rresp, cl_sh_dma_pcis_rresp} = m_axi4_concat_rresp;
-assign {m_axi4_manycore_rlast, cl_sh_dma_pcis_rlast} = m_axi4_concat_rlast;
-assign {m_axi4_manycore_rvalid, cl_sh_dma_pcis_rvalid} = m_axi4_concat_rvalid;
-assign m_axi4_concat_rready = {m_axi4_manycore_rready, sh_cl_dma_pcis_rready};
-
-assign m_axi4_concat_awid = {m_axi4_manycore_awid, sh_cl_dma_pcis_awid};
-assign m_axi4_concat_awaddr = {m_axi4_manycore_awaddr, sh_cl_dma_pcis_awaddr};
-assign m_axi4_concat_awlen = {m_axi4_manycore_awlen, sh_cl_dma_pcis_awlen};
-assign m_axi4_concat_awsize = {m_axi4_manycore_awsize, sh_cl_dma_pcis_awsize};
-assign m_axi4_concat_awburst = {m_axi4_manycore_awburst, 2'b01};
-assign m_axi4_concat_awlock = {m_axi4_manycore_awlock, 2'b00};
-assign m_axi4_concat_awcache = {m_axi4_manycore_awcache, 4'b0000};
-assign m_axi4_concat_awprot = {m_axi4_manycore_awprot, 3'b000};
-assign m_axi4_concat_awregion = {m_axi4_manycore_awregion, 4'b0000};
-assign m_axi4_concat_awqos = {m_axi4_manycore_awqos, 4'b0000};
-assign m_axi4_concat_awvalid = {m_axi4_manycore_awvalid, sh_cl_dma_pcis_awvalid};
-assign {m_axi4_manycore_awready, cl_sh_dma_pcis_awready} = m_axi4_concat_awready;
-
-assign m_axi4_concat_wdata = {m_axi4_manycore_wdata, sh_cl_dma_pcis_wdata};
-assign m_axi4_concat_wstrb = {m_axi4_manycore_wstrb, sh_cl_dma_pcis_wstrb};
-assign m_axi4_concat_wlast = {m_axi4_manycore_wlast, sh_cl_dma_pcis_wlast};
-assign m_axi4_concat_wvalid = {m_axi4_manycore_wvalid, sh_cl_dma_pcis_wvalid};
-assign {m_axi4_manycore_wready, cl_sh_dma_pcis_wready} = m_axi4_concat_wready;
-
-assign {m_axi4_manycore_bid, cl_sh_dma_pcis_bid} = m_axi4_concat_bid;
-assign {m_axi4_manycore_bresp, cl_sh_dma_pcis_bresp} = m_axi4_concat_bresp;
-assign {m_axi4_manycore_bvalid, cl_sh_dma_pcis_bvalid} = m_axi4_concat_bvalid;
-assign m_axi4_concat_bready = {m_axi4_manycore_bready, sh_cl_dma_pcis_bready};
-
-assign m_axi4_concat_arid = {m_axi4_manycore_arid, sh_cl_dma_pcis_arid};
-assign m_axi4_concat_araddr = {m_axi4_manycore_araddr, sh_cl_dma_pcis_araddr};
-assign m_axi4_concat_arlen = {m_axi4_manycore_arlen, sh_cl_dma_pcis_arlen};
-assign m_axi4_concat_arsize = {m_axi4_manycore_arsize, sh_cl_dma_pcis_arsize};
-assign m_axi4_concat_arburst = {m_axi4_manycore_arburst, 2'b01};
-assign m_axi4_concat_arlock = {m_axi4_manycore_arlock, 2'b00};
-assign m_axi4_concat_arcache = {m_axi4_manycore_arcache, 4'b0000};
-assign m_axi4_concat_arprot = {m_axi4_manycore_arprot, 3'b000};
-assign m_axi4_concat_arregion = {m_axi4_manycore_arregion, 4'b0000};
-assign m_axi4_concat_arqos = {m_axi4_manycore_arqos, 4'b0000};
-assign m_axi4_concat_arvalid = {m_axi4_manycore_arvalid, sh_cl_dma_pcis_arvalid};
-assign {m_axi4_manycore_arready, cl_sh_dma_pcis_arready} = m_axi4_concat_arready;
-
-axi_crossbar_v2_1_18_axi_crossbar #(
-  .C_FAMILY                   ("virtexuplus"       ),
-  .C_NUM_SLAVE_SLOTS          (2                   ),
-  .C_NUM_MASTER_SLOTS         (1                   ),
-  .C_AXI_ID_WIDTH             (6                   ),
-  .C_AXI_ADDR_WIDTH           (64                  ),
-  .C_AXI_DATA_WIDTH           (512                 ),
-  .C_AXI_PROTOCOL             (0                   ), // 0 is AXI4 Full
-  .C_NUM_ADDR_RANGES          (1                   ),
-  .C_M_AXI_BASE_ADDR          (128'H00000000000000000000000000000000),
-  .C_M_AXI_ADDR_WIDTH         (64'H0000004000000040),
-  .C_S_AXI_BASE_ID            (64'H0000000000000000),
-  .C_S_AXI_THREAD_ID_WIDTH    (64'H0000000500000005),
-  .C_AXI_SUPPORTS_USER_SIGNALS(0                   ),
-  .C_AXI_AWUSER_WIDTH         (1                   ),
-  .C_AXI_ARUSER_WIDTH         (1                   ),
-  .C_AXI_WUSER_WIDTH          (1                   ),
-  .C_AXI_RUSER_WIDTH          (1                   ),
-  .C_AXI_BUSER_WIDTH          (1                   ),
-  .C_M_AXI_WRITE_CONNECTIVITY (32'H00000003        ),
-  .C_M_AXI_READ_CONNECTIVITY  (32'H00000003        ),
-  .C_R_REGISTER               (0                   ),
-  .C_S_AXI_SINGLE_THREAD      (64'H0000000000000000),
-  .C_S_AXI_WRITE_ACCEPTANCE   (64'H0000000200000002),
-  .C_S_AXI_READ_ACCEPTANCE    (64'H0000000200000002),
-  .C_M_AXI_WRITE_ISSUING      (32'H00000004        ),
-  .C_M_AXI_READ_ISSUING       (32'H00000004        ),
-  .C_S_AXI_ARB_PRIORITY       (64'H0000000000000000),
-  .C_M_AXI_SECURE             (32'H00000000        ),
-  .C_CONNECTIVITY_MODE        (0                   )
-) xbar (
-  .aclk          (clk_main_a0    ),
-  .aresetn       (rst_main_n_sync),
-  .s_axi_awid    (m_axi4_concat_awid   ),
-  .s_axi_awaddr  (m_axi4_concat_awaddr ),
-  .s_axi_awlen   (m_axi4_concat_awlen  ),
-  .s_axi_awsize  (m_axi4_concat_awsize ),
-  .s_axi_awburst (m_axi4_concat_awburst),
-  .s_axi_awlock  (m_axi4_concat_awlock ),
-  .s_axi_awcache (m_axi4_concat_awcache),
-  .s_axi_awprot  (m_axi4_concat_awprot ),
-  .s_axi_awqos   (m_axi4_concat_awqos  ),
-  .s_axi_awuser  (2'b0),
-  .s_axi_awvalid (m_axi4_concat_awvalid),
-  .s_axi_awready (m_axi4_concat_awready),
-  .s_axi_wid     (12'H0         ),
-  .s_axi_wdata   (m_axi4_concat_wdata  ),
-  .s_axi_wstrb   (m_axi4_concat_wstrb  ),
-  .s_axi_wlast   (m_axi4_concat_wlast  ),
-  .s_axi_wuser   (2'H0          ),
-  .s_axi_wvalid  (m_axi4_concat_wvalid ),
-  .s_axi_wready  (m_axi4_concat_wready ),
-  .s_axi_bid     (m_axi4_concat_bid    ),
-  .s_axi_bresp   (m_axi4_concat_bresp  ),
-  .s_axi_buser   (              ),
-  .s_axi_bvalid  (m_axi4_concat_bvalid ),
-  .s_axi_bready  (m_axi4_concat_bready ),
-  .s_axi_arid    (m_axi4_concat_arid   ),
-  .s_axi_araddr  (m_axi4_concat_araddr ),
-  .s_axi_arlen   (m_axi4_concat_arlen  ),
-  .s_axi_arsize  (m_axi4_concat_arsize ),
-  .s_axi_arburst (m_axi4_concat_arburst),
-  .s_axi_arlock  (m_axi4_concat_arlock ),
-  .s_axi_arcache (m_axi4_concat_arcache),
-  .s_axi_arprot  (m_axi4_concat_arprot ),
-  .s_axi_arqos   (m_axi4_concat_arqos  ),
-  .s_axi_aruser  (2'H0          ),
-  .s_axi_arvalid (m_axi4_concat_arvalid),
-  .s_axi_arready (m_axi4_concat_arready),
-  .s_axi_rid     (m_axi4_concat_rid    ),
-  .s_axi_rdata   (m_axi4_concat_rdata  ),
-  .s_axi_rresp   (m_axi4_concat_rresp  ),
-  .s_axi_rlast   (m_axi4_concat_rlast  ),
-  .s_axi_ruser   (              ),
-  .s_axi_rvalid  (m_axi4_concat_rvalid ),
-  .s_axi_rready  (m_axi4_concat_rready ),
-  .m_axi_awid    (cl_sh_ddr_awid[5:0]  ),
-  .m_axi_awaddr  (cl_sh_ddr_awaddr   ),
-  .m_axi_awlen   (cl_sh_ddr_awlen    ),
-  .m_axi_awsize  (cl_sh_ddr_awsize   ),
-  .m_axi_awburst (cl_sh_ddr_awburst  ),
-  .m_axi_awlock  (                   ),
-  .m_axi_awcache (                   ),
-  .m_axi_awprot  (                   ),
-  .m_axi_awregion(                   ),
-  .m_axi_awqos   (                   ),
-  .m_axi_awuser  (                   ),
-  .m_axi_awvalid (cl_sh_ddr_awvalid  ),
-  .m_axi_awready (sh_cl_ddr_awready  ),
-  .m_axi_wid     (cl_sh_ddr_wid[5:0] ),
-  .m_axi_wdata   (cl_sh_ddr_wdata    ),
-  .m_axi_wstrb   (cl_sh_ddr_wstrb    ),
-  .m_axi_wlast   (cl_sh_ddr_wlast    ),
-  .m_axi_wuser   (                   ),
-  .m_axi_wvalid  (cl_sh_ddr_wvalid   ),
-  .m_axi_wready  (sh_cl_ddr_wready   ),
-  .m_axi_bid     (sh_cl_ddr_bid[5:0] ),
-  .m_axi_bresp   (sh_cl_ddr_bresp    ),
-  .m_axi_buser   (                   ),
-  .m_axi_bvalid  (sh_cl_ddr_bvalid   ),
-  .m_axi_bready  (cl_sh_ddr_bready   ),
-  .m_axi_arid    (cl_sh_ddr_arid[5:0]),
-  .m_axi_araddr  (cl_sh_ddr_araddr   ),
-  .m_axi_arlen   (cl_sh_ddr_arlen    ),
-  .m_axi_arsize  (cl_sh_ddr_arsize   ),
-  .m_axi_arburst (cl_sh_ddr_arburst  ),
-  .m_axi_arlock  (                   ),
-  .m_axi_arcache (                   ),
-  .m_axi_arprot  (                   ),
-  .m_axi_arregion(                   ),
-  .m_axi_arqos   (                   ),
-  .m_axi_aruser  (                   ),
-  .m_axi_arvalid (cl_sh_ddr_arvalid  ),
-  .m_axi_arready (sh_cl_ddr_arready  ),
-  .m_axi_rid     (sh_cl_ddr_rid[5:0] ),
-  .m_axi_rdata   (sh_cl_ddr_rdata    ),
-  .m_axi_rresp   (sh_cl_ddr_rresp    ),
-  .m_axi_rlast   (sh_cl_ddr_rlast    ),
-  .m_axi_ruser   (1'H0               ),
-  .m_axi_rvalid  (sh_cl_ddr_rvalid   ),
-  .m_axi_rready  (cl_sh_ddr_rready   ));
+assign cl_sh_ddr_arid = m_axi4_manycore_arid;
+assign cl_sh_ddr_araddr = m_axi4_manycore_araddr;
+assign cl_sh_ddr_arlen = m_axi4_manycore_arlen;
+assign cl_sh_ddr_arsize = m_axi4_manycore_arsize;
+assign cl_sh_ddr_arburst = m_axi4_manycore_arburst;
+assign cl_sh_ddr_arlock = m_axi4_manycore_arlock;
+assign cl_sh_ddr_arcache = m_axi4_manycore_arcache;
+assign cl_sh_ddr_arprot = m_axi4_manycore_arprot;
+assign cl_sh_ddr_arregion = m_axi4_manycore_arregion;
+assign cl_sh_ddr_arqos = m_axi4_manycore_arqos;
+assign cl_sh_ddr_arvalid = m_axi4_manycore_arvalid;
+assign m_axi4_manycore_arready = sh_cl_ddr_arready;
 
 //--------------------------------------------
 // AXI-Lite OCL System
 //---------------------------------------------
-
-// Tied to 0, for now:
-//assign m_axil_ocl_awready = 1'b0;
-//assign m_axil_ocl_wready = 1'b0;
-//assign m_axil_ocl_bvalid = 1'b0;
-//assign m_axil_ocl_bresp = 2'b00;
-//assign m_axil_ocl_arready = 1'b0;
-
-// Read data/response
-//assign m_axil_ocl_rvalid = 1'b0;
-//assign m_axil_ocl_rresp = 2'b00;
-
 axi_register_slice_light AXIL_OCL_REG_SLC (
    .aclk          (clk_main_a0),
    .aresetn       (rst_main_n_sync),

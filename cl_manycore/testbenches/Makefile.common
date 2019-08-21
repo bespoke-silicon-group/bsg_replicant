@@ -100,6 +100,7 @@ CXXFLAGS   += -lstdc++
 
 # VDEFINES are used during Verilog compilation
 VDEFINES   += VCS_SIM
+VDEFINES   += DISABLE_VJTAG_DEBUG
 ifeq ($(AXI_PROT_CHECK),1)
 VDEFINES   += ENABLE_PROTOCOL_CHK
 endif
