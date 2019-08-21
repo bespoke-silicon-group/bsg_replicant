@@ -26,7 +26,8 @@
 +incdir+${CL_DIR}/testbenches
 
 # Manycore HDL Files
--f ${BSG_MANYCORE_DIR}/machines/sv.include
+-f ${BSG_MANYCORE_DIR}/machines/core.include
+-f ${BSG_MANYCORE_DIR}/machines/sim.include
 
 # Custom Logic (CL) design files
 ${CL_DIR}/hardware/bsg_bladerunner_configuration.v
