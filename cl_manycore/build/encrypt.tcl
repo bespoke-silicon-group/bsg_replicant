@@ -60,8 +60,6 @@ file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_stitch.v                  $T
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router_buffered.v         $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router.v                  $TARGET_DIR
 
-file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt.vh                 $TARGET_DIR
-file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma_pkt.vh             $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v                  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt_decode.v           $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_manycore_link_to_cache.v     $TARGET_DIR
