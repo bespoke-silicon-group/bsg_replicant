@@ -1,6 +1,13 @@
 REGRESSION_TESTS_TYPE = specint
 
 UNIFIED_TESTS = test_000.test 
+UNIFIED_TESTS+= test_164.gzip
+UNIFIED_TESTS+= test_175.vpr
+UNIFIED_TESTS+= test_181.mcf
+#UNIFIED_TESTS+= test_186.crafty
+UNIFIED_TESTS+= test_197.parser
+UNIFIED_TESTS+= test_256.bzip2
+#UNIFIED_TESTS+= test_300.twolf
 
 INDEPENDENT_TESTS :=
 
