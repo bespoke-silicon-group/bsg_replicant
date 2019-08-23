@@ -43,16 +43,21 @@ int test_unified_main (int argc, char **argv) {
 	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
 	int err, r = HB_MC_FAIL, len;
 
-	const char *spmd_path = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/";
-	const char *spmd_name = "/main.riscv";
+	const char *spmd_path = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/specint2000/";	
         char *test_name;
         struct arguments args = {NULL};
 
-        argp_parse (&argp_name, argc, argv, 0, 0, &args);
-        test_name = args.testname;
-        bsg_pr_test_info("%s Regression Test\n", test_name);
+  argp_parse (&argp_name, argc, argv, 0, 0, &args);
+  test_name = args.testname;
+  bsg_pr_test_info("%s Regression Test\n", test_name);
 
-	len = strlen(spmd_path) + strlen(test_name) + strlen(spmd_name);
+	test_name += strlen("test_");
+
+	char spmd_name[strlen(test_name)+strlen(".riscv")];
+	strcpy(spmd_name, test_name);
+	strcat(spmd_name, ".riscv");
+
+	len = strlen(spmd_path) + strlen(spmd_name);
 
 	char program_path[len + 1], *ptr;
 	program_path[len] = '\0';
@@ -60,10 +65,6 @@ int test_unified_main (int argc, char **argv) {
 
 	strcpy(ptr, spmd_path);
 	ptr += strlen(spmd_path);
-
-	test_name += strlen("test_");
-	strcpy(ptr, test_name);
-	ptr += strlen(test_name);
 
 	strcpy(ptr, spmd_name);
 
