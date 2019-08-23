@@ -3,6 +3,7 @@ package_update: true
 package_upgrade: true
 packages:
  - emacs
+ - vim
  - python36-devel
 
 runcmd:
