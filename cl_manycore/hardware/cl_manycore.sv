@@ -522,6 +522,7 @@ bind vanilla_core vanilla_core_profiler #(
   .x_cord_width_p(x_cord_width_p)
   ,.y_cord_width_p(y_cord_width_p)
   ,.data_width_p(data_width_p)
+  ,.dmem_size_p(dmem_size_p)
 ) vcore_prof (
   .*
   ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
