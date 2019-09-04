@@ -1,11 +1,11 @@
 # This Makefile fragment is for setting up the CAD environment for cosimulation
 #
-# This Makefile requires Makefile.environment to be included by a previous makefile
+# This Makefile requires environment.mk to be included by a previous makefile
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 ifndef __MAKEFILE_ENVIRONMENT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: Makefile.environment not previously included$(NC)"))
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: environment.mk not previously included$(NC)"))
 endif
 
 # Cosimulation requires VCS-MX and Vivado. Search for bsg_cadenv and use

@@ -1,10 +1,10 @@
-include ../Makefile.environment
-include $(CL_DIR)/Makefile.hdk
-include $(HARDWARE_PATH)/Makefile.include
+include ../environment.mk
+include $(CL_DIR)/hdk.mk
+include $(HARDWARE_PATH)/hardware.mk
 
 # The following makefile fragment verifies that the tools and CAD environment is
-# configured correctly. Makefile.environment must be included before this line
-include $(CL_DIR)/Makefile.cadenv
+# configured correctly. environment.mk must be included before this line
+include $(CL_DIR)/cadenv.mk
 
 .DEFAULT_GOAL=build
 .PHONY: clean build

@@ -10,24 +10,25 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../Makefile.environment 
+include ../environment.mk
 
 # The following makefile fragment verifies that the tools and CAD environment is
 # configured correctly. Makefile.environment must be included before this line
-include $(CL_DIR)/Makefile.cadenv
+include $(CL_DIR)/cadenv.mk
 
-# $(HARDWARE_PATH)/Makefile.include adds to VSOURCES which is a list of verilog
+# $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
 # source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also defines $(HARDWARE_CLEANS), a list of clean
-# rules for cleaning hardware
-include $(HARDWARE_PATH)/Makefile.include
-# Makefile.libraries defines build rules for hardware and software libraries
+# but for header files. It also adds to CLEANS, a list of clean rules for
+# cleaning hardware targets.
+include $(HARDWARE_PATH)/hardware.mk
+
+# libraries.mk defines build rules for hardware and software libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# Makefile.libraries defines $(LIBRARY_TARGETS) and $(LIBRARY_CLEANS)
-include Makefile.libraries
+# libraries.mk adds to LIBRARIES and CLEANS variables
+include libraries.mk
 
 # The F1 Co-simulation sources are defined in cosimulation.mk. It adds to
 # VSOURCES, VHEADERS, and VINCLUDES and uses the variable BSG_MANYCORE_DIR
@@ -58,18 +59,18 @@ EXTRA_TURBO ?= 0 # Use at your own risk.
 #
 # The TARGETS are the subdirectories containing regression tests
 TARGETS = library spmd cuda python
-
+CLEANS += $(addsuffix .clean,$(TARGETS))
 .PHONY: clean %.clean regression $(TARGETS)
 
 all: regression
 
 regression: $(TARGETS)
-$(TARGETS): $(VHEADERS) $(VSOURCES) $(LIBRARIES_TARGETS)
+$(TARGETS): $(VHEADERS) $(VSOURCES) $(LIBRARIES)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
-clean: $(addsuffix .clean,$(TARGETS)) $(HARDWARE_CLEANS) $(LIBRARIES_CLEANS)
+clean: $(CLEANS)
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak

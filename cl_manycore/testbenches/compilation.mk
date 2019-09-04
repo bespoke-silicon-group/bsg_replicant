@@ -1,6 +1,6 @@
 # This Makefile Fragment enables cosimulation
 #
-# Makefile.environment verifies the build environment and sets the following
+# environment.mk verifies the build environment and sets the following
 # variables
 #
 # TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
@@ -9,7 +9,7 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../Makefile.environment 
+include ../../environment.mk 
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
@@ -35,31 +35,31 @@ $(error $(shell echo -e "$(RED)BSG MAKE ERROR: SRC_PATH is not defined$(NC)"))
 endif
 
 # The following makefile fragment verifies that the tools and CAD environment is
-# configured correctly. Makefile.environment must be included before this line
-include $(CL_DIR)/Makefile.cadenv
+# configured correctly. environment.mk must be included before this line
+include $(CL_DIR)/cadenv.mk
 
-# The following variables are set by $(CL_DIR)/Makefile.hdk, which will fail if
-# Makefile.environment is not included hdk_setup.sh has not been run, or
+# The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
+# environment.mk is not included hdk_setup.sh has not been run, or
 #
 # HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
 # AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
 # HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
-include $(CL_DIR)/Makefile.hdk
+include $(CL_DIR)/hdk.mk
 
-# $(HARDWARE_PATH)/Makefile.include adds to VSOURCES which is a list of verilog
+# $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
 # source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also defines $(HARDWARE_CLEANS), a list of clean
-# rules for cleaning hardware
-include $(HARDWARE_PATH)/Makefile.include
+# but for header files. It also adds to CLEANS, a list of clean rules for
+# cleaning hardware targets.
+include $(HARDWARE_PATH)/hardware.mk
 
-# Makefile.libraries defines build rules for hardware and software libraries
+# libraries.mk defines build rules for hardware and software libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# Makefile.libraries defines $(LIBRARY_TARGETS) and $(LIBRARY_CLEANS)
-include $(TESTBENCH_PATH)/Makefile.libraries
+# libraries.mk adds to LIBRARIES and CLEANS variables
+include $(TESTBENCH_PATH)/libraries.mk
 
 # -------------------- Arguments --------------------
 # This Makefile has several optional "arguments" that are passed as Variables
@@ -198,14 +198,12 @@ $(SIM_PATH)/compile.vlogan.log: $(VHEADERS) $(VSOURCES)
 # $(SRC_PATH) directory. To allow users to attach test-specific makefile
 # rules, each test has a corresponding <test_name>.rule that can have additional
 # dependencies
-$(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log \
-		$(LIBRARIES_TARGETS)
+$(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log $(LIBRARIES)
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
 
-$(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log \
-		$(LIBRARIES_TARGETS)
+$(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log $(LIBRARIES)
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l compile.vcs.log

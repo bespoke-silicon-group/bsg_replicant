@@ -1,5 +1,5 @@
-include ../Makefile.environment
-include $(CL_DIR)/Makefile.hdk
+include ../environment.mk
+include $(CL_DIR)/hdk.mk
 INCLUDES += -I$(SDK_DIR)/userspace/include
 INCLUDES += -I$(HDK_DIR)/common/software/include 
 INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include -I.
