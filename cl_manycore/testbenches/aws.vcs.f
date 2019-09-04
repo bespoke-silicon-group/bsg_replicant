@@ -1,8 +1,5 @@
 +define+CARD_1=card
 
-# Custom Logic (CL) source directories
--y ${CL_DIR}/hardware
-
 # AWS source library directories
 -y ${HDK_SHELL_DESIGN_DIR}/lib
 -y ${HDK_SHELL_DESIGN_DIR}/interfaces
@@ -19,25 +16,6 @@
 +incdir+${HDK_SHELL_DESIGN_DIR}/ip/cl_debug_bridge/bd_0/ip/ip_0/hdl/verilog
 +incdir+${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice/hdl
 +incdir+${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl
-
-# Custom Logic (CL) include directories
-+incdir+${CL_DIR}/../hdl/
-+incdir+${CL_DIR}/hardware
-+incdir+${CL_DIR}/testbenches
-
-# Manycore HDL Files
--f ${BSG_MANYCORE_DIR}/machines/core.include
--f ${BSG_MANYCORE_DIR}/machines/sim.include
-
-# Custom Logic (CL) design files
-${CL_DIR}/hardware/bsg_bladerunner_configuration.v
-${CL_DIR}/hardware/cl_manycore_pkg.v
-${CL_DIR}/hardware/cl_manycore.sv
-${CL_DIR}/../hdl/bsg_bladerunner_rom.v
-${CL_DIR}/../hdl/axil_to_mcl.v
-${CL_DIR}/../hdl/s_axil_mcl_adapter.v
-${CL_DIR}/../hdl/axil_to_mem.sv
-${CL_DIR}/hardware/bsg_manycore_wrapper.v
 
 # Vivado library files
 #${XILINX_VIVADO}/data/ip/xilinx/ila_v6_2/hdl/ila_v6_2_syn_rfs.v
