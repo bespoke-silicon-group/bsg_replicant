@@ -1,5 +1,6 @@
 # This Makefile Fragment defines rules for compilation of the C/C++
 # regression tests.
+LDFLAGS += -lbsg_manycore_runtime -lm
 
 # each target in INDEPENDENT_TESTS needs to build its .o from a
 # .c and .h of the same name

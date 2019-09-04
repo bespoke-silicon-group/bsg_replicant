@@ -34,4 +34,3 @@ CXXDEFINES += $(DEFINES)
 FLAGS     = -g -Wall
 CFLAGS   += -std=c11 $(FLAGS) 
 CXXFLAGS += -std=c++11 $(FLAGS)
-LDFLAGS  += -lbsg_manycore_runtime -lm

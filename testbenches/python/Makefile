@@ -1,6 +1,6 @@
 # This (rather sparse) Makefile is responsible for building and
 # running regression tests in cosimulation.  Run `make help` to see the
-# available targets. (The target `help` is defined in cosimulation.mk)
+# available targets. (The target `help` is defined in compilation.mk)
 
 # environment.mk verifies the build environment and sets the following
 # makefile variables:
@@ -25,7 +25,7 @@ include $(CL_DIR)/hdk.mk
 # for this sub-directory.
 include $(REGRESSION_PATH)/python/tests.mk
 
-# The HDK Makefile must come before cosimulation.mk to override AWS'
+# The HDK Makefile must come before compilation.mk to override AWS'
 # (broken) clean HDK_COMMON_DIR is set by running `source
 # hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
@@ -34,12 +34,12 @@ include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 # tests.mk in each regression sub-directory.
 SIM_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)/
 
-# cosimulation.mk defines all of the rules for building cosimulation
+# compilation.mk defines all of the rules for building cosimulation
 # binaries
-include $(TESTBENCH_PATH)/cosimulation.mk
+include $(TESTBENCH_PATH)/compilation.mk
 
 # rules.mk defines rules for building RISC-V binaries associated with
 # the tests in this sub-directory. rules.mk must come after
-# cosimulation.mk so that <test_name>.rule and <test_name>.clean are
+# compilation.mk so that <test_name>.rule and <test_name>.clean are
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
