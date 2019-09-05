@@ -16,9 +16,10 @@ include ../Makefile.environment
 # configured correctly. Makefile.environment must be included before this line
 include $(CL_DIR)/Makefile.cadenv
 
-# $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
-# of rules that generate hardware for cosimulation and computation. It also defines
-# $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
+# $(HARDWARE_PATH)/Makefile.include adds to VSOURCES which is a list of verilog
+# source files for cosimulation and compilation, and VHEADERS, which is similar,
+# but for header files. It also defines $(HARDWARE_CLEANS), a list of clean
+# rules for cleaning hardware
 include $(HARDWARE_PATH)/Makefile.include
 # Makefile.libraries defines build rules for hardware and software libraries
 # that are necessary for running cosimulation. These are dependencies for
@@ -27,6 +28,10 @@ include $(HARDWARE_PATH)/Makefile.include
 #
 # Makefile.libraries defines $(LIBRARY_TARGETS) and $(LIBRARY_CLEANS)
 include Makefile.libraries
+
+# The F1 Co-simulation sources are defined in cosimulation.mk. It adds to
+# VSOURCES, VHEADERS, and VINCLUDES and uses the variable BSG_MANYCORE_DIR
+include $(TESTBENCH_PATH)/cosimulation.mk
 
 # -------------------- Arguments --------------------
 #
@@ -59,7 +64,7 @@ TARGETS = library spmd cuda python
 all: regression
 
 regression: $(TARGETS)
-$(TARGETS): $(HARDWARE_TARGETS) $(LIBRARIES_TARGETS)
+$(TARGETS): $(VHEADERS) $(VSOURCES) $(LIBRARIES_TARGETS)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)

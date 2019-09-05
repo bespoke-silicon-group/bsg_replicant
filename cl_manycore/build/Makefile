@@ -10,7 +10,7 @@ include $(CL_DIR)/Makefile.cadenv
 .PHONY: clean build
 
 build: checkpoints/to_aws/$(PROJECT).Developer_CL.tar
-checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(HARDWARE_TARGETS)
+checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(VHEADERS) $(VSOURCES)
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \

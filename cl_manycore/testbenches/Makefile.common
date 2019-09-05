@@ -47,9 +47,10 @@ include $(CL_DIR)/Makefile.cadenv
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 include $(CL_DIR)/Makefile.hdk
 
-# $(HARDWARE_PATH)/Makefile.include defines $(HARDWARE_TARGETS) which is a list
-# of rules that generate hardware for cosimulation and computation. It also defines
-# $(HARDWARE_CLEANS), a list of clean rules for cleaning said generated hardware
+# $(HARDWARE_PATH)/Makefile.include adds to VSOURCES which is a list of verilog
+# source files for cosimulation and compilation, and VHEADERS, which is similar,
+# but for header files. It also defines $(HARDWARE_CLEANS), a list of clean
+# rules for cleaning hardware
 include $(HARDWARE_PATH)/Makefile.include
 
 # Makefile.libraries defines build rules for hardware and software libraries
@@ -98,9 +99,14 @@ CDEFINES   += -DCOSIM -DVCS
 CXXDEFINES += -DCOSIM -DVCS
 CXXFLAGS   += -lstdc++
 
-# VDEFINES are used during Verilog compilation
+
+# So that we can limit tool-specific to a few specific spots we use VDEFINES,
+# VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
+# verilog headers, and sources (respectively). These are used during simulation
+# compilation, but transformed into a tool-specific syntax where necesssary.
 VDEFINES   += VCS_SIM
 VDEFINES   += DISABLE_VJTAG_DEBUG
+
 ifeq ($(AXI_PROT_CHECK),1)
 VDEFINES   += ENABLE_PROTOCOL_CHK
 endif
@@ -114,15 +120,22 @@ VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 endif
 
-VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_misc
-VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_cache
-VINCLUDES += $(BASEJUMP_STL_DIR)/bsg_noc
-VINCLUDES += $(BSG_MANYCORE_DIR)/v
-VINCLUDES += $(BSG_MANYCORE_DIR)/v/vanilla_bean
+# The manycore architecture unsynthesizable simulation sources (for tracing,
+# etc) are defined in sim_filelist.mk. It adds to VSOURCES, VHEADERS, and
+# VINCLUDES and uses the variable BSG_MANYCORE_DIR
+include $(BSG_MANYCORE_DIR)/machines/sim_filelist.mk
 
+# The F1 Co-simulation sources are defined in cosimulation.mk. It adds to
+# VSOURCES, VHEADERS, and VINCLUDES and uses the variable BSG_MANYCORE_DIR
+include $(TESTBENCH_PATH)/cosimulation.mk
+
+# Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
+# tool-specific versions of the same variables. VHEADERS must be compiled before
+# VSOURCES.
+VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES) 
 VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
-VLOGAN_FILELIST += $(TESTBENCH_PATH)/top.vcs.f
+VLOGAN_FILELIST += $(TESTBENCH_PATH)/aws.vcs.f
 VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
                    -sverilog +systemverilogext+.svh +systemverilogext+.sv \
                    +libext+.sv +libext+.v +libext+.vh +libext+.svh \
@@ -135,7 +148,7 @@ VCS_CXXFLAGS   += $(foreach def,$(CXXFLAGS),-CFLAGS "$(def)")
 VCS_CXXDEFINES += $(foreach def,$(CXXDEFINES),-CFLAGS "$(def)")
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
-                -timescale=1ps/1ps -sverilog -full64 +memcbk -licqueue
+                -timescale=1ps/1ps -sverilog -full64 -licqueue
 
 # NOTE: undef_vcs_macro is a HACK!!! 
 # `ifdef VCS is only used is in tb.sv top-level in the aws-fpga repository. This
@@ -145,6 +158,7 @@ VCS_VFLAGS    += +rad -undef_vcs_macro
 VLOGAN_VFLAGS += -undef_vcs_macro
 else 
 VCS_VFLAGS    += -debug_pp
+VCS_VFLAGS    += +memcbk 
 endif
 
 ifeq ($(TURBO), 1)
@@ -157,6 +171,7 @@ ifeq ($(DEBUG), 1)
 VCS_VFLAGS    += -gui
 VCS_VFLAGS    += -R
 VCS_VFLAGS    += -debug_all
+VCS_VFLAGS    += +memcbk
 endif
 
 # -------------------- TARGETS --------------------
@@ -165,22 +180,16 @@ endif
 $(SIM_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
 	cp $< $@
 
-# $(HARDWARE_TARGETS) is defined by Makefile.include in the $(HARDWARE_PATH)
-# directory. This rule generates all of the hardware files necessary for
-# simulation
 $(SIM_PATH)/compile.vlogan.log: $(SIM_PATH)/synopsys_sim.setup
 $(SIM_PATH)/compile.vlogan.log: $(CL_DIR)/Makefile.machine.include
-$(SIM_PATH)/compile.vlogan.log: $(HARDWARE_TARGETS) $(VLOGAN_FILELIST)
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+$(SIM_PATH)/compile.vlogan.log: $(VHEADERS) $(VSOURCES)
 	XILINX_IP=$(XILINX_IP) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
 	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
 	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
 	XILINX_VIVADO=$(XILINX_VIVADO) \
-	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) -f $(VLOGAN_FILELIST) \
-		$(TESTBENCH_PATH)/$(WRAPPER_NAME).sv $(VLOGAN_DEFINES)  \
+	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) $(VLOGAN_SOURCES) \
+		-f $(TESTBENCH_PATH)/aws.vcs.f $(VLOGAN_DEFINES)  \
 		$(VLOGAN_INCLUDES) -l $@.prelim
 	mv $@.prelim $@
 

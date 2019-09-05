@@ -2,7 +2,7 @@ include ../Makefile.environment
 include Makefile.include
 
 .DEFAULT_GOAL=all
-all: $(HARDWARE_TARGETS)
+all: $(VSOURCES)
 hardware:all
 
 .PHONY: clean all hardware
