@@ -22,13 +22,13 @@ include $(CL_DIR)/cadenv.mk
 # cleaning hardware targets.
 include $(HARDWARE_PATH)/hardware.mk
 
-# libraries.mk defines build rules for hardware and software libraries
+# simlibs.mk defines build rules for hardware and software libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# libraries.mk adds to LIBRARIES and CLEANS variables
-include libraries.mk
+# simlibs.mk adds to LIBRARIES and CLEANS variables
+include simlibs.mk
 
 # The F1 Co-simulation sources are defined in cosimulation.mk. It adds to
 # VSOURCES, VHEADERS, and VINCLUDES and uses the variable BSG_MANYCORE_DIR
