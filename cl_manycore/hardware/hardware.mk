@@ -37,7 +37,7 @@ VSOURCES += $(CL_DIR)/../hdl/axil_to_mem.sv
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 
-HARDWARE_CLEANS = hardware.clean
+CLEANS += hardware.clean
 
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.include
 	python $(HARDWARE_PATH)/create_bladerunner_rom.py \

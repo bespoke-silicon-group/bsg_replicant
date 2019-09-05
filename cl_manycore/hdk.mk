@@ -3,7 +3,7 @@ RED=\033[0;31m
 NC=\033[0m
 
 ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR undefined while trying to configure HDK Environment. Did you include Makefile.environment?$(NC)")
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR undefined while trying to configure HDK Environment. Did you include environment.mk?$(NC)")
 endif
 
 # First, check to see if HDK_SHELL_DESIGN_DIR is defined. When hdk_setup.sh is
