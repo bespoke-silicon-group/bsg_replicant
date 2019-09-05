@@ -53,12 +53,12 @@ include $(CL_DIR)/hdk.mk
 # cleaning hardware targets.
 include $(HARDWARE_PATH)/hardware.mk
 
-# simlibs.mk defines build rules for hardware and software libraries
+# simlibs.mk defines build rules for hardware and software simulation libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# simlibs.mk adds to LIBRARIES and CLEANS variables
+# simlibs.mk adds to SIMLIBS and CLEANS variables
 include $(TESTBENCH_PATH)/simlibs.mk
 
 # -------------------- Arguments --------------------
@@ -200,12 +200,12 @@ $(SIM_PATH)/compile.vlogan.log: $(VHEADERS) $(VSOURCES)
 # $(SRC_PATH) directory. To allow users to attach test-specific makefile
 # rules, each test has a corresponding <test_name>.rule that can have additional
 # dependencies
-$(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log $(LIBRARIES)
+$(SIM_PATH)/%: $(SRC_PATH)/%.c $(SIM_PATH)/compile.vlogan.log $(SIMLIBS)
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
 
-$(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log $(LIBRARIES)
+$(SIM_PATH)/%: $(SRC_PATH)/%.cpp $(SIM_PATH)/compile.vlogan.log $(SIMLIBS)
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l compile.vcs.log

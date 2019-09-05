@@ -22,12 +22,12 @@ include $(CL_DIR)/cadenv.mk
 # cleaning hardware targets.
 include $(HARDWARE_PATH)/hardware.mk
 
-# simlibs.mk defines build rules for hardware and software libraries
+# simlibs.mk defines build rules for hardware and software simulation libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# simlibs.mk adds to LIBRARIES and CLEANS variables
+# simlibs.mk adds to SIMLIBS and CLEANS variables
 include simlibs.mk
 
 # The F1 Co-simulation sources are defined in cosimulation.mk. It adds to
@@ -65,7 +65,7 @@ CLEANS += $(addsuffix .clean,$(TARGETS))
 all: regression
 
 regression: $(TARGETS)
-$(TARGETS): $(VHEADERS) $(VSOURCES) $(LIBRARIES)
+$(TARGETS): $(VHEADERS) $(VSOURCES) $(SIMLIBS)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
