@@ -363,7 +363,7 @@ module axil_to_mcl
   	if(reset_i)
   		returning_wr_v_r <= '0;
   	else
-  		returning_wr_v_r <= endpoint_in_v_lo & endpoint_in_we_lo;
+  		returning_wr_v_r <= endpoint_in_yumi_li & endpoint_in_we_lo;
   end
 
   `declare_bsg_mcl_request_s;
