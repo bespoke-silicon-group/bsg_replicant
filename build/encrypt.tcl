@@ -21,7 +21,7 @@
 
 set HDK_SHELL_DIR $::env(HDK_SHELL_DIR)
 set CL_DIR $::env(CL_DIR)
-set COMMON_DIR $CL_DIR/../hdl/
+set HARDWARE_DIR $CL_DIR/hardware
 set BSG_MANYCORE_DIR $::env(BSG_MANYCORE_DIR)
 set BSG_IP_CORES_DIR $::env(BSG_IP_CORES_DIR)
 set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
@@ -37,13 +37,13 @@ if {[llength [glob -nocomplain -dir $TARGET_DIR *]] != 0} {
 
 # List your design files below. Include any .inc files, but do NOT include
 # AWS source files.
-file copy -force $COMMON_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
-file copy -force $COMMON_DIR/axil_to_mcl.vh                                   $TARGET_DIR
-file copy -force $COMMON_DIR/axil_to_mcl.v                                    $TARGET_DIR
-file copy -force $COMMON_DIR/s_axil_mcl_adapter.v                             $TARGET_DIR
-file copy -force $COMMON_DIR/axil_to_mem.sv                                   $TARGET_DIR
-file copy -force $COMMON_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
-file copy -force $COMMON_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
+file copy -force $HARDWARE_DIR/bsg_axi_bus_pkg.vh                               $TARGET_DIR
+file copy -force $HARDWARE_DIR/axil_to_mcl.vh                                   $TARGET_DIR
+file copy -force $HARDWARE_DIR/axil_to_mcl.v                                    $TARGET_DIR
+file copy -force $HARDWARE_DIR/s_axil_mcl_adapter.v                             $TARGET_DIR
+file copy -force $HARDWARE_DIR/axil_to_mem.sv                                   $TARGET_DIR
+file copy -force $HARDWARE_DIR/bsg_bladerunner_rom_pkg.vh                       $TARGET_DIR
+file copy -force $HARDWARE_DIR/bsg_bladerunner_rom.v                            $TARGET_DIR
 
 file copy -force $CL_DIR/hardware/cl_manycore_pkg.v                           $TARGET_DIR
 file copy -force $CL_DIR/hardware/f1_parameters.vh                            $TARGET_DIR

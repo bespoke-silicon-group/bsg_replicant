@@ -129,7 +129,6 @@ include $(BSG_MANYCORE_DIR)/machines/sim_filelist.mk
 VINCLUDES += $(TESTBENCH_PATH)
 
 VSOURCES += $(TESTBENCH_PATH)/$(WRAPPER_NAME).sv
-VINCLUDES += $(CL_DIR)/../hdl/
 
 # Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
 # tool-specific versions of the same variables. VHEADERS must be compiled before
