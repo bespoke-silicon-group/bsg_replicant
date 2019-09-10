@@ -16,10 +16,10 @@ $(info BSG MAKE INFO: Assuming remaining HDK variables are set)
 # Else, if HDK_SHELL_DESIGN_DIR is not defined, then check to see if we are
 # running inside of a bladerunner-like environment, where aws-fpga is relative
 # to CL_DIR. If it is, then use it to configure our environment
-else ifneq ("$(wildcard $(CL_DIR)/../../aws-fpga)","")
-$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Using $(CL_DIR)/../../aws-fpga as AWS_FPGA_REPO_DIR variable$(NC)"))
+else ifneq ("$(wildcard $(CL_DIR)/../aws-fpga)","")
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Using $(CL_DIR)/../aws-fpga as AWS_FPGA_REPO_DIR variable$(NC)"))
 
-AWS_FPGA_REPO_DIR    = $(CL_DIR)/../../aws-fpga
+AWS_FPGA_REPO_DIR    = $(CL_DIR)/../aws-fpga
 HDK_DIR              = $(AWS_FPGA_REPO_DIR)/hdk
 HDK_COMMON_DIR       = $(HDK_DIR)/common
 HDK_SHELL_DIR        = $(realpath $(HDK_COMMON_DIR)/shell_stable/)

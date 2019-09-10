@@ -11,7 +11,7 @@ endif
 # Cosimulation requires VCS-MX and Vivado. Search for bsg_cadenv and use
 # cadenv.mk to configure EDA Environment if it is present. If it is not present,
 # check for Vivado and VCS.
-ifneq ("$(wildcard $(CL_DIR)/../../bsg_cadenv/cadenv.mk)","")
+ifneq ("$(wildcard $(CL_DIR)/../bsg_cadenv/cadenv.mk)","")
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Found bsg_cadenv. Including cadenv.mk to configure cad environment.$(NC)"))
 include $(CL_DIR)/../bsg_cadenv/cadenv.mk
 export VCS_HOME=$(VCSMX_HOME)
