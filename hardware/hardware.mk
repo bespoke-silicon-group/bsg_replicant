@@ -30,10 +30,10 @@ VSOURCES += $(HARDWARE_PATH)/cl_manycore_pkg.v
 VSOURCES += $(HARDWARE_PATH)/cl_manycore.sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 
-VSOURCES += $(CL_DIR)/../hdl/bsg_bladerunner_rom.v
-VSOURCES += $(CL_DIR)/../hdl/axil_to_mcl.v
-VSOURCES += $(CL_DIR)/../hdl/s_axil_mcl_adapter.v
-VSOURCES += $(CL_DIR)/../hdl/axil_to_mem.sv
+VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
+VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
+VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
+VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 
