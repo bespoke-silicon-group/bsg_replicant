@@ -6,8 +6,8 @@ directory of the design.
 
 Each test also has a corresponding .riscv binary file in the bsg_manycore/software/spmd/bsg_cuda_lite_runtime/ directory.
 
-To add a test, see the instructions in `cl_manycore/regression/library/`. Tests
-added to Makefile.tests in the `cl_manycore/regression/library/` will automatically
+To add a test, see the instructions in `regression/library/`. Tests
+added to Makefile.tests in the `regression/library/` will automatically
 be run in this directory. 
 
 To run all tests in an appropriately configured environment, run:
