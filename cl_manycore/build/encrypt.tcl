@@ -62,7 +62,6 @@ file copy -force $BASEJUMP_STL_DIR/bsg_noc/bsg_mesh_router.v                  $T
 
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkg.v                  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_pkt_decode.v           $TARGET_DIR
-file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_manycore_link_to_cache.v     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi_rx.v            $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_to_axi_tx.v            $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_cache/bsg_cache_dma.v                  $TARGET_DIR
@@ -144,6 +143,7 @@ file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_mul.v                        
 file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_preprocess.v                     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_fpu/bsg_fpu_sticky.v                         $TARGET_DIR
 
+file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_link_to_cache.v                   $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/parameters.vh                     $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/definitions.vh                    $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_manycore_proc_vanilla.v       $TARGET_DIR
@@ -165,6 +165,7 @@ file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hash_function.v               
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/hash_function_reverse.v           $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/v/vanilla_bean/bsg_cache_to_axi_hashed.v         $TARGET_DIR
 
+file copy -force $BSG_MANYCORE_DIR/v/bsg_manycore_addr_pkg.v                      $TARGET_DIR
 file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/bsg_mem_cfg_pkg.v           $TARGET_DIR
 
 file copy -force $BSG_MANYCORE_DIR/testbenches/common/v/vanilla_core_profiler.v     $TARGET_DIR
