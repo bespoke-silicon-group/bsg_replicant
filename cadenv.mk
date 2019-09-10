@@ -13,7 +13,7 @@ endif
 # check for Vivado and VCS.
 ifneq ("$(wildcard $(CL_DIR)/../../bsg_cadenv/cadenv.mk)","")
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Found bsg_cadenv. Including cadenv.mk to configure cad environment.$(NC)"))
-include $(CL_DIR)/../../bsg_cadenv/cadenv.mk
+include $(CL_DIR)/../bsg_cadenv/cadenv.mk
 export VCS_HOME=$(VCSMX_HOME)
 else ifndef VCS_HOME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: VCS_HOME environment variable undefined. Are you sure vcs-mx is installed?$(NC)"))

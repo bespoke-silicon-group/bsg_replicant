@@ -10,7 +10,7 @@ CL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 # for Makefile.common. If Makefile.common is found, then we are and we should use
 # that to define BSG_IP_CORES_DIR/BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR and
 # override previous settings. Warn, to provide feedback.
-ifneq ("$(wildcard $(CL_DIR)/../../Makefile.common)","")
+ifneq ("$(wildcard $(CL_DIR)/../Makefile.common)","")
 
 # Override BSG_IP_CORES_DIR and BSG_MANYCORE_DIR and warn if there is a
 # mismatch. := is critical here since it assigns the value of the variable
@@ -30,7 +30,7 @@ _BSG_MANYCORE_DIR := $(BSG_MANYCORE_DIR)
 undefine BSG_MANYCORE_DIR
 endif
 
-include $(CL_DIR)/../../Makefile.common
+include $(CL_DIR)/../Makefile.common
 
 ifdef _BSG_IP_CORES_DIR
 ifneq ($(_BSG_IP_CORES_DIR), $(BSG_IP_CORES_DIR))
