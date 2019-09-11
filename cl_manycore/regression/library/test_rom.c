@@ -6,6 +6,7 @@ int test_rom (int argc, char **argv) {
         uint32_t unexpected, expected, minexpected, maxexpected, result;
         uint32_t vcache_assoc, vcache_sets, vcache_block_words;
         uint32_t vcache_assoc_expect_max = 32, vcache_sets_expect = 64, vcache_block_words_expect = 16;
+        uint32_t major_version_max = 4; uint32_t minor_version_max = 10, minor_version_min = 0;
 
         hb_mc_dimension_t dim;
         hb_mc_coordinate_t host;
@@ -45,12 +46,11 @@ int test_rom (int argc, char **argv) {
 
         /* Read configuration and test values */
 #ifdef COSIM
-        expected = 0xFF;
         bsg_pr_test_info("Checking that the COSIM Major Version Number is %d\n", expected);
         result = hb_mc_config_get_version_major(config);
-        if(result != expected){
+        if(result > major_version_max){
                 bsg_pr_test_err("(COSIM) Incorrect Major Version Number. "
-                                "Got: %d, expected %d\n", result, expected);
+                                "Got: %d, expected <= %d\n", result, major_version_max);
                 fail = 1;
         }
 #else
@@ -58,10 +58,10 @@ int test_rom (int argc, char **argv) {
         bsg_pr_test_info("Checking that the F1 Major Version Number is "
                         "between %d and %d\n", minexpected, maxexpected);
         result = hb_mc_config_get_version_major(config);
-        if((result < minexpected) || (result > maxexpected)){
+        if((result < minor_version_min) || (result > minor_version_max)){
                 bsg_pr_test_err("Unexpected value for Major Version Number. "
-                                "Got: %d. Expected at least %d, at most %d\n",
-                                result, minexpected, maxexpected);
+                                "Got: %d. Expected >= %d, <= %d\n",
+                                result, minor_version_min, minor_version_max);
                 fail = 1;
         }
 #endif
