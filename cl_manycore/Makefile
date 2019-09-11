@@ -13,7 +13,7 @@ all: $(SIM_TARGETS) $(BUILD_TARGETS)
 .PHONY: build regression hardware
 
 build:
-	$(MAKE) -C $@ PROJECT=$(PROJECT) CL_MANYCORE_RELEASE_VERSION=$(CL_MANYCORE_RELEASE_VERSION)
+	$(MAKE) -C $@ PROJECT=$(PROJECT)
 
 regression:
 	$(MAKE) -C regression $@ 
