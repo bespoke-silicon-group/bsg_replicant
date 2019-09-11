@@ -1,10 +1,6 @@
 # This Makefile Fragment defines rules for compilation of the C/C++
 # regression tests.
 
-# REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
-# sub-directory.
-SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
-
 # each target in INDEPENDENT_TESTS needs to build its .o from a
 # .c and .h of the same name
 OBJECTS = $(foreach tgt, $(INDEPENDENT_TESTS), $(tgt).o)
