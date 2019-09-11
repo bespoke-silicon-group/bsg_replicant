@@ -5,7 +5,7 @@ int test_rom (int argc, char **argv) {
         int rc = 0, fail = 0;
         uint32_t unexpected, expected, minexpected, maxexpected, result;
         uint32_t vcache_assoc, vcache_sets, vcache_block_words;
-        uint32_t vcache_assoc_expect = 2, vcache_sets_expect = 64, vcache_block_words_expect = 16;
+        uint32_t vcache_assoc_expect_max = 32, vcache_sets_expect = 64, vcache_block_words_expect = 16;
 
         hb_mc_dimension_t dim;
         hb_mc_coordinate_t host;
@@ -180,10 +180,10 @@ int test_rom (int argc, char **argv) {
         }
 
         vcache_assoc       = hb_mc_config_get_vcache_ways(config);
-        bsg_pr_test_info("Checking that V-Cache associativity is %" PRIu32 "\n", vcache_assoc_expect);
-        if (vcache_assoc != vcache_assoc_expect) {
-                bsg_pr_test_err("Unexpected associativity value: Got %" PRIu32 ". Expected %" PRIu32 "\n",
-                                vcache_assoc, vcache_assoc_expect);
+        bsg_pr_test_info("Checking that V-Cache associativity is less than %" PRIu32 "\n", vcache_assoc_expect_max);
+        if (vcache_assoc > vcache_assoc_expect_max) {
+                bsg_pr_test_err("Unexpected associativity value: Got %" PRIu32 ". Expected <= %" PRIu32 "\n",
+                                vcache_assoc, vcache_assoc_expect_max);
                 fail = 1;
         }
 
