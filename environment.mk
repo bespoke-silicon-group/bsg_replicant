@@ -17,8 +17,7 @@ NC=\033[0m
 # has been included previously.
 __MAKEFILE_ENVIRONMENT := 1
 
-# TODO: Use git commands to get the repository root
-CL_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+CL_DIR := $(shell git rev-parse --show-toplevel)
 HARDWARE_PATH    = $(CL_DIR)/hardware/
 REGRESSION_PATH  = $(CL_DIR)/regression/
 TESTBENCH_PATH   = $(CL_DIR)/testbenches/
