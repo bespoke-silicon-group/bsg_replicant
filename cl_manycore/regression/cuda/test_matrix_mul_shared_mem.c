@@ -60,9 +60,9 @@ int kernel_matrix_mul_shared_mem () {
 	/*****************************************************************************************************************
 	* Allocate memory on the device for A, B and C.
 	******************************************************************************************************************/
-	uint32_t M = 64;   
-	uint32_t N = 128; 
-	uint32_t P = 32; 
+	uint32_t M = 32;   
+	uint32_t N = 64; 
+	uint32_t P = 16; 
 
 	eva_t A_device, B_device, C_device; 
 	rc = hb_mc_device_malloc(&device, M * N * sizeof(uint32_t), &A_device); /* allocate A[M][N] on the device */
@@ -128,8 +128,8 @@ int kernel_matrix_mul_shared_mem () {
 	* Define tg_dim_x/y: number of tiles in each tile group
 	* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
 	******************************************************************************************************************/
-	uint32_t block_size_x = 16;
-	uint32_t block_size_y = 16;
+	uint32_t block_size_x = 4;
+	uint32_t block_size_y = 4;
 
 	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 };
 
