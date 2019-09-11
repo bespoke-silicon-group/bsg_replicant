@@ -30,10 +30,6 @@ include $(HARDWARE_PATH)/hardware.mk
 # simlibs.mk adds to SIMLIBS and CLEANS variables
 include simlibs.mk
 
-# The F1 Co-simulation sources are defined in cosimulation.mk. It adds to
-# VSOURCES, VHEADERS, and VINCLUDES and uses the variable BSG_MANYCORE_DIR
-include $(TESTBENCH_PATH)/cosimulation.mk
-
 # -------------------- Arguments --------------------
 #
 # This Makefile has several optional "arguments" that are passed as Variables
