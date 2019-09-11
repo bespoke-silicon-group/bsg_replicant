@@ -1,7 +1,5 @@
 include ../../environment.mk
 include $(CL_DIR)/hdk.mk
-SRC_PATH=$(REGRESSION_PATH)/python/
-SIM_PATH=$(TESTBENCH_PATH)/python/
 
 include $(CL_DIR)/Makefile.machine.include
 include $(REGRESSION_PATH)/python/tests.mk

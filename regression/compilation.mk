@@ -1,4 +1,9 @@
-TARGETS   := $(INDEPENDENT_TESTS) test_unified_main
+# This Makefile Fragment defines rules for compilation of the C/C++
+# regression tests.
+
+# REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
+# sub-directory.
+SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 
 # each target in INDEPENDENT_TESTS needs to build its .o from a
 # .c and .h of the same name
@@ -33,19 +38,11 @@ $(USER_RULES):
 USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
 $(USER_CLEAN_RULES):
 
-.PHONY: build.clean
-.PHONY: $(USER_RULES) $(USER_CLEAN_RULES) regression regression.clean
-
 $(addsuffix .log,$(INDEPENDENT_TESTS)): %.log: % %.rule
 	sudo ./$< | tee $@
 
 %.log: test_unified_main %.rule
 	sudo ./$< $(basename $@) | tee $@
-
-regression.clean: $(USER_CLEAN_RULES)
-	rm -f *.log
-
-clean: regression.clean build.clean
 
 regression: regression.log
 regression.log: $(addsuffix .log, $(REGRESSION_TESTS))
@@ -78,3 +75,22 @@ regression.log: $(addsuffix .log, $(REGRESSION_TESTS))
 	echo ""| tee -a $@; \
 	echo "==========================================================="| tee -a $@;
 
+regression.clean: $(USER_CLEAN_RULES)
+	rm -f *.log
+
+clean: regression.clean build.clean
+
+.PHONY: build.clean
+.PHONY: $(USER_RULES) $(USER_CLEAN_RULES) regression regression.clean
+
+.DEFAULT_GOAL := help
+help:
+	@echo "Usage:"
+	@echo "make {regression|clean|<test_name>|<test_name>.log}"
+	@echo "      regression: Run all regression tests for "
+	@echo "             this subdirectory"
+	@echo "      <test_name>: Build the regression binary for a specific"
+	@echo "             test"
+	@echo "      <test_name.log>: Run a specific regression test and "
+	@echo "             generate the log file"
+	@echo "      clean: Remove all subdirectory-specific outputs"

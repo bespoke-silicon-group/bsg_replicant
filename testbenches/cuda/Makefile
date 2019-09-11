@@ -1,7 +1,5 @@
 include ../../environment.mk
 include $(CL_DIR)/hdk.mk
-SRC_PATH=$(REGRESSION_PATH)/cuda/
-SIM_PATH=$(TESTBENCH_PATH)/cuda/
 
 include $(CL_DIR)/Makefile.machine.include
 include $(REGRESSION_PATH)/cuda/tests.mk

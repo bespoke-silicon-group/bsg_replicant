@@ -15,15 +15,14 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-# This file REQUIRES several variables to be set: 
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
 # 
 # REGRESSION_TESTS: Names of all available regression tests.
 ifndef REGRESSION_TESTS
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
 endif
 
-# The following variables are typically set by the including Makefile:
-#
 # SIM_PATH: The path to the directory where the simulation is run
 ifndef SIM_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: SIM_PATH is not defined$(NC)"))
@@ -38,8 +37,7 @@ endif
 # configured correctly. environment.mk must be included before this line
 include $(CL_DIR)/cadenv.mk
 
-# The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
-# environment.mk is not included hdk_setup.sh has not been run, or
+# The following variables are set by $(CL_DIR)/hdk.mk
 #
 # HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
 # AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
@@ -175,6 +173,10 @@ VCS_VFLAGS    += -debug_all
 VCS_VFLAGS    += +memcbk
 endif
 
+# REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
+# sub-directory.
+SIM_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)/
+
 # -------------------- TARGETS --------------------
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%
 
@@ -285,4 +287,16 @@ clean: $(USER_CLEAN_RULES)
 	rm -rf .vlogansetup* stack.info*
 	rm -rf $(REGRESSION_TESTS) test_unified_main
 
-.PHONY: regression clean $(USER_RULES) $(USER_CLEAN_RULES)
+.PHONY: help regression clean $(USER_RULES) $(USER_CLEAN_RULES)
+
+.DEFAULT_GOAL := help
+help:
+	@echo "Usage:"
+	@echo "make {regression|clean|<test_name>|<test_name>.log}"
+	@echo "      regression: Run all cosimulation regression tests for "
+	@echo "             this subdirectory"
+	@echo "      <test_name>: Build the cosimulation binary for a specific"
+	@echo "             test"
+	@echo "      <test_name.log>: Run a specific cosimulation test and "
+	@echo "             generate the log file"
+	@echo "      clean: Remove all subdirectory-specific outputs"
