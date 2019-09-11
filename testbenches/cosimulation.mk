@@ -23,11 +23,6 @@ ifndef REGRESSION_TESTS
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
 endif
 
-# SIM_PATH: The path to the directory where the simulation is run
-ifndef SIM_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: SIM_PATH is not defined$(NC)"))
-endif
-
 # SRC_PATH: The path to the directory containing the .c or cpp test files
 ifndef SRC_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: SRC_PATH is not defined$(NC)"))
@@ -172,10 +167,6 @@ VCS_VFLAGS    += -R
 VCS_VFLAGS    += -debug_all
 VCS_VFLAGS    += +memcbk
 endif
-
-# REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
-# sub-directory.
-SIM_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)/
 
 # -------------------- TARGETS --------------------
 .PRECIOUS: $(SIM_PATH)/%.log $(SIM_PATH)/%

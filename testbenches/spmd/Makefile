@@ -6,6 +6,9 @@ include $(REGRESSION_PATH)/spmd/tests.mk
 # The HDK Makefile must come before cosimulation.mk to override AWS' (broken) clean
 # HDK_COMMON_DIR is set by running `source hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
+# REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
+# sub-directory.
+SIM_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)/
 include $(TESTBENCH_PATH)/cosimulation.mk
 # Makefile.rules must come after cosimulation.mk so that <test_name>.rule and
 # <test_name>.clean are not overwritten.
