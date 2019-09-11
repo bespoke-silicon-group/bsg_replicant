@@ -1,8 +1,6 @@
-PROJECT = cl_manycore
+include environment.mk
 
-# Image version is set by Bladerunner Makefile
-FPGA_IMAGE_VERSION ?= 0.0.0 
-CL_MANYCORE_RELEASE_VERSION  ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
+PROJECT = cl_manycore
 
 DEBUG ?= 
 AXI_MEMORY_MODEL ?= 1
@@ -23,7 +21,7 @@ regression:
 hardware:
 	$(MAKE) -C hardware $@ 
 
-cosim: hardware
+cosim: 
 	$(MAKE) -C testbenches regression DEBUG=$(DEBUG) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL) \
 		AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO) EXTRA_TURBO=$(EXTRA_TURBO)
 

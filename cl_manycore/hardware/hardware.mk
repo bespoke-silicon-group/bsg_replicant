@@ -2,7 +2,7 @@ include $(CL_DIR)/Makefile.machine.include
 BSG_IP_CORES_COMMIT_ID ?= deadbeef
 BSG_MANYCORE_COMMIT_ID ?= feedcafe
 BSG_F1_COMMIT_ID       ?= 42c0ffee
-
+FPGA_IMAGE_VERSION     ?= 0.0.0
 CL_MANYCORE_MAX_EPA_WIDTH            := $(BSG_MACHINE_MAX_EPA_WIDTH)
 CL_MANYCORE_DATA_WIDTH               := $(BSG_MACHINE_DATA_WIDTH)
 CL_MANYCORE_VCACHE_WAYS              := $(BSG_MACHINE_VCACHE_WAY)
@@ -10,8 +10,8 @@ CL_MANYCORE_VCACHE_SETS              := $(BSG_MACHINE_VCACHE_SET)
 CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS  := $(BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS)
 CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS := $(BSG_MACHINE_VCACHE_STRIPE_SIZE_WORDS)
 
-CL_MANYCORE_RELEASE_VERSION    ?= 00ffddee
-CL_MANYCORE_COMPILATION_DATE   ?= $(shell date +%m%d%Y)
+CL_MANYCORE_RELEASE_VERSION          ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
+CL_MANYCORE_COMPILATION_DATE         ?= $(shell date +%m%d%Y)
 
 # The manycore architecture sources are defined in arch_filelist.mk. The
 # unsynthesizable simulation sources (for tracing, etc) are defined in
