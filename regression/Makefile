@@ -18,7 +18,7 @@ $(TARGETS):
 help:
 	@echo "Usage:"
 	@echo "make {regression|clean|<subdirectory_name>}"
-	@echo "      regression: Run all cosimulation regression tests"
-	@echo "      <subdirectory_name>>: Run all the regression tests for"
-	@echo "             a specific sub-directory (Options are: $(TARGETS)"
-	@echo "      clean: Remove all cosimulation build files"
+	@echo "      regression: Run all F1 regression tests"
+	@echo "      <subdirectory_name>: Run all the regression tests for"
+	@echo "             a specific sub-directory (Options are: $(TARGETS))"
+	@echo "      clean: Remove all build files"

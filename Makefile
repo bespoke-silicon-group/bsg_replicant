@@ -20,9 +20,8 @@ help:
 	@echo "Usage:"
 	@echo "make {build|regression|cosim|clean}"
 	@echo "      build: Runs Vivado and Generates the Design Checkpoint to"
-	@echo "	            upload to AWS."
-	@echo "      regression: *Only runs on an F1 instance* Runs all "
-	@echo "             software regression tests"
+	@echo "             upload to AWS."
+	@echo "      regression: Runs all software regression tests on F1"
 	@echo "      cosim: Runs all regression tests in C/C++ Co-simulation"
 	@echo "      clean: Remove all build files"
 
