@@ -1,4 +1,4 @@
-# Co-Simulation Testbenches
+# Co-Simulation (Testbenches)
 
 This directory tree contains makefiles and source files for running
 C/C++ Co-Simulation. In Co-Simulation a C/C++ top level drives inputs

@@ -21,7 +21,7 @@ include ../environment.mk
 include $(CL_DIR)/hdk.mk
 
 # libraries.mk defines rules for building the BSG Manycore Runtime libraries,
-# flags, and a list of sources.
+# flags, and a list of sources. It defines the variaable LIBRARIES
 include $(LIBRARIES_PATH)/libraries.mk
 
 build: $(LIBRARIES)
@@ -46,6 +46,6 @@ help:
 	@echo "      build: Compile the BSG Manycore Runtime Libraries"
 	@echo "             (libbsg_manycore_runtime.so)"
 	@echo "      install: Install libbsg_manycore_runtime.so in"
-	@echo "             /usr/lib64 and the haders in /usr/include"
+	@echo "             /usr/lib64 and the headers in /usr/include"
 	@echo "      uninstall: Remove the installed libraries"
 	@echo "      clean: Remove all subdirectory-specific outputs"
