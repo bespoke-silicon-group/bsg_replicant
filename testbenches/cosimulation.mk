@@ -1,4 +1,5 @@
-# This Makefile Fragment enables cosimulation
+# This Makefile Fragment defines all of the rules for building
+# cosimulation binaries
 #
 # environment.mk verifies the build environment and sets the following
 # variables

@@ -1,3 +1,5 @@
+# This Makefile fragment defines rules for building RISC-V binaries
+# associated with the tests in this sub-directory
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/
 
 .PHONY: test_%.clean $(USER_RULES)
