@@ -23,7 +23,6 @@ set HDK_SHELL_DIR $::env(HDK_SHELL_DIR)
 set CL_DIR $::env(CL_DIR)
 set HARDWARE_DIR $CL_DIR/hardware
 set BSG_MANYCORE_DIR $::env(BSG_MANYCORE_DIR)
-set BSG_IP_CORES_DIR $::env(BSG_IP_CORES_DIR)
 set BASEJUMP_STL_DIR $::env(BASEJUMP_STL_DIR)
 set VIVADO_IP_DIR $::env(XILINX_VIVADO)/data/ip/xilinx/
 
@@ -122,7 +121,7 @@ file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w_synth.v               $T
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1r1w.v                     $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_bit_synth.v  $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte_synth.v $TARGET_DIR
-file copy -force $BSG_IP_CORES_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v $TARGET_DIR
+file copy -force $BASEJUMP_STL_DIR/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_mask_write_byte.v       $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync.v                       $TARGET_DIR
 file copy -force $BASEJUMP_STL_DIR/bsg_mem/bsg_mem_1rw_sync_synth.v                 $TARGET_DIR

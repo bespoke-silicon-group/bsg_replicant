@@ -13,8 +13,6 @@
 # CL_DIR: Path to the directory of this AWS F1 Project
 include environment.mk
 
-# Name of this project
-PROJECT = cl_manycore
 .PHONY: help build regression cosim clean
 
 .DEFAULT_GOAL := help
@@ -29,7 +27,7 @@ help:
 	@echo "      clean: Remove all build files"
 
 build:
-	$(MAKE) -C $@ PROJECT=$(PROJECT)
+	$(MAKE) -C $@ $@
 
 regression:
 	$(MAKE) -C regression $@ 

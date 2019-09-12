@@ -23,6 +23,7 @@ CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS  := $(BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS)
 CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS := $(BSG_MACHINE_VCACHE_STRIPE_SIZE_WORDS)
 CL_MANYCORE_RELEASE_VERSION          ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
 CL_MANYCORE_COMPILATION_DATE         ?= $(shell date +%m%d%Y)
+CL_TOP_MODULE                        := cl_manycore
 
 # The following variables are defined by environment.mk if this bsg_f1
 # repository is a submodule of bsg_bladerunner. If they are not set,
@@ -46,7 +47,7 @@ VINCLUDES += $(HARDWARE_PATH)
 
 VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_configuration.v
 VSOURCES += $(HARDWARE_PATH)/cl_manycore_pkg.v
-VSOURCES += $(HARDWARE_PATH)/cl_manycore.sv
+VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 
 VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
