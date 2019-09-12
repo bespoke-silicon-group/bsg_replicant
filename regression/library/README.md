@@ -1,12 +1,15 @@
 # Library (Host Library Tests)
 
-This directory contains regression tests for Host-Library functionality on
-F1. Each test is a .c/.h, or a .cpp/.hpp file pair.
+This directory runs regression tests of Manycore
+functionality on F1. Each test is a .c/.h, or a .cpp/.hpp file pair,
+located in the `regression/library` directory.
 
-All tests must:
-   - Have a `.c` and `.h` file OR `.cpp` and `.hpp` file. 
-   - The names of the `.c`/`.h` OR `.cpp`/`.hpp` must match
-   - Return 0 on success or non-zero on failure
+To add a test, see the instructions in `regression/library/`. Tests
+added to tests.mk in the `regression/library/` will automatically
+be run during regression testing.
 
-To add a test, create a `.c` and `.h` file, or a `.cpp` and `.hpp` file then add
-the name to the list in Makefile.tests in this directory.
+To run all tests in an appropriately configured environment, run:
+
+```make regression``` 
+
+Or, alternatively, run `make help` to see a list of available targets.
