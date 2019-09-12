@@ -10,14 +10,14 @@ This repository contains the following folders:
 - `build`: Vivado scripts for building FPGA Design Checkpoint Files to upload to AWS-F1
 - `hardware`: HDL sources, ROM scripts, and package files
 - `libraries`: C/C++ driver and CUDA-lite Runtime library sources
-- `regression`: Regression tests for cosimuation and AWS F1 Execution
-- `testbenches`: Testbench files for RTL and C/C++ Co-Simulation
+- `regression`: C/C++ Regression tests for co-simuation and AWS F1 Execution
+- `testbenches`: Testbench makefiles for C/C++ Co-Simulation
 - `scripts`: Scripts used to upload Amazon FPGA images (AFIs) and configure Amazon Machine Images (AMIs).
 
 This repository contains the following files:
 
 - `Makefile`: Contains targets for Co-Simulation, Bitstream Generation, F1 Regression
-- `Makefile.machine.include`: Defines the Manycore configuration for cosimulation and bitstream compilation
+- `Makefile.machine.include`: Defines the Manycore configuration for co-simulation and bitstream compilation
 - `README.md`: This file
 - `cadenv.mk`: A makefile fragment for deducing the CAD tool environment
 - `environment.mk`: A makefile fragment for deducing the build environment. 
@@ -25,11 +25,11 @@ This repository contains the following files:
 
 ## Dependencies
 
-To simulate/cosimulate/build these projects you must have the following tools.
+To simulate/co-simulate/build these projects you must have the following tools.
 
    1. Vivado 2018.2
    2. A clone of aws-fpga (v1.4.5) 
-   3. Synopsys VCS
+   3. Synopsys VCS (We use O-2018.09-SP2, but others would work)
 
 This repository depends on the following repositories: 
 

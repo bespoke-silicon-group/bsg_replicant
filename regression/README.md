@@ -7,26 +7,29 @@ To add a test, see the instructions in the relevant subdirectories.
 
 ## Contents
 
-   - `library`: These programs test the F1 library. These programs cannot
-     require a binary running on the manycore.
+This directory contains the following folders: 
 
-   - `spmd`: These programs test the Manycore functionality. These programs
-     expect a matching binary in the `software/spmd` directory of
-     `bsg_manycore`
+- `library`: Tests for the BSG Manycore Runtime Library
+- `spmd`: Tests for basic Manycore functionality. Most tests launch a self-checking program from the [BSG Manycore SPMD Directory](https://github.com/bespoke-silicon-group/bsg_manycore/tree/master/software/spmd)
+- `cuda`: Tests for CUDA-Lite functionality. These launch CUDA-Lite kernels from [BSG Manycore CUDA-Lite Directory](https://github.com/bespoke-silicon-group/bsg_manycore/tree/master/software/spmd/bsg_cuda_lite_runtime)
+- `python`: Tests with a Python top level (e.g. for TVM)
 
-   - `Makefile`: This is a simple makefile for running all of the regression tests
-     in the sub-directories. If a new directory is added, simply add it to the
-     `TARGETS` variable and it should be added to `make regression`
+This directory contains the following files:
 
-   - `Makefile.include`: This Makefile snippet is included by the Makefiles in the
-     subdirectories.
+- `Makefile`: Contains targets for regression (Run `make help` for more information)
+- `compilation.mk`: A makefile fragment for building regression binaries. Used in all of the sub-folders.
+- `cl_manycore_regression.h`: A C/C++ Header file with useful regression functions
+- `targets.mk`: A makefile fragment that lists the sub-directories of this folder.
 
-## Notes
+## Quick-Start
 
-All tests in the subdirectories must:
+To run all the regression tests in each of the sub folders run: 
 
-   - Have a `.c` and `.h` file OR `.cpp` and `.hpp` file. 
-   - The names of the `.c`/`.h` OR `.cpp`/`.hpp` must match
-   - The names must art with `test_`
-   - Return 0 on success or non-zero on failure
-   - Use `bsg_pr_test_info` and `bsg_pr_test_pass_fail` defined in `cl_manycore_regression.h` instead of stdio calls.
+`make regression`
+
+To run a specific sub-suite, run: 
+
+`make <sub-directory name>`
+
+Alternatively, navigate into one of the subdirectories and run `make
+help` for more information.
