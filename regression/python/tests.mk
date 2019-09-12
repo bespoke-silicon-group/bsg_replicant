@@ -1,10 +1,17 @@
+# This Makefile fragment defines all of the regression tests (and the
+# source path) for this sub-directory.
+
 REGRESSION_TESTS_TYPE = python
 SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 
+# "Unified tests" all use the generic test top-level:
+# test_unified_main.c
 UNIFIED_TESTS = test_python
 
+# "Independent Tests" use a per-test <test_name>.c file
 INDEPENDENT_TESTS := 
 
+# REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
 PYTHON_TEST_PATH = $(abspath $(BSG_F1_DIR)/regression/python/)

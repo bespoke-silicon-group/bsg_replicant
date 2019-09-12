@@ -1,9 +1,6 @@
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/
 
-.PHONY: help test_%.clean $(USER_RULES)
-
-help:
-	@echo "To make a specific test run: make <testname> and then execute the resulting binary"
+.PHONY: test_%.clean $(USER_RULES)
 
 $(USER_RULES): test_%.rule: $(SPMD_SRC_PATH)/%/main.riscv
 

@@ -1,10 +1,7 @@
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime/
 
-.PHONY: help
-
-help:
-	@echo "To make a specific test run: make <testname> and then execute the resulting binary"
+.PHONY:
 
 $(USER_RULES): test_%.rule: $(CUDALITE_SRC_PATH)/%/main.riscv
 
