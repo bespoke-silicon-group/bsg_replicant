@@ -28,7 +28,7 @@ CL_TOP_MODULE                        := cl_manycore
 # The following variables are defined by environment.mk if this bsg_f1
 # repository is a submodule of bsg_bladerunner. If they are not set,
 # we use default values.
-BSG_IP_CORES_COMMIT_ID ?= deadbeef
+BASEJUMP_STL_COMMIT_ID ?= deadbeef
 BSG_MANYCORE_COMMIT_ID ?= feedcafe
 BSG_F1_COMMIT_ID       ?= 42c0ffee
 FPGA_IMAGE_VERSION     ?= 0.0.0
@@ -69,7 +69,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.i
                 --host-coord-x=$(CL_MANYCORE_HOST_COORD_X) \
                 --host-coord-y=$(CL_MANYCORE_HOST_COORD_Y) \
                 --mc-version=$(CL_MANYCORE_RELEASE_VERSION) \
-                bsg_ip_cores@$(BSG_IP_CORES_COMMIT_ID) \
+                basejump_stl@$(BASEJUMP_STL_COMMIT_ID) \
                 bsg_manycore@$(BSG_MANYCORE_COMMIT_ID) \
                 bsg_f1@$(BSG_F1_COMMIT_ID) > $@
 

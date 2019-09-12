@@ -16,7 +16,7 @@ VCACHE_SETS=64
 VCACHE_BLOCK_SIZE_IN_WORDS=16
 VCACHE_STRIPE_SIZE_IN_WORDS=VCACHE_BLOCK_SIZE_IN_WORDS
 
-REPOS = ["bsg_manycore", "bsg_f1", "bsg_ip_cores"]
+REPOS = ["bsg_manycore", "bsg_f1", "basejump_stl"]
 
 class ReleaseRepoAction(argparse.Action):
         def __call__(self, parser, namespace, repo_at_commit_ids, option_string=None):
@@ -74,7 +74,7 @@ def main():
     print_item(args.host_coord_x)
     print_item(args.host_coord_y)
     print_item(args.desc_ptr)
-    print_item(args.bsg_ip_cores)
+    print_item(args.basejump_stl)
     print_item(args.bsg_manycore)
     print_item(args.bsg_f1)
     print_item(args.vcache_associativity)
