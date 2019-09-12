@@ -26,10 +26,10 @@ LIBRARIES_PATH   := $(CL_DIR)/libraries/
 BSG_MACHINE_PATH := $(CL_DIR)
 
 # Check if we are running inside of the BSG Bladerunner repository by searching
-# for Makefile.common. If Makefile.common is found, then we are and we should use
+# for project.mk. If project.mk is found, then we are and we should use
 # that to define BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR and
 # override previous settings. Warn, to provide feedback.
-ifneq ("$(wildcard $(CL_DIR)/../Makefile.common)","")
+ifneq ("$(wildcard $(CL_DIR)/../project.mk)","")
 
 # Override BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR.
 # If they were previously set, warn if there is a mismatch between the
@@ -50,9 +50,9 @@ _BSG_MANYCORE_DIR := $(BSG_MANYCORE_DIR)
 undefine BSG_MANYCORE_DIR
 endif
 
-# Include Makefile.common from Bladerunner. This will override
+# Include project.mk from Bladerunner. This will override
 # BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR
-include $(CL_DIR)/../Makefile.common
+include $(CL_DIR)/../project.mk
 
 ifdef _BASEJUMP_STL_DIR
 ifneq ($(_BASEJUMP_STL_DIR), $(BASEJUMP_STL_DIR))
@@ -71,7 +71,7 @@ endif # Matches: ifneq ($(_BSG_MANYCORE_DIR), $(BSG_MANYCORE_DIR))
 endif # Matches: ifdef _BSG_MANYCORE_DIR
 # Undefine the temporary variable to prevent its use
 undefine _BSG_MANYCORE_DIR
-endif # Matches: ifneq ("$(wildcard $(CL_DIR)/../Makefile.common)","")
+endif # Matches: ifneq ("$(wildcard $(CL_DIR)/../project.mk)","")
 
 # If BASEJUMP_STL_DIR is not defined at this point, raise an error.
 ifndef BASEJUMP_STL_DIR
