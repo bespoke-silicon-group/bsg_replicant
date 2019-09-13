@@ -18,8 +18,8 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 	echo ""| tee -a $@; \
 	echo "==========================================================="| tee -a $@; \
 	echo ""| tee -a $@; \
-	for target in $(basename $(basename $^)); do \
-		if grep "BSG REGRESSION TEST .*PASSED.*" $$target.log > /dev/null; then \
+	for target in $(notdir $(basename $^)); do \
+		if grep "BSG REGRESSION TEST .*PASSED.*" $(EXEC_PATH)/$$target.log > /dev/null; then \
 			echo "PASS: Regression Test $$target passed!"| tee -a $@; \
 			let "pass+=1"; \
 		else \
