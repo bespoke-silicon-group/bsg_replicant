@@ -4,4 +4,4 @@ set PROJ_NAME ipgen
 set SIMLIB_DIR vcs_simlibs
 
 compile_simlib -simulator vcs -family virtexuplus \
-    -language all -library all -dir $env(TESTBENCH_PATH)/$SIMLIB_DIR
+    -language all -library all -dir [exec pwd]/$SIMLIB_DIR

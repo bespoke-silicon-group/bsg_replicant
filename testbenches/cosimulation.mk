@@ -29,4 +29,3 @@ help:
 
 clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
 	rm -rf vanilla.log vcache_stats.log vanilla_stats.log
-
