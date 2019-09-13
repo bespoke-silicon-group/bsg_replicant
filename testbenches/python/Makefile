@@ -48,6 +48,6 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # The rule below defines how to run test_loader for Python tests. The loader
 # requires one argument: The test name (TEST_NAME)
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
-$(TESTBENCH_PATH)/python/%.log: $(EXEC_PATH)/test_loader %.rule
+$(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
 		+c_args="$(TEST_NAME)" | tee $@
