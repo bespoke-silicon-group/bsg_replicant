@@ -37,5 +37,5 @@ include rules.mk
 SPMD_PATH=$(BSG_MANYCORE_DIR)/software/spmd
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
 $(EXEC_PATH)/%.log: TEST_PATH=$(SPMD_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
-$(EXEC_PATH)/%.log: $(SIM_PATH)/test_loader %.rule
-	sudo ./$< $(TEST_PATH) $(TEST_NAME) | tee $@
+$(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@

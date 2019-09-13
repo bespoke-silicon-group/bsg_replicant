@@ -12,14 +12,14 @@ OBJECTS = $(foreach tgt, $(INDEPENDENT_TESTS), $(tgt).o)
 %.o: %.cpp %.hpp
 	$(CXX) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) -c -o $@ $<
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
+$(UNIFIED_TESTS): %: $(EXEC_PATH)/test_loader
+$(EXEC_PATH)/test_loader: LD=$(CC)
+$(EXEC_PATH)/test_loader: %: %.o
 	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
 
 # each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
 $(INDEPENDENT_TESTS): LD=$(CC)
-$(INDEPENDENT_TESTS): %: %.o
+$(INDEPENDENT_TESTS): %: $(EXEC_PATH)/%.o
 	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
 # To include a test in regression, the user defines a list of tests in

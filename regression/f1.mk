@@ -1,11 +1,10 @@
 # This makefile fragment defines the rules that are re-used between execution
 # regression sub-suites.
 
-
 # These two rules technically shouldn't be in this file...
 INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
 $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	sudo ./$< | tee $@
+	sudo $< | tee $@
 
 # compillation.mk defines rules for compilation of the C/C++ regression tests.
 # It defines the target <test_name> for each regression test.

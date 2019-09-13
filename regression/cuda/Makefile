@@ -34,6 +34,6 @@ include rules.mk
 # The rule below defines how to run test_loader for CUDA-Lite tests. The loader
 # requires one argument: The test name (TEST_NAME)
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
-$(EXEC_PATH)/%.log: $(SIM_PATH)/test_loader %.rule
-	sudo ./$< $(TEST_NAME) | tee $@
+$(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
+	sudo $< $(TEST_NAME) | tee $@
 
