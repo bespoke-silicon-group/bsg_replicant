@@ -1,5 +1,5 @@
-#ifndef __TEST_UNIFIED_MAIN_H
-#define __TEST_UNIFIED_MAIN_H
+#ifndef __TEST_LOADER_H
+#define __TEST_LOADER_H
 #include <bsg_manycore_errno.h>
 #include <stdio.h>
 #include <sys/ioctl.h>

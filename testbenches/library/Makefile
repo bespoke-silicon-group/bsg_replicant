@@ -30,16 +30,20 @@ include $(REGRESSION_PATH)/library/tests.mk
 # hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 
-# SIM_PATH defines this directory. REGRESSION_TESTS_TYPE is defined by
-# tests.mk in each regression sub-directory.
-SIM_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)/
+# EXEC_PATH defines this directory, where the tests are actually
+# executed. REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
+# sub-directory.
+EXEC_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)
 
-# compilation.mk defines all of the rules for building cosimulation
-# binaries
-include $(TESTBENCH_PATH)/compilation.mk
+# cosimulation.mk defines all of the re-used rules for cosimulation. 
+# (e.g. regression, clean, help, etc)
+include $(TESTBENCH_PATH)/cosimulation.mk
 
 # rules.mk defines rules for building RISC-V binaries associated with
 # the tests in this sub-directory. rules.mk must come after
 # compilation.mk so that <test_name>.rule and <test_name>.clean are
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
+
+# regression.mk defines the regression target
+include $(REGRESSION_PATH)/regression.mk

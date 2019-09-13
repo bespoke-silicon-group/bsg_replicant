@@ -58,6 +58,7 @@ include $(REGRESSION_PATH)/targets.mk
 .PHONY: clean %.clean regression $(TARGETS)
 
 regression: $(TARGETS)
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
 $(TARGETS): $(VHEADERS) $(VSOURCES) $(SIMLIBS)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\

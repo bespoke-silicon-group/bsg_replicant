@@ -1,5 +1,5 @@
-#ifndef TEST_UNIFIED_MAIN_H
-#define TEST_UNIFIED_MAIN_H
+#ifndef TEST_LOADER_H
+#define TEST_LOADER_H
 
 
 #include <stdio.h>

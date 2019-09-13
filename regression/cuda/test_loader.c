@@ -1,10 +1,10 @@
-#include "test_unified_main.h"
+#include "test_loader.h"
 #include <sys/stat.h>
 
 #define ALLOC_NAME "default_allocator"
 
-int test_unified_main (int argc, char **argv) {
-        struct arguments args = {};
+int test_loader (int argc, char **argv) {
+        struct arguments_name args = {};
         argp_parse(&argp_name, argc, argv, 0, 0, &args);	
         char *test_name = args.testname;
         char banner_message[256];
@@ -103,7 +103,7 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	svSetScope(scope);
 #endif
         bsg_pr_test_info("Unified Main Regression Test (COSIMULATION)\n");
-	int rc = test_unified_main(argc, argv);
+	int rc = test_loader(argc, argv);
         *exit_code = rc;
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return;
@@ -111,7 +111,7 @@ void cosim_main(uint32_t *exit_code, char * args) {
 #else
 int main(int argc, char ** argv) {
         bsg_pr_test_info("Unified Main CUDA Regression Test (F1)\n");
-	int rc = test_unified_main(argc, argv);
+	int rc = test_loader(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }

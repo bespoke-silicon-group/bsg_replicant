@@ -11,6 +11,7 @@ clean: $(addsuffix .clean,$(TARGETS))
 	$(MAKE) -C $(basename $@) clean
 
 regression: $(TARGETS)
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
 $(TARGETS): 
 	$(MAKE) -C $@ regression
 

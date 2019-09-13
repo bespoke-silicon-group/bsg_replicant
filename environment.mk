@@ -19,10 +19,10 @@ __MAKEFILE_ENVIRONMENT := 1
 PROJECT = cl_manycore
 
 CL_DIR           := $(shell git rev-parse --show-toplevel)
-HARDWARE_PATH    := $(CL_DIR)/hardware/
-REGRESSION_PATH  := $(CL_DIR)/regression/
-TESTBENCH_PATH   := $(CL_DIR)/testbenches/
-LIBRARIES_PATH   := $(CL_DIR)/libraries/
+HARDWARE_PATH    := $(CL_DIR)/hardware
+REGRESSION_PATH  := $(CL_DIR)/regression
+TESTBENCH_PATH   := $(CL_DIR)/testbenches
+LIBRARIES_PATH   := $(CL_DIR)/libraries
 BSG_MACHINE_PATH := $(CL_DIR)
 
 # Check if we are running inside of the BSG Bladerunner repository by searching
