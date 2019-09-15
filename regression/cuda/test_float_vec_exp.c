@@ -1,56 +1,29 @@
-// Copyright (c) 2019, University of Washington All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without modification,
-// are permitted provided that the following conditions are met:
-// 
-// Redistributions of source code must retain the above copyright notice, this list
-// of conditions and the following disclaimer.
-// 
-// Redistributions in binary form must reproduce the above copyright notice, this
-// list of conditions and the following disclaimer in the documentation and/or
-// other materials provided with the distribution.
-// 
-// Neither the name of the copyright holder nor the names of its contributors may
-// be used to endorse or promote products derived from this software without
-// specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-// ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 /******************************************************************************/
-/* A[N] * B[N] --> C[N]                                                       */
-/* Runs the floating point vector addition on one 2x2 tile group        */
+/* exp(A[N]) --> B[N]                                                         */
+/* Runs the floating point vector exponential on one 2x2 tile group           */
 /* Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.         */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_add/     */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_exp/     */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_float_vec_add.h"
+#include "test_float_vec_exp.h"
 
-#define TEST_NAME "test_float_vec_add"
+#define TEST_NAME "test_float_vec_exp"
 #define ALLOC_NAME "default_allocator"
 
 #define MAX_FLOAT_ERROR_TOLERANCE 1e-3
 
-void host_float_vec_add (float *A, float *B, float *C, int N) { 
+void host_float_vec_exp (float *A, float *B, int N) { 
 	for (int i = 0; i < N; i ++) { 
-		C[i] = A[i] + B[i];
+		B[i] = expf(A[i]);
 	}
 	return;
 }
 
 
-int kernel_float_vec_add () {
-	bsg_pr_test_info("Running the CUDA Floating Point Vector Addition "
+int kernel_float_vec_exp () {
+	bsg_pr_test_info("Running the CUDA Floating Point Vector Exponential "
                          "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
@@ -70,7 +43,7 @@ int kernel_float_vec_add () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/float_vec_add/main.riscv";
+                                                    "/float_vec_exp/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -83,7 +56,7 @@ int kernel_float_vec_add () {
         /**********************************************************************/
 	uint32_t N = 1024;
 
-	hb_mc_eva_t A_device, B_device, C_device; 
+	hb_mc_eva_t A_device, B_device; 
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to allocate memory on device.\n");
@@ -98,27 +71,18 @@ int kernel_float_vec_add () {
 	}
 
 
-	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &C_device);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to allocate memory on device.\n");
-		return rc;
-	}
-
-
         /**********************************************************************/
         /* Allocate memory on the host for A & B                              */
         /* and initialize with random values.                                 */
         /**********************************************************************/
 	float A_host[N]; 
-	float B_host[N]; 
 	for (int i = 0; i < N; i++) { 
-		A_host[i] = (((float)rand() / 0xFFFFFF) + ((float)rand() / (float)RAND_MAX));
-		B_host[i] = (((float)rand() / 0xFFFFFF) + ((float)rand() / (float)RAND_MAX));
+		A_host[i] = ((float)rand() / (float)RAND_MAX);
 	}
 
 
         /**********************************************************************/
-	/* Copy A & B from host onto device DRAM.                             */
+	/* Copy A from host onto device DRAM.                             */
         /**********************************************************************/
 	void *dst = (void *) ((intptr_t) A_device);
 	void *src = (void *) &A_host[0];
@@ -129,19 +93,10 @@ int kernel_float_vec_add () {
 	}
 
 
-	dst = (void *) ((intptr_t) B_device);
-	src = (void *) &B_host[0];
-	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to copy memory to device.\n");
-		return rc;
-	}
-
-
         /**********************************************************************/
-	/* Initialize values in C_device to 0.                                */
+	/* Initialize values in B_device to 0.                                */
         /**********************************************************************/
-	rc = hb_mc_device_memset(&device, &C_device, 0, N * sizeof(uint32_t));
+	rc = hb_mc_device_memset(&device, &B_device, 0, N * sizeof(uint32_t));
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to set memory on device.\n");
 		return rc;
@@ -165,14 +120,14 @@ int kernel_float_vec_add () {
         /**********************************************************************/
 	/* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-	int argv[5] = {A_device, B_device, C_device, N, block_size_x};
+	int argv[4] = {A_device, B_device, N, block_size_x};
 
 	
         /**********************************************************************/
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_add", 5, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_exp", 4, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -192,9 +147,9 @@ int kernel_float_vec_add () {
         /**********************************************************************/
 	/* Copy result matrix back from device DRAM into host memory.         */
         /**********************************************************************/
-	float C_host[N];
-	src = (void *) ((intptr_t) C_device);
-	dst = (void *) &C_host[0];
+	float B_host[N];
+	src = (void *) ((intptr_t) B_device);
+	dst = (void *) &B_host[0];
 	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
@@ -215,21 +170,21 @@ int kernel_float_vec_add () {
         /**********************************************************************/
 	/* Calculate the expected result using host code and compare.         */ 
         /**********************************************************************/
-	float C_expected[N]; 
-	host_float_vec_add (A_host, B_host, C_expected, N); 
+	float B_expected[N]; 
+	host_float_vec_exp (A_host, B_expected, N); 
 
 	float max_ferror = 0; 
 	float ferror = 0;
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		ferror = fabs(C_expected[i] - C_host[i]);
+		ferror = fabs(B_expected[i] - B_host[i]);
 		max_ferror = fmax ( max_ferror, ferror); 	
 		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
 			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tDiff: %.32f\n",
                                            i,
-                                           C_host[i],
-                                           C_expected[i],
+                                           B_host[i],
+                                           B_expected[i],
                                            ferror);
 			mismatch = 1;
 		}
@@ -258,16 +213,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_float_vec_add Regression Test (COSIMULATION)\n");
-	int rc = kernel_float_vec_add();
+	bsg_pr_test_info("test_float_vec_exp Regression Test (COSIMULATION)\n");
+	int rc = kernel_float_vec_exp();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_float_vec_add Regression Test (F1)\n");
-	int rc = kernel_float_vec_add();
+	bsg_pr_test_info("test_float_vec_exp Regression Test (F1)\n");
+	int rc = kernel_float_vec_exp();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }

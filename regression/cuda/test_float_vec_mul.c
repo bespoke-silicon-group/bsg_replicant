@@ -1,56 +1,29 @@
-// Copyright (c) 2019, University of Washington All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without modification,
-// are permitted provided that the following conditions are met:
-// 
-// Redistributions of source code must retain the above copyright notice, this list
-// of conditions and the following disclaimer.
-// 
-// Redistributions in binary form must reproduce the above copyright notice, this
-// list of conditions and the following disclaimer in the documentation and/or
-// other materials provided with the distribution.
-// 
-// Neither the name of the copyright holder nor the names of its contributors may
-// be used to endorse or promote products derived from this software without
-// specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-// ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 /******************************************************************************/
 /* A[N] * B[N] --> C[N]                                                       */
-/* Runs the floating point vector addition on one 2x2 tile group        */
+/* Runs the floating point vector multiplication on one 2x2 tile group        */
 /* Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.         */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_add/     */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_mul/     */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_float_vec_add.h"
+#include "test_float_vec_mul.h"
 
-#define TEST_NAME "test_float_vec_add"
+#define TEST_NAME "test_float_vec_mul"
 #define ALLOC_NAME "default_allocator"
 
 #define MAX_FLOAT_ERROR_TOLERANCE 1e-3
 
-void host_float_vec_add (float *A, float *B, float *C, int N) { 
+void host_float_vec_mul (float *A, float *B, float *C, int N) { 
 	for (int i = 0; i < N; i ++) { 
-		C[i] = A[i] + B[i];
+		C[i] = A[i] * B[i];
 	}
 	return;
 }
 
 
-int kernel_float_vec_add () {
-	bsg_pr_test_info("Running the CUDA Floating Point Vector Addition "
+int kernel_float_vec_mul () {
+	bsg_pr_test_info("Running the CUDA Floating Point Vector Multiplciation "
                          "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
@@ -70,7 +43,7 @@ int kernel_float_vec_add () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/float_vec_add/main.riscv";
+                                                    "/float_vec_mul/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -172,7 +145,7 @@ int kernel_float_vec_add () {
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_add", 5, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_mul", 5, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -216,7 +189,7 @@ int kernel_float_vec_add () {
 	/* Calculate the expected result using host code and compare.         */ 
         /**********************************************************************/
 	float C_expected[N]; 
-	host_float_vec_add (A_host, B_host, C_expected, N); 
+	host_float_vec_mul (A_host, B_host, C_expected, N); 
 
 	float max_ferror = 0; 
 	float ferror = 0;
@@ -258,16 +231,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_float_vec_add Regression Test (COSIMULATION)\n");
-	int rc = kernel_float_vec_add();
+	bsg_pr_test_info("test_float_vec_mul Regression Test (COSIMULATION)\n");
+	int rc = kernel_float_vec_mul();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_float_vec_add Regression Test (F1)\n");
-	int rc = kernel_float_vec_add();
+	bsg_pr_test_info("test_float_vec_mul Regression Test (F1)\n");
+	int rc = kernel_float_vec_mul();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
