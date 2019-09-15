@@ -1,18 +1,19 @@
 /******************************************************************************/
 /* A[N] * B[N] --> C[N]                                                       */
-/* Runs the floating point matrix multiplication on a group of 2x2 tile groups*/
+/* Runs the floating point matrix multiplication with tile-group shared meomry*/
+/* on a group of 2x2 tile groups                                              */
 /* Grid dimensions are defined based on total work / block_size_x/y           */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_matrix_mul/  */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_matrix_mul_shared_mem/  */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_float_matrix_mul.h"
+#include "test_float_matrix_mul_shared_mem.h"
 
-#define TEST_NAME "test_float_matrix_mul"
+#define TEST_NAME "test_float_matrix_mul_shared_mem"
 #define ALLOC_NAME "default_allocator"
 
-#define MAX_FLOAT_ERROR_TOLERANCE 1e-3
+#define MAX_FLOAT_ERROR_TOLERANCE 1e0
 
 
 /*! 
@@ -33,9 +34,9 @@ void host_float_matrix_mul (float *A, float *B, float *C, int M, int N, int P) {
 	
 
 
-int kernel_float_matrix_mul () {
+int kernel_float_matrix_mul_shared_mem () {
 	bsg_pr_test_info("Running the CUDA Floating Point Matrix Multiplication "
-                         "Kernel on a grid of 2x2 tile group.\n\n");
+                         "With Tilegroup-Shared Memory Kernel on a grid of 2x2 tile group.\n\n");
 	int rc;
 
 	srand(time(NULL)); 
@@ -54,7 +55,7 @@ int kernel_float_matrix_mul () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/float_matrix_mul/main.riscv";
+                                                    "/float_matrix_mul_shared_mem/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -164,12 +165,11 @@ int kernel_float_matrix_mul () {
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_matrix_mul", 8, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_matrix_mul_shared_mem", 8, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
 	}
-
 
 
         /**********************************************************************/
@@ -254,16 +254,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_float_matrix_mul Regression Test (COSIMULATION)\n");
-	int rc = kernel_float_matrix_mul();
+	bsg_pr_test_info("test_float_matrix_mul_shared_mem Regression Test (COSIMULATION)\n");
+	int rc = kernel_float_matrix_mul_shared_mem();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_float_matrix_mul Regression Test (F1)\n");
-	int rc = kernel_float_matrix_mul();
+	bsg_pr_test_info("test_float_matrix_mul_shared_mem Regression Test (F1)\n");
+	int rc = kernel_float_matrix_mul_shared_mem();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
