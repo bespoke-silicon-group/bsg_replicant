@@ -5,8 +5,10 @@
 
 #ifdef __cplusplus
 #include <cstdint>
+#include <ctime>
 #else
 #include <stdint.h>
+#include <time.h>
 #endif
 
 #ifdef __cplusplus

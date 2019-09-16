@@ -1443,6 +1443,7 @@ static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
  */
 int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
 
+	clock_t start_time = clock();
 	int error ;
 	/* loop untill all tile groups have been allocated, launched and finished. */
 	while(hb_mc_device_all_tile_groups_finished(device) != HB_MC_SUCCESS) {
@@ -1469,6 +1470,9 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
 		}
 
 	}
+
+	clock_t end_time = clock();
+	bsg_pr_info("Execution Cycles: %d\tTime(s): %e\n", (end_time - start_time), (float) (end_time - start_time) / CLOCKS_PER_SEC);
 
 	return HB_MC_SUCCESS;
 }
