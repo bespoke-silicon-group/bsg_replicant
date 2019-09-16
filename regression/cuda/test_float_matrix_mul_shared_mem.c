@@ -13,8 +13,6 @@
 #define TEST_NAME "test_float_matrix_mul_shared_mem"
 #define ALLOC_NAME "default_allocator"
 
-#define MAX_FLOAT_ERROR_TOLERANCE 1e0
-
 
 /*! 
  * Matrix multiplication code on the host side to compare the results
@@ -99,12 +97,12 @@ int kernel_float_matrix_mul_shared_mem () {
 	float A_host[M * N]; 
 	float B_host[N * P]; 
 	for (int i = 0; i < M * N; i++) { 
-		A_host[i] = (((float)rand() / 0xFFFFFF) + ((float)rand() / (float)RAND_MAX));
+		A_host[i] = hb_mc_generate_float_rand(); 
 
 	}
 
 	for (int i = 0; i < N * P; i++) { 
-		B_host[i] = (((float)rand() / 0xFFFFFF) + ((float)rand() / (float)RAND_MAX));
+		B_host[i] = hb_mc_generate_float_rand();
 	}
 
 
@@ -217,10 +215,10 @@ int kernel_float_matrix_mul_shared_mem () {
 	int mismatch = 0; 
 	for (int y = 0; y < M; y ++) { 
 		for (int x = 0; x < P; x ++){ 
-			ferror = fabs(C_expected[y * P + x] - C_host[y * P + x]);
+			ferror = hb_mc_calculate_float_error(C_expected[y * P + x], C_host[y * P + x]);
 			max_ferror = fmax ( max_ferror, ferror); 	
 			if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
-				bsg_pr_err(BSG_RED("Mismatch: ") "C[%d][%d]: %.32f\tExpected: %.32f\tDiff: %.32f\n",
+				bsg_pr_err(BSG_RED("Mismatch: ") "C[%d][%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
                                 	           y,
                                                    x,
                                         	   C_host[y * P + x],
@@ -231,7 +229,7 @@ int kernel_float_matrix_mul_shared_mem () {
 		} 
 	}
 
-	bsg_pr_test_info ("MAX FP Error: %e\n", max_ferror); 
+	bsg_pr_test_info ("MAX relative FP error: %e\n", max_ferror); 
 
 	if (mismatch) { 
 		return HB_MC_FAIL;

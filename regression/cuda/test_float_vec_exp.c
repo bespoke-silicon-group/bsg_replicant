@@ -12,8 +12,6 @@
 #define TEST_NAME "test_float_vec_exp"
 #define ALLOC_NAME "default_allocator"
 
-#define MAX_FLOAT_ERROR_TOLERANCE 1e-3
-
 void host_float_vec_exp (float *A, float *B, int N) { 
 	for (int i = 0; i < N; i ++) { 
 		B[i] = expf(A[i]);
@@ -178,10 +176,10 @@ int kernel_float_vec_exp () {
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		ferror = fabs(B_expected[i] - B_host[i]);
+		ferror = hb_mc_calculate_float_error(B_expected[i], B_host[i]);
 		max_ferror = fmax ( max_ferror, ferror); 	
 		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
-			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tDiff: %.32f\n",
+			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
                                            i,
                                            B_host[i],
                                            B_expected[i],
@@ -190,7 +188,7 @@ int kernel_float_vec_exp () {
 		}
 	} 
 
-	bsg_pr_test_info ("MAX FP Error: %e\n", max_ferror); 
+	bsg_pr_test_info ("MAX relative FP error: %e\n", max_ferror); 
 
 	if (mismatch) { 
 		return HB_MC_FAIL;

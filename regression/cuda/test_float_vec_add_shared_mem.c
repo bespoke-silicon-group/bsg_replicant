@@ -39,8 +39,6 @@
 #define TEST_NAME "test_float_vec_add_shared_mem"
 #define ALLOC_NAME "default_allocator"
 
-#define MAX_FLOAT_ERROR_TOLERANCE 1e-3
-
 void host_float_vec_add (float *A, float *B, float *C, int N) { 
 	for (int i = 0; i < N; i ++) { 
 		C[i] = A[i] + B[i];
@@ -112,8 +110,8 @@ int kernel_float_vec_add_shared_mem () {
 	float A_host[N]; 
 	float B_host[N]; 
 	for (int i = 0; i < N; i++) { 
-		A_host[i] = (((float)rand() / 0xFFFFFF) + ((float)rand() / (float)RAND_MAX));
-		B_host[i] = (((float)rand() / 0xFFFFFF) + ((float)rand() / (float)RAND_MAX));
+		A_host[i] = hb_mc_generate_float_rand();
+		B_host[i] = hb_mc_generate_float_rand();
 	}
 
 
@@ -223,10 +221,10 @@ int kernel_float_vec_add_shared_mem () {
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		ferror = fabs(C_expected[i] - C_host[i]);
+		ferror = hb_mc_calculate_float_error(C_expected[i], C_host[i]);
 		max_ferror = fmax ( max_ferror, ferror); 	
 		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
-			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tDiff: %.32f\n",
+			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tRelative Error: %.32f\n",
                                            i,
                                            C_host[i],
                                            C_expected[i],
@@ -235,7 +233,7 @@ int kernel_float_vec_add_shared_mem () {
 		}
 	} 
 
-	bsg_pr_test_info ("MAX FP Error: %e\n", max_ferror); 
+	bsg_pr_test_info ("MAX relative FP error: %e\n", max_ferror); 
 
 	if (mismatch) { 
 		return HB_MC_FAIL;
