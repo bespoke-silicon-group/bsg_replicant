@@ -38,36 +38,23 @@ enum hb_mc_uart_epa_indx {
   HB_MC_NUM_UART_EPAS
 };
 
-static hb_mc_request_packet_id_t ids [HB_MC_NUM_UART_EPAS];
+static hb_mc_request_packet_id_t ids [] = {
+  [STDOUT_EPA_INDX] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEADC) ),
+  [STDERR_EPA_INDX] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEEE0) ),
+  [BRANCH_TRACE_EPA_INDX] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEEE4) ),
+  { /* sentinel */ },
+};
 
-static FILE* uart_streams [HB_MC_NUM_UART_EPAS];
+static FILE* uart_streams [] = {
+  [STDOUT_EPA_INDX] = stdout,
+  [STDERR_EPA_INDX] = stderr,
+  [BRANCH_TRACE_EPA_INDX] = stderr,
+};
 
 static int init(hb_mc_responder_t *responder,
     hb_mc_manycore_t *mc)
 {
   bsg_pr_dbg("hello from %s\n", __FILE__);
-
-  for(int i=STDOUT_EPA_INDX; i<HB_MC_NUM_UART_EPAS; i++) {
-    switch (i) {
-      case STDOUT_EPA_INDX:
-        uart_streams[i] = stdout;
-        ids[i] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEADC) );
-        break;
-
-      case STDERR_EPA_INDX:
-        uart_streams[i] = stderr;
-        ids[i] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEEE0) );
-        break;
-
-      case BRANCH_TRACE_EPA_INDX:
-        uart_streams[i] = stderr;
-        ids[i] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEEE4) );
-        break;
-
-      default:
-        return -1;
-    }
-  }
   responder->responder_data = uart_streams;
         return 0;
 }
@@ -89,7 +76,7 @@ static int respond(hb_mc_responder_t *responder,
   auto src_y = hb_mc_request_packet_get_y_src(rqst);
 
   for(int i=STDOUT_EPA_INDX; i<HB_MC_NUM_UART_EPAS; i++) {
-    if(hb_mc_request_packet_is_match(rqst, (responder->ids + i))) {
+    if(hb_mc_request_packet_is_match(rqst, &responder->ids[i])) {
       FILE *f = ((FILE**)responder->responder_data)[i];
 
       switch (i) {
