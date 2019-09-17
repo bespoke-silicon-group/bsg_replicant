@@ -30,36 +30,82 @@
 #include <bsg_manycore_printing.h>
 #include <stdio.h>
 
-#define UART_EPA 0xEADC
+enum hb_mc_uart_epa_indx {
+  STDOUT_EPA_INDX, 
+  STDERR_EPA_INDX, 
+  BRANCH_TRACE_EPA_INDX,
 
-static hb_mc_request_packet_id_t ids [] = {
-        RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEADC) ),
-        { /* sentinel */ },
+  HB_MC_NUM_UART_EPAS
 };
 
+static hb_mc_request_packet_id_t ids [HB_MC_NUM_UART_EPAS];
+
+static FILE* uart_streams [HB_MC_NUM_UART_EPAS];
+
 static int init(hb_mc_responder_t *responder,
-		hb_mc_manycore_t *mc)
+    hb_mc_manycore_t *mc)
 {
-	bsg_pr_dbg("hello from %s\n", __FILE__);
-	responder->responder_data = stdout;
+  bsg_pr_dbg("hello from %s\n", __FILE__);
+
+  for(int i=STDOUT_EPA_INDX; i<HB_MC_NUM_UART_EPAS; i++) {
+    switch (i) {
+      case STDOUT_EPA_INDX:
+        uart_streams[i] = stdout;
+        ids[i] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEADC) );
+        break;
+
+      case STDERR_EPA_INDX:
+        uart_streams[i] = stderr;
+        ids[i] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEEE0) );
+        break;
+
+      case BRANCH_TRACE_EPA_INDX:
+        uart_streams[i] = stderr;
+        ids[i] = RQST_ID( RQST_ID_ANY_X, RQST_ID_ANY_Y, RQST_ID_ADDR(0xEEE4) );
+        break;
+
+      default:
+        return -1;
+    }
+  }
+  responder->responder_data = uart_streams;
         return 0;
 }
 
 static int quit(hb_mc_responder_t *responder,
-		hb_mc_manycore_t *mc)
+    hb_mc_manycore_t *mc)
 {
-	bsg_pr_dbg("goodbye from %s\n", __FILE__);
-	responder->responder_data = nullptr;
+  bsg_pr_dbg("goodbye from %s\n", __FILE__);
+  responder->responder_data = nullptr;
         return 0;
 }
 
 static int respond(hb_mc_responder_t *responder,
-		   hb_mc_manycore_t *mc,
-		   const hb_mc_request_packet_t *rqst)
+       hb_mc_manycore_t *mc,
+       const hb_mc_request_packet_t *rqst)
 {
-	auto data = hb_mc_request_packet_get_data(rqst);
-	FILE *f = (FILE*)responder->responder_data;
-	fputc((int)data, f);
+  auto data = hb_mc_request_packet_get_data(rqst);
+  auto src_x = hb_mc_request_packet_get_x_src(rqst);
+  auto src_y = hb_mc_request_packet_get_y_src(rqst);
+
+  for(int i=STDOUT_EPA_INDX; i<HB_MC_NUM_UART_EPAS; i++) {
+    if(hb_mc_request_packet_is_match(rqst, (responder->ids + i))) {
+      FILE *f = ((FILE**)responder->responder_data)[i];
+
+      switch (i) {
+        case BRANCH_TRACE_EPA_INDX:
+          fprintf(f, "BSG_BRANCH_TRACE x=%d y=%d target=%d\n", 
+                  src_x, src_y, (int)data);
+          break;
+
+        default:
+          fputc((int)data, f);
+          break;
+      }
+
+      break;
+    }
+  }
         return 0;
 }
 
