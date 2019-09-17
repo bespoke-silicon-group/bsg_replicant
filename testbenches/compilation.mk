@@ -81,18 +81,12 @@ NPROCS = $(shell echo "(`nproc`/4 + 1)" | bc)
 # Name of the cosimulation wrapper system verilog file.
 WRAPPER_NAME = cosim_wrapper
 
-# libfpga_mgmt will be compiled in $(TESTBENCH_PATH)
-LDFLAGS    += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH)
-
 # libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
+LDFLAGS    += -lbsg_manycore_runtime -lm
 LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
-# The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
-INCLUDES   += -I$(LIBRARIES_PATH) 
-
 CDEFINES   += -DCOSIM -DVCS
 CXXDEFINES += -DCOSIM -DVCS
 CXXFLAGS   += -lstdc++
-
 
 # So that we can limit tool-specific to a few specific spots we use VDEFINES,
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and

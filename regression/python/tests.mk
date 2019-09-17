@@ -32,5 +32,4 @@ CXXDEFINES += $(DEFINES)
 FLAGS     = -g -Wall $(shell python3.6-config --cflags) -O1 
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS) 
-LDFLAGS  += -lbsg_manycore_runtime -lm
 LDFLAGS  += $(shell python3.6-config --ldflags) 

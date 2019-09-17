@@ -1,4 +1,4 @@
-# Co-Simulation Testbenches
+# Co-Simulation (Testbenches)
 
 This directory tree contains makefiles and source files for running
 C/C++ Co-Simulation. In Co-Simulation a C/C++ top level drives inputs
@@ -19,7 +19,7 @@ This directory contains the following folders:
 This directory contains the following files:
 
 - `Makefile`: Contains targets for Co-Simulation (Run `make help` for more information)
-- `cosimulation.mk`: A makefile fragment for building Co-Simulation binaries. Used in all of the sub-folders.
+- `compilation.mk`: A makefile fragment for compiling Co-Simulation binaries. Used in all of the sub-folders.
 - `simlibs.mk`: A makefile fragment for building hardware and software simulation libraries
 - `aws.vcs.f`: A VCS filelist containing all of the AWS VCS Sources
 - `gen_simlibs.tcl`: A TCL Script for exporting the pre-compiled VCS Simulation libraires from Vivado
