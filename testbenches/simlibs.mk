@@ -44,36 +44,32 @@ $(TESTBENCH_PATH)/vcs_simlibs: $(TESTBENCH_PATH)/gen_simlibs.tcl
 
 # Define the COSIM macro so that the DPI Versions of functions are called
 $(OBJECTS): CXXFLAGS += -DCOSIM
+$(OBJECTS): CFLAGS   += -DCOSIM
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH), so direct the linker there
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(TESTBENCH_PATH) 
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-Wl,-rpath=$(TESTBENCH_PATH)
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: $(TESTBENCH_PATH)/libfpga_mgmt.so
+$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: % : $(TESTBENCH_PATH)/libfpga_mgmt.so
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1: %: %.0
 	ln -sf $@.0 $@
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so: %: %.1
 	ln -sf $@.1 $@
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH)
-$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES  = -I$(C_SDK_USR_UTILS_DIR) 
-$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(C_SDK_USR_INC_DIR)
-$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(C_COMMON_DIR)/include
-$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
+$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(SDK_DIR)/userspace/include
+$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(HDK_DIR)/common/software/include
 $(TESTBENCH_PATH)/libfpga_mgmt.so: CFLAGS = -std=c11 -D_GNU_SOURCE -fPIC -shared
-$(TESTBENCH_PATH)/libfpga_mgmt.so: $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c $(C_COMMON_DIR)/src/fpga_pci_sv.c
+$(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(SDK_DIR)/userspace/utils/sh_dpi_tasks.c
+$(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(HDK_DIR)/common/software/src/fpga_pci_sv.c
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
-libraries: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
 .PHONY: simlibs.clean
-simlibs.clean: 
+simlibs.clean: libraries.clean
 	rm -rf $(TESTBENCH_PATH)/synopsys_sim.setup
 	rm -rf $(TESTBENCH_PATH)/vcs_simlibs
 	rm -rf $(TESTBENCH_PATH)/libfpga_mgmt.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1
-
-# Clean targets for Hardware/Software Co-Simulation libraries
-CLEANS += simlibs.clean
 
 # Targets for building hardware/software Co-Simulation libraries
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so

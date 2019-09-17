@@ -21,18 +21,18 @@ include ../environment.mk
 include $(CL_DIR)/hdk.mk
 
 # libraries.mk defines rules for building the BSG Manycore Runtime libraries,
-# flags, and a list of sources. It defines the variaable LIBRARIES
+# flags, and a list of sources.
 include $(LIBRARIES_PATH)/libraries.mk
 
-build: $(LIBRARIES)
+build: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
 
-install: build
-	mv libbsg_manycore_runtime.so.1.0 /usr/lib64/
-	ln -sf /usr/lib64/libbsg_manycore_runtime.so.1.0 /usr/lib64/libbsg_manycore_runtime.so.1
-	ln -sf /usr/lib64/libbsg_manycore_runtime.so.1.0 /usr/lib64/libbsg_manycore_runtime.so
+install: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
+	mv $(notdir $^) /usr/lib64/
+	ln -sf /usr/lib64/$(notdir $^) /usr/lib64/libbsg_manycore_runtime.so.1
+	ln -sf /usr/lib64/$(notdir $^) /usr/lib64/libbsg_manycore_runtime.so
 	cp -t /usr/include $(HEADERS)
 
-clean: $(CLEANS)
+clean: libraries.clean
 
 uninstall: clean
 	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h

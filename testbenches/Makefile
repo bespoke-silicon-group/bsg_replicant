@@ -19,8 +19,7 @@ include $(CL_DIR)/cadenv.mk
 
 # $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
 # source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also adds to CLEANS, a list of clean rules for
-# cleaning hardware targets.
+# but for header files. 
 include $(HARDWARE_PATH)/hardware.mk
 
 # simlibs.mk defines build rules for hardware and software simulation libraries
@@ -65,7 +64,7 @@ $(TARGETS): $(VHEADERS) $(VSOURCES) $(SIMLIBS)
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
 CLEANS += $(addsuffix .clean,$(TARGETS))
-clean: $(CLEANS)
+clean: $(CLEANS) simlibs.clean hardware.clean
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak
