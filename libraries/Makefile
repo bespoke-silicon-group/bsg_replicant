@@ -27,9 +27,9 @@ include $(LIBRARIES_PATH)/libraries.mk
 build: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
 
 install: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
-	mv $(notdir $^) /usr/lib64/
-	ln -sf /usr/lib64/$(notdir $^) /usr/lib64/libbsg_manycore_runtime.so.1
-	ln -sf /usr/lib64/$(notdir $^) /usr/lib64/libbsg_manycore_runtime.so
+	mv $(notdir $<) /usr/lib64/
+	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so.1
+	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so
 	cp -t /usr/include $(HEADERS)
 
 clean: libraries.clean

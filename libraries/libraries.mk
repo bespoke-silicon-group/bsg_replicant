@@ -56,7 +56,7 @@ $(OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 $(OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 $(OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 $(OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC
-$(OBJECTS): % : $(HEADERS)
+$(OBJECTS): $(HEADERS)
 
 # Objects that should be compiled with debug flags
 DEBUG_OBJECTS  +=
