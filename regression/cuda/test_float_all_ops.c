@@ -11,14 +11,15 @@
 
 
 #include "test_float_all_ops.h"
+//#include <math.h>
 
 #define TEST_NAME "test_float_all_ops"
 #define ALLOC_NAME "default_allocator"
 
 #define NUM_OPS 6
+#define NUM_CORNER_CASES 6
+
 char *operations[NUM_OPS] = {"ADD", "SUB", "MUL", "DIV", "CMPR", "CVRT"};
-
-
 
 void host_float_all_ops (float *A, float *B,
                          float *res_add, float *res_sub,
@@ -36,6 +37,7 @@ void host_float_all_ops (float *A, float *B,
 	return;
 }
 
+float corner_cases[NUM_CORNER_CASES] = {INFINITY, -INFINITY, NAN, -NAN, 0.0, -0.0};
 
 int kernel_float_all_ops () {
 	bsg_pr_test_info("Running the CUDA Floating Point All Operations "
@@ -70,7 +72,7 @@ int kernel_float_all_ops () {
         /**********************************************************************/
 	/* Allocate memory on the device for A, B and all result vectors.     */
         /**********************************************************************/
-	uint32_t N = 64;
+	uint32_t N = 1024;
 
 	hb_mc_eva_t A_device, B_device;
 	hb_mc_eva_t res_add_device, res_sub_device;
@@ -136,15 +138,37 @@ int kernel_float_all_ops () {
 
         /**********************************************************************/
         /* Allocate memory on the host for A & B                              */
-        /* and initialize with random values.                                 */
+        /* and initialize with random values and corner cases.                */
         /**********************************************************************/
 	float A_host[N]; 
 	float B_host[N]; 
-	for (int i = 0; i < N; i++) { 
+	
+	// Create every possible combination of corner cases for A & B 
+	for (int y = 0; y < NUM_CORNER_CASES; y++) { 
+		for (int x = 0; x < NUM_CORNER_CASES; x++) { 
+			A_host[y * NUM_CORNER_CASES + x] = corner_cases[x]; 
+			B_host[y * NUM_CORNER_CASES + x] = corner_cases[y]; 
+		}
+	}
+
+	// Create every possible combination of A=corner case and B=random float 
+	for (int i = 0; i < NUM_CORNER_CASES; i ++) { 
+		A_host[NUM_CORNER_CASES * NUM_CORNER_CASES + i] = corner_cases[i];
+		B_host[NUM_CORNER_CASES * NUM_CORNER_CASES + i] = hb_mc_generate_float_rand();
+	}
+	
+	// Create every possible combination of A=random float and B=corner case 
+	for (int i = 0; i < NUM_CORNER_CASES; i ++) { 
+		A_host[NUM_CORNER_CASES * NUM_CORNER_CASES + NUM_CORNER_CASES + i] = hb_mc_generate_float_rand();
+		B_host[NUM_CORNER_CASES * NUM_CORNER_CASES + NUM_CORNER_CASES + i] = corner_cases[i];
+	}
+
+	// Fill the rest of A and B with random floats
+	for (int i = NUM_CORNER_CASES * NUM_CORNER_CASES + 2 * NUM_CORNER_CASES; i < N; i++) { 
 		A_host[i] = hb_mc_generate_float_rand();
 		B_host[i] = hb_mc_generate_float_rand();
 	}
-
+	
 
         /**********************************************************************/
 	/* Copy A & B from host onto device DRAM.                             */
@@ -353,7 +377,7 @@ int kernel_float_all_ops () {
 	float *result [NUM_OPS] =   {res_add_host, res_sub_host, res_mul_host, res_div_host,
                                      res_compare_host, res_convert_host};
 
-	int mismatch = 0; 
+	int mismatch = 0;
 	for (int op = 0; op < NUM_OPS; op++) { 
 		for (int i = 0; i < N; i++) {
 			ferror = hb_mc_calculate_float_error (expected[op][i], result[op][i]);
@@ -361,7 +385,7 @@ int kernel_float_all_ops () {
 
 			if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
 				bsg_pr_err(BSG_RED("Mismatch- %s: ") "C[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
-                                                   operations[i],
+                                                   operations[op],
                 	                           i,
                         	                   result[op][i],
                                 	           expected[op][i],
@@ -374,7 +398,8 @@ int kernel_float_all_ops () {
 	for (int op = 0; op < NUM_OPS; op ++){ 	
 		bsg_pr_test_info ("MAX relative FP error - %s: %e\n", operations[op], max_ferror[op]); 
 	}
-	
+		
+
 	if (mismatch) { 
 		return HB_MC_FAIL;
 	}
