@@ -235,5 +235,4 @@ compilation.clean:
 	rm -rf $(REGRESSION_TESTS) test_loader
 
 .PHONY: help compilation.clean $(USER_RULES) $(USER_CLEAN_RULES)
-CLEANS += $(USER_CLEAN_RULES) compilation.clean
 

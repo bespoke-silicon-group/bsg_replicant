@@ -46,4 +46,4 @@ regression.clean:
 	rm -rf $(LOG_RULES) regression.log
 
 .PHONY: regression regression.clean
-CLEANS += regression.clean
+

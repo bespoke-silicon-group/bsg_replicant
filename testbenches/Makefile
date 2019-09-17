@@ -64,8 +64,7 @@ $(TARGETS): $(VHEADERS) $(VSOURCES) $(SIMLIBS)
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
-CLEANS += $(addsuffix .clean,$(TARGETS))
-clean: $(CLEANS) simlibs.clean hardware.clean
+clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean hardware.clean
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak

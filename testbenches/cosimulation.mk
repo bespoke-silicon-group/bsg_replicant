@@ -27,4 +27,4 @@ help:
 	@echo "             generate the log file"
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
-clean: $(CLEANS)
+clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
