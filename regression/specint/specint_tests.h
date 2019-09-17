@@ -1,5 +1,5 @@
-#ifndef __SPMD_TESTS_H
-#define __SPMD_TESTS_H
+#ifndef __SPECINT_TESTS_H
+#define __SPECINT_TESTS_H
 
 #include <bsg_manycore.h>
 #include <bsg_manycore_tile.h>
@@ -8,4 +8,4 @@
 
 #include "../cl_manycore_regression.h"
 
-#endif // __SPMD_TESTS_H
+#endif // __SPECINT_TESTS_H

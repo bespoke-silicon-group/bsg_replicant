@@ -1,13 +1,13 @@
 # This Makefile fragment defines rules for building RISC-V binaries
 # associated with the tests in this sub-directory
 
-# SPMD_SRC_PATH is the path to the software/spmd directory in BSG
-# Manycore. It contains directories with RISC-V programs.
-SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/specint2000/
+# SPECINT_SRC_PATH is the path to specint directory in BSG
+# Manycore. It contains makefiles to compile specint programs.
+SPECINT_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/specint2000/
 
 .PHONY: test_%.clean $(USER_RULES)
 
-$(USER_RULES): test_%.rule: $(SPMD_SRC_PATH)/%.riscv
+$(USER_RULES): test_%.rule: $(SPECINT_SRC_PATH)/%.riscv
 
 $(USER_CLEAN_RULES): 
 	CL_DIR=$(CL_DIR) \
@@ -15,9 +15,9 @@ $(USER_CLEAN_RULES):
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(SPMD_SRC_PATH) -f Makefile.$(subst .clean,,$(subst test_,,$@)) clean
+	$(MAKE) -C $(SPECINT_SRC_PATH) -f Makefile.$(subst .clean,,$(subst test_,,$@)) clean
 
-$(SPMD_SRC_PATH)/%.riscv: $(CL_DIR)/Makefile.machine.include
+$(SPECINT_SRC_PATH)/%.riscv: $(CL_DIR)/Makefile.machine.include
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
@@ -25,4 +25,4 @@ $(SPMD_SRC_PATH)/%.riscv: $(CL_DIR)/Makefile.machine.include
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(SPMD_SRC_PATH) -f Makefile.$(subst .riscv,,$(notdir $@)) clean $(notdir $@)
+	$(MAKE) -C $(SPECINT_SRC_PATH) -f Makefile.$(subst .riscv,,$(notdir $@)) clean $(notdir $@)

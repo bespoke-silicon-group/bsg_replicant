@@ -43,7 +43,7 @@ int test_unified_main (int argc, char **argv) {
 	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
 	int err, r = HB_MC_FAIL, len;
 
-	const char *spmd_path = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/specint2000/";	
+	const char *specint_path = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/specint2000/";	
         char *test_name;
         struct arguments args = {NULL};
 
@@ -53,20 +53,20 @@ int test_unified_main (int argc, char **argv) {
 
 	test_name += strlen("test_");
 
-	char spmd_name[strlen(test_name)+strlen(".riscv")];
-	strcpy(spmd_name, test_name);
-	strcat(spmd_name, ".riscv");
+	char specint_name[strlen(test_name)+strlen(".riscv")];
+	strcpy(specint_name, test_name);
+	strcat(specint_name, ".riscv");
 
-	len = strlen(spmd_path) + strlen(spmd_name);
+	len = strlen(specint_path) + strlen(specint_name);
 
 	char program_path[len + 1], *ptr;
 	program_path[len] = '\0';
 	ptr = program_path;
 
-	strcpy(ptr, spmd_path);
-	ptr += strlen(spmd_path);
+	strcpy(ptr, specint_path);
+	ptr += strlen(specint_path);
 
-	strcpy(ptr, spmd_name);
+	strcpy(ptr, specint_name);
 
 	bsg_pr_test_info("Reading from file: %s\n", program_path);
 

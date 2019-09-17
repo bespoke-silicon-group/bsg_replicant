@@ -7,6 +7,6 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include "spmd_tests.h"
+#include "specint_tests.h"
 
 #endif
