@@ -31,8 +31,8 @@ void host_float_all_ops (float *A, float *B,
 		res_sub[i] = A[i] - B[i];
 		res_mul[i] = A[i] * B[i];
 		res_div[i] = A[i] / B[i];
-		res_compare[i] = (A[i] >= B[i] ? 1.0 : 0.0);
-		res_convert[i] = A[i]; // TODO: Complete convert
+		res_compare[i] = (A[i] >= B[i] ? 1 : 0);
+		res_convert[i] = (float) hb_mc_float_to_int(A[i]);
 	}
 	return;
 }
@@ -169,7 +169,6 @@ int kernel_float_all_ops () {
 		B_host[i] = hb_mc_generate_float_rand();
 	}
 	
-
         /**********************************************************************/
 	/* Copy A & B from host onto device DRAM.                             */
         /**********************************************************************/
@@ -357,7 +356,7 @@ int kernel_float_all_ops () {
         /**********************************************************************/
 	float res_add_expected[N], res_sub_expected[N];
 	float res_mul_expected[N], res_div_expected[N];
-	float res_compare_expected[N], res_convert_expected[N];
+	int res_compare_expected[N], res_convert_expected[N];
 
 	host_float_all_ops (A_host, B_host,
                             res_add_expected, res_sub_expected,

@@ -117,10 +117,24 @@ int compare_results(int num_fields, const char *desc[], const uint32_t *expected
 // A data structure to generate random floating points 
 // within the entire range
 typedef union data_t {
-	uint32_t hb_mc_int;
+	int32_t hb_mc_int;
 	float hb_mc_float;
 } hb_mc_data_t;
 
+// Converts an int into a float and returns it
+static inline float hb_mc_int_to_float(int i){ 
+	hb_mc_data_t data;
+	data.hb_mc_int = i;
+	return data.hb_mc_float;
+}
+
+// Converts a float into an int and returns it
+static inline int hb_mc_float_to_int (float f){
+	hb_mc_data_t data;
+	data.hb_mc_float = f;
+	return data.hb_mc_int;
+}
+	
 
 // Generates random floating point numbers
 // within the permitted float32 range 
@@ -138,7 +152,7 @@ static inline float hb_mc_calculate_float_error (float expected, float result) {
 	// if expected is close enough to zero that the division would return 1
 	if (fabs(expected) < 1e-15)
 		return (fabs(expected - result));
-	return (fabs((expected - result)/expected));
+	return (fabs((float)(expected - result)/expected));
 }
 #ifdef __cplusplus
 extern "C" {
