@@ -32,10 +32,16 @@ include $(HARDWARE_PATH)/hardware.mk
 # configured correctly. environment.mk must be included before this line
 include $(CL_DIR)/cadenv.mk
 
+SOURCES = $(addprefix src_post_encryption/, $(notdir $(VHEADERS) $(VSOURCES)))
+
+$(SOURCES): src_post_encryption $(VHEADERS) $(VSOURCES)
+	@cp $(filter %/$(notdir $@), $(VHEADERS) $(VSOURCES)) $@
+
+src_post_encryption:
+	mkdir $@
+
 build: checkpoints/to_aws/$(PROJECT).Developer_CL.tar
-checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(VHEADERS) $(VSOURCES)
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
+checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(SOURCES)
 	XILINX_IP=$(XILINX_IP) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
 	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
@@ -49,6 +55,7 @@ checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(VHEADERS) $(VSOURCES)
 clean: hardware.clean
 	rm -rf *.log *.jou *.out hd_visual *.tmp 
 	rm -rf checkpoints last_log .Xil .cache src_post_encryption/ reports/
+	rm -rf src_post_encryption
 
 .DEFAULT_GOAL=help
 .PHONY: clean build help

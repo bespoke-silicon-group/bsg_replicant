@@ -23,7 +23,6 @@ This directory contains the following files:
     4. Creates a Design Checkpoint (DCP) file
     5. Collects all design files and the final DCP in a tarball (.tar)
 - `create_dcp.tcl`: TCL script responsible for creating the DCP file that is required by Amazon.
-- `encrypt.tcl`: Contains a list of hardware design files that should be synthesized and encrypted
 - `synth.tcl`: Synthesis commands for Vivado
     - Reads all verilog files copied and encrypted by `encrypt.tcl`
 - `README.md`: This file
