@@ -4,9 +4,9 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-# This Makefile requires environment.mk to be included by a previous makefile
-ifndef __MAKEFILE_ENVIRONMENT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: environment.mk not previously included$(NC)"))
+# CL_DIR: The path to the root of the BSG F1 Repository
+ifndef CL_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
 endif
 
 # Cosimulation requires VCS-MX and Vivado. Bespoke Silicon Group uses

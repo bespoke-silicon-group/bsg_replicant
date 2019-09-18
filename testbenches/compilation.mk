@@ -1,16 +1,5 @@
 # This Makefile Fragment defines all of the rules for building
 # cosimulation binaries
-#
-# environment.mk verifies the build environment and sets the following
-# variables
-#
-# TESTBENCH_PATH: The path to the testbench directory in the bsg_f1 repository
-# LIBRAIRES_PATH: The path to the libraries directory in the bsg_f1 repository
-# HARDARE_PATH: The path to the hardware directory in the bsg_f1 repository
-# BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
-# BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
-# CL_DIR: Path to the directory of this AWS F1 Project
-include ../../environment.mk 
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
@@ -34,8 +23,28 @@ ifndef EXEC_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
 endif
 
+# CL_DIR: The path to the root of the BSG F1 Repository
+ifndef CL_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
+endif
+
+# HARDWARE_PATH: The path to the hardware folder in BSG F1
+ifndef HARDWARE_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
+endif
+
+# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
+ifndef TESTBENCH_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+endif
+
+# REGRESSION_PATH: The path to the regression folder in BSG F1
+ifndef REGRESSION_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_PATH is not defined$(NC)"))
+endif
+
 # The following makefile fragment verifies that the tools and CAD environment is
-# configured correctly. environment.mk must be included before this line
+# configured correctly.
 include $(CL_DIR)/cadenv.mk
 
 # The following variables are set by $(CL_DIR)/hdk.mk
@@ -48,16 +57,13 @@ include $(CL_DIR)/hdk.mk
 
 # $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
 # source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also adds to CLEANS, a list of clean rules for
-# cleaning hardware targets.
+# but for header files. 
 include $(HARDWARE_PATH)/hardware.mk
 
 # simlibs.mk defines build rules for hardware and software simulation libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
-#
-# simlibs.mk adds to SIMLIBS and CLEANS variables
 include $(TESTBENCH_PATH)/simlibs.mk
 
 # -------------------- Arguments --------------------
@@ -223,7 +229,7 @@ $(USER_RULES):
 USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
 $(USER_CLEAN_RULES):
 
-compilation.clean: 
+compilation.clean: $(USER_CLEAN_RULES)
 	rm -rf $(EXEC_PATH)/AN.DB $(EXEC_PATH)/DVEfiles
 	rm -rf $(EXEC_PATH)/*.daidir $(EXEC_PATH)/*.tmp
 	rm -rf $(EXEC_PATH)/64 $(EXEC_PATH)/.cxl*

@@ -24,4 +24,4 @@ help:
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
 .PHONY: help
-clean: $(CLEANS)
+clean: compilation.clean regression.clean

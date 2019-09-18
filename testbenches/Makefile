@@ -27,7 +27,6 @@ include $(HARDWARE_PATH)/hardware.mk
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# simlibs.mk adds to SIMLIBS and CLEANS variables
 include simlibs.mk
 
 # -------------------- Arguments --------------------

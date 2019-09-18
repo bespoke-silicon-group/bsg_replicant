@@ -11,10 +11,6 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-# Set __MAKEFILE_ENVIRONMENT so that others can check if this makefile
-# has been included previously.
-__MAKEFILE_ENVIRONMENT := 1
-
 # Name of this project
 PROJECT = cl_manycore
 

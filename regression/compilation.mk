@@ -35,4 +35,3 @@ compilation.clean:
 	rm -rf $(OBJECTS) $(INDEPENDENT_TESTS) test_loader
 
 .PHONY: compilation.clean $(USER_RULES) $(USER_CLEAN_RULES)
-CLEANS += compilation.clean $(USER_CLEAN_RULES)
