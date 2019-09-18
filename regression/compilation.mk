@@ -1,5 +1,19 @@
 # This Makefile Fragment defines rules for compilation of the C/C++
 # regression tests.
+
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
+# REGRESSION_TESTS: Names of all available regression tests.
+ifndef REGRESSION_TESTS
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
+endif
+
+# EXEC_PATH: The path to the directory where tests will be executed
+ifndef EXEC_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
+endif
+
 LDFLAGS += -lbsg_manycore_runtime -lm
 
 # each target in INDEPENDENT_TESTS needs to build its .o from a

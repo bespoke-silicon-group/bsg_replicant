@@ -18,6 +18,16 @@ ifndef HARDWARE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
 endif
 
+# BSG_MANYCORE_DIR: The path to the bsg_manycore repository
+ifndef BSG_MANYCORE_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MANYCORE_DIR is not defined$(NC)"))
+endif
+
+# BASEJUMP_STL_DIR: The path to the bsg_manycore repository
+ifndef BASEJUMP_STL_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BASEJUMP_STL_DIR is not defined$(NC)"))
+endif
+
 # Makefile.machine.include defines the Manycore hardware
 # configuration.
 include $(CL_DIR)/Makefile.machine.include
