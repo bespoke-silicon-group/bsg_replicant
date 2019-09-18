@@ -17,7 +17,9 @@ This directory contains the following folders:
 This directory contains the following files:
 
 - `Makefile`: Contains targets for regression (Run `make help` for more information)
-- `compilation.mk`: A makefile fragment for building regression binaries. Used in all of the sub-folders.
+- `f1.mk`: A makefile fragment for executing regression binaries on F1. Used in all of the sub-folders.
+- `compilation.mk`: A makefile fragment for building regression binaries. Used in f1.mk.
+- `regression.mk`: A makefile fragment for running regression and reporting results. Used in f1.mk and cosimulation.mk
 - `cl_manycore_regression.h`: A C/C++ Header file with useful regression functions
 - `targets.mk`: A makefile fragment that lists the sub-directories of this folder.
 

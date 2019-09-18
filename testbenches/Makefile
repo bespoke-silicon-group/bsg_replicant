@@ -27,7 +27,6 @@ include $(HARDWARE_PATH)/hardware.mk
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
 #
-# simlibs.mk adds to SIMLIBS and CLEANS variables
 include simlibs.mk
 
 # -------------------- Arguments --------------------
@@ -58,13 +57,13 @@ include $(REGRESSION_PATH)/targets.mk
 .PHONY: clean %.clean regression $(TARGETS)
 
 regression: $(TARGETS)
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
 $(TARGETS): $(VHEADERS) $(VSOURCES) $(SIMLIBS)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
-CLEANS += $(addsuffix .clean,$(TARGETS))
-clean: $(CLEANS) simlibs.clean hardware.clean
+clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean hardware.clean
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak

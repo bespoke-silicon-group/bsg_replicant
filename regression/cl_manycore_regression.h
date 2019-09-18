@@ -139,8 +139,16 @@ void get_argv(char * args, int argc, char **argv){
 #endif // COSIM
 static char doc[] = "A regression test for BSG Manycore on F1";
 
-struct arguments{
-        char *testname; // Path to RISC-V Manycore Binary
+struct arguments_none{
+};
+
+struct arguments_name{
+        char *testname; // Name of RISC-V Manycore Binary to run
+};
+
+struct arguments_path{
+        char *path; // Path to RISC-V Manycore Binary to run
+        char *name; // Name of Test to Run
 };
 
 /*
@@ -148,14 +156,19 @@ struct arguments{
   accept.
 */
 static char desc_name[] = "<Test Name>";
+static char desc_path[] = "<Path to Manycore Binary> <Name of Test>";
 static char desc_none[] = "";
 static struct argp_option opts_name[] = {
         {0, 'b', "TEST", 0, "Name of Manycore Test to Run"},
         {0}};
+static struct argp_option opts_path[] = {
+        {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
+        {0, 'p', "PATH", 0, "Path to RISC-V Manycore Binary"},
+        {0}};
 static struct argp_option opts_none[] = {{0}};
 
 static error_t parse_name (int key, char *arg, struct argp_state *state){
-        struct arguments *args = (struct arguments *)state->input;
+        struct arguments_name *args = (struct arguments_name *)state->input;
  
         switch (key) 
                 {
@@ -173,7 +186,46 @@ static error_t parse_name (int key, char *arg, struct argp_state *state){
                         break;
                 case ARGP_KEY_END:
                         if (!args->testname){
+                                bsg_pr_test_err("Test Name not provided!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                default:
+                        return ARGP_ERR_UNKNOWN;
+                }
+        return 0;
+}
+
+static error_t parse_path (int key, char *arg, struct argp_state *state){
+        struct arguments_path *args = (struct arguments_path *)state->input;
+ 
+        switch (key) 
+                {
+                case 'p':
+                        args->path = arg;
+                        break;
+                case 'n':
+                        args->name = arg;
+                        break;
+                case ARGP_KEY_ARG:
+                        if (state->arg_num == 0){
+                                args->path = arg;
+                        }
+                        if (state->arg_num == 1){
+                                args->name = arg;
+                        }
+                        if (state->arg_num > 2){
+                                bsg_pr_test_err("Too Many Arguments provided!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                case ARGP_KEY_END:
+                        if (!args->path){
                                 bsg_pr_test_err("Executable path not provided!\n");
+                                argp_usage(state);
+                        }
+                        if (!args->name){
+                                bsg_pr_test_err("Test Name not provided!\n");
                                 argp_usage(state);
                         }
                         break;
@@ -198,6 +250,7 @@ static error_t parse_none (int key, char *arg, struct argp_state *state){
 }
 
 static struct argp argp_name = {opts_name, parse_name, desc_name, doc};
+static struct argp argp_path = {opts_path, parse_path, desc_path, doc};
 static struct argp argp_none = {opts_none, parse_none, desc_none, doc};
 
 #define __BSG_STRINGIFY(arg) #arg

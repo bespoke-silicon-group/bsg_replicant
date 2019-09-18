@@ -26,3 +26,14 @@ include $(REGRESSION_PATH)/compilation.mk
 # cosimulation.mk so that <test_name>.rule and <test_name>.clean are
 # not overwritten.
 include rules.mk
+
+# The rule below defines how to run test_loader for SPMD tests. The loader
+# requires two arguments: The path to the RISC-V Binary loaded onto the manycore
+# (TEST_PATH), and the test name (TEST_NAME). SPECINT_PATH is defined for convenience
+SPECINT_PATH=$(BSG_MANYCORE_DIR)/software/spmd/specint2000
+$(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
+$(EXEC_PATH)/%.log: TEST_PATH=$(SPECINT_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
+$(EXEC_PATH)/%.log: #$(EXEC_PATH)/test_loader #%.rule
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
+
+

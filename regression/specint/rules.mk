@@ -3,7 +3,7 @@
 
 # SPECINT_SRC_PATH is the path to specint directory in BSG
 # Manycore. It contains makefiles to compile specint programs.
-SPECINT_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/specint2000/
+SPECINT_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/specint2000
 
 .PHONY: test_%.clean $(USER_RULES)
 

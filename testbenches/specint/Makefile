@@ -29,9 +29,9 @@ include $(REGRESSION_PATH)/specint/tests.mk
 # HDK_COMMON_DIR is set by running `source hdk_setup.sh` from the aws-fpga repository
 include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 
-# SIM_PATH defines this directory. REGRESSION_TESTS_TYPE is defined by
+# EXEC_PATH defines this directory. REGRESSION_TESTS_TYPE is defined by
 # tests.mk in each regression sub-directory.
-SIM_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)/
+EXEC_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)
 
 # cosimulation.mk defines all of the rules for building cosimulation
 # binaries
@@ -42,3 +42,13 @@ include $(TESTBENCH_PATH)/cosimulation.mk
 # cosimulation.mk so that <test_name>.rule and <test_name>.clean are
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
+
+# The rule below defines how to run test_loader for SPECINT tests. The loader
+# requires two arguments: The path to the RISC-V Binary loaded onto the manycore
+# (TEST_PATH), and the test name (TEST_NAME). SPECINT_PATH is defined for convenience
+SPECINT_PATH=$(BSG_MANYCORE_DIR)/software/spmd/specint2000
+$(EXEC_PATH)/%.log: TEST_PATH=$(SPECINT_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
+$(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
+$(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
+		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@

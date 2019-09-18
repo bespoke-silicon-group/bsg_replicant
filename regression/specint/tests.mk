@@ -6,7 +6,7 @@
 include $(CL_DIR)/Makefile.machine.include
 
 REGRESSION_TESTS_TYPE = specint
-SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
+SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)
 
 # "Unified tests" all use the generic test top-level:
 # test_unified_main.c

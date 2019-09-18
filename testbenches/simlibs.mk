@@ -1,12 +1,26 @@
 # This Makefile fragment is for building hardware and software libraries for
 # cosimulation
-#
-# This Makefile requires environment.mk to be included by a previous makefile
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
-ifndef __MAKEFILE_ENVIRONMENT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: environment.mk not previously included$(NC)"))
+
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
+
+# CL_DIR: The path to the root of the BSG F1 Repository
+ifndef CL_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
+endif
+
+# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
+ifndef TESTBENCH_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+endif
+
+# LIBRARIES_PATH: The path to the regression folder in BSG F1
+ifndef LIBRARIES_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
 endif
 
 # The following variables are set by $(CL_DIR)/hdk.mk, which will fail if

@@ -14,7 +14,7 @@ int test_rom (int argc, char **argv) {
         hb_mc_manycore_t mc = {0};
 
         char *path;
-        struct arguments args = {NULL};
+        struct arguments_none args = {NULL};
 
         rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
 

@@ -1,15 +1,12 @@
-#ifndef TEST_UNIFIED_MAIN_H
-#define TEST_UNIFIED_MAIN_H
-
-
+#ifndef __TEST_LOADER_H
+#define __TEST_LOADER_H
+#include <bsg_manycore_errno.h>
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-
-#include "cuda_tests.h"
-
+#include "specint_tests.h"
 
 #endif

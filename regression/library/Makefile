@@ -1,6 +1,6 @@
 # This (rather sparse) Makefile is responsible for building and
 # running regression tests on F1.  Run `make help` to see the
-# available targets. (The target `help` is defined in compilation.mk
+# available targets. (The target `help` is defined in f1.mk)
 
 # environment.mk verifies the build environment and sets the following
 # makefile variables:
@@ -13,19 +13,20 @@
 # CL_DIR: Path to the directory of this AWS F1 Project
 include ../../environment.mk
 
-# tests.mk defines all of the regression tests (and the source path)
-# for this sub-directory.
+# tests.mk defines all of the regression tests (and the source path) for this
+# sub-directory. It defines the variable REGRESSION_TESTS_TYPE
 include tests.mk
-EXEC_PATH=$(REGRESION_PATH)/library/
 
-# compillation.mk defines rules for compilation of the C/C++
-# regression tests.
-include $(REGRESSION_PATH)/compilation.mk
+# EXEC_PATH defines this directory, where the tests are actually
+# executed. REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
+# sub-directory. It is used in execute.mk
+EXEC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)
 
-# rules.mk defines rules for building RISC-V binaries associated with
-# the tests in this sub-directory. rules.mk must come after
-# cosimulation.mk so that <test_name>.rule and <test_name>.clean are
-# not overwritten.
+# f1.mk defines all of the re-used rules for execution on F1 (e.g. regression,
+# clean, help, etc)
+include $(REGRESSION_PATH)/f1.mk
+
+# rules.mk defines rules for building RISC-V binaries associated with the tests
+# in this sub-directory. rules.mk must come after f1.mk so that
+# <test_name>.rule and <test_name>.clean are not overwritten.
 include rules.mk
-
-

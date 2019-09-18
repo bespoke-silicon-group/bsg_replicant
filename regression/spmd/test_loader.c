@@ -1,4 +1,4 @@
-#include "test_unified_main.h"
+#include "test_loader.h"
 #include <sys/stat.h>
 
 static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
@@ -37,41 +37,23 @@ static int read_program_file(const char *file_name, unsigned char **file_data, s
 	return HB_MC_SUCCESS;
 }
 
-int test_unified_main (int argc, char **argv) {
+int test_loader(int argc, char **argv) {
 	unsigned char *program_data;
 	size_t program_size;
 	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
-	int err, r = HB_MC_FAIL, len;
+	int err, r = HB_MC_FAIL;
 
-	const char *specint_path = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/specint2000/";	
-        char *test_name;
-        struct arguments args = {NULL};
+        char *bin_path, *test_name;
+        struct arguments_path args = {NULL, NULL};
 
-  argp_parse (&argp_name, argc, argv, 0, 0, &args);
-  test_name = args.testname;
-  bsg_pr_test_info("%s Regression Test\n", test_name);
+        argp_parse (&argp_path, argc, argv, 0, 0, &args);
+        bin_path = args.path;
+        test_name = args.name;
 
-	test_name += strlen("test_");
-
-	char specint_name[strlen(test_name)+strlen(".riscv")];
-	strcpy(specint_name, test_name);
-	strcat(specint_name, ".riscv");
-
-	len = strlen(specint_path) + strlen(specint_name);
-
-	char program_path[len + 1], *ptr;
-	program_path[len] = '\0';
-	ptr = program_path;
-
-	strcpy(ptr, specint_path);
-	ptr += strlen(specint_path);
-
-	strcpy(ptr, specint_name);
-
-	bsg_pr_test_info("Reading from file: %s\n", program_path);
+	bsg_pr_test_info("Reading from file: %s\n", bin_path);
 
 	// read in the program data from the file system
-	err = read_program_file(program_path, &program_data, &program_size);
+	err = read_program_file(bin_path, &program_data, &program_size);
 	if (err != HB_MC_SUCCESS)
 		return err;
 
@@ -116,8 +98,7 @@ int test_unified_main (int argc, char **argv) {
 				&target, 1);
 	if (err != HB_MC_SUCCESS) {
 		bsg_pr_err("failed to load binary '%s': %s\n",
-			   program_path,
-			   hb_mc_strerror(err));
+			   bin_path, hb_mc_strerror(err));
 		return err;
 	}
 
@@ -183,14 +164,14 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	int rc = test_unified_main(argc, argv);
+	int rc = test_loader(argc, argv);
         *exit_code = rc;
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return;
 }
 #else
 int main(int argc, char ** argv) {
-	int rc = test_unified_main(argc, argv);
+	int rc = test_loader(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }

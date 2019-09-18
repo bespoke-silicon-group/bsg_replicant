@@ -5,12 +5,6 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-# This Makefile requires environment.mk to be included by a previous
-# makefile
-ifndef __MAKEFILE_ENVIRONMENT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: environment.mk not previously included$(NC)"))
-endif
-
 # Double check that CL_DIR has been defined. It is set in
 # environment.mk, but it is a critical variable so we make extra
 # certain before proceeding.

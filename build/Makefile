@@ -23,8 +23,7 @@ include $(CL_DIR)/hdk.mk
 
 # $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
 # source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also adds to CLEANS, a list of clean rules for
-# cleaning hardware targets.
+# but for header files. 
 #
 # hardware.mk also sets CL_TOP_MODULE, the top module of this design
 include $(HARDWARE_PATH)/hardware.mk
@@ -47,7 +46,7 @@ checkpoints/to_aws/$(PROJECT).Developer_CL.tar: $(VHEADERS) $(VSOURCES)
 	CL_DIR=$(CL_DIR) \
 	./aws_build_dcp_from_cl.sh -foreground -design $(PROJECT)
 
-clean: $(CLEANS)
+clean: hardware.clean
 	rm -rf *.log *.jou *.out hd_visual *.tmp 
 	rm -rf checkpoints last_log .Xil .cache src_post_encryption/ reports/
 

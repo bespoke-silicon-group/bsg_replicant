@@ -3,7 +3,7 @@
 
 # SPMD_SRC_PATH is the path to the software/spmd directory in BSG
 # Manycore. It contains directories with RISC-V programs.
-SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/
+SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
 .PHONY: test_%.clean $(USER_RULES)
 

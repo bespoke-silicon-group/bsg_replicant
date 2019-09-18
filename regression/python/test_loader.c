@@ -11,7 +11,7 @@ int test_python(int argc, char **argv) {
         const char *python_path = BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/";
         char *test_name;
 
-        struct arguments args = {NULL};
+        struct arguments_name args = {NULL};
 
         argp_parse (&argp_name, argc, argv, 0, 0, &args);
         test_name = args.testname;

@@ -14,13 +14,12 @@ include ../environment.mk
 
 # $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
 # source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also adds to CLEANS, a list of clean rules for
-# cleaning hardware targets.
-include hardware.mk
+# but for header files. 
+include $(HARDWARE_PATH)/hardware.mk
 
 all: $(VSOURCES) $(VHEADERS)
 hardware:all
-clean: $(CLEANS)
+clean: hardware.clean
 
 .PHONY: clean all hardware
 .DEFAULT_GOAL := help
