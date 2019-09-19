@@ -44,6 +44,3 @@ include $(TESTBENCH_PATH)/cosimulation.mk
 # compilation.mk so that <test_name>.rule and <test_name>.clean are
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
-
-# regression.mk defines the regression target
-include $(REGRESSION_PATH)/regression.mk

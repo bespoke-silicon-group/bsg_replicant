@@ -55,11 +55,6 @@ include $(CL_DIR)/cadenv.mk
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 include $(CL_DIR)/hdk.mk
 
-# $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
-# source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. 
-include $(HARDWARE_PATH)/hardware.mk
-
 # simlibs.mk defines build rules for hardware and software simulation libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
@@ -69,9 +64,6 @@ include $(TESTBENCH_PATH)/simlibs.mk
 # -------------------- Arguments --------------------
 # This Makefile has several optional "arguments" that are passed as Variables
 #
-# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
-#                   speed. Default: 1
-# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: 0
 # DEBUG: Opens the GUI during cosimulation. Default: 0
 # TURBO: Disables VPD generation. Default: 0
 # EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
@@ -79,8 +71,6 @@ include $(TESTBENCH_PATH)/simlibs.mk
 # If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
 # This is a COMPILATION ONLY option. Any subsequent runs, without compilation
 # will retain this setting
-AXI_MEMORY_MODEL ?= 1
-AXI_PROT_CHECK   ?= 0
 DEBUG            ?= 0
 TURBO            ?= 0
 EXTRA_TURBO      ?= 0
@@ -101,52 +91,14 @@ LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
 # The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
 INCLUDES   += -I$(LIBRARIES_PATH) 
 
+# CSOURCES/HEADERS should probably go in some regression file list.
+CSOURCES   += 
+CHEADERS   += $(REGRESSION_PATH)/cl_manycore_regression.h
 CDEFINES   += -DCOSIM -DVCS
+CXXSOURCES += 
+CXXHEADERS += $(REGRESSION_PATH)/cl_manycore_regression.h
 CXXDEFINES += -DCOSIM -DVCS
 CXXFLAGS   += -lstdc++
-
-
-# So that we can limit tool-specific to a few specific spots we use VDEFINES,
-# VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
-# verilog headers, and sources (respectively). These are used during simulation
-# compilation, but transformed into a tool-specific syntax where necesssary.
-VDEFINES   += VCS_SIM
-VDEFINES   += DISABLE_VJTAG_DEBUG
-
-ifeq ($(AXI_PROT_CHECK),1)
-VDEFINES   += ENABLE_PROTOCOL_CHK
-endif
-
-ifeq ($(AXI_MEMORY_MODEL),1)
-VDEFINES   += AXI_MEMORY_MODEL=1
-VDEFINES   += ECC_DIRECT_EN
-VDEFINES   += RND_ECC_EN
-VDEFINES   += ECC_ADDR_LO=0
-VDEFINES   += ECC_ADDR_HI=0
-VDEFINES   += RND_ECC_WEIGHT=0
-endif
-
-# The manycore architecture unsynthesizable simulation sources (for tracing,
-# etc) are defined in sim_filelist.mk. It adds to VSOURCES, VHEADERS, and
-# VINCLUDES and uses the variable BSG_MANYCORE_DIR
-include $(BSG_MANYCORE_DIR)/machines/sim_filelist.mk
-
-# Custom Logic (CL) source directories
-VINCLUDES += $(TESTBENCH_PATH)
-
-VSOURCES += $(TESTBENCH_PATH)/$(WRAPPER_NAME).sv
-
-# Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
-# tool-specific versions of the same variables. VHEADERS must be compiled before
-# VSOURCES.
-VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES) 
-VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
-VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
-VLOGAN_FILELIST += $(TESTBENCH_PATH)/aws.vcs.f
-VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
-                   -sverilog +systemverilogext+.svh +systemverilogext+.sv \
-                   +libext+.sv +libext+.v +libext+.vh +libext+.svh \
-                   -full64 -lca -v2005 +v2k +lint=TFIPC-L -assert svaext
 
 VCS_CFLAGS     += $(foreach def,$(CFLAGS),-CFLAGS "$(def)")
 VCS_CDEFINES   += $(foreach def,$(CDEFINES),-CFLAGS "$(def)")
@@ -162,7 +114,6 @@ VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
 # macro guards against generating vpd files, which slow down simulation.
 ifeq ($(EXTRA_TURBO), 1)
 VCS_VFLAGS    += +rad -undef_vcs_macro
-VLOGAN_VFLAGS += -undef_vcs_macro
 else 
 VCS_VFLAGS    += -debug_pp
 VCS_VFLAGS    += +memcbk 
@@ -181,36 +132,17 @@ VCS_VFLAGS    += -debug_all
 VCS_VFLAGS    += +memcbk
 endif
 
-.PRECIOUS: $(EXEC_PATH)/%.vcs.log $(EXEC_PATH)/compile.vlogan.log $(EXEC_PATH)/%
-
-$(EXEC_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
-	cp $< $@
-
-$(EXEC_PATH)/compile.vlogan.log: $(EXEC_PATH)/synopsys_sim.setup \
-		$(CL_DIR)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
-	XILINX_IP=$(XILINX_IP) \
-	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
-	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
-	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
-	XILINX_VIVADO=$(XILINX_VIVADO) \
-	vlogan $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) $(VLOGAN_SOURCES) \
-		-f $(TESTBENCH_PATH)/aws.vcs.f $(VLOGAN_DEFINES)  \
-		$(VLOGAN_INCLUDES) -l $@.prelim
-	mv $@.prelim $@
-
 # VCS Generates an executable file by compiling the $(SRC_PATH)/%.c or
 # $(SRC_PATH)/%.cpp file that corresponds to the target test in the
-# $(SRC_PATH) directory. To allow users to attach test-specific makefile
-# rules, each test has a corresponding <test_name>.rule that can have additional
-# dependencies
-$(EXEC_PATH)/%: $(SRC_PATH)/%.c $(REGRESSION_PATH)/cl_manycore_regression.h \
-		$(EXEC_PATH)/compile.vlogan.log $(SIMLIBS)
+# $(SRC_PATH) directory.
+$(EXEC_PATH)/%: $(SRC_PATH)/%.c $(CSOURCES) $(CHEADERS) $(SIMLIBS)
+	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CFLAGS) $(VCS_CDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
 
-$(EXEC_PATH)/%: $(SRC_PATH)/%.cpp $(REGRESSION_PATH)/cl_manycore_regression.h \
-		$(EXEC_PATH)/compile.vlogan.log $(SIMLIBS)
+$(EXEC_PATH)/%: $(SRC_PATH)/%.cpp $(CXXSOURCES) $(CXXHEADERS) $(SIMLIBS)
+	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
@@ -229,13 +161,11 @@ $(USER_RULES):
 USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
 $(USER_CLEAN_RULES):
 
-compilation.clean: $(USER_CLEAN_RULES)
-	rm -rf $(EXEC_PATH)/AN.DB $(EXEC_PATH)/DVEfiles
+compilation.clean: 
+	rm -rf $(EXEC_PATH)/DVEfiles
 	rm -rf $(EXEC_PATH)/*.daidir $(EXEC_PATH)/*.tmp
 	rm -rf $(EXEC_PATH)/64 $(EXEC_PATH)/.cxl*
 	rm -rf $(EXEC_PATH)/*.vcs.log $(EXEC_PATH)/*.jou
-	rm -rf $(EXEC_PATH)/*.vlogan.log
-	rm -rf $(EXEC_PATH)/synopsys_sim.setup
 	rm -rf $(EXEC_PATH)/*.key $(EXEC_PATH)/*.vpd
 	rm -rf $(EXEC_PATH)/vc_hdrs.h
 	rm -rf .vlogansetup* stack.info*

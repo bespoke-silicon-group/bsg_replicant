@@ -17,11 +17,6 @@ include ../environment.mk
 # *environment.mk must be included before cadenv.mk*
 include $(CL_DIR)/cadenv.mk
 
-# $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
-# source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. 
-include $(HARDWARE_PATH)/hardware.mk
-
 # simlibs.mk defines build rules for hardware and software simulation libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
@@ -58,12 +53,12 @@ include $(REGRESSION_PATH)/targets.mk
 
 regression: $(TARGETS)
 	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
-$(TARGETS): $(VHEADERS) $(VSOURCES) $(SIMLIBS)
+$(TARGETS): $(SIMLIBS)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
 		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
 
-clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean hardware.clean
+clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean
 	rm -rf *.log *.jou
 	rm -rf .cxl*
 	rm -rf *.bak
