@@ -32,10 +32,14 @@ include $(HARDWARE_PATH)/hardware.mk
 # configured correctly. environment.mk must be included before this line
 include $(CL_DIR)/cadenv.mk
 
-SOURCES = $(addprefix src_post_encryption/, $(notdir $(VHEADERS) $(VSOURCES)))
+# Replace any xilinx-unsynthesizable sources with xilinx-synthesizable sources
+BUILD_SOURCES := $(filter-out $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v,$(VHEADERS) $(VSOURCES)) 
+BUILD_SOURCES += $(BASEJUMP_STL_DIR)/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
 
-$(SOURCES): src_post_encryption $(VHEADERS) $(VSOURCES)
-	@cp $(filter %/$(notdir $@), $(VHEADERS) $(VSOURCES)) $@
+SOURCES = $(addprefix src_post_encryption/, $(notdir $(BUILD_SOURCES)))
+
+$(SOURCES): src_post_encryption $(BUILD_SOURCES)
+	@cp $(filter %/$(notdir $@), $(BUILD_SOURCES)) $@
 
 src_post_encryption:
 	mkdir $@

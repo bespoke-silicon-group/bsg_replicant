@@ -61,6 +61,10 @@ include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 # but transformed into a tool-specific syntax where necesssary.
 VINCLUDES += $(HARDWARE_PATH)
 
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_cache_wrapper_axi.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/memory_system.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_mem_cfg_pkg.v
+
 VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_configuration.v
 VSOURCES += $(HARDWARE_PATH)/cl_manycore_pkg.v
 VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
