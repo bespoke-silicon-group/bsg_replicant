@@ -72,6 +72,11 @@ VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
+VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
+VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
+VHEADERS += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
+VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh
+VHEADERS += $(HARDWARE_PATH)/cl_id_defines.vh
 
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.include
 	python $(HARDWARE_PATH)/create_bladerunner_rom.py \
