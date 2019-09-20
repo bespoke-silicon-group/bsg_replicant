@@ -1,27 +1,27 @@
 /******************************************************************************/
-/* sqrtf(A[N]) --> B[N]                                                       */
-/* Runs the floating point vector square root on one 2x2 tile group           */
+/* logf(A[N]) --> B[N]                                                       */
+/* Runs the floating point vector logarithmic on one 2x2 tile group           */
 /* Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.         */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_sqrt/     */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_log/     */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_float_vec_sqrt.h"
+#include "test_float_vec_log.h"
 
-#define TEST_NAME "test_float_vec_sqrt"
+#define TEST_NAME "test_float_vec_log"
 #define ALLOC_NAME "default_allocator"
 
-void host_float_vec_sqrt (float *A, float *B, int N) { 
+void host_float_vec_log (float *A, float *B, int N) { 
 	for (int i = 0; i < N; i ++) { 
-		B[i] = sqrtf(A[i]);
+		B[i] = logf(A[i]);
 	}
 	return;
 }
 
 
-int kernel_float_vec_sqrt () {
-	bsg_pr_test_info("Running the CUDA Floating Point Vector Square Root "
+int kernel_float_vec_log () {
+	bsg_pr_test_info("Running the CUDA Floating Point Vector Logarithmic "
                          "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
@@ -41,7 +41,7 @@ int kernel_float_vec_sqrt () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/float_vec_sqrt/main.riscv";
+                                                    "/float_vec_log/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -72,10 +72,12 @@ int kernel_float_vec_sqrt () {
         /**********************************************************************/
         /* Allocate memory on the host for A & B                              */
         /* and initialize with random values.                                 */
+	/* Considering the nature of logarithmic for extremely small numbers, */
+	/* We add 1e-15 to all numbers to ensure all numbers are large enough.*/
         /**********************************************************************/
 	float A_host[N]; 
 	for (int i = 0; i < N; i++) { 
-		A_host[i] = hb_mc_generate_float_rand_positive();
+		A_host[i] = hb_mc_generate_float_rand_positive() + 1e-15;
 	}
 
 
@@ -125,7 +127,7 @@ int kernel_float_vec_sqrt () {
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_sqrt", 4, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_log", 4, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -169,7 +171,7 @@ int kernel_float_vec_sqrt () {
 	/* Calculate the expected result using host code and compare.         */ 
         /**********************************************************************/
 	float B_expected[N]; 
-	host_float_vec_sqrt (A_host, B_expected, N); 
+	host_float_vec_log (A_host, B_expected, N); 
 
 	float max_ferror = 0; 
 	float ferror = 0;
@@ -179,7 +181,8 @@ int kernel_float_vec_sqrt () {
 		ferror = hb_mc_calculate_float_error(B_expected[i], B_host[i]);
 		max_ferror = fmax ( max_ferror, ferror); 	
 		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
-			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
+			bsg_pr_err(BSG_RED("Mismatch: ") "Input: %.40f - B[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
+                                           A_host[i],
                                            i,
                                            B_host[i],
                                            B_expected[i],
@@ -211,16 +214,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_float_vec_sqrt Regression Test (COSIMULATION)\n");
-	int rc = kernel_float_vec_sqrt();
+	bsg_pr_test_info("test_float_vec_log Regression Test (COSIMULATION)\n");
+	int rc = kernel_float_vec_log();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_float_vec_sqrt Regression Test (F1)\n");
-	int rc = kernel_float_vec_sqrt();
+	bsg_pr_test_info("test_float_vec_log Regression Test (F1)\n");
+	int rc = kernel_float_vec_log();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }

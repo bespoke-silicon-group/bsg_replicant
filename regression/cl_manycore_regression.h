@@ -145,6 +145,16 @@ static inline float hb_mc_generate_float_rand(){
 	return data.hb_mc_float;
 }
 
+// Generates random floating point numbers
+// within the permitted float32 range 
+// All numbers of positive 
+static inline float hb_mc_generate_float_rand_positive(){ 
+	hb_mc_data_t data;
+	data.hb_mc_int = rand() ;
+	return data.hb_mc_float;
+}
+
+
 // Compares two floating points and returns the relative error
 // If the original number is zero, returns the differnce to avoid div by zero
 // TODO: find a more appropriate solution for a = 0
