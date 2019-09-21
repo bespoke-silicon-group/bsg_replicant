@@ -142,6 +142,11 @@ static inline int hb_mc_float_to_int (float f){
 static inline float hb_mc_generate_float_rand(){ 
 	hb_mc_data_t data;
 	data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1) ; 
+	
+	// To avoid denormal floating point numbers 
+	if (abs(data.hb_mc_int) <= 0x0040)
+		data.hb_mc_int = 0;
+
 	return data.hb_mc_float;
 }
 
@@ -151,6 +156,11 @@ static inline float hb_mc_generate_float_rand(){
 static inline float hb_mc_generate_float_rand_positive(){ 
 	hb_mc_data_t data;
 	data.hb_mc_int = rand() ;
+
+	// To avoid denormal floating point numbers 
+	if (abs(data.hb_mc_int) <= 0x0040)
+		data.hb_mc_int = 0;
+
 	return data.hb_mc_float;
 }
 
