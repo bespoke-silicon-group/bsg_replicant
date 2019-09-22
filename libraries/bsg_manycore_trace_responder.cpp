@@ -28,7 +28,7 @@ static int init(hb_mc_responder_t *responder,
 {
   bsg_pr_dbg("hello from %s\n", __FILE__);
   responder->responder_data = trace_config;
-        return 0;
+  return 0;
 }
 
 static int quit(hb_mc_responder_t *responder,
@@ -36,7 +36,7 @@ static int quit(hb_mc_responder_t *responder,
 {
   bsg_pr_dbg("goodbye from %s\n", __FILE__);
   responder->responder_data = nullptr;
-        return 0;
+  return 0;
 }
 
 static int respond(hb_mc_responder_t *responder,
@@ -56,7 +56,8 @@ static int respond(hb_mc_responder_t *responder,
       break;
     }
   }
-        return 0;
+
+  return 0;
 }
 
 static hb_mc_responder_t trace_responder("TRACE", ids, init, quit, respond);
