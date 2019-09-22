@@ -49,10 +49,10 @@ static int respond(hb_mc_responder_t *responder,
 
   for(int i=0; i<HB_MC_NUM_TRACE_EPAS; i++) {
     if(hb_mc_request_packet_is_match(rqst, &responder->ids[i])) {
-      trace_config_t config = ((trace_config_t*)
-                               responder->responder_data)[i];
-      fprintf(config.f, "hbmc_%s_trace x=%d y=%d data=%x\n"
-              , config.type, src_x, src_y, (int)data);
+      trace_config_t config = ((trace_config_t*) responder->responder_data)[i];
+      fprintf(config.f, 
+              "hbmc_%s_trace x=%d y=%d data=%x\n", 
+              config.type, src_x, src_y, (int)data);
       break;
     }
   }
