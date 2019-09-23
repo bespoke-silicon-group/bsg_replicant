@@ -95,9 +95,7 @@ VINCLUDES += $(TESTBENCH_PATH)
 # cleaning hardware targets.
 include $(HARDWARE_PATH)/hardware.mk
 
-# The manycore architecture unsynthesizable simulation sources (for tracing,
-# etc) are defined in sim_filelist.mk. It adds to VSOURCES, VHEADERS, and
-# VINCLUDES and uses the variable BSG_MANYCORE_DIR
+# The manycore architecture unsynthesizable simulation sources (for tracing, etc).
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_axi_mem.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
 
