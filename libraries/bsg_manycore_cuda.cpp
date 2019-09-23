@@ -115,6 +115,11 @@ __attribute__((warn_unused_result))
 static int hb_mc_device_program_exit (hb_mc_program_t *program); 
 
 __attribute__((warn_unused_result))
+static int hb_mc_program_binary_copy (hb_mc_program_t *program,
+                                      const unsigned char *bin_data,
+                                      size_t bin_size); 
+
+__attribute__((warn_unused_result))
 static int hb_mc_program_allocator_init (const hb_mc_config_t *cfg,
                                          hb_mc_program_t *program,
                                          const char *name,
@@ -1136,9 +1141,14 @@ int hb_mc_device_program_init_binary (hb_mc_device_t *device,
 	}
 
 
-	device->program->bin = bin_data;
-
-	device->program->bin_size = bin_size;
+	// Copy binary into device's program struct and set it's size in characters
+	error = hb_mc_program_binary_copy (device->program,
+                                           bin_data,
+                                           bin_size);
+	if (error != HB_MC_SUCCESS) { 
+		bsg_pr_err("%s: failed to copy binary into program struct.\n", __func__); 
+		return error;
+	}
 
 
 	// Initialize program's memory allocator
@@ -1280,6 +1290,38 @@ static int hb_mc_device_program_exit (hb_mc_program_t *program) {
 }
 
 
+
+
+/**
+ * Copies the binary into the hb_mc_program_t struct's binary section
+ * And sets the program's binary size in characters 
+ * @param[in]  program       Pointer to program
+ * @param[in]  bin_data      Buffer containing the binary
+ * @param[in]  bin_size      Size of binary in characters
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+static int hb_mc_program_binary_copy (hb_mc_program_t *program,
+                                      const unsigned char *bin_data,
+                                      size_t bin_size) { 
+
+	if (!bin_data) {
+		bsg_pr_err("%s: binary is null.\n", __func__);
+		return HB_MC_INVALID;
+	}
+
+	unsigned char* copy = (unsigned char*) malloc (bin_size);
+	if (!copy){ 
+		bsg_pr_err("%s: failed to allocated space on device for program binary.\n", __func__);
+		return HB_MC_NOMEM;
+	}
+
+	memcpy((unsigned char*) copy, (const unsigned char*) bin_data, bin_size);
+	
+	program->bin = copy; 
+	program->bin_size = bin_size;
+
+	return HB_MC_SUCCESS;	
+}
 
 
 
