@@ -43,6 +43,7 @@ CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_request_packet_id.cpp
 CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_responder.cpp
 CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
 CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
+CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_trace_responder.cpp
 
 HEADERS += $(LIBRARIES_PATH)/bsg_manycore.h
 HEADERS += $(LIBRARIES_PATH)/bsg_manycore_bits.h

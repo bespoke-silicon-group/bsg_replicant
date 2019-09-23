@@ -21,6 +21,7 @@ module bsg_manycore_wrapper
     , parameter vcache_size_p="inv"
     , parameter vcache_block_size_in_words_p="inv"
     , parameter vcache_sets_p="inv"
+    , parameter branch_trace_en_p="inv"
  
     , parameter num_cache_p="inv"
 
@@ -76,6 +77,7 @@ module bsg_manycore_wrapper
     ,.vcache_size_p(vcache_size_p)
     ,.vcache_block_size_in_words_p(vcache_block_size_in_words_p)
     ,.vcache_sets_p(vcache_sets_p)
+    ,.branch_trace_en_p(branch_trace_en_p)
   ) manycore (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
