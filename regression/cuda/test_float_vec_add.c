@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /******************************************************************************/
-/* A[N] + B[N] --> C[N]                                                       */
-/* Runs the floating point vector addition on one 2x2 tile group              */
+/* A[N] * B[N] --> C[N]                                                       */
+/* Runs the floating point vector addition on one 2x2 tile group        */
 /* Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.         */
 /* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_add/     */
 /* manycore binary in the BSG Manycore repository.                            */
@@ -53,7 +53,7 @@ int kernel_float_vec_add () {
                          "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
-	srand(time); 
+	srand(time(NULL)); 
 
 
         /**********************************************************************/
@@ -80,7 +80,7 @@ int kernel_float_vec_add () {
         /**********************************************************************/
 	/* Allocate memory on the device for A, B and C.                      */
         /**********************************************************************/
-	uint32_t N = 64;
+	uint32_t N = 1024;
 
 	hb_mc_eva_t A_device, B_device, C_device; 
 	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device);
@@ -110,9 +110,9 @@ int kernel_float_vec_add () {
         /**********************************************************************/
 	float A_host[N]; 
 	float B_host[N]; 
-	for (int i = 0; i < N; i++) { /* fill A with arbitrary data */
-		A_host[i] = (float)rand() / (float)(RAND_MAX / 0xFFFF);
-		B_host[i] =  (float)rand() / (float)(RAND_MAX / 0xFFFF);
+	for (int i = 0; i < N; i++) { 
+		A_host[i] = hb_mc_generate_float_rand();
+		B_host[i] = hb_mc_generate_float_rand();
 	}
 
 
@@ -135,6 +135,17 @@ int kernel_float_vec_add () {
 		bsg_pr_err("failed to copy memory to device.\n");
 		return rc;
 	}
+
+
+        /**********************************************************************/
+	/* Initialize values in C_device to 0.                                */
+        /**********************************************************************/
+	rc = hb_mc_device_memset(&device, &C_device, 0, N * sizeof(uint32_t));
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to set memory on device.\n");
+		return rc;
+	} 
+
 
 
         /**********************************************************************/
@@ -206,19 +217,24 @@ int kernel_float_vec_add () {
 	float C_expected[N]; 
 	host_float_vec_add (A_host, B_host, C_expected, N); 
 
+	float max_ferror = 0; 
+	float ferror = 0;
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		if (A_host[i] + B_host[i] != C_host[i]) {
-			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]:  %f + %f = %f\t Expected: %f\n",
+		ferror = hb_mc_calculate_float_error (C_expected[i], C_host[i]); 
+		max_ferror = fmax ( max_ferror, ferror); 	
+		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
+			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
                                            i,
-                                           A_host[i],
-                                           B_host[i],
                                            C_host[i],
-                                           C_expected[i]);
+                                           C_expected[i],
+                                           ferror);
 			mismatch = 1;
 		}
 	} 
+
+	bsg_pr_test_info ("MAX relative FP error: %e\n", max_ferror); 
 
 	if (mismatch) { 
 		return HB_MC_FAIL;

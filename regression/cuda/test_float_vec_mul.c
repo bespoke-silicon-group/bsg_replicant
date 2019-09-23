@@ -26,29 +26,30 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /******************************************************************************/
-/* A[N] + B[N] --> C[N]                                                       */
-/* Runs the floating point vector addition with shared mem on a 2x2 tile group*/
+/* A[N] * B[N] --> C[N]                                                       */
+/* Runs the floating point vector multiplication on one 2x2 tile group        */
 /* Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.         */
-/* This test uses the software/spmd/bsg_cuda_lite_runtime/float_vec_add_shared_mem/ */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/float_vec_mul/     */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_float_vec_add_shared_mem.h"
+#include "test_float_vec_mul.h"
 
-#define TEST_NAME "test_float_vec_add_shared_mem"
+#define TEST_NAME "test_float_vec_mul"
 #define ALLOC_NAME "default_allocator"
 
-void host_float_vec_add (float *A, float *B, float *C, int N) { 
+
+void host_float_vec_mul (float *A, float *B, float *C, int N) { 
 	for (int i = 0; i < N; i ++) { 
-		C[i] = A[i] + B[i];
+		C[i] = A[i] * B[i];
 	}
 	return;
 }
 
 
-int kernel_float_vec_add_shared_mem () {
-	bsg_pr_test_info("Running the CUDA Floating Point Vector Addition With Shared Memory "
+int kernel_float_vec_mul () {
+	bsg_pr_test_info("Running the CUDA Floating Point Vector Multiplciation "
                          "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
 	int rc;
 
@@ -68,7 +69,7 @@ int kernel_float_vec_add_shared_mem () {
 
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/float_vec_add_shared_mem/main.riscv";
+                                                    "/float_vec_mul/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -110,8 +111,8 @@ int kernel_float_vec_add_shared_mem () {
 	float A_host[N]; 
 	float B_host[N]; 
 	for (int i = 0; i < N; i++) { 
-		A_host[i] = hb_mc_generate_float_rand();
-		B_host[i] = hb_mc_generate_float_rand();
+		A_host[i] = hb_mc_generate_float_rand(); 
+		B_host[i] = hb_mc_generate_float_rand(); 
 	}
 
 
@@ -170,7 +171,7 @@ int kernel_float_vec_add_shared_mem () {
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_add_shared_mem", 5, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_mul", 5, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -214,7 +215,7 @@ int kernel_float_vec_add_shared_mem () {
 	/* Calculate the expected result using host code and compare.         */ 
         /**********************************************************************/
 	float C_expected[N]; 
-	host_float_vec_add (A_host, B_host, C_expected, N); 
+	host_float_vec_mul (A_host, B_host, C_expected, N); 
 
 	float max_ferror = 0; 
 	float ferror = 0;
@@ -224,7 +225,7 @@ int kernel_float_vec_add_shared_mem () {
 		ferror = hb_mc_calculate_float_error(C_expected[i], C_host[i]);
 		max_ferror = fmax ( max_ferror, ferror); 	
 		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
-			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.32f\tExpected: %.32f\tRelative Error: %.32f\n",
+			bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]: %.40f\tExpected: %.40f\tRelative Err: %.32f\n",
                                            i,
                                            C_host[i],
                                            C_expected[i],
@@ -256,16 +257,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_float_vec_add_shared_mem Regression Test (COSIMULATION)\n");
-	int rc = kernel_float_vec_add_shared_mem();
+	bsg_pr_test_info("test_float_vec_mul Regression Test (COSIMULATION)\n");
+	int rc = kernel_float_vec_mul();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_float_vec_add_shared_mem Regression Test (F1)\n");
-	int rc = kernel_float_vec_add_shared_mem();
+	bsg_pr_test_info("test_float_vec_mul Regression Test (F1)\n");
+	int rc = kernel_float_vec_mul();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }

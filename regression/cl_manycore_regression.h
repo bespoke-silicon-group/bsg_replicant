@@ -108,6 +108,72 @@ int compare_results(int num_fields, const char *desc[], const uint32_t *expected
         }
         return success ? HB_MC_SUCCESS : HB_MC_FAIL;
 }
+
+
+// Maximum tolerable FP error between X86 and RISCV 
+#define MAX_FLOAT_ERROR_TOLERANCE 1e-6
+
+
+// A data structure to generate random floating points 
+// within the entire range
+typedef union data_t {
+	int32_t hb_mc_int;
+	float hb_mc_float;
+} hb_mc_data_t;
+
+// Converts an int into a float and returns it
+static inline float hb_mc_int_to_float(int i){ 
+	hb_mc_data_t data;
+	data.hb_mc_int = i;
+	return data.hb_mc_float;
+}
+
+// Converts a float into an int and returns it
+static inline int hb_mc_float_to_int (float f){
+	hb_mc_data_t data;
+	data.hb_mc_float = f;
+	return data.hb_mc_int;
+}
+	
+
+// Generates random floating point numbers
+// within the permitted float32 range 
+// Number has a 50% chance of being negative 
+static inline float hb_mc_generate_float_rand(){ 
+	hb_mc_data_t data;
+	data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1) ; 
+	
+	// To avoid denormal floating point numbers 
+	if (abs(data.hb_mc_int) <= 0x0040)
+		data.hb_mc_int = 0;
+
+	return data.hb_mc_float;
+}
+
+// Generates random floating point numbers
+// within the permitted float32 range 
+// All numbers of positive 
+static inline float hb_mc_generate_float_rand_positive(){ 
+	hb_mc_data_t data;
+	data.hb_mc_int = rand() ;
+
+	// To avoid denormal floating point numbers 
+	if (abs(data.hb_mc_int) <= 0x0040)
+		data.hb_mc_int = 0;
+
+	return data.hb_mc_float;
+}
+
+
+// Compares two floating points and returns the relative error
+// If the original number is zero, returns the differnce to avoid div by zero
+// TODO: find a more appropriate solution for a = 0
+static inline float hb_mc_calculate_float_error (float expected, float result) { 
+	// if expected is close enough to zero that the division would return 1
+	if (fabs(expected) < 1e-15)
+		return (fabs(expected - result));
+	return (fabs((float)(expected - result)/expected));
+}
 #ifdef __cplusplus
 extern "C" {
 void cosim_main(uint32_t *exit_code, char * args);
