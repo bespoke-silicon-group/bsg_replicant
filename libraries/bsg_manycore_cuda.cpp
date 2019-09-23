@@ -1303,16 +1303,20 @@ static int hb_mc_device_program_exit (hb_mc_program_t *program) {
 static int hb_mc_program_binary_copy (hb_mc_program_t *program,
                                       const unsigned char *bin_data,
                                       size_t bin_size) { 
+
+	if (!bin_data) {
+		bsg_pr_err("%s: binary is null.\n", __func__);
+		return HB_MC_INVALID;
+	}
+
 	unsigned char* copy = (unsigned char*) malloc (bin_size);
 	if (!copy){ 
 		bsg_pr_err("%s: failed to allocated space on device for program binary.\n", __func__);
 		return HB_MC_NOMEM;
 	}
 
-	for (int ptr = 0; ptr < bin_size; ptr++){
-		copy[ptr] = bin_data[ptr];
-	}
-
+	memcpy((unsigned char*) copy, (const unsigned char*) bin_data, bin_size);
+	
 	program->bin = copy; 
 	program->bin_size = bin_size;
 
