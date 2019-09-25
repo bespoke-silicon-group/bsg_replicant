@@ -44,9 +44,14 @@ include ../../environment.mk
 # for this sub-directory.
 include tests.mk
 
-# compillation.mk defines rules for compilation of the C/C++
-# regression tests.
-include $(REGRESSION_PATH)/compilation.mk
+# EXEC_PATH defines this directory, where the tests are actually
+# executed. REGRESSION_TESTS_TYPE is defined by tests.mk in each regression
+# sub-directory. It is used in f1.mk
+EXEC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)
+
+# f1.mk defines all of the re-used rules for execution on F1. (e.g. regression,
+# clean, help, etc)
+include $(REGRESSION_PATH)/f1.mk
 
 # rules.mk defines rules for building RISC-V binaries associated with
 # the tests in this sub-directory. rules.mk must come after
@@ -59,8 +64,8 @@ include rules.mk
 # (TEST_PATH), and the test name (TEST_NAME). SPECINT_PATH is defined for convenience
 SPECINT_PATH=$(BSG_MANYCORE_DIR)/software/spmd/specint2000
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
-$(EXEC_PATH)/%.log: TEST_PATH=$(SPECINT_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
-$(EXEC_PATH)/%.log: #$(EXEC_PATH)/test_loader #%.rule
+$(EXEC_PATH)/%.log: TEST_PATH=$(SPECINT_PATH)/$(subst test_,,$(TEST_NAME)).riscv
+$(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
 
 
