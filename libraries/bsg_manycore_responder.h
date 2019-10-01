@@ -150,10 +150,11 @@ int hb_mc_responder_del(hb_mc_responder_t *responder);
 					throw r;			\
 			}						\
 			~__bsg_manycore_ ## rspdr ## _add_del () {	\
-				int r = hb_mc_responder_del(&rspdr);	\
-				if (r != HB_MC_SUCCESS)			\
-					throw r;			\
-			}						\
+                                int r = hb_mc_responder_del(&rspdr);    \
+                                if (r != HB_MC_SUCCESS)                                       \
+                                        bsg_pr_err("%s: failed to remove responder %s: %s\n", \
+                                                    __FILE__, #rspdr, hb_mc_strerror(r));      \
+			}					\
 		};							\
 		__bsg_manycore_ ## rspdr ## _add_del add_ ## rspdr;	\
 	}
