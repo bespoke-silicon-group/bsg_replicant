@@ -189,6 +189,25 @@ set VIVADO_IP_DIR $::env(XILINX_VIVADO)/data/ip/xilinx/
 set TARGET_DIR $CL_DIR/build/src_post_encryption
 set UNUSED_TEMPLATES_DIR $HDK_SHELL_DIR/design/interfaces
 
+# OK - here, and in synth.tcl is how we handle Xilinx IP in the
+# HDL flow. Things get... a little weird. 
+#
+# The following lines copy the source files of any verilog and VHDL IP
+# that we use in the design. It's ugly, but effective, and I can't
+# figure out how to do it any better. In essence, for every IP that we
+# use, we copy the HDL file from it's xilinx IP directory, into
+# $TARGET_DIR. However, it's not that simple, because each IP can
+# depend on underlying IP -- for example the AXI MM FIFO
+# (axi_fifo_mm_s) uses the Fifo Library (lib_fifo), so you ALSO have
+# to copy the Fifo Library. The only way you can determine what IP
+# files are dependencies is by reading the component.xml file and
+# finding the Verilog/VHDL Synthesis Fileset. Repeat (recursively)
+# until no more IPs remain.
+#
+# As I said, it's janky.
+#
+# If you want to know how the files are used by vivado once they are
+# copied, read synth.tcl.
 file copy -force $VIVADO_IP_DIR/generic_baseblocks_v2_1/hdl/generic_baseblocks_v2_1_vl_rfs.v        $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_register_slice_v2_1/hdl/axi_register_slice_v2_1_vl_rfs.v        $TARGET_DIR
 file copy -force $VIVADO_IP_DIR/axi_crossbar_v2_1/hdl/axi_crossbar_v2_1_vl_rfs.v                    $TARGET_DIR

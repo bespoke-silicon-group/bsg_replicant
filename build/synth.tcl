@@ -44,6 +44,18 @@ puts "AWS FPGA: ([clock format [clock seconds] -format %T]) Reading developer's 
 
 read_verilog -sv [glob $ENC_SRC_DIR/*.{v,sv,vh}]
 
+# OK - here, and in create_dcp.tcl is how we handle Xilinx IP in the
+# HDL flow. Things get... a little weird. The following lines read in
+# VHDL libraries from the VHDL files specified. Every time that Vivado
+# is upgraded (e.g. 2018.2 to 2019.1) you need to check/update the
+# version numbers (e.g. axi_fifo_mm_s_v4_1_14 will become
+# axi_fifo_mm_s_v4_1_16). The only way I've figured out how to do this
+# is by reading the component.xml file in the corresponding IP
+# directory of the Xilinx IP Library
+# (e.g. Vivado/2019.2/data/ip/xilinx/axi_fifo_mm_s_v4_1/component.xml). 
+#
+# But how do the files get copied to $ENC_SRC_DIR? Read create_dcp.tcl.
+
 read_vhdl -library axi_fifo_mm_s_v4_1_16 $ENC_SRC_DIR/axi_fifo_mm_s_v4_1_rfs.vhd
 read_vhdl -library fifo_generator_v13_2_4 $ENC_SRC_DIR/fifo_generator_v13_2_vhsyn_rfs.vhd
 read_vhdl -library lib_fifo_v1_0_13 $ENC_SRC_DIR/lib_fifo_v1_0_rfs.vhd

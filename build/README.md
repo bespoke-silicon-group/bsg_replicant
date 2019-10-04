@@ -22,10 +22,11 @@ This directory contains the following files:
     3. Implements (places & routes) the RTL Design
     4. Creates a Design Checkpoint (DCP) file
     5. Collects all design files and the final DCP in a tarball (.tar)
-- `create_dcp.tcl`: TCL script responsible for creating the DCP file that is required by Amazon.
-- `synth.tcl`: Synthesis commands for Vivado
-    - Reads all verilog files copied and encrypted by `encrypt.tcl`
+- `create_dcp.tcl`: TCL script responsible for creating the DCP file that is required by Amazon. You must add all the Xilinx libraries you will use here. Read the comments in the file for more information.
+- `synth.tcl`: Synthesis commands for Vivado. (*NOTE*: Must be edited when upgrading vivado)
+    - Reads all verilog files copied and encrypted by `create_dcp.tcl`. For more information, read the comment block in the file. (*NOTE*: Must be edited when upgrading vivado)
 - `README.md`: This file
+
 
 # Quick-Start
 
