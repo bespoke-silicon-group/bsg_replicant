@@ -140,7 +140,7 @@ module axil_to_mcl
    end
   // synopsys translate_on
 
-  axi_crossbar_v2_1_18_axi_crossbar #(
+  axi_crossbar_v2_1_20_axi_crossbar #(
     .C_FAMILY                   ("virtexuplus"             )
     ,.C_NUM_SLAVE_SLOTS          (1                         )
     ,.C_NUM_MASTER_SLOTS         (C_NUM_MASTER_SLOTS        )
