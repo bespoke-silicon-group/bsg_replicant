@@ -98,9 +98,9 @@ axi_fifo_mm_s #(
   .C_TX_FIFO_DEPTH       (512           ),
   .C_RX_FIFO_DEPTH       (512           ),
   .C_TX_FIFO_PF_THRESHOLD(507           ),
-  .C_TX_FIFO_PE_THRESHOLD(2             ),
+  .C_TX_FIFO_PE_THRESHOLD(5             ),
   .C_RX_FIFO_PF_THRESHOLD(507           ),
-  .C_RX_FIFO_PE_THRESHOLD(2             ),
+  .C_RX_FIFO_PE_THRESHOLD(5             ),
   .C_USE_TX_CUT_THROUGH  (0             ),
   .C_DATA_INTERFACE_TYPE (0             ),
   .C_BASEADDR            (32'h80000000  ),
@@ -193,7 +193,7 @@ axi_fifo_mm_s #(
                    );
 */
 
-axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
+axis_dwidth_converter_v1_1_18_axis_dwidth_converter #(
   .C_FAMILY(fpga_version_p),
   .C_S_AXIS_TDATA_WIDTH(32),
   .C_M_AXIS_TDATA_WIDTH(mcl_width_p),
@@ -285,7 +285,7 @@ bsg_fifo_1r1w_small #(
   ,.yumi_i (rcv_fifo_yumi_li)
 );
 
-axis_dwidth_converter_v1_1_16_axis_dwidth_converter #(
+axis_dwidth_converter_v1_1_18_axis_dwidth_converter #(
   .C_FAMILY            (fpga_version_p                    ),
   .C_S_AXIS_TDATA_WIDTH(mcl_width_p                       ),
   .C_M_AXIS_TDATA_WIDTH(32                                ),
