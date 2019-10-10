@@ -27,8 +27,8 @@ This repository contains the following files:
 
 To simulate/co-simulate/build these projects you must have the following tools.
 
-   1. Vivado 2018.2
-   2. A clone of aws-fpga (v1.4.5) 
+   1. Vivado 2019.1
+   2. A clone of aws-fpga (v1.4.11)
    3. Synopsys VCS (We use O-2018.09-SP2, but others would work)
 
 This repository depends on the following repositories: 
@@ -41,7 +41,7 @@ This repository depends on the following repositories:
 
 The simplest way to use this project is to clone it's meta-project: [BSG Bladerunner](https://github.com/bespoke-silicon-group/bsg_bladerunner/). 
 
-BSG Bladerunner tracks BSG F1 (this repository, BSG Manycore, and
+BSG Bladerunner tracks BSG F1 (this repository), BSG Manycore, and
 BaseJump STL repositories as submodules and maintains a monotonic
 versionining scheme. BSG Bladerunner also contains cosimulation
 instructions. 
