@@ -61,7 +61,7 @@ args = parser.parse_args()
 timestamp = datetime.datetime.now().strftime('%Y/%m/%d-%H:%M:%S')
 instance_name = 'v' + args.ImageVersion + ' ' + timestamp + '_image_build'
 ami_name = 'BSG ' + args.Name[0] + ' v' + args.ImageVersion + ' AMI ' 
-base_ami = 'ami-0f131f9789b1455aa'
+base_ami = 'ami-0217815815c960b75'
 # The instance type is used to build the image - it does not need to match the
 # final instance type (e.g. an F1 instance type)
 instance_type = 't2.2xlarge'
