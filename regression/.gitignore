@@ -1,4 +1,6 @@
 *.o
 !*.c
+!*.cpp
+!*.hpp
 !*.h
 test*

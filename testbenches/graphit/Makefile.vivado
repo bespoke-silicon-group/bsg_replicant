@@ -25,6 +25,4 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragement defines the possible targets
-# (sub-directories) for regression in cosimulation and on F1.
-TARGETS = library spmd cuda python graphit
+# This makefile fragment is useless. It is needed to satisfy the AWS HDK Flow
