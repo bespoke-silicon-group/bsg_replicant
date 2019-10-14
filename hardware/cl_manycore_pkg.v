@@ -10,14 +10,9 @@ package cl_manycore_pkg;
 
   `include "bsg_defines.v"
   `include "f1_parameters.vh"
-<<<<<<< HEAD:hardware/cl_manycore_pkg.v
   import bsg_mem_cfg_pkg::*;
-  
-  parameter bsg_mem_cfg_e mem_cfg_p = `CL_MANYCORE_MEM_CFG;
-=======
 
-<<<<<<< HEAD:cl_manycore/hardware/cl_manycore_pkg.v
->>>>>>> 465068b... refactor mcl:cl_manycore/hardware/cl_manycore_pkg.v
+  parameter bsg_mem_cfg_e mem_cfg_p = `CL_MANYCORE_MEM_CFG;
   parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
   parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;
   parameter num_tiles_x_p = `CL_MANYCORE_DIM_X;

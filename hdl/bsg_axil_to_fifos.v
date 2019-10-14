@@ -1,27 +1,45 @@
 /*
 * bsg_axil_to_fifos.v
 *
-* adapt axil interface to parameterized fifo interface
+*     axil interface <-> fifo interface
+*       ____________      __________
+*      | tx streams | -> | tx fifos | -->
+*      |____________|    |__________|
+*      |            \______________________clr isr
+*  ==> |                                   |
+*      |____________      __________       |
+*      | rx streams | <- | rx fifos | -->  |
+*      |____________|    |__________|      |
+*          |                               |
+*   ->-----/<------------|monitor regs <---/
+*  rom_data &            (see definitions below)
+*  mcl_credits
 *
 * Note:
-* This adapter is similar to the Xilinx axi_fifo_mm_s IP working on cut-though mode. (No TLR is used)
-* Config addresses are base_address + n * 0x100, where n=range(num_slots_p)
-* raise DECERR if access address is out of range
+* 1) Axil address is divided as |slot index[31:12]|base address[11:0]|, the slot index is defined as:
+*    20'b0: axil to fifos, host as master
+*    20'b1: axil to fifos, host as slave
+*    20'b2: monitor and rom data
 *
-* The host AXI-Lite write and read examples:
-* To write to a FIFO,
-* 1. set the isr[27] to 0
-* 2. write words to base_addr + ofs_tdr_lp
-* 3. read the isr and check [27]=1 for successful write (the last data has been dequeued from the tx FIFO). check again or reset if fail.
-* Read the transmit vacancy register at base_addr + ofs_tdfv_lp to get the current tx FIFO status
-* Note: if write to a full fifo, data will not be updated.
+* 2) The axil to stream adapter is similar to the Xilinx axi_fifo_mm_s IP in cut-though mode
+*    config registers are defined in bsg_manycore_link_to_axil_pkg.v
 *
-* To read from a FIFO,
-* 1. read the Receive Length Reigster, RLR = fifo_width_lp/8 * fifo_rlr_words_lp if rx_FIFO >= fifo_rlr_words_lp, else 0
-* 2. read RLR data from Receive Destination Register RDR,
-* if read from a empty fifo, you will get stale data
+* 3) Axil Write and Read examples:
+*    a. write to a FIFO,
+*       1. set the isr[27] to 0
+*       2. write words to base_addr + axil_mm2s_ofs_tdr_lp
+*       3. read the isr and check [27]=1 for successful write, i.e. the last data has been
+*          dequeued from the tx FIFO. if fail. check again or reset if fail
+*       4. read the transmit vacancy register (TDFV) to get the current tx FIFO status.
+           TDFV will not be updated if write to a full fifo
 *
-* TODO: to make this module fully parameterized with num_slots_p, monitor register address should be remapped
+*    b. read from a FIFO,
+*       1. read the Receive Length Reigster
+           For simple implementation, RLR is fixed to rx_FIFO >= rlr_els_gp ? fifo_width_p/8 * rlr_els_gp : 0
+*       2. read RLR bytes of data at Receive Destination Register (RDR)
+*          Host will get stale data if read from a empty fifo
+*
+* TODO: Monitor addresses should be remapped, to fully parameterize the parameter num_slots_p,
 *
 */
 
@@ -29,135 +47,91 @@
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_axil_to_mcl_pkg.vh"
 
-module bsg_axil_to_fifos 
-  import cl_mcl_pkg::*;
-#(
-  parameter axil_base_addr_p = "inv"
-  , parameter num_slots_p = 2
-  , parameter fifo_els_p = "inv"
-  , parameter fifo_width_lp = axil_data_width_lp
+import bsg_axil_to_mcl_pkg::*;
+module bsg_axil_to_fifos #(
+  parameter num_slots_p = 2
+  , parameter fifo_width_p = "inv"
   , parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
   , parameter axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
 ) (
-  input                                                  clk_i
-  ,input                                                  reset_i
-  ,input  [axil_mosi_bus_width_lp-1:0]                    s_axil_bus_i
-  ,output [axil_miso_bus_width_lp-1:0]                    s_axil_bus_o
-  ,output [           num_slots_p-1:0]                    fifo_v_o
-  ,output [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_o
-  ,input  [           num_slots_p-1:0]                    fifo_ready_i
-  ,input  [           num_slots_p-1:0]                    fifo_v_i
-  ,input  [           num_slots_p-1:0][fifo_width_lp-1:0] fifo_data_i
-  ,output [           num_slots_p-1:0]                    fifo_ready_o
-  ,output [                      31:0]                    rom_addr_o
-  ,input  [                      31:0]                    rom_data_i
-  ,input  [           num_slots_p-1:0][fifo_width_lp-1:0] rcv_vacancy_i
-  ,input  [         num_slots_p/2-1:0][fifo_width_lp-1:0] mc_out_credits_i
+  input                                                 clk_i
+  ,input                                                 reset_i
+  ,input  [axil_mosi_bus_width_lp-1:0]                   s_axil_bus_i
+  ,output [axil_miso_bus_width_lp-1:0]                   s_axil_bus_o
+  ,output [           num_slots_p-1:0][fifo_width_p-1:0] fifos_o
+  ,output [           num_slots_p-1:0]                   fifos_v_o
+  ,input  [           num_slots_p-1:0]                   fifos_ready_i
+  ,input  [           num_slots_p-1:0][fifo_width_p-1:0] fifos_i
+  ,input  [           num_slots_p-1:0]                   fifos_v_i
+  ,output [           num_slots_p-1:0]                   fifos_ready_o
+  ,output [                      31:0]                   rom_addr_o
+  ,input  [                      31:0]                   rom_data_i
+  ,input  [           num_slots_p-1:0][fifo_width_p-1:0] rcv_vacancy_i
+  ,input  [         num_slots_p/2-1:0][fifo_width_p-1:0] out_credits_i
 );
 
+  // synopsys translate_off
+  initial begin
+    assert (num_slots_p == 2);
+    else $fatal("Only support num_slots_p=2, [%m]");
+  end
+  // synopsys translate_on
 
-
-  localparam fifo_ptr_width_lp = `BSG_WIDTH(fifo_els_p);
-
-  localparam index_addr_width_lp  = (axil_addr_width_lp-base_addr_width_p);
-
-  localparam ofs_rsp_rcv_vacancy_lp = base_addr_width_p'(HOST_RCV_VACANCY_MC_RES_p);
-  localparam ofs_req_rcv_vacancy_lp = base_addr_width_p'(HOST_RCV_VACANCY_MC_REQ_p);
-  localparam ofs_mc_out_credits_lp  = base_addr_width_p'(HOST_REQ_CREDITS_p)       ;
 
   `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
-  bsg_axil_mosi_bus_s s_axil_bus_i_cast;
-  bsg_axil_miso_bus_s s_axil_bus_o_cast;
+  bsg_axil_mosi_bus_s s_axil_bus_li_cast;
+  bsg_axil_miso_bus_s s_axil_bus_lo_cast;
 
-  assign s_axil_bus_i_cast = s_axil_bus_i;
-  assign s_axil_bus_o      = s_axil_bus_o_cast;
-
-
-  logic [31:0] awaddr_li ;
-  logic        awvalid_li;
-  logic        awready_lo;
-  logic [31:0] wdata_li  ;
-  logic [ 3:0] wstrb_li  ;
-  logic        wvalid_li ;
-  logic        wready_lo ;
-
-  logic [1:0] bresp_lo ;
-  logic       bvalid_lo;
-  logic       bready_li;
-
-  logic [31:0] araddr_li ;
-  logic        arvalid_li;
-  logic        arready_lo;
-  logic [31:0] rdata_lo  ;
-  logic [ 1:0] rresp_lo  ;
-  logic        rvalid_lo ;
-  logic        rready_li ;
-
-  assign awaddr_li                 = s_axil_bus_i_cast.awaddr;
-  assign awvalid_li                = s_axil_bus_i_cast.awvalid;
-  assign s_axil_bus_o_cast.awready = awready_lo;
-  assign wdata_li                  = s_axil_bus_i_cast.wdata;
-  assign wstrb_li                  = s_axil_bus_i_cast.wstrb;
-  assign wvalid_li                 = s_axil_bus_i_cast.wvalid;
-  assign s_axil_bus_o_cast.wready  = wready_lo;
-
-  assign s_axil_bus_o_cast.bresp  = bresp_lo;
-  assign s_axil_bus_o_cast.bvalid = bvalid_lo;
-  assign bready_li                = s_axil_bus_i_cast.bready;
-
-  assign araddr_li                 = s_axil_bus_i_cast.araddr;
-  assign arvalid_li                = s_axil_bus_i_cast.arvalid;
-  assign s_axil_bus_o_cast.arready = arready_lo;
-  assign s_axil_bus_o_cast.rdata   = rdata_lo;
-  assign s_axil_bus_o_cast.rresp   = rresp_lo;
-  assign s_axil_bus_o_cast.rvalid  = rvalid_lo;
-  assign rready_li                 = s_axil_bus_i_cast.rready;
+  assign s_axil_bus_li_cast = s_axil_bus_i;
+  assign s_axil_bus_o       = s_axil_bus_lo_cast;
 
 
-  //----------------------------------------------
-  // tx fifo
-  //----------------------------------------------
+  logic [num_slots_p-1:0][fifo_width_p-1:0] txs_lo      ;
+  logic [num_slots_p-1:0]                   txs_v_lo    ;
+  logic [num_slots_p-1:0]                   txs_ready_li;
 
-  // data output
-  logic [num_slots_p-1:0][fifo_width_lp-1:0] tx_data_lo;
-  logic [num_slots_p-1:0] tx_v_lo;
-  logic [num_slots_p-1:0] tx_ready_li;
+  logic [num_slots_p-1:0][fifo_width_p-1:0] rxs_li      ;
+  logic [num_slots_p-1:0]                   rxs_v_li    ;
+  logic [num_slots_p-1:0]                   rxs_ready_lo;
 
-  wire [num_slots_p-1:0] tx_enqueue = tx_v_lo & tx_ready_li;
-  wire [num_slots_p-1:0] tx_dequeue = fifo_v_o & fifo_ready_i;
+  localparam fifo_ptr_width_lp = `BSG_WIDTH(axil_fifo_els_gp);
 
-  logic [num_slots_p-1:0] clear_isr_tc_lo;
-  logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] tx_vacancy_lo;
-  logic [num_slots_p-1:0][31:0] isr_r;
+  logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] tx_vacancy_lo  ;
+  logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] rx_occupancy_lo;
 
-  bsg_axil_to_fifos_tx #(
-    .num_fifos_p (num_slots_p  ),
-    .fifo_width_p(fifo_width_lp)
-  ) axil_to_fifos_tx (
-    .clk_i(clk_i)
-    ,.reset_i(reset_i)
-    ,.awaddr_i      (awaddr_li      )
-    ,.awvalid_i     (awvalid_li     )
-    ,.awready_o     (awready_lo     )
-    ,.wdata_i       (wdata_li       )
-    ,.wstrb_i       (wstrb_li       )
-    ,.wvalid_i      (wvalid_li      )
-    ,.wready_o      (wready_lo      )
-    ,.bresp_o       (bresp_lo       )
-    ,.bvalid_o      (bvalid_lo      )
-    ,.bready_i      (bready_li      )
-    ,.tx_data_o     (tx_data_lo     )
-    ,.tx_v_o        (tx_v_lo        )
-    ,.tx_ready_i    (tx_ready_li    )
-    ,.clear_isr_tc_o(clear_isr_tc_lo)
+  // txs to fifos
+  //-------------
+
+  logic [num_slots_p-1:0] clr_isr_txc_lo;
+
+  bsg_axil_txs #(.num_fifos_p(num_slots_p)) mm2s_tx (
+    .clk_i         (clk_i                        ),
+    .reset_i       (reset_i                      ),
+    .awaddr_i      (s_axil_bus_li_cast.awaddr    ),
+    .awvalid_i     (s_axil_bus_li_cast.awvalid_li),
+    .awready_o     (s_axil_bus_lo_cast.awready_lo),
+    .wdata_i       (s_axil_bus_li_cast.wdata_li  ),
+    .wstrb_i       (s_axil_bus_li_cast.wstrb_li  ),
+    .wvalid_i      (s_axil_bus_li_cast.wvalid_li ),
+    .wready_o      (s_axil_bus_lo_cast.wready_lo ),
+    .bresp_o       (s_axil_bus_lo_cast.bresp_lo  ),
+    .bvalid_o      (s_axil_bus_lo_cast.bvalid_lo ),
+    .bready_i      (s_axil_bus_li_cast.bready_li ),
+    .txs_o         (txs_lo                       ),
+    .txs_v_o       (txs_v_lo                     ),
+    .txs_ready_i   (txs_ready_li                 ),
+    .clr_isrs_txc_o(clr_isr_txc_lo               )
   );
 
-  for (genvar i=0; i<num_slots_p; i++) begin : transmit_fifo
+  wire [num_slots_p-1:0] tx_enqueue = txs_v_lo & txs_ready_li  ;
+  wire [num_slots_p-1:0] tx_dequeue = fifos_v_o & fifos_ready_i;
+
+  for (genvar i=0; i<num_slots_p; i++) begin : tx_fifo
     bsg_counter_up_down #(
-      .max_val_p (fifo_els_p)
-      ,.init_val_p(fifo_els_p)
+      .max_val_p (axil_fifo_els_gp)
+      ,.init_val_p(axil_fifo_els_gp)
       ,.max_step_p(1         )
-    ) tx_vacancy_counter (      
+    ) tx_vacancy_counter (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
       ,.down_i (tx_enqueue[i]   )
@@ -166,71 +140,31 @@ module bsg_axil_to_fifos
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_lp)
-      ,.els_p             (fifo_els_p   )
-      ,.ready_THEN_valid_p(0            )
+      .width_p           (fifo_width_p    ),
+      .els_p             (axil_fifo_els_gp),
+      .ready_THEN_valid_p(0               )
     ) tx_fifo (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.v_i    (tx_v_lo[i]    )
-      ,.ready_o(tx_ready_li[i])
-      ,.data_i (tx_data_lo[i] )
-      ,.v_o    (fifo_v_o[i]   )
-      ,.data_o (fifo_data_o[i])
-      ,.yumi_i (tx_dequeue[i] )
+      .clk_i  (clk_i          ),
+      .reset_i(reset_i        ),
+      .v_i    (txs_v_lo[i]    ),
+      .ready_o(txs_ready_li[i]),
+      .data_i (txs_lo[i]      ),
+      .v_o    (fifos_v_o[i]   ),
+      .data_o (fifos_o[i]     ),
+      .yumi_i (tx_dequeue[i]  )
     );
-
-    always_ff @(posedge clk_i) begin
-			if (reset_i)
-				isr_r <= '0;
-			else if (clear_isr_tc_lo[i])
-        isr_r[i][FIFO_ISR_TC_BIT_p] <= 1'b0; // clear the tx complete bit
-      else if ((tx_vacancy_lo[i]==fifo_ptr_width_lp'(fifo_els_p-1)) & tx_dequeue[i])
-        isr_r[i][FIFO_ISR_TC_BIT_p] <= 1'b1;  // set the tx complete bit
-      else
-        isr_r[i] <= isr_r[i];
-    end
-  end
+  end : tx_fifo
 
 
-  //----------------------------------------------
-  // rx fifo
-  //----------------------------------------------
+  // fifos to rxs
+  //-------------
 
-  wire [num_slots_p-1:0] rx_v_li;
-  wire [num_slots_p-1:0][31:0] rx_data_li;
-  wire [num_slots_p-1:0] rx_ready_lo;
+  wire [num_slots_p-1:0] rx_enqueue = fifos_v_i & fifos_ready_o;
+  wire [num_slots_p-1:0] rx_dequeue = rxs_ready_lo & rxs_v_li  ;
 
-  wire [num_slots_p-1:0] rx_enqueue = fifo_v_i & fifo_ready_o;
-  wire [num_slots_p-1:0] rx_dequeue = rx_ready_lo & rx_v_li;
-
-  logic [num_slots_p-1:0][fifo_ptr_width_lp-1:0] rx_occupancy_lo;
-
-  wire [31:0] rd_addr_lo;
-  logic [num_slots_p-1:0][31:0] mon_data_li;
-  logic [31:0] rom_data_li;
-
-  bsg_axil_to_fifos_rx #(.num_fifos_p(num_slots_p)) axil_fifo_rx (
-    .clk_i     (clk_i),
-    .reset_i   (reset_i),
-    .araddr_i  (araddr_li  ),
-    .arvalid_i (arvalid_li ),
-    .arready_o (arready_lo ),
-    .rdata_o   (rdata_lo   ),
-    .rresp_o   (rresp_lo   ),
-    .rvalid_o  (rvalid_lo  ),
-    .rready_i  (rready_li  ),
-    .rx_v_i    (rx_v_li    ),
-    .rx_data_i (rx_data_li ),
-    .rx_ready_o(rx_ready_lo),
-    .rd_addr_o (rd_addr_lo ),
-    .mon_data_i(mon_data_li),
-    .rom_data_i(rom_data_li)
-  );
-
-  for (genvar i=0; i<num_slots_p; i++) begin : receive_fifo
+  for (genvar i=0; i<num_slots_p; i++) begin : rx_fifo
     bsg_counter_up_down #(
-      .max_val_p (fifo_els_p)
+      .max_val_p (axil_fifo_els_gp)
       ,.init_val_p(0         )
       ,.max_step_p(1         )
     ) rx_occupancy_counter (
@@ -242,49 +176,84 @@ module bsg_axil_to_fifos
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_lp)
-      ,.els_p             (fifo_els_p   )
-      ,.ready_THEN_valid_p(0            )
+      .width_p           (fifo_width_p    ),
+      .els_p             (axil_fifo_els_gp),
+      .ready_THEN_valid_p(0               )
     ) rx_fifo (
-      .clk_i  (clk_i          )
-      ,.reset_i(reset_i        )
-      ,.v_i    (fifo_v_i[i]    )
-      ,.ready_o(fifo_ready_o[i])
-      ,.data_i (fifo_data_i[i] )
-      ,.v_o    (rx_v_li[i]     )
-      ,.data_o (rx_data_li[i]  )
-      ,.yumi_i (rx_dequeue[i]  )
+      .clk_i  (clk_i           ),
+      .reset_i(reset_i         ),
+      .v_i    (fifos_v_i[i]    ),
+      .ready_o(fifos_ready_o[i]),
+      .data_i (fifos_i[i]      ),
+      .v_o    (rxs_v_li[i]     ),
+      .data_o (rxs_li[i]       ),
+      .yumi_i (rx_dequeue[i]   )
     );
+  end : rx_fifo
+
+  logic [           31:0]       axil_rd_addr_lo;
+  logic [num_slots_p-1:0][31:0] mm2s_regs_li   ;
+  logic [           31:0]       mcl_data_li    ;
+
+  bsg_axil_rxs #(.num_fifos_p(num_slots_p)) mm2s_rx (
+    .clk_i      (clk_i                        ),
+    .reset_i    (reset_i                      ),
+    .araddr_i   (s_axil_bus_li_cast.araddr_li ),
+    .arvalid_i  (s_axil_bus_li_cast.arvalid_li),
+    .arready_o  (s_axil_bus_lo_cast.arready_lo),
+    .rdata_o    (s_axil_bus_lo_cast.rdata_lo  ),
+    .rresp_o    (s_axil_bus_lo_cast.rresp_lo  ),
+    .rvalid_o   (s_axil_bus_lo_cast.rvalid_lo ),
+    .rready_i   (s_axil_bus_li_cast.rready_li ),
+    .rxs_i      (rxs_li                       ),
+    .rxs_v_i    (rxs_v_li                     ),
+    .rxs_ready_o(rxs_ready_lo                 ),
+    .rd_addr_o  (axil_rd_addr_lo              ),
+    .mm2s_regs_i(mm2s_regs_li                 ),
+    .mcl_data_i (mcl_data_li                  )
+  );
+
+
+  //----------------------------------------------
+  // mux for reading data:
+  // mm2s registers, mcl rom data, mcl credits
+  //----------------------------------------------
+  logic [num_slots_p-1:0][31:0] axil_mm2s_isr_r;
+
+  for (genvar i=0; i<num_slots_p; i++) begin : rx_fifo
+    always_ff @(posedge clk_i) begin
+      if (reset_i)
+        axil_mm2s_isr_r <= '0;
+      else if (clr_isr_txc_lo[i])
+        axil_mm2s_isr_r[i][isr_txc_bit_gp] <= 1'b0; // clear the tx complete bit
+      else if ((tx_vacancy_lo[i]==fifo_ptr_width_lp'(axil_fifo_els_gp-1)) & tx_dequeue[i])
+        axil_mm2s_isr_r[i][isr_txc_bit_gp] <= 1'b1; // set the tx complete bit
+      else
+        axil_mm2s_isr_r[i] <= axil_mm2s_isr_r[i];
+    end
 
     // read from registers
     always_comb begin
-      case (rd_addr_lo[0+:base_addr_width_p])
-        ofs_isr_lp  : mon_data_li[i] = isr_r[i];
-        ofs_tdfv_lp : mon_data_li[i] = fifo_width_lp'(tx_vacancy_lo[i]);
-        ofs_rdfo_lp : mon_data_li[i] = fifo_width_lp'({rx_occupancy_lo[i][fifo_ptr_width_lp-1:2],2'b00});
-        ofs_rlr_lp  : mon_data_li[i] = (rx_occupancy_lo[i] >= fifo_rlr_words_lp) ? (fifo_width_lp/8*fifo_rlr_words_lp): '0;
-        default     : mon_data_li[i] = fifo_width_lp'(32'hBEEF_DEAD);
+      case (axil_rd_addr_lo[0+:axil_base_addr_width_gp])
+        axil_mm2s_ofs_isr_lp  : mm2s_regs_li[i] = axil_mm2s_isr_r[i];
+        axil_mm2s_ofs_tdfv_lp : mm2s_regs_li[i] = fifo_width_p'(tx_vacancy_lo[i]);
+        axil_mm2s_ofs_rdfo_lp : mm2s_regs_li[i] = fifo_width_p'({rx_occupancy_lo[i][fifo_ptr_width_lp-1:2],2'b00});
+        axil_mm2s_ofs_rlr_lp  : mm2s_regs_li[i] = (rx_occupancy_lo[i] >= rlr_els_gp) ?
+                                                    (fifo_width_p/8*rlr_els_gp) : '0;
+        default               : mm2s_regs_li[i] = fifo_width_p'(32'hBEEF_DEAD);
       endcase
     end
-  end
+  end : rx_fifo
 
-  // read from rom and monitors
-  assign rom_addr_o = rd_addr_lo;
+  // read from rom and mcl credits
+  assign rom_addr_o = axil_rd_addr_lo;
   always_comb begin
-    case (rd_addr_lo[0+:base_addr_width_p])
-      ofs_rsp_rcv_vacancy_lp : rom_data_li = rcv_vacancy_i[0];
-      ofs_req_rcv_vacancy_lp : rom_data_li = rcv_vacancy_i[1];
-      ofs_mc_out_credits_lp  : rom_data_li = mc_out_credits_i[0];
-      default                : rom_data_li = rom_data_i;
+    case (axil_rd_addr_lo[0+:axil_base_addr_width_gp])
+      host_rcv_vacancy_mc_res_gp : mcl_data_li = rcv_vacancy_i[0];
+      host_rcv_vacancy_mc_req_gp : mcl_data_li = rcv_vacancy_i[1];
+      host_req_credits_out_gp    : mcl_data_li = out_credits_i[0];
+      default                    : mcl_data_li = rom_data_i;
     endcase
   end
-
-  // synopsys translate_off
-  initial begin
-    assert (num_slots_p == 2)
-      else
-        $fatal("## only support axis fifo slot == 2!");
-  end
-  // synopsys translate_on
 
 endmodule // bsg_axil_to_fifos
