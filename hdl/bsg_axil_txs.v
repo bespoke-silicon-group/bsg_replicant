@@ -3,10 +3,10 @@
 *
 */
 
-`include "bsg_axil_to_mcl_pkg.vh"
+`include "bsg_manycore_link_to_axil_pkg.v"
 
 module bsg_axil_txs
-  import import bsg_axil_to_mcl_pkg::*;
+  import bsg_manycore_link_to_axil_pkg::*;
 #(parameter num_fifos_p = "inv") (
   input                          clk_i
   ,input                          reset_i
@@ -141,6 +141,6 @@ module bsg_axil_txs
 
   assign txs_v_o    = {num_fifos_p{wvalid_i&wready_o}} & fifo_addr_v;
   assign txs_o = {num_fifos_p{wdata_i}};
-  assign clr_isrs_txc_o   = {num_fifos_p{wdata_i[isr_txc_bit_gp]}} & isr_addr_v;
+  assign clr_isrs_txc_o   = {num_fifos_p{wdata_i[axil_mm2s_isr_txc_bit_gp]}} & isr_addr_v;
 
 endmodule

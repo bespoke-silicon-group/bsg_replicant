@@ -1,19 +1,19 @@
 # Copyright (c) 2019, University of Washington All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
-# 
+#
 # Redistributions in binary form must reproduce the above copyright notice, this
 # list of conditions and the following disclaimer in the documentation and/or
 # other materials provided with the distribution.
-# 
+#
 # Neither the name of the copyright holder nor the names of its contributors may
 # be used to endorse or promote products derived from this software without
 # specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,7 +34,7 @@
 
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
-# 
+#
 # CL_DIR: The path to the root of the BSG F1 Repository
 ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
@@ -88,6 +88,7 @@ include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 # verilog sources (respectively). These are used during simulation compilation,
 # but transformed into a tool-specific syntax where necesssary.
 VINCLUDES += $(HARDWARE_PATH)
+VINCLUDES += $(CL_DIR)/hdl
 
 VHEADERS += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_mem_cfg_pkg.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_cache_wrapper_axi.v
@@ -99,12 +100,18 @@ VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 
 VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
-VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
-VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
-VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
+# VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
+# VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
+# VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
+VHEADERS += $(CL_DIR)/hdl/bsg_axil_rxs.v
+VHEADERS += $(CL_DIR)/hdl/bsg_axil_txs.v
+VHEADERS += $(CL_DIR)/hdl/bsg_axil_to_fifos.v
+VHEADERS += $(CL_DIR)/hdl/bsg_manycore_endpoint_to_fifos.v
+VHEADERS += $(CL_DIR)/hdl/bsg_manycore_link_to_axil_pkg.v
+VHEADERS += $(CL_DIR)/hdl/bsg_manycore_link_to_axil.v
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
-VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
+# VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh

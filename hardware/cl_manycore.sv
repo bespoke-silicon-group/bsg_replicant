@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -990,7 +990,7 @@ bsg_manycore_wrapper #(
 //
 memory_system #(
   .mem_cfg_p(mem_cfg_p)
-  
+
   ,.bsg_global_x_p(num_tiles_x_p)
   ,.bsg_global_y_p(num_tiles_y_p)
 
@@ -1064,9 +1064,12 @@ assign m_axi4_manycore_arregion = 4'b0;
 assign m_axi4_manycore_arqos = 4'b0;
 
 
-
-
 // manycore link
+`include "bsg_axi_bus_pkg.vh"
+
+`declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+bsg_axil_mosi_bus_s s_axil_bus_li_cast;
+bsg_axil_miso_bus_s s_axil_bus_lo_cast;
 
 logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;
 logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
@@ -1074,48 +1077,46 @@ logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
 logic print_stat_v_lo;
 logic [data_width_p-1:0] print_stat_tag_lo;
 
-axil_to_mcl #(
-  .num_mcl_p        (1                )
-  ,.num_tiles_x_p    (num_tiles_x_p    )
-  ,.num_tiles_y_p    (num_tiles_y_p    )
-  ,.addr_width_p     (addr_width_p     )
-  ,.data_width_p     (data_width_p     )
-  ,.x_cord_width_p   (x_cord_width_p   )
-  ,.y_cord_width_p   (y_cord_width_p   )
-  ,.load_id_width_p  (load_id_width_p  )
-  ,.max_out_credits_p(max_out_credits_p)
-) axil_to_mcl_inst (
-  .clk_i             (clk_main_a0       )
-  ,.reset_i           (~rst_main_n_sync  )
+assign s_axil_bus_li_cast.awaddr  = m_axil_ocl_awaddr;
+assign s_axil_bus_li_cast.awvalid = m_axil_ocl_awvalid;
+assign m_axil_ocl_awready         = s_axil_bus_lo_cast.awready;
+assign s_axil_bus_li_cast.wdata   = m_axil_ocl_wdata;
+assign s_axil_bus_li_cast.wstrb   = m_axil_ocl_wstrb;
+assign s_axil_bus_li_cast.wvalid   = m_axil_ocl_wvalid;
+assign m_axil_ocl_wready          = s_axil_bus_lo_cast.wready;
+assign m_axil_ocl_bresp           = s_axil_bus_lo_cast.bresp;
+assign m_axil_ocl_bvalid          = s_axil_bus_lo_cast.bvalid;
+assign s_axil_bus_li_cast.bready  = m_axil_ocl_bready;
+assign s_axil_bus_li_cast.araddr  = m_axil_ocl_araddr;
+assign s_axil_bus_li_cast.arvalid = m_axil_ocl_arvalid;
+assign m_axil_ocl_arready         = s_axil_bus_lo_cast.arready;
+assign m_axil_ocl_rdata           = s_axil_bus_lo_cast.rdata;
+assign m_axil_ocl_rresp           = s_axil_bus_lo_cast.rresp;
+assign m_axil_ocl_rvalid          = s_axil_bus_lo_cast.rvalid;
+assign s_axil_bus_li_cast.rready  = m_axil_ocl_rready;
 
+bsg_manycore_link_to_axil #(
+  .x_cord_width_p   (x_cord_width_p   ),
+  .y_cord_width_p   (y_cord_width_p   ),
+  .addr_width_p     (addr_width_p     ),
+  .data_width_p     (data_width_p     ),
+  .max_out_credits_p(max_out_credits_p),
+  .load_id_width_p  (load_id_width_p  )
+) mcl_to_axil (
+  .clk_i           (clk_main_a0       ),
+  .reset_i         (~rst_main_n_sync  ),
   // axil slave interface
-  ,.s_axil_mcl_awvalid(m_axil_ocl_awvalid)
-  ,.s_axil_mcl_awaddr (m_axil_ocl_awaddr )
-  ,.s_axil_mcl_awready(m_axil_ocl_awready)
-  ,.s_axil_mcl_wvalid (m_axil_ocl_wvalid )
-  ,.s_axil_mcl_wdata  (m_axil_ocl_wdata  )
-  ,.s_axil_mcl_wstrb  (m_axil_ocl_wstrb  )
-  ,.s_axil_mcl_wready (m_axil_ocl_wready )
-  ,.s_axil_mcl_bresp  (m_axil_ocl_bresp  )
-  ,.s_axil_mcl_bvalid (m_axil_ocl_bvalid )
-  ,.s_axil_mcl_bready (m_axil_ocl_bready )
-  ,.s_axil_mcl_araddr (m_axil_ocl_araddr )
-  ,.s_axil_mcl_arvalid(m_axil_ocl_arvalid)
-  ,.s_axil_mcl_arready(m_axil_ocl_arready)
-  ,.s_axil_mcl_rdata  (m_axil_ocl_rdata  )
-  ,.s_axil_mcl_rresp  (m_axil_ocl_rresp  )
-  ,.s_axil_mcl_rvalid (m_axil_ocl_rvalid )
-  ,.s_axil_mcl_rready (m_axil_ocl_rready )
-
+  .s_axil_bus_i    (s_axil_bus_li_cast),
+  .s_axil_bus_o    (s_axil_bus_lo_cast),
   // manycore link
-  ,.link_sif_i        (loader_link_sif_lo)
-  ,.link_sif_o        (loader_link_sif_li)
-  ,.my_x_i            (mcl_x_cord_lp     )
-  ,.my_y_i            (mcl_y_cord_lp     )
-
-  ,.print_stat_v_o(print_stat_v_lo)
-  ,.print_stat_tag_o(print_stat_tag_lo)
+  .link_sif_i      (loader_link_sif_lo),
+  .link_sif_o      (loader_link_sif_li),
+  .my_x_i          (mcl_x_cord_lp     ),
+  .my_y_i          (mcl_y_cord_lp     ),
+  .print_stat_v_o  (print_stat_v_lo   ),
+  .print_stat_tag_o(print_stat_tag_lo )
 );
+
 
 //-----------------------------------------------
 // Debug bridge, used if need Virtual JTAG
