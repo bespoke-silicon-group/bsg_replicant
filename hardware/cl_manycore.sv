@@ -1071,8 +1071,8 @@ assign m_axi4_manycore_arqos = 4'b0;
 bsg_axil_mosi_bus_s s_axil_bus_li_cast;
 bsg_axil_miso_bus_s s_axil_bus_lo_cast;
 
-logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;
-logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
+logic [x_cord_width_p-1:0] mcl_x_cord_li = '0;
+logic [y_cord_width_p-1:0] mcl_y_cord_li = '0;
 
 logic print_stat_v_lo;
 logic [data_width_p-1:0] print_stat_tag_lo;
@@ -1111,8 +1111,8 @@ bsg_manycore_link_to_axil #(
   // manycore link
   .link_sif_i      (loader_link_sif_lo),
   .link_sif_o      (loader_link_sif_li),
-  .my_x_i          (mcl_x_cord_lp     ),
-  .my_y_i          (mcl_y_cord_lp     ),
+  .my_x_i          (mcl_x_cord_li     ),
+  .my_y_i          (mcl_y_cord_li     ),
   .print_stat_v_o  (print_stat_v_lo   ),
   .print_stat_tag_o(print_stat_tag_lo )
 );
