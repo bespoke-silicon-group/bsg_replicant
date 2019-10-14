@@ -27,11 +27,11 @@
 
 `include "bsg_manycore_packet.vh"
 `include "cl_manycore_pkg.v"
-`include "bsg_manycore_link_to_axi_pkg.v"
+`include "bsg_manycore_link_to_axil_pkg.v"
 
 module bsg_manycore_endpoint_to_fifos
   import cl_manycore_pkg::*;
-  import bsg_manycore_link_to_axi_pkg::*;
+  import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter fifo_width_p = "inv"
   // these are endpoint parameters
@@ -63,6 +63,9 @@ module bsg_manycore_endpoint_to_fifos
   ,input                                                        rcv_fifo_th_i
   // endpoint out packet credits
   ,output [`BSG_WIDTH(max_out_credits_p)-1:0]                   out_credits_o
+  // print stat
+  ,output                                                       print_stat_v_o
+  ,output [                 data_width_p-1:0]                   print_stat_tag_o
 );
 
 
@@ -151,7 +154,7 @@ module bsg_manycore_endpoint_to_fifos
   end
 
   assign fifo_rsp_ready_lo    = ~returning_wr_v_r;
-  assign returning_data_li[i] = returning_wr_v_r[i] ? '0 : (data_width_p)'(fifo_rsp_li[i].data);
+  assign returning_data_li = returning_wr_v_r ? '0 : (data_width_p)'(fifo_rsp_li.data);
   assign returning_v_li       = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_ready_lo);
 
   // manycore request to host
@@ -167,25 +170,25 @@ module bsg_manycore_endpoint_to_fifos
 
   assign mc_req_v_lo = endpoint_in_v_lo;
   assign endpoint_in_yumi_li = mc_req_ready_li & mc_req_v_lo;
-  assign mc_req_lo[i].padding = '0;
-  assign mc_req_lo[i].addr = (32)'(endpoint_in_addr_lo[i]);
-  assign mc_req_lo[i].op = (8)'(endpoint_in_we_lo[i]);
-  assign mc_req_lo[i].op_ex = (8)'(endpoint_in_mask_lo[i]);
-  assign mc_req_lo[i].payload.data = (32)'(endpoint_in_data_lo[i]);
-  assign mc_req_lo[i].src_y_cord = (8)'(in_src_x_cord_lo[i]);
-  assign mc_req_lo[i].src_x_cord = (8)'(in_src_y_cord_lo[i]);
-  assign mc_req_lo[i].y_cord = (8)'(my_y_i[i]);
-  assign mc_req_lo[i].x_cord = (8)'(my_x_i[i]);
+  assign mc_req_lo.padding = '0;
+  assign mc_req_lo.addr = (32)'(endpoint_in_addr_lo);
+  assign mc_req_lo.op = (8)'(endpoint_in_we_lo);
+  assign mc_req_lo.op_ex = (8)'(endpoint_in_mask_lo);
+  assign mc_req_lo.payload.data = (32)'(endpoint_in_data_lo);
+  assign mc_req_lo.src_y_cord = (8)'(in_src_x_cord_lo);
+  assign mc_req_lo.src_x_cord = (8)'(in_src_y_cord_lo);
+  assign mc_req_lo.y_cord = (8)'(my_y_i);
+  assign mc_req_lo.x_cord = (8)'(my_x_i);
 
   // manycore response to host
   // -------------------------
   assign mc_rsp_v_lo = returned_v_r_lo;
-  assign mc_rsp_lo[i].padding = '0;
-  assign mc_rsp_lo[i].pkt_type = 8'({`ePacketType_data});  // Curly braces must be kept!
-  assign mc_rsp_lo[i].data = 32'(returned_data_r_lo[i]);
-  assign mc_rsp_lo[i].load_id = 32'(returned_load_id_r_lo[i]);
-  assign mc_rsp_lo[i].y_cord = 8'(my_y_i[i]);
-  assign mc_rsp_lo[i].x_cord = 8'(my_x_i[i]);
+  assign mc_rsp_lo.padding = '0;
+  assign mc_rsp_lo.pkt_type = 8'({`ePacketType_data});  // Curly braces must be kept!
+  assign mc_rsp_lo.data = 32'(returned_data_r_lo);
+  assign mc_rsp_lo.load_id = 32'(returned_load_id_r_lo);
+  assign mc_rsp_lo.y_cord = 8'(my_y_i);
+  assign mc_rsp_lo.x_cord = 8'(my_x_i);
   assign returned_yumi_li = mc_rsp_ready_li & mc_rsp_v_lo;
 
 
@@ -235,5 +238,10 @@ module bsg_manycore_endpoint_to_fifos
     .my_x_i              (my_x_i                ),
     .my_y_i              (my_y_i                )
   );
+
+
+  assign print_stat_v_o = endpoint_in_v_lo & endpoint_in_we_lo
+    & ({endpoint_in_addr_lo[13:0], 2'b00} == 16'h0D0C);
+  assign print_stat_tag_o = endpoint_in_data_lo;
 
 endmodule

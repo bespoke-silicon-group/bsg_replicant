@@ -4,10 +4,10 @@
 */
 
 `include "bsg_defines.v"
-`include "bsg_axil_to_mcl_pkg.vh"
+`include "bsg_manycore_link_to_axil_pkg.v"
 
 module bsg_axil_rxs
-  import import bsg_axil_to_mcl_pkg::*;
+  import bsg_manycore_link_to_axil_pkg::*;
 #(parameter num_fifos_p = "inv") (
   input                          clk_i
   ,input                          reset_i

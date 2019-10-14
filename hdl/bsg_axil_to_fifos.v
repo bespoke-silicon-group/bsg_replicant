@@ -27,7 +27,7 @@
 * 3) Axil Write and Read examples:
 *    a. write to a FIFO,
 *       1. set the isr[27] to 0
-*       2. write words to base_addr + axil_mm2s_ofs_tdr_lp
+*       2. write words to base_addr + axil_mm2s_ofs_tdr_gp
 *       3. read the isr and check [27]=1 for successful write, i.e. the last data has been
 *          dequeued from the tx FIFO. if fail. check again or reset if fail
 *       4. read the transmit vacancy register (TDFV) to get the current tx FIFO status.
@@ -35,7 +35,7 @@
 *
 *    b. read from a FIFO,
 *       1. read the Receive Length Reigster
-           For simple implementation, RLR is fixed to rx_FIFO >= rlr_els_gp ? fifo_width_p/8 * rlr_els_gp : 0
+           For simple implementation, RLR is fixed to rx_FIFO >= axil_mm2s_rlr_els_gp ? fifo_width_p/8 * axil_mm2s_rlr_els_gp : 0
 *       2. read RLR bytes of data at Receive Destination Register (RDR)
 *          Host will get stale data if read from a empty fifo
 *
@@ -45,10 +45,11 @@
 
 `include "bsg_defines.v"
 `include "bsg_axi_bus_pkg.vh"
-`include "bsg_axil_to_mcl_pkg.vh"
+`include "bsg_manycore_link_to_axil_pkg.v"
 
-import bsg_axil_to_mcl_pkg::*;
-module bsg_axil_to_fifos #(
+module bsg_axil_to_fifos
+  import bsg_manycore_link_to_axil_pkg::*;
+#(
   parameter num_slots_p = 2
   , parameter fifo_width_p = "inv"
   , parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
@@ -72,8 +73,8 @@ module bsg_axil_to_fifos #(
 
   // synopsys translate_off
   initial begin
-    assert (num_slots_p == 2);
-    else $fatal("Only support num_slots_p=2, [%m]");
+    assert (num_slots_p == 2)
+      else $fatal("Only support num_slots_p=2, [%m]");
   end
   // synopsys translate_on
 
@@ -105,28 +106,28 @@ module bsg_axil_to_fifos #(
   logic [num_slots_p-1:0] clr_isr_txc_lo;
 
   bsg_axil_txs #(.num_fifos_p(num_slots_p)) mm2s_tx (
-    .clk_i         (clk_i                        ),
-    .reset_i       (reset_i                      ),
-    .awaddr_i      (s_axil_bus_li_cast.awaddr    ),
-    .awvalid_i     (s_axil_bus_li_cast.awvalid_li),
-    .awready_o     (s_axil_bus_lo_cast.awready_lo),
-    .wdata_i       (s_axil_bus_li_cast.wdata_li  ),
-    .wstrb_i       (s_axil_bus_li_cast.wstrb_li  ),
-    .wvalid_i      (s_axil_bus_li_cast.wvalid_li ),
-    .wready_o      (s_axil_bus_lo_cast.wready_lo ),
-    .bresp_o       (s_axil_bus_lo_cast.bresp_lo  ),
-    .bvalid_o      (s_axil_bus_lo_cast.bvalid_lo ),
-    .bready_i      (s_axil_bus_li_cast.bready_li ),
-    .txs_o         (txs_lo                       ),
-    .txs_v_o       (txs_v_lo                     ),
-    .txs_ready_i   (txs_ready_li                 ),
-    .clr_isrs_txc_o(clr_isr_txc_lo               )
+    .clk_i         (clk_i                     ),
+    .reset_i       (reset_i                   ),
+    .awaddr_i      (s_axil_bus_li_cast.awaddr ),
+    .awvalid_i     (s_axil_bus_li_cast.awvalid),
+    .awready_o     (s_axil_bus_lo_cast.awready),
+    .wdata_i       (s_axil_bus_li_cast.wdata  ),
+    .wstrb_i       (s_axil_bus_li_cast.wstrb  ),
+    .wvalid_i      (s_axil_bus_li_cast.wvalid ),
+    .wready_o      (s_axil_bus_lo_cast.wready ),
+    .bresp_o       (s_axil_bus_lo_cast.bresp  ),
+    .bvalid_o      (s_axil_bus_lo_cast.bvalid ),
+    .bready_i      (s_axil_bus_li_cast.bready ),
+    .txs_o         (txs_lo                    ),
+    .txs_v_o       (txs_v_lo                  ),
+    .txs_ready_i   (txs_ready_li              ),
+    .clr_isrs_txc_o(clr_isr_txc_lo            )
   );
 
   wire [num_slots_p-1:0] tx_enqueue = txs_v_lo & txs_ready_li  ;
   wire [num_slots_p-1:0] tx_dequeue = fifos_v_o & fifos_ready_i;
 
-  for (genvar i=0; i<num_slots_p; i++) begin : tx_fifo
+  for (genvar i=0; i<num_slots_p; i++) begin : tx_s
     bsg_counter_up_down #(
       .max_val_p (axil_fifo_els_gp)
       ,.init_val_p(axil_fifo_els_gp)
@@ -153,7 +154,7 @@ module bsg_axil_to_fifos #(
       .data_o (fifos_o[i]     ),
       .yumi_i (tx_dequeue[i]  )
     );
-  end : tx_fifo
+  end : tx_s
 
 
   // fifos to rxs
@@ -162,7 +163,7 @@ module bsg_axil_to_fifos #(
   wire [num_slots_p-1:0] rx_enqueue = fifos_v_i & fifos_ready_o;
   wire [num_slots_p-1:0] rx_dequeue = rxs_ready_lo & rxs_v_li  ;
 
-  for (genvar i=0; i<num_slots_p; i++) begin : rx_fifo
+  for (genvar i=0; i<num_slots_p; i++) begin : rx_s
     bsg_counter_up_down #(
       .max_val_p (axil_fifo_els_gp)
       ,.init_val_p(0         )
@@ -189,28 +190,28 @@ module bsg_axil_to_fifos #(
       .data_o (rxs_li[i]       ),
       .yumi_i (rx_dequeue[i]   )
     );
-  end : rx_fifo
+  end : rx_s
 
   logic [           31:0]       axil_rd_addr_lo;
   logic [num_slots_p-1:0][31:0] mm2s_regs_li   ;
   logic [           31:0]       mcl_data_li    ;
 
   bsg_axil_rxs #(.num_fifos_p(num_slots_p)) mm2s_rx (
-    .clk_i      (clk_i                        ),
-    .reset_i    (reset_i                      ),
-    .araddr_i   (s_axil_bus_li_cast.araddr_li ),
-    .arvalid_i  (s_axil_bus_li_cast.arvalid_li),
-    .arready_o  (s_axil_bus_lo_cast.arready_lo),
-    .rdata_o    (s_axil_bus_lo_cast.rdata_lo  ),
-    .rresp_o    (s_axil_bus_lo_cast.rresp_lo  ),
-    .rvalid_o   (s_axil_bus_lo_cast.rvalid_lo ),
-    .rready_i   (s_axil_bus_li_cast.rready_li ),
-    .rxs_i      (rxs_li                       ),
-    .rxs_v_i    (rxs_v_li                     ),
-    .rxs_ready_o(rxs_ready_lo                 ),
-    .rd_addr_o  (axil_rd_addr_lo              ),
-    .mm2s_regs_i(mm2s_regs_li                 ),
-    .mcl_data_i (mcl_data_li                  )
+    .clk_i      (clk_i                     ),
+    .reset_i    (reset_i                   ),
+    .araddr_i   (s_axil_bus_li_cast.araddr ),
+    .arvalid_i  (s_axil_bus_li_cast.arvalid),
+    .arready_o  (s_axil_bus_lo_cast.arready),
+    .rdata_o    (s_axil_bus_lo_cast.rdata  ),
+    .rresp_o    (s_axil_bus_lo_cast.rresp  ),
+    .rvalid_o   (s_axil_bus_lo_cast.rvalid ),
+    .rready_i   (s_axil_bus_li_cast.rready ),
+    .rxs_i      (rxs_li                    ),
+    .rxs_v_i    (rxs_v_li                  ),
+    .rxs_ready_o(rxs_ready_lo              ),
+    .rd_addr_o  (axil_rd_addr_lo           ),
+    .mm2s_regs_i(mm2s_regs_li              ),
+    .mcl_data_i (mcl_data_li               )
   );
 
 
@@ -220,14 +221,14 @@ module bsg_axil_to_fifos #(
   //----------------------------------------------
   logic [num_slots_p-1:0][31:0] axil_mm2s_isr_r;
 
-  for (genvar i=0; i<num_slots_p; i++) begin : rx_fifo
+  for (genvar i=0; i<num_slots_p; i++) begin : mm2s_regs
     always_ff @(posedge clk_i) begin
       if (reset_i)
-        axil_mm2s_isr_r <= '0;
+        axil_mm2s_isr_r[i] <= '0;
       else if (clr_isr_txc_lo[i])
-        axil_mm2s_isr_r[i][isr_txc_bit_gp] <= 1'b0; // clear the tx complete bit
+        axil_mm2s_isr_r[i][axil_mm2s_isr_txc_bit_gp] <= 1'b0; // clear the tx complete bit
       else if ((tx_vacancy_lo[i]==fifo_ptr_width_lp'(axil_fifo_els_gp-1)) & tx_dequeue[i])
-        axil_mm2s_isr_r[i][isr_txc_bit_gp] <= 1'b1; // set the tx complete bit
+        axil_mm2s_isr_r[i][axil_mm2s_isr_txc_bit_gp] <= 1'b1; // set the tx complete bit
       else
         axil_mm2s_isr_r[i] <= axil_mm2s_isr_r[i];
     end
@@ -235,15 +236,15 @@ module bsg_axil_to_fifos #(
     // read from registers
     always_comb begin
       case (axil_rd_addr_lo[0+:axil_base_addr_width_gp])
-        axil_mm2s_ofs_isr_lp  : mm2s_regs_li[i] = axil_mm2s_isr_r[i];
-        axil_mm2s_ofs_tdfv_lp : mm2s_regs_li[i] = fifo_width_p'(tx_vacancy_lo[i]);
-        axil_mm2s_ofs_rdfo_lp : mm2s_regs_li[i] = fifo_width_p'({rx_occupancy_lo[i][fifo_ptr_width_lp-1:2],2'b00});
-        axil_mm2s_ofs_rlr_lp  : mm2s_regs_li[i] = (rx_occupancy_lo[i] >= rlr_els_gp) ?
-                                                    (fifo_width_p/8*rlr_els_gp) : '0;
+        axil_mm2s_ofs_isr_gp  : mm2s_regs_li[i] = axil_mm2s_isr_r[i];
+        axil_mm2s_ofs_tdfv_gp : mm2s_regs_li[i] = fifo_width_p'(tx_vacancy_lo[i]);
+        axil_mm2s_ofs_rdfo_gp : mm2s_regs_li[i] = fifo_width_p'({rx_occupancy_lo[i][fifo_ptr_width_lp-1:2],2'b00});
+        axil_mm2s_ofs_rlr_gp  : mm2s_regs_li[i] = (rx_occupancy_lo[i] >= axil_mm2s_rlr_els_gp) ?
+                                                    (fifo_width_p/8*axil_mm2s_rlr_els_gp) : '0;
         default               : mm2s_regs_li[i] = fifo_width_p'(32'hBEEF_DEAD);
       endcase
     end
-  end : rx_fifo
+  end : mm2s_regs
 
   // read from rom and mcl credits
   assign rom_addr_o = axil_rd_addr_lo;
