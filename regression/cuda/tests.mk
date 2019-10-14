@@ -78,6 +78,7 @@ INDEPENDENT_TESTS += test_float_vec_log
 INDEPENDENT_TESTS += test_float_matrix_mul
 INDEPENDENT_TESTS += test_float_matrix_mul_shared_mem
 INDEPENDENT_TESTS += test_softmax
+INDEPENDENT_TESTS += test_log_softmax
 
 # REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
