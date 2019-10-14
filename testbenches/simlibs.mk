@@ -121,6 +121,13 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
 
+VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_fifo.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_ptr_gray.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_launch_sync_sync.v
+
+
 # -------------------- TARGETS --------------------
 # This makefile defines two variables for External Use: 
 #
@@ -135,6 +142,7 @@ WORKDIR = $(TESTBENCH_PATH)/vcs_simlibs/$(PROJECT)
 # tool-specific versions of the same variables. VHEADERS must be compiled before
 # VSOURCES.
 VDEFINES   += VCS_SIM
+VDEFINES   += COSIM
 VDEFINES   += DISABLE_VJTAG_DEBUG
 
 ifeq ($(AXI_PROT_CHECK),1)
