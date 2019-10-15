@@ -39,7 +39,7 @@ module bsg_manycore_link_to_axil
 #(
   // endpoint parameters
   parameter x_cord_width_p = "inv"
-  , parameter y_cord_width_p="inv"
+  , parameter y_cord_width_p = "inv"
   , parameter addr_width_p = "inv"
   , parameter data_width_p = "inv"
   , parameter max_out_credits_p = "inv"
@@ -100,7 +100,6 @@ module bsg_manycore_link_to_axil
 
   bsg_axil_to_fifos #(
     .num_slots_p     (num_slots_lp       ),
-    .axil_base_addr_p(axil_m_slot_addr_gp),
     .fifo_width_p    (32                 )
   ) axil_to_fifos (
     .clk_i        (clk_i              ),
