@@ -10,13 +10,14 @@
 *      |____________      __________       |
 *      | rx streams | <- | rx fifos | -->  |
 *      |____________|    |__________|      |
-*          |                               |
-*   ->-----/<------------|monitor regs <---/
-*  rom_data &            (see definitions below)
-*  mcl_credits
+*          |              ____________     |
+*  --> --->/<------------/monitor regs\<---/
+*  rom_data &            \____________/
+*  mcl_credits           (see definitions in Note2)
 *
 * Note:
-* 1) Axil address is divided as |slot index[31:12]|base address[11:0]|, the slot index is defined as:
+* 1) Axil address is divided as |--slot index[31:12]--|--base address[11:0]--|
+*    The slot indexes are defined as:
 *    20'b0: axil to fifos, host as master
 *    20'b1: axil to fifos, host as slave
 *    20'b2: monitor and rom data
@@ -35,7 +36,8 @@
 *
 *    b. read from a FIFO,
 *       1. read the Receive Length Reigster
-           For simple implementation, RLR is fixed to rx_FIFO >= axil_mm2s_rlr_els_gp ? fifo_width_p/8 * axil_mm2s_rlr_els_gp : 0
+           For simple implementation, RLR is fixed to 
+           (rx_FIFO >= axil_mm2s_rlr_els_gp) ? fifo_width_p/8 * axil_mm2s_rlr_els_gp : 0
 *       2. read RLR bytes of data at Receive Destination Register (RDR)
 *          Host will get stale data if read from a empty fifo
 *

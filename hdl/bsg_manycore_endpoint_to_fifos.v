@@ -35,8 +35,8 @@ module bsg_manycore_endpoint_to_fifos
 #(
   parameter fifo_width_p = "inv"
   // these are endpoint parameters
-  , parameter x_cord_width_p="inv"
-  , parameter y_cord_width_p="inv"
+  , parameter x_cord_width_p = "inv"
+  , parameter y_cord_width_p = "inv"
   , parameter addr_width_p = "inv"
   , parameter data_width_p = "inv"
   , parameter max_out_credits_p = "inv"
