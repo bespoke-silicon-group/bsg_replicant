@@ -36,7 +36,7 @@
 *
 *    b. read from a FIFO,
 *       1. read the Receive Length Reigster
-           For simple implementation, RLR is fixed to 
+           For simple implementation, RLR is fixed to
            (rx_FIFO >= axil_mm2s_rlr_els_gp) ? fifo_width_p/8 * axil_mm2s_rlr_els_gp : 0
 *       2. read RLR bytes of data at Receive Destination Register (RDR)
 *          Host will get stale data if read from a empty fifo
@@ -122,7 +122,7 @@ module bsg_axil_to_fifos
     .bready_i      (s_axil_bus_li_cast.bready ),
     .txs_o         (txs_lo                    ),
     .txs_v_o       (txs_v_lo                  ),
-    .txs_ready_i   (txs_ready_li              ),
+    // .txs_ready_i   (txs_ready_li              ),
     .clr_isrs_txc_o(clr_isr_txc_lo            )
   );
 
