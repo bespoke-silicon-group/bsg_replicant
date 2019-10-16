@@ -140,8 +140,8 @@ module bsg_manycore_endpoint_to_fifos
     ,(y_cord_width_p)'(fifo_req_li.y_cord)
     ,(x_cord_width_p)'(fifo_req_li.x_cord)
   };
-  assign endpoint_out_v_li = fifo_req_v_li & fifo_req_enable;
-  assign fifo_req_ready_lo = endpoint_out_ready_lo & fifo_req_enable;
+  assign endpoint_out_v_li = fifo_req_enable & fifo_req_v_li;
+  assign fifo_req_ready_lo = fifo_req_enable & endpoint_out_ready_lo;
 
   // host response to manycore
   // -------------------------
@@ -153,9 +153,9 @@ module bsg_manycore_endpoint_to_fifos
       returning_wr_v_r <= endpoint_in_yumi_li & endpoint_in_we_lo;
   end
 
-  assign fifo_rsp_ready_lo    = ~returning_wr_v_r;
+  assign fifo_rsp_ready_lo = ~returning_wr_v_r;
   assign returning_data_li = returning_wr_v_r ? '0 : (data_width_p)'(fifo_rsp_li.data);
-  assign returning_v_li       = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_ready_lo);
+  assign returning_v_li    = returning_wr_v_r | (fifo_rsp_v_li & fifo_rsp_ready_lo);
 
   // manycore request to host
   // -------------------------

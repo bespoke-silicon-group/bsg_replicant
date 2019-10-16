@@ -1,5 +1,27 @@
 /*
 * bsg_axil_txs.v
+*             ___     ___     ___     ___     ___
+* clk     ___/   \___/   \___/   \___/   \___/   \___
+*                    _______
+* awaddr  XXXxxxxxxxX_ADDR__XXXXXXXXXXXXXXXXXXXXXXXXx
+*             _______________
+* awvalid ___/               \_______________________
+*                    ________
+* awready __________/        \_______________________
+*                             ________
+* wdata   XXXXxxxxxxxxxxxxxxxx_DATA___XXXXXXXXXXXXXXX
+*                             ________
+* wstrb   XXXXxxxxxxxxxxxxxxxx_STRB___XXXXXXXXXXXXXXX
+*                             _______
+* wvalid  ___XXXXXXXXXXXXXXXXx       \_______________
+*                             _______
+* wready  ___________________/       \_______________
+*                                     _______
+* bresp   XXXXXXXXXXXXXXXXXXXXXXXXXXXX_RESP__XXXXXXXX
+*                                     _______
+* bvalid  ___________________________/       \_______
+*         ___________________________________________
+* bready
 *
 */
 
@@ -21,13 +43,16 @@ module bsg_axil_txs
   ,output [            1:0]       bresp_o
   ,output                         bvalid_o
   ,input                          bready_i
-  // fifo
+  // to fifo, valid only, data will be dropped if not ready
   ,output [num_fifos_p-1:0][31:0] txs_o
   ,output [num_fifos_p-1:0]       txs_v_o
-  ,input  [num_fifos_p-1:0]       txs_ready_i
+  // ,input  [num_fifos_p-1:0]       txs_ready_i
   // clear the tx complete bit of isr
   ,output [num_fifos_p-1:0]       clr_isrs_txc_o
 );
+
+  // tie unused signal
+  // wire [num_fifos_p-1:0] unused_fifo_ready_li = txs_ready_i;
 
   // --------------------------------------------
   // axil write state machine
@@ -64,7 +89,7 @@ module bsg_axil_txs
       end
 
       E_WR_RESP : begin
-        if (bresp_o & bready_i)
+        if (bvalid_o & bready_i)
           wr_state_n = E_WR_IDLE;
       end
 
@@ -79,68 +104,67 @@ module bsg_axil_txs
       wr_state_r <= wr_state_n;
   end
 
-  // tie unused signal
-  wire [num_fifos_p-1:0] unused_fifo_ready_li = txs_ready_i;
 
-  logic [num_fifos_p-1:0] base_addr_v;
+  logic [num_fifos_p-1:0] base_addr_hit;
   logic [num_fifos_p-1:0] fifo_addr_v;
   logic [num_fifos_p-1:0] isr_addr_v ;
+  logic wr_addr_error;
 
-  logic        in_wr_addr;
-  logic        in_wr_data;
-  logic        in_wr_resp;
   logic [31:0] wr_addr_r, wr_addr_n;
-  logic        awready_n ;
-  logic        wready_n  ;
-  logic [ 1:0] bresp_n   ;
-  logic        bvalid_n  ;
+  logic [ 1:0] bresp_r, bresp_n;
 
-  wire tx_ready = 1'b1; // always ready for the write
+  wire in_wr_addr = wr_state_r == E_WR_ADDR;
+  wire in_wr_data = wr_state_r == E_WR_DATA;
+  wire in_wr_resp = wr_state_r == E_WR_RESP;
+
   always_comb begin
-    // wr state
-    in_wr_addr = wr_state_r == E_WR_ADDR;
-    in_wr_data = wr_state_r == E_WR_DATA;
-    in_wr_resp = wr_state_r == E_WR_RESP;
-    // waddr channel
-    awready_n  = in_wr_addr;
-    wready_n   = in_wr_data & tx_ready;
-    wr_addr_n  = (awvalid_i & awready_o) ? awaddr_i : wr_addr_r;
-    // write response
-    bresp_n    = !(|base_addr_v) & (in_wr_data | in_wr_resp) ? 2'b11 : '0; // DECERR or OKAY
-    bvalid_n   = in_wr_resp & bready_i;
+    // get write address
+    wr_addr_n = (awvalid_i & awready_o) ? awaddr_i : wr_addr_r;
+    // gen bus response
+    wr_addr_error = !(|base_addr_hit);
+    bresp_n   = (wvalid_i & wready_o) ? (wr_addr_error ? 2'b11 : 2'b00) : bresp_r; // DECERR or OKAY
   end
-
-  assign awready_o = awready_n;
-  assign wready_o  = wready_n;
-  assign bresp_o   = bresp_n;
-  assign bvalid_o  = bvalid_n;
 
   always_ff @(posedge clk_i) begin
     if (reset_i) begin
       wr_addr_r <= '0;
+      bresp_r <= '0;
     end
     else begin
       wr_addr_r <= wr_addr_n;
+      bresp_r <= bresp_n;
     end
   end
 
   for (genvar i=0; i<num_fifos_p; i++) begin : wr_addr_hit
     // axil wr addr hits the slot base address
-    assign base_addr_v[i] = in_wr_data
+    assign base_addr_hit[i] = in_wr_data
       && (wr_addr_r[axil_base_addr_width_gp+:axil_slot_idx_width_gp]
         == axil_slot_idx_width_gp'(i+(axil_m_slot_addr_gp>>axil_base_addr_width_gp)));
-    // wr command is transmission data register
-    assign fifo_addr_v[i] = base_addr_v[i]
+    // is writing transmission data register
+    assign fifo_addr_v[i] = base_addr_hit[i]
       && (wr_addr_r[0+:axil_base_addr_width_gp]
         == axil_base_addr_width_gp'(axil_mm2s_ofs_tdr_gp));
-    // wr command is interrupt status register
-    assign isr_addr_v[i]  = base_addr_v[i]
+    // is writing interrupt status register
+    assign isr_addr_v[i]  = base_addr_hit[i]
       && (wr_addr_r[0+:axil_base_addr_width_gp]
         == axil_base_addr_width_gp'(axil_mm2s_ofs_isr_gp));
   end : wr_addr_hit
 
-  assign txs_v_o    = {num_fifos_p{wvalid_i&wready_o}} & fifo_addr_v;
+  // output signals
+
+  // axil side
+  assign awready_o = in_wr_addr;
+  assign wready_o  = in_wr_data;  //always ready for the write
+
+  assign bresp_o   = bresp_r;
+  assign bvalid_o  = in_wr_resp;
+
+  // tx stream side
+  assign txs_v_o = {num_fifos_p{wvalid_i & wready_o}} & fifo_addr_v;
   assign txs_o = {num_fifos_p{wdata_i}};
-  assign clr_isrs_txc_o   = {num_fifos_p{wdata_i[axil_mm2s_isr_txc_bit_gp]}} & isr_addr_v;
+
+  // control
+  assign clr_isrs_txc_o = {num_fifos_p{wdata_i[axil_mm2s_isr_txc_bit_gp]}} & isr_addr_v;
 
 endmodule

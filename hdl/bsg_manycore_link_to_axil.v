@@ -46,25 +46,64 @@ module bsg_manycore_link_to_axil
   , parameter load_id_width_p = "inv"
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
   , localparam num_endpoints_lp = num_endpoints_gp
-  // axil parameters
-  , parameter axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1)
-  , parameter axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1)
 ) (
-  input                                                      clk_i
-  ,input                                                      reset_i
-  ,input  [axil_mosi_bus_width_lp-1:0]                        s_axil_bus_i
-  ,output [axil_miso_bus_width_lp-1:0]                        s_axil_bus_o
-  ,input  [      num_endpoints_lp-1:0][link_sif_width_lp-1:0] link_sif_i
-  ,output [      num_endpoints_lp-1:0][link_sif_width_lp-1:0] link_sif_o
-  ,input  [      num_endpoints_lp-1:0][   x_cord_width_p-1:0] my_x_i
-  ,input  [      num_endpoints_lp-1:0][   y_cord_width_p-1:0] my_y_i
+  input                                                clk_i
+  ,input                                                reset_i
+  // axil signals
+  ,input                                                axil_awvalid_i
+  ,input  [                31:0]                        axil_awaddr_i
+  ,output                                               axil_awready_o
+  ,input                                                axil_wvalid_i
+  ,input  [                31:0]                        axil_wdata_i
+  ,input  [                 3:0]                        axil_wstrb_i
+  ,output                                               axil_wready_o
+  ,output [                 1:0]                        axil_bresp_o
+  ,output                                               axil_bvalid_o
+  ,input                                                axil_bready_i
+  ,input  [                31:0]                        axil_araddr_i
+  ,input                                                axil_arvalid_i
+  ,output                                               axil_arready_o
+  ,output [                31:0]                        axil_rdata_o
+  ,output [                 1:0]                        axil_rresp_o
+  ,output                                               axil_rvalid_o
+  ,input                                                axil_rready_i
+  // manycore link signals
+  ,input  [num_endpoints_lp-1:0][link_sif_width_lp-1:0] link_sif_i
+  ,output [num_endpoints_lp-1:0][link_sif_width_lp-1:0] link_sif_o
+  ,input  [num_endpoints_lp-1:0][   x_cord_width_p-1:0] my_x_i
+  ,input  [num_endpoints_lp-1:0][   y_cord_width_p-1:0] my_y_i
   // print stat
-  ,output [      num_endpoints_lp-1:0]                        print_stat_v_o
-  ,output [      num_endpoints_lp-1:0][     data_width_p-1:0] print_stat_tag_o
+  ,output [num_endpoints_lp-1:0]                        print_stat_v_o
+  ,output [num_endpoints_lp-1:0][     data_width_p-1:0] print_stat_tag_o
 );
 
   localparam num_slots_lp = num_endpoints_lp*2; // not using assertion here
 
+  // axil parameters
+  // localparam axil_mosi_bus_width_lp = `bsg_axil_mosi_bus_width(1);
+  // localparam axil_miso_bus_width_lp = `bsg_axil_miso_bus_width(1);
+
+  `declare_bsg_axil_bus_s(1, bsg_axil_mosi_bus_s, bsg_axil_miso_bus_s);
+  bsg_axil_mosi_bus_s s_axil_bus_li_cast;
+  bsg_axil_miso_bus_s s_axil_bus_lo_cast;
+
+  assign s_axil_bus_li_cast.awaddr  = axil_awaddr_i;
+  assign s_axil_bus_li_cast.awvalid = axil_awvalid_i;
+  assign axil_awready_o             = s_axil_bus_lo_cast.awready;
+  assign s_axil_bus_li_cast.wdata   = axil_wdata_i;
+  assign s_axil_bus_li_cast.wstrb   = axil_wstrb_i;
+  assign s_axil_bus_li_cast.wvalid  = axil_wvalid_i;
+  assign axil_wready_o              = s_axil_bus_lo_cast.wready;
+  assign axil_bresp_o               = s_axil_bus_lo_cast.bresp;
+  assign axil_bvalid_o              = s_axil_bus_lo_cast.bvalid;
+  assign s_axil_bus_li_cast.bready  = axil_bready_i;
+  assign s_axil_bus_li_cast.araddr  = axil_araddr_i;
+  assign s_axil_bus_li_cast.arvalid = axil_arvalid_i;
+  assign axil_arready_o             = s_axil_bus_lo_cast.arready;
+  assign axil_rdata_o               = s_axil_bus_lo_cast.rdata;
+  assign axil_rresp_o               = s_axil_bus_lo_cast.rresp;
+  assign axil_rvalid_o              = s_axil_bus_lo_cast.rvalid;
+  assign s_axil_bus_li_cast.rready  = axil_rready_i;
 
   // ---------------------------------------------------------------------
   // bladerunner rom
@@ -104,8 +143,8 @@ module bsg_manycore_link_to_axil
   ) axil_to_fifos (
     .clk_i        (clk_i              ),
     .reset_i      (reset_i            ),
-    .s_axil_bus_i (s_axil_bus_i       ),
-    .s_axil_bus_o (s_axil_bus_o       ),
+    .s_axil_bus_i (s_axil_bus_li_cast ),
+    .s_axil_bus_o (s_axil_bus_lo_cast ),
     .fifos_i      (axil_fifos_li      ),
     .fifos_v_i    (axil_fifos_v_li    ),
     .fifos_ready_o(axil_fifos_ready_lo),
