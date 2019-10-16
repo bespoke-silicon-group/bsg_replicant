@@ -32,14 +32,14 @@
 *       3. read the isr and check [27]=1 for successful write, i.e. the last data has been
 *          dequeued from the tx FIFO. if fail. check again or reset if fail
 *       4. read the transmit vacancy register (TDFV) to get the current tx FIFO status.
-           TDFV will not be updated if write to a full fifo
+           If write to a full fifo, TDFV will not be updated and the data will be dropped!!!
 *
 *    b. read from a FIFO,
 *       1. read the Receive Length Reigster
            For simple implementation, RLR is fixed to
            (rx_FIFO >= axil_mm2s_rlr_els_gp) ? fifo_width_p/8 * axil_mm2s_rlr_els_gp : 0
 *       2. read RLR bytes of data at Receive Destination Register (RDR)
-*          Host will get stale data if read from a empty fifo
+*          If read from a empty fifo, RDFO will not be updated and you get ZERO data!!!
 *
 * TODO: Monitor addresses should be remapped, to fully parameterize the parameter num_slots_p,
 *
