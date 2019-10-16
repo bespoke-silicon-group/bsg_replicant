@@ -209,7 +209,7 @@ module bsg_axil_to_fifos
     .rvalid_o   (s_axil_bus_lo_cast.rvalid ),
     .rready_i   (s_axil_bus_li_cast.rready ),
     .rxs_i      (rxs_li                    ),
-    .rxs_v_i    (rxs_v_li                  ),
+    // .rxs_v_i    (rxs_v_li                  ),
     .rxs_ready_o(rxs_ready_lo              ),
     .rd_addr_o  (axil_rd_addr_lo           ),
     .mm2s_regs_i(mm2s_regs_li              ),
