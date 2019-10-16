@@ -211,7 +211,7 @@ module bsg_manycore_link_to_axil
 
   logic [num_slots_lp-1:0][`BSG_WIDTH(rcv_fifo_els_gp)-1:0] rcv_vacancy_lo;
 
-  for (genvar i=0; i<num_slots_lp; i++) begin : downsizer
+  for (genvar i=0; i<num_slots_lp; i++) begin : dnsizer
     bsg_counter_up_down #(
       .max_val_p (rcv_fifo_els_gp),
       .init_val_p(rcv_fifo_els_gp),
@@ -227,7 +227,7 @@ module bsg_manycore_link_to_axil
 
     bsg_fifo_1r1w_small #(
       .width_p           (mcl_fifo_width_gp),
-      .els_p             (rcv_fifo_els_gp   ),
+      .els_p             (rcv_fifo_els_gp  ),
       .ready_THEN_valid_p(0                )  // for input
     ) rcv_fifo (
       .clk_i  (clk_i               ),
@@ -249,11 +249,11 @@ module bsg_manycore_link_to_axil
       .valid_i(rcv_fifo_v_lo[i]    ),
       .data_i (rcv_fifo_lo[i]      ),
       .ready_o(rcv_fifo_r_li[i]    ),
-      .valid_o(axil_fifos_v_li[i]   ),
-      .data_o (axil_fifos_li[i]),
+      .valid_o(axil_fifos_v_li[i]  ),
+      .data_o (axil_fifos_li[i]    ),
       .yumi_i (piso_yumi_li[i]     )
     );
-  end : downsizer
+  end : dnsizer
 
 
   // ---------------------------------------------------------------------
