@@ -12,10 +12,12 @@
 *      |_____________|    |____|    |                | ==>
 *                                   |                |
 *       _____________      ____     |                | <==
-*  <== |mc request   | <- |~~~~| <- |=in_pkt_o       |
+*  <== |mc response  | <- |~//~| <- |=returned_pkt_o | <-- rcv_fifo_th_i
 *      |_____________|    |____|    |                |
-*  <== |mc response  | <- |~~~~| <- |=returned_pkt_o | <-- rcv_fifo_th_i
+*  <== |mc request   | <- |~~~~| <- |=in_pkt_o       |
 *      |_____________|    |____|    |________________|
+*
+*
 *
 * Note:
 * the host request is disabled if any of the following conditions are met:
@@ -175,8 +177,8 @@ module bsg_manycore_endpoint_to_fifos
   assign mc_req_lo.op = (8)'(endpoint_in_we_lo);
   assign mc_req_lo.op_ex = (8)'(endpoint_in_mask_lo);
   assign mc_req_lo.payload.data = (32)'(endpoint_in_data_lo);
-  assign mc_req_lo.src_y_cord = (8)'(in_src_x_cord_lo);
-  assign mc_req_lo.src_x_cord = (8)'(in_src_y_cord_lo);
+  assign mc_req_lo.src_x_cord = (8)'(in_src_x_cord_lo);
+  assign mc_req_lo.src_y_cord = (8)'(in_src_y_cord_lo);
   assign mc_req_lo.y_cord = (8)'(my_y_i);
   assign mc_req_lo.x_cord = (8)'(my_x_i);
 
