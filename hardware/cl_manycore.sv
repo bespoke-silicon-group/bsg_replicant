@@ -285,9 +285,26 @@ module cl_manycore
    logic         core_reset;
 
 `ifdef COSIM
-   assign core_clk = sh_cl_status_vdip_q2[0]
+   // This clock mux switches between the "fast" IO Clock and the Slow
+   // Unsynthesizable "Core Clk". The assign logic below introduces
+   // order-of-evaluation issues that can cause spurrious negedges
+   // because the simulator doesn't know what order to evaluate clocks
+   // in during a clock switch.
+   BUFGMUX 
+     #(
+       .CLK_SEL_TYPE("ASYNC") // SYNC, ASYNC
+       )
+   BUFGMUX_inst 
+     (
+      .O(core_clk), // 1-bit output: Clock output
+      .I0(clk_main_a0), // 1-bit input: Clock input (S=0)
+      .I1(ns_core_clk), // 1-bit input: Clock input (S=1)
+      .S(sh_cl_status_vdip_q2[0]) // 1-bit input: Clock select
+      );
+   
+/*   assign core_clk = sh_cl_status_vdip_q2[0]
      ? ns_core_clk
-                     : clk_main_a0;
+                     : clk_main_a0;*/
    
    assign core_reset = ns_core_reset;
 `else
