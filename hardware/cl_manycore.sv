@@ -289,7 +289,9 @@ module cl_manycore
    // Unsynthesizable "Core Clk". The assign logic below introduces
    // order-of-evaluation issues that can cause spurrious negedges
    // because the simulator doesn't know what order to evaluate clocks
-   // in during a clock switch.
+   // in during a clock switch. See the following datasheet for more
+   // information:
+   // www.xilinx.com/support/documentation/sw_manuals/xilinx2019_1/ug974-vivado-ultrascale-libraries.pdf
    BUFGMUX 
      #(
        .CLK_SEL_TYPE("ASYNC") // SYNC, ASYNC
