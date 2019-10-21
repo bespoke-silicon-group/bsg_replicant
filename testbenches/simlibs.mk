@@ -32,8 +32,7 @@ RED=\033[0;31m
 NC=\033[0m
 
 # This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this makefile..
-# 
+# set by the Makefile that includes this makefile.
 
 # CL_DIR: The path to the root of the BSG F1 Repository
 ifndef CL_DIR
@@ -59,17 +58,11 @@ endif
 # -------------------- Arguments --------------------
 # This Makefile has several optional "arguments" that are passed as Variables
 #
-# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
-#                   speed. Default: 1 (Requires re-compilation when changed)
-# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: 0 (Requires
-#                 re-compilation when changed)
 # EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
 # 
 # If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
 # This is a COMPILATION ONLY option. Any subsequent runs, without compilation
 # will retain this setting
-AXI_MEMORY_MODEL ?= 1
-AXI_PROT_CHECK   ?= 0
 EXTRA_TURBO      ?= 0
 
 # The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
@@ -141,7 +134,8 @@ ifeq ($(AXI_PROT_CHECK),1)
 VDEFINES   += ENABLE_PROTOCOL_CHK
 endif
 
-ifeq ($(AXI_MEMORY_MODEL),1)
+include $(CL_DIR)/Makefile.machine.include
+ifneq ($(CL_MANYCORE_MEM_CFG),e_mem_cfg_f1_dram)
 VDEFINES   += AXI_MEMORY_MODEL=1
 VDEFINES   += ECC_DIRECT_EN
 VDEFINES   += RND_ECC_EN
