@@ -26,25 +26,24 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /******************************************************************************/
-/* Runs the memset kernel a grid of 2x2 tile groups.                          */
+/* Runs the mecpy kernel a grid of 2x2 tile groups.                           */
 /* Host allcoates space on DRAM and passes the pointer and size to tiles      */
-/* Tiles fill the space with the requested value from host                    */
+/* Tiles fill the space by copying from array A to array B                    */
 /* Host the compares the values with expected.                                */
 /* Grid dimensions are prefixed at 1x1.                                       */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/memset/            */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/memcpy/            */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_memset.h"
+#include "test_memcpy.h"
 
-#define TEST_NAME "test_memset"
+#define TEST_NAME "test_memcpy"
 #define ALLOC_NAME "default_allocator"
-#define TEST_VALUE 0x1234
 
 
-int kernel_memset () {
-	bsg_pr_test_info("Running the CUDA Memset Kernel "
+int kernel_memcpy () {
+	bsg_pr_test_info("Running the CUDA Memcpy Kernel "
                          "on a grid of 2x2 tile groups.\n\n");
 	int rc;
 
@@ -64,7 +63,7 @@ int kernel_memset () {
 	}
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/memset/main.riscv";
+                                                    "/memcpy/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -73,7 +72,7 @@ int kernel_memset () {
 
 
         /**********************************************************************/
-	/* Allocate memory on the device for A_ptr.                           */
+	/* Allocate memory on the device for A & B.                           */
         /**********************************************************************/
 	uint32_t N = 64;
 
@@ -84,8 +83,38 @@ int kernel_memset () {
 		return rc;
 	}
 
-	// Set the entire space to zero
-	rc = hb_mc_device_memset(&device, &A_device, 0, N * sizeof(uint8_t));
+
+	hb_mc_eva_t B_device; 
+	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B_device);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to allocate memory on device.\n");
+		return rc;
+	}
+
+	
+	/**********************************************************************/
+	/* Allocate A & B on the host.                                        */
+	/* Fill A with random values and set B to -1 on the host.             */
+	/* Copy A from host to device DRAM and set B to 0 on device DRAM.     */
+	/**********************************************************************/
+	uint32_t A_host[N];
+	uint32_t B_host[N];
+	for (int i = 0; i < N; i++) { /* fill A with arbitrary data */
+		A_host[i] = rand() & 0xFFFF;
+		B_host[i] = -1;
+	}
+
+	// Copy A from host to device
+	void *dst = (void *) ((intptr_t) A_device);
+	void *src = (void *) &A_host[0];
+	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);
+	if (rc != HB_MC_SUCCESS) { 
+		bsg_pr_err("failed to copy memory to device.\n");
+		return rc;
+	}
+
+	// Set the B to zero on the device
+	rc = hb_mc_device_memset(&device, &B_device, 0, N * sizeof(uint8_t));
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to set memory on device.\n");
 		return rc;
@@ -106,14 +135,14 @@ int kernel_memset () {
         /**********************************************************************/
 	/* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-	int argv[3] = {A_device, TEST_VALUE , N};
+	int argv[3] = {B_device, A_device, N};
 
 
         /**********************************************************************/
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_memset", 3, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_memcpy", 3, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -134,9 +163,8 @@ int kernel_memset () {
         /**********************************************************************/
 	/* Copy result vector back from device DRAM into host memory.         */
         /**********************************************************************/
-	uint32_t A_host[N];
-	void *src = (void *) ((intptr_t) A_device);
-	void *dst = (void *) &A_host;
+	src = (void *) ((intptr_t) B_device);
+	dst = (void *) &B_host;
 	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to copy memory from device.\n");
@@ -156,11 +184,11 @@ int kernel_memset () {
 
 	int mismatch = 0; 
 	for (int i = 0; i < N; i++) {
-		if (A_host[i] != TEST_VALUE) {
-			bsg_pr_err(BSG_RED("Mismatch: ") "A[%d] =  0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n",
+		if (A_host[i] != B_host[i]) {
+			bsg_pr_err(BSG_RED("Mismatch: ") "B[%d] =  0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n",
                                                          i,
-                                                         A_host[i],
-                                                         TEST_VALUE);
+                                                         B_host[i],
+                                                         A_host[i]);
 			mismatch = 1;
 		}
 	} 
@@ -186,16 +214,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_memset Regression Test (COSIMULATION)\n");
-	int rc = kernel_memset();
+	bsg_pr_test_info("test_memcpy Regression Test (COSIMULATION)\n");
+	int rc = kernel_memcpy();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_memset Regression Test (F1)\n");
-	int rc = kernel_memset();
+	bsg_pr_test_info("test_memcpy Regression Test (F1)\n");
+	int rc = kernel_memcpy();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }

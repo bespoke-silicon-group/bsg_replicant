@@ -55,6 +55,7 @@ INDEPENDENT_TESTS += test_dram_load_store
 INDEPENDENT_TESTS += test_dram_host_allocated
 INDEPENDENT_TESTS += test_dram_device_allocated
 INDEPENDENT_TESTS += test_memset
+INDEPENDENT_TESTS += test_memcpy
 INDEPENDENT_TESTS += test_vec_add
 INDEPENDENT_TESTS += test_vec_add_parallel
 INDEPENDENT_TESTS += test_vec_add_parallel_multi_grid
