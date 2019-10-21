@@ -92,7 +92,6 @@ LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
 # verilog headers, and sources (respectively). These are used during simulation
 # compilation, but transformed into a tool-specific syntax where necesssary.
-VSOURCES += $(TESTBENCH_PATH)/cosim_wrapper.sv
 VINCLUDES += $(TESTBENCH_PATH)
 
 # $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
@@ -100,6 +99,7 @@ VINCLUDES += $(TESTBENCH_PATH)
 # but for header files. It also adds to CLEANS, a list of clean rules for
 # cleaning hardware targets.
 include $(HARDWARE_PATH)/hardware.mk
+VSOURCES += $(TESTBENCH_PATH)/cosim_wrapper.sv
 
 # The manycore architecture unsynthesizable simulation sources (for tracing, etc).
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_axi_mem.v
