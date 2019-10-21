@@ -40,7 +40,7 @@
 
 
 int kernel_device_memset () {
-	bsg_pr_test_info("Running the CUDA Memset Kernel on a grid of one 2x2 tile group.\n\n");
+	bsg_pr_test_info("Running the CUDA Device Memset Kernel on a grid of one 2x2 tile group.\n\n");
 	int rc;
 
 	/*****************************************************************************************************************
