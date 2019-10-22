@@ -25,22 +25,22 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "test_memset.h"
+#include "test_host_memset.h"
 
-#define TEST_NAME "test_memset"
+#define TEST_NAME "test_host_memset"
 #define ALLOC_NAME "default_allocator"
 #define TEST_BYTE 0xcd
 
 /*!
- * Runs a memset kernel on a 2x2 tile group. 
- * Device allcoates memory on device and uses memset to set to a prefixed valu.
+ * Runs a host_memset kernel on a 2x2 tile group. 
+ * Device allcoates memory on device and uses hb_mc_device_memset to set to a prefixed valu.
  * Device then calls an empty kernel and loads back the meomry to compare.
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/memset/ Manycore binary in the BSG Manycore bitbucket repository.  
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/host_memset/ Manycore binary in the BSG Manycore bitbucket repository.  
 */
 
 
-int kernel_memset () {
-	bsg_pr_test_info("Running the CUDA Memset Kernel on a grid of one 2x2 tile group.\n\n");
+int kernel_host_memset () {
+	bsg_pr_test_info("Running the CUDA Device Memset Kernel on a grid of one 2x2 tile group.\n\n");
 	int rc;
 
 	/*****************************************************************************************************************
@@ -54,7 +54,7 @@ int kernel_memset () {
 		return rc;
 	}
 
-	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/memset/main.riscv";
+	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime" "/host_memset/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -100,7 +100,7 @@ int kernel_memset () {
 	/*****************************************************************************************************************
 	* Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
 	******************************************************************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_memset", 0, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_host_memset", 0, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -171,16 +171,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_memset Regression Test (COSIMULATION)\n");
-	int rc = kernel_memset();
+	bsg_pr_test_info("test_host_memset Regression Test (COSIMULATION)\n");
+	int rc = kernel_host_memset();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_memset Regression Test (F1)\n");
-	int rc = kernel_memset();
+	bsg_pr_test_info("test_host_memset Regression Test (F1)\n");
+	int rc = kernel_host_memset();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
