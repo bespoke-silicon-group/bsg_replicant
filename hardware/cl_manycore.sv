@@ -265,19 +265,6 @@ module cl_manycore
       .o(ns_core_clk)
       );
 
-   logic         ns_core_reset;
-   bsg_nonsynth_reset_gen 
-     #(
-       .num_clocks_p(1)
-       ,.reset_cycles_lo_p(0)
-       ,.reset_cycles_hi_p(16)
-       ) 
-   core_reset_gen 
-     (
-      .clk_i(ns_core_clk)
-      ,.async_reset_o(ns_core_reset)
-      );
-
 `endif
 
 
@@ -304,11 +291,12 @@ module cl_manycore
       .S(sh_cl_status_vdip_q2[0]) // 1-bit input: Clock select
       );
    
-/*   assign core_clk = sh_cl_status_vdip_q2[0]
-     ? ns_core_clk
-                     : clk_main_a0;*/
-   
-   assign core_reset = ns_core_reset;
+   // THIS IS AN UNSAFE CLOCK CROSSING. It is only guaranteed to work
+   // because 1. We're in cosimulation, and 2. we don't have ongoing
+   // transfers at the start or end of simulation. This means that
+   // core_clk, and clk_main_a0 *are the same signal* (See BUFGMUX
+   // above).
+   assign core_reset = ~rst_main_n_sync; 
 `else
    assign core_clk = clk_main_a0;
    assign core_reset = ~rst_main_n_sync;
