@@ -135,6 +135,10 @@ VDEFINES   += ENABLE_PROTOCOL_CHK
 endif
 
 include $(CL_DIR)/Makefile.machine.include
+# Setting CL_MANYCORE_MEM_CFG to e_mem_cfg_f1_dram directs simulation
+# to use the slower, but more accurate, DDR Model. The default is
+# e_mem_cfg_default which uses an (infinite) AXI memory model with low
+# (1-2 cycle) latency.
 ifneq ($(CL_MANYCORE_MEM_CFG),e_mem_cfg_f1_dram)
 VDEFINES   += AXI_MEMORY_MODEL=1
 VDEFINES   += ECC_DIRECT_EN
