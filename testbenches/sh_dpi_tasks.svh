@@ -309,6 +309,11 @@ end
       `SLOT_MACRO_TASK(set_virtual_dip_switch(dip))
    endfunction
 
+   export "DPI-C" task sv_set_virtual_dip_switch;
+   task sv_set_virtual_dip_switch(input int slot_id = 0, int dip);
+      `SLOT_MACRO_TASK(set_virtual_dip_switch(dip))
+   endtask
+
    //=================================================
    //
    // get_virtual_dip_switch
