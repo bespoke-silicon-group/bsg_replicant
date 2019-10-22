@@ -26,23 +26,23 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /******************************************************************************/
-/* Runs the mecpy kernel a grid of 2x2 tile groups.                           */
+/* Runs the device_memcpy kernel a grid of 2x2 tile groups.                   */
 /* Host allcoates space on DRAM and passes the pointer and size to tiles      */
 /* Tiles fill the space by copying from array A to array B                    */
 /* Host the compares the values with expected.                                */
 /* Grid dimensions are prefixed at 1x1.                                       */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/memcpy/            */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/device_memcpy/     */
 /* manycore binary in the BSG Manycore repository.                            */
 /******************************************************************************/
 
 
-#include "test_memcpy.h"
+#include "test_device_memcpy.h"
 
-#define TEST_NAME "test_memcpy"
+#define TEST_NAME "test_device_memcpy"
 #define ALLOC_NAME "default_allocator"
 
 
-int kernel_memcpy () {
+int kernel_device_memcpy () {
 	bsg_pr_test_info("Running the CUDA Memcpy Kernel "
                          "on a grid of 2x2 tile groups.\n\n");
 	int rc;
@@ -63,7 +63,7 @@ int kernel_memcpy () {
 	}
 
 	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/memcpy/main.riscv";
+                                                    "/device_memcpy/main.riscv";
 	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize program.\n");
@@ -142,7 +142,7 @@ int kernel_memcpy () {
 	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_memcpy", 3, argv);
+	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_device_memcpy", 3, argv);
 	if (rc != HB_MC_SUCCESS) { 
 		bsg_pr_err("failed to initialize grid.\n");
 		return rc;
@@ -214,16 +214,16 @@ void cosim_main(uint32_t *exit_code, char * args) {
 	scope = svGetScopeFromName("tb");
 	svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_memcpy Regression Test (COSIMULATION)\n");
-	int rc = kernel_memcpy();
+	bsg_pr_test_info("test_device_memcpy Regression Test (COSIMULATION)\n");
+	int rc = kernel_device_memcpy();
 	*exit_code = rc;
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_memcpy Regression Test (F1)\n");
-	int rc = kernel_memcpy();
+	bsg_pr_test_info("test_device_memcpy Regression Test (F1)\n");
+	int rc = kernel_device_memcpy();
 	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
 	return rc;
 }
