@@ -673,8 +673,8 @@ module cl_manycore
     ,.axil_rvalid_o   (m_axil_ocl_rvalid )
     ,.axil_rready_i   (m_axil_ocl_rready )
     // manycore link
-    ,.link_sif_i      (loader_link_sif_lo)
-    ,.link_sif_o      (loader_link_sif_li)
+    ,.link_sif_i      (axil_link_sif_li  )
+    ,.link_sif_o      (axil_link_sif_lo  )
     ,.my_x_i          (mcl_x_cord_li     )
     ,.my_y_i          (mcl_y_cord_li     )
     ,.print_stat_v_o  (print_stat_v_lo   )
