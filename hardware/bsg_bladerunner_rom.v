@@ -43,20 +43,20 @@ module bsg_bladerunner_rom #(
   logic returning_v_li;
 
   bsg_manycore_endpoint_standard #(
-    .x_cord_width_p   (x_cord_width_p   ),
-    .y_cord_width_p   (y_cord_width_p   ),
-    .fifo_els_p       (fifo_els_p       ),
-    .addr_width_p     (addr_width_p     ),
-    .data_width_p     (data_width_p     ),
-    .max_out_credits_p(max_out_credits_p),
-    .load_id_width_p  (load_id_width_p  )
+    .x_cord_width_p   (x_cord_width_p   )
+    ,.y_cord_width_p   (y_cord_width_p   )
+    ,.fifo_els_p       (fifo_els_p       )
+    ,.addr_width_p     (addr_width_p     )
+    ,.data_width_p     (data_width_p     )
+    ,.max_out_credits_p(max_out_credits_p)
+    ,.load_id_width_p  (load_id_width_p  )
   ) mcl_endpoint_standard (
     .clk_i               (clk_i            )
     ,.reset_i             (reset_i          )
-    
+
     ,.link_sif_i          (link_sif_i       )
     ,.link_sif_o          (link_sif_o       )
-    
+
     ,.in_v_o              (in_v_lo          )
     ,.in_yumi_i           (in_yumi_li       )
     ,.in_data_o           (in_data_lo       )
@@ -65,20 +65,20 @@ module bsg_bladerunner_rom #(
     ,.in_we_o             (in_we_lo         )
     ,.in_src_x_cord_o     (in_src_x_cord_lo )
     ,.in_src_y_cord_o     (in_src_y_cord_lo )
-    
+
     ,.out_v_i             (1'b0             )
     ,.out_packet_i        ('0               )
     ,.out_ready_o         (                 )
-    
+
     ,.returned_data_r_o   (                 )
     ,.returned_load_id_r_o(                 )
     ,.returned_v_r_o      (                 )
     ,.returned_fifo_full_o(                 )
     ,.returned_yumi_i     (1'b0             )
-    
+
     ,.returning_data_i    (returning_data_li)
     ,.returning_v_i       (returning_v_li   )
-    
+
     ,.out_credits_o       (                 )
     ,.my_x_i              (my_x_i           )
     ,.my_y_i              (my_y_i           )

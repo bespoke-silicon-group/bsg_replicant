@@ -108,22 +108,22 @@ module bsg_axil_to_fifos
   logic [num_slots_p-1:0] clr_isr_txc_lo;
 
   bsg_axil_txs #(.num_fifos_p(num_slots_p)) mm2s_tx (
-    .clk_i         (clk_i                     ),
-    .reset_i       (reset_i                   ),
-    .awaddr_i      (s_axil_bus_li_cast.awaddr ),
-    .awvalid_i     (s_axil_bus_li_cast.awvalid),
-    .awready_o     (s_axil_bus_lo_cast.awready),
-    .wdata_i       (s_axil_bus_li_cast.wdata  ),
-    .wstrb_i       (s_axil_bus_li_cast.wstrb  ),
-    .wvalid_i      (s_axil_bus_li_cast.wvalid ),
-    .wready_o      (s_axil_bus_lo_cast.wready ),
-    .bresp_o       (s_axil_bus_lo_cast.bresp  ),
-    .bvalid_o      (s_axil_bus_lo_cast.bvalid ),
-    .bready_i      (s_axil_bus_li_cast.bready ),
-    .txs_o         (txs_lo                    ),
-    .txs_v_o       (txs_v_lo                  ),
+    .clk_i         (clk_i                     )
+    ,.reset_i       (reset_i                   )
+    ,.awaddr_i      (s_axil_bus_li_cast.awaddr )
+    ,.awvalid_i     (s_axil_bus_li_cast.awvalid)
+    ,.awready_o     (s_axil_bus_lo_cast.awready)
+    ,.wdata_i       (s_axil_bus_li_cast.wdata  )
+    ,.wstrb_i       (s_axil_bus_li_cast.wstrb  )
+    ,.wvalid_i      (s_axil_bus_li_cast.wvalid )
+    ,.wready_o      (s_axil_bus_lo_cast.wready )
+    ,.bresp_o       (s_axil_bus_lo_cast.bresp  )
+    ,.bvalid_o      (s_axil_bus_lo_cast.bvalid )
+    ,.bready_i      (s_axil_bus_li_cast.bready )
+    ,.txs_o         (txs_lo                    )
+    ,.txs_v_o       (txs_v_lo                  )
     // .txs_ready_i   (txs_ready_li              ),
-    .clr_isrs_txc_o(clr_isr_txc_lo            )
+    ,.clr_isrs_txc_o(clr_isr_txc_lo            )
   );
 
   wire [num_slots_p-1:0] tx_enqueue = txs_v_lo & txs_ready_li  ;
@@ -143,18 +143,18 @@ module bsg_axil_to_fifos
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_p    ),
-      .els_p             (axil_fifo_els_gp),
-      .ready_THEN_valid_p(0               )
+      .width_p           (fifo_width_p    )
+      ,.els_p             (axil_fifo_els_gp)
+      ,.ready_THEN_valid_p(0               )
     ) tx_fifo (
-      .clk_i  (clk_i          ),
-      .reset_i(reset_i        ),
-      .v_i    (txs_v_lo[i]    ),
-      .ready_o(txs_ready_li[i]),
-      .data_i (txs_lo[i]      ),
-      .v_o    (fifos_v_o[i]   ),
-      .data_o (fifos_o[i]     ),
-      .yumi_i (tx_dequeue[i]  )
+      .clk_i  (clk_i          )
+      ,.reset_i(reset_i        )
+      ,.v_i    (txs_v_lo[i]    )
+      ,.ready_o(txs_ready_li[i])
+      ,.data_i (txs_lo[i]      )
+      ,.v_o    (fifos_v_o[i]   )
+      ,.data_o (fifos_o[i]     )
+      ,.yumi_i (tx_dequeue[i]  )
     );
   end : tx_s
 
@@ -179,18 +179,18 @@ module bsg_axil_to_fifos
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_p    ),
-      .els_p             (axil_fifo_els_gp),
-      .ready_THEN_valid_p(0               )
+      .width_p           (fifo_width_p    )
+      ,.els_p             (axil_fifo_els_gp)
+      ,.ready_THEN_valid_p(0               )
     ) rx_fifo (
-      .clk_i  (clk_i           ),
-      .reset_i(reset_i         ),
-      .v_i    (fifos_v_i[i]    ),
-      .ready_o(fifos_ready_o[i]),
-      .data_i (fifos_i[i]      ),
-      .v_o    (rxs_v_li[i]     ),
-      .data_o (rxs_li[i]       ),
-      .yumi_i (rx_dequeue[i]   )
+      .clk_i  (clk_i           )
+      ,.reset_i(reset_i         )
+      ,.v_i    (fifos_v_i[i]    )
+      ,.ready_o(fifos_ready_o[i])
+      ,.data_i (fifos_i[i]      )
+      ,.v_o    (rxs_v_li[i]     )
+      ,.data_o (rxs_li[i]       )
+      ,.yumi_i (rx_dequeue[i]   )
     );
   end : rx_s
 
@@ -199,21 +199,21 @@ module bsg_axil_to_fifos
   logic [           31:0]       mcl_data_li    ;
 
   bsg_axil_rxs #(.num_fifos_p(num_slots_p)) mm2s_rx (
-    .clk_i      (clk_i                     ),
-    .reset_i    (reset_i                   ),
-    .araddr_i   (s_axil_bus_li_cast.araddr ),
-    .arvalid_i  (s_axil_bus_li_cast.arvalid),
-    .arready_o  (s_axil_bus_lo_cast.arready),
-    .rdata_o    (s_axil_bus_lo_cast.rdata  ),
-    .rresp_o    (s_axil_bus_lo_cast.rresp  ),
-    .rvalid_o   (s_axil_bus_lo_cast.rvalid ),
-    .rready_i   (s_axil_bus_li_cast.rready ),
-    .rxs_i      (rxs_li                    ),
+    .clk_i      (clk_i                     )
+    ,.reset_i    (reset_i                   )
+    ,.araddr_i   (s_axil_bus_li_cast.araddr )
+    ,.arvalid_i  (s_axil_bus_li_cast.arvalid)
+    ,.arready_o  (s_axil_bus_lo_cast.arready)
+    ,.rdata_o    (s_axil_bus_lo_cast.rdata  )
+    ,.rresp_o    (s_axil_bus_lo_cast.rresp  )
+    ,.rvalid_o   (s_axil_bus_lo_cast.rvalid )
+    ,.rready_i   (s_axil_bus_li_cast.rready )
+    ,.rxs_i      (rxs_li                    )
     // .rxs_v_i    (rxs_v_li                  ),
-    .rxs_ready_o(rxs_ready_lo              ),
-    .rd_addr_o  (axil_rd_addr_lo           ),
-    .mm2s_regs_i(mm2s_regs_li              ),
-    .mcl_data_i (mcl_data_li               )
+    ,.rxs_ready_o(rxs_ready_lo              )
+    ,.rd_addr_o  (axil_rd_addr_lo           )
+    ,.mm2s_regs_i(mm2s_regs_li              )
+    ,.mcl_data_i (mcl_data_li               )
   );
 
 

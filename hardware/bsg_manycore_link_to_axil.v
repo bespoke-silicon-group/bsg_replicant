@@ -116,11 +116,11 @@ module bsg_manycore_link_to_axil
   logic [                31:0] rom_data_lo;
 
   bsg_bladerunner_configuration #(
-    .width_p     (rom_width_p  ),
-    .addr_width_p(lg_rom_els_lp)
+    .width_p     (rom_width_p  )
+    ,.addr_width_p(lg_rom_els_lp)
   ) configuration_rom (
-    .addr_i(rom_addr_li[2+:lg_rom_els_lp]),
-    .data_o(rom_data_lo                  )
+    .addr_i(rom_addr_li[2+:lg_rom_els_lp])
+    ,.data_o(rom_data_lo                  )
   );
 
 
@@ -138,23 +138,23 @@ module bsg_manycore_link_to_axil
   logic [    num_slots_lp-1:0][31:0] rcv_vacancy_li;
 
   bsg_axil_to_fifos #(
-    .num_slots_p     (num_slots_lp       ),
-    .fifo_width_p    (32                 )
+    .num_slots_p     (num_slots_lp       )
+    ,.fifo_width_p    (32                 )
   ) axil_to_fifos (
-    .clk_i        (clk_i              ),
-    .reset_i      (reset_i            ),
-    .s_axil_bus_i (s_axil_bus_li_cast ),
-    .s_axil_bus_o (s_axil_bus_lo_cast ),
-    .fifos_i      (axil_fifos_li      ),
-    .fifos_v_i    (axil_fifos_v_li    ),
-    .fifos_ready_o(axil_fifos_ready_lo),
-    .fifos_o      (axil_fifos_lo      ),
-    .fifos_v_o    (axil_fifos_v_lo    ),
-    .fifos_ready_i(axil_fifos_ready_li),
-    .rom_addr_o   (rom_addr_li        ),
-    .rom_data_i   (rom_data_lo        ),
-    .rcv_vacancy_i(rcv_vacancy_li     ),
-    .out_credits_i(out_credits_li     )
+    .clk_i        (clk_i              )
+    ,.reset_i      (reset_i            )
+    ,.s_axil_bus_i (s_axil_bus_li_cast )
+    ,.s_axil_bus_o (s_axil_bus_lo_cast )
+    ,.fifos_i      (axil_fifos_li      )
+    ,.fifos_v_i    (axil_fifos_v_li    )
+    ,.fifos_ready_o(axil_fifos_ready_lo)
+    ,.fifos_o      (axil_fifos_lo      )
+    ,.fifos_v_o    (axil_fifos_v_lo    )
+    ,.fifos_ready_i(axil_fifos_ready_li)
+    ,.rom_addr_o   (rom_addr_li        )
+    ,.rom_data_i   (rom_data_lo        )
+    ,.rcv_vacancy_i(rcv_vacancy_li     )
+    ,.out_credits_i(out_credits_li     )
   );
 
 
@@ -176,17 +176,17 @@ module bsg_manycore_link_to_axil
 
   for (genvar i=0; i<num_slots_lp; i++) begin : upsizer
     bsg_serial_in_parallel_out #(
-      .width_p(32                  ),
-      .els_p  (mcl_fifo_width_gp/32)
+      .width_p(32                  )
+      ,.els_p  (mcl_fifo_width_gp/32)
     ) sipo (
-      .clk_i     (clk_i                 ),
-      .reset_i   (reset_i               ),
-      .valid_i   (axil_fifos_v_lo[i]    ),
-      .data_i    (axil_fifos_lo[i]      ),
-      .ready_o   (axil_fifos_ready_li[i]),
-      .valid_o   (sipo_valid_lo[i]      ),
-      .data_o    (mcl_fifo_data_li[i]   ),
-      .yumi_cnt_i(sipo_yumi_cnt_li[i]   )
+      .clk_i     (clk_i                 )
+      ,.reset_i   (reset_i               )
+      ,.valid_i   (axil_fifos_v_lo[i]    )
+      ,.data_i    (axil_fifos_lo[i]      )
+      ,.ready_o   (axil_fifos_ready_li[i])
+      ,.valid_o   (sipo_valid_lo[i]      )
+      ,.data_o    (mcl_fifo_data_li[i]   )
+      ,.yumi_cnt_i(sipo_yumi_cnt_li[i]   )
     );
     assign mcl_fifo_v_li[i]    = &sipo_valid_lo[i];
     assign sipo_yumi_cnt_li[i] = (mcl_fifo_v_li[i] & mcl_fifo_ready_lo[i])
@@ -213,45 +213,45 @@ module bsg_manycore_link_to_axil
 
   for (genvar i=0; i<num_slots_lp; i++) begin : dnsizer
     bsg_counter_up_down #(
-      .max_val_p (rcv_fifo_els_gp),
-      .init_val_p(rcv_fifo_els_gp),
-      .max_step_p(1             )
+      .max_val_p (rcv_fifo_els_gp)
+      ,.init_val_p(rcv_fifo_els_gp)
+      ,.max_step_p(1             )
     ) rcv_vacancy_cnt (
-      .clk_i  (clk_i            ),
-      .reset_i(reset_i          ),
-      .down_i (rcv_enqueue[i]   ),
-      .up_i   (rcv_dequeue[i]   ),
-      .count_o(rcv_vacancy_lo[i])
+      .clk_i  (clk_i            )
+      ,.reset_i(reset_i          )
+      ,.down_i (rcv_enqueue[i]   )
+      ,.up_i   (rcv_dequeue[i]   )
+      ,.count_o(rcv_vacancy_lo[i])
     );
     assign rcv_vacancy_li[i] = 32'(rcv_vacancy_lo[i]);
 
     bsg_fifo_1r1w_small #(
-      .width_p           (mcl_fifo_width_gp),
-      .els_p             (rcv_fifo_els_gp  ),
-      .ready_THEN_valid_p(0                )  // for input
+      .width_p           (mcl_fifo_width_gp)
+      ,.els_p             (rcv_fifo_els_gp  )
+      ,.ready_THEN_valid_p(0                )  // for input
     ) rcv_fifo (
-      .clk_i  (clk_i               ),
-      .reset_i(reset_i             ),
-      .v_i    (mcl_fifo_v_lo[i]    ),
-      .ready_o(mcl_fifo_ready_li[i]),
-      .data_i (mcl_fifo_data_lo[i] ),
-      .v_o    (rcv_fifo_v_lo[i]    ),
-      .data_o (rcv_fifo_lo[i]      ),
-      .yumi_i (rcv_dequeue[i]      )
+      .clk_i  (clk_i               )
+      ,.reset_i(reset_i             )
+      ,.v_i    (mcl_fifo_v_lo[i]    )
+      ,.ready_o(mcl_fifo_ready_li[i])
+      ,.data_i (mcl_fifo_data_lo[i] )
+      ,.v_o    (rcv_fifo_v_lo[i]    )
+      ,.data_o (rcv_fifo_lo[i]      )
+      ,.yumi_i (rcv_dequeue[i]      )
     );
 
     bsg_parallel_in_serial_out #(
-      .width_p(32                  ),
-      .els_p  (mcl_fifo_width_gp/32)
+      .width_p(32                  )
+      ,.els_p  (mcl_fifo_width_gp/32)
     ) piso (
-      .clk_i  (clk_i               ),
-      .reset_i(reset_i             ),
-      .valid_i(rcv_fifo_v_lo[i]    ),
-      .data_i (rcv_fifo_lo[i]      ),
-      .ready_o(rcv_fifo_r_li[i]    ),
-      .valid_o(axil_fifos_v_li[i]  ),
-      .data_o (axil_fifos_li[i]    ),
-      .yumi_i (piso_yumi_li[i]     )
+      .clk_i  (clk_i               )
+      ,.reset_i(reset_i             )
+      ,.valid_i(rcv_fifo_v_lo[i]    )
+      ,.data_i (rcv_fifo_lo[i]      )
+      ,.ready_o(rcv_fifo_r_li[i]    )
+      ,.valid_o(axil_fifos_v_li[i]  )
+      ,.data_o (axil_fifos_li[i]    )
+      ,.yumi_i (piso_yumi_li[i]     )
     );
   end : dnsizer
 
@@ -268,30 +268,30 @@ module bsg_manycore_link_to_axil
     assign rcv_fifo_th_li[i] = (rcv_vacancy_lo[i*2]<max_out_credits_p);
 
     bsg_manycore_endpoint_to_fifos #(
-      .fifo_width_p     (mcl_fifo_width_gp),
-      .x_cord_width_p   (x_cord_width_p   ),
-      .y_cord_width_p   (y_cord_width_p   ),
-      .addr_width_p     (addr_width_p     ),
-      .data_width_p     (data_width_p     ),
-      .max_out_credits_p(max_out_credits_p),
-      .load_id_width_p  (load_id_width_p  )
+      .fifo_width_p     (mcl_fifo_width_gp)
+      ,.x_cord_width_p   (x_cord_width_p   )
+      ,.y_cord_width_p   (y_cord_width_p   )
+      ,.addr_width_p     (addr_width_p     )
+      ,.data_width_p     (data_width_p     )
+      ,.max_out_credits_p(max_out_credits_p)
+      ,.load_id_width_p  (load_id_width_p  )
     ) mc_ep_to_fifos (
-      .clk_i           (clk_i                    ),
-      .reset_i         (reset_i                  ),
-      .fifo_v_i        (mcl_fifo_v_li[i*2+:2]    ),
-      .fifo_data_i     (mcl_fifo_data_li[i*2+:2] ),
-      .fifo_ready_o    (mcl_fifo_ready_lo[i*2+:2]),
-      .fifo_v_o        (mcl_fifo_v_lo[i*2+:2]    ),
-      .fifo_data_o     (mcl_fifo_data_lo[i*2+:2] ),
-      .fifo_ready_i    (mcl_fifo_ready_li[i*2+:2]),
-      .link_sif_i      (link_sif_i[i]            ),
-      .link_sif_o      (link_sif_o[i]            ),
-      .my_x_i          (my_x_i[i]                ),
-      .my_y_i          (my_y_i[i]                ),
-      .rcv_fifo_th_i   (rcv_fifo_th_li[i]        ),
-      .out_credits_o   (out_credits_lo[i]        ),
-      .print_stat_v_o  (print_stat_v_o[i]        ),
-      .print_stat_tag_o(print_stat_tag_o[i]      )
+      .clk_i           (clk_i                    )
+      ,.reset_i         (reset_i                  )
+      ,.fifo_v_i        (mcl_fifo_v_li[i*2+:2]    )
+      ,.fifo_data_i     (mcl_fifo_data_li[i*2+:2] )
+      ,.fifo_ready_o    (mcl_fifo_ready_lo[i*2+:2])
+      ,.fifo_v_o        (mcl_fifo_v_lo[i*2+:2]    )
+      ,.fifo_data_o     (mcl_fifo_data_lo[i*2+:2] )
+      ,.fifo_ready_i    (mcl_fifo_ready_li[i*2+:2])
+      ,.link_sif_i      (link_sif_i[i]            )
+      ,.link_sif_o      (link_sif_o[i]            )
+      ,.my_x_i          (my_x_i[i]                )
+      ,.my_y_i          (my_y_i[i]                )
+      ,.rcv_fifo_th_i   (rcv_fifo_th_li[i]        )
+      ,.out_credits_o   (out_credits_lo[i]        )
+      ,.print_stat_v_o  (print_stat_v_o[i]        )
+      ,.print_stat_tag_o(print_stat_tag_o[i]      )
     );
   end : fifo_2_ep
 

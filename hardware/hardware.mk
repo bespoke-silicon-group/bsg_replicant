@@ -99,9 +99,6 @@ VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 
 VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
-# VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
-# VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
-# VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
 VSOURCES += $(CL_DIR)/hardware/bsg_axil_rxs.v
 VSOURCES += $(CL_DIR)/hardware/bsg_axil_txs.v
 VSOURCES += $(CL_DIR)/hardware/bsg_axil_to_fifos.v
@@ -110,7 +107,6 @@ VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil_pkg.v
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil.v
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
-# VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh
