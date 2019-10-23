@@ -70,6 +70,7 @@ module bsg_manycore_endpoint_to_fifos
   ,output [                 data_width_p-1:0]                   print_stat_tag_o
 );
 
+  localparam mc_req_op_width_p = 2; // default op_width in manycore request packet
 
   // fifo pair signals
   bsg_mcl_request_s  fifo_req_li, mc_req_lo;
@@ -134,7 +135,7 @@ module bsg_manycore_endpoint_to_fifos
 
   assign endpoint_out_packet_li = {
     (addr_width_p)'(fifo_req_li.addr)
-    ,(request_op_width_p)'(fifo_req_li.op)
+    ,(mc_req_op_width_p)'(fifo_req_li.op)
     ,data_mask_width_lp'(fifo_req_li.op_ex)
     ,(data_width_p)'(fifo_req_li.payload.data)
     ,(y_cord_width_p)'(fifo_req_li.src_y_cord)
@@ -161,15 +162,6 @@ module bsg_manycore_endpoint_to_fifos
 
   // manycore request to host
   // -------------------------
-  // logic                          timer_v_lo         ;
-  // logic                          timer_ready_li     ;
-  // logic [      data_width_p-1:0] timer_data_lo      ;
-  // logic [data_mask_width_lp-1:0] timer_mask_lo      ;
-  // logic [      addr_width_p-1:0] timer_addr_lo      ;
-  // logic                          timer_we_lo        ;
-  // logic [    x_cord_width_p-1:0] timer_src_x_cord_lo;
-  // logic [    y_cord_width_p-1:0] timer_src_y_cord_lo;
-
   assign mc_req_v_lo = endpoint_in_v_lo;
   assign endpoint_in_yumi_li = mc_req_ready_li & mc_req_v_lo;
   assign mc_req_lo.padding = '0;
@@ -195,50 +187,50 @@ module bsg_manycore_endpoint_to_fifos
 
 
   bsg_manycore_endpoint_standard #(
-    .x_cord_width_p   (x_cord_width_p   ),
-    .y_cord_width_p   (y_cord_width_p   ),
-    .fifo_els_p       (4                ),
-    .addr_width_p     (addr_width_p     ),
-    .data_width_p     (data_width_p     ),
-    .max_out_credits_p(max_out_credits_p),
-    .load_id_width_p  (load_id_width_p  )
+    .x_cord_width_p   (x_cord_width_p   )
+    ,.y_cord_width_p   (y_cord_width_p   )
+    ,.fifo_els_p       (4                )
+    ,.addr_width_p     (addr_width_p     )
+    ,.data_width_p     (data_width_p     )
+    ,.max_out_credits_p(max_out_credits_p)
+    ,.load_id_width_p  (load_id_width_p  )
   ) epsd (
-    .clk_i               (clk_i                 ),
-    .reset_i             (reset_i               ),
+    .clk_i               (clk_i                 )
+    ,.reset_i             (reset_i               )
 
-    .link_sif_i          (link_sif_i            ),
-    .link_sif_o          (link_sif_o            ),
+    ,.link_sif_i          (link_sif_i            )
+    ,.link_sif_o          (link_sif_o            )
 
     // manycore packet -> fifo
-    .in_v_o              (endpoint_in_v_lo      ),
-    .in_yumi_i           (endpoint_in_yumi_li   ),
-    .in_data_o           (endpoint_in_data_lo   ),
-    .in_mask_o           (endpoint_in_mask_lo   ),
-    .in_addr_o           (endpoint_in_addr_lo   ),
-    .in_we_o             (endpoint_in_we_lo     ),
-    .in_src_x_cord_o     (in_src_x_cord_lo      ),
-    .in_src_y_cord_o     (in_src_y_cord_lo      ),
+    ,.in_v_o              (endpoint_in_v_lo      )
+    ,.in_yumi_i           (endpoint_in_yumi_li   )
+    ,.in_data_o           (endpoint_in_data_lo   )
+    ,.in_mask_o           (endpoint_in_mask_lo   )
+    ,.in_addr_o           (endpoint_in_addr_lo   )
+    ,.in_we_o             (endpoint_in_we_lo     )
+    ,.in_src_x_cord_o     (in_src_x_cord_lo      )
+    ,.in_src_y_cord_o     (in_src_y_cord_lo      )
 
     // fifo -> manycore packet
-    .out_v_i             (endpoint_out_v_li     ),
-    .out_packet_i        (endpoint_out_packet_li),
-    .out_ready_o         (endpoint_out_ready_lo ),
+    ,.out_v_i             (endpoint_out_v_li     )
+    ,.out_packet_i        (endpoint_out_packet_li)
+    ,.out_ready_o         (endpoint_out_ready_lo )
 
     // manycore credit -> fifo
-    .returned_data_r_o   (returned_data_r_lo    ),
-    .returned_load_id_r_o(returned_load_id_r_lo ),
-    .returned_v_r_o      (returned_v_r_lo       ),
-    .returned_fifo_full_o(returned_fifo_full_lo ),
+    ,.returned_data_r_o   (returned_data_r_lo    )
+    ,.returned_load_id_r_o(returned_load_id_r_lo )
+    ,.returned_v_r_o      (returned_v_r_lo       )
+    ,.returned_fifo_full_o(returned_fifo_full_lo )
     // always 1'b1 if returned_fifo_p is not set
-    .returned_yumi_i     (returned_yumi_li      ),
+    ,.returned_yumi_i     (returned_yumi_li      )
 
     // fifo -> manycore credit
-    .returning_data_i    (returning_data_li     ),
-    .returning_v_i       (returning_v_li        ),
+    ,.returning_data_i    (returning_data_li     )
+    ,.returning_v_i       (returning_v_li        )
 
-    .out_credits_o       (out_credits_o         ),
-    .my_x_i              (my_x_i                ),
-    .my_y_i              (my_y_i                )
+    ,.out_credits_o       (out_credits_o         )
+    ,.my_x_i              (my_x_i                )
+    ,.my_y_i              (my_y_i                )
   );
 
 
