@@ -955,7 +955,6 @@ static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
 					hb_mc_direction_to_string(dir), hb_mc_strerror(err));
 			return err;
 		}
-		bsg_pr_info("wait for tx complete\n");
 	} while (!tx_complete);
 
 	// clear the Transmit Complete bit
