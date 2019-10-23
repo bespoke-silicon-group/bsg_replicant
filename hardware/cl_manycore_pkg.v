@@ -11,7 +11,7 @@ package cl_manycore_pkg;
   `include "bsg_defines.v"
   `include "f1_parameters.vh"
   import bsg_mem_cfg_pkg::*;
-
+  
   parameter bsg_mem_cfg_e mem_cfg_p = `CL_MANYCORE_MEM_CFG;
   parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
   parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;
@@ -20,11 +20,6 @@ package cl_manycore_pkg;
   parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_x_p);
   parameter y_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_y_p+2);
   parameter load_id_width_p = 12;
-  parameter request_op_width_p = 2;
-  parameter max_out_credits_p = 16; // the max number of outstanding requests from the host endpoint to the manycore
-  parameter host_cord_x_p = 0;
-  parameter host_cord_y_p = 0;
-
   parameter dmem_size_p = 1024;
   parameter icache_entries_p = 1024;
   parameter icache_tag_width_p = 12;
@@ -44,8 +39,8 @@ package cl_manycore_pkg;
   parameter axi_strb_width_p = (axi_data_width_p>>3);
   parameter axi_burst_len_p = 1;
 
-  // manycore link
-  parameter axil_base_addr_p = 32'h0000_0000;
+  // the max number of outstanding requests from the host endpoint to the manycore
+  parameter max_out_credits_p = 16;
 
 endpackage
 
