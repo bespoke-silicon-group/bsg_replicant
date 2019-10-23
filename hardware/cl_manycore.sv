@@ -693,8 +693,8 @@ module cl_manycore
    assign axil_link_sif_li = async_link_sif_lo;
    assign async_link_sif_li = axil_link_sif_lo;
 `else
-   assign axil_link_sif_li = loader_link_sif_li;
-   assign loader_link_sif_lo = axil_link_sif_lo;
+   assign axil_link_sif_li = loader_link_sif_lo;
+   assign loader_link_sif_li = axil_link_sif_lo;
 `endif
 
    //-----------------------------------------------
