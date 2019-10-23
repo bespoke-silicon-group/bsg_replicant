@@ -52,7 +52,18 @@ help:
 	@echo "             test"
 	@echo "      <test_name.log>: Run a specific cosimulation test and "
 	@echo "             generate the log file"
+	@echo "      <test_name.vanilla.log>: Run a specific cosimulation test and "
+	@echo "             generate the vanilla log file"
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
+VANILLA_LOG_RULES = $(addsuffix .vanilla.log,$(REGRESSION_TESTS))
+VANILLA_LOG_TARGETS =$(addprefix $(EXEC_PATH)/,$(VANILLA_LOG_RULES))
+$(VANILLA_LOG_RULES): SIM_ARGS +=+trace
+$(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
+	@mv vanilla.log $@
+	@mv vcache_stats.log $(subst vanilla,vcache_stats,$@)
+	@mv vanilla_stall_trace.log $(subst vanilla,vanilla_stall_trace,$@)
+	@mv vanilla_stats.log $(subst vanilla,vanilla_stats,$@)
+
 clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
-	rm -rf vanilla.log vcache_stats.log vanilla_stats.log
+	rm -rf *.log

@@ -756,6 +756,11 @@ module cl_manycore
 `endif //  `ifndef DISABLE_VJTAG_DEBUG
 
    // synopsys translate off
+   int                        status;
+   logic                      trace_en;
+   initial begin
+      assign trace_en = $test$plusargs("trace");
+   end
 
    bind vanilla_core vanilla_core_trace 
      #(
@@ -769,16 +774,15 @@ module cl_manycore
    vtrace 
      (
       .*
-      ,.trace_en_i(1'b1)
+      ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 
 
    // profilers
    //
-   logic [31:0]               global_ctr;
+   logic [31:0] global_ctr;
 
-   bsg_cycle_counter 
-     global_cc 
+   bsg_cycle_counter global_cc 
      (
       .clk_i(core_clk)
       ,.reset_i(core_reset)
@@ -793,13 +797,13 @@ module cl_manycore
        ,.data_width_p(data_width_p)
        ,.dmem_size_p(data_width_p)
        ) 
-   vcore_prof 
+   vcore_prof
      (
       .*
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
-      ,.trace_en_i(1'b1)
+      ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 
    if (mem_cfg_p == e_mem_cfg_default) begin
