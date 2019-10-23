@@ -755,76 +755,87 @@ module cl_manycore
 
 `endif //  `ifndef DISABLE_VJTAG_DEBUG
 
-// synopsys translate off
-generate
-   if(exec_trace_en_p)
-         logic    exec_trace_en = 1;
-   else
-         logic    exec_trace_en = 0;
-endgenerate
-   
-bind vanilla_core vanilla_core_trace #(
-  .x_cord_width_p(x_cord_width_p)
-  ,.y_cord_width_p(y_cord_width_p)
-  ,.icache_tag_width_p(icache_tag_width_p)
-  ,.icache_entries_p(icache_entries_p)
-  ,.data_width_p(data_width_p)
-  ,.dmem_size_p(dmem_size_p)
-) vtrace (
-  .*
-  ,.trace_en_i(exec_trace_en)
-);
+   // synopsys translate off
+   int                        status;
+   logic                      trace_en;
+   initial begin
+      assign trace_en = $test$plusargs("trace");
+   end
+
+   bind vanilla_core vanilla_core_trace 
+     #(
+       .x_cord_width_p(x_cord_width_p)
+       ,.y_cord_width_p(y_cord_width_p)
+       ,.icache_tag_width_p(icache_tag_width_p)
+       ,.icache_entries_p(icache_entries_p)
+       ,.data_width_p(data_width_p)
+       ,.dmem_size_p(dmem_size_p)
+       ) 
+   vtrace 
+     (
+      .*
+      ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
+      );
 
 
-// profilers
-//
-logic [31:0] global_ctr;
+   // profilers
+   //
+   logic [31:0] global_ctr;
 
-bsg_cycle_counter global_cc (
-  .clk_i(clk_main_a0)
-  ,.reset_i(~rst_main_n_sync)
-  ,.ctr_r_o(global_ctr)
-);
+   bsg_cycle_counter global_cc 
+     (
+      .clk_i(core_clk)
+      ,.reset_i(core_reset)
+      ,.ctr_r_o(global_ctr)
+      );
 
 
-bind vanilla_core vanilla_core_profiler #(
-  .x_cord_width_p(x_cord_width_p)
-  ,.y_cord_width_p(y_cord_width_p)
-  ,.data_width_p(data_width_p)
-  ,.dmem_size_p(data_width_p)
-) vcore_prof (
-  .*
-  ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-  ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-  ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
-  ,.trace_en_i(1'b1)
-);
+   bind vanilla_core vanilla_core_profiler 
+     #(
+       .x_cord_width_p(x_cord_width_p)
+       ,.y_cord_width_p(y_cord_width_p)
+       ,.data_width_p(data_width_p)
+       ,.dmem_size_p(data_width_p)
+       ) 
+   vcore_prof
+     (
+      .*
+      ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+      ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
+      );
 
-if (mem_cfg_p == e_mem_cfg_default) begin
+   if (mem_cfg_p == e_mem_cfg_default) begin
 
-  bind bsg_cache vcache_profiler #(
-    .data_width_p(data_width_p)
-  ) vcache_prof (
-    .*
-    ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-    ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-    ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
-  );
+      bind bsg_cache vcache_profiler 
+        #(
+          .data_width_p(data_width_p)
+          ) 
+      vcache_prof 
+        (
+         .*
+         ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+         ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+         ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+         );
 
-end
-else if (mem_cfg_p == e_mem_cfg_infinite) begin
-  bind bsg_nonsynth_mem_infinite infinite_mem_profiler #(
-    .data_width_p(data_width_p)
-    ,.x_cord_width_p(x_cord_width_p)
-    ,.y_cord_width_p(y_cord_width_p)
-  ) infty_mem_prof (
-    .*
-    ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-    ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-    ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
-  );
-end
+   end
+   else if (mem_cfg_p == e_mem_cfg_infinite) begin
+      bind bsg_nonsynth_mem_infinite infinite_mem_profiler 
+        #(
+          .data_width_p(data_width_p)
+          ,.x_cord_width_p(x_cord_width_p)
+          ,.y_cord_width_p(y_cord_width_p)
+          ) 
+      infty_mem_prof 
+        (.*
+         ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+         ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+         ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+         );
+   end
 
-// synopsys translate on
+   // synopsys translate on
 
 endmodule
