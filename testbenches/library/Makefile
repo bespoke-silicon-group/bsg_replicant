@@ -71,3 +71,12 @@ include $(TESTBENCH_PATH)/cosimulation.mk
 # compilation.mk so that <test_name>.rule and <test_name>.clean are
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
+
+
+# The rule below defines how to run all Library tests. The output .vpd
+# file will be named <test_name>.vpd. To generate a trace file, run
+# `make <test_name>.vanilla.log`
+INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
+$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
+		+c_args="" | tee $@

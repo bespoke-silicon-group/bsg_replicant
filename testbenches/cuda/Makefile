@@ -72,12 +72,24 @@ include $(TESTBENCH_PATH)/cosimulation.mk
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 
-# The rule below defines how to run test_loader for CUDA-Lite tests. The loader
-# requires one argument: The test name (TEST_NAME)
+# All CUDA tests require two arguments: The path to the RISC-V Binary loaded
+# onto the manycore (TEST_PATH), and the test name (TEST_NAME). CUDA_PATH is
+# defined for convenience
+CUDA_PATH=$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
+$(EXEC_PATH)/%.log: TEST_PATH=$(CUDA_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
+
+# The rule below defines how to run test_loader for CUDA-Lite tests. 
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
-		+c_args="$(TEST_NAME)" | tee $@
+		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
+
+# The rule below defines how to run all CUDA-Lite tests that don't use
+# test_loader.
+INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
+$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
+		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
 
 # regression.mk defines the regression target
 include $(REGRESSION_PATH)/regression.mk

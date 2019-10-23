@@ -28,13 +28,6 @@
 # This makefile fragment defines the rules that are re-used between cosimulation
 # sub-suites.
 
-# The following rules generate the <test_name>.log file by running the
-# <test_name> executable. The output .vpd file will be named <test_name>.vpd.
-INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
-$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
-		+c_args="$(C_ARGS)" | tee $@
-
 # compilation.mk defines all of the rules for building cosimulation binaries
 # It defines the target <test_name> for each regression test.
 include $(TESTBENCH_PATH)/compilation.mk

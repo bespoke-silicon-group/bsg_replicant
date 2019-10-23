@@ -73,8 +73,10 @@ include $(TESTBENCH_PATH)/cosimulation.mk
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 
 # The rule below defines how to run test_loader for Python tests. The loader
-# requires one argument: The test name (TEST_NAME)
+# requires two arguments: The Python Test Directoty (PYTHON_TEST_PATH) and the
+# test name (TEST_NAME)
+PYTHON_TEST_PATH = $(BSG_F1_DIR)/regression/python/
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
-		+c_args="$(TEST_NAME)" | tee $@
+		+c_args="$(PYTHON_TEST_PATH) $(TEST_NAME)" | tee $@

@@ -54,7 +54,7 @@ include $(REGRESSION_PATH)/compilation.mk
 # not overwritten.
 include rules.mk
 
-# The rule below defines how to run test_loader for SPMD tests. The loader
+# The rule below defines how to run test_loader for SPECINT tests. The loader
 # requires two arguments: The path to the RISC-V Binary loaded onto the manycore
 # (TEST_PATH), and the test name (TEST_NAME). SPECINT_PATH is defined for convenience
 SPECINT_PATH=$(BSG_MANYCORE_DIR)/software/spmd/specint2000

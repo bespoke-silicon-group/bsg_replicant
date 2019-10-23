@@ -35,13 +35,14 @@
 
 int test_python(int argc, char **argv) {
         int len, err;
-        const char *python_path = BSG_STRINGIFY(BSG_PYTHON_TEST_PATH) "/";
+        char *python_path;
         char *test_name;
 
-        struct arguments_name args = {NULL};
+        struct arguments_path args = {NULL};
 
-        argp_parse (&argp_name, argc, argv, 0, 0, &args);
-        test_name = args.testname;
+        argp_parse (&argp_path_py, argc, argv, 0, 0, &args);
+        test_name = args.name;
+        python_path = args.path;
         bsg_pr_test_info("%s Regression Test\n", test_name);
 
         len = strlen(python_path) + strlen(test_name) + strlen(".py");

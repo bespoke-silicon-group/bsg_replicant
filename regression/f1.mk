@@ -41,10 +41,6 @@ ifndef REGRESSION_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_PATH is not defined$(NC)"))
 endif
 
-INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
-$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	sudo $< | tee $@
-
 # compillation.mk defines rules for compilation of the C/C++ regression tests.
 # It defines the target <test_name> for each regression test.
 include $(REGRESSION_PATH)/compilation.mk
