@@ -70,4 +70,4 @@ $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 # The rule below defines how to run all SPMD tests that don't use test_loader
 INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
 $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	sudo $< | tee $@
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
