@@ -44,26 +44,26 @@ extern "C" {
 #define HB_MC_NOTFOUND      (-7)
 #define HB_MC_BUSY          (-8)
 
-static inline const char * hb_mc_strerror(int err)
-{
-        static const char *strtab [] = {
-                [-HB_MC_SUCCESS]           = "Success",
-                [-HB_MC_FAIL]              = "Failure",
-                [-HB_MC_TIMEOUT]           = "Timeout",
-		[-HB_MC_UNINITIALIZED]     = "Not initialized",
-		[-HB_MC_INVALID]           = "Invalid input",
-		[-HB_MC_NOMEM]             = "Out of memory",
-		[-HB_MC_NOIMPL]            = "Not implemented",
-                [-HB_MC_NOTFOUND]          = "Not found",
-		[-HB_MC_BUSY]              = "Busy",
-        };
-        return strtab[-err];
-}
+        static inline const char * hb_mc_strerror(int err)
+        {
+                static const char *strtab [] = {
+                        [-HB_MC_SUCCESS]           = "Success",
+                        [-HB_MC_FAIL]              = "Failure",
+                        [-HB_MC_TIMEOUT]           = "Timeout",
+                        [-HB_MC_UNINITIALIZED]     = "Not initialized",
+                        [-HB_MC_INVALID]           = "Invalid input",
+                        [-HB_MC_NOMEM]             = "Out of memory",
+                        [-HB_MC_NOIMPL]            = "Not implemented",
+                        [-HB_MC_NOTFOUND]          = "Not found",
+                        [-HB_MC_BUSY]              = "Busy",
+                };
+                return strtab[-err];
+        }
 
-static inline int hb_mc_is_error(int err)
-{
-        return (err < HB_MC_SUCCESS) && (err >= HB_MC_NOTFOUND);
-}
+        static inline int hb_mc_is_error(int err)
+        {
+                return (err < HB_MC_SUCCESS) && (err >= HB_MC_NOTFOUND);
+        }
 
 #ifdef __cplusplus
 }

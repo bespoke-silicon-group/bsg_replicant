@@ -40,7 +40,7 @@ static const char error_init_help [] = "Is your FPGA initialized with an AGFI?";
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                       hb_mc_config_t *config)
 {
-	uint32_t xlogsz_max, xdim_max;
+        uint32_t xlogsz_max, xdim_max;
         hb_mc_config_raw_t cur;
         hb_mc_idx_t idx;
         char date[8], version[3];
@@ -70,7 +70,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->timestamp.day =  date[5] * 10 + date[4] * 1;
         config->timestamp.month = date[7] * 10 + date[6] * 1;
 
-	idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
+        idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
         if (idx > HB_MC_CONFIG_MAX_BITWIDTH_DATA){
                 bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d: %s\n",
                            __func__, idx, error_init_help);
@@ -78,7 +78,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->network_bitwidth_data = idx;
 
-	idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
+        idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
         if (idx > HB_MC_CONFIG_MAX_BITWIDTH_ADDR){
                 bsg_pr_err("%s: Invalid Network Address Bitwidth %d: %s\n",
                            __func__, idx, error_init_help);
@@ -86,13 +86,13 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->network_bitwidth_addr = idx;
 
-	/* The maximum X dimension of the network is limited by the network
-	 * address bitwidth */
-	xlogsz_max = HB_MC_CONFIG_MAX_BITWIDTH_ADDR - config->network_bitwidth_addr;
-	xdim_max = (1 << xlogsz_max);
+        /* The maximum X dimension of the network is limited by the network
+         * address bitwidth */
+        xlogsz_max = HB_MC_CONFIG_MAX_BITWIDTH_ADDR - config->network_bitwidth_addr;
+        xdim_max = (1 << xlogsz_max);
 
         idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
-	//Temporarily removed this condition until it is cleared up. TODO: Fix.
+        //Temporarily removed this condition until it is cleared up. TODO: Fix.
         //if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
         if ((idx < HB_MC_COORDINATE_MIN)){
                 bsg_pr_err("%s: Invalid Device Dimension X %d: %s\n",

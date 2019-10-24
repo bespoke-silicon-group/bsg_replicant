@@ -42,11 +42,11 @@
 extern "C" {
 #endif // #if defined(__cplusplus)
 
-/* #if defined(COSIM) */
-/* #define BSG_PRINT_PREFIX_DEBUG "DEBUG @(%llu/%llu):   " */
-/* #else // !defined(COSIM) */
-/* #define BSG_PRINT_PREFIX_DEBUG "DEBUG @(%llu):   " */
-/* #endif */
+        /* #if defined(COSIM) */
+        /* #define BSG_PRINT_PREFIX_DEBUG "DEBUG @(%llu/%llu):   " */
+        /* #else // !defined(COSIM) */
+        /* #define BSG_PRINT_PREFIX_DEBUG "DEBUG @(%llu):   " */
+        /* #endif */
 
 #define BSG_PRINT_PREFIX_DEBUG "DEBUG"
 #define BSG_PRINT_PREFIX_ERROR "ERROR:   "
@@ -59,37 +59,37 @@ extern "C" {
 #define BSG_PRINT_STREAM_INFO  stderr
 
 #ifdef COSIM
-extern void sv_bsg_realtime(uint64_t*);
-uint64_t bsg_realtime();
+        extern void sv_bsg_realtime(uint64_t*);
+        uint64_t bsg_realtime();
 #endif
 
-static inline uint64_t bsg_utc(){
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
+        static inline uint64_t bsg_utc(){
+                struct timeval tv;
+                gettimeofday(&tv, NULL);
 
-	uint64_t ms =
-		(uint64_t)(tv.tv_sec) * 1000 +
-		(uint64_t)(tv.tv_usec) / 1000;
+                uint64_t ms =
+                        (uint64_t)(tv.tv_sec) * 1000 +
+                        (uint64_t)(tv.tv_usec) / 1000;
 
-	return ms;
-}
+                return ms;
+        }
 
-__attribute__((format(printf, 2, 3)))
-int bsg_pr_prefix(const char *prefix, const char *fmt, ...);
+        __attribute__((format(printf, 2, 3)))
+        int bsg_pr_prefix(const char *prefix, const char *fmt, ...);
 
-/* #if defined(DEBUG) && defined(COSIM) */
-/* #define bsg_pr_dbg(fmt, ...)                    \ */
-/*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_realtime(), bsg_utc(), ##__VA_ARGS__) */
-/* #elif defined(DEBUG) */
-/* #define bsg_pr_dbg(fmt, ...)                    \ */
-/*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_utc(), ##__VA_ARGS__) */
-/* #else  */
-/* #define bsg_pr_dbg(...) */
-/* #endif */
+        /* #if defined(DEBUG) && defined(COSIM) */
+        /* #define bsg_pr_dbg(fmt, ...)                    \ */
+        /*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_realtime(), bsg_utc(), ##__VA_ARGS__) */
+        /* #elif defined(DEBUG) */
+        /* #define bsg_pr_dbg(fmt, ...)                    \ */
+        /*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_utc(), ##__VA_ARGS__) */
+        /* #else  */
+        /* #define bsg_pr_dbg(...) */
+        /* #endif */
 
 #if defined(DEBUG)
-#define bsg_pr_dbg(fmt, ...)			\
-	bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, ##__VA_ARGS__)
+#define bsg_pr_dbg(fmt, ...)                                            \
+        bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, ##__VA_ARGS__)
 #else
 #define bsg_pr_dbg(...)
 #endif

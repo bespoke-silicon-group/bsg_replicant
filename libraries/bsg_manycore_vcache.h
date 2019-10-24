@@ -41,23 +41,23 @@
 extern "C" {
 #endif
 
-/* Offsets in bytes */
+        /* Offsets in bytes */
 #define HB_MC_VCACHE_EPA_BASE          0x00000000
 #define HB_MC_VCACHE_EPA_OFFSET_DRAM   0x00000000
 #define HB_MC_VCACHE_EPA_OFFSET_TAG    0x20000000
 #define HB_MC_VCACHE_EPA_RESERVED_BITS 1
 
-/* EPA Macros */
-#define EPA_VCACHE_FROM_BYTE_OFFSET(offset)			\
-	EPA_FROM_BASE_AND_OFFSET(HB_MC_VCACHE_EPA_BASE, offset)
+        /* EPA Macros */
+#define EPA_VCACHE_FROM_BYTE_OFFSET(offset)                     \
+        EPA_FROM_BASE_AND_OFFSET(HB_MC_VCACHE_EPA_BASE, offset)
 
-#define HB_MC_VCACHE_EPA_DRAM						\
-	EPA_VCACHE_FROM_BYTE_OFFSET(HB_MC_VCACHE_EPA_OFFSET_DRAM)
+#define HB_MC_VCACHE_EPA_DRAM                                           \
+        EPA_VCACHE_FROM_BYTE_OFFSET(HB_MC_VCACHE_EPA_OFFSET_DRAM)
 
-#define HB_MC_VCACHE_EPA_TAG						\
-	EPA_VCACHE_FROM_BYTE_OFFSET(HB_MC_VCACHE_EPA_OFFSET_TAG)
+#define HB_MC_VCACHE_EPA_TAG                                            \
+        EPA_VCACHE_FROM_BYTE_OFFSET(HB_MC_VCACHE_EPA_OFFSET_TAG)
 
-/* Victim Cache Data Bits */
+        /* Victim Cache Data Bits */
 #define HB_MC_VCACHE_VALID_BITIDX 31
 #define HB_MC_VCACHE_VALID (1 << HB_MC_VCACHE_VALID_BITIDX)
 

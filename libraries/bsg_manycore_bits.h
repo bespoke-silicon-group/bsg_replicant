@@ -39,7 +39,7 @@
 extern "C" {
 #endif
 
-uint32_t hb_mc_get_bits (uint32_t val, uint32_t start, uint32_t size);
+        uint32_t hb_mc_get_bits (uint32_t val, uint32_t start, uint32_t size);
 
 #ifdef __cplusplus
 }

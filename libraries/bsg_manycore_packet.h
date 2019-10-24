@@ -36,11 +36,11 @@
 extern "C" {
 #endif
 
-typedef union packet {
-	hb_mc_request_packet_t request; /**/
-	hb_mc_response_packet_t response; /* from the Hammerblade Manycore */
-	uint32_t words[4];
-} hb_mc_packet_t;
+        typedef union packet {
+                hb_mc_request_packet_t request; /**/
+                hb_mc_response_packet_t response; /* from the Hammerblade Manycore */
+                uint32_t words[4];
+        } hb_mc_packet_t;
 
 #ifdef __cplusplus
 }

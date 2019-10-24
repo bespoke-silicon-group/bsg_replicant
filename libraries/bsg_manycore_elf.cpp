@@ -163,19 +163,19 @@ static void object_symbol_table_init(const char *fname, symbol_table& symbols)
         fclose(f);
         return;
         
-fail_free_object_data:
+ fail_free_object_data:
         free(object_data);
-fail_close_f:
+ fail_close_f:
         fclose(f);
-fail_return:
+ fail_return:
         exit(1);
 }
 
 int symbol_to_eva(const char *fname, const char *sym_name, eva_t* eva)
 {
-	static symbol_table symbols;
+        static symbol_table symbols;
         object_symbol_table_init(fname, symbols);
-	symbol_table::iterator it = symbols.find(string(sym_name));
+        symbol_table::iterator it = symbols.find(string(sym_name));
         if (it != symbols.end()) {
                 *eva = (it->second->value);
                 return HB_MC_SUCCESS;
