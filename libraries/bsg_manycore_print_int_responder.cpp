@@ -72,8 +72,8 @@ static int respond(hb_mc_responder_t *responder,
         FILE *f = (FILE*)responder->responder_data;
         char coordstr[256];
         hb_mc_coordinate_to_string(hb_mc_coordinate(hb_mc_request_packet_get_x_src(rqst),
-                                                     hb_mc_request_packet_get_y_src(rqst)),
-                                    coordstr,sizeof(coordstr));
+                                                    hb_mc_request_packet_get_y_src(rqst)),
+                                   coordstr,sizeof(coordstr));
         utof_t f_data;
 
         switch (hb_mc_request_packet_get_epa(rqst)) {

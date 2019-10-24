@@ -132,11 +132,11 @@ module axil_to_mcl
   // synopsys translate_off
    always_ff @(negedge clk_i)
    begin
-  	 assert (mux_bus_num_lp <= 16)
-  	 else begin
-  		 $error("## axil mux master slot can not exceed 16!");
-  		 $finish();
-  	 end
+         assert (mux_bus_num_lp <= 16)
+         else begin
+                 $error("## axil mux master slot can not exceed 16!");
+                 $finish();
+         end
    end
   // synopsys translate_on
 
@@ -360,10 +360,10 @@ module axil_to_mcl
   logic [num_mcl_p-1:0] returning_wr_v_r;
   always_ff @(posedge clk_i)
   begin
-  	if(reset_i)
-  		returning_wr_v_r <= '0;
-  	else
-  		returning_wr_v_r <= endpoint_in_yumi_li & endpoint_in_we_lo;
+        if(reset_i)
+                returning_wr_v_r <= '0;
+        else
+                returning_wr_v_r <= endpoint_in_yumi_li & endpoint_in_we_lo;
   end
 
   `declare_bsg_mcl_request_s;

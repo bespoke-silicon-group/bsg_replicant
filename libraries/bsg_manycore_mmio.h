@@ -57,11 +57,11 @@
 #define HB_MC_MMIO_FIFO_DATA_WIDTH 32
 #define HB_MC_MMIO_FIFO_NUM_BYTES 0x1000
 
-#define hb_mc_mmio_fifo_get_direction_offset(dir) \
-	(dir * HB_MC_MMIO_FIFO_NUM_BYTES)
+#define hb_mc_mmio_fifo_get_direction_offset(dir)       \
+        (dir * HB_MC_MMIO_FIFO_NUM_BYTES)
 
-#define hb_mc_mmio_fifo_get_reg_addr(dir, reg) \
-	(hb_mc_mmio_fifo_get_direction_offset(dir) + reg)
+#define hb_mc_mmio_fifo_get_reg_addr(dir, reg)                  \
+        (hb_mc_mmio_fifo_get_direction_offset(dir) + reg)
 
 /* Hammerblade-Manycore ROM */
 #define HB_MC_MMIO_ROM_BASE 0x2000
@@ -74,8 +74,8 @@
 #define HB_MC_MMIO_CREDITS_FIFO_DEVICE_VACANCY_OFFSET 0x100
 #define HB_MC_MMIO_CREDITS_HOST_OFFSET 0x200
 
-#define hb_mc_mmio_credits_get_reg_addr(reg) \
-	(HB_MC_MMIO_CREDITS_BASE + reg)
+#define hb_mc_mmio_credits_get_reg_addr(reg)    \
+        (HB_MC_MMIO_CREDITS_BASE + reg)
 
 
 #endif
