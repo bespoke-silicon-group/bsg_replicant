@@ -34,7 +34,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
    import bsg_bladerunner_rom_pkg::*;
-   import bsg_mem_cfg_pkg::*;
+   import bsg_manycore_mem_cfg_pkg::*;
    (
 `include "cl_ports.vh"
     );
@@ -806,7 +806,7 @@ module cl_manycore
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 
-   if (mem_cfg_p == e_mem_cfg_default) begin
+   if (mem_cfg_p == e_vcache_blocking_axi4_nonsynth_mem) begin
 
       bind bsg_cache vcache_profiler 
         #(
@@ -821,7 +821,7 @@ module cl_manycore
          );
 
    end
-   else if (mem_cfg_p == e_mem_cfg_infinite) begin
+   else if (mem_cfg_p == e_infinite_mem) begin
       bind bsg_nonsynth_mem_infinite infinite_mem_profiler 
         #(
           .data_width_p(data_width_p)
