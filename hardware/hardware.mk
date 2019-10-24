@@ -88,7 +88,6 @@ include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 # verilog sources (respectively). These are used during simulation compilation,
 # but transformed into a tool-specific syntax where necesssary.
 VINCLUDES += $(HARDWARE_PATH)
-VINCLUDES += $(CL_DIR)/hdl
 
 VHEADERS += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_mem_cfg_pkg.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_cache_wrapper_axi.v
@@ -103,12 +102,12 @@ VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
 # VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
 # VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
 # VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
-VSOURCES += $(CL_DIR)/hdl/bsg_axil_rxs.v
-VSOURCES += $(CL_DIR)/hdl/bsg_axil_txs.v
-VSOURCES += $(CL_DIR)/hdl/bsg_axil_to_fifos.v
-VSOURCES += $(CL_DIR)/hdl/bsg_manycore_endpoint_to_fifos.v
-VSOURCES += $(CL_DIR)/hdl/bsg_manycore_link_to_axil_pkg.v
-VSOURCES += $(CL_DIR)/hdl/bsg_manycore_link_to_axil.v
+VSOURCES += $(CL_DIR)/hardware/bsg_axil_rxs.v
+VSOURCES += $(CL_DIR)/hardware/bsg_axil_txs.v
+VSOURCES += $(CL_DIR)/hardware/bsg_axil_to_fifos.v
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_endpoint_to_fifos.v
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil_pkg.v
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil.v
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 # VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
