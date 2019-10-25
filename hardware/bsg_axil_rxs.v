@@ -55,9 +55,9 @@ module bsg_axil_rxs
   // --------------------------------------------
 
   typedef enum bit [1:0] {
-    E_RD_IDLE = 2'b0,
-    E_RD_ADDR = 2'd1,
-    E_RD_DATA = 2'd2
+    E_RD_IDLE,
+    E_RD_ADDR,
+    E_RD_DATA
   } rd_state_e;
 
   rd_state_e rd_state_r, rd_state_n;
@@ -66,13 +66,13 @@ module bsg_axil_rxs
     rd_state_n = rd_state_r;
     case (rd_state_r)
 
-      E_RD_IDLE : begin
+      E_RD_IDLE : begin  // always ready to accept address
         if (arvalid_i)
           rd_state_n = E_RD_ADDR;
       end
 
-      E_RD_ADDR : begin
-        rd_state_n = E_RD_DATA;  // always ready to accept address
+      E_RD_ADDR : begin  // the rd address is flopped
+        rd_state_n = E_RD_DATA; 
       end
 
       E_RD_DATA : begin
@@ -96,6 +96,7 @@ module bsg_axil_rxs
   logic [num_fifos_p-1:0] fifo_addr_v;
   logic                   rom_addr_hit ;
 
+  wire in_rd_idle = rd_state_r == E_RD_IDLE;
   wire in_rd_addr = rd_state_r == E_RD_ADDR;
   wire in_rd_data = rd_state_r == E_RD_DATA;
 
@@ -104,7 +105,7 @@ module bsg_axil_rxs
 
   always_comb begin
     // raddr channel
-    rd_addr_n  = (arvalid_i & arready_o) ? araddr_i : rd_addr_r;
+    rd_addr_n  = (arvalid_i & arready_o & in_rd_idle) ? araddr_i : rd_addr_r;
     // read response, raise DECERR if access address is out of range
     rresp_n    = ~(|base_addr_hit | rom_addr_hit) & in_rd_data ? 2'b11 : '0; // DECERR or OKAY
   end
@@ -139,7 +140,7 @@ module bsg_axil_rxs
   // output signals
 
   // axil side
-  assign arready_o = in_rd_addr;
+  assign arready_o = in_rd_addr | in_rd_idle;
   assign rvalid_o  = in_rd_data;  //always valid for the read
 
   assign rresp_o = rresp_n;
