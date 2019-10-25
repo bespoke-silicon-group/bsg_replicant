@@ -354,7 +354,7 @@ module cl_manycore
    bsg_manycore_link_sif_s async_link_sif_lo;
 
    bsg_manycore_link_sif_async_buffer #(
-                                        .addr_width_p(addr_width_p)
+					.addr_width_p(addr_width_p)
                                         ,.data_width_p(data_width_p)
                                         ,.x_cord_width_p(x_cord_width_p)
                                         ,.y_cord_width_p(y_cord_width_p)
@@ -377,79 +377,182 @@ module cl_manycore
 
 `endif
 
-   // configurable memory system
-   //
-   memory_system 
-     #(
-       .mem_cfg_p(mem_cfg_p)
-      
-       ,.bsg_global_x_p(num_tiles_x_p)
-       ,.bsg_global_y_p(num_tiles_y_p)
+   ////////////////////////////////
+   // Configurable Memory System //
+   ////////////////////////////////
 
-       ,.data_width_p(data_width_p)
-       ,.addr_width_p(addr_width_p)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ,.load_id_width_p(load_id_width_p)
-
-       ,.block_size_in_words_p(block_size_in_words_p)
-       ,.sets_p(sets_p)
-       ,.ways_p(ways_p)
-
-       ,.axi_id_width_p(axi_id_width_p)
-       ,.axi_addr_width_p(axi_addr_width_p)
-       ,.axi_data_width_p(axi_data_width_p)
-       ,.axi_burst_len_p(axi_burst_len_p)
-
-       ) 
-   memsys 
-     (
-      .clk_i(core_clk)
-      ,.reset_i(core_reset)
-
-      ,.link_sif_i(cache_link_sif_lo)
-      ,.link_sif_o(cache_link_sif_li)
-
-      ,.axi_awid_o    (m_axi4_manycore_awid)
-      ,.axi_awaddr_o  (m_axi4_manycore_awaddr)
-      ,.axi_awlen_o   (m_axi4_manycore_awlen)
-      ,.axi_awsize_o  (m_axi4_manycore_awsize)
-      ,.axi_awburst_o (m_axi4_manycore_awburst)
-      ,.axi_awcache_o (m_axi4_manycore_awcache)
-      ,.axi_awprot_o  (m_axi4_manycore_awprot)
-      ,.axi_awlock_o  (m_axi4_manycore_awlock)
-      ,.axi_awvalid_o (m_axi4_manycore_awvalid)
-      ,.axi_awready_i (m_axi4_manycore_awready)
-
-      ,.axi_wdata_o   (m_axi4_manycore_wdata)
-      ,.axi_wstrb_o   (m_axi4_manycore_wstrb)
-      ,.axi_wlast_o   (m_axi4_manycore_wlast)
-      ,.axi_wvalid_o  (m_axi4_manycore_wvalid)
-      ,.axi_wready_i  (m_axi4_manycore_wready)
-
-      ,.axi_bid_i     (m_axi4_manycore_bid)
-      ,.axi_bresp_i   (m_axi4_manycore_bresp)
-      ,.axi_bvalid_i  (m_axi4_manycore_bvalid)
-      ,.axi_bready_o  (m_axi4_manycore_bready)
-
-      ,.axi_arid_o    (m_axi4_manycore_arid)
-      ,.axi_araddr_o  (m_axi4_manycore_araddr)
-      ,.axi_arlen_o   (m_axi4_manycore_arlen)
-      ,.axi_arsize_o  (m_axi4_manycore_arsize)
-      ,.axi_arburst_o (m_axi4_manycore_arburst)
-      ,.axi_arcache_o (m_axi4_manycore_arcache)
-      ,.axi_arprot_o  (m_axi4_manycore_arprot)
-      ,.axi_arlock_o  (m_axi4_manycore_arlock)
-      ,.axi_arvalid_o (m_axi4_manycore_arvalid)
-      ,.axi_arready_i (m_axi4_manycore_arready)
-
-      ,.axi_rid_i     (m_axi4_manycore_rid)
-      ,.axi_rdata_i   (m_axi4_manycore_rdata)
-      ,.axi_rresp_i   (m_axi4_manycore_rresp)
-      ,.axi_rlast_i   (m_axi4_manycore_rlast)
-      ,.axi_rvalid_i  (m_axi4_manycore_rvalid)
-      ,.axi_rready_o  (m_axi4_manycore_rready)
+   // LEVEL 1
+  if (mem_cfg_p == e_infinite_mem) begin
+    // each column has a nonsynth infinite memory
+    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+      bsg_nonsynth_mem_infinite #(
+        .data_width_p(data_width_p)
+        ,.addr_width_p(addr_width_p)
+        ,.x_cord_width_p(x_cord_width_p)
+        ,.y_cord_width_p(y_cord_width_p)
+        ,.load_id_width_p(load_id_width_p)
+      ) mem_infty (
+        .clk_i(core_clk)
+        ,.reset_i(~rst_main_n_sync)
+        // memory systems link from bsg_manycore_wrapper
+        ,.link_sif_i(cache_link_sif_lo[i])
+        ,.link_sif_o(cache_link_sif_li[i])
+        // coordinates for memory system are determined by bsg_manycore_wrapper
+        ,.my_x_i(cache_x_lo[i])
+        ,.my_y_i(cache_y_lo[i])
       );
+    end
+
+    bind bsg_nonsynth_mem_infinite infinite_mem_profiler #(
+      .data_width_p(data_width_p)
+      ,.x_cord_width_p(x_cord_width_p)
+      ,.y_cord_width_p(y_cord_width_p)
+    ) infinite_mem_prof (
+      .*
+      ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+    );
+
+  end
+  else if (mem_cfg_p == e_vcache_blocking_axi4_nonsynth_mem) begin: lv1_vcache
+
+    // import bsg_cache_pkg::*;
+
+    // `declare_bsg_cache_dma_pkt_s(cache_addr_width_lp);
+    // bsg_cache_dma_pkt_s [num_tiles_x_p-1:0] dma_pkt;
+    // logic [num_tiles_x_p-1:0] dma_pkt_v_lo;
+    // logic [num_tiles_x_p-1:0] dma_pkt_yumi_li;
+
+    // logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_li;
+    // logic [num_tiles_x_p-1:0] dma_data_v_li;
+    // logic [num_tiles_x_p-1:0] dma_data_ready_lo;
+
+    // logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_lo;
+    // logic [num_tiles_x_p-1:0] dma_data_v_lo;
+    // logic [num_tiles_x_p-1:0] dma_data_yumi_li;
+
+    // for (genvar i = 0; i < num_tiles_x_p; i++) begin
+
+    //   bsg_manycore_vcache_blocking #(
+    //     .data_width_p(data_width_p)
+    //     ,.addr_width_p(bsg_max_epa_width_p)
+    //     ,.block_size_in_words_p(vcache_block_size_in_words_p)
+    //     ,.sets_p(vcache_sets_p)
+    //     ,.ways_p(vcache_ways_p)
+
+    //     ,.x_cord_width_p(x_cord_width_lp)
+    //     ,.y_cord_width_p(y_cord_width_lp)
+    //     ,.load_id_width_p(load_id_width_p)
+    //   ) vcache (
+    //     .clk_i(clk)
+    //     ,.reset_i(reset_r[1])
+
+    //     ,.link_sif_i(ver_link_lo[S][i])
+    //     ,.link_sif_o(ver_link_li[S][i])
+
+    //     ,.my_x_i((x_cord_width_lp)'(i))
+    //     ,.my_y_i((y_cord_width_lp)'(num_tiles_y_p))
+
+    //     ,.dma_pkt_o(dma_pkt[i])
+    //     ,.dma_pkt_v_o(dma_pkt_v_lo[i])
+    //     ,.dma_pkt_yumi_i(dma_pkt_yumi_li[i])
+
+    //     ,.dma_data_i(dma_data_li[i])
+    //     ,.dma_data_v_i(dma_data_v_li[i])
+    //     ,.dma_data_ready_o(dma_data_ready_lo[i])
+
+    //     ,.dma_data_o(dma_data_lo[i])
+    //     ,.dma_data_v_o(dma_data_v_lo[i])
+    //     ,.dma_data_yumi_i(dma_data_yumi_li[i])
+    //  );
+
+    // end
+
+    // bind bsg_cache vcache_profiler #(
+    //   .data_width_p(data_width_p)
+    // ) vcache_prof (
+    //   .*
+    //   ,.global_ctr_i($root.spmd_testbench.global_ctr)
+    //   ,.print_stat_v_i($root.spmd_testbench.print_stat_v)
+    //   ,.print_stat_tag_i($root.spmd_testbench.print_stat_tag)
+    // );
+
+  end // block: lv1_vcache
+
+   // // configurable memory system
+   // //
+   // memory_system
+   //   #(
+   //     .mem_cfg_p(mem_cfg_p)
+
+   //     ,.bsg_global_x_p(num_tiles_x_p)
+   //     ,.bsg_global_y_p(num_tiles_y_p)
+
+   //     ,.data_width_p(data_width_p)
+   //     ,.addr_width_p(addr_width_p)
+   //     ,.x_cord_width_p(x_cord_width_p)
+   //     ,.y_cord_width_p(y_cord_width_p)
+   //     ,.load_id_width_p(load_id_width_p)
+
+   //     ,.block_size_in_words_p(block_size_in_words_p)
+   //     ,.sets_p(sets_p)
+   //     ,.ways_p(ways_p)
+
+   //     ,.axi_id_width_p(axi_id_width_p)
+   //     ,.axi_addr_width_p(axi_addr_width_p)
+   //     ,.axi_data_width_p(axi_data_width_p)
+   //     ,.axi_burst_len_p(axi_burst_len_p)
+
+   //     )
+   // memsys
+   //   (
+   //    .clk_i(core_clk)
+   //    ,.reset_i(core_reset)
+
+   //    ,.link_sif_i(cache_link_sif_lo)
+   //    ,.link_sif_o(cache_link_sif_li)
+
+   //    ,.axi_awid_o    (m_axi4_manycore_awid)
+   //    ,.axi_awaddr_o  (m_axi4_manycore_awaddr)
+   //    ,.axi_awlen_o   (m_axi4_manycore_awlen)
+   //    ,.axi_awsize_o  (m_axi4_manycore_awsize)
+   //    ,.axi_awburst_o (m_axi4_manycore_awburst)
+   //    ,.axi_awcache_o (m_axi4_manycore_awcache)
+   //    ,.axi_awprot_o  (m_axi4_manycore_awprot)
+   //    ,.axi_awlock_o  (m_axi4_manycore_awlock)
+   //    ,.axi_awvalid_o (m_axi4_manycore_awvalid)
+   //    ,.axi_awready_i (m_axi4_manycore_awready)
+
+   //    ,.axi_wdata_o   (m_axi4_manycore_wdata)
+   //    ,.axi_wstrb_o   (m_axi4_manycore_wstrb)
+   //    ,.axi_wlast_o   (m_axi4_manycore_wlast)
+   //    ,.axi_wvalid_o  (m_axi4_manycore_wvalid)
+   //    ,.axi_wready_i  (m_axi4_manycore_wready)
+
+   //    ,.axi_bid_i     (m_axi4_manycore_bid)
+   //    ,.axi_bresp_i   (m_axi4_manycore_bresp)
+   //    ,.axi_bvalid_i  (m_axi4_manycore_bvalid)
+   //    ,.axi_bready_o  (m_axi4_manycore_bready)
+
+   //    ,.axi_arid_o    (m_axi4_manycore_arid)
+   //    ,.axi_araddr_o  (m_axi4_manycore_araddr)
+   //    ,.axi_arlen_o   (m_axi4_manycore_arlen)
+   //    ,.axi_arsize_o  (m_axi4_manycore_arsize)
+   //    ,.axi_arburst_o (m_axi4_manycore_arburst)
+   //    ,.axi_arcache_o (m_axi4_manycore_arcache)
+   //    ,.axi_arprot_o  (m_axi4_manycore_arprot)
+   //    ,.axi_arlock_o  (m_axi4_manycore_arlock)
+   //    ,.axi_arvalid_o (m_axi4_manycore_arvalid)
+   //    ,.axi_arready_i (m_axi4_manycore_arready)
+
+   //    ,.axi_rid_i     (m_axi4_manycore_rid)
+   //    ,.axi_rdata_i   (m_axi4_manycore_rdata)
+   //    ,.axi_rresp_i   (m_axi4_manycore_rresp)
+   //    ,.axi_rlast_i   (m_axi4_manycore_rlast)
+   //    ,.axi_rvalid_i  (m_axi4_manycore_rvalid)
+   //    ,.axi_rready_o  (m_axi4_manycore_rready)
+   //    );
 
    assign m_axi4_manycore_awregion = 4'b0;
    assign m_axi4_manycore_awqos = 4'b0;
@@ -806,35 +909,36 @@ module cl_manycore
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 
-   if (mem_cfg_p == e_vcache_blocking_axi4_nonsynth_mem) begin
+   // if (mem_cfg_p == e_vcache_blocking_axi4_nonsynth_mem) begin
 
-      bind bsg_cache vcache_profiler 
-        #(
-          .data_width_p(data_width_p)
-          ) 
-      vcache_prof 
-        (
-         .*
-         ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-         ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-         ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
-         );
+   //    bind bsg_cache vcache_profiler
+   //      #(
+   //        .data_width_p(data_width_p)
+   //        )
+   //    vcache_prof
+   //      (
+   //       .*
+   //       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+   //       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+   //       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+   //       );
 
-   end
-   else if (mem_cfg_p == e_infinite_mem) begin
-      bind bsg_nonsynth_mem_infinite infinite_mem_profiler 
-        #(
-          .data_width_p(data_width_p)
-          ,.x_cord_width_p(x_cord_width_p)
-          ,.y_cord_width_p(y_cord_width_p)
-          ) 
-      infty_mem_prof 
-        (.*
-         ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-         ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-         ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
-         );
-   end
+   // end
+   // else if (mem_cfg_p == e_infinite_mem) begin
+
+   //    bind bsg_nonsynth_mem_infinite infinite_mem_profiler
+   //      #(
+   //        .data_width_p(data_width_p)
+   //        ,.x_cord_width_p(x_cord_width_p)
+   //        ,.y_cord_width_p(y_cord_width_p)
+   //        )
+   //    infty_mem_prof
+   //      (.*
+         // ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+         // ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+         // ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+   //       );
+   // end
 
    // synopsys translate on
 
