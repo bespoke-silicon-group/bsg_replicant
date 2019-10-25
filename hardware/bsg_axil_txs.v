@@ -61,10 +61,10 @@ module bsg_axil_txs
   // Although the awvalid and wvalid can be asserted at the same cycle,
   // we assume they come in series events, for simplicity.
   typedef enum bit [1:0] {
-    E_WR_IDLE = 2'd0,
-    E_WR_ADDR = 2'd1,
-    E_WR_DATA = 2'd2,
-    E_WR_RESP = 2'd3
+    E_WR_IDLE,
+    E_WR_ADDR,
+    E_WR_DATA,
+    E_WR_RESP
   } wr_state_e;
 
   wr_state_e wr_state_r, wr_state_n;
