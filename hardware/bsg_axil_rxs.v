@@ -72,7 +72,7 @@ module bsg_axil_rxs
       end
 
       E_RD_ADDR : begin  // the rd address is flopped
-        rd_state_n = E_RD_DATA; 
+        rd_state_n = E_RD_DATA;
       end
 
       E_RD_DATA : begin
@@ -148,7 +148,7 @@ module bsg_axil_rxs
   // select the read data
   if (num_fifos_p == 1) begin : one_fifo
     assign rd_fifo_idx = fifo_addr_v;
-    assign rdata_o = rom_addr_hit ? mm2s_regs_i
+    assign rdata_o = rom_addr_hit ? mcl_data_i
                                 : read_fifo ? rxs_i
                                             : mm2s_regs_i;
   end
