@@ -90,7 +90,6 @@ include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 VINCLUDES += $(HARDWARE_PATH)
 
 VHEADERS += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_mem_cfg_pkg.v
-#VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_axi_mem.v
 
 VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_configuration.v
 VSOURCES += $(HARDWARE_PATH)/cl_manycore_pkg.v
