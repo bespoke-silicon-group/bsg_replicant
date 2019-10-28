@@ -354,7 +354,7 @@ module cl_manycore
    bsg_manycore_link_sif_s async_link_sif_lo;
 
    bsg_manycore_link_sif_async_buffer #(
-					.addr_width_p(addr_width_p)
+                                        .addr_width_p(addr_width_p)
                                         ,.data_width_p(data_width_p)
                                         ,.x_cord_width_p(x_cord_width_p)
                                         ,.y_cord_width_p(y_cord_width_p)
@@ -449,10 +449,10 @@ module cl_manycore
       ) vcache (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
-	// memory systems link from bsg_manycore_wrapper
+        // memory systems link from bsg_manycore_wrapper
         ,.link_sif_i(cache_link_sif_lo[i])
         ,.link_sif_o(cache_link_sif_li[i])
-	// coordinates for memory system are determined by bsg_manycore_wrapper
+        // coordinates for memory system are determined by bsg_manycore_wrapper
         ,.my_x_i(cache_x_lo[i])
         ,.my_y_i(cache_y_lo[i])
 
@@ -601,53 +601,53 @@ module cl_manycore
    // Attach cache to output DRAM
 
    // AXI Address Write signals
-   assign m_axi4_manycore_awid		= lv2_axi4.axi_awid;
-   assign m_axi4_manycore_awaddr	= lv2_axi4.axi_awaddr;
-   assign m_axi4_manycore_awvalid	= lv2_axi4.axi_awvalid;
-   assign lv2_axi4.axi_awready		= m_axi4_manycore_awready;
-   assign m_axi4_manycore_awlen		=  lv2_axi4.axi_awlen;
-   assign m_axi4_manycore_awsize	= lv2_axi4.axi_awsize;
-   assign m_axi4_manycore_awburst	= lv2_axi4.axi_awburst;
-   assign m_axi4_manycore_awcache	= lv2_axi4.axi_awcache;
-   assign m_axi4_manycore_awprot	= lv2_axi4.axi_awprot;
-   assign m_axi4_manycore_awlock	= lv2_axi4.axi_awlock;
-   assign m_axi4_manycore_awregion	= 4'b0;
-   assign m_axi4_manycore_awqos		= 4'b0;
+   assign m_axi4_manycore_awid          = lv2_axi4.axi_awid;
+   assign m_axi4_manycore_awaddr        = lv2_axi4.axi_awaddr;
+   assign m_axi4_manycore_awvalid       = lv2_axi4.axi_awvalid;
+   assign lv2_axi4.axi_awready          = m_axi4_manycore_awready;
+   assign m_axi4_manycore_awlen         =  lv2_axi4.axi_awlen;
+   assign m_axi4_manycore_awsize        = lv2_axi4.axi_awsize;
+   assign m_axi4_manycore_awburst       = lv2_axi4.axi_awburst;
+   assign m_axi4_manycore_awcache       = lv2_axi4.axi_awcache;
+   assign m_axi4_manycore_awprot        = lv2_axi4.axi_awprot;
+   assign m_axi4_manycore_awlock        = lv2_axi4.axi_awlock;
+   assign m_axi4_manycore_awregion      = 4'b0;
+   assign m_axi4_manycore_awqos         = 4'b0;
 
    // AXI Write signals
-   assign m_axi4_manycore_wdata		= lv2_axi4.axi_wdata;
-   assign m_axi4_manycore_wstrb		= lv2_axi4.axi_wstrb;
-   assign m_axi4_manycore_wlast		= lv2_axi4.axi_wlast;
-   assign m_axi4_manycore_wvalid	= lv2_axi4.axi_wvalid;
-   assign lv2_axi4.axi_wready		= m_axi4_manycore_wready;
+   assign m_axi4_manycore_wdata         = lv2_axi4.axi_wdata;
+   assign m_axi4_manycore_wstrb         = lv2_axi4.axi_wstrb;
+   assign m_axi4_manycore_wlast         = lv2_axi4.axi_wlast;
+   assign m_axi4_manycore_wvalid        = lv2_axi4.axi_wvalid;
+   assign lv2_axi4.axi_wready           = m_axi4_manycore_wready;
 
    // AXI Burst signals
-   assign lv2_axi4.axi_bid		= m_axi4_manycore_bid;
-   assign lv2_axi4.axi_bresp		= m_axi4_manycore_bresp;
-   assign lv2_axi4.axi_bvalid		= m_axi4_manycore_bvalid;
-   assign m_axi4_manycore_bready	= lv2_axi4.axi_bready;
+   assign lv2_axi4.axi_bid              = m_axi4_manycore_bid;
+   assign lv2_axi4.axi_bresp            = m_axi4_manycore_bresp;
+   assign lv2_axi4.axi_bvalid           = m_axi4_manycore_bvalid;
+   assign m_axi4_manycore_bready        = lv2_axi4.axi_bready;
 
    // AXI Address Read signals
-   assign m_axi4_manycore_arid		= lv2_axi4.axi_arid;
-   assign m_axi4_manycore_araddr	= lv2_axi4.axi_araddr;
-   assign m_axi4_manycore_arlen		= lv2_axi4.axi_arlen;
-   assign m_axi4_manycore_arsize	= lv2_axi4.axi_arsize;
-   assign m_axi4_manycore_arburst	= lv2_axi4.axi_arburst;
-   assign m_axi4_manycore_arcache	= lv2_axi4.axi_arcache;
-   assign m_axi4_manycore_arprot	= lv2_axi4.axi_arprot;
-   assign m_axi4_manycore_arlock	= lv2_axi4.axi_arlock;
-   assign m_axi4_manycore_arvalid	= lv2_axi4.axi_arvalid;
-   assign lv2_axi4.axi_arready		= m_axi4_manycore_arready;
-   assign m_axi4_manycore_arregion	= 4'b0;
-   assign m_axi4_manycore_arqos		= 4'b0;
+   assign m_axi4_manycore_arid          = lv2_axi4.axi_arid;
+   assign m_axi4_manycore_araddr        = lv2_axi4.axi_araddr;
+   assign m_axi4_manycore_arlen         = lv2_axi4.axi_arlen;
+   assign m_axi4_manycore_arsize        = lv2_axi4.axi_arsize;
+   assign m_axi4_manycore_arburst       = lv2_axi4.axi_arburst;
+   assign m_axi4_manycore_arcache       = lv2_axi4.axi_arcache;
+   assign m_axi4_manycore_arprot        = lv2_axi4.axi_arprot;
+   assign m_axi4_manycore_arlock        = lv2_axi4.axi_arlock;
+   assign m_axi4_manycore_arvalid       = lv2_axi4.axi_arvalid;
+   assign lv2_axi4.axi_arready          = m_axi4_manycore_arready;
+   assign m_axi4_manycore_arregion      = 4'b0;
+   assign m_axi4_manycore_arqos         = 4'b0;
 
    // AXI Read signals
-   assign lv2_axi4.axi_rid		= m_axi4_manycore_rid;
-   assign lv2_axi4.axi_rdata		= m_axi4_manycore_rdata;
-   assign lv2_axi4.axi_rresp		= m_axi4_manycore_rresp;
-   assign lv2_axi4.axi_rlast		= m_axi4_manycore_rlast;
-   assign lv2_axi4.axi_rvalid		= m_axi4_manycore_rvalid;
-   assign m_axi4_manycore_rready	= lv2_axi4.axi_rready;
+   assign lv2_axi4.axi_rid              = m_axi4_manycore_rid;
+   assign lv2_axi4.axi_rdata            = m_axi4_manycore_rdata;
+   assign lv2_axi4.axi_rresp            = m_axi4_manycore_rresp;
+   assign lv2_axi4.axi_rlast            = m_axi4_manycore_rlast;
+   assign lv2_axi4.axi_rvalid           = m_axi4_manycore_rvalid;
+   assign m_axi4_manycore_rready        = lv2_axi4.axi_rready;
   end // if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram)
 
 
