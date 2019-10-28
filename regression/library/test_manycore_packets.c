@@ -55,52 +55,52 @@ void response_packet_to_array(/*const*/ hb_mc_response_packet_t *pack, /*out*/ u
 }
 
 int test_manycore_packets() {
-	hb_mc_manycore_t manycore = {0}, *mc = &manycore;
-	int err;
+        hb_mc_manycore_t manycore = {0}, *mc = &manycore;
+        int err;
 
-	/*****************************/
-	/* Initializing the manycore */
-	/*****************************/
-	err = hb_mc_manycore_init(mc, "test_manycore_packets", 0);
-	if (err != HB_MC_SUCCESS) {
-		bsg_pr_err(BSG_RED("failed to initialize manycore: %s\n"), hb_mc_strerror(err));
-		return err;
-	}
+        /*****************************/
+        /* Initializing the manycore */
+        /*****************************/
+        err = hb_mc_manycore_init(mc, "test_manycore_packets", 0);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err(BSG_RED("failed to initialize manycore: %s\n"), hb_mc_strerror(err));
+                return err;
+        }
 
-	/*************************/
-	/* Seeding the test data */
-	/*************************/
-	srand(time(0));
-	
-	hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(mc);
-	uint32_t host_x = hb_mc_coordinate_get_x(host);
-	uint32_t host_y = hb_mc_coordinate_get_y(host);
+        /*************************/
+        /* Seeding the test data */
+        /*************************/
+        srand(time(0));
+        
+        hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(mc);
+        uint32_t host_x = hb_mc_coordinate_get_x(host);
+        uint32_t host_y = hb_mc_coordinate_get_y(host);
 
-	uint8_t target_x = 0;
-	uint8_t target_y = 1;
-	uint32_t addr = DMEM_BASE >> 2; // EPA
-	uint32_t data  = rand();
+        uint8_t target_x = 0;
+        uint8_t target_y = 1;
+        uint32_t addr = DMEM_BASE >> 2; // EPA
+        uint32_t data  = rand();
 
-	bsg_pr_test_info("Address: 0x%08" PRIx32 ", Expected data: %08" PRIx32 "\n", addr, data);
+        bsg_pr_test_info("Address: 0x%08" PRIx32 ", Expected data: %08" PRIx32 "\n", addr, data);
 
-	hb_mc_request_packet_t req1, req2;
-	hb_mc_response_packet_t res;
+        hb_mc_request_packet_t req1, req2;
+        hb_mc_response_packet_t res;
 
-	const char *req_desc[] = {
+        const char *req_desc[] = {
                 "Destination X", "Destination Y",
                      "Source X",      "Source Y",
                          "Mask",        "Opcode",
                       "Address",          "Data",
         };
 
-	uint32_t req_expected[] = {
-		target_x,                       target_y,
-		host_x,                         host_y,
+        uint32_t req_expected[] = {
+                target_x,                       target_y,
+                host_x,                         host_y,
                 HB_MC_PACKET_REQUEST_MASK_WORD, HB_MC_PACKET_OP_REMOTE_STORE,
-		addr,                           data,
+                addr,                           data,
         };
 
-	const char *res_desc[] = {
+        const char *res_desc[] = {
                 "Destination X", "Destination Y",
                        "Opcode",          "Data",
         };
@@ -110,12 +110,12 @@ int test_manycore_packets() {
                 HB_MC_PACKET_OP_REMOTE_STORE,   data,
         };
 
-	uint32_t actual[8];
+        uint32_t actual[8];
 
-	/**************************/
-	/* Test packet formatting */
-	/**************************/
-	bsg_pr_test_info("Manually formatting packet\n");
+        /**************************/
+        /* Test packet formatting */
+        /**************************/
+        bsg_pr_test_info("Manually formatting packet\n");
         hb_mc_request_packet_set_x_dst(&req1, target_x);
         hb_mc_request_packet_set_y_dst(&req1, target_y);
         hb_mc_request_packet_set_x_src(&req1, host_x);
@@ -125,86 +125,86 @@ int test_manycore_packets() {
         hb_mc_request_packet_set_op   (&req1, HB_MC_PACKET_OP_REMOTE_STORE);
         hb_mc_request_packet_set_addr (&req1, addr);
 
-	request_packet_to_array(&req1, actual);
+        request_packet_to_array(&req1, actual);
         if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
 
-	/************************************/
-	/* Test transmitting a store packet */
-	/************************************/
-	bsg_pr_test_info("Sending store packet to tile (%d, %d)\n", target_x, target_y);
-	err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);
-	if (err != HB_MC_SUCCESS) {
-		bsg_pr_test_info(BSG_RED("Failed to write to FIFO (%s)") ": %s\n",
-				 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
-				 hb_mc_strerror(err));
-		return HB_MC_FAIL;
-	}
-	
-        bsg_pr_test_info(BSG_GREEN("Succesfully Wrote packet to FIFO (%s)") "\n",
-			 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE));
-
-	/************************************************************/
-	/* Test transmitting a load packet and receiving the result */
-	/************************************************************/
-	hb_mc_request_packet_set_op(&req1, HB_MC_PACKET_OP_REMOTE_LOAD);
-        bsg_pr_test_info("Testing reading packet\n");
-	err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);	
-        if(err != HB_MC_SUCCESS) {
+        /************************************/
+        /* Test transmitting a store packet */
+        /************************************/
+        bsg_pr_test_info("Sending store packet to tile (%d, %d)\n", target_x, target_y);
+        err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);
+        if (err != HB_MC_SUCCESS) {
                 bsg_pr_test_info(BSG_RED("Failed to write to FIFO (%s)") ": %s\n",
-				 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
-				 hb_mc_strerror(err));
+                                 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
+                                 hb_mc_strerror(err));
                 return HB_MC_FAIL;
         }
-	
-        bsg_pr_test_info("Reading\n");
-	err = hb_mc_manycore_packet_rx(mc, (hb_mc_packet_t*)&res, HB_MC_MMIO_FIFO_TO_DEVICE, -1);
-	if (err != HB_MC_SUCCESS) {
-		bsg_pr_test_info(BSG_RED("Failed to read from FIFO (%s)") ": %s\n",
-				 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
-				 hb_mc_strerror(err));
-		return HB_MC_FAIL;
-	}
-	bsg_pr_test_info("Comparing to expected read packet:\n");
+        
+        bsg_pr_test_info(BSG_GREEN("Succesfully Wrote packet to FIFO (%s)") "\n",
+                         hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE));
 
-	response_packet_to_array(&res, actual);
+        /************************************************************/
+        /* Test transmitting a load packet and receiving the result */
+        /************************************************************/
+        hb_mc_request_packet_set_op(&req1, HB_MC_PACKET_OP_REMOTE_LOAD);
+        bsg_pr_test_info("Testing reading packet\n");
+        err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);      
+        if(err != HB_MC_SUCCESS) {
+                bsg_pr_test_info(BSG_RED("Failed to write to FIFO (%s)") ": %s\n",
+                                 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
+                                 hb_mc_strerror(err));
+                return HB_MC_FAIL;
+        }
+        
+        bsg_pr_test_info("Reading\n");
+        err = hb_mc_manycore_packet_rx(mc, (hb_mc_packet_t*)&res, HB_MC_MMIO_FIFO_TO_DEVICE, -1);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_test_info(BSG_RED("Failed to read from FIFO (%s)") ": %s\n",
+                                 hb_mc_direction_to_string(HB_MC_MMIO_FIFO_TO_DEVICE),
+                                 hb_mc_strerror(err));
+                return HB_MC_FAIL;
+        }
+        bsg_pr_test_info("Comparing to expected read packet:\n");
+
+        response_packet_to_array(&res, actual);
         if(compare_results(4, res_desc, res_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
 
-	/*******/
-	/* END */
-	/*******/
-	hb_mc_manycore_exit(mc);
-	return HB_MC_SUCCESS;	
+        /*******/
+        /* END */
+        /*******/
+        hb_mc_manycore_exit(mc);
+        return HB_MC_SUCCESS;   
 }
 
 #ifdef COSIM
 void cosim_main(uint32_t *exit_code, char * args) {
-	// We aren't passed command line arguments directly so we parse them
-	// from *args. args is a string from VCS - to pass a string of arguments
-	// to args, pass c_args to VCS as follows: +c_args="<space separated
-	// list of args>"
-	int argc = get_argc(args);
-	char *argv[argc];
-	get_argv(args, argc, argv);
+        // We aren't passed command line arguments directly so we parse them
+        // from *args. args is a string from VCS - to pass a string of arguments
+        // to args, pass c_args to VCS as follows: +c_args="<space separated
+        // list of args>"
+        int argc = get_argc(args);
+        char *argv[argc];
+        get_argv(args, argc, argv);
 
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
-	bsg_pr_test_info("%s Regression Test (COSIMULATION)\n", basename(__FILE__));
-	int rc = test_manycore_packets();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+        bsg_pr_test_info("%s Regression Test (COSIMULATION)\n", basename(__FILE__));
+        int rc = test_manycore_packets();
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("%s Regression Test (F1)\n", basename(__FILE__));
-	int rc = test_manycore_packets();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("%s Regression Test (F1)\n", basename(__FILE__));
+        int rc = test_manycore_packets();
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
 

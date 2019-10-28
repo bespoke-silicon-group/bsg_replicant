@@ -77,7 +77,7 @@ int test_loader (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-	bsg_pr_test_info("Reading from file: %s\n", bin_path);
+        bsg_pr_test_info("Reading from file: %s\n", bin_path);
 
         // read in the program data from the file system
         err = read_program_file(bin_path, &program_data, &program_size);

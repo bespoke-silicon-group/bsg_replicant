@@ -36,194 +36,198 @@
 
 #include "test_float_vec_log.h"
 
-#define TEST_NAME "test_float_vec_log"
 #define ALLOC_NAME "default_allocator"
 
 void host_float_vec_log (float *A, float *B, int N) { 
-	for (int i = 0; i < N; i ++) { 
-		B[i] = logf(A[i]);
-	}
-	return;
+        for (int i = 0; i < N; i ++) { 
+                B[i] = logf(A[i]);
+        }
+        return;
 }
 
 
-int kernel_float_vec_log () {
-	bsg_pr_test_info("Running the CUDA Floating Point Vector Logarithmic "
-                         "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
-	int rc;
+int kernel_float_vec_log (int argc, char **argv) {
+        int rc;
+        char *bin_path, *test_name;
+        struct arguments_path args = {NULL, NULL};
 
-	srand(time(NULL)); 
+        argp_parse (&argp_path, argc, argv, 0, 0, &args);
+        bin_path = args.path;
+        test_name = args.name;
+
+        bsg_pr_test_info("Running the CUDA Floating Point Vector Logarithmic "
+                         "Kernel on a 1x1 grid of 2x2 tile group.\n\n");
+
+        srand(time(NULL)); 
 
 
         /**********************************************************************/
         /* Define path to binary.                                             */
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
-	hb_mc_device_t device;
-	rc = hb_mc_device_init(&device, TEST_NAME, 0);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to initialize device.\n");
-		return rc;
-	}
+        hb_mc_device_t device;
+        rc = hb_mc_device_init(&device, test_name, 0);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to initialize device.\n");
+                return rc;
+        }
 
 
-	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/float_vec_log/main.riscv";
-	rc = hb_mc_device_program_init(&device, elf, ALLOC_NAME, 0);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to initialize program.\n");
-		return rc;
-	}
+        rc = hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to initialize program.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
-	/* Allocate memory on the device for A, B and C.                      */
+        /* Allocate memory on the device for A, B and C.                      */
         /**********************************************************************/
-	uint32_t N = 1024;
+        uint32_t N = 1024;
 
-	hb_mc_eva_t A_device, B_device; 
-	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to allocate memory on device.\n");
-		return rc;
-	}
+        hb_mc_eva_t A_device, B_device; 
+        rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to allocate memory on device.\n");
+                return rc;
+        }
 
 
-	rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B_device);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to allocate memory on device.\n");
-		return rc;
-	}
+        rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B_device);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to allocate memory on device.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
         /* Allocate memory on the host for A & B                              */
         /* and initialize with random values.                                 */
-	/* Considering the nature of logarithmic for extremely small numbers, */
-	/* We add 1e-15 to all numbers to ensure all numbers are large enough.*/
+        /* Considering the nature of logarithmic for extremely small numbers, */
+        /* We add 1e-15 to all numbers to ensure all numbers are large enough.*/
         /**********************************************************************/
-	float A_host[N]; 
-	for (int i = 0; i < N; i++) { 
-		A_host[i] = hb_mc_generate_float_rand_positive() + 1e-15;
-	}
-
-
-        /**********************************************************************/
-	/* Copy A from host onto device DRAM.                             */
-        /**********************************************************************/
-	void *dst = (void *) ((intptr_t) A_device);
-	void *src = (void *) &A_host[0];
-	rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);	
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to copy memory to device.\n");
-		return rc;
-	}
+        float A_host[N]; 
+        for (int i = 0; i < N; i++) { 
+                A_host[i] = hb_mc_generate_float_rand_positive() + 1e-15;
+        }
 
 
         /**********************************************************************/
-	/* Initialize values in B_device to 0.                                */
+        /* Copy A from host onto device DRAM.                             */
         /**********************************************************************/
-	rc = hb_mc_device_memset(&device, &B_device, 0, N * sizeof(uint32_t));
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to set memory on device.\n");
-		return rc;
-	} 
+        void *dst = (void *) ((intptr_t) A_device);
+        void *src = (void *) &A_host[0];
+        rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);     
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to copy memory to device.\n");
+                return rc;
+        }
+
+
+        /**********************************************************************/
+        /* Initialize values in B_device to 0.                                */
+        /**********************************************************************/
+        rc = hb_mc_device_memset(&device, &B_device, 0, N * sizeof(uint32_t));
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to set memory on device.\n");
+                return rc;
+        } 
 
 
 
         /**********************************************************************/
-	/* Define block_size_x/y: amount of work for each tile group          */
-	/* Define tg_dim_x/y: number of tiles in each tile group              */
-	/* Calculate grid_dim_x/y: number of                                  */
+        /* Define block_size_x/y: amount of work for each tile group          */
+        /* Define tg_dim_x/y: number of tiles in each tile group              */
+        /* Calculate grid_dim_x/y: number of                                  */
         /* tile groups needed based on block_size_x/y                         */
         /**********************************************************************/
-	uint32_t block_size_x = N;
+        uint32_t block_size_x = N;
 
-	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2}; 
+        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2}; 
 
-	hb_mc_dimension_t grid_dim = { .x = 1, .y = 1}; 
+        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1}; 
 
 
         /**********************************************************************/
-	/* Prepare list of input arguments for kernel.                        */
+        /* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-	int argv[4] = {A_device, B_device, N, block_size_x};
+        int cuda_argv[4] = {A_device, B_device, N, block_size_x};
 
-	
+        
         /**********************************************************************/
-	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
+        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_log", 4, argv);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to initialize grid.\n");
-		return rc;
-	}
+        rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_float_vec_log", 4, cuda_argv);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to initialize grid.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
-	/* Launch and execute all tile groups on device and wait for finish.  */ 
+        /* Launch and execute all tile groups on device and wait for finish.  */ 
         /**********************************************************************/
-	rc = hb_mc_device_tile_groups_execute(&device);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to execute tile groups.\n");
-		return rc;
-	}
+        rc = hb_mc_device_tile_groups_execute(&device);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to execute tile groups.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
-	/* Copy result matrix back from device DRAM into host memory.         */
+        /* Copy result matrix back from device DRAM into host memory.         */
         /**********************************************************************/
-	float B_host[N];
-	src = (void *) ((intptr_t) B_device);
-	dst = (void *) &B_host[0];
-	rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to copy memory from device.\n");
-		return rc;
-	}
+        float B_host[N];
+        src = (void *) ((intptr_t) B_device);
+        dst = (void *) &B_host[0];
+        rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to copy memory from device.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
         /* Freeze the tiles and memory manager cleanup.                       */
         /**********************************************************************/
-	rc = hb_mc_device_finish(&device); 
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to de-initialize device.\n");
-		return rc;
-	}
+        rc = hb_mc_device_finish(&device); 
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to de-initialize device.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
-	/* Calculate the expected result using host code and compare.         */ 
+        /* Calculate the expected result using host code and compare.         */ 
         /**********************************************************************/
-	float B_expected[N]; 
-	host_float_vec_log (A_host, B_expected, N); 
+        float B_expected[N]; 
+        host_float_vec_log (A_host, B_expected, N); 
 
-	float max_ferror = 0; 
-	float ferror = 0;
+        float max_ferror = 0; 
+        float ferror = 0;
 
-	int mismatch = 0; 
-	for (int i = 0; i < N; i++) {
-		ferror = hb_mc_calculate_float_error(B_expected[i], B_host[i]);
-		max_ferror = fmax ( max_ferror, ferror); 	
-		if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
-			bsg_pr_err(BSG_RED("Mismatch: ") "Input: %.40f - B[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
+        int mismatch = 0; 
+        for (int i = 0; i < N; i++) {
+                ferror = hb_mc_calculate_float_error(B_expected[i], B_host[i]);
+                max_ferror = fmax ( max_ferror, ferror);        
+                if ( ferror > MAX_FLOAT_ERROR_TOLERANCE ) { 
+                        bsg_pr_err(BSG_RED("Mismatch: ") "Input: %.40f - B[%d]: %.32f\tExpected: %.32f\tRelative error: %.32f\n",
                                            A_host[i],
                                            i,
                                            B_host[i],
                                            B_expected[i],
                                            ferror);
-			mismatch = 1;
-		}
-	} 
+                        mismatch = 1;
+                }
+        } 
 
-	bsg_pr_test_info ("MAX relative FP error: %e\n", max_ferror); 
+        bsg_pr_test_info ("MAX relative FP error: %e\n", max_ferror); 
 
-	if (mismatch) { 
-		return HB_MC_FAIL;
-	}
-	return HB_MC_SUCCESS;
+        if (mismatch) { 
+                return HB_MC_FAIL;
+        }
+        return HB_MC_SUCCESS;
 }
 
 #ifdef COSIM
@@ -237,22 +241,22 @@ void cosim_main(uint32_t *exit_code, char * args) {
         get_argv(args, argc, argv);
 
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_float_vec_log Regression Test (COSIMULATION)\n");
-	int rc = kernel_float_vec_log();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+        bsg_pr_test_info("test_float_vec_log Regression Test (COSIMULATION)\n");
+        int rc = kernel_float_vec_log(argc, argv);
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_float_vec_log Regression Test (F1)\n");
-	int rc = kernel_float_vec_log();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("test_float_vec_log Regression Test (F1)\n");
+        int rc = kernel_float_vec_log(argc, argv);
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
 

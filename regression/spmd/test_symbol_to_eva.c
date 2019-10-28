@@ -37,8 +37,6 @@
 
 #include "test_symbol_to_eva.h"
 
-#define TEST_NAME "test_symbol_to_eva"
-
 #define TEST_NAME_FMT "18s"
 
 #define array_size(x)                           \
@@ -46,42 +44,39 @@
 
 static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
 {
-	struct stat st;
-	FILE *f;
-	int r;
-	unsigned char *data;
+        struct stat st;
+        FILE *f;
+        int r;
+        unsigned char *data;
 
-	if ((r = stat(file_name, &st)) != 0) {
-		bsg_pr_err("could not stat '%s': %m\n", file_name);
-		return HB_MC_FAIL;
-	}
+        if ((r = stat(file_name, &st)) != 0) {
+                bsg_pr_err("could not stat '%s': %m\n", file_name);
+                return HB_MC_FAIL;
+        }
 
-	if (!(f = fopen(file_name, "rb"))) {
-		bsg_pr_err("failed to open '%s': %m\n", file_name);
-		return HB_MC_FAIL;
-	}
+        if (!(f = fopen(file_name, "rb"))) {
+                bsg_pr_err("failed to open '%s': %m\n", file_name);
+                return HB_MC_FAIL;
+        }
 
-	if (!(data = (unsigned char *) malloc(st.st_size))) {
-		bsg_pr_err("failed to read '%s': %m\n", file_name);
-		fclose(f);
-		return HB_MC_FAIL;
-	}
+        if (!(data = (unsigned char *) malloc(st.st_size))) {
+                bsg_pr_err("failed to read '%s': %m\n", file_name);
+                fclose(f);
+                return HB_MC_FAIL;
+        }
 
-	if ((r = fread(data, st.st_size, 1, f)) != 1) {
-		bsg_pr_err("failed to read '%s': %m\n", file_name);
-		fclose(f);
-		free(data);
-		return HB_MC_FAIL;
-	}
+        if ((r = fread(data, st.st_size, 1, f)) != 1) {
+                bsg_pr_err("failed to read '%s': %m\n", file_name);
+                fclose(f);
+                free(data);
+                return HB_MC_FAIL;
+        }
 
-	fclose(f);
-	*file_data = data;
-	*file_size = st.st_size;
-	return HB_MC_SUCCESS;
+        fclose(f);
+        *file_data = data;
+        *file_size = st.st_size;
+        return HB_MC_SUCCESS;
 }
-
-static const char program_file_name [] = BSG_STRINGIFY(BSG_MANYCORE_DIR)
-        "/software/spmd/symbol_to_eva/main.riscv";
 
 struct test_should_succeed {
         const char *test_name;
@@ -118,27 +113,33 @@ static struct test_should_fail fail_tests [] = {
         { "bad-eva",             FTI_BAD_EVA, "_bsg_data_start_addr",      HB_MC_INVALID },
 };
 
-int test_symbol_to_eva () {
-	unsigned char *program_data;
-	size_t program_size;
-	int err, r = HB_MC_SUCCESS;
+int test_symbol_to_eva (int argc, char **argv) {
+        unsigned char *program_data;
+        size_t program_size;
+        int err, r = HB_MC_SUCCESS;
+        char *bin_path, *test_name;
+        struct arguments_path args = {NULL, NULL};
 
-	// read in the program data from the file system
-	err = read_program_file(program_file_name, &program_data, &program_size);
-	if (err != HB_MC_SUCCESS)
-		return err;
+        argp_parse (&argp_path, argc, argv, 0, 0, &args);
+        bin_path = args.path;
+        test_name = args.name;
+
+        // read in the program data from the file system
+        err = read_program_file(bin_path, &program_data, &program_size);
+        if (err != HB_MC_SUCCESS)
+                return err;
 
         /* now that the program has been loaded... */
         /* for each test that should succeed */
         for (int i = 0; i < array_size(success_tests); i++) {
                 struct test_should_succeed *test = &success_tests[i];
-                bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": ...\n", TEST_NAME, test->test_name);
+                bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": ...\n", test_name, test->test_name);
                 hb_mc_eva_t eva;
                 err = hb_mc_loader_symbol_to_eva(program_data, program_size, test->symbol,
                                                  &eva);
                 if (err != HB_MC_SUCCESS) {
                         bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": symbol '%s': " BSG_RED("FAILED") ": %s\n",
-                                         TEST_NAME,
+                                         test_name,
                                          test->test_name,
                                          test->symbol,
                                          hb_mc_strerror(err));
@@ -147,7 +148,7 @@ int test_symbol_to_eva () {
                         bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": symbol '%s': " BSG_RED("FAILED") ": "
                                          "expected 0x%08" PRIx32 ", "
                                          "got 0x%08" PRIx32 "\n",
-                                         TEST_NAME,
+                                         test_name,
                                          test->test_name,
                                          test->symbol,
                                          test->expected_eva,
@@ -155,7 +156,7 @@ int test_symbol_to_eva () {
                         r = HB_MC_FAIL;
                 } else { // success!
                         bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": " BSG_GREEN("PASSED") "\n",
-                                         TEST_NAME, test->test_name);
+                                         test_name, test->test_name);
                 }
         }
 
@@ -166,7 +167,7 @@ int test_symbol_to_eva () {
                 unsigned char *buffer;
                 size_t sz;
 
-                bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": ...\n", TEST_NAME, test->test_name);
+                bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": ...\n", test_name, test->test_name);
 
                 /* set inputs */
                 if (test->input & FTI_BAD_BUFFER) {
@@ -193,17 +194,17 @@ int test_symbol_to_eva () {
                         bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": " BSG_RED("FAILED") ": "
                                          "expected %s, "
                                          "got %s\n",
-                                         TEST_NAME, test->test_name,
+                                         test_name, test->test_name,
                                          hb_mc_strerror(test->expected_result),
                                          hb_mc_strerror(err));
                         r = HB_MC_FAIL;
                 } else {
                         bsg_pr_test_info("%s: test %" TEST_NAME_FMT ": " BSG_GREEN("PASSED") "\n",
-                                         TEST_NAME, test->test_name);
+                                         test_name, test->test_name);
                 }
         }
 
-	return r;
+        return r;
 }
 
 
@@ -218,22 +219,22 @@ void cosim_main(uint32_t *exit_code, char * args) {
         get_argv(args, argc, argv);
 
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
-	bsg_pr_test_info(TEST_NAME " Regression Test (COSIMULATION)\n");
-	int rc = test_symbol_to_eva();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+        bsg_pr_test_info("test_symbol_to_eva Regression Test (COSIMULATION)\n");
+        int rc = test_symbol_to_eva(argc, argv);
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info(TEST_NAME " Regression Test (F1)\n");
-	int rc = test_symbol_to_eva();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("test_symbol_to_eva Regression Test (F1)\n");
+        int rc = test_symbol_to_eva(argc, argv);
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
 

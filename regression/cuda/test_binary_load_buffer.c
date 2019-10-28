@@ -38,108 +38,111 @@
 
 #include "test_binary_load_buffer.h"
 
-#define TEST_NAME "test_binary_load_buffer"
 #define ALLOC_NAME "default_allocator"
 
 
-int kernel_binary_load_buffer() {
-	bsg_pr_test_info("Running the CUDA Empty Kernel using a pre-loaded "
-                         "binary buffer on a 1x1 grid of 2x2 tile group.\n\n");
-	int rc;
+int kernel_binary_load_buffer(int argc, char **argv) {
+        int rc;
+        char *bin_path, *test_name;
+        struct arguments_path args = {NULL, NULL};
 
-	srand(time); 
+        argp_parse (&argp_path, argc, argv, 0, 0, &args);
+        bin_path = args.path;
+        test_name = args.name;
+
+        bsg_pr_test_info("Running the CUDA Empty Kernel using a pre-loaded "
+                         "binary buffer on a 1x1 grid of 2x2 tile group.\n\n");
+
+        srand(time); 
 
 
         /**********************************************************************/
         /* Define path to binary.                                             */
         /* Initialize device, load binary and unfreeze tiles.                 */
-	/* In this test, we use hb_mc_program_init_binary instead of          */
-	/* hb_mc_program_init, meaning the binary is already pre-loaded into a*/
-	/* buffer and passed into the program_init function isntead of passing*/
-	/* a address to the binary.                                           */
+        /* In this test, we use hb_mc_program_init_binary instead of          */
+        /* hb_mc_program_init, meaning the binary is already pre-loaded into a*/
+        /* buffer and passed into the program_init function isntead of passing*/
+        /* a address to the binary.                                           */
         /**********************************************************************/
-	hb_mc_device_t device;
-	rc = hb_mc_device_init(&device, TEST_NAME, 0);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to initialize device.\n");
-		return rc;
-	}
+        hb_mc_device_t device;
+        rc = hb_mc_device_init(&device, test_name, 0);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to initialize device.\n");
+                return rc;
+        }
+
+        unsigned char* bin_data;
+        size_t bin_size;
+
+        rc = hb_mc_loader_read_program_file (bin_path, &bin_data, &bin_size);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err ("%s: failed to read binary file.\n", __func__); 
+                return rc;
+        }
 
 
-	char* elf = BSG_STRINGIFY(BSG_MANYCORE_DIR) "/software/spmd/bsg_cuda_lite_runtime"
-                                                    "/binary_load_buffer/main.riscv";
-	unsigned char* bin_data;
-	size_t bin_size;
-
-	rc = hb_mc_loader_read_program_file (elf, &bin_data, &bin_size);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err ("%s: failed to read binary file.\n", __func__); 
-		return rc;
-	}
-
-
-	rc = hb_mc_device_program_init_binary (&device,
-                                               TEST_NAME, 
+        rc = hb_mc_device_program_init_binary (&device,
+                                               test_name, 
                                                bin_data,
                                                bin_size, 
                                                ALLOC_NAME,
                                                0); 
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err ("%s: failed to initialize progarm.\n", __func__); 
-		return rc;
-	}
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err ("%s: failed to initialize progarm.\n", __func__); 
+                return rc;
+        }
 
-	// Free the binary buffer
-	free (bin_data);
-
-
-        /**********************************************************************/
-	/* Define tg_dim_x/y: number of tiles in each tile group              */
-	/* Define grid_dim_x/y: number of tile groups needed.                 */
-        /**********************************************************************/
-
-	hb_mc_dimension_t tg_dim = { .x = 2, .y = 2}; 
-
-	hb_mc_dimension_t grid_dim = { .x = 1, .y = 1}; 
+        // Free the binary buffer
+        free (bin_data);
 
 
         /**********************************************************************/
-	/* Prepare list of input arguments for kernel.                        */
+        /* Define tg_dim_x/y: number of tiles in each tile group              */
+        /* Define grid_dim_x/y: number of tile groups needed.                 */
         /**********************************************************************/
-	int argv[1] = {};
 
-	
+        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2}; 
+
+        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1}; 
+
+
         /**********************************************************************/
-	/* Enquque grid of tile groups, pass in grid and tile group dimensions*/
+        /* Prepare list of input arguments for kernel.                        */
+        /**********************************************************************/
+        int cuda_argv[1] = {};
+
+        
+        /**********************************************************************/
+        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-	rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_binary_load_buffer", 0, argv);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to initialize grid.\n");
-		return rc;
-	}
+        rc = hb_mc_application_init (&device, grid_dim, tg_dim, "kernel_binary_load_buffer", 0, cuda_argv);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to initialize grid.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
-	/* Launch and execute all tile groups on device and wait for finish.  */ 
+        /* Launch and execute all tile groups on device and wait for finish.  */ 
         /**********************************************************************/
-	rc = hb_mc_device_tile_groups_execute(&device);
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to execute tile groups.\n");
-		return rc;
-	}
+        rc = hb_mc_device_tile_groups_execute(&device);
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to execute tile groups.\n");
+                return rc;
+        }
 
 
         /**********************************************************************/
         /* Freeze the tiles and memory manager cleanup.                       */
         /**********************************************************************/
-	rc = hb_mc_device_finish(&device); 
-	if (rc != HB_MC_SUCCESS) { 
-		bsg_pr_err("failed to de-initialize device.\n");
-		return rc;
-	}
+        rc = hb_mc_device_finish(&device); 
+        if (rc != HB_MC_SUCCESS) { 
+                bsg_pr_err("failed to de-initialize device.\n");
+                return rc;
+        }
 
-	return HB_MC_SUCCESS;
+        return HB_MC_SUCCESS;
 }
 
 #ifdef COSIM
@@ -153,22 +156,22 @@ void cosim_main(uint32_t *exit_code, char * args) {
         get_argv(args, argc, argv);
 
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
-	bsg_pr_test_info("test_binary_load_buffer Regression Test (COSIMULATION)\n");
-	int rc = kernel_binary_load_buffer();
-	*exit_code = rc;
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return;
+        bsg_pr_test_info("test_binary_load_buffer Regression Test (COSIMULATION)\n");
+        int rc = kernel_binary_load_buffer(argc, argv);
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
 }
 #else
 int main(int argc, char ** argv) {
-	bsg_pr_test_info("test_binary_load_buffer Regression Test (F1)\n");
-	int rc = kernel_binary_load_buffer();
-	bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-	return rc;
+        bsg_pr_test_info("test_binary_load_buffer Regression Test (F1)\n");
+        int rc = kernel_binary_load_buffer(argc, argv);
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return rc;
 }
 #endif
 

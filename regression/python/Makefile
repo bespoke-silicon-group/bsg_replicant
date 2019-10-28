@@ -60,7 +60,7 @@ include rules.mk
 
 # The rule below defines how to run test_loader for Python tests. The loader
 # requires one argument: The test name (TEST_NAME)
+PYTHON_TEST_PATH = $(BSG_F1_DIR)/regression/python/
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
-	sudo $< $(TEST_NAME) | tee $@
-
+	sudo $< $(PYTHON_TEST_PATH) $(TEST_NAME) | tee $@

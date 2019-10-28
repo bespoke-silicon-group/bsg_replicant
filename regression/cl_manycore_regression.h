@@ -118,51 +118,51 @@ int compare_results(int num_fields, const char *desc[], const uint32_t *expected
 // A data structure to generate random floating points 
 // within the entire range
 typedef union data_t {
-	int32_t hb_mc_int;
-	float hb_mc_float;
+        int32_t hb_mc_int;
+        float hb_mc_float;
 } hb_mc_data_t;
 
 // Converts an int into a float and returns it
 static inline float hb_mc_int_to_float(int i){ 
-	hb_mc_data_t data;
-	data.hb_mc_int = i;
-	return data.hb_mc_float;
+        hb_mc_data_t data;
+        data.hb_mc_int = i;
+        return data.hb_mc_float;
 }
 
 // Converts a float into an int and returns it
 static inline int hb_mc_float_to_int (float f){
-	hb_mc_data_t data;
-	data.hb_mc_float = f;
-	return data.hb_mc_int;
+        hb_mc_data_t data;
+        data.hb_mc_float = f;
+        return data.hb_mc_int;
 }
-	
+        
 
 // Generates random floating point numbers
 // within the permitted float32 range 
 // Number has a 50% chance of being negative 
 static inline float hb_mc_generate_float_rand(){ 
-	hb_mc_data_t data;
-	data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1) ; 
-	
-	// To avoid denormal floating point numbers 
-	if (abs(data.hb_mc_int) <= 0x0040)
-		data.hb_mc_int = 0;
+        hb_mc_data_t data;
+        data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1) ; 
+        
+        // To avoid denormal floating point numbers 
+        if (abs(data.hb_mc_int) <= 0x0040)
+                data.hb_mc_int = 0;
 
-	return data.hb_mc_float;
+        return data.hb_mc_float;
 }
 
 // Generates random floating point numbers
 // within the permitted float32 range 
 // All numbers of positive 
 static inline float hb_mc_generate_float_rand_positive(){ 
-	hb_mc_data_t data;
-	data.hb_mc_int = rand() ;
+        hb_mc_data_t data;
+        data.hb_mc_int = rand() ;
 
-	// To avoid denormal floating point numbers 
-	if (abs(data.hb_mc_int) <= 0x0040)
-		data.hb_mc_int = 0;
+        // To avoid denormal floating point numbers 
+        if (abs(data.hb_mc_int) <= 0x0040)
+                data.hb_mc_int = 0;
 
-	return data.hb_mc_float;
+        return data.hb_mc_float;
 }
 
 
@@ -170,10 +170,10 @@ static inline float hb_mc_generate_float_rand_positive(){
 // If the original number is zero, returns the differnce to avoid div by zero
 // TODO: find a more appropriate solution for a = 0
 static inline float hb_mc_calculate_float_error (float expected, float result) { 
-	// if expected is close enough to zero that the division would return 1
-	if (fabs(expected) < 1e-15)
-		return (fabs(expected - result));
-	return (fabs((float)(expected - result)/expected));
+        // if expected is close enough to zero that the division would return 1
+        if (fabs(expected) < 1e-15)
+                return (fabs(expected - result));
+        return (fabs((float)(expected - result)/expected));
 }
 #ifdef __cplusplus
 extern "C" {
@@ -251,6 +251,7 @@ struct arguments_path{
 */
 static char desc_name[] = "<Test Name>";
 static char desc_path[] = "<Path to Manycore Binary> <Name of Test>";
+static char desc_path_py[] = "<Path to Python Tests Directory> <Name of Test>";
 static char desc_none[] = "";
 static struct argp_option opts_name[] = {
         {0, 'b', "TEST", 0, "Name of Manycore Test to Run"},
@@ -258,6 +259,10 @@ static struct argp_option opts_name[] = {
 static struct argp_option opts_path[] = {
         {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
         {0, 'p', "PATH", 0, "Path to RISC-V Manycore Binary"},
+        {0}};
+static struct argp_option opts_path_py[] = {
+        {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
+        {0, 'p', "PATH", 0, "Path to Python Folder"},
         {0}};
 static struct argp_option opts_none[] = {{0}};
 
@@ -329,6 +334,10 @@ static error_t parse_path (int key, char *arg, struct argp_state *state){
         return 0;
 }
 
+static error_t parse_path_py (int key, char *arg, struct argp_state *state){
+        return parse_path(key, arg, state);
+}
+
 static error_t parse_none (int key, char *arg, struct argp_state *state){
  
         switch (key) 
@@ -345,9 +354,7 @@ static error_t parse_none (int key, char *arg, struct argp_state *state){
 
 static struct argp argp_name = {opts_name, parse_name, desc_name, doc};
 static struct argp argp_path = {opts_path, parse_path, desc_path, doc};
+static struct argp argp_path_py = {opts_path_py, parse_path_py, desc_path_py, doc};
 static struct argp argp_none = {opts_none, parse_none, desc_none, doc};
-
-#define __BSG_STRINGIFY(arg) #arg
-#define BSG_STRINGIFY(arg) __BSG_STRINGIFY(arg)
 
 #endif

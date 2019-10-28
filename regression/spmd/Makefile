@@ -66,3 +66,8 @@ $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
 $(EXEC_PATH)/%.log: TEST_PATH=$(SPMD_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
+
+# The rule below defines how to run all SPMD tests that don't use test_loader
+INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
+$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@

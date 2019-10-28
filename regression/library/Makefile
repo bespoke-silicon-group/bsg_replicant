@@ -57,3 +57,8 @@ include $(REGRESSION_PATH)/f1.mk
 # in this sub-directory. rules.mk must come after f1.mk so that
 # <test_name>.rule and <test_name>.clean are not overwritten.
 include rules.mk
+
+# The rule below defines how to run all library tests
+INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
+$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
+	sudo $< | tee $@

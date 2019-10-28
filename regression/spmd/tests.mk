@@ -50,9 +50,10 @@ INDEPENDENT_TESTS += test_bsg_scalar_print
 # REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
+# The following define is DEPRECATED. Do not use BSG_MANYCORE_DIR as a
+# macro! Instead, pass it as an argument and parse it using argparse.
 DEFINES += -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR))
-DEFINES += -DCL_MANYCORE_DIM_X=$(CL_MANYCORE_DIM_X) 
-DEFINES += -DCL_MANYCORE_DIM_Y=$(CL_MANYCORE_DIM_Y)
+
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 
 CDEFINES   += $(DEFINES)

@@ -29,18 +29,18 @@
 
 #ifdef COSIM
 void cosim_main(uint32_t *exit_code, char * args) {
-	// We aren't passed command line arguments directly so we parse them
-	// from *args. args is a string from VCS - to pass a string of arguments
-	// to args, pass c_args to VCS as follows: +c_args="<space separated
-	// list of args>"
-	int argc = get_argc(args);
-	char *argv[argc];
-	get_argv(args, argc, argv);
+        // We aren't passed command line arguments directly so we parse them
+        // from *args. args is a string from VCS - to pass a string of arguments
+        // to args, pass c_args to VCS as follows: +c_args="<space separated
+        // list of args>"
+        int argc = get_argc(args);
+        char *argv[argc];
+        get_argv(args, argc, argv);
 
 #ifdef VCS
-	svScope scope;
-	scope = svGetScopeFromName("tb");
-	svSetScope(scope);
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
 #endif
         bsg_pr_test_info("test_unified_main Regression Test (COSIMULATION)\n");
         int rc = HB_MC_SUCCESS;
