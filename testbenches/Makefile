@@ -55,8 +55,6 @@ include simlibs.mk
 #
 # This Makefile has several optional "arguments" that are passed as Variables
 #
-# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
-#                   speed. Default: 1
 # AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: 0
 # DEBUG: Opens the GUI during cosimulation. Default: 0
 # TURBO: Disables VPD generation. Default: 1
@@ -67,11 +65,9 @@ include simlibs.mk
 # will retain this setting
 
 DEBUG ?= 0
-AXI_MEMORY_MODEL ?= 1
 AXI_PROT_CHECK ?= 0
 TURBO ?= 1 # Use if you don't want debug information
 EXTRA_TURBO ?= 0 # Use at your own risk.
-
 
 # targets.mk defines the targets (sub-directories) for regression in
 # cosimulation
@@ -83,7 +79,7 @@ regression: $(TARGETS)
 $(TARGETS): $(SIMLIBS)
 	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
 		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
-		TURBO=$(TURBO) AXI_MEMORY_MODEL=$(AXI_MEMORY_MODEL)
+		TURBO=$(TURBO)
 
 clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean
 	rm -rf *.log *.jou

@@ -45,7 +45,16 @@ package bsg_bladerunner_mem_cfg_pkg;
     // LEVEL 1) bsg_manycore_vcache (blocking)
     // LEVEL 2) bsg_cache_to_axi
     // LEVEl 3) bsg_nonsynth_manycore_axi_mem
+
+    // e_vcache_blocking_axi4_f1_dram directs simulation to use the
+    // slower, but more accurate, DDR Model. The default is
+    // e_vcache_blocking_axi4_f1_model uses an (infinite) AXI memory
+    // model with low (1-2 cycle) latency in simulation. 
+    //                                      
+    // Either value produces the correct DDR4 Module in F1
+    // implemenation
     , e_vcache_blocking_axi4_f1_dram
+    , e_vcache_blocking_axi4_f1_model
 
   } bsg_bladerunner_mem_cfg_e;
 
