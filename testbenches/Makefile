@@ -55,7 +55,6 @@ include simlibs.mk
 #
 # This Makefile has several optional "arguments" that are passed as Variables
 #
-# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: 0
 # DEBUG: Opens the GUI during cosimulation. Default: 0
 # TURBO: Disables VPD generation. Default: 1
 # EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
@@ -65,7 +64,6 @@ include simlibs.mk
 # will retain this setting
 
 DEBUG ?= 0
-AXI_PROT_CHECK ?= 0
 TURBO ?= 1 # Use if you don't want debug information
 EXTRA_TURBO ?= 0 # Use at your own risk.
 
@@ -77,9 +75,8 @@ include $(REGRESSION_PATH)/targets.mk
 regression: $(TARGETS)
 	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
 $(TARGETS): $(SIMLIBS)
-	$(MAKE) -C  $@ regression EXTRA_TURBO=$(EXTRA_TURBO) 			\
-		DEBUG=$(DEBUG) AXI_PROT_CHECK=$(AXI_PROT_CHECK) 		\
-		TURBO=$(TURBO)
+	$(MAKE) -C $@ regression EXTRA_TURBO=$(EXTRA_TURBO)	\
+		DEBUG=$(DEBUG) TURBO=$(TURBO)
 
 clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean
 	rm -rf *.log *.jou

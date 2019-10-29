@@ -65,22 +65,17 @@ regression:
 
 # DEBUG=1 Opens the Waveform GUI during simulation
 
-# AXI_PROT_CHECK=1 enables an AXI Protocol Checker on the PCI
-# Interface of the AWS Shell
-
 # TURBO=1 increases simulation speed, but disables waveform generation
 
 # EXTRA_TURBO=1 further increases simulation speed, but may affect
 # correctness.
 DEBUG ?=
-AXI_PROT_CHECK ?=
 TURBO ?= 1 
 EXTRA_TURBO ?= 0
 
 cosim: 
-	$(MAKE) -C testbenches regression DEBUG=$(DEBUG)	\
-		AXI_PROT_CHECK=$(AXI_PROT_CHECK) TURBO=$(TURBO)	\
-		EXTRA_TURBO=$(EXTRA_TURBO)
+	$(MAKE) -C testbenches regression EXTRA_TURBO=$(EXTRA_TURBO)	\
+		DEBUG=$(DEBUG) TURBO=$(TURBO)
 
 clean:
 	$(MAKE) -C testbenches clean 
