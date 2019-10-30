@@ -1,4 +1,4 @@
-// Copyright (c) 2019, University of Washington All rights reserved.
+x// Copyright (c) 2019, University of Washington All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -141,24 +141,24 @@ static inline int hb_mc_float_to_int (float f){
 // within the permitted float32 range 
 // Number has a 50% chance of being negative 
 static inline float hb_mc_generate_float_rand(){ 
-	hb_mc_data_t data;
+        hb_mc_data_t data;
         do
         {
                 data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1);
         } while(!isnormal(data.hb_mc_float));
-	return data.hb_mc_float;
+        return data.hb_mc_float;
 }
 
 // Generates random floating point numbers
 // within the permitted float32 range 
 // All numbers of positive 
 static inline float hb_mc_generate_float_rand_positive(){ 
-	hb_mc_data_t data;
+        hb_mc_data_t data;
         do
         {
                 data.hb_mc_int = rand();
         } while(!isnormal(data.hb_mc_float) || data.hb_mc_float < 0);
-	return data.hb_mc_float;
+        return data.hb_mc_float;
 }
 
 
