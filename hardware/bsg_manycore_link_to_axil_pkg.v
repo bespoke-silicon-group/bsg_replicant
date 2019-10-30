@@ -1,9 +1,7 @@
 `ifndef BSG_MANYCORE_LINK_TO_AXIL_PKG_V
 `define BSG_MANYCORE_LINK_TO_AXIL_PKG_V
 
-`define  declare_bsg_manycore_link_fifo_s(fifo_width_mp, data_width_mp, addr_width_mp,
-  pkt_type_width_mp, load_id_width_mp, op_width_mp, op_ex_width_gp,
-  x_cord_width_mp, y_cord_width_mp) \
+`define declare_bsg_manycore_link_fifo_s(fifo_width_mp, data_width_mp, addr_width_mp, pkt_type_width_mp, load_id_width_mp, op_width_mp, op_ex_width_gp, x_cord_width_mp, y_cord_width_mp) \
 \
   typedef struct packed { \
     logic [fifo_width_mp - pkt_type_width_mp - data_width_mp - \
