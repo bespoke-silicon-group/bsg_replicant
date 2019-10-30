@@ -25,14 +25,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef __SPMD_TESTS_H
-#define __SPMD_TESTS_H
+#ifndef TEST_LOG_SOFTMAX_H
+#define TEST_LOG_SOFTMAX_H
 
-#include <bsg_manycore.h>
-#include <bsg_manycore_tile.h>
-#include <bsg_manycore_loader.h>
-#include <bsg_manycore_errno.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <string.h>
+#include <time.h>
+#include <stdlib.h>
 
-#include "../cl_manycore_regression.h"
+#include "cuda_tests.h"
 
-#endif // __SPMD_TESTS_H
+
+#endif

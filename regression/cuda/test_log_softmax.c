@@ -25,40 +25,38 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "test_softmax.h"
+#include "test_log_softmax.h"
 #include <math.h>
 
 #define ALLOC_NAME "default_allocator"
 
 #define max(x, y) (((x) > (y)) ? (x) : (y))
 
-void softmax(float *A, float *B, int M, int N)
+void log_softmax(float *A, float *B, int M, int N)
 {
         float m = -INFINITY;
         for(int i = 0; i < M * N; i++)
                 m = max(A[i], m);
 
-        for(int i = 0; i < M * N; i++)
-                B[i] = expf(A[i] - m);
-
         float sum = 0;
         for(int i = 0; i < M * N; i++)
-                sum += B[i];
+                sum += expf(A[i] - m);
 
+        sum = logf(sum);
         for(int i = 0; i < M * N; i++)
-                B[i] /= sum;
+                B[i] = A[i] - sum;
 }
 
-int kernel_softmax(int argc, char **argv)
-{       
-        bsg_pr_test_info("Running CUDA Softmax Kernel on a 2x2 tile group.\n\n");
+int kernel_log_softmax(int argc, char **argv)
+{
+        bsg_pr_test_info("Running CUDA LogSoftmax Kernel on a 2x2 tile group.\n\n");
         char *elf, *test_name;
         struct arguments_path args = { NULL, NULL };
         argp_parse(&argp_path, argc, argv, 0, 0, &args);
         elf = args.path;
         test_name = args.name;
-
         srand(time(0));
+
         int rc;
         hb_mc_device_t manycore, *mc = &manycore;
         rc = hb_mc_device_init(mc, test_name, 0);
@@ -115,7 +113,7 @@ int kernel_softmax(int argc, char **argv)
 
         int cuda_argv[] = { A_device, B_device, M, N, block_size_y, block_size_x };
         size_t cuda_argc = sizeof(cuda_argv) / sizeof(cuda_argv[0]);
-        rc = hb_mc_application_init(mc, grid_dim, tilegroup_dim, "kernel_softmax", cuda_argc, cuda_argv);
+        rc = hb_mc_application_init(mc, grid_dim, tilegroup_dim, "kernel_log_softmax", cuda_argc, cuda_argv);
         if(rc != HB_MC_SUCCESS)
         {
                 bsg_pr_err("Failed to initialize grid.\n");
@@ -145,14 +143,13 @@ int kernel_softmax(int argc, char **argv)
         }
 
         float B_expected[M * N];
-        softmax(A_host, B_expected, M, N);
+        log_softmax(A_host, B_expected, M, N);
 
         int mismatches = 0;
         for(int y = 0; y < M; y++)
                 for(int x = 0; x < N; x++)
-                {
                         if(hb_mc_calculate_float_error(B_actual[y * N + x], B_expected[y * N + x]) > MAX_FLOAT_ERROR_TOLERANCE ||
-                           (!isnormal(B_expected[y * N + x]) && B_actual[y * N + x] != 0.0f))
+                           (!isnormal(B_actual[y * N + x]) && B_actual[y * N + x] != 0.0f))
                         {
                                 bsg_pr_err(BSG_RED("Mismatch: ") "B[%d][%d] = %.9f = %x \t Expected: %.9f = %x\n",
                                            y, x,
@@ -162,7 +159,6 @@ int kernel_softmax(int argc, char **argv)
                                            B_expected[y * N + x]);
                                 mismatches++;
                         }
-                }
         if(!mismatches)
         {
                 bsg_pr_test_info(BSG_GREEN("Matrices match!\n"));
@@ -188,8 +184,8 @@ void cosim_main(uint32_t *exit_code, char *args)
         scope = svGetScopeFromName("tb");
         svSetScope(scope);
 #endif
-        bsg_pr_test_info("test_softmax Regression Test (COSIMULATION)\n");
-        int rc = kernel_softmax(argc, argv);
+        bsg_pr_test_info("test_log_softmax Regression Test (COSIMULATION)\n");
+        int rc = kernel_log_softmax(argc, argv);
         *exit_code = rc;
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return;
@@ -197,8 +193,8 @@ void cosim_main(uint32_t *exit_code, char *args)
 #else
 int main(int argc, char **argv)
 {
-        bsg_pr_test_info("test_softmax Regression Test (F1)\n");
-        int rc = kernel_softmax(argc, argv);
+        bsg_pr_test_info("test_log_softmax Regression Test (F1)\n");
+        int rc = kernel_log_softmax(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }

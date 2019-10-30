@@ -142,12 +142,10 @@ static inline int hb_mc_float_to_int (float f){
 // Number has a 50% chance of being negative 
 static inline float hb_mc_generate_float_rand(){ 
         hb_mc_data_t data;
-        data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1) ; 
-        
-        // To avoid denormal floating point numbers 
-        if (abs(data.hb_mc_int) <= 0x0040)
-                data.hb_mc_int = 0;
-
+        do
+        {
+                data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1);
+        } while(!isnormal(data.hb_mc_float));
         return data.hb_mc_float;
 }
 
@@ -156,12 +154,10 @@ static inline float hb_mc_generate_float_rand(){
 // All numbers of positive 
 static inline float hb_mc_generate_float_rand_positive(){ 
         hb_mc_data_t data;
-        data.hb_mc_int = rand() ;
-
-        // To avoid denormal floating point numbers 
-        if (abs(data.hb_mc_int) <= 0x0040)
-                data.hb_mc_int = 0;
-
+        do
+        {
+                data.hb_mc_int = rand();
+        } while(!isnormal(data.hb_mc_float) || data.hb_mc_float < 0);
         return data.hb_mc_float;
 }
 
