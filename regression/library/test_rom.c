@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -58,18 +58,31 @@ int test_rom (int argc, char **argv) {
 
         config = hb_mc_manycore_get_config(&mc);
         /* Test host credit return value. Expect 16 and fail otherwise */
-        expected = 16;
+        expected = HB_MC_MMIO_MAX_CREDITS;
         bsg_pr_test_info("Checking that the number of host credits is %d\n", expected);
-        bsg_pr_test_info("(I know it's a magic number...)\n");
-        result = hb_mc_manycore_get_host_credits(&mc);
-        if(result != expected){
-                bsg_pr_test_err("Incorrect number of host credits. "
-                                "Got: %d, expected %d\n", result, expected);
-                bsg_pr_test_err("Have you programed your FPGA"
-                                " (fpga-load-local-image)\n");
-                fail = 1;
-                goto cleanup; // Considered harmful
+        // bsg_pr_test_info("(I know it's a magic number...)\n");
+
+        // check enough times to let the credit resume...
+        uint32_t matched = 0;
+        for (unsigned i = 0; i < HB_MC_MMIO_MAX_CREDITS; i++) {
+            result = hb_mc_manycore_get_host_credits(&mc);
+            bsg_pr_test_info("Try No. %d: host credits is %d\n", i, result);
+            if(result == expected) {
+                matched = 1;
+                break;
+            }
+
         }
+
+        if (!matched) {
+            bsg_pr_test_err("Incorrect number of host credits. "
+                            "Got: %d, expected %d\n", result, expected);
+            bsg_pr_test_err("Have you programed your FPGA"
+                            " (fpga-load-local-image)\n");
+            fail = 1;
+            goto cleanup; // Considered harmful
+        }
+
 
         /* Read configuration and test values */
 #ifdef COSIM
