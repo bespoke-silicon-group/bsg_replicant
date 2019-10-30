@@ -59,17 +59,11 @@ endif
 # -------------------- Arguments --------------------
 # This Makefile has several optional "arguments" that are passed as Variables
 #
-# AXI_MEMORY_MODEL: Use an SRAM-like Memory model that increases simulation
-#                   speed. Default: 1 (Requires re-compilation when changed)
-# AXI_PROT_CHECK: Enables PCIe Protocol checker. Default: 0 (Requires
-#                 re-compilation when changed)
 # EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
 # 
 # If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
 # This is a COMPILATION ONLY option. Any subsequent runs, without compilation
 # will retain this setting
-AXI_MEMORY_MODEL ?= 1
-AXI_PROT_CHECK   ?= 0
 EXTRA_TURBO      ?= 0
 
 # The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
@@ -143,12 +137,15 @@ WORKDIR = $(TESTBENCH_PATH)/vcs_simlibs/$(PROJECT)
 VDEFINES   += VCS_SIM
 VDEFINES   += COSIM
 VDEFINES   += DISABLE_VJTAG_DEBUG
-
-ifeq ($(AXI_PROT_CHECK),1)
 VDEFINES   += ENABLE_PROTOCOL_CHK
-endif
 
-ifeq ($(AXI_MEMORY_MODEL),1)
+include $(CL_DIR)/Makefile.machine.include
+# Setting CL_MANYCORE_MEM_CFG to e_vcache_blocking_axi4_f1_dram
+# directs simulation to use the slower, but more accurate, DDR
+# Model. The default is e_vcache_blocking_axi4_f1_model uses an
+# (infinite) AXI memory model with low (1-2 cycle) latency in
+# simulation.
+ifeq ($(CL_MANYCORE_MEM_CFG),e_vcache_blocking_axi4_f1_model)
 VDEFINES   += AXI_MEMORY_MODEL=1
 VDEFINES   += ECC_DIRECT_EN
 VDEFINES   += RND_ECC_EN

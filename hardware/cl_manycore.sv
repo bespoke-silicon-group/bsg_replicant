@@ -34,7 +34,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
    import bsg_bladerunner_rom_pkg::*;
-   import bsg_manycore_mem_cfg_pkg::*;
+   import bsg_bladerunner_mem_cfg_pkg::*;
    (
 `include "cl_ports.vh"
     );
@@ -417,7 +417,8 @@ module cl_manycore
     );
 
   end
-  else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram) begin: lv1_vcache
+  else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
+           mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
 
     import bsg_cache_pkg::*;
 
@@ -484,7 +485,8 @@ module cl_manycore
 
   // LEVEL 2
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram) begin: lv2_axi4
+  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
+      mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv2_axi4
 
     logic [axi_id_width_p-1:0] axi_awid;
     logic [axi_addr_width_p-1:0] axi_awaddr;
@@ -597,7 +599,8 @@ module cl_manycore
 
   // LEVEL 3
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram) begin
+  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
+      mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin
    // Attach cache to output DRAM
 
    // AXI Address Write signals
