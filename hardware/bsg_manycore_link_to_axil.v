@@ -56,16 +56,18 @@
 * 2. The definition of mm2s control registers are defined at bsg_manycore_link_to_axil_pkg.v
 *    a. To read the ROM, access the base address defined as rom_base_addr_gp.
 *       The axil address is bytes wise, while the rom address is word wise.
+*
 *    b. To read from the rx fifo:
 *       i.  poll from the Receive Data FIFO word Occupancy(RDFO) until greater than the #words of one packet
 *       ii. read packet data from the Receive Destination Register(RDR).
 *           If read from a empty fifo, RDFO will not be updated and you get ZEROs
+*       Note: We assume that reading from a valid FIFO will always success.
+*
 *    c. To write to manycore through the tx fifo (one packet per time):
 *       i.  read the Transmit Data FIFO word Vacancy(TDFV) and save the value as vacancy_before
 *       ii. write words of one mc packet to the Transmit Destination Register(TDR).
 *       iii.poll the TDFV as vacancy_after until vacancy_after = vacancy_before for successful writing to the mc
-*
-*       Note, We assume that the initial FIFO is empty, and writing to a empty FIFO will always success.
+*       Note: We assume that the initial FIFO is empty, and writing to an empty FIFO will always success.
 *
 */
 
