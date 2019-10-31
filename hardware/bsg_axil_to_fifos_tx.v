@@ -1,4 +1,5 @@
-// Copyright (c) 2019, University of Washington All rights reserved.  //
+// Copyright (c) 2019, University of Washington All rights reserved.
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
 //
@@ -32,40 +33,40 @@ module bsg_axil_to_fifos_tx
   import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter num_fifos_p = "inv"
-  , parameter fifo_width_p = "inv" // bit wise
+  , parameter mcl_fifo_width_p = "inv" // bit wise
   , localparam lg_fifo_els_lp = `BSG_WIDTH(axil_fifo_els_gp)
 ) (
-  input                                        clk_i
-  ,input                                        reset_i
+  input                                          clk_i
+  ,input                                          reset_i
   // axil tx channel
-  ,input  [           31:0]                     awaddr_i
-  ,input                                        awvalid_i
-  ,output                                       awready_o
-  ,input  [           31:0]                     wdata_i
-  ,input  [            3:0]                     wstrb_i
-  ,input                                        wvalid_i
-  ,output                                       wready_o
-  ,output [            1:0]                     bresp_o
-  ,output                                       bvalid_o
-  ,input                                        bready_i
+  ,input  [           31:0]                       awaddr_i
+  ,input                                          awvalid_i
+  ,output                                         awready_o
+  ,input  [           31:0]                       wdata_i
+  ,input  [            3:0]                       wstrb_i
+  ,input                                          wvalid_i
+  ,output                                         wready_o
+  ,output [            1:0]                       bresp_o
+  ,output                                         bvalid_o
+  ,input                                          bready_i
   // fifo data out
-  ,output [num_fifos_p-1:0][  fifo_width_p-1:0] fifo_data_o
-  ,output [num_fifos_p-1:0]                     fifo_v_o
-  ,input  [num_fifos_p-1:0]                     fifo_ready_i
-  ,output [num_fifos_p-1:0][lg_fifo_els_lp-1:0] tx_vacancy_o
+  ,output [num_fifos_p-1:0][mcl_fifo_width_p-1:0] fifo_data_o
+  ,output [num_fifos_p-1:0]                       fifo_v_o
+  ,input  [num_fifos_p-1:0]                       fifo_ready_i
+  ,output [num_fifos_p-1:0][  lg_fifo_els_lp-1:0] tx_vacancy_o
 );
 
-  localparam sipo_lp = fifo_width_p/axil_data_width_gp;
+  localparam sipo_els_lp = mcl_fifo_width_p/axil_data_width_gp;
 
   // to axil tx from axil tx
-  logic [num_fifos_p-1:0][fifo_width_p-1:0] txs_data_lo ;
-  logic [num_fifos_p-1:0]                   txs_v_lo    ;
-  logic [num_fifos_p-1:0]                   txs_ready_li;
+  logic [num_fifos_p-1:0][axil_data_width_gp-1:0] txs_data_lo ;
+  logic [num_fifos_p-1:0]                         txs_v_lo    ;
+  logic [num_fifos_p-1:0]                         txs_ready_li;
 
   // from stream fifo to sipo manycore packets
-  logic [num_fifos_p-1:0][fifo_width_p-1:0] axil_fifo_data_lo ;
-  logic [num_fifos_p-1:0]                   axil_fifo_v_lo    ;
-  logic [num_fifos_p-1:0]                   axil_fifo_ready_li;
+  logic [num_fifos_p-1:0][axil_data_width_gp-1:0] axil_fifo_data_lo ;
+  logic [num_fifos_p-1:0]                         axil_fifo_v_lo    ;
+  logic [num_fifos_p-1:0]                         axil_fifo_ready_li;
 
 
   // --------------------------------------------
@@ -231,18 +232,18 @@ module bsg_axil_to_fifos_tx
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_p    ),
-      .els_p             (axil_fifo_els_gp),
-      .ready_THEN_valid_p(0               )
+      .width_p           (axil_data_width_gp)
+      ,.els_p             (axil_fifo_els_gp  )
+      ,.ready_THEN_valid_p(0                 )
     ) tx_fifo (
-      .clk_i  (clk_i               ),
-      .reset_i(reset_i             ),
-      .v_i    (txs_v_lo[i]         ),
-      .ready_o(txs_ready_li[i]     ),
-      .data_i (txs_data_lo[i]      ),
-      .v_o    (axil_fifo_v_lo[i]   ),
-      .data_o (axil_fifo_data_lo[i]),
-      .yumi_i (tx_dequeue[i]       )
+      .clk_i  (clk_i               )
+      ,.reset_i(reset_i             )
+      ,.v_i    (txs_v_lo[i]         )
+      ,.ready_o(txs_ready_li[i]     )
+      ,.data_i (txs_data_lo[i]      )
+      ,.v_o    (axil_fifo_v_lo[i]   )
+      ,.data_o (axil_fifo_data_lo[i])
+      ,.yumi_i (tx_dequeue[i]       )
     );
 
   end : tx_s
@@ -252,26 +253,26 @@ module bsg_axil_to_fifos_tx
 // stream upsizer
 // -------------------------------------
 
-  localparam yumi_cnt_width_lp = $clog2(sipo_lp+1)            ;
-  localparam sipo_yumi_els_lp  = (yumi_cnt_width_lp)'(sipo_lp);
+  localparam yumi_cnt_width_lp = $clog2(sipo_els_lp+1)            ;
+  localparam sipo_yumi_els_lp  = (yumi_cnt_width_lp)'(sipo_els_lp);
 
-  logic [num_fifos_p-1:0][          sipo_lp-1:0] sipo_valid_lo   ;
+  logic [num_fifos_p-1:0][          sipo_els_lp-1:0] sipo_valid_lo   ;
   logic [num_fifos_p-1:0][yumi_cnt_width_lp-1:0] sipo_yumi_cnt_li;
 
   for (genvar i=0; i<num_fifos_p; i++) begin : upsizer
 
     bsg_serial_in_parallel_out #(
-      .width_p(axil_data_width_gp),
-      .els_p  (sipo_lp           )
+      .width_p(axil_data_width_gp)
+      ,.els_p  (sipo_els_lp           )
     ) sipo (
-      .clk_i     (clk_i                ),
-      .reset_i   (reset_i              ),
-      .valid_i   (axil_fifo_v_lo[i]    ),
-      .data_i    (axil_fifo_data_lo[i] ),
-      .ready_o   (axil_fifo_ready_li[i]),
-      .valid_o   (sipo_valid_lo[i]     ),
-      .data_o    (fifo_data_o[i]       ),
-      .yumi_cnt_i(sipo_yumi_cnt_li[i]  )
+      .clk_i     (clk_i                )
+      ,.reset_i   (reset_i              )
+      ,.valid_i   (axil_fifo_v_lo[i]    )
+      ,.data_i    (axil_fifo_data_lo[i] )
+      ,.ready_o   (axil_fifo_ready_li[i])
+      ,.valid_o   (sipo_valid_lo[i]     )
+      ,.data_o    (fifo_data_o[i]       )
+      ,.yumi_cnt_i(sipo_yumi_cnt_li[i]  )
     );
 
     assign fifo_v_o[i]         = &sipo_valid_lo[i];

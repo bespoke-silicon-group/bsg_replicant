@@ -1026,25 +1026,25 @@ static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
                         return err;
                 }
 
-        } while (occupancy < 1);
+        } while (occupancy < 1);  // this is packet occupancy, not word occupancy!
 
-        /* get FIFO length */
-        err = hb_mc_manycore_mmio_read32(mc, length_addr, &length);
-        if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: Failed to read %s FIFO length register: %s\n",
-                                __func__, typestr, hb_mc_strerror(err));
-                return err;
-        }
+        // /* get FIFO length */
+        // err = hb_mc_manycore_mmio_read32(mc, length_addr, &length);
+        // if (err != HB_MC_SUCCESS) {
+        //         manycore_pr_err(mc, "%s: Failed to read %s FIFO length register: %s\n",
+        //                         __func__, typestr, hb_mc_strerror(err));
+        //         return err;
+        // }
 
-        if (length != sizeof(*packet)) {
-                manycore_pr_err(mc, "%s: Read bad length %" PRId32 " from %s FIFO length register\n",
-                                __func__, length, typestr);
-                return HB_MC_FAIL;
-        }
+        // if (length != sizeof(*packet)) {
+        //         manycore_pr_err(mc, "%s: Read bad length %" PRId32 " from %s FIFO length register\n",
+        //                         __func__, length, typestr);
+        //         return HB_MC_FAIL;
+        // }
 
-        manycore_pr_dbg(mc, "%s: From %s FIFO: Read the receive length register "
-                        "@ 0x%08" PRIxPTR " to be %" PRIu32 "\n",
-                        __func__, typestr, length_addr, length);
+        // manycore_pr_dbg(mc, "%s: From %s FIFO: Read the receive length register "
+        //                 "@ 0x%08" PRIxPTR " to be %" PRIu32 "\n",
+        //                 __func__, typestr, length_addr, length);
 
         /* read in the packet one word at a time */
         for (unsigned i = 0; i < array_size(packet->words); i++) {

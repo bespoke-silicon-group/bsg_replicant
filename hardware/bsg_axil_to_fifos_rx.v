@@ -1,4 +1,5 @@
-// Copyright (c) 2019, University of Washington All rights reserved.  //
+// Copyright (c) 2019, University of Washington All rights reserved.
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
 //
@@ -32,7 +33,7 @@ module bsg_axil_to_fifos_rx
   import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter num_fifos_p = "inv"
-  , parameter fifo_width_p = "inv" // bit wise
+  , parameter mcl_fifo_width_p = "inv" // bit wise
   , parameter rom_addr_width_p = "inv"
   , parameter max_out_credits_p = "inv"
   , localparam lg_fifo_els_lp = `BSG_WIDTH(axil_fifo_els_gp)
@@ -49,7 +50,7 @@ module bsg_axil_to_fifos_rx
   ,output                                                             rvalid_o
   ,input                                                              rready_i
   // fifo data in
-  ,input  [                  num_fifos_p-1:0][      fifo_width_p-1:0] fifo_data_i
+  ,input  [                  num_fifos_p-1:0][  mcl_fifo_width_p-1:0] fifo_data_i
   ,input  [                  num_fifos_p-1:0]                         fifo_v_i
   ,output [                  num_fifos_p-1:0]                         fifo_ready_o
   // mcl status
@@ -57,18 +58,18 @@ module bsg_axil_to_fifos_rx
   ,input  [                  num_fifos_p-1:0][    lg_fifo_els_lp-1:0] tx_vacancy_i
   ,input  [`BSG_WIDTH(max_out_credits_p)-1:0]                         mcl_credits_i
   ,output [             rom_addr_width_p-1:0]                         rom_addr_o
-  ,input  [                 fifo_width_p-1:0]                         rom_data_i
+  ,input  [             mcl_fifo_width_p-1:0]                         rom_data_i
 );
 
 
-  localparam rx_bytes_lp = fifo_width_p/8                 ; // num of bytes per fifo element
-  localparam piso_lp     = fifo_width_p/axil_data_width_gp; // this really should be int!
+  localparam rx_bytes_lp = mcl_fifo_width_p/8                 ; // num of bytes per fifo element
+  localparam piso_els_lp = mcl_fifo_width_p/axil_data_width_gp; // this really should be int!
 
 
   // receive fifo to piso
-  logic [num_fifos_p-1:0][fifo_width_p-1:0] rcv_fifo_data_lo ;
-  logic [num_fifos_p-1:0]                   rcv_fifo_v_lo    ;
-  logic [num_fifos_p-1:0]                   rcv_fifo_ready_li;
+  logic [num_fifos_p-1:0][mcl_fifo_width_p-1:0] rcv_fifo_data_lo ;
+  logic [num_fifos_p-1:0]                       rcv_fifo_v_lo    ;
+  logic [num_fifos_p-1:0]                       rcv_fifo_ready_li;
 
   // piso to stream fifo input
   logic [num_fifos_p-1:0][axil_data_width_gp-1:0] piso_data_lo ;
@@ -76,9 +77,9 @@ module bsg_axil_to_fifos_rx
   logic [num_fifos_p-1:0]                         piso_ready_lo;
 
   // stream fifo to axil rx module input
-  logic [num_fifos_p-1:0][fifo_width_p-1:0] rxs_data_li ;
-  logic [num_fifos_p-1:0]                   rxs_v_li    ;
-  logic [num_fifos_p-1:0]                   rxs_ready_lo;
+  logic [num_fifos_p-1:0][axil_data_width_gp-1:0] rxs_data_li ;
+  logic [num_fifos_p-1:0]                         rxs_v_li    ;
+  logic [num_fifos_p-1:0]                         rxs_ready_lo;
 
 
   // -------------------------------------
@@ -91,30 +92,30 @@ module bsg_axil_to_fifos_rx
   for (genvar i=0; i<num_fifos_p; i++) begin : rcv_buf
 
     bsg_counter_up_down #(
-      .max_val_p (rcv_fifo_els_gp),
-      .init_val_p(rcv_fifo_els_gp),
-      .max_step_p(1              )
+      .max_val_p (rcv_fifo_els_gp)
+      ,.init_val_p(rcv_fifo_els_gp)
+      ,.max_step_p(1              )
     ) rcv_vacancy_cnt (
-      .clk_i  (clk_i           ),
-      .reset_i(reset_i         ),
-      .down_i (rcv_enqueue[i]  ),
-      .up_i   (rcv_dequeue[i]  ),
-      .count_o(rcv_vacancy_o[i])  // ==> to axil rx
+      .clk_i  (clk_i           )
+      ,.reset_i(reset_i         )
+      ,.down_i (rcv_enqueue[i]  )
+      ,.up_i   (rcv_dequeue[i]  )
+      ,.count_o(rcv_vacancy_o[i])  // ==> to axil rx
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_p   ),
-      .els_p             (rcv_fifo_els_gp),
-      .ready_THEN_valid_p(0              )  // input handshake
+      .width_p           (mcl_fifo_width_p)
+      ,.els_p             (rcv_fifo_els_gp)
+      ,.ready_THEN_valid_p(0              )  // input handshake
     ) rcv_fifo (
-      .clk_i  (clk_i              ),
-      .reset_i(reset_i            ),
-      .v_i    (fifo_v_i[i]        ),
-      .ready_o(fifo_ready_o[i]    ),
-      .data_i (fifo_data_i[i]     ),
-      .v_o    (rcv_fifo_v_lo[i]   ),
-      .data_o (rcv_fifo_data_lo[i]),
-      .yumi_i (rcv_dequeue[i]     )
+      .clk_i  (clk_i              )
+      ,.reset_i(reset_i            )
+      ,.v_i    (fifo_v_i[i]        )
+      ,.ready_o(fifo_ready_o[i]    )
+      ,.data_i (fifo_data_i[i]     )
+      ,.v_o    (rcv_fifo_v_lo[i]   )
+      ,.data_o (rcv_fifo_data_lo[i])
+      ,.yumi_i (rcv_dequeue[i]     )
     );
 
   end : rcv_buf
@@ -129,17 +130,17 @@ module bsg_axil_to_fifos_rx
   for (genvar i=0; i<num_fifos_p; i++) begin : dnsizer
 
     bsg_parallel_in_serial_out #(
-      .width_p(axil_data_width_gp),
-      .els_p  (piso_lp           )
+      .width_p(axil_data_width_gp)
+      ,.els_p  (piso_els_lp       )
     ) piso (
-      .clk_i  (clk_i               ),
-      .reset_i(reset_i             ),
-      .valid_i(rcv_fifo_v_lo[i]    ),
-      .data_i (rcv_fifo_data_lo[i] ),
-      .ready_o(rcv_fifo_ready_li[i]),
-      .valid_o(piso_v_li[i]        ),
-      .data_o (piso_data_lo[i]     ),
-      .yumi_i (piso_yumi_li[i]     )
+      .clk_i  (clk_i               )
+      ,.reset_i(reset_i             )
+      ,.valid_i(rcv_fifo_v_lo[i]    )
+      ,.data_i (rcv_fifo_data_lo[i] )
+      ,.ready_o(rcv_fifo_ready_li[i])
+      ,.valid_o(piso_v_li[i]        )
+      ,.data_o (piso_data_lo[i]     )
+      ,.yumi_i (piso_yumi_li[i]     )
     );
 
   end : dnsizer
@@ -169,18 +170,18 @@ module bsg_axil_to_fifos_rx
     );
 
     bsg_fifo_1r1w_small #(
-      .width_p           (fifo_width_p    ),
-      .els_p             (axil_fifo_els_gp),
-      .ready_THEN_valid_p(0               )
+      .width_p           (axil_data_width_gp)
+      ,.els_p             (axil_fifo_els_gp  )
+      ,.ready_THEN_valid_p(0                 )
     ) mm2s_fifo (
-      .clk_i  (clk_i           ),
-      .reset_i(reset_i         ),
-      .v_i    (piso_v_li[i]    ),
-      .ready_o(piso_ready_lo[i]),
-      .data_i (piso_data_lo[i] ),
-      .v_o    (rxs_v_li[i]     ),
-      .data_o (rxs_data_li[i]  ),
-      .yumi_i (rx_dequeue[i]   )
+      .clk_i  (clk_i           )
+      ,.reset_i(reset_i         )
+      ,.v_i    (piso_v_li[i]    )
+      ,.ready_o(piso_ready_lo[i])
+      ,.data_i (piso_data_lo[i] )
+      ,.v_o    (rxs_v_li[i]     )
+      ,.data_o (rxs_data_li[i]  )
+      ,.yumi_i (rx_dequeue[i]   )
     );
 
   end : rx
@@ -304,7 +305,7 @@ module bsg_axil_to_fifos_rx
     assign read_fifo_wait[i] = in_rd_data && fifos_base_hit[i] && fifo_offset_li == axil_mm2s_ofs_rdr_gp;
 
     // rd fifo has more than piso words
-    assign rdata_batch_v[i] = rx_occupancy_lo[i] >= piso_lp;
+    assign rdata_batch_v[i] = rx_occupancy_lo[i] >= piso_els_lp;
 
   end : rd_addr_hit
 
@@ -318,11 +319,10 @@ module bsg_axil_to_fifos_rx
       case (fifo_offset_li[0+:axil_rx_addr_width_gp])
         axil_mm2s_ofs_tdfv_gp  : rdata_r = tx_vacancy_i;
         axil_mm2s_ofs_rdr_gp   : rdata_r = rxs_data_li;
-        axil_mm2s_ofs_rdfo_gp  : rdata_r = {rx_occupancy_lo[lg_fifo_els_lp-1:2],2'b00};
-        axil_mm2s_ofs_rlr_gp   : rdata_r = rdata_batch_v ? rx_bytes_lp : 0;
+        axil_mm2s_ofs_rdfo_gp  : rdata_r = rdata_batch_v ? rx_occupancy_lo : 0;
         mcl_ofs_rcvfv_gp       : rdata_r = rcv_vacancy_o;
         mcl_ofs_edp_credits_gp : rdata_r = mcl_credits_i;
-        default                : rdata_r = fifo_width_p'(32'hBEEF_DEAD);
+        default                : rdata_r = mcl_fifo_width_p'(32'hBEEF_DEAD);
       endcase
     end
 
@@ -341,11 +341,10 @@ module bsg_axil_to_fifos_rx
       case (fifo_offset_li[0+:axil_rx_addr_width_gp])
         axil_mm2s_ofs_tdfv_gp  : rdata_r = tx_vacancy_i[fifos_idx_lo];
         axil_mm2s_ofs_rdr_gp   : rdata_r = rxs_data_li[fifos_idx_lo];
-        axil_mm2s_ofs_rdfo_gp  : rdata_r = {rx_occupancy_lo[fifos_idx_lo][lg_fifo_els_lp-1:2],2'b00};
-        axil_mm2s_ofs_rlr_gp   : rdata_r = rdata_batch_v[fifos_idx_lo] ? rx_bytes_lp : 0;
+        axil_mm2s_ofs_rdfo_gp  : rdata_r = rdata_batch_v[fifos_idx_lo] ? rx_occupancy_lo[fifos_idx_lo] : 0;
         mcl_ofs_rcvfv_gp       : rdata_r = rcv_vacancy_o[fifos_idx_lo];
         mcl_ofs_edp_credits_gp : rdata_r = mcl_credits_i;  // axil base sub spaces are mapped to the same mcl endpoint out credits
-        default                : rdata_r = fifo_width_p'(32'hBEEF_DEAD);
+        default                : rdata_r = mcl_fifo_width_p'(32'hBEEF_DEAD);
       endcase
     end : rd_regs
 

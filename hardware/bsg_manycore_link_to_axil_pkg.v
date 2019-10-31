@@ -36,13 +36,25 @@
 
 package bsg_manycore_link_to_axil_pkg;
 
+  // ------------------------------
+  // manycore endpoint for host
+  // ------------------------------
+
   parameter mc_ep_fifo_els_gp = 4;
 
-  // local parameters that should not change for current design
-  parameter axil_fifo_els_gp = 256;
-  parameter rcv_fifo_els_gp  = 64 ; // rx fifo and rcv fifo have equal size
 
-  parameter mcl_num_fifos_gp      = 4  ;
+  // ---------------------------------
+  // manycore link to fifo
+  // ---------------------------------
+
+  localparam mcl_num_fifos_gp = 4; // fixed for credit-based endpoint
+
+  // fifo size
+  parameter axil_fifo_els_gp   = 256;
+  parameter rcv_fifo_els_gp    = 64 ; // rx fifo and rcv fifo have equal size
+  parameter host_rcv_buf_th_gp = 16 ; // receive fifo vacancy threshold to fence the host load request
+
+  // host packet struct parameters
   parameter mcl_fifo_width_gp     = 128;
   parameter mcl_data_width_gp     = 32 ;
   parameter mcl_addr_width_gp     = 32 ;
@@ -51,37 +63,36 @@ package bsg_manycore_link_to_axil_pkg;
   parameter mcl_op_ex_width_gp    = 8  ;
   parameter mcl_x_cord_width_gp   = 8  ;
   parameter mcl_y_cord_width_gp   = 8  ;
-
   localparam mcl_load_id_width_gp = mcl_data_width_gp;
 
-  parameter axil_data_width_gp = 32;
 
+  // ---------------------------------
+  // axil to fifos
+  // ---------------------------------
+
+  localparam axil_data_width_gp = 32;
+  localparam axil_addr_width_gp = 32;
+
+  // axi-lite parameters
   parameter base_addr_width_gp = 12           ;
   parameter rom_base_addr_gp   = 32'h0000_0000;
-  parameter fifo_base_addr_gp  = 32'h0000_1000; // the 2nd fifo address += (1<<base_addr_width_gp)
+  parameter fifo_base_addr_gp  = 32'h0000_1000;
+  // note: #N fifo address: n<<base_addr_width_gp
 
-  localparam fifo_idx_width_gp = 32 - base_addr_width_gp;
-  // note: slot_idx_width + base_addr_width <= 32 (axil addr width)
-  // use '=' condition here to strictly check the address is hit or not
+  localparam fifo_idx_width_gp = axil_addr_width_gp - base_addr_width_gp;
 
+  // mm2s control registers
   parameter axil_rx_addr_width_gp = 8;
-  // tx and rx registers
-  parameter axil_mm2s_ofs_isr_gp  = 8'h00; // Interrupt Status Register
-  parameter axil_mm2s_ofs_tdfv_gp = 8'h0C; // Transmit FIFO word Vacancy
-  parameter axil_mm2s_ofs_tdr_gp  = 8'h10; // Transmit Data Destination Register
+  // parameter axil_mm2s_ofs_isr_gp  = 8'h00; // Interrupt Status Register
+  parameter axil_mm2s_ofs_tdfv_gp = 8'h0C; // Transmit Data FIFO word Vacancy
+  parameter axil_mm2s_ofs_tdr_gp  = 8'h10; // Transmit Destination Register
   // parameter axil_mm2s_ofs_tlr_gp  = 8'h14; // Transmit Length Register, not used
   parameter axil_mm2s_ofs_rdfo_gp = 8'h1C; // Receive Data FIFO word occupancy
-  parameter axil_mm2s_ofs_rdr_gp  = 8'h20; // Receive Data Destination Register
-  parameter axil_mm2s_ofs_rlr_gp  = 8'h24; // Receive Length Register
+  parameter axil_mm2s_ofs_rdr_gp  = 8'h20; // Receive Destination Register
+  // parameter axil_mm2s_ofs_rlr_gp  = 8'h24; // Receive Length Register
 
   parameter mcl_ofs_rcvfv_gp       = 8'h2C; // Receive fifo vacancy of the mcl receive fifo
   parameter mcl_ofs_edp_credits_gp = 8'h30; // out credits of the mcl endpoint standard
-  // 2 base address are mapped to 1 endpoint standard
-
-  // monitor registers
-  // localparam host_rcv_vacancy_mc_req_gp = base_addr_width_gp'(32'h100);
-  // localparam host_rcv_vacancy_mc_res_gp = base_addr_width_gp'(32'h200);
-  // localparam host_req_credits_out_gp    = base_addr_width_gp'(32'h300);
 
 endpackage : bsg_manycore_link_to_axil_pkg
 

@@ -33,25 +33,31 @@
 *          Rx & TX         16B           manycore
 *           FIFOs     slicing logic  endpoing standard
 *       _____________      ____      ________________
-*  ==> |host request | -> |~~~~| -> |=out_pkt_i      | --> out_credits_o
+*  ==> |host request | -> |~//~| -> |=out_pkt_i      | --> out_credits_o
 *      |_____________|    |____|    |                |
 *  ==> |host response| -> |~~~~| -> |=returning_pkt_i|
-*      |_____________|    |____|    |                | ==>
-*                                   |                |
-*       _____________      ____     |                | <==
-*  <== |mc response  | <- |~//~| <- |=returned_pkt_o | <-- rcv_vacancy_i
+*      |_____________|    |____|    |                |
+*                                   |                | <=> manycore link sif
+*       _____________      ____     |                |
+*  <== |mc response  | <- |~~~~| <- |=returned_pkt_o | <-- rcv_vacancy_i
 *      |_____________|    |____|    |                |
 *  <== |mc request   | <- |~~~~| <- |=in_pkt_o       |
 *      |_____________|    |____|    |________________|
 *
+* Credit Control Note:
+* 1. The host is master, i.e. host requests to manycore
+*    The host request is fenced in case of the following conditions
+*     a. If manycore endpoint out credits == 0, the host should wait for the credits to resume.
+*     b. If out_pkt is load AND mc_rsp_rcv_vacancy_i < host_rcv_buf_th_gp (TODO: check this value),
+*        the host should poll the rx fifo and dequeue the data previously loaded from the manycore.
 *
+* 2. Manycore is master, i.e. manycore requests to the host
+*     a. For store request, the host will automatically generate an out response with 1 cycle delay.
+*     b. For load request, the host must generate the response in order.
+*     c. If the host does not poll in time, the fifo will become full and the backup the mc network.
 *
-* Note:
-* the host request is fenced if any of the following conditions are met:
-* 1. manycore endpoint out credits == 0
-* 2. out_pkt is load AND mc_rsp_rcv_vacancy_i < max_out_credits_p
-*    We are not using 0 as the receive fifo vacancy threshold because of the network latency
-*
+* See the BaseJump Manycore Accelerator Network for more details.
+* https://docs.google.com/document/d/1-i62N72pfx2Cd_xKT3hiTuSilQnuC0ZOaSQMG8UPkto
 */
 
 `include "bsg_manycore_packet.vh"
@@ -203,7 +209,7 @@ module bsg_manycore_endpoint_to_fifos
   // -------------------------
   wire fifo_req_fence = (out_credits_o == '0) ||
                         ((host_req_li_cast.op == mc_op_width_lp'({`ePacketOp_remote_load})) &&
-                          mc_rsp_rcv_vacancy_i<max_out_credits_p);
+                          mc_rsp_rcv_vacancy_i < host_rcv_buf_th_gp);
 
   assign endpoint_out_packet_li = {
     (addr_width_p)'(host_req_li_cast.addr)

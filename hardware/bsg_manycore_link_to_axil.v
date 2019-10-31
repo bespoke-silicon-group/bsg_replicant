@@ -1,4 +1,5 @@
-// Copyright (c) 2019, University of Washington All rights reserved.  //
+// Copyright (c) 2019, University of Washington All rights reserved.
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
 //
@@ -28,30 +29,44 @@
 /*
 *  bsg_manycore_link_to_axil.v
 *
-*  AXIL memory-mapped (HOST side)   <->   manycore endpoint standard (MC side)
-*       _________      ______________                    __________
-*  ==> | axil    | -> |  ser_i_par_o | ---------------> | manycore |
-*      | to      | -> |______X2______| ---------------> | endpoint |  --> link_sif_o
-*      | fifos   |     ______________      ________     | to fifos |
-*      |         | <- |  par_i_ser_o | <- |rcv fifo| <- |          |  <-- link_sif_i
-*      |         | <- |______X2______| <-/|___X2___| <- |          |
-*      |         |                       ||        |    |          |
-*      |         | <--------------------=]]        [--> |          |
-*      |_________| <----------------------------------- |out credit|
-*           ^                                           |__________|
-*       ____|____
-*      | cfg rom |
-*      |_________| (bladerunner-related hardware configurations)
+*      AXIL memory-mapped (HOST side)   <->   manycore endpoint standard (MC side)
+*
+*                  axil_to_fifo_tx
+*          ________________________________________        __________
+*         |                                        | -->  | manycore |
+*         | {mm2s}->{fifo(32)}->{sipo}             |      | endpoint |
+*         |________________________________________| -->  | to fifos |
+*      TX/                                                |          | ==> link_sif_o
+* axil===           axil_to_fifo_rx                       |          |
+*      RX\ ________________________________________       |          | <== link_sif_i
+*         |                                        | <--  |          |
+*         | {mm2s}<-{fifo(32)}<-{piso}<-{rcv fifo} |      |          |
+*         |________________________________________| <--  |__________|
+*              ^
+*          ____|_______
+*         | config rom |
+*         |____________|(bladerunner hardware configurations)
+*
 *
 * Note:
-* 1. Only num_endpoints_gp = 1 is tested, see reference 2 for detailed block diagram
-* 2. The memory allocation for AXI address space is defined at bsg_manycore_link_to_axil_pkg.v
-* 3. Because the piso module has conversion latency, we use the rcv fifo (as the 1st rcv_fifos shown above) to ensure
-*    that the fifo always accepts the returned packets from manycore, which is the rule of attaching Master Modules
-*    in the BaseJump Manycore Accelerator Network. (see reference 1 below)
+* 1. Because of the conversion latency of piso, we use a rcv fifo to ensure that the link
+*    always accepts the response packets from manycore, which is a compulsive requirement of
+*    the manycore network
 *
-* [1] https://docs.google.com/document/d/1-i62N72pfx2Cd_xKT3hiTuSilQnuC0ZOaSQMG8UPkto
-* [2] https://docs.google.com/presentation/d/1srH52eYQnYlFdKQ5RnTwliF_OBiIewoYhc4CdA30Svo
+* 2. The definition of mm2s control registers are defined at bsg_manycore_link_to_axil_pkg.v
+*    a. To read the ROM, access the base address defined as rom_base_addr_gp.
+*       The axil address is bytes wise, while the rom address is word wise.
+*    b. To read from the rx fifo:
+*       i.  poll from the Receive Data FIFO word Occupancy(RDFO) until greater than the #words of one packet
+*       ii. read packet data from the Receive Destination Register(RDR).
+*           If read from a empty fifo, RDFO will not be updated and you get ZEROs
+*    c. To write to manycore through the tx fifo (one packet per time):
+*       i.  read the Transmit Data FIFO word Vacancy(TDFV) and save the value as vacancy_before
+*       ii. write words of one mc packet to the Transmit Destination Register(TDR).
+*       iii.poll the TDFV as vacancy_after until vacancy_after = vacancy_before for successful writing to the mc
+*
+*       Note, We assume that the initial FIFO is empty, and writing to a empty FIFO will always success.
+*
 */
 
 `include "bsg_defines.v"
@@ -139,52 +154,52 @@ logic [`BSG_WIDTH(max_out_credits_p)-1:0]                                   out_
 // host <---credit--- mc
 // host <---packet--- mc
 bsg_axil_to_fifos_rx #(
-  .num_fifos_p      (num_fifos_lp     ),
-  .fifo_width_p     (mcl_fifo_width_gp),
-  .rom_addr_width_p (rom_addr_width_lp),
-  .max_out_credits_p(max_out_credits_p)
+  .num_fifos_p      (num_fifos_lp     )
+  ,.mcl_fifo_width_p (mcl_fifo_width_gp)
+  ,.rom_addr_width_p (rom_addr_width_lp)
+  ,.max_out_credits_p(max_out_credits_p)
 ) axil_rx_fifos (
-  .clk_i        (clk_i                             ),
-  .reset_i      (reset_i                           ),
-  .araddr_i     (axil_araddr_i                     ),
-  .arvalid_i    (axil_arvalid_i                    ),
-  .arready_o    (axil_arready_o                    ),
-  .rdata_o      (axil_rdata_o                      ),
-  .rresp_o      (axil_rresp_o                      ),
-  .rvalid_o     (axil_rvalid_o                     ),
-  .rready_i     (axil_rready_i                     ),
-  .fifo_data_i  ({mc_req_lo, mc_rsp_lo}            ),
-  .fifo_v_i     ({mc_req_v_lo, mc_rsp_v_lo}        ),
-  .fifo_ready_o ({mc_req_ready_li, mc_rsp_ready_li}),
-  .rcv_vacancy_o(rcv_vacancy_lo                    ),
-  .tx_vacancy_i (tx_vacancy_lo                     ),
-  .mcl_credits_i(out_credits_lo                    ),
-  .rom_addr_o   (rom_addr_lo                       ),
-  .rom_data_i   (rom_data_li                       )
+  .clk_i        (clk_i                             )
+  ,.reset_i      (reset_i                           )
+  ,.araddr_i     (axil_araddr_i                     )
+  ,.arvalid_i    (axil_arvalid_i                    )
+  ,.arready_o    (axil_arready_o                    )
+  ,.rdata_o      (axil_rdata_o                      )
+  ,.rresp_o      (axil_rresp_o                      )
+  ,.rvalid_o     (axil_rvalid_o                     )
+  ,.rready_i     (axil_rready_i                     )
+  ,.fifo_data_i  ({mc_req_lo, mc_rsp_lo}            )
+  ,.fifo_v_i     ({mc_req_v_lo, mc_rsp_v_lo}        )
+  ,.fifo_ready_o ({mc_req_ready_li, mc_rsp_ready_li})
+  ,.rcv_vacancy_o(rcv_vacancy_lo                    )
+  ,.tx_vacancy_i (tx_vacancy_lo                     )
+  ,.mcl_credits_i(out_credits_lo                    )
+  ,.rom_addr_o   (rom_addr_lo                       )
+  ,.rom_data_i   (rom_data_li                       )
 );
 
 // host ---packet---> mc
 // host ---credit---> mc
 bsg_axil_to_fifos_tx #(
-  .num_fifos_p (num_fifos_lp     ),
-  .fifo_width_p(mcl_fifo_width_gp)
+  .num_fifos_p (num_fifos_lp     )
+  ,.mcl_fifo_width_p(mcl_fifo_width_gp)
 ) axil_tx_fifos (
-  .clk_i       (clk_i                                 ),
-  .reset_i     (reset_i                               ),
-  .awaddr_i    (axil_awaddr_i                         ),
-  .awvalid_i   (axil_awvalid_i                        ),
-  .awready_o   (axil_awready_o                        ),
-  .wdata_i     (axil_wdata_i                          ),
-  .wstrb_i     (axil_wstrb_i                          ),
-  .wvalid_i    (axil_wvalid_i                         ),
-  .wready_o    (axil_wready_o                         ),
-  .bresp_o     (axil_bresp_o                          ),
-  .bvalid_o    (axil_bvalid_o                         ),
-  .bready_i    (axil_bready_i                         ),
-  .fifo_data_o ({host_rsp_li, host_req_li}            ),
-  .fifo_v_o    ({host_rsp_v_li, host_req_v_li}        ),
-  .fifo_ready_i({host_rsp_ready_lo, host_req_ready_lo}),
-  .tx_vacancy_o(tx_vacancy_lo                         )
+  .clk_i       (clk_i                                 )
+  ,.reset_i     (reset_i                               )
+  ,.awaddr_i    (axil_awaddr_i                         )
+  ,.awvalid_i   (axil_awvalid_i                        )
+  ,.awready_o   (axil_awready_o                        )
+  ,.wdata_i     (axil_wdata_i                          )
+  ,.wstrb_i     (axil_wstrb_i                          )
+  ,.wvalid_i    (axil_wvalid_i                         )
+  ,.wready_o    (axil_wready_o                         )
+  ,.bresp_o     (axil_bresp_o                          )
+  ,.bvalid_o    (axil_bvalid_o                         )
+  ,.bready_i    (axil_bready_i                         )
+  ,.fifo_data_o ({host_rsp_li, host_req_li}            )
+  ,.fifo_v_o    ({host_rsp_v_li, host_req_v_li}        )
+  ,.fifo_ready_i({host_rsp_ready_lo, host_req_ready_lo})
+  ,.tx_vacancy_o(tx_vacancy_lo                         )
 );
 
 
@@ -193,11 +208,11 @@ bsg_axil_to_fifos_tx #(
 // ---------------------------------------------------------------------
 
 bsg_bladerunner_configuration #(
-  .width_p     (rom_width_p        ),
-  .addr_width_p(rom_addr_width_lp-2)  // word address
+  .width_p     (rom_width_p        )
+  ,.addr_width_p(rom_addr_width_lp-2)  // word address
 ) configuration_rom (
-  .addr_i(rom_addr_lo[2+:rom_addr_width_lp]),
-  .data_o(rom_data_li                      )
+  .addr_i(rom_addr_lo[2+:rom_addr_width_lp-2])
+  ,.data_o(rom_data_li                        )
 );
 
 
@@ -206,40 +221,44 @@ bsg_bladerunner_configuration #(
 // ---------------------------------------------------------------------
 
 bsg_manycore_endpoint_to_fifos #(
-  .mcl_fifo_width_p (mcl_fifo_width_gp),
-  .x_cord_width_p   (x_cord_width_p   ),
-  .y_cord_width_p   (y_cord_width_p   ),
-  .addr_width_p     (addr_width_p     ),
-  .data_width_p     (data_width_p     ),
-  .max_out_credits_p(max_out_credits_p),
-  .load_id_width_p  (load_id_width_p  )
+  .mcl_fifo_width_p (mcl_fifo_width_gp)
+  ,.x_cord_width_p   (x_cord_width_p   )
+  ,.y_cord_width_p   (y_cord_width_p   )
+  ,.addr_width_p     (addr_width_p     )
+  ,.data_width_p     (data_width_p     )
+  ,.max_out_credits_p(max_out_credits_p)
+  ,.load_id_width_p  (load_id_width_p  )
 ) mc_ep_to_fifos (
-  .clk_i               (clk_i            ),
-  .reset_i             (reset_i          ),
+  .clk_i               (clk_i            )
+  ,.reset_i             (reset_i          )
+
   // fifo interface
-  .mc_req_o            (mc_req_lo        ),
-  .mc_req_v_o          (mc_req_v_lo      ),
-  .mc_req_ready_i      (mc_req_ready_li  ),
-  .host_rsp_i          (host_rsp_li      ),
-  .host_rsp_v_i        (host_rsp_v_li    ),
-  .host_rsp_ready_o    (host_rsp_ready_lo),
-  .host_req_i          (host_req_li      ),
-  .host_req_v_i        (host_req_v_li    ),
-  .host_req_ready_o    (host_req_ready_lo),
-  .mc_rsp_o            (mc_rsp_lo        ),
-  .mc_rsp_v_o          (mc_rsp_v_lo      ),
-  .mc_rsp_ready_i      (mc_rsp_ready_li  ),
+  ,.mc_req_o            (mc_req_lo        )
+  ,.mc_req_v_o          (mc_req_v_lo      )
+  ,.mc_req_ready_i      (mc_req_ready_li  )
+  ,.host_rsp_i          (host_rsp_li      )
+  ,.host_rsp_v_i        (host_rsp_v_li    )
+  ,.host_rsp_ready_o    (host_rsp_ready_lo)
+  ,.host_req_i          (host_req_li      )
+  ,.host_req_v_i        (host_req_v_li    )
+  ,.host_req_ready_o    (host_req_ready_lo)
+  ,.mc_rsp_o            (mc_rsp_lo        )
+  ,.mc_rsp_v_o          (mc_rsp_v_lo      )
+  ,.mc_rsp_ready_i      (mc_rsp_ready_li  )
+
   // manycore link
-  .link_sif_i          (link_sif_i       ),
-  .link_sif_o          (link_sif_o       ),
-  .my_x_i              (my_x_i           ),
-  .my_y_i              (my_y_i           ),
+  ,.link_sif_i          (link_sif_i       )
+  ,.link_sif_o          (link_sif_o       )
+  ,.my_x_i              (my_x_i           )
+  ,.my_y_i              (my_y_i           )
+
   // credit control
-  .mc_rsp_rcv_vacancy_i(rcv_vacancy_lo[0]),
-  .out_credits_o       (out_credits_lo   ),
+  ,.mc_rsp_rcv_vacancy_i(rcv_vacancy_lo[0])
+  ,.out_credits_o       (out_credits_lo   )
+
   // stat log
-  .print_stat_v_o      (print_stat_v_o   ),
-  .print_stat_tag_o    (print_stat_tag_o )
+  ,.print_stat_v_o      (print_stat_v_o   )
+  ,.print_stat_tag_o    (print_stat_tag_o )
 );
 
 endmodule
