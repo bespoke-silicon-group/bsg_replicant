@@ -472,6 +472,8 @@ module cl_manycore
 
     end
 
+    // synopsys translate off
+
     bind bsg_cache vcache_profiler #(
       .data_width_p(data_width_p)
     ) vcache_prof (
@@ -480,6 +482,7 @@ module cl_manycore
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
     );
+    // synopsys translate on
 
   end // block: lv1_vcache
 
