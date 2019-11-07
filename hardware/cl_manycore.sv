@@ -33,6 +33,7 @@
 
 module cl_manycore
   import cl_manycore_pkg::*;
+  import bsg_manycore_pkg::*;
    import bsg_bladerunner_rom_pkg::*;
    import bsg_bladerunner_mem_cfg_pkg::*;
    (
@@ -43,7 +44,6 @@ module cl_manycore
    logic rst_main_n_sync;
 
 `include "bsg_defines.v"
-`include "bsg_manycore_packet.vh"
 `include "cl_id_defines.vh"
 `include "cl_manycore_defines.vh"
 
@@ -383,6 +383,34 @@ module cl_manycore
   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3);
   localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
 
+
+  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
+    || mem_cfg_p ==e_vcache_blocking_axi4_f1_model
+    || mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram
+    || mem_cfg_p ==  e_vcache_non_blocking_axi4_f1_model) begin: lv1_dma
+
+    // for now blocking and non-blocking shares the same wire, since interface is
+    // the same. But it might change in the future.
+
+    import bsg_cache_pkg::*;
+    localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(cache_addr_width_lp);
+
+    logic [num_tiles_x_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
+    logic [num_tiles_x_p-1:0] dma_pkt_v_lo;
+    logic [num_tiles_x_p-1:0] dma_pkt_yumi_li;
+
+    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_li;
+    logic [num_tiles_x_p-1:0] dma_data_v_li;
+    logic [num_tiles_x_p-1:0] dma_data_ready_lo;
+
+    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_lo;
+    logic [num_tiles_x_p-1:0] dma_data_v_lo;
+    logic [num_tiles_x_p-1:0] dma_data_yumi_li;
+
+  end
+  
+
+
    // LEVEL 1
   if (mem_cfg_p == e_infinite_mem) begin
     // each column has a nonsynth infinite memory
@@ -420,20 +448,6 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
            mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
 
-    import bsg_cache_pkg::*;
-
-    `declare_bsg_cache_dma_pkt_s(cache_addr_width_lp);
-    bsg_cache_dma_pkt_s [num_tiles_x_p-1:0] dma_pkt;
-    logic [num_tiles_x_p-1:0] dma_pkt_v_lo;
-    logic [num_tiles_x_p-1:0] dma_pkt_yumi_li;
-
-    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_li;
-    logic [num_tiles_x_p-1:0] dma_data_v_li;
-    logic [num_tiles_x_p-1:0] dma_data_ready_lo;
-
-    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_lo;
-    logic [num_tiles_x_p-1:0] dma_data_v_lo;
-    logic [num_tiles_x_p-1:0] dma_data_yumi_li;
 
     for (genvar i = 0; i < num_tiles_x_p; i++) begin
 
@@ -457,17 +471,17 @@ module cl_manycore
         ,.my_x_i(cache_x_lo[i])
         ,.my_y_i(cache_y_lo[i])
 
-        ,.dma_pkt_o(dma_pkt[i])
-        ,.dma_pkt_v_o(dma_pkt_v_lo[i])
-        ,.dma_pkt_yumi_i(dma_pkt_yumi_li[i])
+        ,.dma_pkt_o(lv1_dma.dma_pkt[i])
+        ,.dma_pkt_v_o(lv1_dma.dma_pkt_v_lo[i])
+        ,.dma_pkt_yumi_i(lv1_dma.dma_pkt_yumi_li[i])
 
-        ,.dma_data_i(dma_data_li[i])
-        ,.dma_data_v_i(dma_data_v_li[i])
-        ,.dma_data_ready_o(dma_data_ready_lo[i])
+        ,.dma_data_i(lv1_dma.dma_data_li[i])
+        ,.dma_data_v_i(lv1_dma.dma_data_v_li[i])
+        ,.dma_data_ready_o(lv1_dma.dma_data_ready_lo[i])
 
-        ,.dma_data_o(dma_data_lo[i])
-        ,.dma_data_v_o(dma_data_v_lo[i])
-        ,.dma_data_yumi_i(dma_data_yumi_li[i])
+        ,.dma_data_o(lv1_dma.dma_data_lo[i])
+        ,.dma_data_v_o(lv1_dma.dma_data_v_lo[i])
+        ,.dma_data_yumi_i(lv1_dma.dma_data_yumi_li[i])
      );
 
     end
@@ -485,11 +499,52 @@ module cl_manycore
     // synopsys translate on
 
   end // block: lv1_vcache
+  else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
+           mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv1_vcache_nb
+
+    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+      bsg_manycore_vcache_non_blocking #(
+        .data_width_p(data_width_p)
+        ,.addr_width_p(addr_width_p)
+        ,.block_size_in_words_p(block_size_in_words_p)
+        ,.sets_p(sets_p)
+        ,.ways_p(ways_p)
+
+        ,.miss_fifo_els_p(miss_fifo_els_p)
+        ,.x_cord_width_p(x_cord_width_p)
+        ,.y_cord_width_p(y_cord_width_p)
+        ,.load_id_width_p(load_id_width_p)
+      ) vcache_nb (
+        .clk_i(core_clk)
+        ,.reset_i(core_reset)
+        
+        ,.link_sif_i(cache_link_sif_lo[i])
+        ,.link_sif_o(cache_link_sif_li[i])
+      
+        ,.dma_pkt_o(lv1_dma.dma_pkt[i])
+        ,.dma_pkt_v_o(lv1_dma.dma_pkt_v_lo[i])
+        ,.dma_pkt_yumi_i(lv1_dma.dma_pkt_yumi_li[i])
+
+        ,.dma_data_i(lv1_dma.dma_data_li[i])
+        ,.dma_data_v_i(lv1_dma.dma_data_v_li[i])
+        ,.dma_data_ready_o(lv1_dma.dma_data_ready_lo[i])
+
+        ,.dma_data_o(lv1_dma.dma_data_lo[i])
+        ,.dma_data_v_o(lv1_dma.dma_data_v_lo[i])
+        ,.dma_data_yumi_i(lv1_dma.dma_data_yumi_li[i])
+      );
+
+    end
+
+  end
+  
 
   // LEVEL 2
   //
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
-      mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv2_axi4
+      mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
+      mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
+      mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv2_axi4
 
     logic [axi_id_width_p-1:0] axi_awid;
     logic [axi_addr_width_p-1:0] axi_awaddr;
@@ -545,17 +600,17 @@ module cl_manycore
       .clk_i(core_clk)
       ,.reset_i(core_reset)
 
-      ,.dma_pkt_i(lv1_vcache.dma_pkt)
-      ,.dma_pkt_v_i(lv1_vcache.dma_pkt_v_lo)
-      ,.dma_pkt_yumi_o(lv1_vcache.dma_pkt_yumi_li)
+      ,.dma_pkt_i(lv1_dma.dma_pkt)
+      ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo)
+      ,.dma_pkt_yumi_o(lv1_dma.dma_pkt_yumi_li)
 
-      ,.dma_data_o(lv1_vcache.dma_data_li)
-      ,.dma_data_v_o(lv1_vcache.dma_data_v_li)
-      ,.dma_data_ready_i(lv1_vcache.dma_data_ready_lo)
+      ,.dma_data_o(lv1_dma.dma_data_li)
+      ,.dma_data_v_o(lv1_dma.dma_data_v_li)
+      ,.dma_data_ready_i(lv1_dma.dma_data_ready_lo)
 
-      ,.dma_data_i(lv1_vcache.dma_data_lo)
-      ,.dma_data_v_i(lv1_vcache.dma_data_v_lo)
-      ,.dma_data_yumi_o(lv1_vcache.dma_data_yumi_li)
+      ,.dma_data_i(lv1_dma.dma_data_lo)
+      ,.dma_data_v_i(lv1_dma.dma_data_v_lo)
+      ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li)
 
       ,.axi_awid_o(axi_awid)
       ,.axi_awaddr_o(axi_awaddr)
@@ -603,7 +658,9 @@ module cl_manycore
   // LEVEL 3
   //
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
-      mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin
+      mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
+      mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
+      mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin
    // Attach cache to output DRAM
 
    // AXI Address Write signals

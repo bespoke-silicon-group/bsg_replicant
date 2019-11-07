@@ -2,9 +2,8 @@
  *  bsg_manycore_wrapper.v
  */
 
-`include "bsg_manycore_packet.vh"
-
 module bsg_manycore_wrapper
+  import bsg_manycore_pkg::*;
   import bsg_noc_pkg::*;
   #(parameter addr_width_p="inv" // in words
     , parameter data_width_p="inv"

@@ -17,11 +17,11 @@
 
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_defines.v"
-`include "bsg_manycore_packet.vh"
 `include "axil_to_mcl.vh"
 `include "bsg_bladerunner_rom_pkg.vh"
 
 module axil_to_mcl
+  import bsg_manycore_pkg::*;
   import cl_mcl_pkg::*;
   import bsg_bladerunner_rom_pkg::*;
   #(
@@ -382,7 +382,7 @@ module axil_to_mcl
 
     // fifo request to manycore
     assign fifo_req_enable[i] = !(
-      (fifo_req_cast[i].op==8'(`ePacketOp_remote_load)) && (rcv_fifo_vacancy_lo[2*i]<max_out_credits_p)
+      (fifo_req_cast[i].op==8'(e_remote_load)) && (rcv_fifo_vacancy_lo[2*i]<max_out_credits_p)
       || (out_credits_lo[i] == '0)
     );
     assign endpoint_out_v_li[i] = fifo_v_lo[2*i] & fifo_req_enable[i];
@@ -403,7 +403,7 @@ module axil_to_mcl
     assign fifo_v_li[2*i]      = returned_v_r_lo[i];
     assign fifo_data_li[2*i]   = mc_res_cast[i];
     assign mc_res_cast[i].padding = '0;
-    assign mc_res_cast[i].pkt_type = {7'b0, `ePacketType_data};
+    assign mc_res_cast[i].pkt_type = {7'b0, e_return_data};
     assign mc_res_cast[i].data = (32)'(returned_data_r_lo[i]);
     assign mc_res_cast[i].load_id = (32)'(returned_load_id_r_lo[i]);
     assign mc_res_cast[i].y_cord = (8)'(my_y_li[i]);
