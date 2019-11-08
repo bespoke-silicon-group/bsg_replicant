@@ -34,6 +34,7 @@ SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 # "Unified tests" all use the generic test top-level:
 # test_unified_main.c
 UNIFIED_TESTS = test_python
+UNIFIED_TESTS += test_lenet5
 
 # "Independent Tests" use a per-test <test_name>.c file
 INDEPENDENT_TESTS := 
@@ -49,4 +50,4 @@ CXXDEFINES += $(DEFINES)
 FLAGS     = -g -Wall $(shell python3.6-config --cflags) -O1
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS) 
-LDFLAGS  += $(shell python3.6-config --ldflags) 
+LDFLAGS  += -L/mnt/users/spin1/no_backup/bandhav/miniconda3/envs/hbmc0/lib -lpython3.7m
