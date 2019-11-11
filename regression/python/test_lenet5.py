@@ -30,6 +30,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+import os
 
 # Network
 class LeNet5(nn.Module):
@@ -67,7 +68,7 @@ class LeNet5(nn.Module):
 
 # Train routine
 def train(net, loader, epochs, optimizer, loss_func):
-  print('Training {}...\n'.format(type(net).__name__))
+  print('Training {} for {} epoch(s)...\n'.format(type(net).__name__, epochs))
   for epoch in range(epochs):
     losses = []
 
@@ -105,7 +106,7 @@ def test(net, loader, loss_func):
   test_loss /= len(loader.dataset)
   test_accuracy = 100. * (num_correct / len(loader.dataset))
 
-  print('\nTest set: Average loss={:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+  print('Test set: Average loss={:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
             test_loss, num_correct, len(loader.dataset), test_accuracy
   ))
 
@@ -113,7 +114,7 @@ def test(net, loader, loss_func):
 BATCH_SIZE = 32
 LEARNING_RATE = 0.02
 MOMENTUM = 0.9
-EPOCHS = 5
+EPOCHS = 1
 net = LeNet5()
 optimizer = torch.optim.SGD(
   net.parameters(), lr=LEARNING_RATE, momentum=MOMENTUM
@@ -141,7 +142,18 @@ testloader = torch.utils.data.DataLoader(
 )
 
 # Train
-train(net, trainloader, EPOCHS, optimizer, loss_func)
+with torch.autograd.profiler.profile() as prof_train:
+  train(net, trainloader, EPOCHS, optimizer, loss_func)
 
 # Test
-test(net, testloader, loss_func)
+with torch.autograd.profiler.profile() as prof_test:
+  test(net, testloader, loss_func)
+
+# Log profiling data
+module_name = os.path.splitext(os.path.basename(__file__))[0]
+profile_log_filename = module_name + '.pytorch.profile.log'
+profile_log = open(profile_log_filename, "w")
+print('PyTorch profiling logged in {}\n'.format( profile_log_filename))
+print(prof_train.key_averages().table(sort_by='self_cpu_time_total'), file=profile_log)
+print(prof_test.key_averages().table(sort_by='self_cpu_time_total'), file=profile_log)
+profile_log.close()
