@@ -107,7 +107,10 @@ VHEADERS += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh
 VHEADERS += $(HARDWARE_PATH)/cl_id_defines.vh
 
-define int2bin
+# The following functions convert a decimal string to a binary string,
+# and a hexadecimal string (WITHOUT the preceeding 0x) into binary
+# strings of 32-characters in length
+define dec2bin
 	`perl -e 'printf "%032b\n",'$(1)`
 endef
 
@@ -129,20 +132,20 @@ $(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.rom
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.include
 	@echo $(call hex2bin,$(CL_MANYCORE_RELEASE_VERSION))   > $@.temp
 	@echo $(call hex2bin,$(CL_MANYCORE_COMPILATION_DATE))  >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_MAX_EPA_WIDTH))     >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_DATA_WIDTH))        >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_DIM_X))             >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_DIM_Y))             >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_HOST_COORD_X))      >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_HOST_COORD_Y))      >> $@.temp
-	@echo $(call int2bin,0)                                >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MAX_EPA_WIDTH))     >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_DATA_WIDTH))        >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_DIM_X))             >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_DIM_Y))             >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_HOST_COORD_X))      >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_HOST_COORD_Y))      >> $@.temp
+	@echo $(call dec2bin,0)                                >> $@.temp
 	@echo $(call hex2bin,$(BASEJUMP_STL_COMMIT_ID))        >> $@.temp
 	@echo $(call hex2bin,$(BSG_MANYCORE_COMMIT_ID))        >> $@.temp
 	@echo $(call hex2bin,$(BSG_F1_COMMIT_ID))              >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_VCACHE_WAYS))       >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_VCACHE_SETS))       >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS))  >> $@.temp
-	@echo $(call int2bin,$(CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_WAYS))       >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_SETS))       >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS))  >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS)) >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define
