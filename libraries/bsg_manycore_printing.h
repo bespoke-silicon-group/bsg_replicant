@@ -59,8 +59,8 @@ extern "C" {
 #define BSG_PRINT_STREAM_INFO  stderr
 
 #ifdef COSIM
-        extern void sv_bsg_realtime(uint64_t*);
-        uint64_t bsg_realtime();
+        extern void sv_bsg_time(uint64_t*);
+        uint64_t bsg_time();
 #endif
 
         static inline uint64_t bsg_utc(){
@@ -79,7 +79,7 @@ extern "C" {
 
         /* #if defined(DEBUG) && defined(COSIM) */
         /* #define bsg_pr_dbg(fmt, ...)                    \ */
-        /*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_realtime(), bsg_utc(), ##__VA_ARGS__) */
+        /*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_time(), bsg_utc(), ##__VA_ARGS__) */
         /* #elif defined(DEBUG) */
         /* #define bsg_pr_dbg(fmt, ...)                    \ */
         /*         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, bsg_utc(), ##__VA_ARGS__) */

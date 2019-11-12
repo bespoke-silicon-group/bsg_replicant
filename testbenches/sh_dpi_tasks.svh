@@ -44,9 +44,10 @@ import tb_type_defines_pkg::*;
    static int h2c_desc_index = 0;
    static int c2h_desc_index = 0;
    
-   export "DPI-C" task sv_bsg_realtime;
-   task sv_bsg_realtime(output longint unsigned t);
-       t = $realtime;
+   export "DPI-C" task sv_bsg_time;
+
+   task sv_bsg_time(output longint unsigned t);
+      t = $time;
    endtask
 
    task sv_printf(input string msg);
