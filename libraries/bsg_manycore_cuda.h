@@ -283,7 +283,7 @@ extern "C" {
 
 
         /**
-         * Enqueues and schedules an application to be run on device
+         * Enqueues and schedules a kernel to be run on device
          * Takes the grid size, tile group dimensions, kernel name, argc,
          * argv* and the finish signal address, calls hb_mc_tile_group_enqueue
          * to initialize all tile groups for grid.
@@ -296,12 +296,12 @@ extern "C" {
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
         __attribute__((warn_unused_result))
-        int hb_mc_application_init (hb_mc_device_t *device,
-                                    hb_mc_dimension_t grid_dim,
-                                    hb_mc_dimension_t tg_dim,
-                                    const char *name,
-                                    const uint32_t argc,
-                                    const uint32_t *argv);
+        int hb_mc_kernel_enqueue (hb_mc_device_t *device,
+                                       hb_mc_dimension_t grid_dim,
+                                       hb_mc_dimension_t tg_dim,
+                                       const char *name,
+                                       const uint32_t argc,
+                                       const uint32_t *argv);
 
 
 
