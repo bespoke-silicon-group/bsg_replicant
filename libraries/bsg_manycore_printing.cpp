@@ -48,7 +48,7 @@ static void insert_time(prefix_info_t *info, const char *prefix)
         /* insert time here */
 #if 1
 #ifdef COSIM
-        fprintf(info->file, "%s @ (%llu/%llu): ", prefix, bsg_realtime(), bsg_utc());
+        fprintf(info->file, "%s @ (%llu/%llu): ", prefix, bsg_time(), bsg_utc());
 #else
         fprintf(info->file, "%s @ (%llu): ", prefix, bsg_utc());
 #endif
@@ -135,10 +135,9 @@ int bsg_pr_prefix(const char *prefix, const char *fmt, ...)
         return r;
 }
 #ifdef COSIM
-uint64_t bsg_realtime(){
+uint64_t bsg_time(){
         uint64_t val;
-        //fprintf(stderr,"%s()\n", __func__);
-        sv_bsg_realtime(&val);
+        sv_bsg_time(&val);
         return val;
 }
 #endif
