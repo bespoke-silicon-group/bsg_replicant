@@ -27,6 +27,7 @@
 
 module cosim_wrapper();
    import cl_manycore_pkg::*;
+   import bsg_bladerunner_mem_cfg_pkg::*;
    initial begin
       int exit_code;
       string args;
@@ -43,6 +44,19 @@ module cosim_wrapper();
       $display("[INFO][TESTBENCH] BSG_MACHINE_MEM_CFG                  = %s", mem_cfg_p.name());
 
       tb.power_up();
+
+      if (mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4 ||
+          mem_cfg_p == e_vcache_blocking_axi4_f1_ddr_modelx4) begin
+         // initialize the DDR
+         $display("BSG COSIM: Starting DDR init...\n");
+         tb.nsec_delay(500);
+         tb.poke_stat(.addr(8'h0c), .ddr_idx(0), .data(32'h0000_0000));
+         tb.poke_stat(.addr(8'h0c), .ddr_idx(1), .data(32'h0000_0000));
+         tb.poke_stat(.addr(8'h0c), .ddr_idx(2), .data(32'h0000_0000));
+         // allow memory to initialize
+         tb.nsec_delay(27000);
+         $display("BSG COSIM: Done DDR init...\n");
+      end
 
       tb.cosim_main(exit_code, args);
       

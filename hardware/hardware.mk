@@ -1,19 +1,19 @@
 # Copyright (c) 2019, University of Washington All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
-# 
+#
 # Redistributions in binary form must reproduce the above copyright notice, this
 # list of conditions and the following disclaimer in the documentation and/or
 # other materials provided with the distribution.
-# 
+#
 # Neither the name of the copyright holder nor the names of its contributors may
 # be used to endorse or promote products derived from this software without
 # specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -34,7 +34,7 @@
 
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
-# 
+#
 # CL_DIR: The path to the root of the BSG F1 Repository
 ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
@@ -99,6 +99,9 @@ VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
 VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
+VSOURCES += $(CL_DIR)/hardware/axi4_transpose_h2v.v
+VSOURCES += $(CL_DIR)/hardware/axi4_clock_converter.v
+VSOURCES += $(CL_DIR)/hardware/cl_sh_ddr_wrapper.v
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh

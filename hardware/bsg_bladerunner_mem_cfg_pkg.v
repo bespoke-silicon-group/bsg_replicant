@@ -7,15 +7,15 @@ package bsg_bladerunner_mem_cfg_pkg;
   `include "bsg_defines.v"
 
   localparam max_cfgs = 128;
-  localparam lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs); 
+  localparam lg_max_cfgs = `BSG_SAFE_CLOG2(max_cfgs);
 
   // Bladerunner Memory Configuration enum
-  // 
+  //
   // The enum naming convention describes which memory system is being used.
   // It roughly divides into three levels of hierarchy.
   //
   // e_{cache/block_mem}_{interface}_{backend_memory}
-  //    
+  //
   //
   // LEVEL 1) What is attached to manycore link on the south side. This could be the
   //          last level of hierarchy, if it's block mem, or infinite memory, for
@@ -31,7 +31,7 @@ package bsg_bladerunner_mem_cfg_pkg;
   //          - aib_ (convert to AIB interface)
   //
   // LEVEL 3) What is being used as the last main memory.
-  //          - nonsynth_mem 
+  //          - nonsynth_mem
   //          - lpddr4 (ex. micron sim model)
   //          - f1_ddr
   //
@@ -41,7 +41,7 @@ package bsg_bladerunner_mem_cfg_pkg;
     // LEVEL 1) zero-latency, infinite capacity block mem.
     //          (uses associative array)
     e_infinite_mem
-    
+
     // LEVEL 1) bsg_manycore_vcache (blocking)
     // LEVEL 2) bsg_cache_to_axi
     // LEVEl 3) bsg_nonsynth_manycore_axi_mem
@@ -49,13 +49,14 @@ package bsg_bladerunner_mem_cfg_pkg;
     // e_vcache_blocking_axi4_f1_dram directs simulation to use the
     // slower, but more accurate, DDR Model. The default is
     // e_vcache_blocking_axi4_f1_model uses an (infinite) AXI memory
-    // model with low (1-2 cycle) latency in simulation. 
-    //                                      
+    // model with low (1-2 cycle) latency in simulation.
+    //
     // Either value produces the correct DDR4 Module in F1
     // implemenation
     , e_vcache_blocking_axi4_f1_dram
     , e_vcache_blocking_axi4_f1_model
-
+    , e_vcache_blocking_axi4_f1_ddrx4
+    , e_vcache_blocking_axi4_f1_ddr_modelx4 // memory model not well supported?
   } bsg_bladerunner_mem_cfg_e;
 
 endpackage

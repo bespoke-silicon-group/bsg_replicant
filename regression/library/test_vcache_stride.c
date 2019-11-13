@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -32,9 +32,13 @@
  */
 #include "test_vcache_stride.h"
 
-#define STRIDE_SIZE 1024
+#define SETS 64
+#define WAYS 8
+#define BLOCK_SIZE 16*4
+
+#define STRIDE_SIZE SETS*BLOCK_SIZE
 #define DRAM_BASE 0x0000
-#define NUM_STRIDES 16
+#define NUM_STRIDES (WAYS*2)
 
 int test_vcache_stride() {
         int rc;
@@ -63,9 +67,7 @@ int test_vcache_stride() {
 
         /* To increase the number of DRAM banks tested, increase ndrams (must be
          * less than dim_x) and add the X coordinates to dim_x */
-        int dram = 0, ndrams = 1;
-        hb_mc_idx_t dram_xs[dim_x];
-        dram_xs[0] = 0;
+        int dram = 0, ndrams = dim_x;
         hb_mc_idx_t dram_coord_y = hb_mc_config_get_dram_y(config);
         hb_mc_idx_t dram_coord_x = -1;
         hb_mc_epa_t epa;
@@ -79,7 +81,7 @@ int test_vcache_stride() {
         hb_mc_response_packet_t res;
 
         for (dram = 0; dram < ndrams; ++dram){
-                dram_coord_x = dram_xs[dram];
+                dram_coord_x = dram;
                 bsg_pr_test_info("Testing DRAM/Cache Interface at (%d, %d).\n", dram_coord_x, dram_coord_y);
 
                 for (stride = 0; stride < NUM_STRIDES; ++stride) {
@@ -92,7 +94,7 @@ int test_vcache_stride() {
                         npa = hb_mc_epa_to_npa(dest, epa);
                         val = gold[stride];
 
-                        bsg_pr_test_info("%s -- Writing value %lu to 0x%x @ (%d, %d)\n", 
+                        bsg_pr_test_info("%s -- Writing value %lu to 0x%x @ (%d, %d)\n",
                                         __func__, val, epa, dram_coord_x, dram_coord_y);
                         rc = hb_mc_manycore_write32(&mc, &npa, val);
                         if(rc != HB_MC_SUCCESS) {
@@ -100,25 +102,30 @@ int test_vcache_stride() {
                                 return HB_MC_FAIL;
                         }
                         val = ~val;
-
+                }
+                // read
+                for (stride = 0; stride < NUM_STRIDES; ++stride) {
+                        epa = DRAM_BASE + stride * STRIDE_SIZE;
+                        dest = hb_mc_coordinate(dram_coord_x, dram_coord_y);
+                        npa = hb_mc_epa_to_npa(dest, epa);
                         rc = hb_mc_manycore_read32(&mc, &npa, &val);
                         if(rc != HB_MC_SUCCESS) {
                                 bsg_pr_test_err("%s -- hb_mc_read32 failed on iteration %d!\n", __func__, stride);
                                 return HB_MC_FAIL;
                         }
-                        bsg_pr_test_info("%s -- Read value %lu from 0x%x @ (%d, %d)\n", 
+                        bsg_pr_test_info("%s -- Read value %lu from 0x%x @ (%d, %d)\n",
                                         __func__, val, epa, dram_coord_x, dram_coord_y);
                         result[stride] = val;
                 }
-        }
-        for (stride = 0; stride < NUM_STRIDES; ++stride) {
-                if(result[stride] != gold[stride]){
-                        bsg_pr_test_err("%s -- Index %d: Result, %lu, did not match expected, %lu!\n", 
-                                        __func__, stride, result[stride], gold[stride]);
-                        return HB_MC_FAIL;
+                for (stride = 0; stride < NUM_STRIDES; ++stride) {
+                        if(result[stride] != gold[stride]){
+                                bsg_pr_test_err("%s -- Index %d: Result, %lu, did not match expected, %lu!\n",
+                                                __func__, stride, result[stride], gold[stride]);
+                                return HB_MC_FAIL;
+                        }
                 }
+                bsg_pr_test_info("%s -- %d Strides Passed\n", __func__, stride);
         }
-        bsg_pr_test_info("%s -- %d Strides Passed\n", __func__, stride);
 
         return HB_MC_SUCCESS;
 }
