@@ -40,6 +40,12 @@ ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
 endif
 
+# BSG_MACHINE_PATH: The path to the Makefile.machine.include file that
+# defines the hardware configuration
+ifndef BSG_MACHINE_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PATH is not defined$(NC)"))
+endif
+
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
 ifndef TESTBENCH_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
@@ -139,7 +145,7 @@ VDEFINES   += COSIM
 VDEFINES   += DISABLE_VJTAG_DEBUG
 VDEFINES   += ENABLE_PROTOCOL_CHK
 
-include $(CL_DIR)/Makefile.machine.include
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 # Setting CL_MANYCORE_MEM_CFG to e_vcache_blocking_axi4_f1_dram
 # directs simulation to use the slower, but more accurate, DDR
 # Model. The default is e_vcache_blocking_axi4_f1_model uses an
@@ -177,9 +183,9 @@ VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 # with `make squeakyclean` or an equivalent
 $(TESTBENCH_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && vivado -mode batch -source $<
-
-$(WORKDIR)/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(CL_DIR)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
 	echo "$(PROJECT) : $(WORKDIR)/64" >> $(TESTBENCH_PATH)/synopsys_sim.setup
+
+$(WORKDIR)/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(BSG_MACHINE_PATH)/Makefile.machine.include $(HARDWARE_MACHINE_FILE) $(VHEADERS) $(VSOURCES)
 	cd $(TESTBENCH_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \

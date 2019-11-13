@@ -40,6 +40,12 @@ ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
 endif
 
+# BSG_MACHINE_PATH: The path to the Makefile.machine.include file that
+# defines the hardware configuration
+ifndef BSG_MACHINE_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PATH is not defined$(NC)"))
+endif
+
 # HARDWARE_PATH: The path to the hardware folder in BSG F1
 ifndef HARDWARE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
@@ -57,7 +63,7 @@ endif
 
 # Makefile.machine.include defines the Manycore hardware
 # configuration.
-include $(CL_DIR)/Makefile.machine.include
+include $(HARDWARE_PATH)/Makefile.machine.include
 CL_MANYCORE_MAX_EPA_WIDTH            := $(BSG_MACHINE_MAX_EPA_WIDTH)
 CL_MANYCORE_DATA_WIDTH               := $(BSG_MACHINE_DATA_WIDTH)
 CL_MANYCORE_VCACHE_WAYS              := $(BSG_MACHINE_VCACHE_WAY)
@@ -87,12 +93,11 @@ include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
 # verilog sources (respectively). These are used during simulation compilation,
 # but transformed into a tool-specific syntax where necesssary.
+VINCLUDES += $(HARDWARE_MACHINE_PATH)
 VINCLUDES += $(HARDWARE_PATH)
 
 VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_mem_cfg_pkg.v
-VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_configuration.v
 VSOURCES += $(HARDWARE_PATH)/cl_manycore_pkg.v
-VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 
 VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
@@ -100,12 +105,15 @@ VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
 VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
 
-VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
-VHEADERS += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh
 VHEADERS += $(HARDWARE_PATH)/cl_id_defines.vh
+
+VSOURCES += $(HARDWARE_MACHINE_PATH)/$(CL_TOP_MODULE).sv
+VHEADERS += $(HARDWARE_MACHINE_PATH)/bsg_bladerunner_rom_pkg.vh
+VHEADERS += $(HARDWARE_MACHINE_PATH)/f1_parameters.vh
+VSOURCES += $(HARDWARE_MACHINE_PATH)/bsg_bladerunner_configuration.v
 
 # The following functions convert a decimal string to a binary string,
 # and a hexadecimal string (WITHOUT the preceeding 0x) into binary
@@ -123,13 +131,13 @@ endef
 # bsg_ascii_to_rom, which parses an ASCII file that encodes binary
 # data. Each rom entry is a 32-character string with 1/0 values. Each
 # line is a separate entry. This target generates the verilog for the rom.
-$(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.rom
+$(HARDWARE_MACHINE_PATH)/%.v: $(HARDWARE_MACHINE_PATH)/%.rom
 	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
                bsg_bladerunner_configuration > $@
 
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
-$(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.include
+%/bsg_bladerunner_configuration.rom: %/machine.mk $(HARDWARE_PATH)/Makefile.machine.include 
 	@echo $(call hex2bin,$(CL_MANYCORE_RELEASE_VERSION))   > $@.temp
 	@echo $(call hex2bin,$(CL_MANYCORE_COMPILATION_DATE))  >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MAX_EPA_WIDTH))     >> $@.temp
@@ -151,7 +159,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.i
 # Each manycore design on has a set of parameters that define
 # it. Instead of passing these parameters as command-line defines
 # (which is tool-specific) we generate a header file.
-$(HARDWARE_PATH)/f1_parameters.vh: $(CL_DIR)/Makefile.machine.include
+%/f1_parameters.vh: %/machine.mk $(HARDWARE_PATH)/Makefile.machine.include
 	@echo "\`ifndef F1_DEFINES" > $@
 	@echo "\`define F1_DEFINES" >> $@
 	@echo "\`define CL_MANYCORE_MAX_EPA_WIDTH $(CL_MANYCORE_MAX_EPA_WIDTH)" >> $@
@@ -167,7 +175,7 @@ $(HARDWARE_PATH)/f1_parameters.vh: $(CL_DIR)/Makefile.machine.include
 	@echo "\`endif" >> $@
 
 # This package defines the number of lines in the ROM
-$(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh: $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom
+%/bsg_bladerunner_rom_pkg.vh: %/machine.mk %/bsg_bladerunner_configuration.rom
 	@echo "\`ifndef BSG_BLADERUNNER_ROM_PKG" > $@
 	@echo "\`define BSG_BLADERUNNER_ROM_PKG" >> $@
 	@echo >> $@
@@ -184,7 +192,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh: $(HARDWARE_PATH)/bsg_bladerunner_co
 .PHONY: hardware.clean
 
 hardware.clean:
-	rm -f $(HARDWARE_PATH)/bsg_bladerunner_configuration.{rom,v}
-	rm -f $(HARDWARE_PATH)/f1_parameters.vh
-	rm -f $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
+	rm -f */bsg_bladerunner_configuration.{rom,v}
+	rm -f */f1_parameters.vh
+	rm -f */bsg_bladerunner_rom_pkg.vh
 
