@@ -41,7 +41,7 @@ $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
 endif
 
 # BSG_MACHINE_PATH: The path to the Makefile.machine.include file that
-# defines the hardware configuration
+# defines the hardware configuration. Usually set in environment.mk
 ifndef BSG_MACHINE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PATH is not defined$(NC)"))
 endif
@@ -63,7 +63,7 @@ endif
 
 # Makefile.machine.include defines the Manycore hardware
 # configuration.
-include $(HARDWARE_PATH)/Makefile.machine.include
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 CL_MANYCORE_MAX_EPA_WIDTH            := $(BSG_MACHINE_MAX_EPA_WIDTH)
 CL_MANYCORE_DATA_WIDTH               := $(BSG_MACHINE_DATA_WIDTH)
 CL_MANYCORE_VCACHE_WAYS              := $(BSG_MACHINE_VCACHE_WAY)
@@ -137,7 +137,7 @@ $(HARDWARE_MACHINE_PATH)/%.v: $(HARDWARE_MACHINE_PATH)/%.rom
 
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
-%/bsg_bladerunner_configuration.rom: %/machine.mk $(HARDWARE_PATH)/Makefile.machine.include 
+%/bsg_bladerunner_configuration.rom: %/machine.mk $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo $(call hex2bin,$(CL_MANYCORE_RELEASE_VERSION))   > $@.temp
 	@echo $(call hex2bin,$(CL_MANYCORE_COMPILATION_DATE))  >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MAX_EPA_WIDTH))     >> $@.temp
@@ -159,7 +159,7 @@ $(HARDWARE_MACHINE_PATH)/%.v: $(HARDWARE_MACHINE_PATH)/%.rom
 # Each manycore design on has a set of parameters that define
 # it. Instead of passing these parameters as command-line defines
 # (which is tool-specific) we generate a header file.
-%/f1_parameters.vh: %/machine.mk $(HARDWARE_PATH)/Makefile.machine.include
+%/f1_parameters.vh: %/machine.mk $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo "\`ifndef F1_DEFINES" > $@
 	@echo "\`define F1_DEFINES" >> $@
 	@echo "\`define CL_MANYCORE_MAX_EPA_WIDTH $(CL_MANYCORE_MAX_EPA_WIDTH)" >> $@
