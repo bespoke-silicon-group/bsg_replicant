@@ -166,10 +166,25 @@ $(HARDWARE_PATH)/f1_parameters.vh: $(CL_DIR)/Makefile.machine.include
 	@echo "\`define CL_MANYCORE_BRANCH_TRACE_EN $(CL_MANYCORE_BRANCH_TRACE_EN)" >> $@
 	@echo "\`endif" >> $@
 
+# This package defines the number of lines in the ROM
+$(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh: $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom
+	@echo "\`ifndef BSG_BLADERUNNER_ROM_PKG" > $@
+	@echo "\`define BSG_BLADERUNNER_ROM_PKG" >> $@
+	@echo >> $@
+	@echo "package bsg_bladerunner_rom_pkg;" >> $@
+	@echo >> $@
+	@echo "parameter rom_width_p = 32;" >> $@
+	@echo "parameter rom_els_p = `wc -l < $<`;" >> $@
+	@echo >> $@
+	@echo "endpackage" >> $@
+	@echo >> $@
+	@echo "\`endif" >> $@
+
+
 .PHONY: hardware.clean
 
 hardware.clean:
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_configuration.{rom,v}
 	rm -f $(HARDWARE_PATH)/f1_parameters.vh
-
+	rm -f $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 
