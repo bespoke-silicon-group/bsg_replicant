@@ -115,7 +115,7 @@ int kernel_softmax(int argc, char **argv)
 
         int cuda_argv[] = { A_device, B_device, M, N, block_size_y, block_size_x };
         size_t cuda_argc = sizeof(cuda_argv) / sizeof(cuda_argv[0]);
-        rc = hb_mc_application_init(mc, grid_dim, tilegroup_dim, "kernel_softmax", cuda_argc, cuda_argv);
+        rc = hb_mc_kernel_enqueue(mc, grid_dim, tilegroup_dim, "kernel_softmax", cuda_argc, cuda_argv);
         if(rc != HB_MC_SUCCESS)
         {
                 bsg_pr_err("Failed to initialize grid.\n");

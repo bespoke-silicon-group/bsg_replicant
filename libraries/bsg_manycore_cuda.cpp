@@ -288,7 +288,7 @@ static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh) {
 
 
 /**
- * Enqueues and schedules an application to be run on device
+ * Enqueues and schedules a kernel to be run on device
  * Takes the grid size, tile group dimensions, kernel name, argc, argv* and the
  * finish signal address, calls hb_mc_tile_group_enqueue to initialize all tile groups for grid.
  * @param[in]  device        Pointer to device
@@ -299,12 +299,12 @@ static int hb_mc_device_mesh_exit (hb_mc_mesh_t *mesh) {
  * @param[in]  argv          List of input arguments to kernel
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_application_init (hb_mc_device_t *device,
-                            hb_mc_dimension_t grid_dim,
-                            hb_mc_dimension_t tg_dim,
-                            const char* name,
-                            uint32_t argc,
-                            const uint32_t *argv) {
+int hb_mc_kernel_enqueue (hb_mc_device_t *device,
+                               hb_mc_dimension_t grid_dim,
+                               hb_mc_dimension_t tg_dim,
+                               const char* name,
+                               uint32_t argc,
+                               const uint32_t *argv) {
         int error; 
         for (hb_mc_idx_t tg_id_x = 0; tg_id_x < hb_mc_dimension_get_x(grid_dim); tg_id_x ++) { 
                 for (hb_mc_idx_t tg_id_y = 0; tg_id_y < hb_mc_dimension_get_y(grid_dim); tg_id_y ++) { 
