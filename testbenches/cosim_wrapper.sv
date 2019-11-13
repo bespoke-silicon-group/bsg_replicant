@@ -45,8 +45,7 @@ module cosim_wrapper();
 
       tb.power_up();
 
-      if (mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4 ||
-          mem_cfg_p == e_vcache_blocking_axi4_f1_ddr_modelx4) begin
+      if (mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4) begin
          // initialize the DDR
          $display("BSG COSIM: Starting DDR init...\n");
          tb.nsec_delay(500);

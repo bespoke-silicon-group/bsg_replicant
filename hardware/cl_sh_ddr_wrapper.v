@@ -232,170 +232,393 @@ assign {s_axi4_cl_ddr_lo.rvalid[2], s_axi4_cl_ddr_lo.rvalid[1], s_axi4_cl_ddr_lo
 assign cl_sh_ddr_rready_2d = {s_axi4_cl_ddr_li.rready[2], s_axi4_cl_ddr_li.rready[1], s_axi4_cl_ddr_li.rready[0]};
 
 
-//-----------------------------------------
-// DDR controller instantiation
-//-----------------------------------------
-localparam NUM_CFG_STGS_CL_DDR_LP = 8;
+`ifndef AXI_MEMORY_MODEL   
 
-logic [ 7:0] sh_ddr_stat_addr_q [2:0];
-logic [ 2:0] sh_ddr_stat_wr_q        ;
-logic [ 2:0] sh_ddr_stat_rd_q        ;
-logic [31:0] sh_ddr_stat_wdata_q[2:0];
-logic [ 2:0] ddr_sh_stat_ack_q       ;
-logic [31:0] ddr_sh_stat_rdata_q[2:0];
-logic [ 7:0] ddr_sh_stat_int_q  [2:0];
+  //-----------------------------------------
+  // DDR controller instantiation
+  //-----------------------------------------
+  localparam NUM_CFG_STGS_CL_DDR_LP = 8;
 
-for (genvar i = 0; i < num_axi4_p; i++) begin : stat_buf
+  logic [ 7:0] sh_ddr_stat_addr_q [2:0];
+  logic [ 2:0] sh_ddr_stat_wr_q        ;
+  logic [ 2:0] sh_ddr_stat_rd_q        ;
+  logic [31:0] sh_ddr_stat_wdata_q[2:0];
+  logic [ 2:0] ddr_sh_stat_ack_q       ;
+  logic [31:0] ddr_sh_stat_rdata_q[2:0];
+  logic [ 7:0] ddr_sh_stat_int_q  [2:0];
 
-  lib_pipe #(.WIDTH(1+1+8+32), .STAGES(NUM_CFG_STGS_CL_DDR_LP)) PIPE_DDR_STAT (
-    .clk    (clk_i                                                                                    ),
-    .rst_n  (~reset_i                                                                                 ),
-    .in_bus ({sh_ddr_stat_wr_i[i], sh_ddr_stat_rd_i[i], sh_ddr_stat_addr_i[i], sh_ddr_stat_wdata_i[i]}),
-    .out_bus({sh_ddr_stat_wr_q[i], sh_ddr_stat_rd_q[i], sh_ddr_stat_addr_q[i], sh_ddr_stat_wdata_q[i]})
+  for (genvar i = 0; i < num_axi4_p; i++) begin : stat_buf
+
+    lib_pipe #(.WIDTH(1+1+8+32), .STAGES(NUM_CFG_STGS_CL_DDR_LP)) PIPE_DDR_STAT (
+      .clk    (clk_i                                                                                    ),
+      .rst_n  (~reset_i                                                                                 ),
+      .in_bus ({sh_ddr_stat_wr_i[i], sh_ddr_stat_rd_i[i], sh_ddr_stat_addr_i[i], sh_ddr_stat_wdata_i[i]}),
+      .out_bus({sh_ddr_stat_wr_q[i], sh_ddr_stat_rd_q[i], sh_ddr_stat_addr_q[i], sh_ddr_stat_wdata_q[i]})
+    );
+
+
+    lib_pipe #(.WIDTH(1+8+32), .STAGES(NUM_CFG_STGS_CL_DDR_LP)) PIPE_DDR_STAT_ACK (
+      .clk    (clk_i                                                               ),
+      .rst_n  (~reset_i                                                            ),
+      .in_bus ({ddr_sh_stat_ack_q[i], ddr_sh_stat_int_q[i], ddr_sh_stat_rdata_q[i]}),
+      .out_bus({ddr_sh_stat_ack_o[i], ddr_sh_stat_int_o[i], ddr_sh_stat_rdata_o[i]})
+    );
+
+  end
+
+  (* dont_touch = "true" *) logic sh_ddr_sync_rst_n;
+  lib_pipe #(.WIDTH(1), .STAGES(4)) SH_DDR_SLC_RST_N (.clk(clk_i), .rst_n(1'b1), .in_bus(~reset_i), .out_bus(sh_ddr_sync_rst_n));
+  sh_ddr #(
+    .DDR_A_PRESENT(`DDR_A_PRESENT),
+    .DDR_B_PRESENT(`DDR_B_PRESENT),
+    .DDR_D_PRESENT(`DDR_D_PRESENT)
+  ) SH_DDR (
+    .clk               (clk_i                 ),
+    .rst_n             (sh_ddr_sync_rst_n     ),
+
+    .stat_clk          (clk_i                 ),
+    .stat_rst_n        (sh_ddr_sync_rst_n     ),
+
+
+    .CLK_300M_DIMM0_DP (CLK_300M_DIMM0_DP     ),
+    .CLK_300M_DIMM0_DN (CLK_300M_DIMM0_DN     ),
+    .M_A_ACT_N         (M_A_ACT_N             ),
+    .M_A_MA            (M_A_MA                ),
+    .M_A_BA            (M_A_BA                ),
+    .M_A_BG            (M_A_BG                ),
+    .M_A_CKE           (M_A_CKE               ),
+    .M_A_ODT           (M_A_ODT               ),
+    .M_A_CS_N          (M_A_CS_N              ),
+    .M_A_CLK_DN        (M_A_CLK_DN            ),
+    .M_A_CLK_DP        (M_A_CLK_DP            ),
+    .M_A_PAR           (M_A_PAR               ),
+    .M_A_DQ            (M_A_DQ                ),
+    .M_A_ECC           (M_A_ECC               ),
+    .M_A_DQS_DP        (M_A_DQS_DP            ),
+    .M_A_DQS_DN        (M_A_DQS_DN            ),
+    .cl_RST_DIMM_A_N   (cl_RST_DIMM_A_N       ),
+
+
+    .CLK_300M_DIMM1_DP (CLK_300M_DIMM1_DP     ),
+    .CLK_300M_DIMM1_DN (CLK_300M_DIMM1_DN     ),
+    .M_B_ACT_N         (M_B_ACT_N             ),
+    .M_B_MA            (M_B_MA                ),
+    .M_B_BA            (M_B_BA                ),
+    .M_B_BG            (M_B_BG                ),
+    .M_B_CKE           (M_B_CKE               ),
+    .M_B_ODT           (M_B_ODT               ),
+    .M_B_CS_N          (M_B_CS_N              ),
+    .M_B_CLK_DN        (M_B_CLK_DN            ),
+    .M_B_CLK_DP        (M_B_CLK_DP            ),
+    .M_B_PAR           (M_B_PAR               ),
+    .M_B_DQ            (M_B_DQ                ),
+    .M_B_ECC           (M_B_ECC               ),
+    .M_B_DQS_DP        (M_B_DQS_DP            ),
+    .M_B_DQS_DN        (M_B_DQS_DN            ),
+    .cl_RST_DIMM_B_N   (cl_RST_DIMM_B_N       ),
+
+    .CLK_300M_DIMM3_DP (CLK_300M_DIMM3_DP     ),
+    .CLK_300M_DIMM3_DN (CLK_300M_DIMM3_DN     ),
+    .M_D_ACT_N         (M_D_ACT_N             ),
+    .M_D_MA            (M_D_MA                ),
+    .M_D_BA            (M_D_BA                ),
+    .M_D_BG            (M_D_BG                ),
+    .M_D_CKE           (M_D_CKE               ),
+    .M_D_ODT           (M_D_ODT               ),
+    .M_D_CS_N          (M_D_CS_N              ),
+    .M_D_CLK_DN        (M_D_CLK_DN            ),
+    .M_D_CLK_DP        (M_D_CLK_DP            ),
+    .M_D_PAR           (M_D_PAR               ),
+    .M_D_DQ            (M_D_DQ                ),
+    .M_D_ECC           (M_D_ECC               ),
+    .M_D_DQS_DP        (M_D_DQS_DP            ),
+    .M_D_DQS_DN        (M_D_DQS_DN            ),
+    .cl_RST_DIMM_D_N   (cl_RST_DIMM_D_N       ),
+
+    //------------------------------------------------------
+    // DDR-4 Interface from CL (AXI-4)
+    //------------------------------------------------------
+    .cl_sh_ddr_awid    (cl_sh_ddr_awid_2d     ),
+    .cl_sh_ddr_awaddr  (cl_sh_ddr_awaddr_2d   ),
+    .cl_sh_ddr_awlen   (cl_sh_ddr_awlen_2d    ),
+    .cl_sh_ddr_awsize  (cl_sh_ddr_awsize_2d   ),
+    .cl_sh_ddr_awvalid (cl_sh_ddr_awvalid_2d  ),
+    .cl_sh_ddr_awburst (cl_sh_ddr_awburst_2d  ),
+    .sh_cl_ddr_awready (sh_cl_ddr_awready_2d  ),
+
+    .cl_sh_ddr_wid     (cl_sh_ddr_wid_2d      ),
+    .cl_sh_ddr_wdata   (cl_sh_ddr_wdata_2d    ),
+    .cl_sh_ddr_wstrb   (cl_sh_ddr_wstrb_2d    ),
+    .cl_sh_ddr_wlast   (cl_sh_ddr_wlast_2d    ),
+    .cl_sh_ddr_wvalid  (cl_sh_ddr_wvalid_2d   ),
+    .sh_cl_ddr_wready  (sh_cl_ddr_wready_2d   ),
+
+    .sh_cl_ddr_bid     (sh_cl_ddr_bid_2d      ),
+    .sh_cl_ddr_bresp   (sh_cl_ddr_bresp_2d    ),
+    .sh_cl_ddr_bvalid  (sh_cl_ddr_bvalid_2d   ),
+    .cl_sh_ddr_bready  (cl_sh_ddr_bready_2d   ),
+
+    .cl_sh_ddr_arid    (cl_sh_ddr_arid_2d     ),
+    .cl_sh_ddr_araddr  (cl_sh_ddr_araddr_2d   ),
+    .cl_sh_ddr_arlen   (cl_sh_ddr_arlen_2d    ),
+    .cl_sh_ddr_arsize  (cl_sh_ddr_arsize_2d   ),
+    .cl_sh_ddr_arvalid (cl_sh_ddr_arvalid_2d  ),
+    .cl_sh_ddr_arburst (cl_sh_ddr_arburst_2d  ),
+    .sh_cl_ddr_arready (sh_cl_ddr_arready_2d  ),
+
+    .sh_cl_ddr_rid     (sh_cl_ddr_rid_2d      ),
+    .sh_cl_ddr_rdata   (sh_cl_ddr_rdata_2d    ),
+    .sh_cl_ddr_rresp   (sh_cl_ddr_rresp_2d    ),
+    .sh_cl_ddr_rlast   (sh_cl_ddr_rlast_2d    ),
+    .sh_cl_ddr_rvalid  (sh_cl_ddr_rvalid_2d   ),
+    .cl_sh_ddr_rready  (cl_sh_ddr_rready_2d   ),
+
+    .sh_cl_ddr_is_ready(lcl_sh_cl_ddr_is_ready),
+
+    .sh_ddr_stat_addr0 (sh_ddr_stat_addr_q[0] ),
+    .sh_ddr_stat_wr0   (sh_ddr_stat_wr_q[0]   ),
+    .sh_ddr_stat_rd0   (sh_ddr_stat_rd_q[0]   ),
+    .sh_ddr_stat_wdata0(sh_ddr_stat_wdata_q[0]),
+    .ddr_sh_stat_ack0  (ddr_sh_stat_ack_q[0]  ),
+    .ddr_sh_stat_rdata0(ddr_sh_stat_rdata_q[0]),
+    .ddr_sh_stat_int0  (ddr_sh_stat_int_q[0]  ),
+
+    .sh_ddr_stat_addr1 (sh_ddr_stat_addr_q[1] ),
+    .sh_ddr_stat_wr1   (sh_ddr_stat_wr_q[1]   ),
+    .sh_ddr_stat_rd1   (sh_ddr_stat_rd_q[1]   ),
+    .sh_ddr_stat_wdata1(sh_ddr_stat_wdata_q[1]),
+    .ddr_sh_stat_ack1  (ddr_sh_stat_ack_q[1]  ),
+    .ddr_sh_stat_rdata1(ddr_sh_stat_rdata_q[1]),
+    .ddr_sh_stat_int1  (ddr_sh_stat_int_q[1]  ),
+
+    .sh_ddr_stat_addr2 (sh_ddr_stat_addr_q[2] ),
+    .sh_ddr_stat_wr2   (sh_ddr_stat_wr_q[2]   ),
+    .sh_ddr_stat_rd2   (sh_ddr_stat_rd_q[2]   ),
+    .sh_ddr_stat_wdata2(sh_ddr_stat_wdata_q[2]),
+    .ddr_sh_stat_ack2  (ddr_sh_stat_ack_q[2]  ),
+    .ddr_sh_stat_rdata2(ddr_sh_stat_rdata_q[2]),
+    .ddr_sh_stat_int2  (ddr_sh_stat_int_q[2]  )
   );
 
+`else 
 
-  lib_pipe #(.WIDTH(1+8+32), .STAGES(NUM_CFG_STGS_CL_DDR_LP)) PIPE_DDR_STAT_ACK (
-    .clk    (clk_i                                                               ),
-    .rst_n  (~reset_i                                                            ),
-    .in_bus ({ddr_sh_stat_ack_q[i], ddr_sh_stat_int_q[i], ddr_sh_stat_rdata_q[i]}),
-    .out_bus({ddr_sh_stat_ack_o[i], ddr_sh_stat_int_o[i], ddr_sh_stat_rdata_o[i]})
-  );
+    axi_mem_model axi4_ddr_model (
+      .clk_core         (clk_i               ),
+      .rst_n            (~reset_i            ),
+      .cl_sh_ddr_awid   (cl_sh_ddr_awid_2d   ),
+      .cl_sh_ddr_awaddr (cl_sh_ddr_awaddr_2d ),
+      .cl_sh_ddr_awlen  (cl_sh_ddr_awlen_2d  ),
+      .cl_sh_ddr_awsize (cl_sh_ddr_awsize_2d ),
+      .cl_sh_ddr_awvalid(cl_sh_ddr_awvalid_2d),
+      .cl_sh_ddr_awburst(cl_sh_ddr_awburst_2d),
+      .sh_cl_ddr_awready(sh_cl_ddr_awready_2d),
+      
+      .cl_sh_ddr_wid    (cl_sh_ddr_wid_2d    ),
+      .cl_sh_ddr_wdata  (cl_sh_ddr_wdata_2d  ),
+      .cl_sh_ddr_wstrb  (cl_sh_ddr_wstrb_2d  ),
+      .cl_sh_ddr_wlast  (cl_sh_ddr_wlast_2d  ),
+      .cl_sh_ddr_wvalid (cl_sh_ddr_wvalid_2d ),
+      .sh_cl_ddr_wready (sh_cl_ddr_wready_2d ),
+      
+      .sh_cl_ddr_bid    (sh_cl_ddr_bid_2d    ),
+      .sh_cl_ddr_bresp  (sh_cl_ddr_bresp_2d  ),
+      .sh_cl_ddr_bvalid (sh_cl_ddr_bvalid_2d ),
+      .cl_sh_ddr_bready (cl_sh_ddr_bready_2d ),
+      
+      .cl_sh_ddr_arid   (cl_sh_ddr_arid_2d   ),
+      .cl_sh_ddr_araddr (cl_sh_ddr_araddr_2d ),
+      .cl_sh_ddr_arlen  (cl_sh_ddr_arlen_2d  ),
+      .cl_sh_ddr_arsize (cl_sh_ddr_arsize_2d ),
+      .cl_sh_ddr_arvalid(cl_sh_ddr_arvalid_2d),
+      .cl_sh_ddr_arburst(cl_sh_ddr_arburst_2d),
+      .sh_cl_ddr_arready(sh_cl_ddr_arready_2d),
+      
+      .sh_cl_ddr_rid    (sh_cl_ddr_rid_2d    ),
+      .sh_cl_ddr_rdata  (sh_cl_ddr_rdata_2d  ),
+      .sh_cl_ddr_rresp  (sh_cl_ddr_rresp_2d  ),
+      .sh_cl_ddr_rlast  (sh_cl_ddr_rlast_2d  ),
+      .sh_cl_ddr_rvalid (sh_cl_ddr_rvalid_2d ),
+      .cl_sh_ddr_rready (cl_sh_ddr_rready_2d )
+    );
 
-end
+  // 
+  // copy from unused_ddr_a_b_d_template.inc
+  //-------------------------------------------------
+  // Array Signals to Tie-off AXI interfaces to sh_ddr module
+  //-------------------------------------------------
+    logic         tie_zero[2:0];
+    logic [  1:0] tie_zero_burst[2:0];
+    logic [ 15:0] tie_zero_id[2:0];
+    logic [ 63:0] tie_zero_addr[2:0];
+    logic [  7:0] tie_zero_len[2:0];
+    logic [511:0] tie_zero_data[2:0];
+    logic [ 63:0] tie_zero_strb[2:0];
 
-(* dont_touch = "true" *) logic sh_ddr_sync_rst_n;
-lib_pipe #(.WIDTH(1), .STAGES(4)) SH_DDR_SLC_RST_N (.clk(clk_i), .rst_n(1'b1), .in_bus(~reset_i), .out_bus(sh_ddr_sync_rst_n));
-sh_ddr #(
-  .DDR_A_PRESENT(`DDR_A_PRESENT),
-  .DDR_B_PRESENT(`DDR_B_PRESENT),
-  .DDR_D_PRESENT(`DDR_D_PRESENT)
-) SH_DDR (
-  .clk               (clk_i                 ),
-  .rst_n             (sh_ddr_sync_rst_n     ),
+  sh_ddr #(.DDR_A_PRESENT(0),
+           .DDR_B_PRESENT(0),
+           .DDR_D_PRESENT(0)) SH_DDR
+     (
+     .clk(clk_i),
+     .rst_n(~reset_i),
+     .stat_clk(clk_i),
+     .stat_rst_n(~reset_i),
 
-  .stat_clk          (clk_i                 ),
-  .stat_rst_n        (sh_ddr_sync_rst_n     ),
+     .CLK_300M_DIMM0_DP(CLK_300M_DIMM0_DP),
+     .CLK_300M_DIMM0_DN(CLK_300M_DIMM0_DN),
+     .M_A_ACT_N(M_A_ACT_N),
+     .M_A_MA(M_A_MA),
+     .M_A_BA(M_A_BA),
+     .M_A_BG(M_A_BG),
+     .M_A_CKE(M_A_CKE),
+     .M_A_ODT(M_A_ODT),
+     .M_A_CS_N(M_A_CS_N),
+     .M_A_CLK_DN(M_A_CLK_DN),
+     .M_A_CLK_DP(M_A_CLK_DP),
+     .M_A_PAR(M_A_PAR),
+     .M_A_DQ(M_A_DQ),
+     .M_A_ECC(M_A_ECC),
+     .M_A_DQS_DP(M_A_DQS_DP),
+     .M_A_DQS_DN(M_A_DQS_DN),
+     .cl_RST_DIMM_A_N(),
+     
+     .CLK_300M_DIMM1_DP(CLK_300M_DIMM1_DP),
+     .CLK_300M_DIMM1_DN(CLK_300M_DIMM1_DN),
+     .M_B_ACT_N(M_B_ACT_N),
+     .M_B_MA(M_B_MA),
+     .M_B_BA(M_B_BA),
+     .M_B_BG(M_B_BG),
+     .M_B_CKE(M_B_CKE),
+     .M_B_ODT(M_B_ODT),
+     .M_B_CS_N(M_B_CS_N),
+     .M_B_CLK_DN(M_B_CLK_DN),
+     .M_B_CLK_DP(M_B_CLK_DP),
+     .M_B_PAR(M_B_PAR),
+     .M_B_DQ(M_B_DQ),
+     .M_B_ECC(M_B_ECC),
+     .M_B_DQS_DP(M_B_DQS_DP),
+     .M_B_DQS_DN(M_B_DQS_DN),
+     .cl_RST_DIMM_B_N(),
 
+     .CLK_300M_DIMM3_DP(CLK_300M_DIMM3_DP),
+     .CLK_300M_DIMM3_DN(CLK_300M_DIMM3_DN),
+     .M_D_ACT_N(M_D_ACT_N),
+     .M_D_MA(M_D_MA),
+     .M_D_BA(M_D_BA),
+     .M_D_BG(M_D_BG),
+     .M_D_CKE(M_D_CKE),
+     .M_D_ODT(M_D_ODT),
+     .M_D_CS_N(M_D_CS_N),
+     .M_D_CLK_DN(M_D_CLK_DN),
+     .M_D_CLK_DP(M_D_CLK_DP),
+     .M_D_PAR(M_D_PAR),
+     .M_D_DQ(M_D_DQ),
+     .M_D_ECC(M_D_ECC),
+     .M_D_DQS_DP(M_D_DQS_DP),
+     .M_D_DQS_DN(M_D_DQS_DN),
+     .cl_RST_DIMM_D_N(),
 
-  .CLK_300M_DIMM0_DP (CLK_300M_DIMM0_DP     ),
-  .CLK_300M_DIMM0_DN (CLK_300M_DIMM0_DN     ),
-  .M_A_ACT_N         (M_A_ACT_N             ),
-  .M_A_MA            (M_A_MA                ),
-  .M_A_BA            (M_A_BA                ),
-  .M_A_BG            (M_A_BG                ),
-  .M_A_CKE           (M_A_CKE               ),
-  .M_A_ODT           (M_A_ODT               ),
-  .M_A_CS_N          (M_A_CS_N              ),
-  .M_A_CLK_DN        (M_A_CLK_DN            ),
-  .M_A_CLK_DP        (M_A_CLK_DP            ),
-  .M_A_PAR           (M_A_PAR               ),
-  .M_A_DQ            (M_A_DQ                ),
-  .M_A_ECC           (M_A_ECC               ),
-  .M_A_DQS_DP        (M_A_DQS_DP            ),
-  .M_A_DQS_DN        (M_A_DQS_DN            ),
-  .cl_RST_DIMM_A_N   (cl_RST_DIMM_A_N       ),
+     //------------------------------------------------------
+     // DDR-4 Interface from CL (AXI-4)
+     //------------------------------------------------------
+     .cl_sh_ddr_awid     (tie_zero_id),
+     .cl_sh_ddr_awaddr   (tie_zero_addr),
+     .cl_sh_ddr_awlen    (tie_zero_len),
+     .cl_sh_ddr_awvalid  (tie_zero),
+     .cl_sh_ddr_awburst  (tie_zero_burst),
+     .sh_cl_ddr_awready  (),
 
+     .cl_sh_ddr_wid      (tie_zero_id),
+     .cl_sh_ddr_wdata    (tie_zero_data),
+     .cl_sh_ddr_wstrb    (tie_zero_strb),
+     .cl_sh_ddr_wlast    (3'b0),
+     .cl_sh_ddr_wvalid   (3'b0),
+     .sh_cl_ddr_wready   (),
 
-  .CLK_300M_DIMM1_DP (CLK_300M_DIMM1_DP     ),
-  .CLK_300M_DIMM1_DN (CLK_300M_DIMM1_DN     ),
-  .M_B_ACT_N         (M_B_ACT_N             ),
-  .M_B_MA            (M_B_MA                ),
-  .M_B_BA            (M_B_BA                ),
-  .M_B_BG            (M_B_BG                ),
-  .M_B_CKE           (M_B_CKE               ),
-  .M_B_ODT           (M_B_ODT               ),
-  .M_B_CS_N          (M_B_CS_N              ),
-  .M_B_CLK_DN        (M_B_CLK_DN            ),
-  .M_B_CLK_DP        (M_B_CLK_DP            ),
-  .M_B_PAR           (M_B_PAR               ),
-  .M_B_DQ            (M_B_DQ                ),
-  .M_B_ECC           (M_B_ECC               ),
-  .M_B_DQS_DP        (M_B_DQS_DP            ),
-  .M_B_DQS_DN        (M_B_DQS_DN            ),
-  .cl_RST_DIMM_B_N   (cl_RST_DIMM_B_N       ),
+     .sh_cl_ddr_bid      (),
+     .sh_cl_ddr_bresp    (),
+     .sh_cl_ddr_bvalid   (),
+     .cl_sh_ddr_bready   (3'b0),
 
-  .CLK_300M_DIMM3_DP (CLK_300M_DIMM3_DP     ),
-  .CLK_300M_DIMM3_DN (CLK_300M_DIMM3_DN     ),
-  .M_D_ACT_N         (M_D_ACT_N             ),
-  .M_D_MA            (M_D_MA                ),
-  .M_D_BA            (M_D_BA                ),
-  .M_D_BG            (M_D_BG                ),
-  .M_D_CKE           (M_D_CKE               ),
-  .M_D_ODT           (M_D_ODT               ),
-  .M_D_CS_N          (M_D_CS_N              ),
-  .M_D_CLK_DN        (M_D_CLK_DN            ),
-  .M_D_CLK_DP        (M_D_CLK_DP            ),
-  .M_D_PAR           (M_D_PAR               ),
-  .M_D_DQ            (M_D_DQ                ),
-  .M_D_ECC           (M_D_ECC               ),
-  .M_D_DQS_DP        (M_D_DQS_DP            ),
-  .M_D_DQS_DN        (M_D_DQS_DN            ),
-  .cl_RST_DIMM_D_N   (cl_RST_DIMM_D_N       ),
+     .cl_sh_ddr_arid     (tie_zero_id),
+     .cl_sh_ddr_araddr   (tie_zero_addr),
+     .cl_sh_ddr_arlen    (tie_zero_len),
+     .cl_sh_ddr_arvalid  (3'b0),
+     .cl_sh_ddr_arburst  (tie_zero_burst),
+     .sh_cl_ddr_arready  (),
 
-  //------------------------------------------------------
-  // DDR-4 Interface from CL (AXI-4)
-  //------------------------------------------------------
-  .cl_sh_ddr_awid    (cl_sh_ddr_awid_2d     ),
-  .cl_sh_ddr_awaddr  (cl_sh_ddr_awaddr_2d   ),
-  .cl_sh_ddr_awlen   (cl_sh_ddr_awlen_2d    ),
-  .cl_sh_ddr_awsize  (cl_sh_ddr_awsize_2d   ),
-  .cl_sh_ddr_awvalid (cl_sh_ddr_awvalid_2d  ),
-  .cl_sh_ddr_awburst (cl_sh_ddr_awburst_2d  ),
-  .sh_cl_ddr_awready (sh_cl_ddr_awready_2d  ),
+     .sh_cl_ddr_rid      (),
+     .sh_cl_ddr_rdata    (),
+     .sh_cl_ddr_rresp    (),
+     .sh_cl_ddr_rlast    (),
+     .sh_cl_ddr_rvalid   (),
+     .cl_sh_ddr_rready   (3'b0),
 
-  .cl_sh_ddr_wid     (cl_sh_ddr_wid_2d      ),
-  .cl_sh_ddr_wdata   (cl_sh_ddr_wdata_2d    ),
-  .cl_sh_ddr_wstrb   (cl_sh_ddr_wstrb_2d    ),
-  .cl_sh_ddr_wlast   (cl_sh_ddr_wlast_2d    ),
-  .cl_sh_ddr_wvalid  (cl_sh_ddr_wvalid_2d   ),
-  .sh_cl_ddr_wready  (sh_cl_ddr_wready_2d   ),
+     .sh_cl_ddr_is_ready (),
 
-  .sh_cl_ddr_bid     (sh_cl_ddr_bid_2d      ),
-  .sh_cl_ddr_bresp   (sh_cl_ddr_bresp_2d    ),
-  .sh_cl_ddr_bvalid  (sh_cl_ddr_bvalid_2d   ),
-  .cl_sh_ddr_bready  (cl_sh_ddr_bready_2d   ),
+     .sh_ddr_stat_addr0   (8'h00),
+     .sh_ddr_stat_wr0     (1'b0), 
+     .sh_ddr_stat_rd0     (1'b0), 
+     .sh_ddr_stat_wdata0  (32'b0),
+     .ddr_sh_stat_ack0   (),
+     .ddr_sh_stat_rdata0 (),
+     .ddr_sh_stat_int0   (),
+     .sh_ddr_stat_addr1   (8'h00),
+     .sh_ddr_stat_wr1     (1'b0), 
+     .sh_ddr_stat_rd1     (1'b0), 
+     .sh_ddr_stat_wdata1  (32'b0),
+     .ddr_sh_stat_ack1   (),
+     .ddr_sh_stat_rdata1 (),
+     .ddr_sh_stat_int1   (),
+     .sh_ddr_stat_addr2   (8'h00),
+     .sh_ddr_stat_wr2     (1'b0), 
+     .sh_ddr_stat_rd2     (1'b0), 
+     .sh_ddr_stat_wdata2  (32'b0),
+     .ddr_sh_stat_ack2   (),
+     .ddr_sh_stat_rdata2 (),
+     .ddr_sh_stat_int2   ()
+     );
 
-  .cl_sh_ddr_arid    (cl_sh_ddr_arid_2d     ),
-  .cl_sh_ddr_araddr  (cl_sh_ddr_araddr_2d   ),
-  .cl_sh_ddr_arlen   (cl_sh_ddr_arlen_2d    ),
-  .cl_sh_ddr_arsize  (cl_sh_ddr_arsize_2d   ),
-  .cl_sh_ddr_arvalid (cl_sh_ddr_arvalid_2d  ),
-  .cl_sh_ddr_arburst (cl_sh_ddr_arburst_2d  ),
-  .sh_cl_ddr_arready (sh_cl_ddr_arready_2d  ),
+  // Tie-off AXI interfaces to sh_ddr module
+    assign tie_zero[2]        =   1'b0;
+    assign tie_zero[1]        =   1'b0;
+    assign tie_zero[0]        =   1'b0;
 
-  .sh_cl_ddr_rid     (sh_cl_ddr_rid_2d      ),
-  .sh_cl_ddr_rdata   (sh_cl_ddr_rdata_2d    ),
-  .sh_cl_ddr_rresp   (sh_cl_ddr_rresp_2d    ),
-  .sh_cl_ddr_rlast   (sh_cl_ddr_rlast_2d    ),
-  .sh_cl_ddr_rvalid  (sh_cl_ddr_rvalid_2d   ),
-  .cl_sh_ddr_rready  (cl_sh_ddr_rready_2d   ),
+    assign tie_zero_burst[2]  =   2'b01; // Only INCR is supported, must be tied to 2'b01
+    assign tie_zero_burst[1]  =   2'b01;
+    assign tie_zero_burst[0]  =   2'b01;
 
-  .sh_cl_ddr_is_ready(lcl_sh_cl_ddr_is_ready),
+    assign tie_zero_id[2]     =  16'b0;
+    assign tie_zero_id[1]     =  16'b0;
+    assign tie_zero_id[0]     =  16'b0;
 
-  .sh_ddr_stat_addr0 (sh_ddr_stat_addr_q[0] ),
-  .sh_ddr_stat_wr0   (sh_ddr_stat_wr_q[0]   ),
-  .sh_ddr_stat_rd0   (sh_ddr_stat_rd_q[0]   ),
-  .sh_ddr_stat_wdata0(sh_ddr_stat_wdata_q[0]),
-  .ddr_sh_stat_ack0  (ddr_sh_stat_ack_q[0]  ),
-  .ddr_sh_stat_rdata0(ddr_sh_stat_rdata_q[0]),
-  .ddr_sh_stat_int0  (ddr_sh_stat_int_q[0]  ),
+    assign tie_zero_addr[2]   =  64'b0;
+    assign tie_zero_addr[1]   =  64'b0;
+    assign tie_zero_addr[0]   =  64'b0;
 
-  .sh_ddr_stat_addr1 (sh_ddr_stat_addr_q[1] ),
-  .sh_ddr_stat_wr1   (sh_ddr_stat_wr_q[1]   ),
-  .sh_ddr_stat_rd1   (sh_ddr_stat_rd_q[1]   ),
-  .sh_ddr_stat_wdata1(sh_ddr_stat_wdata_q[1]),
-  .ddr_sh_stat_ack1  (ddr_sh_stat_ack_q[1]  ),
-  .ddr_sh_stat_rdata1(ddr_sh_stat_rdata_q[1]),
-  .ddr_sh_stat_int1  (ddr_sh_stat_int_q[1]  ),
+    assign tie_zero_len[2]    =   8'b0;
+    assign tie_zero_len[1]    =   8'b0;
+    assign tie_zero_len[0]    =   8'b0;
 
-  .sh_ddr_stat_addr2 (sh_ddr_stat_addr_q[2] ),
-  .sh_ddr_stat_wr2   (sh_ddr_stat_wr_q[2]   ),
-  .sh_ddr_stat_rd2   (sh_ddr_stat_rd_q[2]   ),
-  .sh_ddr_stat_wdata2(sh_ddr_stat_wdata_q[2]),
-  .ddr_sh_stat_ack2  (ddr_sh_stat_ack_q[2]  ),
-  .ddr_sh_stat_rdata2(ddr_sh_stat_rdata_q[2]),
-  .ddr_sh_stat_int2  (ddr_sh_stat_int_q[2]  )
-);
+    assign tie_zero_data[2]   = 512'b0;
+    assign tie_zero_data[1]   = 512'b0;
+    assign tie_zero_data[0]   = 512'b0;
+
+    assign tie_zero_strb[2]   =  64'b0;
+    assign tie_zero_strb[1]   =  64'b0;
+    assign tie_zero_strb[0]   =  64'b0;
+
+    assign ddr_sh_stat_ack_o[0]   =   1'b1; // Needed in order not to hang the interface
+    assign ddr_sh_stat_rdata_o[0] =  32'b0;
+    assign ddr_sh_stat_int_o[0]   =   8'b0;
+
+    assign ddr_sh_stat_ack_o[1]   =   1'b1; // Needed in order not to hang the interface
+    assign ddr_sh_stat_rdata_o[1] =  32'b0;
+    assign ddr_sh_stat_int_o[1]   =   8'b0;
+
+    assign ddr_sh_stat_ack_o[2]   =   1'b1; // Needed in order not to hang the interface
+    assign ddr_sh_stat_rdata_o[2] =  32'b0;
+    assign ddr_sh_stat_int_o[2]   =   8'b0;
+
+  `endif
 
 endmodule

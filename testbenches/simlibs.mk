@@ -154,6 +154,15 @@ VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 endif
 
+ifeq ($(CL_MANYCORE_MEM_CFG),e_vcache_blocking_axi4_f1_ddrx4_model)
+VDEFINES   += AXI_MEMORY_MODEL=1
+VDEFINES   += ECC_DIRECT_EN
+VDEFINES   += RND_ECC_EN
+VDEFINES   += ECC_ADDR_LO=0
+VDEFINES   += ECC_ADDR_HI=0
+VDEFINES   += RND_ECC_WEIGHT=0
+endif
+
 ifeq ($(EXTRA_TURBO), 1)
 VLOGAN_VFLAGS += -undef_vcs_macro
 endif

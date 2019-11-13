@@ -56,7 +56,7 @@ package bsg_bladerunner_mem_cfg_pkg;
     , e_vcache_blocking_axi4_f1_dram
     , e_vcache_blocking_axi4_f1_model
     , e_vcache_blocking_axi4_f1_ddrx4
-    , e_vcache_blocking_axi4_f1_ddr_modelx4 // memory model not well supported?
+    , e_vcache_blocking_axi4_f1_ddrx4_model
   } bsg_bladerunner_mem_cfg_e;
 
 endpackage

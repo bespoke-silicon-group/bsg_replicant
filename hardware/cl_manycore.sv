@@ -420,7 +420,7 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
            mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
            mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4 ||
-           mem_cfg_p == e_vcache_blocking_axi4_f1_ddr_modelx4) begin: lv1_vcache
+           mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4_model) begin: lv1_vcache
 
     import bsg_cache_pkg::*;
 
@@ -615,7 +615,7 @@ module cl_manycore
   // LEVEL 2
   //
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4 ||
-      mem_cfg_p == e_vcache_blocking_axi4_f1_ddr_modelx4) begin: lv2_axi4_x4
+      mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4_model) begin: lv2_axi4_x4
 
     for (genvar i = 0; i < num_tiles_x_p; i++) begin : cache_to_axi
       bsg_cache_to_axi_hashed #(
@@ -927,7 +927,7 @@ module cl_manycore
 
   end // if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram)
   else if (mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4 ||
-      mem_cfg_p == e_vcache_blocking_axi4_f1_ddr_modelx4) begin : axi4_x4_cast
+           mem_cfg_p == e_vcache_blocking_axi4_f1_ddrx4_model) begin : axi4_x4_cast
 
     localparam DEVICE_FAMILY_LP = "virtexuplus";
     localparam num_cl_ddr_lp = 3;
@@ -1104,8 +1104,7 @@ module cl_manycore
       .cl_RST_DIMM_D_N    (cl_RST_DIMM_D_N                                             )
     );
 
-  end
-
+  end 
 
    // manycore link
 

@@ -45,6 +45,7 @@ ${HDK_SHELL_DESIGN_DIR}/ip/axi_register_slice_light/hdl/axi_infrastructure_v1_1_
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/axi_clock_converter_v2_1_vl_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/hdl/fifo_generator_v13_2_rfs.v
 ${HDK_SHELL_DESIGN_DIR}/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
+${HDK_SHELL_DESIGN_DIR}/sh_ddr/sim/axi_mem_model.sv
 
 # Simulator-specific design files
 -f ${HDK_COMMON_DIR}/verif/tb/filelists/tb.vcs.f
