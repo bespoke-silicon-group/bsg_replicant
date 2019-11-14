@@ -4,8 +4,9 @@
 #define TEST_NAME "test_bfs_templated"
 #define ALLOC_NAME "default_allocator"
 
+
 const std::string ucode_path =
-        "//nbu/spin/eafurst/bsg_bladerunner/bsg_manycore"
+        "/nbu/spin/eafurst/bsg_bladerunner/bsg_manycore"
         "/software/spmd/bsg_cuda_lite_runtime/template_func/main.riscv";
 
 using hammerblade::Device;
@@ -21,9 +22,10 @@ GlblHBInt test_val_dev;
 
 int launch(int argc, char * argv[]){
     hammerblade::builtin_loadMicroCodeFromFile(ucode_path);
+//    GraphHB edges;
 
     test_val_dev = GlblHBInt("test_val");
-    edges = hammerblade::builtin_loadEdgesFromFileToHB ( argv[(1) ]) ;
+    edges = hammerblade::builtin_loadEdgesFromFileToHB ( "/mnt/users/ssd0/homes/eafurst/graphit/test/graphs/4.el") ;
     Device::Ptr device = Device::GetInstance();
 
     std::cerr << "setting global scalar values" << std::endl;

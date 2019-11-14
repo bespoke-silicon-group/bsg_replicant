@@ -63,10 +63,10 @@ int launch(int argc, char * argv[]){
 }
 #ifdef COSIM
 void cosim_main(uint32_t *exit_code, char * args) {
+    fprintf(stderr, "Hello World\n");
     int argc = get_argc(args);
     char *argv[argc];
     get_argv(args, argc, argv);
-
 #ifdef VCS
     svScope scope;
     scope = svGetScopeFromName("tb");
