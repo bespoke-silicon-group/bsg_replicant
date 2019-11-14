@@ -71,6 +71,7 @@ endif
 # This is a COMPILATION ONLY option. Any subsequent runs, without compilation
 # will retain this setting
 EXTRA_TURBO      ?= 0
+MACHINE_TYPE=4x4_DDRC
 
 # The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
 # hdk_setup.sh has not been run, or environment.mk is not included

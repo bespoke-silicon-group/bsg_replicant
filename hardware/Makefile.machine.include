@@ -25,12 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# HARDWARE_PATH: The path to the hardware folder in BSG F1
-ifndef HARDWARE_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
-endif
+__MACHINE_CWD := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-KNOWN_MACHINE_TYPES = $(notdir $(shell find $(HARDWARE_PATH) -maxdepth 1 -mindepth 1 -type d))
+KNOWN_MACHINE_TYPES = $(notdir $(shell find $(__MACHINE_CWD) -maxdepth 1 -mindepth 1 -type d))
 # MACHINE_TYPE: The type of machine to target.
 ifndef MACHINE_TYPE
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: MACHINE_TYPE is not defined$(NC)"))
@@ -42,6 +39,6 @@ $(info $(shell echo -e "$(RED)BSG MAKE ERROR: Unknown MACHINE_TYPE $(MACHINE_TYP
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: Valid MACHINE_TYPE values are $(KNOWN_MACHINE_TYPES)"))
 endif
 
-HARDWARE_MACHINE_PATH = $(HARDWARE_PATH)/$(MACHINE_TYPE)
+HARDWARE_MACHINE_PATH = $(__MACHINE_CWD)/$(MACHINE_TYPE)
 HARDWARE_MACHINE_FILE = $(HARDWARE_MACHINE_PATH)/machine.mk
 include $(HARDWARE_MACHINE_FILE)

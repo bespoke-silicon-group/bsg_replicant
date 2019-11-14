@@ -43,6 +43,7 @@ $(USER_CLEAN_RULES):
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	MACHINE_TYPE=$(MACHINE_TYPE) \
 	$(MAKE) -C $(SPMD_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
 
 $(SPMD_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
@@ -54,4 +55,5 @@ $(SPMD_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	MACHINE_TYPE=$(MACHINE_TYPE) \
 	$(MAKE) -C $(dir $@) clean $(notdir $@)

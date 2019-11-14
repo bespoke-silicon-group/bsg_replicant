@@ -41,6 +41,7 @@ $(USER_CLEAN_RULES):
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	MACHINE_TYPE=$(MACHINE_TYPE) \
 	$(MAKE) -C $(CUDALITE_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
 
 $(CUDALITE_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
@@ -50,6 +51,7 @@ $(CUDALITE_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	MACHINE_TYPE=$(MACHINE_TYPE) \
 	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	$(MAKE) -C $(dir $@) clean $(notdir $@)
