@@ -31,6 +31,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <float.h>
 #include <bsg_manycore_errno.h>
 #include <unistd.h>
 #include <argp.h>
@@ -140,7 +142,7 @@ static inline int hb_mc_float_to_int (float f){
 // Generates random floating point numbers
 // within the permitted float32 range 
 // Number has a 50% chance of being negative 
-static inline float hb_mc_generate_float_rand(){ 
+static inline float hb_mc_generate_float_rand(){
         hb_mc_data_t data;
         do
         {
@@ -170,6 +172,22 @@ static inline float hb_mc_calculate_float_error (float expected, float result) {
         if (fabs(expected) < 1e-15)
                 return (fabs(expected - result));
         return (fabs((float)(expected - result)/expected));
+}
+
+static inline bool hb_mc_floats_match(float a, float b) {
+        float abs_a = fabs(a);
+        float abs_b = fabs(b);
+        float diff = fabs(a - b);
+        hb_mc_data_t pun;
+        pun.hb_mc_int = 0x00800000;
+        float min_normal = pun.hb_mc_float;
+
+        if(a == b || (isnan(abs_a) && isnan(abs_b)))
+                return true;
+        else if(a == 0 || b == 0 || (abs_a + abs_b < min_normal))
+                return diff < (MAX_FLOAT_ERROR_TOLERANCE * min_normal);
+
+        return (diff / fminf(abs_a + abs_b, FLT_MAX)) < MAX_FLOAT_ERROR_TOLERANCE;
 }
 #ifdef __cplusplus
 extern "C" {
