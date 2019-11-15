@@ -116,10 +116,6 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 
-#VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_fifo.v
-#VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_async_ptr_gray.v
-#VSOURCES += $(BASEJUMP_STL_DIR)/bsg_async/bsg_launch_sync_sync.v
-
 
 # -------------------- TARGETS --------------------
 # This makefile defines two variables for External Use: 
