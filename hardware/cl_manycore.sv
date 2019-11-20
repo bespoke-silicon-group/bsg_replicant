@@ -449,7 +449,7 @@ module cl_manycore
            mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
 
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
 
       bsg_manycore_vcache_blocking #(
         .data_width_p(data_width_p)
@@ -490,6 +490,7 @@ module cl_manycore
 
     bind bsg_cache vcache_profiler #(
       .data_width_p(data_width_p)
+      ,.addr_width_p(addr_width_p)
     ) vcache_prof (
       .*
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
@@ -502,7 +503,7 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
            mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv1_vcache_nb
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
       bsg_manycore_vcache_non_blocking #(
         .data_width_p(data_width_p)
         ,.addr_width_p(addr_width_p)
@@ -535,6 +536,40 @@ module cl_manycore
       );
 
     end
+
+    bind bsg_cache_non_blocking vcache_non_blocking_profiler #(
+      .data_width_p(data_width_p)
+      ,.addr_width_p(addr_width_p)
+      ,.sets_p(sets_p)
+      ,.ways_p(ways_p)
+      ,.id_width_p(id_width_p)
+      ,.block_size_in_words_p(block_size_in_words_p)
+    ) vcache_prof (
+      .clk_i(clk_i)
+      ,.reset_i(reset_i)
+
+      ,.tl_data_mem_pkt_i(tl_data_mem_pkt_lo)
+      ,.tl_data_mem_pkt_v_i(tl_data_mem_pkt_v_lo)
+      ,.tl_data_mem_pkt_ready_i(tl_data_mem_pkt_ready_li)
+
+      ,.mhu_idle_i(mhu_idle)
+
+      ,.mhu_data_mem_pkt_i(mhu_data_mem_pkt_lo)
+      ,.mhu_data_mem_pkt_v_i(mhu_data_mem_pkt_v_lo)
+      ,.mhu_data_mem_pkt_yumi_i(mhu_data_mem_pkt_yumi_li)
+
+      ,.miss_fifo_data_i(miss_fifo_data_li)
+      ,.miss_fifo_v_i(miss_fifo_v_li)
+      ,.miss_fifo_ready_i(miss_fifo_ready_lo)
+
+      ,.dma_pkt_i(dma_pkt_o)
+      ,.dma_pkt_v_i(dma_pkt_v_o)
+      ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
+
+      ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
+      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
+      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+    );
 
   end
   
