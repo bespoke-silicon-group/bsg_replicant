@@ -6,8 +6,9 @@
 `include "bsg_defines.v"
 `include "bsg_bladerunner_rom_pkg.vh"
 
-module bsg_bladerunner_rom #(
-  // rom parameters
+module bsg_bladerunner_rom
+  import bsg_manycore_pkg::*;
+  #(// rom parameters
   rom_width_p="inv"
   ,rom_els_p="inv"
   // manycore parameters

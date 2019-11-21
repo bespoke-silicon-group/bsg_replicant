@@ -63,6 +63,7 @@ CL_MANYCORE_DATA_WIDTH               := $(BSG_MACHINE_DATA_WIDTH)
 CL_MANYCORE_VCACHE_WAYS              := $(BSG_MACHINE_VCACHE_WAY)
 CL_MANYCORE_VCACHE_SETS              := $(BSG_MACHINE_VCACHE_SET)
 CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS  := $(BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS)
+CL_MANYCORE_VCACHE_MISS_FIFO_ELS     := $(BSG_MACHINE_VCACHE_MISS_FIFO_ELS)
 CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS := $(BSG_MACHINE_VCACHE_STRIPE_SIZE_WORDS)
 CL_MANYCORE_BRANCH_TRACE_EN          := $(BSG_MACHINE_BRANCH_TRACE_EN)
 CL_MANYCORE_RELEASE_VERSION          ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
@@ -146,6 +147,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.i
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_SETS))       >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS))  >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_MISS_FIFO_ELS)) >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define
@@ -162,6 +164,7 @@ $(HARDWARE_PATH)/f1_parameters.vh: $(CL_DIR)/Makefile.machine.include
 	@echo "\`define CL_MANYCORE_VCACHE_WAYS $(CL_MANYCORE_VCACHE_WAYS)" >> $@
 	@echo "\`define CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS $(CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS)" >> $@
 	@echo "\`define CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS $(CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS)" >> $@
+	@echo "\`define CL_MANYCORE_VCACHE_MISS_FIFO_ELS $(CL_MANYCORE_VCACHE_MISS_FIFO_ELS)" >> $@
 	@echo "\`define CL_MANYCORE_MEM_CFG $(CL_MANYCORE_MEM_CFG)" >> $@
 	@echo "\`define CL_MANYCORE_BRANCH_TRACE_EN $(CL_MANYCORE_BRANCH_TRACE_EN)" >> $@
 	@echo "\`endif" >> $@

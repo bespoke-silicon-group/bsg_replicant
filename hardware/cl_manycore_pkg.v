@@ -32,6 +32,7 @@ package cl_manycore_pkg;
   parameter ways_p = `CL_MANYCORE_VCACHE_WAYS;
   parameter block_size_in_words_p = `CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS;
   parameter vcache_size_p = sets_p * ways_p * block_size_in_words_p;
+  parameter miss_fifo_els_p = `CL_MANYCORE_VCACHE_MISS_FIFO_ELS;
 
   parameter axi_id_width_p = 6;
   parameter axi_addr_width_p = 64;
