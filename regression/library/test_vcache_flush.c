@@ -160,11 +160,12 @@ int test_vcache_flush() {
         CACHE_LINE_SIZE_WORDS = hb_mc_config_get_vcache_block_words(config);
         CACHE_LINE_SIZE = hb_mc_config_get_vcache_size(config);
 
-        int dram = 0, ndrams = 1;
+        int dram = 0, ndrams = dim_x;
         hb_mc_idx_t dram_coord_y = hb_mc_config_get_dram_y(config);
         hb_mc_idx_t dram_coord_x = -1;
         hb_mc_idx_t dram_xs[dim_x];
-        dram_xs[0] = 0;
+        // set all dram_xs to their unique column id
+        for (hb_mc_idx_t x = 0; x < dim_x; ++x) dram_xs[x] = x;
 
         addr_bitwidth = hb_mc_config_get_network_bitwidth_addr(config);
         addrs[0] = 0;
