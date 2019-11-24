@@ -63,9 +63,10 @@ int test_vcache_stride() {
 
         /* To increase the number of DRAM banks tested, increase ndrams (must be
          * less than dim_x) and add the X coordinates to dim_x */
-        int dram = 0, ndrams = 1;
+        int dram = 0, ndrams = dim_x;
         hb_mc_idx_t dram_xs[dim_x];
-        dram_xs[0] = 0;
+        for (hb_mc_idx_t x = 0; x < dim_x; x++) dram_xs[x] = x;
+
         hb_mc_idx_t dram_coord_y = hb_mc_config_get_dram_y(config);
         hb_mc_idx_t dram_coord_x = -1;
         hb_mc_epa_t epa;
@@ -92,7 +93,7 @@ int test_vcache_stride() {
                         npa = hb_mc_epa_to_npa(dest, epa);
                         val = gold[stride];
 
-                        bsg_pr_test_info("%s -- Writing value %lu to 0x%x @ (%d, %d)\n", 
+                        bsg_pr_test_info("%s -- Writing value %08x to 0x%08x @ (%d, %d)\n",
                                         __func__, val, epa, dram_coord_x, dram_coord_y);
                         rc = hb_mc_manycore_write32(&mc, &npa, val);
                         if(rc != HB_MC_SUCCESS) {
@@ -106,14 +107,14 @@ int test_vcache_stride() {
                                 bsg_pr_test_err("%s -- hb_mc_read32 failed on iteration %d!\n", __func__, stride);
                                 return HB_MC_FAIL;
                         }
-                        bsg_pr_test_info("%s -- Read value %lu from 0x%x @ (%d, %d)\n", 
+                        bsg_pr_test_info("%s -- Read value %08x from 0x%08x @ (%d, %d)\n",
                                         __func__, val, epa, dram_coord_x, dram_coord_y);
                         result[stride] = val;
                 }
         }
         for (stride = 0; stride < NUM_STRIDES; ++stride) {
                 if(result[stride] != gold[stride]){
-                        bsg_pr_test_err("%s -- Index %d: Result, %lu, did not match expected, %lu!\n", 
+                        bsg_pr_test_err("%s -- Index %d: Result, %08x, did not match expected, %08x!\n",
                                         __func__, stride, result[stride], gold[stride]);
                         return HB_MC_FAIL;
                 }
