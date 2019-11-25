@@ -67,24 +67,27 @@ int test_vcache_sequence() {
 
                 for (int i = 0; i < ARRAY_LEN; i ++) { 
                         A_host = rand();
-
-                        hb_mc_npa_t dram_npa = hb_mc_npa (dram_coord, BASE_ADDR + i); 
+                        hb_mc_epa_t dram_epa = BASE_ADDR + i*sizeof(A_host);
+                        hb_mc_npa_t dram_npa = hb_mc_npa (dram_coord, dram_epa); 
 
                         err = hb_mc_manycore_write32(mc, &dram_npa, A_host); 
                         if (err != HB_MC_SUCCESS) {
-                                bsg_pr_err("%s: failed to write A[%d] = %d to DRAM coord(%d,%d) addr %d.\n", __func__, i, A_host, dram_coord_x, dram_coord_y, BASE_ADDR + i);
+                                bsg_pr_err("%s: failed to write A[%d] = %d to DRAM coord(%d,%d) addr 0x%08x.\n",
+                                           __func__, i, A_host, dram_coord_x, dram_coord_y, dram_epa);
                                 return err;
                         }
 
 
                         err = hb_mc_manycore_read32(mc, &dram_npa, &A_device); 
                         if ( err != HB_MC_SUCCESS) {
-                                bsg_pr_err("%s: failed to read A[%d] from DRAM coord (%d,%d) addr %d.\n", __func__, i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
+                                bsg_pr_err("%s: failed to read A[%d] from DRAM coord (%d,%d) addr 0x%08x.\n",
+                                           __func__, i, dram_coord_x, dram_coord_y, dram_epa);
                                 return err;
                         }
 
                         if (A_host != A_device) {
-                                bsg_pr_err(BSG_RED("Mismatch: ") "A_host[%d] = %d   !=   A_device[%d] = %d -- EPA: %d.\n", i, A_host, i, A_device, BASE_ADDR + i);
+                                bsg_pr_err(BSG_RED("Mismatch: ") "A_host[%d] = %d   !=   A_device[%d] = %d -- EPA: 0x%08x.\n",
+                                           i, A_host, i, A_device, dram_epa);
                                 mismatch = 1;
                         }
                 } 
