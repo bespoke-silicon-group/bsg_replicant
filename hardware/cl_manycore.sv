@@ -1089,6 +1089,8 @@ module cl_manycore
      #(
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
+       ,.icache_tag_width_p(icache_tag_width_p)
+       ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
        ,.dmem_size_p(data_width_p)
        ) 
