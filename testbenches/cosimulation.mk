@@ -50,13 +50,12 @@ help:
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
 VANILLA_LOG_RULES = $(addsuffix .vanilla.log,$(REGRESSION_TESTS))
-VANILLA_LOG_TARGETS =$(addprefix $(EXEC_PATH)/,$(VANILLA_LOG_RULES))
 $(VANILLA_LOG_RULES): SIM_ARGS +=+trace
 $(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
 	@mv vanilla.log $@
 	@mv vcache_non_blocking_stats.log $(subst vanilla,vcache_non_blocking_stats,$@)
-	@mv vanilla_operation_trace.csv $(subst vanilla,vanilla_operation_trace.csv,$@)
-	@mv vanilla_stats.csv $(subst vanilla,vanilla_stats.csv,$@)
+	@mv vanilla_operation_trace.csv $(subst vanilla.log,vanilla_operation_trace.csv,$@)
+	@mv vanilla_stats.csv $(subst vanilla.log,vanilla_stats.csv,$@)
 
 clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
 	rm -rf *.log *.csv
