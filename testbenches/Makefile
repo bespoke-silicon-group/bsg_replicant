@@ -79,7 +79,8 @@ $(TARGETS): $(SIMLIBS)
 		DEBUG=$(DEBUG) TURBO=$(TURBO)
 
 clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean
-	rm -rf *.log *.jou *.csv
+	rm -rf *.log *.jou 
+	rm -rf *.vanilla_operation_trace.csv *.vanilla_stats.csv
 	rm -rf .cxl*
 	rm -rf *.bak
 

@@ -58,4 +58,5 @@ $(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
 	@mv vanilla_stats.csv $(subst vanilla.log,vanilla_stats.csv,$@)
 
 clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
-	rm -rf *.log *.csv
+	rm -rf *.log
+	rm -rf *.vanilla_operation_trace.csv *.vanilla_stats.csv
