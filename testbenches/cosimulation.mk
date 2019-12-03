@@ -55,7 +55,7 @@ $(VANILLA_LOG_RULES): SIM_ARGS +=+trace
 $(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
 	@mv vanilla.log $@
 	@mv vcache_non_blocking_stats.log $(subst vanilla,vcache_non_blocking_stats,$@)
-	@mv vanilla_operation_trace.log $(subst vanilla,vanilla_operation_trace,$@)
+	@mv vanilla_operation_trace.csv $(subst vanilla,vanilla_operation_trace.csv,$@)
 	@mv vanilla_stats.csv $(subst vanilla,vanilla_stats.csv,$@)
 
 clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
