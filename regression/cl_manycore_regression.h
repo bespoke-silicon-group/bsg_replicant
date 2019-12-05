@@ -28,14 +28,29 @@
 #ifndef _CL_MANYCORE_REGRESSION_H
 #define _CL_MANYCORE_REGRESSION_H
 
+#ifdef __cplusplus
+
+#include <cstdlib>
+#include <cstdio>
+#include <cstdbool>
+#include <cfloat>
+
+using std::isnormal;
+
+#else
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <float.h>
+
+#endif
+
 #include <bsg_manycore_errno.h>
 #include <unistd.h>
 #include <argp.h>
+
 #ifdef VCS
 #include "svdpi.h"
 #endif

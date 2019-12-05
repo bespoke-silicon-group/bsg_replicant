@@ -48,6 +48,7 @@
 #include <cstdio>
 #include <climits>
 #include <cstdbool>
+#include <cassert>
 #else
 #include <inttypes>
 #include <stdint.h>
@@ -56,6 +57,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <assert.h>
 #endif
 
 #include <stack>
@@ -1270,16 +1272,23 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
 
         // mark request with id
         hb_mc_request_packet_set_data(&rqst.request, id);
-
+        int shift = hb_mc_npa_get_epa(npa) & 0x3;
         /* set the byte mask */
         switch (sz) {
         case 4:
                 hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
+                assert(shift == 0 || shift == 2);
+                hb_mc_request_packet_set_mask(&rqst.request,
+                                              static_cast<hb_mc_packet_mask_t>(
+                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
+                break;
         case 1:
-                manycore_pr_err(mc, "%zu byte reads are not yet supported\n", sz);
-                return HB_MC_NOIMPL;
+                assert(shift == 0 || shift == 1 || shift == 2 || shift == 3);
+                hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
+                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
+                break;
         default:
                 return HB_MC_INVALID;
         }
@@ -1329,9 +1338,11 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
                 *(uint32_t*)vp = hb_mc_response_packet_get_data(&rsp.response);
                 break;
         case 2:
+                *(uint16_t*)vp = hb_mc_response_packet_get_data(&rsp.response) & 0xFFFF;
+                break;
         case 1:
-                manycore_pr_err(mc, "%zu byte reads are not yet supported\n", sz);
-                return HB_MC_NOIMPL;
+                *(uint8_t*)vp = hb_mc_response_packet_get_data(&rsp.response) & 0xFF;
+                break;
         default:
                 return HB_MC_INVALID;
         }
@@ -1364,16 +1375,26 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         if (err != HB_MC_SUCCESS)
                 return err;
 
+        int shift = hb_mc_npa_get_epa(npa) & 0x3;
         /* set data and size */
         switch (sz) {
         case 4:
+                assert(shift == 0);
                 hb_mc_request_packet_set_data(&rqst.request, *(const uint32_t*)vp);
                 hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
+                assert(shift == 0 || shift == 2);
+                hb_mc_request_packet_set_data(&rqst.request, *(const uint16_t*)vp);
+                hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
+                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
+                break;
         case 1:
-                manycore_pr_err(mc, "%zu byte writes are not yet supported\n", sz);
-                return HB_MC_NOIMPL;
+                assert(shift == 0 || shift == 1 || shift == 2 || shift == 3);
+                hb_mc_request_packet_set_data(&rqst.request, *(const  uint8_t*)vp);
+                hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
+                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
+                break;
         default:
                 return HB_MC_INVALID;
         }
@@ -1694,7 +1715,7 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 /**
  * Read one byte from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid hb_mc_npa_t
+ * @param[in]  npa    A valid hb_mc_npa_t (note that this is a byte-level address)
  * @param[out] vp     A byte to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
@@ -1706,24 +1727,28 @@ int hb_mc_manycore_read8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t *
 /**
  * Read a 16-bit half-word from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid hb_mc_npa_t aligned to a two byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a two byte boundary (note that this is a byte-level address)
  * @param[out] vp     A half-word to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t *vp)
 {
+        if(hb_mc_npa_get_epa(npa) & 0x1) // Check for 2-byte alignment by checking lowest bit
+                return HB_MC_INVALID;
         return hb_mc_manycore_read(mc, npa, vp, 2);
 }
 
 /**
  * Read a 32-bit word from manycore hardware at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary (note that this is a byte-level address)
  * @param[out] vp     A word to be set to the data read
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_read32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t *vp)
 {
+        if(hb_mc_npa_get_epa(npa) & 0x3) // Check for 4-byte alignment by checking two lowest bits
+                return HB_MC_INVALID;
         return hb_mc_manycore_read(mc, npa, vp, 4);
 }
 
@@ -1748,6 +1773,8 @@ int hb_mc_manycore_write8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t 
  */
 int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t v)
 {
+        if(hb_mc_npa_get_epa(npa) & 0x1) // Check for 2-byte alignment by checking lowest bit
+                return HB_MC_INVALID;
         return hb_mc_manycore_write(mc, npa, &v, 2);
 }
 
@@ -1760,6 +1787,8 @@ int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_
  */
 int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v)
 {
+        if(hb_mc_npa_get_epa(npa) & 0x3) // Check for 4-byte alignment by checking lowest bit
+                return HB_MC_INVALID;
         return hb_mc_manycore_write(mc, npa, &v, 4);
 }
 
