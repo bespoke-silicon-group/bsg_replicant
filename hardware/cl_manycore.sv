@@ -34,6 +34,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
+  import bsg_manycore_addr_pkg::*;
    import bsg_bladerunner_rom_pkg::*;
    import bsg_bladerunner_mem_cfg_pkg::*;
    (
@@ -347,6 +348,15 @@ module cl_manycore
       ,.loader_link_sif_i(loader_link_sif_li)
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
+
+  // print stat signals for vanilla_core_profiler module
+  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
+  bsg_manycore_packet_s fwd_pkt;
+  logic print_stat_v;
+  logic [data_width_p-1:0] print_stat_tag;
+  assign fwd_pkt = loader_link_sif_lo.fwd.data;
+  assign print_stat_v = loader_link_sif_lo.fwd.v & (fwd_pkt.addr == (bsg_print_stat_epa_gp >> 2)) & loader_link_sif_li.fwd.ready_and_rev;
+  assign print_stat_tag = fwd_pkt.payload.data;
 
 `ifdef COSIM
 
@@ -1098,8 +1108,8 @@ module cl_manycore
      (
       .*
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v)
+      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag)
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 
