@@ -110,7 +110,7 @@ NPROCS = $(shell echo "(`nproc`/4 + 1)" | bc)
 WRAPPER_NAME = cosim_wrapper
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH)
-LDFLAGS    += -lbsg_manycore_runtime -lm
+LDFLAGS    += -lramulator -lbsg_manycore_runtime -lm
 LDFLAGS    += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH)
 
 # libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)

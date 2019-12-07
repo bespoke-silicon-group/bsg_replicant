@@ -103,8 +103,17 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1rw_sync_assoc.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_ramulator_hbm.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_ramulator_hbm_channel.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm_tx.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
@@ -124,6 +133,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 #
 # SIMLIBS: Targets for building hardware/software simulation libraries
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
+SIMLIBS += $(TESTBENCH_PATH)/libramulator.so
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
 SIMLIBS += $(TESTBENCH_PATH)/synopsys_sim.setup
 SIMLIBS += $(WORKDIR)/AN.DB
@@ -222,6 +232,8 @@ $(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(SDK_DIR)/userspace/utils/sh_dpi_tasks.c
 $(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(HDK_DIR)/common/software/src/fpga_pci_sv.c
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
+include $(TESTBENCH_PATH)/ramulator.mk
+
 .PHONY: simlibs.clean
 simlibs.clean: libraries.clean hardware.clean
 	rm -rf $(TESTBENCH_PATH)/synopsys_sim.setup
@@ -229,3 +241,4 @@ simlibs.clean: libraries.clean hardware.clean
 	rm -rf $(TESTBENCH_PATH)/libfpga_mgmt.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1
+	rm -rf $(TESTBENCH_PATH)/libramulator.so
