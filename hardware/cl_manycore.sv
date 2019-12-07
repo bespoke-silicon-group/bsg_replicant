@@ -383,11 +383,18 @@ module cl_manycore
   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3);
   localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
 
+  // hbm ramulator
+  localparam hbm_channel_addr_width_p = 29;
+  localparam hbm_data_width_p = 512;
+  localparam hbm_num_channels_p = num_tiles_x_p;
+  localparam hbm_cache_bank_addr_width_p = dram_ch_addr_width_p+byte_offset_width_lp;
 
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
     || mem_cfg_p ==e_vcache_blocking_axi4_f1_model
+    || mem_cfg_p == e_vcache_blocking_ramulator_hbm
     || mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram
-    || mem_cfg_p ==  e_vcache_non_blocking_axi4_f1_model) begin: lv1_dma
+    || mem_cfg_p ==  e_vcache_non_blocking_axi4_f1_model
+    || mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv1_dma
 
     // for now blocking and non-blocking shares the same wire, since interface is
     // the same. But it might change in the future.
@@ -697,67 +704,71 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
            mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv2_ramulator_hbm
 
-    localparam hbm_channel_addr_width_p = 29;
-    localparam hbm_data_width_p = 128;
+    // DDR is unused
+`include "unused_ddr_c_template.inc"
 
     logic hbm_clk;
     logic hbm_reset;
 
-    logic [hbm_channel_addr_width_p-1:0] hbm_ch_addr_lo;
-    logic                                hbm_req_yumi_li;
-    logic                                hbm_req_v_lo;
-    logic                                hbm_write_not_read_lo;
+    logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_lo;
+    logic [hbm_num_channels_p-1:0]                 	         hbm_req_yumi_li;
+    logic [hbm_num_channels_p-1:0]                               hbm_req_v_lo;
+    logic [hbm_num_channels_p-1:0]                               hbm_write_not_read_lo;
 
-    logic [hbm_data_width_p-1:0]         hbm_data_lo;
-    logic                                hbm_data_v_lo;
-    logic                                hbm_data_yum_li;
+    logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_lo;
+    logic [hbm_num_channels_p-1:0]                               hbm_data_v_lo;
+    logic [hbm_num_channels_p-1:0]                               hbm_data_yumi_li;
 
-    logic [hbm_data_width_p-1:0]         hbm_data_li;
-    logic                                hbm_data_v_li;
+    logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_li;
+    logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
 
-    bsg_cache_to_ramulator
-      #(.num_cache_p(num_tiles_x_p)
-        ,.data_width_p(data_width_p)
-        ,.addr_width_p(addr_width_p)
-        ,.block_size_in_words_p(block_size_in_words_p)
-        ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
-        ,.hbm_data_width_p(hbm_data_width_p))
-    cache_to_ramulator
-      (.core_clk_i(core_clk)
-       ,.core_reset_i(core_reset)
+    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+      bsg_cache_to_ramulator_hbm
+                    #(.num_cache_p(1)
+                      ,.data_width_p(data_width_p)
+                      ,.addr_width_p(cache_addr_width_lp)
+                      ,.block_size_in_words_p(block_size_in_words_p)
+                      ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
+                      ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
+                      ,.hbm_data_width_p(hbm_data_width_p))
+      cache_to_ramulator
+                    (.core_clk_i(core_clk)
+                     ,.core_reset_i(core_reset)
 
-       ,.dma_pkt_i(lv1_dma.dma_pkt)
-       ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo)
-       ,.dma_pkt_yumi_o(lv1_dma.dma_pkt_yumi_li)
+                     ,.dma_pkt_i(lv1_dma.dma_pkt[i])
+                     ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo[i])
+                     ,.dma_pkt_yumi_o(lv1_dma.dma_pkt_yumi_li[i])
 
-       ,.dma_data_o(lv1_dma.dma_data_li)
-       ,.dma_data_v_o(lv1_dma.dma_data_v_li)
-       ,.dma_data_ready_i(lv1_dma.dma_data_ready_lo)
+                     ,.dma_data_o(lv1_dma.dma_data_li[i])
+                     ,.dma_data_v_o(lv1_dma.dma_data_v_li[i])
+                     ,.dma_data_ready_i(lv1_dma.dma_data_ready_lo[i])
 
-       ,.dma_data_i(lv1_dma.dma_data_lo)
-       ,.dma_data_v_i(lv1_dma.dma_data_v_lo)
-       ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li)
+                     ,.dma_data_i(lv1_dma.dma_data_lo[i])
+                     ,.dma_data_v_i(lv1_dma.dma_data_v_lo[i])
+                     ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li[i])
 
-       ,.hbm_clk_i(hbm_clk)
-       ,.hbm_reset_i(hbm_reset)
+                     ,.hbm_clk_i(hbm_clk)
+                     ,.hbm_reset_i(hbm_reset)
 
-       ,.hbm_ch_addr_o(hbm_ch_addr_lo)
-       ,.hbm_req_yumi_i(hbm_req_yumi_li)
-       ,.hbm_req_v_o(hbm_req_v_lo)
-       ,.hbm_write_not_read_o(hbm_write_not_read_lo)
+                     ,.hbm_ch_addr_o(hbm_ch_addr_lo[i])
+                     ,.hbm_req_yumi_i(hbm_req_yumi_li[i])
+                     ,.hbm_req_v_o(hbm_req_v_lo[i])
+                     ,.hbm_write_not_read_o(hbm_write_not_read_lo[i])
 
-       ,.hbm_data_o(hbm_data_lo)
-       ,.hbm_data_v_o(hbm_data_v_lo)
-       ,.hbm_data_yumi_i(hbm_data_yumi_li)
+                     ,.hbm_data_o(hbm_data_lo[i])
+                     ,.hbm_data_v_o(hbm_data_v_lo[i])
+                     ,.hbm_data_yumi_i(hbm_data_yumi_li[i])
 
-       ,.hbm_data_i(hbm_data_li)
-       ,.hbm_data_v_i(hbm_data_v_li)
-       );
+                     ,.hbm_data_i(hbm_data_li[i])
+                     ,.hbm_data_v_i(hbm_data_v_li[i])
+                     );
 
-        // assign hbm clk and reset to core for now...
-        assign hbm_clk = core_clk;
-        assign hbm_reset = core_reset;
-  end
+    end
+
+    // assign hbm clk and reset to core for now...
+    assign hbm_clk = core_clk;
+    assign hbm_reset = core_reset;
+  end // block: lv2_ramulator_hbm
 
   // LEVEL 3
   //
@@ -818,6 +829,31 @@ module cl_manycore
   end
   else if (mem_cfg_p == e_vcache_blocking_ramulator_hbm ||
            mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv3_ramulator_hbm
+
+    bsg_nonsynth_ramulator_hbm
+      #(.num_channels_p(hbm_num_channels_p)
+        ,.data_width_p(hbm_data_width_p)
+        ,.channel_addr_width_p(hbm_channel_addr_width_p)
+        ,.init_val_p(1)
+        //,.debug_p(1)
+        )
+    hbm
+      (.clk_i(lv2_ramulator_hbm.hbm_clk)
+       ,.reset_i(lv2_ramulator_hbm.hbm_reset)
+
+       ,.v_i(lv2_ramulator_hbm.hbm_req_v_lo)
+       ,.write_not_read_i(lv2_ramulator_hbm.hbm_write_not_read_lo)
+       ,.ch_addr_i(lv2_ramulator_hbm.hbm_ch_addr_lo)
+       ,.yumi_o(lv2_ramulator_hbm.hbm_req_yumi_li)
+
+       ,.data_v_i(lv2_ramulator_hbm.hbm_data_v_lo)
+       ,.data_i(lv2_ramulator_hbm.hbm_data_lo)
+       ,.data_yumi_o(lv2_ramulator_hbm.hbm_data_yumi_li)
+
+       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li)
+       ,.data_o(lv2_ramulator_hbm.hbm_data_li)
+
+       );
 
   end // block: lv3_ramulator_hbm
 
