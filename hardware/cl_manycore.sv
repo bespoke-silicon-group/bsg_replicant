@@ -255,12 +255,12 @@ module cl_manycore
 
    logic         ns_core_clk;
    parameter lc_core_clk_period_p =400000;
-   
-   bsg_nonsynth_clock_gen 
+
+   bsg_nonsynth_clock_gen
      #(
        .cycle_time_p(lc_core_clk_period_p)
-       ) 
-   core_clk_gen 
+       )
+   core_clk_gen
      (
       .o(ns_core_clk)
       );
@@ -386,7 +386,7 @@ module cl_manycore
   // hbm ramulator
   localparam hbm_channel_addr_width_p = 29;
   localparam hbm_data_width_p = 512;
-  localparam hbm_num_channels_p = num_tiles_x_p;
+  localparam hbm_num_channels_p = 8;
   localparam hbm_cache_bank_addr_width_p = dram_ch_addr_width_p+byte_offset_width_lp;
 
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
@@ -588,7 +588,7 @@ module cl_manycore
 
   // LEVEL 2
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
+  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
       mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
       mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
       mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv2_axi4
@@ -704,11 +704,23 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
            mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv2_ramulator_hbm
 
+    if (hbm_num_channels_p != num_tiles_x_p) begin
+      $fatal("the number of hbm channels (%d) must match l2 caches (%d)",
+             hbm_num_channels_p, num_tiles_x_p);
+    end
+
+
     // DDR is unused
 `include "unused_ddr_c_template.inc"
 
     logic hbm_clk;
     logic hbm_reset;
+
+    //500MHz
+    bsg_nonsynth_clock_gen
+      #(.cycle_time_p(2000))
+    clk_gen
+      (.o(hbm_clk));
 
     logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_lo;
     logic [hbm_num_channels_p-1:0]                 	         hbm_req_yumi_li;
@@ -766,7 +778,7 @@ module cl_manycore
     end
 
     // assign hbm clk and reset to core for now...
-    assign hbm_clk = core_clk;
+    //assign hbm_clk = core_clk;
     assign hbm_reset = core_reset;
   end // block: lv2_ramulator_hbm
 
