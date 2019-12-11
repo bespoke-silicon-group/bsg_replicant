@@ -387,7 +387,7 @@ module cl_manycore
   localparam hbm_channel_addr_width_p = 29;
   localparam hbm_data_width_p = 512;
   localparam hbm_num_channels_p = 8;
-  localparam hbm_cache_bank_addr_width_p = dram_ch_addr_width_p+byte_offset_width_lp;
+  localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - x_cord_width_p + byte_offset_width_lp;
 
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
     || mem_cfg_p ==e_vcache_blocking_axi4_f1_model
@@ -704,11 +704,19 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
            mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv2_ramulator_hbm
 
-    if (hbm_num_channels_p != num_tiles_x_p) begin
-      $fatal("the number of hbm channels (%d) must match l2 caches (%d)",
+    // checks that this configuration is supported
+    // we do not support having fewer caches than channels
+    localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/hbm_num_channels_p);
+    if (num_cache_per_hbm_channel_p <= 0) begin
+      $fatal("hbm channels (%d) must be less than or equal to l2 caches (%d)",
              hbm_num_channels_p, num_tiles_x_p);
     end
-
+    // caches:channels must be an integral ratio
+    localparam real _num_tiles_x_real_p = num_tiles_x_p;
+    if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/hbm_num_channels_p)) begin
+      $fatal("l2 caches (%d) must be a multiple of hbm channels (%d)",
+             num_tiles_x_p, hbm_num_channels_p);
+    end
 
     // DDR is unused
 `include "unused_ddr_c_template.inc"
@@ -734,47 +742,49 @@ module cl_manycore
     logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_li;
     logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    for (genvar ch_i = 0; ch_i < hbm_num_channels_p; ch_i++) begin
+      localparam cache_range_lo_p = ch_i * num_cache_per_hbm_channel_p;
+      localparam cache_range_hi_p = (ch_i+1) * num_cache_per_hbm_channel_p - 1;
+
       bsg_cache_to_ramulator_hbm
-                    #(.num_cache_p(1)
-                      ,.data_width_p(data_width_p)
-                      ,.addr_width_p(cache_addr_width_lp)
-                      ,.block_size_in_words_p(block_size_in_words_p)
-                      ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
-                      ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
-                      ,.hbm_data_width_p(hbm_data_width_p))
+        #(.num_cache_p(num_cache_per_hbm_channel_p)
+          ,.data_width_p(data_width_p)
+          ,.addr_width_p(cache_addr_width_lp)
+          ,.block_size_in_words_p(block_size_in_words_p)
+          ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
+          ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
+          ,.hbm_data_width_p(hbm_data_width_p))
       cache_to_ramulator
-                    (.core_clk_i(core_clk)
-                     ,.core_reset_i(core_reset)
+        (.core_clk_i(core_clk)
+         ,.core_reset_i(core_reset)
 
-                     ,.dma_pkt_i(lv1_dma.dma_pkt[i])
-                     ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo[i])
-                     ,.dma_pkt_yumi_o(lv1_dma.dma_pkt_yumi_li[i])
+         ,.dma_pkt_i(lv1_dma.dma_pkt[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_pkt_yumi_o(lv1_dma.dma_pkt_yumi_li[cache_range_hi_p:cache_range_lo_p])
 
-                     ,.dma_data_o(lv1_dma.dma_data_li[i])
-                     ,.dma_data_v_o(lv1_dma.dma_data_v_li[i])
-                     ,.dma_data_ready_i(lv1_dma.dma_data_ready_lo[i])
+         ,.dma_data_o(lv1_dma.dma_data_li[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_v_o(lv1_dma.dma_data_v_li[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_ready_i(lv1_dma.dma_data_ready_lo[cache_range_hi_p:cache_range_lo_p])
 
-                     ,.dma_data_i(lv1_dma.dma_data_lo[i])
-                     ,.dma_data_v_i(lv1_dma.dma_data_v_lo[i])
-                     ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li[i])
+         ,.dma_data_i(lv1_dma.dma_data_lo[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_v_i(lv1_dma.dma_data_v_lo[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li[cache_range_hi_p:cache_range_lo_p])
 
-                     ,.hbm_clk_i(hbm_clk)
-                     ,.hbm_reset_i(hbm_reset)
+         ,.hbm_clk_i(hbm_clk)
+         ,.hbm_reset_i(hbm_reset)
 
-                     ,.hbm_ch_addr_o(hbm_ch_addr_lo[i])
-                     ,.hbm_req_yumi_i(hbm_req_yumi_li[i])
-                     ,.hbm_req_v_o(hbm_req_v_lo[i])
-                     ,.hbm_write_not_read_o(hbm_write_not_read_lo[i])
+         ,.hbm_ch_addr_o(hbm_ch_addr_lo[ch_i])
+         ,.hbm_req_yumi_i(hbm_req_yumi_li[ch_i])
+         ,.hbm_req_v_o(hbm_req_v_lo[ch_i])
+         ,.hbm_write_not_read_o(hbm_write_not_read_lo[ch_i])
 
-                     ,.hbm_data_o(hbm_data_lo[i])
-                     ,.hbm_data_v_o(hbm_data_v_lo[i])
-                     ,.hbm_data_yumi_i(hbm_data_yumi_li[i])
+         ,.hbm_data_o(hbm_data_lo[ch_i])
+         ,.hbm_data_v_o(hbm_data_v_lo[ch_i])
+         ,.hbm_data_yumi_i(hbm_data_yumi_li[ch_i])
 
-                     ,.hbm_data_i(hbm_data_li[i])
-                     ,.hbm_data_v_i(hbm_data_v_li[i])
-                     );
-
+         ,.hbm_data_i(hbm_data_li[ch_i])
+         ,.hbm_data_v_i(hbm_data_v_li[ch_i])
+         );
     end
 
     // assign hbm clk and reset to core for now...
