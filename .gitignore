@@ -2,6 +2,7 @@
 *.swp
 *.str
 *.log
+*.csv
 *~
 __pycache__
 .Xil
