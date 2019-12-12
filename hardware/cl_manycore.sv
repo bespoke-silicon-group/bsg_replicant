@@ -387,7 +387,7 @@ module cl_manycore
   localparam hbm_channel_addr_width_p = 29;
   localparam hbm_data_width_p = 512;
   localparam hbm_num_channels_p = 8;
-  localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - x_cord_width_p + byte_offset_width_lp;
+  //localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - x_cord_width_p + byte_offset_width_lp;
 
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
     || mem_cfg_p ==e_vcache_blocking_axi4_f1_model
@@ -718,6 +718,8 @@ module cl_manycore
              num_tiles_x_p, hbm_num_channels_p);
     end
 
+    localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
+    localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - lg_num_cache_per_hbm_channel_p;
     // DDR is unused
 `include "unused_ddr_c_template.inc"
 
@@ -857,7 +859,6 @@ module cl_manycore
         ,.data_width_p(hbm_data_width_p)
         ,.channel_addr_width_p(hbm_channel_addr_width_p)
         ,.init_val_p(1)
-        //,.debug_p(1)
         )
     hbm
       (.clk_i(lv2_ramulator_hbm.hbm_clk)
