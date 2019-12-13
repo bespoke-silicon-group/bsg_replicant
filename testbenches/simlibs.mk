@@ -127,13 +127,14 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 
+# Include makefile for ramulator sources
+include $(TESTBENCH_PATH)/ramulator.mk
 
 # -------------------- TARGETS --------------------
 # This makefile defines two variables for External Use: 
 #
 # SIMLIBS: Targets for building hardware/software simulation libraries
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
-SIMLIBS += $(TESTBENCH_PATH)/libramulator.so
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
 SIMLIBS += $(TESTBENCH_PATH)/synopsys_sim.setup
 SIMLIBS += $(WORKDIR)/AN.DB
@@ -170,25 +171,6 @@ VDEFINES   += ECC_ADDR_LO=0
 VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 endif
-
-ifeq ($(CL_MANYCORE_MEM_CFG),e_vcache_non_blocking_ramulator_hbm)
-VDEFINES   += AXI_MEMORY_MODEL=1
-VDEFINES   += ECC_DIRECT_EN
-VDEFINES   += RND_ECC_EN
-VDEFINES   += ECC_ADDR_LO=0
-VDEFINES   += ECC_ADDR_HI=0
-VDEFINES   += RND_ECC_WEIGHT=0
-endif
-
-ifeq ($(CL_MANYCORE_MEM_CFG),e_vcache_blocking_ramulator_hbm)
-VDEFINES   += AXI_MEMORY_MODEL=1
-VDEFINES   += ECC_DIRECT_EN
-VDEFINES   += RND_ECC_EN
-VDEFINES   += ECC_ADDR_LO=0
-VDEFINES   += ECC_ADDR_HI=0
-VDEFINES   += RND_ECC_WEIGHT=0
-endif
-
 
 ifeq ($(EXTRA_TURBO), 1)
 VLOGAN_VFLAGS += -undef_vcs_macro
@@ -251,8 +233,6 @@ $(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(SDK_DIR)/userspace/utils/sh_dpi_tasks.c
 $(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(HDK_DIR)/common/software/src/fpga_pci_sv.c
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
-include $(TESTBENCH_PATH)/ramulator.mk
-
 .PHONY: simlibs.clean
 simlibs.clean: libraries.clean hardware.clean
 	rm -rf $(TESTBENCH_PATH)/synopsys_sim.setup
@@ -260,4 +240,3 @@ simlibs.clean: libraries.clean hardware.clean
 	rm -rf $(TESTBENCH_PATH)/libfpga_mgmt.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1
-	rm -rf $(TESTBENCH_PATH)/libramulator.so

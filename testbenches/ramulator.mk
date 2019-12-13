@@ -56,6 +56,33 @@ ifndef PROJECT
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
 endif
 
+# Don't include more than once
+ifndef (_BSG_F1_TESTBENCHES_RAMULATOR_MK)
+_BSG_F1_TESTBENCHES_RAMULATOR_MK := 1
+# Check if ramulator is the memory model for this design
+ifneq ($(filter e_%_ramulator_hbm, $(CL_MANYCORE_MEM_CFG)),)
+
+# Disable the micron memory model (it's unused and slows simulation WAY down)
+VDEFINES   += AXI_MEMORY_MODEL=1
+VDEFINES   += ECC_DIRECT_EN
+VDEFINES   += RND_ECC_EN
+VDEFINES   += ECC_ADDR_LO=0
+VDEFINES   += ECC_ADDR_HI=0
+VDEFINES   += RND_ECC_WEIGHT=0
+
+# Add ramulator to the simlibs
+SIMLIBS += $(TESTBENCH_PATH)/libramulator.so
+LDFLAGS += -lramulator
+
+# Add a clean rule
+.PHONY: ramulator.clean
+ramulator.clean:
+	rm -f $(TESTBENCH_PATH)/libramulator.so
+
+# Add as a subrule to simlibs.clean
+simlibs.clean: ramulator.clean
+
+# Rules for building ramulator library
 $(TESTBENCH_PATH)/libramulator.so: INCLUDES += -I$(BASEJUMP_STL_DIR)/imports/ramulator/src
 $(TESTBENCH_PATH)/libramulator.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
 $(TESTBENCH_PATH)/libramulator.so: CXXFLAGS += -DRAMULATOR
@@ -70,3 +97,6 @@ $(TESTBENCH_PATH)/libramulator.so: $(BASEJUMP_STL_DIR)/imports/ramulator/src/Con
 $(TESTBENCH_PATH)/libramulator.so: $(BASEJUMP_STL_DIR)/imports/ramulator/src/ALDRAM.cpp
 $(TESTBENCH_PATH)/libramulator.so: $(BASEJUMP_STL_DIR)/imports/ramulator/src/TLDRAM.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
+
+endif # ifneq($(filter e_%_ramulator_hbm, $(CL_MANYCORE_MEM_CFG)),)
+endif # ifndef(_BSG_F1_TESTBENCHES_RAMULATOR_MK)
