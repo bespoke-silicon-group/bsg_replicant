@@ -13,6 +13,7 @@ This repository contains the following folders:
 - `regression`: C/C++ Regression tests for co-simuation and AWS F1 Execution
 - `testbenches`: Testbench makefiles for C/C++ Co-Simulation
 - `scripts`: Scripts used to upload Amazon FPGA images (AFIs) and configure Amazon Machine Images (AMIs).
+- `machines`: Customized `Makefile.machine.include` file for different designs.
 
 This repository contains the following files:
 
@@ -45,3 +46,15 @@ BSG Bladerunner tracks BSG F1 (this repository), BSG Manycore, and
 BaseJump STL repositories as submodules and maintains a monotonic
 versionining scheme. BSG Bladerunner also contains cosimulation
 instructions. 
+
+## Customized Design Configurations
+
+`Makefile.machine.include` contains the default design for the testbenches but the `machines` directory contains
+other designs. To use one of these other designs, just copy the `Makefile.machine.include` to this directory.
+
+```
+cp machines/<design_name>/Makefile.machine.include .
+```
+
+
+

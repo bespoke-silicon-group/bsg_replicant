@@ -103,8 +103,17 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1rw_sync_assoc.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_ramulator_hbm.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_ramulator_hbm_channel.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm_tx.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
@@ -118,6 +127,8 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 
+# Include makefile for ramulator sources
+include $(TESTBENCH_PATH)/ramulator.mk
 
 # -------------------- TARGETS --------------------
 # This makefile defines two variables for External Use: 

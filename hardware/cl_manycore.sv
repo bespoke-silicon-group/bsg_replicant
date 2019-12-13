@@ -255,12 +255,12 @@ module cl_manycore
 
    logic         ns_core_clk;
    parameter lc_core_clk_period_p =400000;
-   
-   bsg_nonsynth_clock_gen 
+
+   bsg_nonsynth_clock_gen
      #(
        .cycle_time_p(lc_core_clk_period_p)
-       ) 
-   core_clk_gen 
+       )
+   core_clk_gen
      (
       .o(ns_core_clk)
       );
@@ -383,11 +383,18 @@ module cl_manycore
   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3);
   localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
 
+  // hbm ramulator
+  localparam hbm_channel_addr_width_p = 29;
+  localparam hbm_data_width_p = 512;
+  localparam hbm_num_channels_p = 8;
+  //localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - x_cord_width_p + byte_offset_width_lp;
 
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
     || mem_cfg_p ==e_vcache_blocking_axi4_f1_model
+    || mem_cfg_p == e_vcache_blocking_ramulator_hbm
     || mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram
-    || mem_cfg_p ==  e_vcache_non_blocking_axi4_f1_model) begin: lv1_dma
+    || mem_cfg_p ==  e_vcache_non_blocking_axi4_f1_model
+    || mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv1_dma
 
     // for now blocking and non-blocking shares the same wire, since interface is
     // the same. But it might change in the future.
@@ -445,8 +452,9 @@ module cl_manycore
     );
 
   end
-  else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
-           mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
+  else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
+           mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
+           mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv1_vcache
 
 
     for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
@@ -501,7 +509,8 @@ module cl_manycore
 
   end // block: lv1_vcache
   else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
-           mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv1_vcache_nb
+           mem_cfg_p == e_vcache_non_blocking_axi4_f1_model ||
+           mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv1_vcache_nb
 
     for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
       bsg_manycore_vcache_non_blocking #(
@@ -579,7 +588,7 @@ module cl_manycore
 
   // LEVEL 2
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram || 
+  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
       mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
       mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
       mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv2_axi4
@@ -692,6 +701,98 @@ module cl_manycore
     );
 
   end // block: lv2_axi4
+  else if (mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
+           mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv2_ramulator_hbm
+
+    // checks that this configuration is supported
+    // we do not support having fewer caches than channels
+    localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/hbm_num_channels_p);
+    if (num_cache_per_hbm_channel_p <= 0) begin
+      $fatal("hbm channels (%d) must be less than or equal to l2 caches (%d)",
+             hbm_num_channels_p, num_tiles_x_p);
+    end
+    // caches:channels must be an integral ratio
+    localparam real _num_tiles_x_real_p = num_tiles_x_p;
+    if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/hbm_num_channels_p)) begin
+      $fatal("l2 caches (%d) must be a multiple of hbm channels (%d)",
+             num_tiles_x_p, hbm_num_channels_p);
+    end
+
+    localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
+    localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - lg_num_cache_per_hbm_channel_p;
+    // DDR is unused
+`include "unused_ddr_c_template.inc"
+
+    logic hbm_clk;
+    logic hbm_reset;
+
+    //500MHz
+    bsg_nonsynth_clock_gen
+      #(.cycle_time_p(2000))
+    clk_gen
+      (.o(hbm_clk));
+
+    logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_lo;
+    logic [hbm_num_channels_p-1:0]                 	         hbm_req_yumi_li;
+    logic [hbm_num_channels_p-1:0]                               hbm_req_v_lo;
+    logic [hbm_num_channels_p-1:0]                               hbm_write_not_read_lo;
+
+    logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_lo;
+    logic [hbm_num_channels_p-1:0]                               hbm_data_v_lo;
+    logic [hbm_num_channels_p-1:0]                               hbm_data_yumi_li;
+
+    logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_li;
+    logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
+
+    for (genvar ch_i = 0; ch_i < hbm_num_channels_p; ch_i++) begin
+      localparam cache_range_lo_p = ch_i * num_cache_per_hbm_channel_p;
+      localparam cache_range_hi_p = (ch_i+1) * num_cache_per_hbm_channel_p - 1;
+
+      bsg_cache_to_ramulator_hbm
+        #(.num_cache_p(num_cache_per_hbm_channel_p)
+          ,.data_width_p(data_width_p)
+          ,.addr_width_p(cache_addr_width_lp)
+          ,.block_size_in_words_p(block_size_in_words_p)
+          ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
+          ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
+          ,.hbm_data_width_p(hbm_data_width_p))
+      cache_to_ramulator
+        (.core_clk_i(core_clk)
+         ,.core_reset_i(core_reset)
+
+         ,.dma_pkt_i(lv1_dma.dma_pkt[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_pkt_yumi_o(lv1_dma.dma_pkt_yumi_li[cache_range_hi_p:cache_range_lo_p])
+
+         ,.dma_data_o(lv1_dma.dma_data_li[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_v_o(lv1_dma.dma_data_v_li[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_ready_i(lv1_dma.dma_data_ready_lo[cache_range_hi_p:cache_range_lo_p])
+
+         ,.dma_data_i(lv1_dma.dma_data_lo[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_v_i(lv1_dma.dma_data_v_lo[cache_range_hi_p:cache_range_lo_p])
+         ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li[cache_range_hi_p:cache_range_lo_p])
+
+         ,.hbm_clk_i(hbm_clk)
+         ,.hbm_reset_i(hbm_reset)
+
+         ,.hbm_ch_addr_o(hbm_ch_addr_lo[ch_i])
+         ,.hbm_req_yumi_i(hbm_req_yumi_li[ch_i])
+         ,.hbm_req_v_o(hbm_req_v_lo[ch_i])
+         ,.hbm_write_not_read_o(hbm_write_not_read_lo[ch_i])
+
+         ,.hbm_data_o(hbm_data_lo[ch_i])
+         ,.hbm_data_v_o(hbm_data_v_lo[ch_i])
+         ,.hbm_data_yumi_i(hbm_data_yumi_li[ch_i])
+
+         ,.hbm_data_i(hbm_data_li[ch_i])
+         ,.hbm_data_v_i(hbm_data_v_li[ch_i])
+         );
+    end
+
+    // assign hbm clk and reset to core for now...
+    //assign hbm_clk = core_clk;
+    assign hbm_reset = core_reset;
+  end // block: lv2_ramulator_hbm
 
   // LEVEL 3
   //
@@ -749,7 +850,36 @@ module cl_manycore
    assign lv2_axi4.axi_rlast            = m_axi4_manycore_rlast;
    assign lv2_axi4.axi_rvalid           = m_axi4_manycore_rvalid;
    assign m_axi4_manycore_rready        = lv2_axi4.axi_rready;
-  end // if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram)
+  end
+  else if (mem_cfg_p == e_vcache_blocking_ramulator_hbm ||
+           mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv3_ramulator_hbm
+
+    bsg_nonsynth_ramulator_hbm
+      #(.num_channels_p(hbm_num_channels_p)
+        ,.data_width_p(hbm_data_width_p)
+        ,.channel_addr_width_p(hbm_channel_addr_width_p)
+        ,.init_mem_p(1)
+        //,.debug_p(1)
+        )
+    hbm
+      (.clk_i(lv2_ramulator_hbm.hbm_clk)
+       ,.reset_i(lv2_ramulator_hbm.hbm_reset)
+
+       ,.v_i(lv2_ramulator_hbm.hbm_req_v_lo)
+       ,.write_not_read_i(lv2_ramulator_hbm.hbm_write_not_read_lo)
+       ,.ch_addr_i(lv2_ramulator_hbm.hbm_ch_addr_lo)
+       ,.yumi_o(lv2_ramulator_hbm.hbm_req_yumi_li)
+
+       ,.data_v_i(lv2_ramulator_hbm.hbm_data_v_lo)
+       ,.data_i(lv2_ramulator_hbm.hbm_data_lo)
+       ,.data_yumi_o(lv2_ramulator_hbm.hbm_data_yumi_li)
+
+       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li)
+       ,.data_o(lv2_ramulator_hbm.hbm_data_li)
+
+       );
+
+  end // block: lv3_ramulator_hbm
 
 
 
