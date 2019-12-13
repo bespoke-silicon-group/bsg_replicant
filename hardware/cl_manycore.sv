@@ -858,7 +858,8 @@ module cl_manycore
       #(.num_channels_p(hbm_num_channels_p)
         ,.data_width_p(hbm_data_width_p)
         ,.channel_addr_width_p(hbm_channel_addr_width_p)
-        ,.init_val_p(1)
+        ,.init_mem_p(1)
+        //,.debug_p(1)
         )
     hbm
       (.clk_i(lv2_ramulator_hbm.hbm_clk)
