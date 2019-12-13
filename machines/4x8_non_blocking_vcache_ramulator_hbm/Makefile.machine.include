@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-BSG_MACHINE_GLOBAL_X                  = 32
+BSG_MACHINE_GLOBAL_X                  = 8
 BSG_MACHINE_GLOBAL_Y                  = 5
 BSG_MACHINE_VCACHE_SET                = 64
 BSG_MACHINE_VCACHE_WAY                = 8
@@ -35,7 +35,7 @@ BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
 BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MAX_EPA_WIDTH             = 28
 BSG_MACHINE_DRAM_SIZE_WORDS           = 1073741824
-BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = 33554432
+BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = 134217728
 
 BSG_MACHINE_DATA_WIDTH                = 32
 
@@ -49,4 +49,4 @@ CL_MANYCORE_HOST_COORD_Y             := 0
 CL_MANYCORE_DIM_X                    := $(BSG_MACHINE_GLOBAL_X)
 CL_MANYCORE_DIM_Y                    := $(shell expr $(BSG_MACHINE_GLOBAL_Y) - 1)
 
-CL_MANYCORE_MEM_CFG                  := e_vcache_blocking_ramulator_hbm
+CL_MANYCORE_MEM_CFG                  := e_vcache_non_blocking_ramulator_hbm
