@@ -38,11 +38,10 @@ module axil_to_mcl
   , addr_width_p="inv"
   , data_width_p="inv"
   , max_out_credits_p="inv"
-  , load_id_width_p="inv"
   , rcv_fifo_els_lp=256
-  , link_sif_width_lp=`bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
-  , packet_width_lp=`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
-  , return_packet_width_lp=`bsg_manycore_return_packet_width(x_cord_width_p,y_cord_width_p,data_width_p,load_id_width_p)
+  , link_sif_width_lp=`bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
+  , packet_width_lp=`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
+  , return_packet_width_lp=`bsg_manycore_return_packet_width(x_cord_width_p,y_cord_width_p,data_width_p)
 ) (input                                         clk_i
   , input                                         reset_i
   // axil signals
@@ -336,15 +335,20 @@ module axil_to_mcl
   logic [num_mcl_p-1:0][   x_cord_width_p-1:0] in_src_x_cord_lo;
   logic [num_mcl_p-1:0][   y_cord_width_p-1:0] in_src_y_cord_lo;
 
+  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p);
+
   logic [num_mcl_p-1:0]                      endpoint_out_v_li;
-  logic [num_mcl_p-1:0][packet_width_lp-1:0] endpoint_out_packet_li;
+  bsg_manycore_packet_s [num_mcl_p-1:0]      endpoint_out_packet_li;
   logic [num_mcl_p-1:0]                      endpoint_out_ready_lo;
 
-  logic [num_mcl_p-1:0][   data_width_p-1:0] returned_data_r_lo;
-  logic [num_mcl_p-1:0][load_id_width_p-1:0] returned_load_id_r_lo;
-  logic [num_mcl_p-1:0]                      returned_v_r_lo;
-  logic [num_mcl_p-1:0]                      returned_fifo_full_lo;
-  logic [num_mcl_p-1:0]                      returned_yumi_li;
+  bsg_manycore_return_packet_type_e
+    [num_mcl_p-1:0] returned_pkt_type_r_lo;
+
+  logic [num_mcl_p-1:0][bsg_manycore_reg_id_width_gp-1:0] returned_reg_id_r_lo;
+  logic [num_mcl_p-1:0][   data_width_p-1:0]              returned_data_r_lo;
+  logic [num_mcl_p-1:0]                                   returned_v_r_lo;
+  logic [num_mcl_p-1:0]                                   returned_fifo_full_lo;
+  logic [num_mcl_p-1:0]                                   returned_yumi_li;
 
   logic [num_mcl_p-1:0][data_width_p-1:0]    returning_data_li;
   logic [num_mcl_p-1:0]                      returning_v_li;
@@ -388,24 +392,51 @@ module axil_to_mcl
     assign endpoint_out_v_li[i] = fifo_v_lo[2*i] & fifo_req_enable[i];
     assign fifo_ready_li[2*i] = endpoint_out_ready_lo[i] & fifo_req_enable[i];
     assign fifo_req_cast[i]          = fifo_data_lo[2*i];
-    assign endpoint_out_packet_li[i] = {
-      (addr_width_p)'(fifo_req_cast[i].addr)
-      ,(2)'(fifo_req_cast[i].op)
-      ,(data_width_p>>3)'(fifo_req_cast[i].op_ex)
-      ,(data_width_p)'(fifo_req_cast[i].payload.data)
-      ,(y_cord_width_p)'(fifo_req_cast[i].src_y_cord)
-      ,(x_cord_width_p)'(fifo_req_cast[i].src_x_cord)
-      ,(y_cord_width_p)'(fifo_req_cast[i].y_cord)
-      ,(x_cord_width_p)'(fifo_req_cast[i].x_cord)
-    };
+
+    bsg_manycore_packet_op_e endpoint_out_packet_op;
+    assign endpoint_out_packet_op = fifo_req_cast[i].op;
+    assign endpoint_out_packet_li[i].addr = (addr_width_p)'(fifo_req_cast[i].addr);
+    assign endpoint_out_packet_li[i].op = endpoint_out_packet_op;
+    assign endpoint_out_packet_li[i].op_ex = ($bits(bsg_manycore_packet_op_ex_u))'(fifo_req_cast[i].op_ex);
+    assign endpoint_out_packet_li[i].src_y_cord = (y_cord_width_p)'(fifo_req_cast[i].src_y_cord);
+    assign endpoint_out_packet_li[i].src_x_cord = (x_cord_width_p)'(fifo_req_cast[i].src_x_cord);
+    assign endpoint_out_packet_li[i].y_cord = (y_cord_width_p)'(fifo_req_cast[i].y_cord);
+    assign endpoint_out_packet_li[i].x_cord = (x_cord_width_p)'(fifo_req_cast[i].x_cord);
+
+    always_comb begin
+      if (endpoint_out_packet_op == e_remote_load) begin
+        endpoint_out_packet_li[i].reg_id = fifo_req_cast[i].payload.load_id;
+      end
+      else begin
+        endpoint_out_packet_li[i].reg_id = '0;
+      end
+    end
+    always_comb begin
+      if (endpoint_out_packet_op == e_remote_store) begin
+        endpoint_out_packet_li[i].payload.data = fifo_req_cast[i].payload.data;
+      end
+      else begin
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.float_wb = '0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.icache_fetch = '0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.part_sel = 4'b1111;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_unsigned_op = '1;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_byte_op = '0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_hex_op = '0;
+      end
+    end
+
+    always_ff @(negedge clk_i) begin
+      assert(reset_i | !endpoint_out_v_li[i] | (endpoint_out_packet_op != e_remote_amo)) else
+        $error("[BSG_ERROR][axil_to_mcl.v] remote atomic memory operations from the host are not supported");
+    end
 
     // manycore response to fifo
     assign fifo_v_li[2*i]      = returned_v_r_lo[i];
     assign fifo_data_li[2*i]   = mc_res_cast[i];
     assign mc_res_cast[i].padding = '0;
-    assign mc_res_cast[i].pkt_type = {7'b0, e_return_data};
+    assign mc_res_cast[i].pkt_type = {6'b0, returned_pkt_type_r_lo[i]};
     assign mc_res_cast[i].data = (32)'(returned_data_r_lo[i]);
-    assign mc_res_cast[i].load_id = (32)'(returned_load_id_r_lo[i]);
+    assign mc_res_cast[i].load_id = (32)'(returned_reg_id_r_lo[i]);
     assign mc_res_cast[i].y_cord = (8)'(my_y_li[i]);
     assign mc_res_cast[i].x_cord = (8)'(my_x_li[i]);
     assign returned_yumi_li[i] = fifo_ready_lo[2*i] & fifo_v_li[2*i];  // must be 1 if fifo_v_li is 1
@@ -442,44 +473,44 @@ module axil_to_mcl
       ,.addr_width_p     (addr_width_p     )
       ,.data_width_p     (data_width_p     )
       ,.max_out_credits_p(max_out_credits_p)
-      ,.load_id_width_p  (load_id_width_p  )
     ) mcl_endpoint_standard (
-      .clk_i               (clk_i                    )
-      ,.reset_i             (reset_i                  )
+      .clk_i                  (clk_i                    )
+      ,.reset_i               (reset_i                  )
 
-      ,.link_sif_i          (link_sif_i               )
-      ,.link_sif_o          (link_sif_o               )
+      ,.link_sif_i            (link_sif_i               )
+      ,.link_sif_o            (link_sif_o               )
 
       // manycore packet -> fifo
-      ,.in_v_o              (endpoint_in_v_lo[i]      )
-      ,.in_yumi_i           (endpoint_in_yumi_li[i]   )
-      ,.in_data_o           (endpoint_in_data_lo[i]   )
-      ,.in_mask_o           (endpoint_in_mask_lo[i]   )
-      ,.in_addr_o           (endpoint_in_addr_lo[i]   )
-      ,.in_we_o             (endpoint_in_we_lo[i]     )
-      ,.in_src_x_cord_o     (in_src_x_cord_lo[i]      )
-      ,.in_src_y_cord_o     (in_src_y_cord_lo[i]      )
+      ,.in_v_o                (endpoint_in_v_lo[i]      )
+      ,.in_yumi_i             (endpoint_in_yumi_li[i]   )
+      ,.in_data_o             (endpoint_in_data_lo[i]   )
+      ,.in_mask_o             (endpoint_in_mask_lo[i]   )
+      ,.in_addr_o             (endpoint_in_addr_lo[i]   )
+      ,.in_we_o               (endpoint_in_we_lo[i]     )
+      ,.in_src_x_cord_o       (in_src_x_cord_lo[i]      )
+      ,.in_src_y_cord_o       (in_src_y_cord_lo[i]      )
 
       // fifo -> manycore packet
-      ,.out_v_i             (endpoint_out_v_li[i]     )
-      ,.out_packet_i        (endpoint_out_packet_li[i])
-      ,.out_ready_o         (endpoint_out_ready_lo[i] )
+      ,.out_v_i               (endpoint_out_v_li[i]     )
+      ,.out_packet_i          (endpoint_out_packet_li[i])
+      ,.out_ready_o           (endpoint_out_ready_lo[i] )
 
       // manycore credit -> fifo
-      ,.returned_data_r_o   (returned_data_r_lo[i]    )
-      ,.returned_load_id_r_o(returned_load_id_r_lo[i] )
-      ,.returned_v_r_o      (returned_v_r_lo[i]       )
-      ,.returned_fifo_full_o(returned_fifo_full_lo[i] )
+      ,.returned_data_r_o     (returned_data_r_lo[i]    )
+      ,.returned_reg_id_r_o   (returned_reg_id_r_lo[i]  )
+      ,.returned_v_r_o        (returned_v_r_lo[i]       )
+      ,.returned_pkt_type_r_o (returned_pkt_type_r_lo[i])
+      ,.returned_fifo_full_o  (returned_fifo_full_lo[i] )
        // always 1'b1 if returned_fifo_p is not set
-      ,.returned_yumi_i     (returned_yumi_li[i]      )
+      ,.returned_yumi_i       (returned_yumi_li[i]      )
 
       // fifo -> manycore credit
-      ,.returning_data_i    (returning_data_li[i]     )
-      ,.returning_v_i       (returning_v_li[i]        )
+      ,.returning_data_i      (returning_data_li[i]     )
+      ,.returning_v_i         (returning_v_li[i]        )
 
-      ,.out_credits_o       (out_credits_lo[i]        )
-      ,.my_x_i              (my_x_li[i]               )
-      ,.my_y_i              (my_y_li[i]               )
+      ,.out_credits_o         (out_credits_lo[i]        )
+      ,.my_x_i                (my_x_li[i]               )
+      ,.my_y_i                (my_y_li[i]               )
     );
   end
 

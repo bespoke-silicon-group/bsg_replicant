@@ -20,7 +20,7 @@ module bsg_bladerunner_rom
   ,max_out_credits_p=16
   ,load_id_width_p="inv"
   ,data_mask_width_lp=(data_width_p>>3)
-  ,link_sif_width_lp=`bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
+  ,link_sif_width_lp=`bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
 ) (input clk_i
   , input reset_i
 

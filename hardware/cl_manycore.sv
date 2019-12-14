@@ -303,7 +303,7 @@ module cl_manycore
 `endif
 
 
-   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p, load_id_width_p);
+   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p);
 
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
@@ -353,27 +353,29 @@ module cl_manycore
    bsg_manycore_link_sif_s async_link_sif_li;
    bsg_manycore_link_sif_s async_link_sif_lo;
 
-   bsg_manycore_link_sif_async_buffer #(
-                                        .addr_width_p(addr_width_p)
-                                        ,.data_width_p(data_width_p)
-                                        ,.x_cord_width_p(x_cord_width_p)
-                                        ,.y_cord_width_p(y_cord_width_p)
-                                        ,.load_id_width_p(load_id_width_p)
-                                        ,.fifo_els_p(16)
-                                        ) async_buf (
+   bsg_manycore_link_sif_async_buffer
+     #(
+       .addr_width_p(addr_width_p)
+       ,.data_width_p(data_width_p)
+       ,.x_cord_width_p(x_cord_width_p)
+       ,.y_cord_width_p(y_cord_width_p)
+       ,.load_id_width_p(load_id_width_p)
+       ,.fifo_els_p(16)
+       )
+  async_buf
+    (
+     // core side
+     .L_clk_i(core_clk)
+     ,.L_reset_i(core_reset)
+     ,.L_link_sif_i(loader_link_sif_lo)
+     ,.L_link_sif_o(loader_link_sif_li)
 
-                                                     // core side
-                                                     .L_clk_i(core_clk)
-                                                     ,.L_reset_i(core_reset)
-                                                     ,.L_link_sif_i(loader_link_sif_lo)
-                                                     ,.L_link_sif_o(loader_link_sif_li)
-
-                                                     // AXI-L side
-                                                     ,.R_clk_i(clk_main_a0)
-                                                     ,.R_reset_i(~rst_main_n_sync)
-                                                     ,.R_link_sif_i(async_link_sif_li)
-                                                     ,.R_link_sif_o(async_link_sif_lo)
-                                                     );
+     // AXI-L side
+     ,.R_clk_i(clk_main_a0)
+     ,.R_reset_i(~rst_main_n_sync)
+     ,.R_link_sif_i(async_link_sif_li)
+     ,.R_link_sif_o(async_link_sif_lo)
+     );
 
 `endif
 

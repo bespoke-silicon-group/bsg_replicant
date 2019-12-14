@@ -28,7 +28,7 @@ module bsg_manycore_wrapper
     , parameter y_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_y_p+2)
   
     , parameter link_sif_width_lp=
-      `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p)
+      `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp)
   )
   (
     input clk_i
@@ -46,7 +46,7 @@ module bsg_manycore_wrapper
 
   // manycore
   //
-  `declare_bsg_manycore_link_sif_s(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p);
+  `declare_bsg_manycore_link_sif_s(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp);
 
   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
