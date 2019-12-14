@@ -326,7 +326,6 @@ module cl_manycore
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
        ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
-       ,.load_id_width_p(load_id_width_p)
        ,.num_cache_p(num_cache_p)
        ,.vcache_size_p(vcache_size_p)
        ,.vcache_block_size_in_words_p(block_size_in_words_p)
@@ -359,7 +358,6 @@ module cl_manycore
        ,.data_width_p(data_width_p)
        ,.x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
-       ,.load_id_width_p(load_id_width_p)
        ,.fifo_els_p(16)
        )
   async_buf
@@ -429,7 +427,6 @@ module cl_manycore
         ,.addr_width_p(addr_width_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
-        ,.load_id_width_p(load_id_width_p)
       ) mem_infty (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
@@ -1079,7 +1076,6 @@ module cl_manycore
        ,.data_width_p     (data_width_p     )
        ,.x_cord_width_p   (x_cord_width_p   )
        ,.y_cord_width_p   (y_cord_width_p   )
-       ,.load_id_width_p  (load_id_width_p  )
        ,.max_out_credits_p(max_out_credits_p)
        ) 
    axil_to_mcl_inst 
