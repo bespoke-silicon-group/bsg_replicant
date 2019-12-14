@@ -467,7 +467,6 @@ module cl_manycore
 
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
-        ,.load_id_width_p(load_id_width_p)
       ) vcache (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
