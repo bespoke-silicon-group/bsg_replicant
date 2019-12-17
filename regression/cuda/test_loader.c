@@ -71,11 +71,26 @@ int test_loader (int argc, char **argv) {
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
 
+        /****************************************/
+        /* Allocate a word for the return value */
+        /****************************************/
+        hb_mc_eva_t raddr;
+        rc = hb_mc_device_malloc(&device, sizeof(uint32_t), &raddr);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("failed to allocate return code.\n");
+                return rc;
+        }
+
+        rc = hb_mc_device_memset(&device, &raddr, 0, sizeof(uint32_t));
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("failed to initialize return code.\n");
+                return rc;
+        };
 
         /**********************************************************************/
         /* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-        int kernel_argv[1] = {};
+        int kernel_argv[] = {raddr};
 
         char kernel_name[256];
         snprintf(kernel_name, sizeof(kernel_name), "kernel_%s", test_name + sizeof("test_") - 1);
@@ -83,7 +98,7 @@ int test_loader (int argc, char **argv) {
         /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, 0, kernel_argv);
+        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, 1, kernel_argv);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize grid.\n");
                 return rc;
@@ -99,6 +114,16 @@ int test_loader (int argc, char **argv) {
                 return rc;
         }       
 
+        /*************************/
+        /* Read the return value */
+        /*************************/
+        uint32_t rcode;
+        rc = hb_mc_device_memcpy(&device, &rcode, raddr, sizeof(rcode),
+                                 HB_MC_MEMCPY_TO_HOST);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("failed to read return code.\n");
+                return rc;
+        }
 
         /**********************************************************************/
         /* Freeze the tiles and memory manager cleanup.                       */
@@ -107,6 +132,14 @@ int test_loader (int argc, char **argv) {
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to de-initialize device.\n");
                 return rc;
+        }
+
+        /*************************/
+        /* Check the return code */
+        /*************************/
+        if (rcode != 0) {
+                bsg_pr_err("kernel returned non-zero.\n");
+                return HB_MC_FAIL;
         }
 
         return HB_MC_SUCCESS;
