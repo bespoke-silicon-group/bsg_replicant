@@ -473,9 +473,6 @@ module cl_manycore
         // memory systems link from bsg_manycore_wrapper
         ,.link_sif_i(cache_link_sif_lo[i])
         ,.link_sif_o(cache_link_sif_li[i])
-        // coordinates for memory system are determined by bsg_manycore_wrapper
-        ,.my_x_i(cache_x_lo[i])
-        ,.my_y_i(cache_y_lo[i])
 
         ,.dma_pkt_o(lv1_dma.dma_pkt[i])
         ,.dma_pkt_v_o(lv1_dma.dma_pkt_v_lo[i])
