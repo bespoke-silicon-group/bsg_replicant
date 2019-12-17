@@ -142,7 +142,6 @@ int test_loader(int argc, char **argv) {
 
         while (1) {
                 hb_mc_packet_t pkt;
-                int err;
                 bsg_pr_dbg("Waiting for finish packet\n");
                 
                 err = hb_mc_manycore_packet_rx(mc, &pkt, HB_MC_FIFO_RX_REQ, -1);
