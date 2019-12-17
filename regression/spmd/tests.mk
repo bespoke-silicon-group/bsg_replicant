@@ -36,6 +36,7 @@ SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 UNIFIED_TESTS = test_fib 
 UNIFIED_TESTS += test_bsg_print_stat
 UNIFIED_TESTS += test_putchar_stream
+UNIFIED_TESTS += test_vcache_atomics
 
 # "Independent Tests" use a per-test <test_name>.c file
 INDEPENDENT_TESTS := test_bsg_dram_loopback_cache
