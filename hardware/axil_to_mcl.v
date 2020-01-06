@@ -416,12 +416,12 @@ module axil_to_mcl
         endpoint_out_packet_li[i].payload.data = fifo_req_cast[i].payload.data;
       end
       else begin
-        endpoint_out_packet_li[i].payload.load_info_s.load_info.float_wb = '0;
-        endpoint_out_packet_li[i].payload.load_info_s.load_info.icache_fetch = '0;
-        endpoint_out_packet_li[i].payload.load_info_s.load_info.part_sel = 4'b1111;
-        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_unsigned_op = '1;
-        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_byte_op = '0;
-        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_hex_op = '0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.float_wb       = 1'b0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.icache_fetch   = 1'b0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.part_sel       = 4'b1111;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_unsigned_op = 1'b1;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_byte_op     = 1'b0;
+        endpoint_out_packet_li[i].payload.load_info_s.load_info.is_hex_op      = 1'b0;
       end
     end
 
