@@ -72,7 +72,15 @@ extern "C" {
         typedef enum __hb_mc_packet_mask_t {
                 HB_MC_PACKET_REQUEST_MASK_BYTE  = 0x1,
                 HB_MC_PACKET_REQUEST_MASK_SHORT = 0x3,
-                HB_MC_PACKET_REQUEST_MASK_WORD  = 0xF
+                HB_MC_PACKET_REQUEST_MASK_WORD  = 0xF,
+
+                HB_MC_PACKET_REQUEST_MASK_BYTE_0 = HB_MC_PACKET_REQUEST_MASK_BYTE << 0,
+                HB_MC_PACKET_REQUEST_MASK_BYTE_1 = HB_MC_PACKET_REQUEST_MASK_BYTE << 1,
+                HB_MC_PACKET_REQUEST_MASK_BYTE_2 = HB_MC_PACKET_REQUEST_MASK_BYTE << 2,
+                HB_MC_PACKET_REQUEST_MASK_BYTE_3 = HB_MC_PACKET_REQUEST_MASK_BYTE << 3,
+
+                HB_MC_PACKET_REQUEST_MASK_SHORT_0 = HB_MC_PACKET_REQUEST_MASK_SHORT << 0,
+                HB_MC_PACKET_REQUEST_MASK_SHORT_1 = HB_MC_PACKET_REQUEST_MASK_SHORT << 2,
         } hb_mc_packet_mask_t;
 
         /**
