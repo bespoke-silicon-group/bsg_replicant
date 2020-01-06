@@ -349,14 +349,11 @@ module cl_manycore
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
 
+
+
+`ifdef COSIM
+
   // print stat signals for vanilla_core_profiler module
-  /*
-  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
-  bsg_manycore_packet_s fwd_pkt;
-  assign fwd_pkt = loader_link_sif_lo.fwd.data;
-  assign print_stat_v = loader_link_sif_lo.fwd.v & (fwd_pkt.addr == (bsg_print_stat_epa_gp >> 2)) & loader_link_sif_li.fwd.ready_and_rev;
-  assign print_stat_tag = fwd_pkt.payload.data;
-  */
   logic print_stat_v;
   logic [data_width_p-1:0] print_stat_tag;
 
@@ -373,9 +370,6 @@ module cl_manycore
     ,.print_stat_v_o(print_stat_v)
     ,.print_stat_tag_o(print_stat_tag)
   );
-
-
-`ifdef COSIM
 
    bsg_manycore_link_sif_s async_link_sif_li;
    bsg_manycore_link_sif_s async_link_sif_lo;
@@ -513,7 +507,7 @@ module cl_manycore
 
     end
 
-    // synopsys translate off
+    // synopsys translate_off
 
     bind bsg_cache vcache_profiler #(
       .data_width_p(data_width_p)
@@ -524,7 +518,7 @@ module cl_manycore
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
     );
-    // synopsys translate on
+    // synopsys translate_on
 
   end // block: lv1_vcache
   else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
@@ -564,7 +558,7 @@ module cl_manycore
 
     end
 
-    // synopsys translate off
+    // synopsys translate_off
 
     bind bsg_cache_non_blocking vcache_non_blocking_profiler #(
       .data_width_p(data_width_p)
@@ -599,7 +593,7 @@ module cl_manycore
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
     );
-    // synopsys translate on
+    // synopsys translate_on
 
   end
   
