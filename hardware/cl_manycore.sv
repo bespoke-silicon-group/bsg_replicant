@@ -350,13 +350,30 @@ module cl_manycore
       );
 
   // print stat signals for vanilla_core_profiler module
+  /*
   `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
   bsg_manycore_packet_s fwd_pkt;
-  logic print_stat_v;
-  logic [data_width_p-1:0] print_stat_tag;
   assign fwd_pkt = loader_link_sif_lo.fwd.data;
   assign print_stat_v = loader_link_sif_lo.fwd.v & (fwd_pkt.addr == (bsg_print_stat_epa_gp >> 2)) & loader_link_sif_li.fwd.ready_and_rev;
   assign print_stat_tag = fwd_pkt.payload.data;
+  */
+  logic print_stat_v;
+  logic [data_width_p-1:0] print_stat_tag;
+
+  bsg_print_stat_snoop #(
+    .data_width_p(data_width_p)
+    ,.addr_width_p(addr_width_p)
+    ,.x_cord_width_p(x_cord_width_p)
+    ,.y_cord_width_p(y_cord_width_p)
+    ,.load_id_width_p(load_id_width_p)
+  ) print_stat_snoop0 (
+    .loader_link_sif_in_i(loader_link_sif_lo)
+    ,.loader_link_sif_out_i(loader_link_sif_li)
+
+    ,.print_stat_v_o(print_stat_v)
+    ,.print_stat_tag_o(print_stat_tag)
+  );
+
 
 `ifdef COSIM
 
