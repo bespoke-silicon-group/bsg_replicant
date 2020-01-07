@@ -28,11 +28,14 @@
 #ifndef BSG_MANYCORE_EPA_H
 #define BSG_MANYCORE_EPA_H
 #include <bsg_manycore_features.h>
+#include <bsg_manycore_errno.h>
 
 #ifdef __cplusplus
 #include <cstdint>
+#include <cstddef>
 #else
 #include <stdint.h>
+#include <stddef.h>
 #endif
 
 #ifdef __cplusplus
@@ -50,6 +53,33 @@ extern "C" {
 
 #define EPA_FROM_BASE_AND_OFFSET(base, offset)  \
         (((base)+(offset)))
+
+        /**
+         * Checks alignment of an epa based on data size in bytes.
+         * @param[in] epa  epa address
+         * @param[in] sz   data size in bytes.
+         * @return         HB_MC_SUCCESS if npa is aligned and HB_MC_INVALID otherwise.
+         */
+        static inline int hb_mc_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz)
+        {
+                switch (sz) {
+                case 4:
+                        if (*epa & 0x3)
+                                return HB_MC_INVALID;
+                        break;
+                case 2:
+                        if (*epa & 0x1)
+                                return HB_MC_INVALID;
+                        break;
+                case 1:
+                        break;
+                default:
+                        return HB_MC_INVALID;
+                }
+                return HB_MC_SUCCESS;
+        }
+
+
 
 #ifdef __cplusplus
 };

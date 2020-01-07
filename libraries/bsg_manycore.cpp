@@ -31,6 +31,7 @@
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_responder.h>
+#include <bsg_manycore_epa.h>
 
 #ifndef COSIM
 #include <fpga_pci.h>
@@ -1375,22 +1376,25 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        int shift = hb_mc_npa_get_epa(npa) & 0x3;
+        hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+
+        // Check for 4-byte, 2-byte or 1-byte alignment based on size
+        if (hb_mc_epa_check_alignment(&epa, sz) != HB_MC_SUCCESS)
+                return HB_MC_INVALID;
+
+        int shift = epa & 0x3;
         /* set data and size */
         switch (sz) {
         case 4:
-                assert(shift == 0);
                 hb_mc_request_packet_set_data(&rqst.request, *(const uint32_t*)vp);
                 hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
-                assert(shift == 0 || shift == 2);
                 hb_mc_request_packet_set_data(&rqst.request, *(const uint16_t*)vp);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
                 break;
         case 1:
-                assert(shift == 0 || shift == 1 || shift == 2 || shift == 3);
                 hb_mc_request_packet_set_data(&rqst.request, *(const  uint8_t*)vp);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
@@ -1773,8 +1777,6 @@ int hb_mc_manycore_write8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t 
  */
 int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t v)
 {
-        if(hb_mc_npa_get_epa(npa) & 0x1) // Check for 2-byte alignment by checking lowest bit
-                return HB_MC_INVALID;
         return hb_mc_manycore_write(mc, npa, &v, 2);
 }
 
@@ -1787,8 +1789,6 @@ int hb_mc_manycore_write16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_
  */
 int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v)
 {
-        if(hb_mc_npa_get_epa(npa) & 0x3) // Check for 4-byte alignment by checking lowest bit
-                return HB_MC_INVALID;
         return hb_mc_manycore_write(mc, npa, &v, 4);
 }
 
