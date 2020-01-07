@@ -34,6 +34,7 @@
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
+  import bsg_manycore_addr_pkg::*;
    import bsg_bladerunner_rom_pkg::*;
    import bsg_bladerunner_mem_cfg_pkg::*;
    (
@@ -348,7 +349,27 @@ module cl_manycore
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
 
+
+
 `ifdef COSIM
+
+  // print stat signals for vanilla_core_profiler module
+  logic print_stat_v;
+  logic [data_width_p-1:0] print_stat_tag;
+
+  bsg_print_stat_snoop #(
+    .data_width_p(data_width_p)
+    ,.addr_width_p(addr_width_p)
+    ,.x_cord_width_p(x_cord_width_p)
+    ,.y_cord_width_p(y_cord_width_p)
+    ,.load_id_width_p(load_id_width_p)
+  ) print_stat_snoop0 (
+    .loader_link_sif_in_i(loader_link_sif_lo)
+    ,.loader_link_sif_out_i(loader_link_sif_li)
+
+    ,.print_stat_v_o(print_stat_v)
+    ,.print_stat_tag_o(print_stat_tag)
+  );
 
    bsg_manycore_link_sif_s async_link_sif_li;
    bsg_manycore_link_sif_s async_link_sif_lo;
@@ -494,7 +515,7 @@ module cl_manycore
 
     end
 
-    // synopsys translate off
+    // synopsys translate_off
 
     bind bsg_cache vcache_profiler #(
       .data_width_p(data_width_p)
@@ -505,7 +526,7 @@ module cl_manycore
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
     );
-    // synopsys translate on
+    // synopsys translate_on
 
   end // block: lv1_vcache
   else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
@@ -546,7 +567,7 @@ module cl_manycore
 
     end
 
-    // synopsys translate off
+    // synopsys translate_off
 
     bind bsg_cache_non_blocking vcache_non_blocking_profiler #(
       .data_width_p(data_width_p)
@@ -581,7 +602,7 @@ module cl_manycore
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
     );
-    // synopsys translate on
+    // synopsys translate_on
 
   end
   
@@ -1228,8 +1249,8 @@ module cl_manycore
      (
       .*
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
-      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
-      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+      ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v)
+      ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag)
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 

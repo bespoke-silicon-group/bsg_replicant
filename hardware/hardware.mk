@@ -95,6 +95,7 @@ VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_configuration.v
 VSOURCES += $(HARDWARE_PATH)/cl_manycore_pkg.v
 VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
+VSOURCES += $(HARDWARE_PATH)/bsg_print_stat_snoop.v
 
 VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
 VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
