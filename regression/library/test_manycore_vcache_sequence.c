@@ -115,54 +115,6 @@ int test_manycore_vcache_sequence() {
                 }
 
 
-                // Write a 4-byte word into mis-aligned addresses to 
-                // verify that API returns an invalid address error
-                hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                                     dram_coord_y,
-                                                     BASE_ADDR+ 1);
-                write_data = rand();
-                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                if (err != HB_MC_SUCCESS) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                        bsg_pr_err("%s: Did not catch write into invalid mis-alined address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-
-                }
-                else {
-                        bsg_pr_err("%s: Did not catch write into invalid mis-alined address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR+ 2);
-                write_data = rand();
-                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } 
-                else {
-                        bsg_pr_err("%s: Did not catch write into invalid mis-alined address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR+ 3);
-                write_data = rand();
-                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                }
-                else {
-                        bsg_pr_err("%s: Did not catch write into invalid mis-alined address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-
         }
 
         /********************************/
