@@ -130,7 +130,7 @@ int test_manycore_vcache_sequence() {
                 }
                 else {
                         bsg_pr_err("%s: Did not catch write into invalid mis-alined address: 0x%08" PRIx32 ".\n",
-                                   __func__, npa);
+                                   __func__, hb_mc_npa_get_epa(&npa));
                         return HB_MC_FAIL;
                 }
 
