@@ -35,7 +35,7 @@
 
 #define TEST_NAME "test_manycore_vcache_sequence"
 
-#define ARRAY_LEN  4096
+#define ARRAY_LEN 4096
 #define BASE_ADDR 0x0000
 
 int test_manycore_vcache_sequence() {
@@ -66,18 +66,19 @@ int test_manycore_vcache_sequence() {
         /* Loop over all DRAM banks and write ARRAY_LEN words to each */
         /**************************************************************/
         for (dram_coord_x = 0; dram_coord_x < 1; dram_coord_x++) {
-                uint32_t write_data, read_data;
+                uint32_t write_data, read_data, byteaddr;
                 bsg_pr_test_info("%s: Testing DRAM bank (%" PRIu32 ",%" PRIu32 ")\n",
                                  __func__, dram_coord_x, dram_coord_y);
                 
-                for (size_t i = 0; i < ARRAY_LEN; i++) {
+                for (size_t i = 0; i < ARRAY_LEN; i += 1) {
+                        byteaddr = i << 2;
                         if ((i % 64) == 1)
                                 bsg_pr_test_info("%s: Have written and read back %4zu words\n",
                                                  __func__, i);
                         
                         hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
                                                              dram_coord_y,
-                                                             BASE_ADDR+i);
+                                                             BASE_ADDR + byteaddr);
                         write_data = rand();
                         err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
                         if (err != HB_MC_SUCCESS) {
@@ -85,7 +86,7 @@ int test_manycore_vcache_sequence() {
                                            " to DRAM coord (%d,%d) @ 0x08%" PRIx32 ": %s\n",
                                            __func__, i, write_data,
                                            dram_coord_x, dram_coord_y,
-                                           (npa.epa+i) << 2,
+                                           npa.epa + byteaddr,
                                            hb_mc_strerror(err));
                                 goto cleanup;
                         }
@@ -96,7 +97,7 @@ int test_manycore_vcache_sequence() {
                                            "from DRAM coord (%d,%d) @ 0x%08" PRIx32 ": %s\n",
                                            __func__, i,
                                            dram_coord_x, dram_coord_y,
-                                           (npa.epa+i) << 2,
+                                           npa.epa + byteaddr,
                                            hb_mc_strerror(err));
                                 goto cleanup;
                         }
@@ -112,6 +113,8 @@ int test_manycore_vcache_sequence() {
                         
                         mismatch = mismatch || !data_match;
                 }
+
+
         }
 
         /********************************/

@@ -43,6 +43,7 @@ INDEPENDENT_TESTS += test_vcache_simplified
 INDEPENDENT_TESTS += test_vcache_stride
 INDEPENDENT_TESTS += test_vcache_sequence
 INDEPENDENT_TESTS += test_printing
+INDEPENDENT_TESTS += test_manycore_alignment
 INDEPENDENT_TESTS += test_manycore_packets
 INDEPENDENT_TESTS += test_manycore_init
 INDEPENDENT_TESTS += test_manycore_dmem_read_write
