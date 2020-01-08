@@ -615,7 +615,7 @@ static int  hb_mc_manycore_mmio_read_mmio(hb_mc_manycore_t *mc, uintptr_t offset
                 manycore_pr_err(mc, "%s: Failed: 0x%" PRIxPTR " "
                                 "is not aligned to 4 byte boundary\n",
                                 __func__, offset);
-                return HB_MC_INVALID;
+                return HB_MC_UNALIGNED;
         }
 
         addr = &addr[offset];
@@ -720,7 +720,7 @@ static int hb_mc_manycore_mmio_write_mmio(hb_mc_manycore_t *mc, uintptr_t offset
                 manycore_pr_err(mc, "%s: Failed: 0x%" PRIxPTR " "
                                 "is not aligned to 4 byte boundary\n",
                                 __func__, offset);
-                return HB_MC_INVALID;
+                return HB_MC_UNALIGNED;
         }
 
         addr = &addr[offset];
@@ -1255,6 +1255,32 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 // Memory API //
 ////////////////
 
+/**
+ * Checks alignment of an epa based on data size in bytes.
+ * @param[in] epa  epa address
+ * @param[in] sz   data size in bytes.
+ * @return         HB_MC_SUCCESS if npa is aligned and HB_MC_UNALIGNED if not,
+ *                 and HB_MC_INVALID otherwise.
+ */
+static inline int hb_mc_manycore_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz)
+{
+        switch (sz) {
+        case 4:
+                if (*epa & 0x3)
+                        return HB_MC_UNALIGNED;
+                break;
+        case 2:
+                if (*epa & 0x1)
+                        return HB_MC_UNALIGNED;
+                break;
+        case 1:
+                break;
+        default:
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}
+
 /* send a read request and don't wait for the return packet */
 static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
                                          const hb_mc_npa_t *npa, size_t sz,
@@ -1271,6 +1297,13 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
                 return err;
         }
 
+        hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+
+        // Check for 4-byte, 2-byte or 1-byte alignment based on size
+        err = hb_mc_manycore_epa_check_alignment(&epa, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
         // mark request with id
         hb_mc_request_packet_set_data(&rqst.request, id);
         int shift = hb_mc_npa_get_epa(npa) & 0x3;
@@ -1280,13 +1313,11 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
                 hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
-                assert(shift == 0 || shift == 2);
                 hb_mc_request_packet_set_mask(&rqst.request,
                                               static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
                 break;
         case 1:
-                assert(shift == 0 || shift == 1 || shift == 2 || shift == 3);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
                 break;
@@ -1379,8 +1410,9 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
 
         // Check for 4-byte, 2-byte or 1-byte alignment based on size
-        if (hb_mc_epa_check_alignment(&epa, sz) != HB_MC_SUCCESS)
-                return HB_MC_INVALID;
+        err = hb_mc_manycore_epa_check_alignment(&epa, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
 
         int shift = epa & 0x3;
         /* set data and size */
@@ -1737,8 +1769,6 @@ int hb_mc_manycore_read8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t *
  */
 int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t *vp)
 {
-        if(hb_mc_npa_get_epa(npa) & 0x1) // Check for 2-byte alignment by checking lowest bit
-                return HB_MC_INVALID;
         return hb_mc_manycore_read(mc, npa, vp, 2);
 }
 
@@ -1751,8 +1781,6 @@ int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t
  */
 int hb_mc_manycore_read32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t *vp)
 {
-        if(hb_mc_npa_get_epa(npa) & 0x3) // Check for 4-byte alignment by checking two lowest bits
-                return HB_MC_INVALID;
         return hb_mc_manycore_read(mc, npa, vp, 4);
 }
 
