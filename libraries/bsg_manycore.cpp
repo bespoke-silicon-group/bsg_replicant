@@ -1363,22 +1363,22 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
         }
 
         /* check that the npa matches? */
-
+        
+        int shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
         /* read data from packet */
         switch (sz) {
         case 4:
                 *(uint32_t*)vp = hb_mc_response_packet_get_data(&rsp.response);
                 break;
         case 2:
-                *(uint16_t*)vp = hb_mc_response_packet_get_data(&rsp.response) & 0xFFFF;
+                *(uint16_t*)vp = (hb_mc_response_packet_get_data(&rsp.response) >> shift) & 0xFFFF;
                 break;
         case 1:
-                *(uint8_t*)vp = hb_mc_response_packet_get_data(&rsp.response) & 0xFF;
+                *(uint8_t*)vp  = (hb_mc_response_packet_get_data(&rsp.response) >> shift) & 0xFF;
                 break;
         default:
                 return HB_MC_INVALID;
         }
-
         if (id != nullptr)
                 *id = hb_mc_response_packet_get_load_id(&rsp.response);
 
@@ -1414,7 +1414,8 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        int shift = epa & 0x3;
+        int mask_shift = epa & 0x3;
+        int data_shift = CHAR_BIT * mask_shift;
         /* set data and size */
         switch (sz) {
         case 4:
@@ -1422,14 +1423,14 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
                 hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
-                hb_mc_request_packet_set_data(&rqst.request, *(const uint16_t*)vp);
+                hb_mc_request_packet_set_data(&rqst.request, static_cast<uint32_t>(*(const uint16_t*)vp) << data_shift);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
+                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << mask_shift));
                 break;
         case 1:
-                hb_mc_request_packet_set_data(&rqst.request, *(const  uint8_t*)vp);
+                hb_mc_request_packet_set_data(&rqst.request, static_cast<uint32_t>(*(const  uint8_t*)vp) << data_shift);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
+                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << mask_shift));
                 break;
         default:
                 return HB_MC_INVALID;
