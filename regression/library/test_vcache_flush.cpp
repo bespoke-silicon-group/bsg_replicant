@@ -118,7 +118,7 @@ int test_address(hb_mc_manycore_t *mc, hb_mc_epa_t addr, T data, hb_mc_idx_t x, 
 
         if(result != data) {
                 bsg_pr_test_err("%s -- Incorrect data read from Victim Cache!. "
-                                "Got %lu, but expected %lu\n",
+                                "Got 0x%08x, but expected 0x%08x\n",
                                 __func__, result, data);
                 return HB_MC_FAIL;
         }
@@ -142,7 +142,7 @@ int test_address(hb_mc_manycore_t *mc, hb_mc_epa_t addr, T data, hb_mc_idx_t x, 
 
         if(result != data) {
                 bsg_pr_test_err("%s -- Incorrect data read from DRAM!. "
-                                "Got %lu, but expected %lu\n",
+                                "Got 0x%08x, but expected 0x%08x\n",
                                 __func__, result, data);
                 return HB_MC_FAIL;
         }
@@ -209,21 +209,18 @@ int test_vcache_flush() {
                 for(i = 0; i < NUM_TESTS; ++i) {
                         addr = addrs[i];
 
-                        uint32_t data32 = rand();
                         bsg_pr_test_info("Testing 32-bit\n");
-                        rc = test_address(&mc, addr, data32, dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr, static_cast<uint32_t>(rand()), dram_coord_x, dram_coord_y);
 
-                        uint16_t data16 = rand() & 0xFFFF;
                         bsg_pr_test_info("Testing 16-bit\n");
-                        rc = test_address(&mc, addr    , data16, dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 2, data16, dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr    , static_cast<uint16_t>(rand() & 0xFFFF), dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr + 2, static_cast<uint16_t>(rand() & 0xFFFF), dram_coord_x, dram_coord_y);
 
-                        uint8_t   data8 = rand() & 0xFF;
                         bsg_pr_test_info("Testing  8-bit\n");
-                        rc = test_address(&mc, addr    ,  data8, dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 1,  data8, dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 2,  data8, dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 3,  data8, dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr    ,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr + 1,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr + 2,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                        rc = test_address(&mc, addr + 3,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
                 }
                 if(rc != HB_MC_SUCCESS)
                         return rc;
