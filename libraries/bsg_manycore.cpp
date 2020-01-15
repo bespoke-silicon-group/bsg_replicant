@@ -61,6 +61,7 @@
 #include <assert.h>
 #endif
 
+#include <type_traits>
 #include <stack>
 #include <queue>
 #include <vector>
@@ -1376,6 +1377,16 @@ static UINT hb_mc_manycore_mask_load_data(const hb_mc_npa_t *npa, uint32_t load_
 {
         int shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
         uint32_t result;
+
+        /* make sure this template is being used only as intended */
+        static_assert(std::is_unsigned<UINT>::value,
+                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
+
+        static_assert(std::is_integral<UINT>::value,
+                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
+
+        static_assert(sizeof(UINT) == 1 || sizeof(UINT) == 2 || sizeof(UINT) == 4,
+                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
 
         if (sizeof(UINT) == 4) {
                 result = load_data;
