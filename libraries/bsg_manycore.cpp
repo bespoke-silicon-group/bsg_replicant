@@ -1405,15 +1405,18 @@ static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, UIN
 {
         int err;
 
+        /* send load request */
         err = hb_mc_manycore_send_read_rqst(mc, npa, sizeof(UINT));
         if (err != HB_MC_SUCCESS)
                 return err;
 
+        /* read back response */
         uint32_t load_data;
         err = hb_mc_manycore_recv_read_rsp(mc, &load_data);
         if (err != HB_MC_SUCCESS)
                 return err;
 
+        /* mask off unused bits */
         *vp = hb_mc_manycore_mask_load_data<UINT>(npa, load_data);
         return HB_MC_SUCCESS;
 }
