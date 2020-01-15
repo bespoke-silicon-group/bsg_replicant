@@ -1363,8 +1363,16 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
         }
 
         /* check that the npa matches? */
-        
-        int shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
+        int shift;
+        if (sz == 2 || sz == 1) {
+                if (npa == nullptr) {
+                        manycore_pr_err(mc,"%s: Non-blocking loads only supported for 32bit values",
+                                        __func__);
+                        return HB_MC_NOIMPL;
+                }
+                shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
+        }
+
         /* read data from packet */
         switch (sz) {
         case 4:
