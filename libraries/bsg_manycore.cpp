@@ -1348,7 +1348,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
 
 /* read a response packet for a read request to an npa */
 static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
-                                        const hb_mc_npa_t *npa, void *vp, size_t sz,
+                                        uint32_t *vp,
                                         uint32_t *id = nullptr)
 {
         hb_mc_packet_t rsp;
@@ -1362,46 +1362,49 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
                 return err;
         }
 
-        /* check that the npa matches? */
-        int shift;
-        if (sz == 2 || sz == 1) {
-                if (npa == nullptr) {
-                        manycore_pr_err(mc,"%s: Non-blocking loads only supported for 32bit values",
-                                        __func__);
-                        return HB_MC_NOIMPL;
-                }
-                shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
-        }
-
         /* read data from packet */
-        switch (sz) {
-        case 4:
-                *(uint32_t*)vp = hb_mc_response_packet_get_data(&rsp.response);
-                break;
-        case 2:
-                *(uint16_t*)vp = (hb_mc_response_packet_get_data(&rsp.response) >> shift) & 0xFFFF;
-                break;
-        case 1:
-                *(uint8_t*)vp  = (hb_mc_response_packet_get_data(&rsp.response) >> shift) & 0xFF;
-                break;
-        default:
-                return HB_MC_INVALID;
-        }
+        *vp = hb_mc_response_packet_get_data(&rsp.response);
+
         if (id != nullptr)
                 *id = hb_mc_response_packet_get_load_id(&rsp.response);
 
         return HB_MC_SUCCESS;
 }
+
+template<typename UINT>
+static UINT hb_mc_manycore_mask_load_data(const hb_mc_npa_t *npa, uint32_t load_data)
+{
+        int shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
+        uint32_t result;
+
+        if (sizeof(UINT) == 4) {
+                result = load_data;
+        } else if (sizeof(UINT) == 2) {
+                result = (load_data >> shift) & 0xFFFF;
+        } else if (sizeof(UINT) == 1) {
+                result = (load_data >> shift) & 0xFF;
+        }
+
+        return static_cast<UINT>(result);
+}
+
 /* read from a memory address on the manycore */
-static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, void *vp, size_t sz)
+template <typename UINT>
+static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, UINT *vp)
 {
         int err;
 
-        err = hb_mc_manycore_send_read_rqst(mc, npa, sz);
+        err = hb_mc_manycore_send_read_rqst(mc, npa, sizeof(UINT));
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        return hb_mc_manycore_recv_read_rsp(mc, npa, vp, sz);
+        uint32_t load_data;
+        err = hb_mc_manycore_recv_read_rsp(mc, &load_data);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        *vp = hb_mc_manycore_mask_load_data<UINT>(npa, load_data);
+        return HB_MC_SUCCESS;
 }
 
 /* write to a memory address on the manycore */
@@ -1613,6 +1616,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                 ids.push(static_cast<uint32_t>(i));
 
         int id_to_rsp_i [n_ids];
+        hb_mc_npa_t id_to_npa[n_ids];
 
         /* until we've received all responses... */
         while (rsp_i < cnt) {
@@ -1631,6 +1635,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
 
                         // save which request this is
                         id_to_rsp_i[rqst_load_id] = rqst_i;
+                        id_to_npa[rqst_load_id] = rqst_addr;
 
                         // send a load request
                         err = hb_mc_manycore_send_read_rqst(mc, &rqst_addr, sizeof(UINT),
@@ -1662,8 +1667,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                 while (occupancy-- > 0 && rsp_i < cnt) {
                         /* read a response and write it back to the location marked by load_id */
                         uint32_t read_data, load_id;
-                        err = hb_mc_manycore_recv_read_rsp(mc, nullptr, &read_data, sizeof(UINT),
-                                                           &load_id);
+                        err = hb_mc_manycore_recv_read_rsp(mc, &read_data, &load_id);
                         if (err != HB_MC_SUCCESS) {
                                 manycore_pr_err(mc, "%s: Failed to receive read response: %s\n",
                                                 __func__, hb_mc_strerror(err));
@@ -1681,7 +1685,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                         }
 
                         // write 'read_data' back to the correct location
-                        data[id_to_rsp_i[load_id]] = static_cast<UINT>(read_data);
+                        data[id_to_rsp_i[load_id]] = hb_mc_manycore_mask_load_data<UINT>(&id_to_npa[load_id], read_data);
 
                         // increment succesful responses
                         rsp_i++;
@@ -1766,7 +1770,7 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
  */
 int hb_mc_manycore_read8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t *vp)
 {
-        return hb_mc_manycore_read(mc, npa, vp, 1);
+        return hb_mc_manycore_read(mc, npa, vp);
 }
 
 /**
@@ -1778,7 +1782,7 @@ int hb_mc_manycore_read8(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint8_t *
  */
 int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t *vp)
 {
-        return hb_mc_manycore_read(mc, npa, vp, 2);
+        return hb_mc_manycore_read(mc, npa, vp);
 }
 
 /**
@@ -1790,7 +1794,7 @@ int hb_mc_manycore_read16(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint16_t
  */
 int hb_mc_manycore_read32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t *vp)
 {
-        return hb_mc_manycore_read(mc, npa, vp, 4);
+        return hb_mc_manycore_read(mc, npa, vp);
 }
 
 /**
