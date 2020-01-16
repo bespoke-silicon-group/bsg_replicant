@@ -72,7 +72,23 @@ VDEFINES   += ECC_ADDR_LO=0
 VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 
-# Add ramulator to the simlibs
+# Flag that DRAMSim3 is being used
+VDEFINES   += USING_DRAMSIM3=1
+
+# Define the name and package of the memory technology
+DRAMSIM3_MEMORY:=$(patsubst e_vcache_blocking_dramsim3_%, %, \
+	$(filter e_vcache_blocking_%, $(CL_MANYCORE_MEM_CFG)))
+
+DRAMSIM3_MEMORY+=$(patsubst e_vcache_non_blocking_dramsim3_%, %, \
+	$(filter e_vcache_non_blocking_%, $(CL_MANYCORE_MEM_CFG)))
+
+DRAMSIM3_MEMORY:=$(strip $(DRAMSIM3_MEMORY))
+DRAMSIM3_MEM_PKG:=bsg_dramsim3_$(DRAMSIM3_MEMORY)_pkg
+
+VDEFINES   += DRAMSIM3_MEMORY=$(DRAMSIM3_MEMORY)
+VDEFINES   += DRAMSIM3_MEM_PKG=$(DRAMSIM3_MEM_PKG)
+
+# Add DRAMSim3 to the simlibs
 SIMLIBS += $(TESTBENCH_PATH)/libdramsim3.so
 LDFLAGS += -ldramsim3
 
@@ -88,7 +104,7 @@ simlibs.clean: dramsim3.clean
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/src
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/headers
-$(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/fmt/include
+$(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/fmt/include
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -DFMT_HEADER_ONLY=1
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
 $(TESTBENCH_PATH)/libdramsim3.so: CXX=g++
@@ -105,6 +121,7 @@ $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/memor
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/refresh.cc
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/simple_stats.cc
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/timing.cc
+$(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
 endif # ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)

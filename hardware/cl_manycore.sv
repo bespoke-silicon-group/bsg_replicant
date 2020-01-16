@@ -405,17 +405,29 @@ module cl_manycore
   localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
 
   // hbm ramulator
+`ifdef USING_DRAMSIM3
+
+  localparam hbm_channel_addr_width_p
+    = `DRAMSIM3_MEM_PKG::channel_addr_width_p;
+  localparam hbm_data_width_p
+    = `DRAMSIM3_MEM_PKG::data_width_p;
+  localparam hbm_num_channels_p
+    = `DRAMSIM3_MEM_PKG::num_channels_p;
+
+`else
   localparam hbm_channel_addr_width_p = 29;
   localparam hbm_data_width_p = 512;
   localparam hbm_num_channels_p = 8;
-  //localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - x_cord_width_p + byte_offset_width_lp;
+`endif
 
   if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
     || mem_cfg_p ==e_vcache_blocking_axi4_f1_model
     || mem_cfg_p == e_vcache_blocking_ramulator_hbm
     || mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram
     || mem_cfg_p ==  e_vcache_non_blocking_axi4_f1_model
-    || mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv1_dma
+    || mem_cfg_p == e_vcache_non_blocking_ramulator_hbm
+    || mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128
+    || mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_dma
 
     // for now blocking and non-blocking shares the same wire, since interface is
     // the same. But it might change in the future.
@@ -475,7 +487,8 @@ module cl_manycore
   end
   else if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
            mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
-           mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv1_vcache
+           mem_cfg_p == e_vcache_blocking_ramulator_hbm ||
+           mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_vcache
 
 
     for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
@@ -531,7 +544,8 @@ module cl_manycore
   end // block: lv1_vcache
   else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
            mem_cfg_p == e_vcache_non_blocking_axi4_f1_model ||
-           mem_cfg_p == e_vcache_non_blocking_ramulator_hbm) begin: lv1_vcache_nb
+           mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
+           mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
 
     for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
       bsg_manycore_vcache_non_blocking #(
@@ -723,7 +737,9 @@ module cl_manycore
 
   end // block: lv2_axi4
   else if (mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
-           mem_cfg_p == e_vcache_blocking_ramulator_hbm) begin: lv2_ramulator_hbm
+           mem_cfg_p == e_vcache_blocking_ramulator_hbm ||
+           mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128 ||
+           mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128) begin: lv2_ramulator_hbm
 
     // checks that this configuration is supported
     // we do not support having fewer caches than channels
@@ -901,7 +917,35 @@ module cl_manycore
        );
 
   end // block: lv3_ramulator_hbm
+  else if (mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128 ||
+           mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128) begin: lv3_dramsim3
 
+    bsg_nonsynth_dramsim3
+      #(.channel_addr_width_p(`DRAMSIM3_MEM_PKG::channel_addr_width_p)
+        ,.data_width_p(`DRAMSIM3_MEM_PKG::data_width_p)
+        ,.num_channels_p(`DRAMSIM3_MEM_PKG::num_channels_p)
+        ,.num_columns_p(`DRAMSIM3_MEM_PKG::num_columns_p)
+        ,.address_mapping_p(`DRAMSIM3_MEM_PKG::address_mapping_p)
+        ,.size_in_bits_p(`DRAMSIM3_MEM_PKG::size_in_bits_p)
+        ,.config_p(`DRAMSIM3_MEM_PKG::config_p)
+        ,.debug_p(1)
+        ,.init_mem_p(1))
+    dram
+      (.clk_i(lv2_ramulator_hbm.hbm_clk)
+       ,.reset_i(lv2_ramulator_hbm.hbm_reset)
+
+       ,.v_i(lv2_ramulator_hbm.hbm_req_v_lo)
+       ,.write_not_read_i(lv2_ramulator_hbm.hbm_write_not_read_lo)
+       ,.ch_addr_i(lv2_ramulator_hbm.hbm_ch_addr_lo)
+       ,.yumi_o(lv2_ramulator_hbm.hbm_req_yumi_li)
+
+       ,.data_v_i(lv2_ramulator_hbm.hbm_data_v_lo)
+       ,.data_i(lv2_ramulator_hbm.hbm_data_lo)
+       ,.data_yumi_o(lv2_ramulator_hbm.hbm_data_yumi_li)
+
+       ,.data_o(lv2_ramulator_hbm.hbm_data_li)
+       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li));
+  end
 
 
 `ifdef COSIM
