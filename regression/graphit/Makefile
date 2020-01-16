@@ -58,9 +58,15 @@ include $(REGRESSION_PATH)/f1.mk
 # <test_name>.rule and <test_name>.clean are not overwritten.
 include rules.mk
 
+CUDA_PATH=$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/
 # The rule below defines how to run test_loader for CUDA-Lite tests. The loader
 # requires one argument: The test name (TEST_NAME)
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
+$(EXEC_PATH)/%.log: TEST_PATH=$(CUDA_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
-	sudo $< $(TEST_NAME) | tee $@
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
 
+# The rule below defines how to run all CUDA-Lite tests that don't use test_loader
+INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
+$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
