@@ -89,6 +89,5 @@ $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
 		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
 
-
 # regression.mk defines the regression target
 include $(REGRESSION_PATH)/regression.mk
