@@ -49,7 +49,6 @@ INDEPENDENT_TESTS += test_manycore_init
 INDEPENDENT_TESTS += test_manycore_dmem_read_write
 INDEPENDENT_TESTS += test_manycore_vcache_sequence
 INDEPENDENT_TESTS += test_manycore_dram_read_write
-INDEPENDENT_TESTS += test_manycore_eva
 INDEPENDENT_TESTS += test_manycore_credits
 INDEPENDENT_TESTS += test_manycore_eva_read_write
 INDEPENDENT_TESTS += test_read_mem_scatter_gather
