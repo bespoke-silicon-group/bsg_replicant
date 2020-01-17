@@ -765,7 +765,11 @@ module cl_manycore
 
     //500MHz
     bsg_nonsynth_clock_gen
+`ifdef USING_DRAMSIM3
+      #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
+`else
       #(.cycle_time_p(2000))
+`endif
     clk_gen
       (.o(hbm_clk));
 
@@ -919,7 +923,7 @@ module cl_manycore
   end // block: lv3_ramulator_hbm
   else if (mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128 ||
            mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128) begin: lv3_dramsim3
-
+`ifdef USING_DRAMSIM3
     bsg_nonsynth_dramsim3
       #(.channel_addr_width_p(`DRAMSIM3_MEM_PKG::channel_addr_width_p)
         ,.data_width_p(`DRAMSIM3_MEM_PKG::data_width_p)
@@ -945,6 +949,7 @@ module cl_manycore
 
        ,.data_o(lv2_ramulator_hbm.hbm_data_li)
        ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li));
+`endif
   end
 
 
