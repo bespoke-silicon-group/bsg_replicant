@@ -93,3 +93,6 @@ $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
 
 # regression.mk defines the regression target
 include $(REGRESSION_PATH)/regression.mk
+
+# dve.mk defines the dve targets
+include $(TESTBENCH_PATH)/dve.mk

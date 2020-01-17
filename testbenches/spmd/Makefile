@@ -90,3 +90,6 @@ INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
 $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
 	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
 		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
+
+# dve.mk defines the dve targets
+include $(TESTBENCH_PATH)/dve.mk
