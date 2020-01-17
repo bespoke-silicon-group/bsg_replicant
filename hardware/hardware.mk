@@ -84,6 +84,8 @@ FPGA_IMAGE_VERSION     ?= 0.0.0
 # BSG_MANYCORE_DIR
 include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3_pkg.v
+
 # So that we can limit tool-specific to a few specific spots we use VDEFINES,
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
 # verilog sources (respectively). These are used during simulation compilation,

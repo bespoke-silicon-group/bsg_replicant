@@ -66,6 +66,14 @@ package bsg_bladerunner_mem_cfg_pkg;
     // LEVEL 2) bsg_cache_to_ramulator_hbm
     // LEVEL 3) bsg_nonsynth_ramulator_hbm
     , e_vcache_non_blocking_ramulator_hbm
+    // LEVEL 1) bsg_manycore_vcache (non-blocking)
+    // LEVEL 2) bsg_cache_to_ramulator_hbm (also works for dramsim3)
+    // LEVEL 3) bsg_nonsynth_dramsim3
+    , e_vcache_non_blocking_dramsim3_hbm2_4gb_x128
+    // LEVEL 1) bsg_manycore_vcache (blocking)
+    // LEVEL 2) bsg_cache_to_ramulator_hbm (also works for dramsim3)
+    // LEVEL 3) bsg_nonsynth_dramsim3
+    , e_vcache_blocking_dramsim3_hbm2_4gb_x128
   } bsg_bladerunner_mem_cfg_e;
 
 endpackage
