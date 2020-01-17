@@ -932,7 +932,7 @@ module cl_manycore
         ,.address_mapping_p(`DRAMSIM3_MEM_PKG::address_mapping_p)
         ,.size_in_bits_p(`DRAMSIM3_MEM_PKG::size_in_bits_p)
         ,.config_p(`DRAMSIM3_MEM_PKG::config_p)
-        ,.debug_p(1)
+        //,.debug_p(1)
         ,.init_mem_p(1))
     dram
       (.clk_i(lv2_ramulator_hbm.hbm_clk)
