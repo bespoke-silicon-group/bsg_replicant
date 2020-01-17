@@ -47,7 +47,16 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES   += $(DEFINES)
 CXXDEFINES += $(DEFINES)
 
-FLAGS     = -g -Wall $(shell python3.6-config --cflags) -O1
+# To check if we are in an Anaconda python environment
+CONDA_PREFIX := $(shell echo $$CONDA_PREFIX)
+
+ifeq ($(CONDA_PREFIX),)
+  FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 
+  LDFLAGS  += $(shell python3-config --ldflags)
+else
+  FLAGS     = -g -Wall -I$(CONDA_PREFIX)/include/python3.7m -O1 
+  LDFLAGS  += -L$(CONDA_PREFIX)/lib -lpython3.7m -Wl,-rpath,$(CONDA_PREFIX)/lib
+endif
+
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS) 
-LDFLAGS  += -L/mnt/users/spin1/no_backup/bandhav/miniconda3/envs/hbmc0/lib -lpython3.7m
