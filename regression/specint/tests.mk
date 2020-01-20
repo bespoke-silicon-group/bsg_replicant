@@ -54,7 +54,7 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES   += $(DEFINES)
 CXXDEFINES += $(DEFINES)
 
-FLAGS     = -g -Wall -Werror
+FLAGS     = -g -Wall -Werror -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c11 $(FLAGS) 
 CXXFLAGS += -std=c++11 $(FLAGS)
 LDFLAGS  += -lbsg_manycore_runtime -lm

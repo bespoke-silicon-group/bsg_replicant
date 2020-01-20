@@ -25,42 +25,34 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment defines all of the regression tests (and the
-# source path) for this sub-directory.
+# This Makefile Fragment defines rules for compilation of the C/C++
+# regression tests.
 
-REGRESSION_TESTS_TYPE = library
-SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
+# REGRESSION_TESTS: Names of all available regression tests.
+ifndef REGRESSION_TESTS
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
+endif
 
-# "Unified tests" all use the generic test top-level:
-# test_unified_main.c
-UNIFIED_TESTS = 
+# EXEC_PATH: The path to the directory where tests will be executed
+ifndef EXEC_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
+endif
 
-# "Independent Tests" use a per-test <test_name>.c file
-INDEPENDENT_TESTS += test_rom
-INDEPENDENT_TESTS += test_struct_size
-INDEPENDENT_TESTS += test_vcache_flush
-INDEPENDENT_TESTS += test_vcache_simplified
-INDEPENDENT_TESTS += test_vcache_stride
-INDEPENDENT_TESTS += test_vcache_sequence
-INDEPENDENT_TESTS += test_printing
-INDEPENDENT_TESTS += test_manycore_alignment
-INDEPENDENT_TESTS += test_manycore_packets
-INDEPENDENT_TESTS += test_manycore_init
-INDEPENDENT_TESTS += test_manycore_dmem_read_write
-INDEPENDENT_TESTS += test_manycore_vcache_sequence
-INDEPENDENT_TESTS += test_manycore_dram_read_write
-INDEPENDENT_TESTS += test_manycore_credits
-INDEPENDENT_TESTS += test_manycore_eva_read_write
-INDEPENDENT_TESTS += test_read_mem_scatter_gather
+LDFLAGS += -lbsg_manycore_runtime -lm
 
-# REGRESSION_TESTS is a list of all regression tests to run.
-REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
+$(UNIFIED_TESTS): %: $(EXEC_PATH)/test_loader
+$(EXEC_PATH)/test_loader: LD=$(CC)
+$(EXEC_PATH)/test_loader: %: %.o
+	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
 
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
+$(INDEPENDENT_TESTS): LD=$(CC)
+$(INDEPENDENT_TESTS): %: $(EXEC_PATH)/%.o
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
-CDEFINES   += $(DEFINES)
-CXXDEFINES += $(DEFINES)
 
-FLAGS     = -g -Wall -Werror -Wno-unused-function -Wno-unused-variable
-CFLAGS   += -std=c99 $(FLAGS) 
-CXXFLAGS += -std=c++11 $(FLAGS)
+link.clean:
+	rm -rf $(INDEPENDENT_TESTS) test_loader

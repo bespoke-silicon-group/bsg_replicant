@@ -28,9 +28,21 @@
 # This makefile fragment defines the rules that are re-used between cosimulation
 # sub-suites.
 
-# compilation.mk defines all of the rules for building cosimulation binaries
-# It defines the target <test_name> for each regression test.
-include $(TESTBENCH_PATH)/compilation.mk
+# The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
+INCLUDES   += -I$(LIBRARIES_PATH) 
+INCLUDES   += -I$(VCS_HOME)/linux64/lib/
+
+# CSOURCES/HEADERS should probably go in some regression file list.
+CDEFINES   += -DCOSIM -DVCS
+CXXDEFINES += -DCOSIM -DVCS
+CXXFLAGS   += -lstdc++
+
+include $(REGRESSION_PATH)/compilation.mk
+
+# link.mk defines all of the linker targets for building executable
+# binaries. It defines the target <test_name> for each regression
+# test.
+include $(TESTBENCH_PATH)/link.mk
 
 # regression.mk defines the targets regression and <test_name.log>
 include $(REGRESSION_PATH)/regression.mk
@@ -49,6 +61,10 @@ help:
 	@echo "             generate the vanilla log file"
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
+VPD_RULES = $(addsuffix .vpd,$(REGRESSION_TESTS))
+$(VPD_RULES): SIM_ARGS +=+trace
+$(VPD_RULES): %.vpd: %.log
+
 VANILLA_LOG_RULES = $(addsuffix .vanilla.log,$(REGRESSION_TESTS))
 $(VANILLA_LOG_RULES): SIM_ARGS +=+trace
 $(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
@@ -57,6 +73,6 @@ $(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
 	@mv vanilla_operation_trace.csv $(subst vanilla.log,vanilla_operation_trace.csv,$@)
 	@mv vanilla_stats.csv $(subst vanilla.log,vanilla_stats.csv,$@)
 
-clean: regression.clean compilation.clean $(USER_CLEAN_RULES)
+clean: regression.clean compilation.clean link.clean $(USER_CLEAN_RULES)
 	rm -rf *.log
 	rm -rf *.vanilla_operation_trace.csv *.vanilla_stats.csv

@@ -58,7 +58,7 @@ import tb_type_defines_pkg::*;
       tb.card.fpga.sh.map_host_memory(addr);
    endtask
 
-   task cl_peek(input longint unsigned addr, output longint unsigned data);
+   task cl_peek(input longint unsigned addr, output int unsigned data);
       tb.card.fpga.sh.peek(.addr(addr), .data(data), .intf(AxiPort::PORT_OCL));
    endtask
    
@@ -74,7 +74,7 @@ import tb_type_defines_pkg::*;
       repeat (x) #1us;
    endtask
 
-   task sv_fpga_pci_peek(input int handle, input longint unsigned offset, output longint unsigned value);
+   task sv_fpga_pci_peek(input int handle, input longint unsigned offset, output int unsigned value);
       tb.card.fpga.sh.peek(.addr(offset), .data(value), .intf(AxiPort::PORT_OCL));
    endtask
    
