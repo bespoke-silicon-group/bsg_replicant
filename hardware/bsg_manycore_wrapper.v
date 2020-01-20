@@ -16,7 +16,6 @@ module bsg_manycore_wrapper
     , parameter icache_tag_width_p="inv"
     , parameter epa_byte_addr_width_p="inv"
     , parameter dram_ch_addr_width_p="inv"
-    , parameter load_id_width_p="inv"
     , parameter vcache_size_p="inv"
     , parameter vcache_block_size_in_words_p="inv"
     , parameter vcache_sets_p="inv"
@@ -28,7 +27,7 @@ module bsg_manycore_wrapper
     , parameter y_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_y_p+2)
   
     , parameter link_sif_width_lp=
-      `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p)
+      `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp)
   )
   (
     input clk_i
@@ -46,7 +45,7 @@ module bsg_manycore_wrapper
 
   // manycore
   //
-  `declare_bsg_manycore_link_sif_s(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp,load_id_width_p);
+  `declare_bsg_manycore_link_sif_s(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp);
 
   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
@@ -72,7 +71,6 @@ module bsg_manycore_wrapper
     ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
     ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
     ,.data_width_p(data_width_p)
-    ,.load_id_width_p(load_id_width_p)
     ,.vcache_size_p(vcache_size_p)
     ,.vcache_block_size_in_words_p(vcache_block_size_in_words_p)
     ,.vcache_sets_p(vcache_sets_p)
@@ -125,7 +123,6 @@ module bsg_manycore_wrapper
       ,.data_width_p(data_width_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
-      ,.load_id_width_p(load_id_width_p)
     ) tieoff_w (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -140,7 +137,6 @@ module bsg_manycore_wrapper
       ,.data_width_p(data_width_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
-      ,.load_id_width_p(load_id_width_p)
     ) tieoff_e (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -155,7 +151,6 @@ module bsg_manycore_wrapper
       ,.data_width_p(data_width_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
-      ,.load_id_width_p(load_id_width_p)
     ) tieoff_n (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -170,7 +165,6 @@ module bsg_manycore_wrapper
       ,.data_width_p(data_width_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
-      ,.load_id_width_p(load_id_width_p)
     ) tieoff_s (
       .clk_i(clk_i)
       ,.reset_i(reset_i)
@@ -185,7 +179,6 @@ module bsg_manycore_wrapper
       ,.data_width_p(data_width_p)
       ,.x_cord_width_p(x_cord_width_lp)
       ,.y_cord_width_p(y_cord_width_lp)
-      ,.load_id_width_p(load_id_width_p)
     ) tieoff_io (
       .clk_i(clk_i)
       ,.reset_i(reset_i)

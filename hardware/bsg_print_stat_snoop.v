@@ -5,10 +5,9 @@ module bsg_print_stat_snoop
     , parameter addr_width_p="inv"
     , parameter x_cord_width_p="inv"
     , parameter y_cord_width_p="inv"
-    , parameter load_id_width_p="inv"
 
     , parameter link_sif_width_lp=
-      `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
+      `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
     
   )
   (
@@ -21,7 +20,7 @@ module bsg_print_stat_snoop
     , output logic [data_width_p-1:0] print_stat_tag_o
   );
 
-  `declare_bsg_manycore_link_sif_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
+  `declare_bsg_manycore_link_sif_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p);
 
   bsg_manycore_link_sif_s loader_link_sif_in;
   bsg_manycore_link_sif_s loader_link_sif_out;
@@ -30,7 +29,7 @@ module bsg_print_stat_snoop
   assign loader_link_sif_out = loader_link_sif_out_i;
 
 
-  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
+  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p);
   bsg_manycore_packet_s fwd_pkt;
   assign fwd_pkt = loader_link_sif_in.fwd.data;
 

@@ -304,7 +304,7 @@ module cl_manycore
 `endif
 
 
-   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p, load_id_width_p);
+   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p);
 
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
@@ -327,7 +327,6 @@ module cl_manycore
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
        ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
-       ,.load_id_width_p(load_id_width_p)
        ,.num_cache_p(num_cache_p)
        ,.vcache_size_p(vcache_size_p)
        ,.vcache_block_size_in_words_p(block_size_in_words_p)
@@ -362,7 +361,6 @@ module cl_manycore
     ,.addr_width_p(addr_width_p)
     ,.x_cord_width_p(x_cord_width_p)
     ,.y_cord_width_p(y_cord_width_p)
-    ,.load_id_width_p(load_id_width_p)
   ) print_stat_snoop0 (
     .loader_link_sif_in_i(loader_link_sif_lo)
     ,.loader_link_sif_out_i(loader_link_sif_li)
@@ -374,27 +372,28 @@ module cl_manycore
    bsg_manycore_link_sif_s async_link_sif_li;
    bsg_manycore_link_sif_s async_link_sif_lo;
 
-   bsg_manycore_link_sif_async_buffer #(
-                                        .addr_width_p(addr_width_p)
-                                        ,.data_width_p(data_width_p)
-                                        ,.x_cord_width_p(x_cord_width_p)
-                                        ,.y_cord_width_p(y_cord_width_p)
-                                        ,.load_id_width_p(load_id_width_p)
-                                        ,.fifo_els_p(16)
-                                        ) async_buf (
+   bsg_manycore_link_sif_async_buffer
+     #(
+       .addr_width_p(addr_width_p)
+       ,.data_width_p(data_width_p)
+       ,.x_cord_width_p(x_cord_width_p)
+       ,.y_cord_width_p(y_cord_width_p)
+       ,.fifo_els_p(16)
+       )
+  async_buf
+    (
+     // core side
+     .L_clk_i(core_clk)
+     ,.L_reset_i(core_reset)
+     ,.L_link_sif_i(loader_link_sif_lo)
+     ,.L_link_sif_o(loader_link_sif_li)
 
-                                                     // core side
-                                                     .L_clk_i(core_clk)
-                                                     ,.L_reset_i(core_reset)
-                                                     ,.L_link_sif_i(loader_link_sif_lo)
-                                                     ,.L_link_sif_o(loader_link_sif_li)
-
-                                                     // AXI-L side
-                                                     ,.R_clk_i(clk_main_a0)
-                                                     ,.R_reset_i(~rst_main_n_sync)
-                                                     ,.R_link_sif_i(async_link_sif_li)
-                                                     ,.R_link_sif_o(async_link_sif_lo)
-                                                     );
+     // AXI-L side
+     ,.R_clk_i(clk_main_a0)
+     ,.R_reset_i(~rst_main_n_sync)
+     ,.R_link_sif_i(async_link_sif_li)
+     ,.R_link_sif_o(async_link_sif_lo)
+     );
 
 `endif
 
@@ -460,7 +459,6 @@ module cl_manycore
         ,.addr_width_p(addr_width_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
-        ,.load_id_width_p(load_id_width_p)
       ) mem_infty (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
@@ -502,16 +500,12 @@ module cl_manycore
 
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
-        ,.load_id_width_p(load_id_width_p)
       ) vcache (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
         // memory systems link from bsg_manycore_wrapper
         ,.link_sif_i(cache_link_sif_lo[i])
         ,.link_sif_o(cache_link_sif_li[i])
-        // coordinates for memory system are determined by bsg_manycore_wrapper
-        ,.my_x_i(cache_x_lo[i])
-        ,.my_y_i(cache_y_lo[i])
 
         ,.dma_pkt_o(lv1_dma.dma_pkt[i])
         ,.dma_pkt_v_o(lv1_dma.dma_pkt_v_lo[i])
@@ -558,7 +552,6 @@ module cl_manycore
         ,.miss_fifo_els_p(miss_fifo_els_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
-        ,.load_id_width_p(load_id_width_p)
       ) vcache_nb (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
@@ -1147,7 +1140,6 @@ module cl_manycore
        ,.data_width_p     (data_width_p     )
        ,.x_cord_width_p   (x_cord_width_p   )
        ,.y_cord_width_p   (y_cord_width_p   )
-       ,.load_id_width_p  (load_id_width_p  )
        ,.max_out_credits_p(max_out_credits_p)
        ) 
    axil_to_mcl_inst 
