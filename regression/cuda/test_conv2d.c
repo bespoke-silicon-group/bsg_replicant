@@ -31,10 +31,10 @@
 #define ALLOC_NAME "default_allocator"
 
 #define MIN_N 4
-#define MAX_N 1024
+#define MAX_N 32
 
 #define MIN_F 1
-#define MAX_F 128
+#define MAX_F 8
 
 #define MIN_P 0
 #define MAX_P 8
