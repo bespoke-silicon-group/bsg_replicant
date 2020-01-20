@@ -78,9 +78,9 @@ $(EXEC_PATH)/%.log: TEST_PATH=$(SPMD_PATH)/$(subst test_,,$(TEST_NAME))/main.ris
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
 
 # The rule below defines how to run test_loader for SPMD tests. The loader
-# requires two arguments: 
+# requires two arguments:
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
 		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
 
 # The rule below defines how to run SPMD tests that do not use
@@ -88,5 +88,8 @@ $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
 # generate a trace file, run `make <test_name>.vanilla.log`
 INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
 $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
 		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
+
+# dve.mk defines the dve targets
+include $(TESTBENCH_PATH)/dve.mk

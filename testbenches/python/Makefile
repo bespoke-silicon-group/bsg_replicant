@@ -78,5 +78,5 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 PYTHON_TEST_PATH = $(BSG_F1_DIR)/regression/python/
 $(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
 		+c_args="$(PYTHON_TEST_PATH) $(TEST_NAME)" | tee $@

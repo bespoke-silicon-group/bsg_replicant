@@ -81,15 +81,18 @@ $(EXEC_PATH)/%.log: TEST_PATH=$(CUDA_PATH)/$(subst test_,,$(TEST_NAME))/main.ris
 
 # The rule below defines how to run test_loader for CUDA-Lite tests. 
 $(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS) \
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
 		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
 
 # The rule below defines how to run all CUDA-Lite tests that don't use
 # test_loader.
 INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
 $(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$<.vpd $(SIM_ARGS)\
+	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS)\
 		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
 
 # regression.mk defines the regression target
 include $(REGRESSION_PATH)/regression.mk
+
+# dve.mk defines the dve targets
+include $(TESTBENCH_PATH)/dve.mk
