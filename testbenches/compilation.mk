@@ -170,7 +170,7 @@ $(EXEC_PATH)/%: $(SRC_PATH)/%.c $(CSOURCES) $(CHEADERS) $(SIMLIBS)
 
 $(EXEC_PATH)/%: $(SRC_PATH)/%.cpp $(CXXSOURCES) $(CXXHEADERS) $(SIMLIBS)
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
-	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
+	vcs tb glbl -cc g++ -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_CXXFLAGS) $(VCS_CXXDEFINES) $(VCS_INCLUDES) $(VCS_LDFLAGS) \
 		$(VCS_VFLAGS) -o $@ -l $@.vcs.log
 
