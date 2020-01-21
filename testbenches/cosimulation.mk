@@ -25,8 +25,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This makefile fragment defines the rules that are re-used between cosimulation
+# This Makefile fragment defines the rules that are re-used between cosimulation
 # sub-suites.
+
+# REGRESSION_PATH: The path to the regression folder in BSG F1
+ifndef REGRESSION_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_PATH is not defined$(NC)"))
+endif
+
+# TESTBENCH_PATH: The path to the regression folder in BSG F1
+ifndef TESTBENCH_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+endif
+
+# REGRESSION_TESTS: The path to the regression folder in BSG F1
+ifndef REGRESSION_TESTS
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
+endif
+
+# EXEC_PATH: The path to the regression folder in BSG F1
+ifndef EXEC_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
+endif
 
 # The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
 INCLUDES   += -I$(LIBRARIES_PATH) 

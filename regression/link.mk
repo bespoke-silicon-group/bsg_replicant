@@ -25,17 +25,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for compilation of the C/C++
+# This Makefile Fragment defines rules for linking object files of
 # regression tests.
 
-# This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this makefile..
-# 
-# REGRESSION_TESTS: Names of all available regression tests.
-ifndef REGRESSION_TESTS
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
-endif
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this fragment...
+# 
 # EXEC_PATH: The path to the directory where tests will be executed
 ifndef EXEC_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))

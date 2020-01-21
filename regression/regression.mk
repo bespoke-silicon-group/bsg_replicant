@@ -25,8 +25,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This makefile fragment defines the regression rules that are reused between ALL
+# This Makefile fragment defines the regression rules that are reused between ALL
 # regression directories (Cosimulation and F1 Execution).
+
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
+
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this fragment...
+# 
+# REGRESSION_TESTS: Names of all available regression tests.
+ifndef REGRESSION_TESTS
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
+endif
+
+# EXEC_PATH: The path to the directory where tests will be executed
+ifndef EXEC_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
+endif
 
 # We build a list of LOG_RULES for the regression rule (below)
 LOG_RULES = $(addsuffix .log,$(REGRESSION_TESTS))

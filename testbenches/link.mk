@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines all of the rules for building
+# This Makefile fragment defines all of the rules for linking
 # cosimulation binaries
 
 ORANGE=\033[0;33m
@@ -33,7 +33,7 @@ RED=\033[0;31m
 NC=\033[0m
 
 # This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this makefile..
+# set by the Makefile that includes this fragment...
 # 
 # REGRESSION_TESTS: Names of all available regression tests.
 ifndef REGRESSION_TESTS
@@ -53,11 +53,6 @@ endif
 # CL_DIR: The path to the root of the BSG F1 Repository
 ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
-endif
-
-# HARDWARE_PATH: The path to the hardware folder in BSG F1
-ifndef HARDWARE_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
 endif
 
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
@@ -83,7 +78,6 @@ include $(TESTBENCH_PATH)/simlibs.mk
 # -------------------- Arguments --------------------
 # This Makefile has several optional "arguments" that are passed as Variables
 #
-# DEBUG: Opens the GUI during cosimulation. Default: 0
 # EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
 # 
 # If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
