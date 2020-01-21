@@ -41,7 +41,7 @@ int test_rom (int argc, char **argv) {
         hb_mc_manycore_t mc = {0};
 
         char *path;
-        struct arguments_none args = {};
+        struct arguments_none args = {NULL};
 
         rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
 
@@ -227,10 +227,7 @@ int test_rom (int argc, char **argv) {
         if (vcache_block_words != vcache_block_words_expect) {
                 bsg_pr_test_err("Unexpected V-Cache block size: "
                                 "Got %" PRIu32 " words, "
-                                "Expected %" PRIu32 " words\n", 
-                                vcache_block_words, 
-                                vcache_block_words_expect
-                                );
+                                "Expected %" PRIu32 " words\n");
                 fail = 1;
         }
 

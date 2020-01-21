@@ -30,7 +30,7 @@
 #include <bsg_manycore_printing.h>
 #include <cinttypes>
 #include <type_traits>
-#include "test_manycore_dmem_read_write.h"
+#include "test_manycore_dmem_read_write.hpp"
 
 #define TEST_NAME "test_manycore_dmem_read_write"
 
