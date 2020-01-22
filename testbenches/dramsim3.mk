@@ -90,7 +90,7 @@ VDEFINES   += DRAMSIM3_MEM_PKG=$(DRAMSIM3_MEM_PKG)
 
 # Add DRAMSim3 to the simlibs
 SIMLIBS += $(TESTBENCH_PATH)/libdramsim3.so
-LDFLAGS += -ldramsim3
+LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldramsim3
 
 # Add a clean rule
 .PHONY: dramsim3.clean

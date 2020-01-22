@@ -28,7 +28,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <bsg_manycore_npa.h>
-#include "test_vcache_flush.h"
+#include "test_vcache_flush.hpp"
 
 #define NUM_TESTS 32
 

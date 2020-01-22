@@ -25,16 +25,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This makefile fragment defines the rules that are re-used between execution
+# This Makefile fragment defines the compilation rules that are re-used between execution
 # regression sub-suites.
+
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
 # 
-# REGRESSION_TESTS: Names of all available regression tests.
-ifndef REGRESSION_TESTS
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
-endif
 
 # REGRESSION_PATH: The path to the regression folder in BSG F1
 ifndef REGRESSION_PATH
@@ -42,8 +42,11 @@ $(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_PATH is not defined$(N
 endif
 
 # compillation.mk defines rules for compilation of the C/C++ regression tests.
-# It defines the target <test_name> for each regression test.
 include $(REGRESSION_PATH)/compilation.mk
+
+# link.mk defines rules for linking of .o files for regression tests.
+# It defines the target <test_name> for each regression test.
+include $(REGRESSION_PATH)/link.mk
 
 # regression.mk defines the targets regression and <test_name.log>
 include $(REGRESSION_PATH)/regression.mk
