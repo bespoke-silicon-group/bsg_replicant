@@ -394,7 +394,7 @@ module axil_to_mcl
     assign fifo_req_cast[i]          = fifo_data_lo[2*i];
 
     bsg_manycore_packet_op_e endpoint_out_packet_op;
-    assign endpoint_out_packet_op = fifo_req_cast[i].op;
+    assign endpoint_out_packet_op = bsg_manycore_packet_op_e'(fifo_req_cast[i].op);
     assign endpoint_out_packet_li[i].addr = (addr_width_p)'(fifo_req_cast[i].addr);
     assign endpoint_out_packet_li[i].op = endpoint_out_packet_op;
     assign endpoint_out_packet_li[i].op_ex = ($bits(bsg_manycore_packet_op_ex_u))'(fifo_req_cast[i].op_ex);
