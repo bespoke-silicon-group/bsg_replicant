@@ -486,7 +486,7 @@ module axil_to_mcl
       ,.in_mask_o             (endpoint_in_mask_lo[i]   )
       ,.in_addr_o             (endpoint_in_addr_lo[i]   )
       ,.in_we_o               (endpoint_in_we_lo[i]     )
-      ,.in_load_info_o        (                         )
+      ,.in_load_info_o        (                         ) // not used since remote load is not supported on host interface.
       ,.in_src_x_cord_o       (in_src_x_cord_lo[i]      )
       ,.in_src_y_cord_o       (in_src_y_cord_lo[i]      )
       ,.in_yumi_i             (endpoint_in_yumi_li[i]   )
