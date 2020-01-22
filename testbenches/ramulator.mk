@@ -72,7 +72,7 @@ VDEFINES   += RND_ECC_WEIGHT=0
 
 # Add ramulator to the simlibs
 SIMLIBS += $(TESTBENCH_PATH)/libramulator.so
-LDFLAGS += -lramulator
+LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -lramulator
 
 # Add a clean rule
 .PHONY: ramulator.clean
