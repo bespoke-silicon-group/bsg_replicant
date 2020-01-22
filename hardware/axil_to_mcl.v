@@ -482,13 +482,14 @@ module axil_to_mcl
 
       // manycore packet -> fifo
       ,.in_v_o                (endpoint_in_v_lo[i]      )
-      ,.in_yumi_i             (endpoint_in_yumi_li[i]   )
       ,.in_data_o             (endpoint_in_data_lo[i]   )
       ,.in_mask_o             (endpoint_in_mask_lo[i]   )
       ,.in_addr_o             (endpoint_in_addr_lo[i]   )
       ,.in_we_o               (endpoint_in_we_lo[i]     )
+      ,.in_load_info_o        (                         )
       ,.in_src_x_cord_o       (in_src_x_cord_lo[i]      )
       ,.in_src_y_cord_o       (in_src_y_cord_lo[i]      )
+      ,.in_yumi_i             (endpoint_in_yumi_li[i]   )
 
       // fifo -> manycore packet
       ,.out_v_i               (endpoint_out_v_li[i]     )

@@ -224,6 +224,7 @@ module cl_manycore
         .s_axi_araddr  (sh_ocl_araddr),
         .s_axi_arvalid (sh_ocl_arvalid),
         .s_axi_arready (ocl_sh_arready),
+        .s_axi_arprot  ('0),
         .s_axi_rdata   (ocl_sh_rdata),
         .s_axi_rresp   (ocl_sh_rresp),
         .s_axi_rvalid  (ocl_sh_rvalid),
@@ -240,6 +241,7 @@ module cl_manycore
         .m_axi_bvalid  (m_axil_ocl_bvalid),
         .m_axi_bready  (m_axil_ocl_bready),
         .m_axi_araddr  (m_axil_ocl_araddr),
+        .m_axi_arprot  (),
         .m_axi_arvalid (m_axil_ocl_arvalid),
         .m_axi_arready (m_axil_ocl_arready),
         .m_axi_rdata   (m_axil_ocl_rdata),
@@ -984,7 +986,7 @@ module cl_manycore
       .s_axi_awready(m_axi4_manycore_awready),
 
       // Slave Interface Write Data Ports
-      .s_axi_wid(m_axi4_manycore_wid),
+      .s_axi_wid('0),
       .s_axi_wdata(m_axi4_manycore_wdata),
       .s_axi_wstrb(m_axi4_manycore_wstrb),
       .s_axi_wlast(m_axi4_manycore_wlast),
