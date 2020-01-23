@@ -160,7 +160,7 @@ int kernel_conv2d(int argc, char **argv)
         float A_host[A_size / sizeof(float)];
         for(int i = 0; i < sizeof(A_host) / sizeof(A_host[0]); i++)
         {
-                A_host[i] = fmod(hb_mc_generate_float_rand(), MAX_VALUE_MAGNITUDE);
+                A_host[i] = fmodf(hb_mc_generate_float_rand(), MAX_VALUE_MAGNITUDE);
                 bsg_pr_test_info("A_host[%d] = %.9f \n",
                                  i, A_host[i]);
         }
@@ -168,7 +168,7 @@ int kernel_conv2d(int argc, char **argv)
         float filter_host[filter_size / sizeof(float)];
         for(int i = 0; i < sizeof(filter_host) / sizeof(filter_host[0]); i++)
         {
-                filter_host[i] = fmod(hb_mc_generate_float_rand(), MAX_VALUE_MAGNITUDE);
+                filter_host[i] = fmodf(hb_mc_generate_float_rand(), MAX_VALUE_MAGNITUDE);
                 bsg_pr_test_info("filter_host[%d] = %.9f \n",
                                  i, filter_host[i]);
         }
@@ -227,25 +227,18 @@ int kernel_conv2d(int argc, char **argv)
         int mismatches = 0;
 
         bsg_pr_info("(M, N, H, W, P, Sx, Sy, Bx, By) = (%d, %d, %d, %d, %d, %d, %d, %d, %d)\n", M, N, H, W, P, Sx, Sy, Bx, By);
+        double sse = 0;
         for(int i = 0; i < B_size / sizeof(float); i++)
-                if(!hb_mc_floats_match(B_actual[i], B_expected[i]))
-                {
-                        bsg_pr_err(BSG_RED("Mismatch: ") "B[%d, %d] = %.9f = 0x%x \t Expected: %.9f = 0x%x\n",
-                                   i / Bx,
-                                   i % Bx,
-                                   B_actual[i],
-                                   *((uint32_t *)(B_actual + i)),
-                                   B_expected[i],
-                                   *((uint32_t *)(B_expected + i)));
-                        mismatches++;
-                }
-
-        if(!mismatches)
         {
-                bsg_pr_test_info(BSG_GREEN("Vectors match!\n"));
+                double difference = B_actual[i] - B_expected[i];
+                sse = difference * difference;
+        }
+        if(sse < MAX_FLOAT_ERROR_TOLERANCE)
+        {
+                bsg_pr_test_info(BSG_GREEN("Matrices match!\n") ", SSE=%.9f", sse);
                 return HB_MC_SUCCESS;
         }
-        bsg_pr_test_err(BSG_RED("Vectors don't match!\n"));
+        bsg_pr_test_err(BSG_RED("Matrices don't match!\n") ", SSE=%.9f", sse);
         return HB_MC_FAIL;
 }
 
