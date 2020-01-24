@@ -60,7 +60,7 @@ int test_loader (int argc, char **argv) {
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
       
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, 1, kernel_argv);
+        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "hello", 1, kernel_argv);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize grid.\n");
                 return rc;
