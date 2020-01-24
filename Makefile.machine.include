@@ -38,7 +38,9 @@ BSG_MACHINE_DRAM_SIZE_WORDS           = 536870912
 BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = 134217728
 
 BSG_MACHINE_DATA_WIDTH                = 32
-BSG_MANYCORE_MACHINE_NAME             := Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHINE_GLOBAL_X)_NB_DDR
+
+# BSG Machine Name is used to build non-conflicting crt.o files
+BSG_MACHINE_NAME                      = Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHINE_GLOBAL_X)_NONBLK_DDR4_F1MODEL
 
 # This flag has to be always 0 by default. Conditional
 # assignment allows user to set this flag through
