@@ -104,8 +104,7 @@ endif
 # VCS Generates an executable file by linking against the
 # $(SRC_PATH)/%.c or $(SRC_PATH)/%.o $(SRC_PATH)/%.cpp file that
 # corresponds to the target test in the $(SRC_PATH) directory.
-$(EXEC_PATH)/%: $(SRC_PATH)/%.o $(OBJECTS) $(SIMLIBS)
-	@echo $(OBJECTS)
+$(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_LDFLAGS) $(VCS_VFLAGS) -o $@ -l $@.vcs.log
