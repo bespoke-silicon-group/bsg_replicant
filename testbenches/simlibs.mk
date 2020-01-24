@@ -50,6 +50,11 @@ ifndef LIBRARIES_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
 endif
 
+# HARDWARE_PATH: The path to the hardware folder in BSG F1
+ifndef HARDWARE_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
+endif
+
 # PROJECT: The project name, used to as the work directory of the hardware
 # library during analysis
 ifndef PROJECT

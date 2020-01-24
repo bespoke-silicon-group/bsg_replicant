@@ -35,10 +35,6 @@ NC=\033[0m
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this fragment...
 # 
-# REGRESSION_TESTS: Names of all available regression tests.
-ifndef REGRESSION_TESTS
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
-endif
 
 # SRC_PATH: The path to the directory containing the .c or cpp test files
 ifndef SRC_PATH
@@ -58,11 +54,6 @@ endif
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
 ifndef TESTBENCH_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
-endif
-
-# REGRESSION_PATH: The path to the regression folder in BSG F1
-ifndef REGRESSION_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_PATH is not defined$(NC)"))
 endif
 
 # The following makefile fragment verifies that the tools and CAD environment is
@@ -110,13 +101,11 @@ VCS_VFLAGS    += -debug_pp
 VCS_VFLAGS    += +memcbk 
 endif
 
-$(REGRESSION_TESTS): %: $(EXEC_PATH)/%
-test_loader: %: $(EXEC_PATH)/%
-
 # VCS Generates an executable file by linking against the
 # $(SRC_PATH)/%.c or $(SRC_PATH)/%.o $(SRC_PATH)/%.cpp file that
 # corresponds to the target test in the $(SRC_PATH) directory.
-$(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
+$(EXEC_PATH)/%: $(SRC_PATH)/%.o $(OBJECTS) $(SIMLIBS)
+	@echo $(OBJECTS)
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
 		$(VCS_LDFLAGS) $(VCS_VFLAGS) -o $@ -l $@.vcs.log
@@ -129,4 +118,4 @@ link.clean:
 	rm -rf $(EXEC_PATH)/*.key $(EXEC_PATH)/*.vpd
 	rm -rf $(EXEC_PATH)/vc_hdrs.h
 	rm -rf .vlogansetup* stack.info*
-	rm -rf $(REGRESSION_TESTS) test_loader
+

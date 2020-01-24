@@ -50,6 +50,15 @@ LOG_RULES = $(addsuffix .log,$(REGRESSION_TESTS))
 LOG_TARGETS =$(addprefix $(EXEC_PATH)/,$(LOG_RULES))
 $(LOG_RULES): %: $(EXEC_PATH)/%
 
+# To include a test in regression, the user defines a list of tests in
+# REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
+# that is run during compilation. These custom rules are useful for building
+# spmd or cuda binaries, for example.
+USER_RULES:=$(addsuffix .rule,$(REGRESSION_TESTS))
+$(USER_RULES):
+USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
+$(USER_CLEAN_RULES):
+
 # The regression target runs all of the tests in the REGRESSION_TESTS variable
 # for a directory.
 regression: $(EXEC_PATH)/regression.log 
