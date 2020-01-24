@@ -43,11 +43,7 @@ int test_loader (int argc, char **argv) {
                          "on a grid of 2x2 tile groups\n\n", test_name);
 
         srand(time);
-
-        /**********************************************************************/
-        /* Define path to binary.                                             */
-        /* Initialize device, load binary and unfreeze tiles.                 */
-        /**********************************************************************/
+      
         hb_mc_device_t device;
         rc = hb_mc_device_init(&device, test_name, 0);
         if (rc != HB_MC_SUCCESS) { 
@@ -55,79 +51,27 @@ int test_loader (int argc, char **argv) {
                 return rc;
         }
         
-        rc = hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0);
+        rc = hb_mc_device_program_init(&device, "hello.riscv", ALLOC_NAME, 0);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize program.\n");
                 return rc;
         }
 
-
-        /**********************************************************************/
-        /* Define block_size_x/y: amount of work for each tile group          */
-        /* Define tg_dim_x/y: number of tiles in each tile group              */
-        /* Calculate grid_dim_x/y: number of                                  */
-        /* tile groups needed based on block_size_x/y                         */
-        /**********************************************************************/
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
-
-        /****************************************/
-        /* Allocate a word for the return value */
-        /****************************************/
-        hb_mc_eva_t raddr;
-        rc = hb_mc_device_malloc(&device, sizeof(uint32_t), &raddr);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to allocate return code.\n");
-                return rc;
-        }
-
-        rc = hb_mc_device_memset(&device, &raddr, 0, sizeof(uint32_t));
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to initialize return code.\n");
-                return rc;
-        };
-
-        /**********************************************************************/
-        /* Prepare list of input arguments for kernel.                        */
-        /**********************************************************************/
-        int kernel_argv[] = {raddr};
-
-        char kernel_name[256];
-        snprintf(kernel_name, sizeof(kernel_name), "kernel_%s", test_name + sizeof("test_") - 1);
-        /**********************************************************************/
-        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
-        /* kernel name, number and list of input arguments                    */
-        /**********************************************************************/
+      
         rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, 1, kernel_argv);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize grid.\n");
                 return rc;
         }
 
-
-        /**********************************************************************/
-        /* Launch and execute all tile groups on device and wait for finish.  */ 
-        /**********************************************************************/
         rc = hb_mc_device_tile_groups_execute(&device);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to execute tile groups.\n");
                 return rc;
         }       
 
-        /*************************/
-        /* Read the return value */
-        /*************************/
-        uint32_t rcode;
-        rc = hb_mc_device_memcpy(&device, &rcode, raddr, sizeof(rcode),
-                                 HB_MC_MEMCPY_TO_HOST);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to read return code.\n");
-                return rc;
-        }
-
-        /**********************************************************************/
-        /* Freeze the tiles and memory manager cleanup.                       */
-        /**********************************************************************/
         rc = hb_mc_device_finish(&device); 
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to de-initialize device.\n");
