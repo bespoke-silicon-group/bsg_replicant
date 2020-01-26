@@ -45,47 +45,20 @@ int test_loader (int argc, char **argv) {
         srand(time);
       
         hb_mc_device_t device;
-        rc = hb_mc_device_init(&device, test_name, 0);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize device.\n");
-                return rc;
-        }
+        hb_mc_device_init(&device, test_name, 0);
         
-        rc = hb_mc_device_program_init(&device, "hello.riscv", ALLOC_NAME, 0);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize program.\n");
-                return rc;
-        }
-
+        hb_mc_device_program_init(&device, "hello.riscv", ALLOC_NAME, 0);
+        
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
       
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "hello", 1, kernel_argv);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize grid.\n");
-                return rc;
-        }
-
-        rc = hb_mc_device_tile_groups_execute(&device);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to execute tile groups.\n");
-                return rc;
-        }       
-
-        rc = hb_mc_device_finish(&device); 
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to de-initialize device.\n");
-                return rc;
-        }
-
-        /*************************/
-        /* Check the return code */
-        /*************************/
-        if (rcode != 0) {
-                bsg_pr_err("kernel returned non-zero.\n");
-                return HB_MC_FAIL;
-        }
-
+        hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "hello", 1, kernel_argv);
+        
+        hb_mc_device_tile_groups_execute(&device);
+        
+        hb_mc_device_finish(&device); 
+        
+       
         return HB_MC_SUCCESS;
 }
 
