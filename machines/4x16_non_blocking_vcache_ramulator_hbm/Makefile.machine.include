@@ -39,9 +39,6 @@ BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = 67108864
 
 BSG_MACHINE_DATA_WIDTH                = 32
 
-# BSG Machine Name is used to build non-conflicting crt.o files
-BSG_MACHINE_NAME                      = Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHINE_GLOBAL_X)_NONBLK_HBM_RAMULATOR
-
 # This flag has to be always 0 by default. Conditional
 # assignment allows user to set this flag through
 # environment when required.
@@ -53,3 +50,7 @@ CL_MANYCORE_DIM_X                    := $(BSG_MACHINE_GLOBAL_X)
 CL_MANYCORE_DIM_Y                    := $(shell expr $(BSG_MACHINE_GLOBAL_Y) - 1)
 
 CL_MANYCORE_MEM_CFG                  := e_vcache_non_blocking_ramulator_hbm
+
+# Define BSG_MACHINE_NAME using the Y and X dimensions, and CL_MANYCORE_MEM_CFG
+BSG_MACHINE_NAME                      =Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHINE_GLOBAL_X)
+BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_$(CL_MANYCORE_MEM_CFG:e_%=%)
