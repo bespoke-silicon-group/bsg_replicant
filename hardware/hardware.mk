@@ -35,9 +35,9 @@
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
 # 
-# CL_DIR: The path to the root of the BSG F1 Repository
-ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
+# : The path to the Makefile.machine.include that defines Machine parameters
+ifndef BSG_MACHINE_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PATH is not defined$(NC)"))
 endif
 
 # HARDWARE_PATH: The path to the hardware folder in BSG F1
@@ -57,7 +57,7 @@ endif
 
 # Makefile.machine.include defines the Manycore hardware
 # configuration.
-include $(CL_DIR)/Makefile.machine.include
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 CL_MANYCORE_MAX_EPA_WIDTH            := $(BSG_MACHINE_MAX_EPA_WIDTH)
 CL_MANYCORE_DATA_WIDTH               := $(BSG_MACHINE_DATA_WIDTH)
 CL_MANYCORE_VCACHE_WAYS              := $(BSG_MACHINE_VCACHE_WAY)
@@ -99,10 +99,10 @@ VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 VSOURCES += $(HARDWARE_PATH)/bsg_print_stat_snoop.v
 
-VSOURCES += $(CL_DIR)/hardware/bsg_bladerunner_rom.v
-VSOURCES += $(CL_DIR)/hardware/axil_to_mcl.v
-VSOURCES += $(CL_DIR)/hardware/s_axil_mcl_adapter.v
-VSOURCES += $(CL_DIR)/hardware/axil_to_mem.sv
+VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_rom.v
+VSOURCES += $(HARDWARE_PATH)/axil_to_mcl.v
+VSOURCES += $(HARDWARE_PATH)/s_axil_mcl_adapter.v
+VSOURCES += $(HARDWARE_PATH)/axil_to_mem.sv
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
@@ -133,7 +133,7 @@ $(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.rom
 
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
-$(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.include
+$(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo $(call hex2bin,$(CL_MANYCORE_RELEASE_VERSION))   > $@.temp
 	@echo $(call hex2bin,$(CL_MANYCORE_COMPILATION_DATE))  >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MAX_EPA_WIDTH))     >> $@.temp
@@ -156,7 +156,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(CL_DIR)/Makefile.machine.i
 # Each manycore design on has a set of parameters that define
 # it. Instead of passing these parameters as command-line defines
 # (which is tool-specific) we generate a header file.
-$(HARDWARE_PATH)/f1_parameters.vh: $(CL_DIR)/Makefile.machine.include
+$(HARDWARE_PATH)/f1_parameters.vh: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo "\`ifndef F1_DEFINES" > $@
 	@echo "\`define F1_DEFINES" >> $@
 	@echo "\`define CL_MANYCORE_MAX_EPA_WIDTH $(CL_MANYCORE_MAX_EPA_WIDTH)" >> $@

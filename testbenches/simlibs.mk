@@ -35,11 +35,6 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 # 
 
-# CL_DIR: The path to the root of the BSG F1 Repository
-ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
-endif
-
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
 ifndef TESTBENCH_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
@@ -71,14 +66,14 @@ endif
 # will retain this setting
 EXTRA_TURBO      ?= 0
 
-# The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
+# The following variables are set by $(BSG_F1_DIR)/hdk.mk, which will fail if
 # hdk_setup.sh has not been run, or environment.mk is not included
 #
 # HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
 # AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
 # HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
-include $(CL_DIR)/hdk.mk
+include $(BSG_F1_DIR)/hdk.mk
 
 # libraries.mk defines the sources and targets for the BSG Manycore Runtime
 # library.
@@ -98,7 +93,12 @@ VINCLUDES += $(TESTBENCH_PATH)
 # but for header files. It also adds to CLEANS, a list of clean rules for
 # cleaning hardware targets.
 include $(HARDWARE_PATH)/hardware.mk
-VSOURCES += $(TESTBENCH_PATH)/cosim_wrapper.sv
+
+# Name of the cosimulation wrapper system verilog file (usually in
+# TESTBENCHES_PATH)
+WRAPPER_NAME = cosim_wrapper
+
+VSOURCES += $(TESTBENCH_PATH)/$(WRAPPER_NAME).sv
 
 # The manycore architecture unsynthesizable simulation sources (for tracing, etc).
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
@@ -158,7 +158,7 @@ VDEFINES   += COSIM
 VDEFINES   += DISABLE_VJTAG_DEBUG
 VDEFINES   += ENABLE_PROTOCOL_CHK
 
-include $(CL_DIR)/Makefile.machine.include
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 # Setting CL_MANYCORE_MEM_CFG to e_vcache_blocking_axi4_f1_dram
 # directs simulation to use the slower, but more accurate, DDR
 # Model. The default is e_vcache_blocking_axi4_f1_model uses an
@@ -206,7 +206,7 @@ VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 $(TESTBENCH_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && vivado -mode batch -source $<
 
-$(WORKDIR)/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(CL_DIR)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
+$(WORKDIR)/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(BSG_MACHINE_PATH)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
 	echo "$(PROJECT) : $(WORKDIR)/64" >> $(TESTBENCH_PATH)/synopsys_sim.setup
 	cd $(TESTBENCH_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
