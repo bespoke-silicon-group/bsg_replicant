@@ -80,9 +80,6 @@ EXTRA_TURBO      ?= 0
 # We parallelize VCS compilation, but we leave a few cores on the table.
 NPROCS = $(shell echo "(`nproc`/4 + 1)" | bc)
 
-# Name of the cosimulation wrapper system verilog file.
-WRAPPER_NAME = cosim_wrapper
-
 LDFLAGS    += -lbsg_manycore_runtime -lm
 # libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
 LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
@@ -104,6 +101,7 @@ endif
 # VCS Generates an executable file by linking against the
 # $(SRC_PATH)/%.c or $(SRC_PATH)/%.o $(SRC_PATH)/%.cpp file that
 # corresponds to the target test in the $(SRC_PATH) directory.
+# WRAPPER_NAME is defined in simlibs.mk
 $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
 	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
