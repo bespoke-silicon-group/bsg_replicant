@@ -223,8 +223,8 @@ $(WORKDIR)/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(CL_DIR)/Makefile.machin
 # re-built every time a regression test is compiled
 
 # Define the COSIM macro so that the DPI Versions of functions are called
-$(OBJECTS): CXXFLAGS += -DCOSIM
-$(OBJECTS): CFLAGS   += -DCOSIM
+$(LIB_OBJECTS): CXXFLAGS += -DCOSIM
+$(LIB_OBJECTS): CFLAGS   += -DCOSIM
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH), so direct the linker there
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(TESTBENCH_PATH) 
