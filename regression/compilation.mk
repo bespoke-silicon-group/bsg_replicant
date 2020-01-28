@@ -35,10 +35,6 @@ NC=\033[0m
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
 # 
-# REGRESSION_TESTS: Names of all available regression tests.
-ifndef REGRESSION_TESTS
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: REGRESSION_TESTS is not defined$(NC)"))
-endif
 
 # SRC_PATH: The path to the directory where tests will be executed
 ifndef SRC_PATH
@@ -53,15 +49,6 @@ endif
 # ... or a .cpp and .hpp of the same name
 %.o: %.cpp %.hpp
 	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
-
-# To include a test in regression, the user defines a list of tests in
-# REGRESSION_TESTS. Each test can also define a custom rule, <test_name>.rule
-# that is run during compilation. These custom rules are useful for building
-# spmd or cuda binaries, for example.
-USER_RULES:=$(addsuffix .rule,$(REGRESSION_TESTS))
-$(USER_RULES):
-USER_CLEAN_RULES=$(addsuffix .clean,$(REGRESSION_TESTS))
-$(USER_CLEAN_RULES):
 
 compilation.clean: 
 	rm -rf $(foreach tgt, $(INDEPENDENT_TESTS), $(SRC_PATH)/$(tgt).o) $(SRC_PATH)/test_loader.o

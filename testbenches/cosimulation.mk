@@ -81,6 +81,9 @@ help:
 	@echo "             generate the vanilla log file"
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
+$(REGRESSION_TESTS): %: $(EXEC_PATH)/%
+test_loader: %: $(EXEC_PATH)/%
+
 VPD_RULES = $(addsuffix .vpd,$(REGRESSION_TESTS))
 $(VPD_RULES): SIM_ARGS +=+trace
 $(VPD_RULES): %.vpd: %.log
@@ -96,3 +99,4 @@ $(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
 clean: regression.clean compilation.clean link.clean $(USER_CLEAN_RULES)
 	rm -rf *.log
 	rm -rf *.vanilla_operation_trace.csv *.vanilla_stats.csv
+	rm -rf $(REGRESSION_TESTS) test_loader
