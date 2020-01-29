@@ -81,105 +81,19 @@ int kernel_device_memcpy (int argc, char **argv) {
         uint32_t N = 64;
 
         hb_mc_eva_t A_device; 
-        rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to allocate memory on device.\n");
-                return rc;
-        }
+        hb_mc_device_malloc(&device, N * sizeof(uint32_t), &A_device);
 
-
-        hb_mc_eva_t B_device; 
-        rc = hb_mc_device_malloc(&device, N * sizeof(uint32_t), &B_device);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to allocate memory on device.\n");
-                return rc;
-        }
-
-        
-        /**********************************************************************/
-        /* Allocate A & B on the host.                                        */
-        /* Fill A with random values and set B to -1 on the host.             */
-        /* Copy A from host to device DRAM and set B to 0 on device DRAM.     */
-        /**********************************************************************/
-        uint32_t A_host[N];
-        uint32_t B_host[N];
-        for (int i = 0; i < N; i++) { /* fill A with arbitrary data */
-                A_host[i] = rand() & 0xFFFF;
-                B_host[i] = -1;
-        }
-
-        // Copy A from host to device
         void *dst = (void *) ((intptr_t) A_device);
         void *src = (void *) &A_host[0];
-        rc = hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to copy memory to device.\n");
-                return rc;
-        }
+        
+        hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE);
+       
+        hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_device_memcpy", 3, cuda_argv);
+        
+        hb_mc_device_tile_groups_execute(&device);        
 
-        // Set the B to zero on the device
-        rc = hb_mc_device_memset(&device, &B_device, 0, N * sizeof(uint8_t));
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to set memory on device.\n");
-                return rc;
-        } 
-
-
-        /**********************************************************************/
-        /* Define block_size_x/y: amount of work for each tile group          */
-        /* Define tg_dim_x/y: number of tiles in each tile group              */
-        /* Calculate grid_dim_x/y: number of                                  */
-        /* tile groups needed based on block_size_x/y                         */
-        /**********************************************************************/
-        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
-
-        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
-
-
-        /**********************************************************************/
-        /* Prepare list of input arguments for kernel.                        */
-        /**********************************************************************/
-        int cuda_argv[3] = {B_device, A_device, N};
-
-
-        /**********************************************************************/
-        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
-        /* kernel name, number and list of input arguments                    */
-        /**********************************************************************/
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_device_memcpy", 3, cuda_argv);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize grid.\n");
-                return rc;
-        }
-
-
-
-        /**********************************************************************/
-        /* Launch and execute all tile groups on device and wait for finish.  */ 
-        /**********************************************************************/
-        rc = hb_mc_device_tile_groups_execute(&device);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to execute tile groups.\n");
-                return rc;
-        }       
-
-
-        /**********************************************************************/
-        /* Copy result vector back from device DRAM into host memory.         */
-        /**********************************************************************/
-        src = (void *) ((intptr_t) B_device);
-        dst = (void *) &B_host;
-        rc = hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to copy memory from device.\n");
-                return rc;
-        }
-
-
-        /**********************************************************************/
-        /* Freeze the tiles and memory manager cleanup.                       */
-        /**********************************************************************/
-        rc = hb_mc_device_finish(&device); 
+        hb_mc_device_finish(&device);
+        
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to de-initialize device.\n");
                 return rc;
