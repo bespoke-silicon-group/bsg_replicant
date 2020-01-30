@@ -559,13 +559,13 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_init_fifos(mc)) != HB_MC_SUCCESS)
                 goto cleanup;
 
-        // // initialize responders
-        // if ((err = hb_mc_responders_init(mc)))
-        //         goto cleanup;
+        // initialize responders
+        if ((err = hb_mc_responders_init(mc)))
+                goto cleanup;
 
-        // // enable dram
-        // if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS)
-        //         goto cleanup;
+        // enable dram
+        if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS)
+                goto cleanup;
 
         r = HB_MC_SUCCESS;
         goto done;
