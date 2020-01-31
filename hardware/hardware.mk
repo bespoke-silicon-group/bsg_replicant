@@ -128,7 +128,7 @@ endef
 # data. Each rom entry is a 32-character string with 1/0 values. Each
 # line is a separate entry. This target generates the verilog for the rom.
 $(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.rom
-	python $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
+	env python2 $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
                bsg_bladerunner_configuration > $@
 
 # This target generates the ASCII file for the ROM. To add entries to
