@@ -11,7 +11,12 @@ package cl_manycore_pkg;
   `include "bsg_defines.v"
   `include "f1_parameters.vh"
   import bsg_bladerunner_mem_cfg_pkg::*;
-  
+
+  typedef enum bit [3:0] {
+    e_vdip_clk_mux
+    , e_vdip_dramsim_timing
+  } bsg_bladerunner_vdip_cfg_e;
+
   parameter bsg_bladerunner_mem_cfg_e mem_cfg_p = `CL_MANYCORE_MEM_CFG;
   parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
   parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;

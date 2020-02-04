@@ -39,6 +39,7 @@
 #else
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
+#include <bsg_manycore_vdip.h>
 #endif
 
 #ifdef __cplusplus
@@ -1496,6 +1497,24 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
+/* setup hacks that we perform in simulation to speedup IO */
+static int hb_mc_manycore_io_speedup_hacks_setup(void)
+{
+#ifdef COSIM
+        // slow manycore clock way down & disable dram simulation timing
+        sv_set_virtual_dip_switch(0, (HB_MC_VDIP_CLK_MUX|HB_MC_VDIP_DRAMSIM_TIMING_N));
+#endif
+}
+
+/* cleanup hacks that we perform in simulation to speedup IO */
+static int hb_mc_manycore_io_speedup_hacks_cleanup(void)
+{
+#ifdef COSIM
+        // resume manycore at configured clock & enable dram simulation timing
+        sv_set_virtual_dip_switch(0, 0);
+#endif
+}
+
 /**
  * Write memory out to manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
@@ -1513,11 +1532,7 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        // This pair of matching function calls changes the clock period of the
-        // manycore during data transfer to accelerate simulation
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 1);
-#endif
+        hb_mc_manycore_io_speedup_hacks_setup();
 
         const uint32_t *words = (const uint32_t*)data;
         size_t n_words = sz >> 2;
@@ -1537,9 +1552,8 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                 hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + 4);
         }
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 0);
-#endif
+        hb_mc_manycore_io_speedup_hacks_cleanup();
+
         return HB_MC_SUCCESS;
 }
 
@@ -1564,9 +1578,8 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         size_t n_words = sz >> 2;
         hb_mc_npa_t addr = *npa;
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 1);
-#endif
+
+        hb_mc_manycore_io_speedup_hacks_setup();
 
         /* send store requests one word at a time */
         for (size_t i = 0; i < n_words; i++) {
@@ -1582,9 +1595,7 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                 hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + sizeof(uint32_t));
         }
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 0);
-#endif
+        hb_mc_manycore_io_speedup_hacks_cleanup();
 
         return HB_MC_SUCCESS;
 }
@@ -1620,9 +1631,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         if (err != HB_MC_SUCCESS)
                 return err;
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 1);
-#endif
+        hb_mc_manycore_io_speedup_hacks_setup();
 
         /* track requests and responses with ids and id_to_rsp_i */
         std::stack <uint32_t, std::vector<uint32_t> > ids;
@@ -1712,9 +1721,8 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
 
                 }
         }
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 0);
-#endif
+
+        hb_mc_manycore_io_speedup_hacks_cleanup();
 
         return HB_MC_SUCCESS;
 }

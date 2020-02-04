@@ -402,6 +402,13 @@ module cl_manycore
   ////////////////////////////////
   // Configurable Memory System //
   ////////////////////////////////
+`ifdef USING_DRAMSIM3
+  logic dram_simulation_timing_enable;
+  // we invert because sh_cl_status_vdip_q2 is initialized to '0 at reset
+  // we want timing by default
+  assign dram_simulation_timing_enable = ~sh_cl_status_vdip_q2[e_vdip_dramsim_timing];
+`endif
+
   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3);
   localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
 
@@ -932,6 +939,7 @@ module cl_manycore
     dram
       (.clk_i(lv2_ramulator_hbm.hbm_clk)
        ,.reset_i(lv2_ramulator_hbm.hbm_reset)
+       ,.timing_enable_i(dram_simulation_timing_enable)
 
        ,.v_i(lv2_ramulator_hbm.hbm_req_v_lo)
        ,.write_not_read_i(lv2_ramulator_hbm.hbm_write_not_read_lo)
