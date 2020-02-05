@@ -136,16 +136,6 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_out_packet_li.y_cord     = y_cord_width_p'(host_req_li_cast.y_cord);
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
 
-  // set the reg_id field in host API
-  // always_comb begin
-  //   if (endpoint_out_packet_li.op == e_remote_load) begin
-  //     endpoint_out_packet_li.reg_id = host_req_li_cast.payload.load_info;
-  //   end
-  //   else begin
-  //     endpoint_out_packet_li.reg_id = '0;
-  //   end
-  // end
-
   always_comb begin
     if (endpoint_out_packet_li.op == e_remote_store) begin
       endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;

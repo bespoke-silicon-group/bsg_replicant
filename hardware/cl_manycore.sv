@@ -1134,53 +1134,6 @@ module cl_manycore
    bsg_manycore_link_sif_s axil_link_sif_li;
    bsg_manycore_link_sif_s axil_link_sif_lo;
 
-// <<<<<<< HEAD
-//    axil_to_mcl
-//      #(.num_mcl_p        (1                )
-//        ,.num_tiles_x_p    (num_tiles_x_p    )
-//        ,.num_tiles_y_p    (num_tiles_y_p    )
-//        ,.addr_width_p     (addr_width_p     )
-//        ,.data_width_p     (data_width_p     )
-//        ,.x_cord_width_p   (x_cord_width_p   )
-//        ,.y_cord_width_p   (y_cord_width_p   )
-//        ,.max_out_credits_p(max_out_credits_p)
-//        )
-//    axil_to_mcl_inst
-//      (
-//       .clk_i             (clk_main_a0)
-//       ,.reset_i           (~rst_main_n_sync)
-
-//       // axil slave interface
-//       ,.s_axil_mcl_awvalid(m_axil_ocl_awvalid)
-//       ,.s_axil_mcl_awaddr (m_axil_ocl_awaddr )
-//       ,.s_axil_mcl_awready(m_axil_ocl_awready)
-//       ,.s_axil_mcl_wvalid (m_axil_ocl_wvalid )
-//       ,.s_axil_mcl_wdata  (m_axil_ocl_wdata  )
-//       ,.s_axil_mcl_wstrb  (m_axil_ocl_wstrb  )
-//       ,.s_axil_mcl_wready (m_axil_ocl_wready )
-//       ,.s_axil_mcl_bresp  (m_axil_ocl_bresp  )
-//       ,.s_axil_mcl_bvalid (m_axil_ocl_bvalid )
-//       ,.s_axil_mcl_bready (m_axil_ocl_bready )
-//       ,.s_axil_mcl_araddr (m_axil_ocl_araddr )
-//       ,.s_axil_mcl_arvalid(m_axil_ocl_arvalid)
-//       ,.s_axil_mcl_arready(m_axil_ocl_arready)
-//       ,.s_axil_mcl_rdata  (m_axil_ocl_rdata  )
-//       ,.s_axil_mcl_rresp  (m_axil_ocl_rresp  )
-//       ,.s_axil_mcl_rvalid (m_axil_ocl_rvalid )
-//       ,.s_axil_mcl_rready (m_axil_ocl_rready )
-
-//       // manycore link
-//       ,.link_sif_i        (axil_link_sif_li)
-//       ,.link_sif_o        (axil_link_sif_lo)
-//       ,.my_x_i            (mcl_x_cord_lp     )
-//       ,.my_y_i            (mcl_y_cord_lp     )
-
-//       ,.print_stat_v_o(print_stat_v_lo)
-//       ,.print_stat_tag_o(print_stat_tag_lo)
-//       );
-// =======
-
-
   bsg_manycore_link_to_axil #(
     .x_cord_width_p   (x_cord_width_p   ),
     .y_cord_width_p   (y_cord_width_p   ),
@@ -1217,8 +1170,6 @@ module cl_manycore
     .print_stat_v_o  (print_stat_v_lo   ),
     .print_stat_tag_o(print_stat_tag_lo )
   );
-
-// >>>>>>> 4ce3599... refactor mcl
 
 `ifdef COSIM
    assign axil_link_sif_li = async_link_sif_lo;
