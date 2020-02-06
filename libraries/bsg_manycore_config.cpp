@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -135,13 +135,15 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
 
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
-        if (idx < config->vcache_block_words) { 
+        if (idx < config->vcache_block_words) {
                 bsg_pr_err("%s: Invalid vcache stripe size %d: stripe size "
                            "cannot be smaller than vcache block size %d: %s\n",
                            __func__, idx, config->vcache_block_words, error_init_help);
                 return HB_MC_INVALID;
         }
         config->vcache_stripe_words = idx;
+
+        config->io_remote_load_cap = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
 
         return HB_MC_SUCCESS;
 }

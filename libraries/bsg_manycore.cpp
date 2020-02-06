@@ -120,17 +120,6 @@ static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
 // FIFO Helper Functions //
 ///////////////////////////
 
-static int hb_mc_manycore_tx_fifo_get_vacancy(hb_mc_manycore_t *mc,
-                                              hb_mc_fifo_tx_t type,
-                                              uint32_t *vacancy)
-{
-        const char *typestr = hb_mc_fifo_tx_to_string(type);
-        manycore_pr_dbg(mc, "We do not check the %s FIFO's vacancy\n", typestr);
-        vacancy = NULL;
-        return HB_MC_FAIL;
-}
-
-
 /* get the number of unread packets in a FIFO (rx only) */
 static int hb_mc_manycore_rx_fifo_get_occupancy(hb_mc_manycore_t *mc,
                                                 hb_mc_fifo_rx_t type,
@@ -352,8 +341,8 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
  */
 static int hb_mc_manycore_get_host_requests_cap(hb_mc_manycore_t *mc, unsigned *cap)
 {
-        // *cap = HB_MC_MMIO_MAX_READ_CREDITS;
-        *cap = 32;  // corresponding to the reg_id width
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        *cap = hb_mc_config_get_io_remote_load_cap(cfg);
         return HB_MC_SUCCESS;
 }
 
@@ -406,7 +395,7 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 {
         int rc;
 
-        /* drain rx FIFO from the manycore request */
+        /* Drain the Manycore-To-Host (RX) Request FIFO */
         rc = hb_mc_manycore_rx_fifo_drain(mc, HB_MC_FIFO_RX_REQ);
         if (rc != HB_MC_SUCCESS)
                 return rc;
@@ -421,7 +410,7 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 
 static void hb_mc_manycore_cleanup_fifos(hb_mc_manycore_t *mc)
 {
-        /* drain rx FIFO from the manycore request */
+        /* Drain the Manycore-To-Host (RX) Request FIFO */
         hb_mc_manycore_rx_fifo_drain(mc, HB_MC_FIFO_RX_REQ);
 }
 
@@ -597,7 +586,7 @@ int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc)
         uint64_t addr;
         uint32_t value;
         int err;
-        addr = HB_MC_MMIO_CREDITS_HOST_OFFSET;
+        addr = hb_mc_mmio_host_credits_get_addr();
         err = hb_mc_manycore_mmio_read32(mc, addr, &value);
         if (err != HB_MC_SUCCESS) {
                 manycore_pr_err(mc, "%s: Failed to read Host Credits Register: %s\n",
@@ -1082,7 +1071,7 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
         if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
                 return r;
 
-        hb_mc_request_packet_set_data(pkt, 0x0);
+        hb_mc_request_packet_set_data(pkt, HB_MC_PACKET_PAYLOAD_REMOTE_LOAD);
         hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
 
         return 0;
@@ -1142,7 +1131,6 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
                 return err;
 
         // mark request with id
-        // hb_mc_request_packet_set_data(&rqst.request, id);
         hb_mc_request_packet_set_reg_id(&rqst.request, id);
         int shift = hb_mc_npa_get_epa(npa) & 0x3;
         /* set the byte mask */

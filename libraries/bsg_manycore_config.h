@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,7 @@
 
 /* MAX AND DUSTIN'S RULE OF THUMB FOR WHAT GOES IN CONFIG
  *
- * An entity requires an accessor in config if: 
+ * An entity requires an accessor in config if:
  * 1. It is in the ROM (or other configuration register)
  * 2. It is trivially derivable from data in the ROM
  * 3. It is a top-level parameter that SHOULD BE in the ROM.
@@ -89,6 +89,7 @@ extern "C" {
                 uint32_t vcache_sets;
                 uint32_t vcache_block_words;
                 uint32_t vcache_stripe_words;
+                uint32_t io_remote_load_cap;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -109,11 +110,13 @@ extern "C" {
                 HB_MC_CONFIG_VCACHE_SETS = 13,
                 HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 14,
                 HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 15,
-                HB_MC_CONFIG_MAX = 16
+                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 16,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
+                HB_MC_CONFIG_MAX = 18
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
-                
+
         static inline uint64_t hb_mc_config_id_to_addr(uint64_t addr, hb_mc_config_id_t id)
         {
                 return (addr + (id << 2));
@@ -138,6 +141,8 @@ extern "C" {
                         [HB_MC_CONFIG_VCACHE_SETS]  = "BLADERUNNER VCACHE SETS",
                         [HB_MC_CONFIG_VCACHE_BLOCK_WORDS] = "BLADERUNNER VCACHE BLOCK SIZE IN WORDS",
                         [HB_MC_CONFIG_VCACHE_STRIPE_WORDS] = "BLADERUNNER VCACHE STRIPE SIZE IN WORDS",
+                        [HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS] = "BLADERUNNER VCACHE MISS FIFO ELS",
+                        [HB_MC_CONFIG_IO_REMOTE_LOAD_CAP] = "BLADERUNNER IO REMOTE LOAD CAPACITY",
                 };
                 return strtab[id];
         }
@@ -215,7 +220,7 @@ extern "C" {
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
                 // The Network has two additional Y rows: An IO Row, and a DRAM/Cache Row
-                return hb_mc_dimension(hb_mc_dimension_get_x(dim), 
+                return hb_mc_dimension(hb_mc_dimension_get_x(dim),
                                        hb_mc_dimension_get_y(dim) + 2);
         }
 
@@ -257,7 +262,7 @@ extern "C" {
         static inline size_t hb_mc_config_get_dmem_size(const hb_mc_config_t *cfg)
         {
                 // 4K: this might be read from ROM if the value ever changes
-                return (1 << hb_mc_config_get_dmem_bitwidth_addr(cfg)); 
+                return (1 << hb_mc_config_get_dmem_bitwidth_addr(cfg));
         }
 
         static inline uint8_t hb_mc_config_get_icache_bitwidth_addr(const hb_mc_config_t *cfg)
@@ -268,7 +273,7 @@ extern "C" {
         static inline size_t hb_mc_config_get_icache_size(const hb_mc_config_t *cfg)
         {
                 // 4K: this might be read from ROM if the value ever changes
-                return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg)); 
+                return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
@@ -348,6 +353,16 @@ extern "C" {
                 return hb_mc_config_get_vcache_block_size(cfg) *
                         hb_mc_config_get_vcache_sets(cfg) *
                         hb_mc_config_get_vcache_ways(cfg);
+        }
+
+        /**
+         * Return the host batching capacity for remote loads.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the host batching capacity for remote loads.
+         */
+        static inline uint32_t hb_mc_config_get_io_remote_load_cap(const hb_mc_config_t *cfg)
+        {
+                return cfg->io_remote_load_cap;
         }
 
 

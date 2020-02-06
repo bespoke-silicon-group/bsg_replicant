@@ -62,6 +62,9 @@
 #define hb_mc_mmio_fifo_get_addr(dir, ofs) \
         (hb_mc_mmio_fifo_get_direction_offset(dir) + ofs)
 
+#define hb_mc_mmio_host_credits_get_addr() \
+        HB_MC_MMIO_CREDITS_HOST_OFFSET
+
 #define hb_mc_mmio_rom_get_addr(ofs) \
         (HB_MC_MMIO_ROM_BASE + ofs)
 

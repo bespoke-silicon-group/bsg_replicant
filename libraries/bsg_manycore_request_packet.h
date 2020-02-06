@@ -43,6 +43,8 @@
 #include <stdio.h>
 #endif
 
+#define HB_MC_PACKET_PAYLOAD_REMOTE_LOAD 0
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -69,6 +71,7 @@ extern "C" {
                 HB_MC_PACKET_OP_REMOTE_LOAD  = 0,
                 HB_MC_PACKET_OP_REMOTE_STORE = 1
         } hb_mc_packet_op_t;
+
 
         typedef enum __hb_mc_packet_mask_t {
                 HB_MC_PACKET_REQUEST_MASK_BYTE  = 0x1,
