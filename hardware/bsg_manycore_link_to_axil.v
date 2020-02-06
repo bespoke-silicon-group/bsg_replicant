@@ -108,49 +108,31 @@ module bsg_manycore_link_to_axil
   assign axil_bvalid_o  = bvalid_r;
   assign axil_bresp_o   = bresp_lo;
 
-  // hold the awaddr
-  logic [axil_addr_width_p-1:0] waddr_n, waddr_r;
-  always_ff @(posedge clk_i) begin
-    if (reset_i)
-      waddr_r <= '0;
-    else
-      waddr_r <= waddr_n;
-  end
-  wire is_write_to_tdr = (waddr_n == mcl_fifo_base_addr_gp + mcl_ofs_tdr_gp);
+  wire is_write_to_tdr = (axil_awaddr_i == mcl_fifo_base_addr_gp + mcl_ofs_tdr_gp);
 
   always_comb begin
-    awready_lo = 1'b1;  // always accepts write address
-    waddr_n    = waddr_r;
+    awready_lo = 1'b0;
+    wready_lo  = 1'b1;
 
-    wready_lo   = 1'b0;
+    tx_wen_li   = 1'b0;
     tx_wdata_li = '0;
 
-    bvalid_n = 1'b0;
+    bvalid_n = bvalid_r;
     bresp_lo = 2'b00; // always OKAY even writing to the undefined address
 
-    tx_wdata_li = '0;
-    tx_wen_li = 1'b0;
+    if (axil_awvalid_i & axil_wvalid_i) begin
+      wready_lo = is_write_to_tdr ? tx_wready_lo : 1'b1;
+      awready_lo = wready_lo;
 
-    if (axil_awvalid_i) begin
-      // awready_lo = 1'b1;
-      waddr_n = axil_awaddr_i;
-
-      if(axil_wvalid_i) begin  // awvalid & wvalid is asserted at the same cycle
-        wready_lo   = is_write_to_tdr ? tx_wready_lo : 1'b1;
-        tx_wdata_li = axil_wdata_i;
-        tx_wen_li   = is_write_to_tdr;
-      end
-    end
-    else if (axil_wvalid_i) begin  // wvalid is later asserted
-      wready_lo   = is_write_to_tdr ? tx_wready_lo : 1'b1;
-      tx_wdata_li = axil_wdata_i;
       tx_wen_li   = is_write_to_tdr;
+      tx_wdata_li = axil_wdata_i;
     end
+
     // write response occurs after
     if (axil_bready_i & axil_bvalid_o)
       bvalid_n = 1'b0;
     else
-      bvalid_n = wready_lo & axil_wvalid_i;
+      bvalid_n = axil_wready_o & axil_wvalid_i;
   end
 
   always_ff @(posedge clk_i) begin
@@ -221,8 +203,6 @@ module bsg_manycore_link_to_axil
       rvalid_r <= rvalid_n;
     end
   end
-  wire is_write_to_rdr = (waddr_n == mcl_fifo_base_addr_gp + mcl_ofs_tdr_gp);
-
 
   always_comb begin
 
