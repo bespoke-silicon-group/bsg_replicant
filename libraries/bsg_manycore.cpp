@@ -37,6 +37,7 @@
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #else
+#include <bsg_test_dram_channel.hpp>
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
 #endif
@@ -1496,6 +1497,82 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
+#ifdef COSIM
+static int hb_mc_manycore_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
+{
+}
+/**
+ * Write memory out to manycore DRAM via C++ backdoor
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                                const void *data, size_t sz)
+{
+    using namespace bsg_test_dram_channel;
+
+    /*
+      Our system supports having multiple caches per memory channel.
+      Currently, we do this by splitting the channels evenly into even 'banks' for each cache.
+
+      IF THE ADDRESS MAPPING SCHEME FROM CACHES TO DRAM CHANGES THIS FUNCTION WILL BREAK!!!!!
+
+      As of the time of this writing we are in the process of designing the memory system.
+      So take note...
+     */
+
+    /*
+      Get system parameters for performing the address mapping
+     */
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+    unsigned long caches = hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg));
+    unsigned long channels = hb_mc_config_get_dram_channels(cfg);
+    unsigned long caches_per_channel = caches/channels;
+
+    /*
+      Figure out which memory channel and bank this NPA maps to.
+     */
+    hb_mc_idx_t cache_x = hb_mc_npa_get_x(npa); // which cache - same as the column
+    parameter_t id = cache_x / caches_per_channel; // which channel
+    parameter_t bank = cache_x % caches_per_channel; // which bank within channel
+
+    /*
+      Use the backdoor to our non-synthesizable memory.
+     */
+    Memory *memory = bsg_test_dram_channel_get_memory(id);
+    parameter_t bank_size = memory->_data.size()/caches_per_channel;
+
+    hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+
+    char npa_str[256];
+
+    if (memory == nullptr) {
+        manycore_pr_err(mc, " %s: Could not get the memory for endpoint at %s\n",
+                        __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+
+        return HB_MC_FAIL;
+    }
+
+    assert(bank*bank_size + epa + sz <= memory->_data.size());
+
+    manycore_pr_dbg(mc, "%s: Writing %zu bytes to %s\n",
+                    __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+
+    memcpy(reinterpret_cast<void*>(&memory->_data[bank*bank_size + epa]), data, sz);
+
+    return HB_MC_SUCCESS;
+}
+#endif
+
+static int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
+{
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+    return hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_y(cfg);
+}
+
 /**
  * Write memory out to manycore hardware starting at a given NPA
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
@@ -1512,7 +1589,15 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         err = hb_mc_manycore_read_write_mem_check_args(mc, __func__, data, sz);
         if (err != HB_MC_SUCCESS)
                 return err;
+#define DRAM_HACK
+#ifdef  DRAM_HACK
+#ifdef COSIM
+        // is this dram?
+        if (hb_mc_manycore_npa_is_dram(mc, npa))
+            return hb_mc_manycore_write_dram_cosim_only(mc, npa, data, sz);
 
+#endif
+#endif
         // This pair of matching function calls changes the clock period of the
         // manycore during data transfer to accelerate simulation
 #ifdef COSIM

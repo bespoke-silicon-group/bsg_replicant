@@ -350,6 +350,16 @@ extern "C" {
                         hb_mc_config_get_vcache_ways(cfg);
         }
 
+        /**
+         * Return the number of DRAM channels in the system.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the number of DRAM channels in the system.
+         */
+        static inline uint32_t hb_mc_config_get_dram_channels(const hb_mc_config_t *cfg)
+        {
+                return 8; // currently a constant
+        }
+
 
 #ifdef __cplusplus
 }
