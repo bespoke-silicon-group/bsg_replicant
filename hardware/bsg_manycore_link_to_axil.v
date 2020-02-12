@@ -153,11 +153,16 @@ module bsg_manycore_link_to_axil
   logic                         tx_rv_lo   ;
   logic                         tx_rready_li;
 
-  // 2. number of words rx from mc request
+  // 2. credit registers
+
+  // host credit
+  localparam host_credits_width_lp = `BSG_WIDTH(fifo_width_p/axil_data_width_p*mcl_read_credits_gp);
+  logic [host_credits_width_lp-1:0] host_credits_lo;
+
+  // rx fifo occupancy for manycore request
   localparam integer piso_els_lp = fifo_width_p/axil_data_width_p;
   localparam pkt_cnt_width_lp = `BSG_WIDTH(mcl_read_credits_gp*piso_els_lp);
-
-  logic [pkt_cnt_width_lp-1:0] rx_pkt_words_lo;
+  logic [pkt_cnt_width_lp-1:0] mc_req_words_lo;
 
   // 3. mc request
   logic [axil_data_width_p-1:0] rx_rdata_lo ;
@@ -185,24 +190,13 @@ module bsg_manycore_link_to_axil
   assign axil_rvalid_o  = rvalid_n;
   assign axil_rresp_o   = rresp_lo;
 
-  wire is_read_credit   = (axil_araddr_i == mcl_ofs_credits_gp);
-  wire is_read_rdr_rsp  = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_rsp_gp) ;
-  wire is_read_rdfo_req = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdfo_req_gp);
-  wire is_read_rdr_req  = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_req_gp) ;
-  wire is_read_rom = (axil_araddr_i >= mcl_rom_base_addr_gp) &&
-    (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_p*rom_width_p/8)));
-
-  // hold the rdata and rvalid until accepted by master
-  always_ff @(posedge clk_i) begin
-    if (reset_i | (axil_rready_i & axil_rvalid_o)) begin
-      rdata_r <= '0;
-      rvalid_r <= 1'b0;
-    end
-    else begin
-      rdata_r <= rdata_n;
-      rvalid_r <= rvalid_n;
-    end
-  end
+  wire is_read_credit        = (axil_araddr_i == mcl_ofs_credits_gp)                         ;
+  wire is_read_rdr_rsp       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_rsp_gp) ;
+  wire is_read_tdfv_host_req = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_tdfv_req_gp);
+  wire is_read_rdfo_mc_req   = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdfo_req_gp);
+  wire is_read_rdr_req       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_req_gp) ;
+  wire is_read_rom           = (axil_araddr_i >= mcl_rom_base_addr_gp) &&
+                               (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_p*rom_width_p/8)));
 
   always_comb begin
 
@@ -218,14 +212,22 @@ module bsg_manycore_link_to_axil
     rx_rom_addr_li = '0;
 
     if (axil_arvalid_i) begin
-      if (is_read_rdr_rsp) begin
+      if (is_read_credit) begin  // always accept and return the occupancy of rx words
+        arready_lo = 1'b1;
+        rdata_n = axil_data_width_p'(ep_out_credits_lo);
+      end
+      else if (is_read_rdr_rsp) begin
         tx_rready_li = 1'b1;
         arready_lo = tx_rready_li & tx_rv_lo;  // accept the read address only when fifo data is valid
         rdata_n = tx_rdata_lo;
       end
-      else if (is_read_rdfo_req) begin  // always accept and return the occupancy of rx words
+      else if (is_read_tdfv_host_req) begin  // always accept and return the vacancy of host req fifo in words
         arready_lo = 1'b1;
-        rdata_n = axil_data_width_p'(rx_pkt_words_lo);
+        rdata_n = axil_data_width_p'(host_credits_lo);
+      end
+      else if (is_read_rdfo_mc_req) begin  // always accept and return the occupancy of rx words
+        arready_lo = 1'b1;
+        rdata_n = axil_data_width_p'(mc_req_words_lo);
       end
       else if (is_read_rdr_req) begin
         rx_rready_li = 1'b1;
@@ -237,10 +239,6 @@ module bsg_manycore_link_to_axil
         rx_rom_addr_li = (axil_araddr_i - mcl_rom_base_addr_gp);
         rdata_n = axil_data_width_p'(rx_rom_data_lo);
       end
-      else if (is_read_credit) begin  // always accept and return the occupancy of rx words
-        arready_lo = 1'b1;
-        rdata_n = axil_data_width_p'(ep_out_credits_lo);
-      end
       else begin
         arready_lo = 1'b1;
         rdata_n = axil_data_width_p'(32'hdead_beef);
@@ -251,6 +249,17 @@ module bsg_manycore_link_to_axil
     end
   end
 
+  // hold the rdata and rvalid until accepted by master
+  always_ff @(posedge clk_i) begin
+    if (reset_i | (axil_rready_i & axil_rvalid_o)) begin
+      rdata_r <= '0;
+      rvalid_r <= 1'b0;
+    end
+    else begin
+      rdata_r <= rdata_n;
+      rvalid_r <= rvalid_n;
+    end
+  end
 
   // ----------------------------
   // bladerunner rom
@@ -305,11 +314,12 @@ module bsg_manycore_link_to_axil
     .w_v_i           (tx_wen_li        ),
     .w_ready_o       (tx_wready_lo     ),
     .r_data_o        (tx_rdata_lo      ),
-    .r_v_o           (tx_rv_lo        ),
+    .r_v_o           (tx_rv_lo         ),
     .r_ready_i       (tx_rready_li     ),
     .host_req_o      (host_req_lo      ),
     .host_req_v_o    (host_req_v_lo    ),
     .host_req_ready_i(host_req_ready_li),
+    .host_credits_o  (host_credits_lo  ),
     .mc_rsp_i        (mc_rsp_li        ),
     .mc_rsp_v_i      (mc_rsp_v_li      ),
     .mc_rsp_ready_o  (mc_rsp_ready_lo  )
@@ -319,19 +329,19 @@ module bsg_manycore_link_to_axil
   bsg_mcl_axil_fifos_slave #(
     .fifo_width_p       (fifo_width_p       ),
     .mc_write_capacity_p(mcl_read_credits_gp),
-    .axil_data_width_p  (axil_data_width_p )
+    .axil_data_width_p  (axil_data_width_p  )
   ) rx (
     .clk_i         (clk_i          ),
     .reset_i       (reset_i        ),
 
     // monitor signals
     .r_data_o      (rx_rdata_lo    ),
-    .r_v_o         (rx_rv_lo      ),
+    .r_v_o         (rx_rv_lo       ),
     .r_ready_i     (rx_rready_li   ),
     .mc_req_i      (mc_req_li      ),
     .mc_req_v_i    (mc_req_v_li    ),
     .mc_req_ready_o(mc_req_ready_lo),
-    .rx_pkt_words_o(rx_pkt_words_lo)
+    .mc_req_words_o(mc_req_words_lo)
   );
 
 

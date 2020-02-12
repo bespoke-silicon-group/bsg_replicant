@@ -33,6 +33,8 @@ module bsg_mcl_axil_fifos_master
   parameter fifo_width_p = "inv"
   , parameter host_read_credits_p = "inv"
   , parameter axil_data_width_p = 32
+  , localparam integer sipo_els_lp = fifo_width_p/axil_data_width_p
+  , localparam credit_width_lp = `BSG_WIDTH(sipo_els_lp*host_read_credits_p)
 ) (
   input                          clk_i
   ,input                          reset_i
@@ -47,12 +49,12 @@ module bsg_mcl_axil_fifos_master
   ,output [     fifo_width_p-1:0] host_req_o
   ,output                         host_req_v_o
   ,input                          host_req_ready_i
+  ,output [  credit_width_lp-1:0] host_credits_o
   ,input  [     fifo_width_p-1:0] mc_rsp_i
   ,input                          mc_rsp_v_i
   ,output                         mc_rsp_ready_o
 );
 
-  localparam integer sipo_els_lp = fifo_width_p/axil_data_width_p;
   localparam integer piso_els_lp = sipo_els_lp;
   // synopsys translate_off
   initial begin
@@ -62,7 +64,7 @@ module bsg_mcl_axil_fifos_master
   end
   // synopsys translate_on
 
-  localparam yumi_cnt_width_lp = $clog2(sipo_els_lp+1);
+  localparam sipo_cnt_width_lp = $clog2(sipo_els_lp+1);
 
 
   // --------------------------------------------------------
@@ -83,16 +85,17 @@ module bsg_mcl_axil_fifos_master
   logic                       req_sipo_ready_li;
 
   // module tx
-  logic host_req_fence;
+  logic pause_host_req;
 
   assign host_req_o        = req_sipo_data_lo;
-  assign host_req_v_o      = (~host_req_fence) & (&req_sipo_v_lo);
-  assign req_sipo_ready_li = (~host_req_fence) & host_req_ready_i;
+  assign host_req_v_o      = (~pause_host_req) & (&req_sipo_v_lo);
+  assign req_sipo_ready_li = (~pause_host_req) & host_req_ready_i;
 
-  wire [yumi_cnt_width_lp-1:0] req_sipo_yumi_li = (req_sipo_ready_li & host_req_v_o) ?
-                                                  yumi_cnt_width_lp'(sipo_els_lp) :
-                                                  '0;
+  wire [sipo_cnt_width_lp-1:0] req_sipo_yumis_li = (req_sipo_ready_li & host_req_v_o) ?
+                                                    sipo_cnt_width_lp'(sipo_els_lp) :
+                                                      '0;
 
+  // size of the req fifo >= host read credits, here we set equal for uniformity
   bsg_fifo_1r1w_small #(
     .width_p           (axil_data_width_p              ),
     .els_p             (sipo_els_lp*host_read_credits_p),
@@ -119,7 +122,7 @@ module bsg_mcl_axil_fifos_master
     .ready_o   (req_sipo_ready_lo),
     .valid_o   (req_sipo_v_lo    ),
     .data_o    (req_sipo_data_lo ),
-    .yumi_cnt_i(req_sipo_yumi_li )
+    .yumi_cnt_i(req_sipo_yumis_li)
   );
 
   // --------------------------------------------------------
@@ -136,7 +139,7 @@ module bsg_mcl_axil_fifos_master
   wire rsp_piso_yumi_li = r_ready_i & r_v_o;
 
   bsg_fifo_1r1w_small #(
-    .width_p           (fifo_width_p   ),
+    .width_p           (fifo_width_p       ),
     .els_p             (host_read_credits_p),
     .ready_THEN_valid_p(0                  )
   ) fifo_rsp (
@@ -144,7 +147,7 @@ module bsg_mcl_axil_fifos_master
     .reset_i(reset_i        ),
     .v_i    (mc_rsp_v_i     ),
     .ready_o(mc_rsp_ready_o ),
-    .data_i (mc_rsp_i  ),
+    .data_i (mc_rsp_i       ),
     .v_o    (rsp_buf_v_lo   ),
     .data_o (rsp_buf_data_lo),
     .yumi_i (rsp_buf_yumi_li)
@@ -168,6 +171,22 @@ module bsg_mcl_axil_fifos_master
   // --------------------------------------------------------
   //                      Flow Control
   // --------------------------------------------------------
+  wire [sipo_cnt_width_lp-1:0] cnt_down_li = (w_ready_o & w_v_i) ? sipo_cnt_width_lp'(1) : '0;
+  wire [sipo_cnt_width_lp-1:0] cnt_up_li   = req_sipo_yumis_li                               ;
+
+  // tracks the vacancy of the req fifo, in words
+  bsg_counter_up_down #(
+    .max_val_p (sipo_els_lp*host_read_credits_p),
+    .init_val_p(sipo_els_lp*host_read_credits_p),
+    .max_step_p(sipo_els_lp                    )
+  ) cnt_req_credit (
+    .clk_i  (clk_i         ),
+    .reset_i(reset_i       ),
+    .down_i (cnt_down_li   ),
+    .up_i   (cnt_up_li     ),
+    .count_o(host_credits_o)
+  );
+
 
   // cast the request packet and detect the host read
   `declare_bsg_manycore_link_fifo_s(fifo_width_p, mcl_addr_width_gp, mcl_data_width_gp, mcl_x_cord_width_gp, mcl_y_cord_width_gp);
@@ -178,12 +197,12 @@ module bsg_mcl_axil_fifos_master
 
   logic [`BSG_WIDTH(host_read_credits_p)-1:0] read_credits_lo;
 
-  // fence the host request if:
-  // 1) endpoint is out of credits (implemented outside)
+  // pause the host request if:
+  // 1) endpoint is out of credits (this is implemented outside)
   // 2) this module is out of read credits
 
-  wire is_host_read_req = host_req_lo_cast.op == 8'(e_remote_load)  ;
-  assign host_req_fence   = is_host_read_req && (read_credits_lo == 0);
+  wire is_host_read_req = host_req_lo_cast.op == 8'(e_remote_load);
+  assign pause_host_req = is_host_read_req && (read_credits_lo == 0);
 
   wire launching_read = host_req_v_o & host_req_ready_i & is_host_read_req;
   wire returned_read  = rsp_buf_yumi_li;

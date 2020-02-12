@@ -145,5 +145,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 
         config->io_remote_load_cap = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
 
+        config->io_host_credits_cap = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
+
         return HB_MC_SUCCESS;
 }

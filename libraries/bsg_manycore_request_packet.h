@@ -223,13 +223,13 @@ extern "C" {
         }
 
         /**
-         * Set the read id in a request packet
+         * Set the id in a load request packet
          * @param[in] packet a request packet
-         * @param[in] rd for for amo and int/float load
+         * @param[in] id for int/float load
          */
-        static inline void hb_mc_request_packet_set_reg_id(hb_mc_request_packet_t *packet, uint8_t reg_id)
+        static inline void hb_mc_request_packet_set_load_id(hb_mc_request_packet_t *packet, uint8_t load_id)
         {
-                packet->reg_id = reg_id;
+                packet->reg_id = load_id;
         }
 
         /**

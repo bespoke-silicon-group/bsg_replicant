@@ -44,7 +44,7 @@ module bsg_mcl_axil_fifos_slave
   ,input  [     fifo_width_p-1:0] mc_req_i
   ,input                          mc_req_v_i
   ,output                         mc_req_ready_o
-  ,output [ pkt_cnt_width_lp-1:0] rx_pkt_words_o
+  ,output [ pkt_cnt_width_lp-1:0] mc_req_words_o
 );
 
   // synopsys translate_off
@@ -107,7 +107,7 @@ module bsg_mcl_axil_fifos_slave
     .reset_i(reset_i       ),
     .down_i (cnt_down_li   ), // release mc pkt ->
     .up_i   (cnt_up_li     ), // get mc pkt <-
-    .count_o(rx_pkt_words_o)
+    .count_o(mc_req_words_o)
   );
 
 endmodule

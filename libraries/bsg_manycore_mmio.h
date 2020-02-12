@@ -31,21 +31,25 @@
 
 /* PCIe FIFOs */
 #define HB_MC_MMIO_FIFO_DATA_WIDTH 32
+#define HB_MC_MMIO_FIFO_NUM_BYTES 0x10
+
+
+// host transmit fifo vacancy to the manycore request 0x00
+#define HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET 0x00
 
 // For host sending request to manycore
 #define HB_MC_MMIO_FIFO_TX_DATA_OFFSET 0x04
 
-// host receive fifo occupancy from manycore response 0x08
 // host receive fifo occupancy from manycore request 0x18
 #define HB_MC_MMIO_FIFO_RX_OCCUPANCY_OFFSET 0x08
 
 // For host receiving response from manycore 0x0C
 // For host receiving request from manycore 0x1C
-#define HB_MC_MMIO_FIFO_NUM_BYTES 0x10
 #define HB_MC_MMIO_FIFO_RX_DATA_OFFSET 0x0C
 
 #define HB_MC_MMIO_MAX_CREDITS 16
-#define HB_MC_MMIO_CREDITS_HOST_OFFSET 0x2000
+// Out credits of the endpoint standard in mcl
+#define HB_MC_MMIO_OUT_CREDITS_HOST_OFFSET 0x2000
 
 /* AXI base address */
 /* Hammerblade-Manycore ROM */
@@ -62,8 +66,8 @@
 #define hb_mc_mmio_fifo_get_addr(dir, ofs) \
         (hb_mc_mmio_fifo_get_direction_offset(dir) + ofs)
 
-#define hb_mc_mmio_host_credits_get_addr() \
-        HB_MC_MMIO_CREDITS_HOST_OFFSET
+#define hb_mc_mmio_out_credits_get_addr() \
+        HB_MC_MMIO_OUT_CREDITS_HOST_OFFSET
 
 #define hb_mc_mmio_rom_get_addr(ofs) \
         (HB_MC_MMIO_ROM_BASE + ofs)

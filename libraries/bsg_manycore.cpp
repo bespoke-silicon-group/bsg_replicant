@@ -156,6 +156,41 @@ static int hb_mc_manycore_rx_fifo_get_occupancy(hb_mc_manycore_t *mc,
 
 }
 
+/* get the number of remaining packets in a host tx FIFO */
+static int hb_mc_manycore_tx_fifo_get_vacancy(hb_mc_manycore_t *mc,
+                                              hb_mc_fifo_tx_t type,
+                                              uint32_t *vacancy)
+{
+        uint32_t val, vac;
+        uintptr_t vacancy_addr = hb_mc_mmio_fifo_get_addr(type, HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET);
+        const char *typestr = hb_mc_fifo_tx_to_string(type);
+        int err;
+        if (type == HB_MC_FIFO_TX_RSP) {
+            manycore_pr_err(mc, "TX FIFO Vacancy register %s is disabled!\n", typestr);
+            vacancy = NULL;
+            return HB_MC_FAIL;
+        }
+        else {
+            err = hb_mc_manycore_mmio_read32(mc, vacancy_addr, &val);
+            if (err != HB_MC_SUCCESS) {
+                    manycore_pr_err(mc, "Failed to get %s vacancy\n", typestr);
+                    return err;
+            }
+
+            // All packets recieved packets should have an integral vacancy that
+            // is determined by the Packet Bit-Width / FIFO Bit-Width
+            vac = ((sizeof(hb_mc_packet_t) * 8))/HB_MC_MMIO_FIFO_DATA_WIDTH;
+            if((vac < ((sizeof(hb_mc_packet_t) * 8))/HB_MC_MMIO_FIFO_DATA_WIDTH) && (val % vac != 0)) {
+                    manycore_pr_err(mc, "Invalid vacancy: Non-integral packet"
+                                    " received from %s\n", typestr);
+                    return HB_MC_FAIL;
+            }
+            *vacancy = (val / vac);
+            return HB_MC_SUCCESS;
+        }
+
+}
+
 /* read all unread packets from a fifo (rx only) */
 static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 {
@@ -339,36 +374,38 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 /*
  * These might be rewritten to read from MMIO space: hence why error codes are returned.
  */
-static int hb_mc_manycore_get_host_requests_cap(hb_mc_manycore_t *mc, unsigned *cap)
+
+static int hb_mc_manycore_update_requests(hb_mc_manycore_t *mc)
 {
+    unsigned threshold, cap;
+    uint32_t vacancy;
+    int err;
+
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+    threshold = hb_mc_config_get_io_credit_upate_threshold(cfg);
+    cap = hb_mc_config_get_io_host_credits_cap(cfg);
+
+    while (mc->htod_requests >= threshold) {
+        err = hb_mc_manycore_tx_fifo_get_vacancy(mc, HB_MC_FIFO_TX_REQ, &vacancy);
+        if (err != HB_MC_SUCCESS)
+                return err;
+        mc->htod_requests = (cap - vacancy);
+    }
+
+    return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_get_remote_load_cap(hb_mc_manycore_t *mc, unsigned *cap)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         *cap = hb_mc_config_get_io_remote_load_cap(cfg);
         return HB_MC_SUCCESS;
 }
 
-static int hb_mc_manycore_get_host_requests(hb_mc_manycore_t *mc, unsigned *rqsts)
-{
-        *rqsts = mc->htod_requests;
-        return HB_MC_SUCCESS;
-}
 
 static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc, hb_mc_request_packet_t *request)
 {
-        unsigned cap;
-        int err;
-
-        /* stores don't require an increment */
-        if (hb_mc_request_packet_get_op(request) == HB_MC_PACKET_OP_REMOTE_STORE)
-                return HB_MC_SUCCESS;
-
-        err = hb_mc_manycore_get_host_requests_cap(mc, &cap);
-        if (err != HB_MC_SUCCESS)
-                return err;
-
-        if (mc->htod_requests >= cap) {
-                manycore_pr_dbg(mc, "%s: Outstanding requests at cap of %u\n", __func__, cap);
-                return HB_MC_BUSY;
-        }
 
         mc->htod_requests++;
         return HB_MC_SUCCESS;
@@ -586,7 +623,7 @@ int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc)
         uint64_t addr;
         uint32_t value;
         int err;
-        addr = hb_mc_mmio_host_credits_get_addr();
+        addr = hb_mc_mmio_out_credits_get_addr();
         err = hb_mc_manycore_mmio_read32(mc, addr, &value);
         if (err != HB_MC_SUCCESS) {
                 manycore_pr_err(mc, "%s: Failed to read Host Credits Register: %s\n",
@@ -883,16 +920,18 @@ int hb_mc_manycore_request_tx(hb_mc_manycore_t *mc,
         int err;
 
         /* do we have capacity for another request? */
-        err = hb_mc_manycore_incr_host_requests(mc, request);
+        err = hb_mc_manycore_update_requests(mc);
         if (err != HB_MC_SUCCESS)
                 return err;
 
         /* send the request packet */
         err = hb_mc_manycore_packet_tx_internal(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_TX_REQ, timeout);
-        if (err != HB_MC_SUCCESS) {
-                hb_mc_manycore_decr_host_requests(mc);
+        if (err != HB_MC_SUCCESS)
                 return err;
-        }
+
+        err = hb_mc_manycore_incr_host_requests(mc, request);
+        if (err != HB_MC_SUCCESS)
+                return err;
 
         return HB_MC_SUCCESS;
 }
@@ -1131,7 +1170,7 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
                 return err;
 
         // mark request with id
-        hb_mc_request_packet_set_reg_id(&rqst.request, id);
+        hb_mc_request_packet_set_load_id(&rqst.request, id);
         int shift = hb_mc_npa_get_epa(npa) & 0x3;
         /* set the byte mask */
         switch (sz) {
@@ -1441,7 +1480,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         int err;
 
         /* cap the number of load ids to the maximum number of pending requests */
-        err = hb_mc_manycore_get_host_requests_cap(mc, &n_ids);
+        err = hb_mc_manycore_get_remote_load_cap(mc, &n_ids);
         if (err != HB_MC_SUCCESS)
                 return err;
 

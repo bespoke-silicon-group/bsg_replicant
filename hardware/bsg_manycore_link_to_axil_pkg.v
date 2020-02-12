@@ -56,13 +56,19 @@ package bsg_manycore_link_to_axil_pkg;
   parameter mcl_rom_base_addr_gp   = 32'h0000_0000;
   parameter mcl_fifo_base_addr_gp  = 32'h0000_1000;
 
+  // fifo registers
+  //
   parameter mcl_ofs_width_gp    = 8    ;
-  parameter mcl_ofs_tdr_gp      = 8'h04;
-  parameter mcl_ofs_rdr_rsp_gp  = 8'h0C;
-  parameter mcl_ofs_rdfo_req_gp = 8'h18;
-  parameter mcl_ofs_rdr_req_gp  = 8'h1C;
 
-  parameter mcl_ofs_credits_gp  = 32'h2000;  // debug only
+  parameter mcl_ofs_tdfv_req_gp = 8'h00;
+  parameter mcl_ofs_tdr_gp      = 8'h04;
+
+  parameter mcl_ofs_rdr_rsp_gp  = 8'h0C;
+
+  parameter mcl_ofs_rdr_req_gp  = 8'h1C;
+  parameter mcl_ofs_rdfo_req_gp = 8'h18;
+
+  parameter mcl_ofs_credits_gp  = 32'h2000;
 
   localparam integer mcl_addr_width_gp   = `BSG_CDIV(addr_width_p,8)*8  ;
   localparam integer mcl_data_width_gp   = `BSG_CDIV(data_width_p,8)*8  ;
