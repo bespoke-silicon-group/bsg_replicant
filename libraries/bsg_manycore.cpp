@@ -40,6 +40,8 @@
 #include <bsg_test_dram_channel.hpp>
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
+#define DRAM_HACK_WRITE
+//#define DRAM_HACK_READ
 #endif
 
 #ifdef __cplusplus
@@ -1402,19 +1404,16 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
 }
 
 #ifdef COSIM
-static int hb_mc_manycore_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
-{
-}
 /**
- * Write memory out to manycore DRAM via C++ backdoor
+ * Given an NPA that maps to DRAM, return a buffer that holds the data for that address.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
- * @param[in]  data   A buffer to be written out manycore hardware
- * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware - used for sanity check
+ * @param[out] buffer The valid buffer
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
-                                                const void *data, size_t sz)
+static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz,
+                                                   unsigned char **buffer)
 {
     using namespace bsg_test_dram_channel;
 
@@ -1460,15 +1459,75 @@ static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_m
         return HB_MC_FAIL;
     }
 
-    assert(bank*bank_size + epa + sz <= memory->_data.size());
+    address_t addr = bank*bank_size + epa;
 
-    manycore_pr_dbg(mc, "%s: Writing %zu bytes to %s\n",
+    manycore_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",
+                    __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
+
+    /*
+      Don't overflow memory if you can help it.
+    */
+    assert(addr + sz <= memory->_data.size());
+
+    *buffer = &memory->_data[addr];
+    return HB_MC_SUCCESS;
+}
+
+/**
+ * Write memory out to manycore DRAM via C++ backdoor
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                                const void *data, size_t sz)
+{
+
+    unsigned char *membuffer;
+    int err = hb_mc_manycore_npa_to_buffer_cosim_only(mc, npa, sz, &membuffer);
+    if (err != HB_MC_SUCCESS)
+        return err;
+
+    char npa_str[256];
+
+    manycore_pr_dbg(mc, "%s: Writing %3zu bytes to %s\n",
                     __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
 
-    memcpy(reinterpret_cast<void*>(&memory->_data[bank*bank_size + epa]), data, sz);
+    memcpy(reinterpret_cast<void*>(membuffer), data, sz);
 
     return HB_MC_SUCCESS;
 }
+
+
+/**
+ * Read memory from manycore DRAM via C++ backdoor
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
+ * @param[in]  data   A host buffer to be read into from manycore hardware
+ * @param[in]  sz     The number of bytes to read from manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                               void *data, size_t sz)
+{
+
+    unsigned char *membuffer;
+    int err = hb_mc_manycore_npa_to_buffer_cosim_only(mc, npa, sz, &membuffer);
+    if (err != HB_MC_SUCCESS)
+        return err;
+
+    char npa_str[256];
+
+    manycore_pr_dbg(mc, "%s: Reading %3zu bytes from %s\n",
+                    __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+
+    memcpy(data, reinterpret_cast<void*>(membuffer), sz);
+
+    return HB_MC_SUCCESS;
+}
+
 #endif
 
 static int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
@@ -1493,8 +1552,8 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         err = hb_mc_manycore_read_write_mem_check_args(mc, __func__, data, sz);
         if (err != HB_MC_SUCCESS)
                 return err;
-#define DRAM_HACK
-#ifdef  DRAM_HACK
+
+#ifdef DRAM_HACK_WRITE
 #ifdef COSIM
         // is this dram?
         if (hb_mc_manycore_npa_is_dram(mc, npa))
@@ -1761,6 +1820,12 @@ int hb_mc_manycore_read_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (err != HB_MC_SUCCESS)
                 return err;
 
+#ifdef DRAM_HACK_READ
+#ifdef COSIM
+        if (hb_mc_manycore_npa_is_dram(mc, npa))
+            return hb_mc_manycore_read_dram_cosim_only(mc, npa, data, sz);
+#endif
+#endif
         uint32_t *words = static_cast<uint32_t*>(data);
         size_t n_words = sz >> 2;
 
