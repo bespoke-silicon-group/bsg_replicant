@@ -92,6 +92,9 @@ VDEFINES   += DRAMSIM3_MEM_PKG=$(DRAMSIM3_MEM_PKG)
 SIMLIBS += $(TESTBENCH_PATH)/libdramsim3.so
 LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldramsim3
 
+# Define USING_DRAMSIM3 for host library
+$(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1
+
 # Add a clean rule
 .PHONY: dramsim3.clean
 dramsim3.clean:

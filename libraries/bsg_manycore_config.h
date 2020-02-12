@@ -421,7 +421,11 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_get_dram_channels(const hb_mc_config_t *cfg)
         {
+#if defined(USING_DRAMSIM3)
                 return 8; // currently a constant
+#else
+                return 1;
+#endif
         }
 
 
