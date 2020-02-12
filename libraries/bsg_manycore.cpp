@@ -24,7 +24,7 @@
 // ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#define DEBUG
 #include <bsg_manycore.h>
 #include <bsg_manycore_fifo.h>
 #include <bsg_manycore_mmio.h>
@@ -37,11 +37,14 @@
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #else
-#include <bsg_test_dram_channel.hpp>
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
+#if defined(USING_DRAMSIM3)
+#include <bsg_test_dram_channel.hpp>
 #define DRAM_HACK_WRITE
 //#define DRAM_HACK_READ
+#endif
+
 #endif
 
 #ifdef __cplusplus
@@ -1499,7 +1502,7 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
-#ifdef COSIM
+#if defined(DRAM_HACK_WRITE) || defined(DRAM_HACK_READ)
 /**
  * Given an NPA that maps to DRAM, return a buffer that holds the data for that address.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
