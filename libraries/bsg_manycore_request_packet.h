@@ -69,9 +69,15 @@ extern "C" {
 
         typedef enum __hb_mc_packet_op_t {
                 HB_MC_PACKET_OP_REMOTE_LOAD  = 0,
-                HB_MC_PACKET_OP_REMOTE_STORE = 1
+                HB_MC_PACKET_OP_REMOTE_STORE = 1,
+                HB_MC_PACKET_OP_CACHE_OP     = 3, // AFL, AINV, AFLINV
         } hb_mc_packet_op_t;
 
+        typedef enum __hb_mc_packet_cache_op {
+                HB_MC_PACKET_CACHE_OP_AFL    = 0, //!< flush address
+                HB_MC_PACKET_CACHE_OP_AINV   = 1, //!< invalidate address
+                HB_MC_PACKET_CACHE_OP_AFLINV = 2, //!< flush address and invalidate
+        } hb_mc_packet_cache_op_t;
 
         typedef enum __hb_mc_packet_mask_t {
                 HB_MC_PACKET_REQUEST_MASK_BYTE  = 0x1,
@@ -135,6 +141,16 @@ extern "C" {
         static inline uint8_t hb_mc_request_packet_get_mask(const hb_mc_request_packet_t *packet)
         {
                 return packet->op_ex;
+        }
+
+        /**
+         * Get the extended opcode of a request packet (a cache opcode if this is a cache op)
+         * @param[in] packet a request packet
+         * @return the extended cache opcode
+         */
+        static inline uint8_t hb_mc_request_packet_get_cache_op(const hb_mc_request_packet_t *packet)
+        {
+	    return packet->op_ex;
         }
 
         /**
@@ -240,6 +256,17 @@ extern "C" {
         static inline void hb_mc_request_packet_set_mask(hb_mc_request_packet_t *packet, hb_mc_packet_mask_t mask)
         {
                 packet->op_ex = mask;
+        }
+
+        /**
+         * Set the cache opcode in a request packet
+         * @param[in] packet a request packet
+         * @param[in] opcode a cache opcode
+         */
+        static inline void hb_mc_request_packet_set_cache_op(hb_mc_request_packet_t *packet,
+                                                             hb_mc_packet_cache_op_t op)
+        {
+                packet->op_ex = op;
         }
 
         /**
