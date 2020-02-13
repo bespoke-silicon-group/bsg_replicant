@@ -117,6 +117,18 @@ VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh
 VHEADERS += $(HARDWARE_PATH)/cl_id_defines.vh
 
+
+
+# ---------------------------------------------------
+# overwrite the hardware design here
+# ---------------------------------------------------
+QCL_DESIGN_NAME = hbm_manycore
+include $(QCL_REPO_DIR)/environment.mk
+include $(QCL_DESIGN_PATH)/$(QCL_DESIGN_NAME)/hw.mk
+# ===================================================
+
+
+
 # The following functions convert a decimal string to a binary string,
 # and a hexadecimal string (WITHOUT the preceeding 0x) into binary
 # strings of 32-characters in length

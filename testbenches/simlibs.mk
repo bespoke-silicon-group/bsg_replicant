@@ -1,19 +1,19 @@
 # Copyright (c) 2019, University of Washington All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
-# 
+#
 # Redistributions in binary form must reproduce the above copyright notice, this
 # list of conditions and the following disclaimer in the documentation and/or
 # other materials provided with the distribution.
-# 
+#
 # Neither the name of the copyright holder nor the names of its contributors may
 # be used to endorse or promote products derived from this software without
 # specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,7 +33,7 @@ NC=\033[0m
 
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
-# 
+#
 
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
 ifndef TESTBENCH_PATH
@@ -60,8 +60,8 @@ endif
 # This Makefile has several optional "arguments" that are passed as Variables
 #
 # EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
-# 
-# If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
+#
+# If you need additional speed, you can set EXTRA_TURBO=1 during compilation.
 # This is a COMPILATION ONLY option. Any subsequent runs, without compilation
 # will retain this setting
 EXTRA_TURBO      ?= 0
@@ -138,7 +138,7 @@ include $(TESTBENCH_PATH)/ramulator.mk
 include $(TESTBENCH_PATH)/dramsim3.mk
 
 # -------------------- TARGETS --------------------
-# This makefile defines two variables for External Use: 
+# This makefile defines two variables for External Use:
 #
 # SIMLIBS: Targets for building hardware/software simulation libraries
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
@@ -179,11 +179,29 @@ VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 endif
 
+ifeq ($(CL_MANYCORE_MEM_CFG),e_vcache_blocking_axi4_hbm)
+VDEFINES   += AXI_MEMORY_MODEL=1
+VDEFINES   += ECC_DIRECT_EN
+VDEFINES   += RND_ECC_EN
+VDEFINES   += ECC_ADDR_LO=0
+VDEFINES   += ECC_ADDR_HI=0
+VDEFINES   += RND_ECC_WEIGHT=0
+endif
+
+ifeq ($(CL_MANYCORE_MEM_CFG),e_vcache_non_blocking_axi4_hbm)
+VDEFINES   += AXI_MEMORY_MODEL=1
+VDEFINES   += ECC_DIRECT_EN
+VDEFINES   += RND_ECC_EN
+VDEFINES   += ECC_ADDR_LO=0
+VDEFINES   += ECC_ADDR_HI=0
+VDEFINES   += RND_ECC_WEIGHT=0
+endif
+
 ifeq ($(EXTRA_TURBO), 1)
 VLOGAN_VFLAGS += -undef_vcs_macro
 endif
 
-VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES) 
+VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES)
 VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VLOGAN_FILELIST += $(TESTBENCH_PATH)/aws.vcs.f
@@ -224,7 +242,7 @@ $(LIB_OBJECTS): CXXFLAGS += -DCOSIM
 $(LIB_OBJECTS): CFLAGS   += -DCOSIM
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH), so direct the linker there
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(TESTBENCH_PATH) 
+$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(TESTBENCH_PATH)
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-Wl,-rpath=$(TESTBENCH_PATH)
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: $(TESTBENCH_PATH)/libfpga_mgmt.so
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1: %: %.0

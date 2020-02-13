@@ -35,9 +35,9 @@ package cl_manycore_pkg;
 
   parameter axi_id_width_p = 6;
   parameter axi_addr_width_p = 64;
-  parameter axi_data_width_p = 512;
+  parameter axi_data_width_p = 256;
   parameter axi_strb_width_p = (axi_data_width_p>>3);
-  parameter axi_burst_len_p = 1;
+  parameter axi_burst_len_p = block_size_in_words_p * 32 / axi_data_width_p;
 
   // the max number of outstanding requests from the host endpoint to the manycore
   parameter max_out_credits_p = `CL_MANYCORE_IO_EP_MAX_OUT_CREDITS;
