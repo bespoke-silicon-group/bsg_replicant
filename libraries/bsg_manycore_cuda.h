@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 
-        // Kernel is not loaded into tile if kernel poitner equals this value.
+        // Kernel is not loaded into tile if kernel pointer equals this value.
 #define HB_MC_CUDA_KERNEL_NOT_LOADED_VAL        0x0001
         // The value that is written on to finish_signal_addr to show that tile group execution is done.
 #define HB_MC_CUDA_FINISH_SIGNAL_VAL            0x0001  
@@ -147,7 +147,8 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_device_init (hb_mc_device_t *device,
                                const char *name,
-                               hb_mc_manycore_id_t id);
+                               hb_mc_manycore_id_t id,
+                               hb_mc_dimension_t dim);
 
 
 
