@@ -439,6 +439,10 @@ static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc, hb_mc_request_
         if (hb_mc_request_packet_get_op(request) == HB_MC_PACKET_OP_REMOTE_STORE)
                 return HB_MC_SUCCESS;
 
+        /* cache operations don't require an increment */
+        if (hb_mc_request_packet_get_op(request) == HB_MC_PACKET_OP_CACHE_OP)
+                return HB_MC_SUCCESS;
+
         err = hb_mc_manycore_get_host_requests_cap(mc, &cap);
         if (err != HB_MC_SUCCESS)
                 return err;
@@ -1258,6 +1262,22 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
         return 0;
 }
 
+static int hb_mc_manycore_format_cache_op_request_packet(hb_mc_manycore_t *mc,
+                                                         hb_mc_request_packet_t *pkt,
+                                                         const hb_mc_npa_t *npa,
+                                                         hb_mc_packet_cache_op_t opcode)
+{
+        int r;
+
+        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+                return r;
+
+        hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_CACHE_OP);
+        hb_mc_request_packet_set_cache_op(pkt, opcode);
+
+        return 0;
+}
+
 ////////////////
 // Memory API //
 ////////////////
@@ -1502,6 +1522,77 @@ static int hb_mc_manycore_read_write_mem_check_args(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
+//////////////////////
+// Cache Operations //
+//////////////////////
+static int hb_mc_manycore_apply_to_vcache_line(hb_mc_manycore_t *mc,
+                                               const hb_mc_npa_t *npa,
+                                               hb_mc_packet_cache_op_t cache_op)
+{
+        int err;
+        hb_mc_request_packet_t pkt;
+
+        if ((err = hb_mc_manycore_format_cache_op_request_packet(mc, &pkt, npa, cache_op)))
+                return err;
+
+        err = hb_mc_manycore_request_tx(mc, &pkt, -1);
+        if (err != HB_MC_SUCCESS) {
+                manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
+                                __func__, hb_mc_strerror(err));
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_apply_to_vcache_lines(hb_mc_manycore_t *mc,
+                                                const hb_mc_npa_t *npa,
+                                                size_t range_sz,
+                                                hb_mc_packet_cache_op_t cache_op)
+{
+        hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        ssize_t sz = static_cast<ssize_t>(range_sz);
+        ssize_t bsize = static_cast<ssize_t>(hb_mc_config_get_vcache_block_size(cfg));
+        int err;
+
+        // align npa to closest cache line
+        sz += (epa & (bsize - 1));
+        epa &= -bsize;
+
+        // until we've applied op the entire range...
+        while (sz > 0) {
+                // apply op to line address
+                hb_mc_npa_t line_npa = *npa;
+                hb_mc_npa_set_epa(&line_npa, epa);
+
+                err = hb_mc_manycore_apply_to_vcache_line(mc, npa, cache_op);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+
+                // next line
+                sz -= std::min(sz, bsize);
+                epa += bsize;
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+static
+int hb_mc_manycore_invalidate_vcache_lines(hb_mc_manycore_t *mc,
+                                           const hb_mc_npa_t *npa,
+                                           size_t sz)
+{
+        return hb_mc_manycore_apply_to_vcache_lines(mc, npa, sz, HB_MC_PACKET_CACHE_OP_AINV);
+}
+
+static
+int hb_mc_manycore_flush_vcache_lines(hb_mc_manycore_t *mc,
+                                      const hb_mc_npa_t *npa,
+                                      size_t sz)
+{
+        return hb_mc_manycore_apply_to_vcache_lines(mc, npa, sz, HB_MC_PACKET_CACHE_OP_AFL);
+}
+
 #if defined(DRAM_HACK_WRITE) || defined(DRAM_HACK_READ)
 /**
  * Given an NPA that maps to DRAM, return a buffer that holds the data for that address.
@@ -1533,6 +1624,9 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
     unsigned long caches = hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg));
     unsigned long channels = hb_mc_config_get_dram_channels(cfg);
     unsigned long caches_per_channel = caches/channels;
+
+    manycore_pr_dbg(mc, "%s: caches = %lu, channels = %lu, caches_per_channel = %lu\n",
+                    __func__, caches, channels, caches_per_channel);
 
     /*
       Figure out which memory channel and bank this NPA maps to.
@@ -1596,6 +1690,11 @@ static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_m
 
     memcpy(reinterpret_cast<void*>(membuffer), data, sz);
 
+    // invalidate the cache lines written
+    err = hb_mc_manycore_invalidate_vcache_lines(mc, npa, sz);
+    if (err != HB_MC_SUCCESS)
+            return err;
+
     return HB_MC_SUCCESS;
 }
 
@@ -1618,6 +1717,17 @@ static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc
         return err;
 
     char npa_str[256];
+
+    // flush the cache lines to be read
+    err = hb_mc_manycore_flush_vcache_lines(mc, npa, sz);
+    if (err != HB_MC_SUCCESS)
+            return err;
+
+    // read a single word from cache - when it completes perform buffered read
+    uint32_t dummy;
+    err = hb_mc_manycore_read32(mc, npa, &dummy);
+    if (err != HB_MC_SUCCESS)
+            return err;
 
     manycore_pr_dbg(mc, "%s: Reading %3zu bytes from %s\n",
                     __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
