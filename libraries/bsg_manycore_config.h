@@ -91,6 +91,7 @@ extern "C" {
                 uint32_t vcache_stripe_words;
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
+                uint32_t io_endpoint_max_out_credits;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -114,7 +115,8 @@ extern "C" {
                 HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 16,
                 HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
-                HB_MC_CONFIG_MAX = 19
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
+                HB_MC_CONFIG_MAX = 20
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -146,6 +148,7 @@ extern "C" {
                         [HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS] = "BLADERUNNER VCACHE MISS FIFO ELS",
                         [HB_MC_CONFIG_IO_REMOTE_LOAD_CAP] = "BLADERUNNER IO REMOTE LOAD CAPACITY",
                         [HB_MC_CONFIG_IO_HOST_CREDITS_CAP] = "BLADERUNNER IO HOST REQUEST CREDITS CAPACITY",
+                        [HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS] = "BLADERUNNER IO ENDPOINT MAX OUT CREDITS",
                 };
                 return strtab[id];
         }
@@ -387,6 +390,16 @@ extern "C" {
         {
                 return cfg->io_host_credits_cap;
                 // return cfg->io_host_credits_cap/2;
+        }
+
+        /**
+         * Return the max out credits of the manycore endpoint standard module in the IO interface.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the max out credits of the manycore endpoint standard module in the IO interface.
+         */
+        static inline uint32_t hb_mc_config_get_io_endpoint_max_out_credits(const hb_mc_config_t *cfg)
+        {
+                return cfg->io_endpoint_max_out_credits;
         }
 
 

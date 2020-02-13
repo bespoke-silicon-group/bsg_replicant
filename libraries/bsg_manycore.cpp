@@ -107,9 +107,9 @@ static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc);
 static int  hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc);
 static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc);
 
-static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
+static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
                                              hb_mc_packet_t *packet,
-                                             hb_mc_fifo_rx_t type,
+                                             hb_mc_fifo_tx_t type,
                                              long timeout);
 
 static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
@@ -371,9 +371,69 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 }
 
 
-/*
- * These might be rewritten to read from MMIO space: hence why error codes are returned.
- */
+/////////////////////////////////
+/* Flow Control Help Functions */
+/////////////////////////////////
+int hb_mc_manycore_get_endpoint_max_out_credits(hb_mc_manycore_t *mc, unsigned *max_credits)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        *max_credits = hb_mc_config_get_io_endpoint_max_out_credits(cfg);
+        return HB_MC_SUCCESS;
+}
+
+
+static int hb_mc_manycore_get_remote_load_cap(hb_mc_manycore_t *mc, unsigned *cap)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        *cap = hb_mc_config_get_io_remote_load_cap(cfg);
+        return HB_MC_SUCCESS;
+}
+
+
+static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc)
+{
+
+        mc->htod_requests++;
+        return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_decr_host_requests(hb_mc_manycore_t *mc)
+{
+        if (mc->htod_requests == 0) {
+                manycore_pr_err(mc, "%s: No outstanding requests!\n", __func__);
+                return HB_MC_FAIL;
+        }
+
+        mc->htod_requests--;
+        return HB_MC_SUCCESS;
+}
+
+static int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc)
+{
+    unsigned cap;
+    unsigned max_credits;
+
+    uint32_t vacancy;
+    int ep_out_credits;
+    int err;
+
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+    cap = hb_mc_config_get_io_host_credits_cap(cfg);
+    err = hb_mc_manycore_get_endpoint_max_out_credits(mc, &max_credits);
+    if (err != HB_MC_SUCCESS)
+            return err;
+
+    // wait until out credts are fully resumed, and the tx fifo vacancy equals to host credits
+    while ((vacancy != cap) | (ep_out_credits != max_credits)) {
+        err = hb_mc_manycore_tx_fifo_get_vacancy(mc, HB_MC_FIFO_TX_REQ, &vacancy);
+        if (err != HB_MC_SUCCESS)
+                return err;
+        ep_out_credits = hb_mc_manycore_get_host_credits(mc);
+    }
+
+    return HB_MC_SUCCESS;
+}
 
 static int hb_mc_manycore_update_requests(hb_mc_manycore_t *mc)
 {
@@ -396,37 +456,13 @@ static int hb_mc_manycore_update_requests(hb_mc_manycore_t *mc)
     return HB_MC_SUCCESS;
 }
 
-static int hb_mc_manycore_get_remote_load_cap(hb_mc_manycore_t *mc, unsigned *cap)
-{
-        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        *cap = hb_mc_config_get_io_remote_load_cap(cfg);
-        return HB_MC_SUCCESS;
-}
-
-
-static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc, hb_mc_request_packet_t *request)
-{
-
-        mc->htod_requests++;
-        return HB_MC_SUCCESS;
-}
-
-static int hb_mc_manycore_decr_host_requests(hb_mc_manycore_t *mc)
-{
-        if (mc->htod_requests == 0) {
-                manycore_pr_err(mc, "%s: No outstanding requests!\n", __func__);
-                return HB_MC_FAIL;
-        }
-
-        mc->htod_requests--;
-        return HB_MC_SUCCESS;
-}
-
 static int hb_mc_manycore_host_requests_init(hb_mc_manycore_t *mc)
 {
         mc->htod_requests = 0;
         return HB_MC_SUCCESS;
 }
+
+
 
 static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 {
@@ -919,17 +955,12 @@ int hb_mc_manycore_request_tx(hb_mc_manycore_t *mc,
 {
         int err;
 
-        /* do we have capacity for another request? */
-        err = hb_mc_manycore_update_requests(mc);
-        if (err != HB_MC_SUCCESS)
-                return err;
-
         /* send the request packet */
         err = hb_mc_manycore_packet_tx_internal(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_TX_REQ, timeout);
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        err = hb_mc_manycore_incr_host_requests(mc, request);
+        err = hb_mc_manycore_incr_host_requests(mc);
         if (err != HB_MC_SUCCESS)
                 return err;
 
@@ -1390,6 +1421,11 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         /* send store requests one word at a time */
         for (size_t i = 0; i < n_words; i++) {
 
+                /* do we have capacity for another request? */
+                err = hb_mc_manycore_update_requests(mc);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+
                 err = hb_mc_manycore_write(mc, &addr, &words[i], 4);
                 if (err != HB_MC_SUCCESS) {
                         manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
@@ -1397,9 +1433,21 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                         return err;
                 }
 
+                err = hb_mc_manycore_incr_host_requests(mc);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+
                 // Increment EPA by 4:
                 hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + 4);
         }
+
+        err = hb_mc_manycore_host_request_fence(mc);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        err = hb_mc_manycore_host_requests_init(mc);
+        if (err != HB_MC_SUCCESS)
+                return err;
 
 #ifdef COSIM
         sv_set_virtual_dip_switch(0, 0);

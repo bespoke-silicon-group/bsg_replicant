@@ -57,25 +57,30 @@ int test_rom (int argc, char **argv) {
         }
 
         config = hb_mc_manycore_get_config(&mc);
-        /* Test host credit return value. Expect 16 and fail otherwise */
-        expected = HB_MC_MMIO_MAX_CREDITS;
-        bsg_pr_test_info("Checking that the number of host credits is %d\n", expected);
-        // bsg_pr_test_info("(I know it's a magic number...)\n");
+
+
+        rc = hb_mc_manycore_get_endpoint_max_out_credits(&mc, &expected);
+        if(rc != HB_MC_SUCCESS){
+                bsg_pr_test_err("Failed to get the max out credits: %s\n",
+                                hb_mc_strerror(rc));
+                return HB_MC_FAIL;
+        }
+        bsg_pr_test_info("Checking from ROM that the expected out credits of endpoint is %d\n", expected);
 
         // check enough times to let the credit resume...
+        int max_trail_num = expected;
         uint32_t matched = 0;
-        for (unsigned i = 0; i < HB_MC_MMIO_MAX_CREDITS; i++) {
+        for (unsigned i = 0; i < max_trail_num; i++) {
             result = hb_mc_manycore_get_host_credits(&mc);
-            bsg_pr_test_info("Try No. %d: host credits is %d\n", i, result);
+            bsg_pr_test_info("Try No. %d: out credits of endpoint is %d\n", i, result);
             if(result == expected) {
                 matched = 1;
                 break;
             }
-
         }
 
         if (!matched) {
-            bsg_pr_test_err("Incorrect number of host credits. "
+            bsg_pr_test_err("Incorrect number of out credits. "
                             "Got: %d, expected %d\n", result, expected);
             bsg_pr_test_err("Have you programed your FPGA"
                             " (fpga-load-local-image)\n");

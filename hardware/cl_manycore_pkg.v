@@ -11,7 +11,7 @@ package cl_manycore_pkg;
   `include "bsg_defines.v"
   `include "f1_parameters.vh"
   import bsg_bladerunner_mem_cfg_pkg::*;
-  
+
   parameter bsg_bladerunner_mem_cfg_e mem_cfg_p = `CL_MANYCORE_MEM_CFG;
   parameter addr_width_p = `CL_MANYCORE_MAX_EPA_WIDTH;
   parameter data_width_p = `CL_MANYCORE_DATA_WIDTH;
@@ -40,7 +40,7 @@ package cl_manycore_pkg;
   parameter axi_burst_len_p = 1;
 
   // the max number of outstanding requests from the host endpoint to the manycore
-  parameter max_out_credits_p = 16;
+  parameter max_out_credits_p = `CL_MANYCORE_IO_EP_MAX_OUT_CREDITS;
 
 endpackage
 

@@ -67,6 +67,7 @@ CL_MANYCORE_VCACHE_MISS_FIFO_ELS     := $(BSG_MACHINE_VCACHE_MISS_FIFO_ELS)
 CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS := $(BSG_MACHINE_VCACHE_STRIPE_SIZE_WORDS)
 CL_MANYCORE_IO_REMOTE_LOAD_CAP       := $(BSG_MACHINE_IO_REMOTE_LOAD_CAP)
 CL_MANYCORE_IO_HOST_CREDITS_CAP      := $(BSG_MACHINE_IO_HOST_CREDITS_CAP)
+CL_MANYCORE_IO_EP_MAX_OUT_CREDITS    := $(BSG_MACHINE_IO_EP_MAX_OUT_CREDITS)
 CL_MANYCORE_BRANCH_TRACE_EN          := $(BSG_MACHINE_BRANCH_TRACE_EN)
 CL_MANYCORE_RELEASE_VERSION          ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
 CL_MANYCORE_COMPILATION_DATE         ?= $(shell date +%m%d%Y)
@@ -155,6 +156,7 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_MISS_FIFO_ELS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_REMOTE_LOAD_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_HOST_CREDITS_CAP)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)) >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define
@@ -174,6 +176,7 @@ $(HARDWARE_PATH)/f1_parameters.vh: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo "\`define CL_MANYCORE_VCACHE_MISS_FIFO_ELS $(CL_MANYCORE_VCACHE_MISS_FIFO_ELS)" >> $@
 	@echo "\`define CL_MANYCORE_MEM_CFG $(CL_MANYCORE_MEM_CFG)" >> $@
 	@echo "\`define CL_MANYCORE_BRANCH_TRACE_EN $(CL_MANYCORE_BRANCH_TRACE_EN)" >> $@
+	@echo "\`define CL_MANYCORE_IO_EP_MAX_OUT_CREDITS $(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)" >> $@
 	@echo "\`endif" >> $@
 
 # This package defines the number of lines in the ROM

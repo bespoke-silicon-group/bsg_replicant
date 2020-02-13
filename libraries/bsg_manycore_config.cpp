@@ -147,5 +147,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 
         config->io_host_credits_cap = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
 
+        config->io_endpoint_max_out_credits = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
+
         return HB_MC_SUCCESS;
 }

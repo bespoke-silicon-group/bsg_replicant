@@ -47,7 +47,6 @@
 // For host receiving request from manycore 0x1C
 #define HB_MC_MMIO_FIFO_RX_DATA_OFFSET 0x0C
 
-#define HB_MC_MMIO_MAX_CREDITS 16
 // Out credits of the endpoint standard in mcl
 #define HB_MC_MMIO_OUT_CREDITS_HOST_OFFSET 0x2000
 

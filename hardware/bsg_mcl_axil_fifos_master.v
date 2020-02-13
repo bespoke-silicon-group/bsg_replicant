@@ -97,9 +97,9 @@ module bsg_mcl_axil_fifos_master
 
   // size of the req fifo >= host read credits, here we set equal for uniformity
   bsg_fifo_1r1w_small #(
-    .width_p           (axil_data_width_p              ),
-    .els_p             (sipo_els_lp*host_read_credits_p),
-    .ready_THEN_valid_p(0                              )
+    .width_p           (axil_data_width_p                  ),
+    .els_p             (sipo_els_lp*(host_read_credits_p-1)),
+    .ready_THEN_valid_p(0                                  )
   ) fifo_req (
     .clk_i  (clk_i          ),
     .reset_i(reset_i        ),

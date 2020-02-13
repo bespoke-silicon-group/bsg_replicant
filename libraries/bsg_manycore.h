@@ -416,6 +416,8 @@ extern "C" {
          */
         int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc);
 
+        int hb_mc_manycore_get_endpoint_max_out_credits(hb_mc_manycore_t *mc, unsigned *max_credit);
+
 
 #ifdef __cplusplus
 }
