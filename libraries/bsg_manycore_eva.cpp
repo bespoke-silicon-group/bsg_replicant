@@ -1064,21 +1064,25 @@ static size_t min_size_t(size_t x, size_t y)
  * Sending packets is expensive, so we don't want to scan any cache way more than once.
  * That's why we keep this table to track what addresses are in cache.
  */
+template <typename IfInCacheFunction>
 class TagTable {
 public:
     using index_t = hb_mc_epa_t;
     using way_t   = hb_mc_epa_t;
     using tag_table_t = std::map<hb_mc_epa_t, hb_mc_epa_t>;
 
-    TagTable(hb_mc_manycore_t *mc) :
+    TagTable(hb_mc_manycore_t *mc, IfInCacheFunction if_in_cache) :
         _mc(mc),
-        _global_tag_table(get_num_caches()) {
+        _global_tag_table(get_num_caches()),
+	_if_in_cache(if_in_cache) {
     }
 
     int check_in_cache(hb_mc_npa_t npa) {
         hb_mc_epa_t addr = get_epa(npa);
         hb_mc_epa_t index = hb_mc_vcache_set(_mc, addr);
         tag_table_t &tag_table = _global_tag_table[get_x(npa)];
+	bool is_in_cache = false;
+	int err;
 
         // for each way in this set...
         for (hb_mc_epa_t way = 0; way < get_associativity(); way++) {
@@ -1089,7 +1093,6 @@ public:
             if (e == tag_table.end()) {
                 // read the tag from cache
                 uint32_t tag;
-                int err;
                 hb_mc_npa_t way_npa = npa;
                 hb_mc_npa_set_epa(&way_npa, way_addr);
                 err = hb_mc_manycore_read32(_mc, &way_npa, &tag);
@@ -1101,22 +1104,24 @@ public:
 
                 // match?
                 if (hb_mc_vcache_tag_epa(_mc, tag) == addr) {
-                    _in_cache.push_back(npa);
-                    return HB_MC_SUCCESS;
-                }
-
+		    is_in_cache = true;
+		    break;
+		}
+	    // match?
             } else if (e->second == addr) {
-                _in_cache.push_back(npa);
-                return HB_MC_SUCCESS;
+		is_in_cache = true;
+		break;
             }
         }
 
+	if (is_in_cache) {
+	    err = _if_in_cache(_mc, npa);
+	    if (err != HB_MC_SUCCESS)
+		return err;
+	}
+
         // not in cache
         return HB_MC_SUCCESS;
-    }
-
-    std::vector<hb_mc_npa_t> in_cache() {
-        return std::move(_in_cache);
     }
 
 private:
@@ -1138,8 +1143,8 @@ private:
     hb_mc_manycore_t * _mc;
     // a way address is in here if it has been scanned - contains read value
     std::vector<tag_table_t> _global_tag_table;
-
-    std::vector<hb_mc_npa_t> _in_cache;
+    // called when a queried npa is in cache
+    IfInCacheFunction _if_in_cache;
 };
 
 /**
@@ -1152,18 +1157,19 @@ private:
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-extern "C" int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
-                                 const hb_mc_eva_map_t *map,
-                                 const hb_mc_coordinate_t *tgt,
-                                 const hb_mc_eva_t *eva,
-                                 const void *data, size_t sz)
+template <typename WriteFunction>
+int hb_mc_manycore_eva_write_internal(hb_mc_manycore_t *mc,
+				      const hb_mc_eva_map_t *map,
+				      const hb_mc_coordinate_t *tgt,
+				      const hb_mc_eva_t *eva,
+				      const void *data, size_t sz,
+				      WriteFunction write_function)
 {
         int err;
         size_t dest_sz, xfer_sz;
         hb_mc_npa_t dest_npa;
         char *destp;
         hb_mc_eva_t curr_eva = *eva;
-        TagTable tag_table(mc);
 
         destp = (char *)data;
         while(sz > 0){
@@ -1181,29 +1187,57 @@ extern "C" int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
                            curr_eva,
                            hb_mc_npa_to_string(&dest_npa, npa_str, sizeof(npa_str)));
 
-                err = hb_mc_manycore_dma_write_no_cache_ainv(mc, &dest_npa, destp, xfer_sz);
+                err = write_function(mc, &dest_npa, destp, xfer_sz);
                 if(err != HB_MC_SUCCESS){
                         bsg_pr_err("%s: Failed to copy data from host to NPA\n",
                                    __func__);
                         return err;
                 }
 
-                // todo: enumerate all lines in stripe (currently there's only one per)
-                tag_table.check_in_cache(dest_npa);
-
                 destp += xfer_sz;
                 sz -= xfer_sz;
                 curr_eva += xfer_sz;
         }
 
-        // flush dirty lines
-        for (hb_mc_npa_t & dirty_npa : tag_table.in_cache()) {
-            err = hb_mc_manycore_vcache_invalidate_npa_range(mc, &dirty_npa, sizeof(uint32_t));
-            if (err != HB_MC_SUCCESS)
-                return err;
-        }
-
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Write memory out to manycore hardware starting at a given EVA
+ * @param[in]  mc     An initialized manycore struct
+ * @param[in]  map    An eva map for computing the eva to npa translation
+ * @param[in]  tgt    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    A valid hb_mc_eva_t
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+extern "C" int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
+                                 const hb_mc_eva_map_t *map,
+                                 const hb_mc_coordinate_t *tgt,
+                                 const hb_mc_eva_t *eva,
+                                 const void *data, size_t sz)
+{
+	auto if_in_cache_function = [] (hb_mc_manycore_t *mc, hb_mc_npa_t npa)
+		{
+			return hb_mc_manycore_vcache_invalidate_npa_range(mc, &npa, sizeof(uint32_t));
+		};
+
+        TagTable <decltype(if_in_cache_function)> tag_table(mc, if_in_cache_function);
+
+	auto write_function  = [&tag_table](hb_mc_manycore_t *mc,
+					   const hb_mc_npa_t *npa,
+					   void *data, size_t sz)
+		{
+			int err;
+			err = hb_mc_manycore_dma_write_no_cache_ainv(mc, npa, data, sz);
+			if (err != HB_MC_SUCCESS)
+				return err;
+
+			return tag_table.check_in_cache(*npa);
+		};
+
+	return hb_mc_manycore_eva_write_internal(mc, map, tgt, eva, data, sz, write_function);
 }
 
 /**
@@ -1270,18 +1304,19 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-extern "C" int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
-                                           const hb_mc_eva_map_t *map,
-                                           const hb_mc_coordinate_t *tgt,
-                                           const hb_mc_eva_t *eva,
-                                           void *data, size_t sz)
+template <typename ReadFunction>
+int hb_mc_manycore_eva_read_internal(hb_mc_manycore_t *mc,
+				     const hb_mc_eva_map_t *map,
+				     const hb_mc_coordinate_t *tgt,
+				     const hb_mc_eva_t *eva,
+				     void *data, size_t sz,
+				     ReadFunction read_function)
 {
         int err;
         size_t src_sz, xfer_sz;
         hb_mc_npa_t src_npa;
         char *srcp;
         hb_mc_eva_t curr_eva = *eva;
-        TagTable tag_table(mc);
 
         srcp = (char *)data;
         while(sz > 0){
@@ -1300,27 +1335,62 @@ extern "C" int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
                            curr_eva,
                            hb_mc_npa_to_string(&src_npa, npa_str, sizeof(npa_str)));
 
-                err = hb_mc_manycore_dma_read_no_cache_afl(mc, &src_npa, srcp, xfer_sz);
+                err = read_function(mc, &src_npa, srcp, xfer_sz);
                 if(err != HB_MC_SUCCESS){
                         bsg_pr_err("%s: Failed to copy data from host to NPA\n",
                                    __func__);
                         return err;
                 }
 
-                tag_table.check_in_cache(src_npa);
-
                 srcp += xfer_sz;
                 sz -= xfer_sz;
                 curr_eva += xfer_sz;
         }
 
-        for (hb_mc_npa_t & cached_npa : tag_table.in_cache()) {
-            err = hb_mc_manycore_vcache_flush_npa_range(mc, &cached_npa, sizeof(uint32_t));
-            if (err != HB_MC_SUCCESS)
-                return err;
-        }
-
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Read memory from manycore hardware starting at a given EVA
+ * @param[in]  mc     An initialized manycore struct
+ * @param[in]  map    An eva map for computing the eva to npa map
+ * @param[in]  tgt    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    A valid hb_mc_eva_t
+ * @param[out] data   A buffer into which data will be read
+ * @param[in]  sz     The number of bytes to read from the manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+extern "C" int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
+                                           const hb_mc_eva_map_t *map,
+                                           const hb_mc_coordinate_t *tgt,
+                                           const hb_mc_eva_t *eva,
+                                           void *data, size_t sz)
+{
+	auto if_in_cache_function = [](hb_mc_manycore_t *mc, hb_mc_npa_t npa)
+		{
+			int err = hb_mc_manycore_vcache_flush_npa_range(mc, &npa, sizeof(uint32_t));
+			if (err != HB_MC_SUCCESS)
+				return err;
+
+			// read from the npa to be sure its flushed
+			uint32_t dummy;
+			return hb_mc_manycore_read32(mc, &npa, &dummy);
+		};
+
+        TagTable <decltype(if_in_cache_function)> tag_table(mc, if_in_cache_function);
+
+	auto read_function = [&tag_table](hb_mc_manycore_t *mc,
+					 const hb_mc_npa_t *npa,
+					 void *data, size_t sz)
+		{
+			int err = tag_table.check_in_cache(*npa);
+			if (err != HB_MC_SUCCESS)
+				return err;
+
+			return hb_mc_manycore_dma_read_no_cache_afl(mc, npa, data, sz);
+		};
+
+	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz, read_function);
 }
 
 /**
