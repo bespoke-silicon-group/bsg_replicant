@@ -235,7 +235,7 @@ extern "C" {
          * @parma[in]  src           EVA address of source to be copied from
          * @parma[in]  dst           EVA address of destination to be copied into
          * @param[in]  name          EVA address of dst
-         * @param[in]  count         Size of buffer (number of words) to be copied
+         * @param[in]  count         Size of buffer (number of bytes) to be copied
          * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
