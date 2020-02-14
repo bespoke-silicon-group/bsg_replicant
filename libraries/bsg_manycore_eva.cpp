@@ -1148,7 +1148,7 @@ private:
 };
 
 /**
- * Write memory out to manycore hardware starting at a given EVA
+ * Internal function to write memory out to manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tgt    Coordinate of the tile issuing this #eva
@@ -1156,6 +1156,8 @@ private:
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ *
+ * This function implements the general algorithm for writing a contiguous EVA region.
  */
 template <typename WriteFunction>
 int hb_mc_manycore_eva_write_internal(hb_mc_manycore_t *mc,
@@ -1203,7 +1205,7 @@ int hb_mc_manycore_eva_write_internal(hb_mc_manycore_t *mc,
 }
 
 /**
- * Write memory out to manycore hardware starting at a given EVA
+ * Write memory out to manycore hardware starting at a given EVA via DMA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tgt    Coordinate of the tile issuing this #eva
@@ -1256,46 +1258,13 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
                              const hb_mc_eva_t *eva,
                              const void *data, size_t sz)
 {
-        int err;
-        size_t dest_sz, xfer_sz;
-        hb_mc_npa_t dest_npa;
-        char *destp;
-        hb_mc_eva_t curr_eva = *eva;
-
-        destp = (char *)data;
-        while(sz > 0){
-                err = hb_mc_eva_to_npa(mc, map, tgt, &curr_eva, &dest_npa, &dest_sz);
-                if(err != HB_MC_SUCCESS){
-                        bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
-                                   __func__);
-                        return err;
-                }
-                xfer_sz = min_size_t(sz, dest_sz);
-
-                char npa_str[256];
-                bsg_pr_dbg("writing %zd bytes to eva %08x (%s)\n",
-                           xfer_sz,
-                           curr_eva,
-                           hb_mc_npa_to_string(&dest_npa, npa_str, sizeof(npa_str)));
-
-                err = hb_mc_manycore_write_mem(mc, &dest_npa, destp, xfer_sz);
-                if(err != HB_MC_SUCCESS){
-                        bsg_pr_err("%s: Failed to copy data from host to NPA\n",
-                                   __func__);
-                        return err;
-                }
-
-                destp += xfer_sz;
-                sz -= xfer_sz;
-                curr_eva += xfer_sz;
-        }
-
-        return HB_MC_SUCCESS;
+        return hb_mc_manycore_eva_write_internal(mc,map, tgt, eva, data, sz,
+						 hb_mc_manycore_write_mem);
 }
 
 
 /**
- * Read memory from manycore hardware starting at a given EVA
+ * Internal function to read memory from manycore hardware starting at a given EVA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa map
  * @param[in]  tgt    Coordinate of the tile issuing this #eva
@@ -1303,6 +1272,8 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ *
+ * This function implements the general algorithm for reading a contiguous EVA region.
  */
 template <typename ReadFunction>
 int hb_mc_manycore_eva_read_internal(hb_mc_manycore_t *mc,
@@ -1409,41 +1380,8 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
                             const hb_mc_eva_t *eva,
                             void *data, size_t sz)
 {
-        int err;
-        size_t src_sz, xfer_sz;
-        hb_mc_npa_t src_npa;
-        char *srcp;
-        hb_mc_eva_t curr_eva = *eva;
-
-        srcp = (char *)data;
-        while(sz > 0){
-                err = hb_mc_eva_to_npa(mc, map, tgt, &curr_eva, &src_npa, &src_sz);
-                if(err != HB_MC_SUCCESS){
-                        bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
-                                   __func__);
-                        return err;
-                }
-
-                xfer_sz = min_size_t(sz, src_sz);
-
-                char npa_str[256];
-                bsg_pr_dbg("read %zd bytes from eva %08x (%s)\n",
-                           xfer_sz,
-                           curr_eva,
-                           hb_mc_npa_to_string(&src_npa, npa_str, sizeof(npa_str)));
-
-                err = hb_mc_manycore_read_mem(mc, &src_npa, srcp, xfer_sz);
-                if(err != HB_MC_SUCCESS){
-                        bsg_pr_err("%s: Failed to copy data from host to NPA\n",
-                                   __func__);
-                        return err;
-                }
-
-                srcp += xfer_sz;
-                sz -= xfer_sz;
-                curr_eva += xfer_sz;
-        }
-        return HB_MC_SUCCESS;
+	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
+						hb_mc_manycore_read_mem);
 }
 
 /**
