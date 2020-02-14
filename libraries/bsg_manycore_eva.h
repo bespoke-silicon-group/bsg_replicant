@@ -291,7 +291,7 @@ extern "C" {
 					const hb_mc_eva_map_t *map,
 					const hb_mc_coordinate_t *tgt,
 					const hb_mc_eva_t *eva,
-					void *data, size_t sz)
+					void *data, size_t sz);
 #ifdef __cplusplus
 }
 #endif
