@@ -1582,7 +1582,6 @@ int hb_mc_manycore_supports_dma_read(const hb_mc_manycore *mc)
  * This function is not supported on all HammerBlade platforms.
  * Please check the return code for HB_MC_NOIMPL.
  */
-__attribute__((warn_unused_result))
 int hb_mc_manycore_dma_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                              const void *data, size_t sz)
 {
@@ -1608,7 +1607,6 @@ int hb_mc_manycore_dma_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
  * This function is not supported on all HammerBlade platforms.
  * Please check the return code for HB_MC_NOIMPL.
  */
-__attribute__((warn_unused_result))
 int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                                            const void *data, size_t sz)
 {
@@ -1645,7 +1643,6 @@ int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa
  * This function is not supported on all HammerBlade platforms.
  * Please check the return code for HB_MC_NOIMPL.
  */
-__attribute__((warn_unused_result))
 int hb_mc_manycore_dma_read_no_cache_afl(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                                          void *data, size_t sz)
 {
@@ -1679,7 +1676,6 @@ int hb_mc_manycore_dma_read_no_cache_afl(hb_mc_manycore_t *mc, const hb_mc_npa_t
  * This function is not supported on all HammerBlade platforms.
  * Please check the return code for HB_MC_NOIMPL.
  */
-__attribute__((warn_unused_result))
 int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                             void *data, size_t sz)
 {
