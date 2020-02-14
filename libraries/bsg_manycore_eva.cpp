@@ -1224,12 +1224,12 @@ int hb_mc_manycore_eva_write_internal(hb_mc_manycore_t *mc,
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa translation
  * @param[in]  tgt    Coordinate of the tile issuing this #eva
- * @param[in]  eva    A valid hb_mc_eva_t
+ * @param[in]  eva    A valid hb_mc_eva_t - must map to DRAM
  * @param[in]  data   A buffer to be written out manycore hardware
  * @param[in]  sz     The number of bytes to write to manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-extern "C" int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
+int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
                                  const hb_mc_eva_map_t *map,
                                  const hb_mc_coordinate_t *tgt,
                                  const hb_mc_eva_t *eva,
@@ -1352,20 +1352,20 @@ int hb_mc_manycore_eva_read_internal(hb_mc_manycore_t *mc,
 }
 
 /**
- * Read memory from manycore hardware starting at a given EVA
+ * Read memory from manycore hardware starting at a given EVA via DMA
  * @param[in]  mc     An initialized manycore struct
  * @param[in]  map    An eva map for computing the eva to npa map
  * @param[in]  tgt    Coordinate of the tile issuing this #eva
- * @param[in]  eva    A valid hb_mc_eva_t
+ * @param[in]  eva    A valid hb_mc_eva_t - must map to DRAM
  * @param[out] data   A buffer into which data will be read
  * @param[in]  sz     The number of bytes to read from the manycore hardware
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-extern "C" int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
-                                           const hb_mc_eva_map_t *map,
-                                           const hb_mc_coordinate_t *tgt,
-                                           const hb_mc_eva_t *eva,
-                                           void *data, size_t sz)
+int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
+				const hb_mc_eva_map_t *map,
+				const hb_mc_coordinate_t *tgt,
+				const hb_mc_eva_t *eva,
+				void *data, size_t sz)
 {
 	auto if_in_cache_function = [](hb_mc_manycore_t *mc, hb_mc_npa_t npa)
 		{
