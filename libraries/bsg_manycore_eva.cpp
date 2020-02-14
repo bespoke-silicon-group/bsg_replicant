@@ -1055,6 +1055,21 @@ static size_t min_size_t(size_t x, size_t y)
         return x < y ? x : y;
 }
 
+static bool is_large_write(const hb_mc_manycore_t *mc, size_t size)
+{
+	// TODO: use the cache parameters to decide what 'large' means
+	// for now - large == more than 8KB
+	return size >= (1 << 13);
+}
+
+
+static bool is_large_read(const hb_mc_manycore_t *mc, size_t size)
+{
+	// TODO: use the cache parameters to decide what 'large' means
+	// for now - large == more than 8KB
+	return size >= (1 << 13);
+}
+
 /**
  * A table for keeping track of which addresses are being kept in cache.
  * When doing DMA we need to check if an address is in cache.
@@ -1258,6 +1273,21 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
                              const hb_mc_eva_t *eva,
                              const void *data, size_t sz)
 {
+	size_t region_sz;
+	hb_mc_npa_t npa;
+
+	int err = hb_mc_eva_to_npa(mc, map, tgt, eva, &npa, &region_sz);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	// should we do DMA?
+	if (hb_mc_manycore_npa_is_dram(mc, &npa)
+	    &&  is_large_write(mc, sz)
+	    && hb_mc_manycore_supports_dma_write(mc))
+		// do write using DMA
+		return hb_mc_manycore_eva_write_dma(mc, map, tgt, eva, data, sz);
+
+	// otherwise do write using the manycore mesh network
         return hb_mc_manycore_eva_write_internal(mc,map, tgt, eva, data, sz,
 						 hb_mc_manycore_write_mem);
 }
@@ -1380,6 +1410,21 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
                             const hb_mc_eva_t *eva,
                             void *data, size_t sz)
 {
+	size_t region_sz;
+	hb_mc_npa_t npa;
+
+	int err = hb_mc_eva_to_npa(mc, map, tgt, eva, &npa, &region_sz);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	// should we do DMA?
+	if (hb_mc_manycore_npa_is_dram(mc, &npa)
+	    &&  is_large_read(mc, sz)
+	    && hb_mc_manycore_supports_dma_read(mc))
+		// do read using DMA
+		return hb_mc_manycore_eva_read_dma(mc, map, tgt, eva, data, sz);
+
+	// otherwise do the read using the manycore mesh network
 	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
 						hb_mc_manycore_read_mem);
 }
