@@ -271,6 +271,7 @@ extern "C" {
 	 * @param[in]  sz     The number of bytes to write to manycore hardware
 	 * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
 	 */
+          __attribute__((warn_unused_result))
 	int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
 					 const hb_mc_eva_map_t *map,
 					 const hb_mc_coordinate_t *tgt,
@@ -287,6 +288,7 @@ extern "C" {
 	 * @param[in]  sz     The number of bytes to read from the manycore hardware
 	 * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
 	 */
+          __attribute__((warn_unused_result))
 	int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
 					const hb_mc_eva_map_t *map,
 					const hb_mc_coordinate_t *tgt,
