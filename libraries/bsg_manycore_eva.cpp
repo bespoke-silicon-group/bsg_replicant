@@ -1235,26 +1235,8 @@ int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
                                  const hb_mc_eva_t *eva,
                                  const void *data, size_t sz)
 {
-	auto if_in_cache_function = [] (hb_mc_manycore_t *mc, hb_mc_npa_t npa)
-		{
-			return hb_mc_manycore_vcache_invalidate_npa_range(mc, &npa, sizeof(uint32_t));
-		};
-
-        TagTable <decltype(if_in_cache_function)> tag_table(mc, if_in_cache_function);
-
-	auto write_function  = [&tag_table](hb_mc_manycore_t *mc,
-					   const hb_mc_npa_t *npa,
-					   void *data, size_t sz)
-		{
-			int err;
-			err = hb_mc_manycore_dma_write_no_cache_ainv(mc, npa, data, sz);
-			if (err != HB_MC_SUCCESS)
-				return err;
-
-			return tag_table.check_in_cache(*npa);
-		};
-
-	return hb_mc_manycore_eva_write_internal(mc, map, tgt, eva, data, sz, write_function);
+	return hb_mc_manycore_eva_write_internal(mc, map, tgt, eva, data, sz,
+						 hb_mc_manycore_dma_write_no_cache_ainv);
 }
 
 /**
@@ -1273,20 +1255,6 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
                              const hb_mc_eva_t *eva,
                              const void *data, size_t sz)
 {
-	size_t region_sz;
-	hb_mc_npa_t npa;
-
-	int err = hb_mc_eva_to_npa(mc, map, tgt, eva, &npa, &region_sz);
-	if (err != HB_MC_SUCCESS)
-		return err;
-
-	// should we do DMA?
-	if (hb_mc_manycore_npa_is_dram(mc, &npa)
-	    &&  is_large_write(mc, sz)
-	    && hb_mc_manycore_supports_dma_write(mc))
-		// do write using DMA
-		return hb_mc_manycore_eva_write_dma(mc, map, tgt, eva, data, sz);
-
 	// otherwise do write using the manycore mesh network
         return hb_mc_manycore_eva_write_internal(mc,map, tgt, eva, data, sz,
 						 hb_mc_manycore_write_mem);
@@ -1367,31 +1335,8 @@ int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
 				const hb_mc_eva_t *eva,
 				void *data, size_t sz)
 {
-	auto if_in_cache_function = [](hb_mc_manycore_t *mc, hb_mc_npa_t npa)
-		{
-			int err = hb_mc_manycore_vcache_flush_npa_range(mc, &npa, sizeof(uint32_t));
-			if (err != HB_MC_SUCCESS)
-				return err;
-
-			// read from the npa to be sure its flushed
-			uint32_t dummy;
-			return hb_mc_manycore_read32(mc, &npa, &dummy);
-		};
-
-        TagTable <decltype(if_in_cache_function)> tag_table(mc, if_in_cache_function);
-
-	auto read_function = [&tag_table](hb_mc_manycore_t *mc,
-					 const hb_mc_npa_t *npa,
-					 void *data, size_t sz)
-		{
-			int err = tag_table.check_in_cache(*npa);
-			if (err != HB_MC_SUCCESS)
-				return err;
-
-			return hb_mc_manycore_dma_read_no_cache_afl(mc, npa, data, sz);
-		};
-
-	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz, read_function);
+	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
+						hb_mc_manycore_dma_read_no_cache_afl);
 }
 
 /**
@@ -1410,21 +1355,6 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
                             const hb_mc_eva_t *eva,
                             void *data, size_t sz)
 {
-	size_t region_sz;
-	hb_mc_npa_t npa;
-
-	int err = hb_mc_eva_to_npa(mc, map, tgt, eva, &npa, &region_sz);
-	if (err != HB_MC_SUCCESS)
-		return err;
-
-	// should we do DMA?
-	if (hb_mc_manycore_npa_is_dram(mc, &npa)
-	    &&  is_large_read(mc, sz)
-	    && hb_mc_manycore_supports_dma_read(mc))
-		// do read using DMA
-		return hb_mc_manycore_eva_read_dma(mc, map, tgt, eva, data, sz);
-
-	// otherwise do the read using the manycore mesh network
 	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
 						hb_mc_manycore_read_mem);
 }
