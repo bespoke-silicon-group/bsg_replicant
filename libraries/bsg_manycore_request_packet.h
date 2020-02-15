@@ -77,6 +77,7 @@ extern "C" {
                 HB_MC_PACKET_CACHE_OP_AFL    = 0, //!< flush address
                 HB_MC_PACKET_CACHE_OP_AINV   = 1, //!< invalidate address
                 HB_MC_PACKET_CACHE_OP_AFLINV = 2, //!< flush address and invalidate
+		HB_MC_PACKET_CACHE_OP_TAGFL  = 3, //!< flush tag
         } hb_mc_packet_cache_op_t;
 
         typedef enum __hb_mc_packet_mask_t {
