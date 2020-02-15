@@ -32,6 +32,7 @@
 #include <bsg_manycore_epa.h>
 #include <bsg_manycore_config.h>
 #include <bsg_manycore.h>
+#include <bsg_manycore_coordinate.h>
 #ifdef __cplusplus
 #include <cstdint>
 #include <cstdio>
@@ -108,6 +109,34 @@ hb_mc_epa_t hb_mc_vcache_way_addr(const hb_mc_manycore_t *mc, hb_mc_epa_t set, h
         return HB_MC_VCACHE_EPA_TAG | (way <<  hb_mc_vcache_way_shift(mc)) | (set << hb_mc_vcache_set_shift(mc));
 }
 
+static
+hb_mc_npa_t hb_mc_vcache_way_npa(const hb_mc_manycore_t *mc, hb_mc_idx_t cache, hb_mc_epa_t set, hb_mc_epa_t way)
+{
+	const hb_mc_config_t *cfg  = hb_mc_manycore_get_config(mc);
+	hb_mc_idx_t vcache_y = hb_mc_config_get_dram_y(cfg);
+	return hb_mc_npa(hb_mc_coordinate(cache, vcache_y), hb_mc_vcache_way_addr(mc, set, way));
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_num_ways(const hb_mc_manycore_t *mc)
+{
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+	return hb_mc_config_get_vcache_ways(cfg);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_num_sets(const hb_mc_manycore_t *mc)
+{
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+	return hb_mc_config_get_vcache_sets(cfg);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_num_caches(const hb_mc_manycore_t *mc)
+{
+	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+	return hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg));
+}
 
 static
 hb_mc_epa_t hb_mc_vcache_tag_epa(const hb_mc_manycore *mc, uint32_t tag)
