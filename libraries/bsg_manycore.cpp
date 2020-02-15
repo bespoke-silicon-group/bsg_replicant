@@ -32,6 +32,7 @@
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_responder.h>
 #include <bsg_manycore_epa.h>
+#include <bsg_manycore_vcache.h>
 
 #ifndef COSIM
 #include <fpga_pci.h>
@@ -1385,6 +1386,77 @@ int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc,
         // read a single word from cache - when it completes, assume flush is done
         uint32_t dummy;
         return hb_mc_manycore_read32(mc, npa, &dummy);
+}
+
+int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
+{
+	int err;
+	hb_mc_request_packet_t pkt;
+
+	err = hb_mc_manycore_format_cache_op_request_packet(mc, &pkt, npa, HB_MC_PACKET_CACHE_OP_TAGFL);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	return hb_mc_manycore_request_tx(mc, &pkt, -1);
+}
+
+template <typename ApplyFunction>
+static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction apply_function)
+{
+	hb_mc_epa_t ways = hb_mc_vcache_num_ways(mc);
+	hb_mc_epa_t sets = hb_mc_vcache_num_sets(mc);
+	hb_mc_epa_t caches = hb_mc_vcache_num_caches(mc);
+	int err;
+
+	for (hb_mc_epa_t way_id = 0; way_id < ways; way_id++) {
+		for (hb_mc_epa_t set_id = 0; set_id < sets; set_id++) {
+			for (hb_mc_epa_t cache_id = 0; cache_id < caches; cache_id++) {
+				// build the address for the way
+				hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, set_id, way_id);
+				// apply
+				err = apply_function(mc, &way_addr);
+				if (err != HB_MC_SUCCESS)
+					return err;
+			}
+		}
+	}
+	return HB_MC_SUCCESS;
+}
+
+/**
+ * Invalidate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
+{
+	return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+			// write way_id (no valid bit)
+			return hb_mc_manycore_write32(mc, way_addr, 0);
+		});
+}
+
+
+/**
+ * Flush entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
+{
+	int err = hb_mc_manycore_apply_to_vcache(mc, hb_mc_manycore_vcache_flush_tag);
+	if (err != HB_MC_SUCCESS)
+		return err;
+
+	// read a word from each cache
+	for (hb_mc_epa_t cache_id = 0; cache_id < hb_mc_vcache_num_caches(mc); cache_id++) {
+
+		hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, 0, 0);
+		hb_mc_npa_set_epa(&way_addr, 0);
+		uint32_t dummy;
+		err = hb_mc_manycore_read32(mc, &way_addr, &dummy);
+		if (err != HB_MC_SUCCESS)
+			return err;
+	}
+	return HB_MC_SUCCESS;
 }
 
 
