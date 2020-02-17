@@ -104,6 +104,12 @@ hb_mc_epa_t hb_mc_vcache_way_shift(const hb_mc_manycore_t *mc)
 }
 
 static
+hb_mc_epa_t hb_mc_vcache_way(const hb_mc_manycore_t *mc, hb_mc_epa_t epa)
+{
+	return (epa >> hb_mc_vcache_way_shift(mc)) & hb_mc_vcache_way_mask(mc);
+}
+
+static
 hb_mc_epa_t hb_mc_vcache_way_addr(const hb_mc_manycore_t *mc, hb_mc_epa_t set, hb_mc_epa_t way)
 {
         return HB_MC_VCACHE_EPA_TAG | (way <<  hb_mc_vcache_way_shift(mc)) | (set << hb_mc_vcache_set_shift(mc));
