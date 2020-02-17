@@ -1432,7 +1432,18 @@ int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
 	return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
 			// write way_id (no valid bit)
 			char npa_str [256];
-			manycore_pr_dbg(mc, "Invalidating vcache tag @ %s\n", hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
+			manycore_pr_dbg(mc, "Invalidating vcache tag @ %s\n",
+					hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
+
+			// read line
+			hb_mc_epa_t tag;
+			int err = hb_mc_manycore_read32(mc, way_addr, &tag);
+			if (err != HB_MC_SUCCESS)
+			  return err;
+
+			// don't invalidate program text
+			if (tag < 0x01000000) return HB_MC_SUCCESS;
+
 			return hb_mc_manycore_write32(mc, way_addr, 0);
 		});
 }
@@ -1447,7 +1458,8 @@ int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
 	int err = hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
 			// flush tag
 			char npa_str[256];
-			manycore_pr_dbg(mc, "Flushing vcach tag @ %s\n", hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
+			manycore_pr_dbg(mc, "Flushing vcach tag @ %s\n",
+					hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
 			return hb_mc_manycore_vcache_flush_tag(mc, way_addr);
 		});
 
