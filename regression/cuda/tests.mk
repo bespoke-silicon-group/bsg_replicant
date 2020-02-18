@@ -54,6 +54,7 @@ INDEPENDENT_TESTS += test_dram_device_allocated
 INDEPENDENT_TESTS += test_device_memset
 INDEPENDENT_TESTS += test_device_memcpy
 INDEPENDENT_TESTS += test_vec_add
+INDEPENDENT_TESTS += test_vec_add_dma
 INDEPENDENT_TESTS += test_vec_add_parallel
 INDEPENDENT_TESTS += test_vec_add_parallel_multi_grid
 INDEPENDENT_TESTS += test_vec_add_serial_multi_grid
