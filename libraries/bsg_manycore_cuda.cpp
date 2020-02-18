@@ -2327,6 +2327,9 @@ int hb_mc_device_dma_to_device (hb_mc_device_t *device,
 {
         int err;
 
+	if (!hb_mc_manycore_supports_dma_read(device->mc))
+		return HB_MC_NOIMPL;
+
         // flush cache
         err = hb_mc_manycore_flush_vcache(device->mc);
         if (err != HB_MC_SUCCESS) {
@@ -2379,6 +2382,9 @@ int hb_mc_device_dma_to_device (hb_mc_device_t *device,
 int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
 {
         int err;
+
+	if (!hb_mc_manycore_supports_dma_read(device->mc))
+		return HB_MC_NOIMPL;
 
         // flush cache
         err = hb_mc_manycore_flush_vcache(device->mc);
