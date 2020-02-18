@@ -40,6 +40,7 @@ UNIFIED_TESTS = test_scalar_print
 UNIFIED_TESTS += test_empty
 UNIFIED_TESTS += test_tile_info
 UNIFIED_TESTS += test_barrier
+UNIFIED_TESTS += test_striped
 
 # "Independent Tests" use a per-test <test_name>.c file
 INDEPENDENT_TESTS += test_binary_load_buffer
