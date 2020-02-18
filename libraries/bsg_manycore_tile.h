@@ -86,6 +86,10 @@ extern "C" {
 #define HB_MC_TILE_EPA_CSR_DRAM_ENABLE                                  \
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET)
 
+/* ICACHE */
+#define HB_MC_TILE_ICACHE_TAG_SHIFT 12
+#define HB_MC_TILE_ICACHE_SIZE      (1 << HB_MC_TILE_ICACHE_TAG_SHIFT)
+
         /**
          * Set a tile's x origin
          * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().

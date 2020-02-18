@@ -364,6 +364,8 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
                    hb_mc_npa_get_epa(&icache_npa)
                    );
 
+	hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_paddr); /* get the load eva */
+
         /*
           The address space of the ICACHE is larger than the ICACHE itself.
           Bits 12-23 actually indicate the tag data rather than a location.
@@ -376,15 +378,38 @@ static int hb_mc_loader_load_tile_icache(hb_mc_manycore_t *mc,
                 return HB_MC_FAIL;
         }
 
-        rc = hb_mc_manycore_write_mem(mc, &icache_npa, segdata, sz);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_dbg("%s: failed to write to (%d,%d)'s icache: %s\n",
-                           __func__,
-                           hb_mc_coordinate_get_x(tile),
-                           hb_mc_coordinate_get_y(tile),
-                           hb_mc_strerror(rc));
-                return rc;
-        }
+	hb_mc_epa_t offset = 0;
+	while (offset <  sz) {
+		// get the tag from the EVA of the program counter
+		hb_mc_epa_t tag =
+			eva >> ICACHE_MC_TILE_ICACHE_TAG_SHIFT;
+
+		// build the EPA for icache memory (tag data is in the msbs)
+		hb_mc_epa_t epa =
+			HB_MC_TILE_EPA_ICACHE
+			| (tag << HB_MC_TILE_ICACHE_TAG_SHIFT)
+			| offset;
+
+		// make the npa
+		hb_mc_npa_t icache_npa = hb_mc_npa(tile, epa);
+
+		// write the full word of instruction data
+		uint32_t data = *(uint32_t*) &segdata[offset];
+
+		rc = hb_mc_manycore_write32(mc, &icache_npa, data);
+		if (rc != HB_MC_SUCCESS) {
+			bsg_pr_dbg("%s: failed to write to (%d, %d)'s icache: %s\n",
+				   __func__,
+				   hb_mc_coordinate_get_x(tile),
+				   hb_mc_coordinate_get_y(tile),
+				   hb_mc_strerror(rc));
+			return rc;
+		}
+
+		// increment
+		offset     += sizeof(uint32_t);
+		eva        += sizeof(uint32_t);
+	}
 
         return HB_MC_SUCCESS;
 }
@@ -732,7 +757,8 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                 bsg_pr_dbg("%s: failed to %s DRAM-enabled for %s: %s\n",
                            __func__,
                            hb_mc_manycore_dram_is_enabled(mc) ? "set" : "clear",
-                           hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)));
+                           hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)),
+			   hb_mc_strerror(rc));
                 return rc;
         }
 
