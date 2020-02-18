@@ -1335,15 +1335,6 @@ int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
 			manycore_pr_dbg(mc, "Invalidating vcache tag @ %s\n",
 					hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
 
-			// read line
-			hb_mc_epa_t tag;
-			int err = hb_mc_manycore_read32(mc, way_addr, &tag);
-			if (err != HB_MC_SUCCESS)
-			  return err;
-
-			// don't invalidate program text
-			if (tag < 0x01000000) return HB_MC_SUCCESS;
-
 			return hb_mc_manycore_write32(mc, way_addr, 0);
 		});
 }
