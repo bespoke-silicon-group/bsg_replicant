@@ -60,7 +60,7 @@ int kernel_vec_add (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-        bsg_pr_test_info("Running the CUDA Vector Addition Kernel on one 2x2 tile groups.\n\n");
+        bsg_pr_test_info("Running the CUDA Vector Addition Kernel on one 2x2 tile groups.\n");
 
         srand(static_cast<unsigned>(time(0)));
 
@@ -69,11 +69,20 @@ int kernel_vec_add (int argc, char **argv) {
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2};
         hb_mc_device_t device;
         CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
+
+	/* if DMA is not supported just return SUCCESS */
+	if (!hb_mc_manycore_supports_dma_write(device.mc)
+	    || !hb_mc_manycore_supports_dma_read(device.mc)) {
+		bsg_pr_test_info("DMA not supported for this machine: returning success\n");
+		return HB_MC_SUCCESS;
+	}
+
         CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
         /* Allocate memory on the device for A, B and C. */
         constexpr int N = (1 << 16);
         constexpr size_t vsize = N * sizeof(uint32_t);
+	bsg_pr_test_info("Using DMA to write vectors of %d integers\n", N);
 
         eva_t A_device, B_device, C_device;
         CUDA_CALL(hb_mc_device_malloc(&device, vsize, &A_device)); /* allocate A[N] on the device */
@@ -105,7 +114,7 @@ int kernel_vec_add (int argc, char **argv) {
                 }
         };
 
-        bsg_pr_info("Writing A and B to device\n");
+        bsg_pr_test_info("Writing A and B to device\n");
 
         CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 2));
 
@@ -135,7 +144,7 @@ int kernel_vec_add (int argc, char **argv) {
                 .size   = vsize
         };
 
-        bsg_pr_info("Reading C to host\n");
+        bsg_pr_test_info("Reading C to host\n");
 
         CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
 
