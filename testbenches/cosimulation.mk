@@ -76,13 +76,17 @@ help:
 	@echo "      <test_name>: Build the cosimulation binary for a specific"
 	@echo "             test"
 	@echo "      <test_name.log>: Run a specific cosimulation test and "
-	@echo "             generate the log file"
+	@echo "             generate the log file. Set WAVES=1 for waveform dump."
 	@echo "      <test_name.vanilla.log>: Run a specific cosimulation test and "
 	@echo "             generate the vanilla log file"
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
 $(REGRESSION_TESTS): %: $(EXEC_PATH)/%
 test_loader: %: $(EXEC_PATH)/%
+
+ifeq ($(WAVES),)
+$(EXEC_PATH)/%.log: SIM_ARGS += +NO_WAVES
+endif
 
 VPD_RULES = $(addsuffix .vpd,$(REGRESSION_TESTS))
 $(VPD_RULES): SIM_ARGS +=+trace
