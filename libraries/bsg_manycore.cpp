@@ -41,7 +41,7 @@
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
 #if defined(USING_DRAMSIM3)
-#include <bsg_test_dram_channel.hpp>
+#include <bsg_mem_dma.hpp>
 #define DRAM_HACK_WRITE
 #define DRAM_HACK_READ
 #endif
@@ -1415,7 +1415,7 @@ int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
 static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz,
                                                    unsigned char **buffer)
 {
-    using namespace bsg_test_dram_channel;
+    using namespace bsg_mem_dma;
 
     /*
       Our system supports having multiple caches per memory channel.
@@ -1448,7 +1448,7 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
     /*
       Use the backdoor to our non-synthesizable memory.
      */
-    Memory *memory = bsg_test_dram_channel_get_memory(id);
+    Memory *memory = bsg_mem_dma_get_memory(id);
     parameter_t bank_size = memory->_data.size()/caches_per_channel;
 
     hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);

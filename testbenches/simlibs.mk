@@ -98,7 +98,8 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1rw_sync_assoc.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_ramulator_hbm.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_test_dram_channel.v
+
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_dma.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
 
@@ -127,6 +128,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 # Include makefile for ramulator sources
 include $(TESTBENCH_PATH)/ramulator.mk
 include $(TESTBENCH_PATH)/dramsim3.mk
+include $(TESTBENCH_PATH)/infmem.mk
 
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
