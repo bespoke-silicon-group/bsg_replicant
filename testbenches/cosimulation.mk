@@ -88,8 +88,8 @@ help:
 	@echo ""
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
-waveforms: $(REGRESSION_TESTS:%=$(EXEC_PATH)/%.vpd)
-traces: $(REGRESSION_TESTS:%=$(EXEC_PATH)/%.vanilla.log)
+waveforms: $(REGRESSION_TESTS:%=%.vpd)
+traces: $(REGRESSION_TESTS:%=%.vanilla.log)
 test_loader $(REGRESSION_TESTS): %: $(EXEC_PATH)/%
 
 $(EXEC_PATH)/%.log: %.vanilla_stats.csv ;
