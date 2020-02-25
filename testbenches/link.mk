@@ -77,15 +77,14 @@ VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
                 -timescale=1ps/1ps -sverilog -full64 -licqueue
 
-# VCS Generates an executable file by linking against the $(SRC_PATH)/%.c or
-# $(SRC_PATH)/%.o $(SRC_PATH)/%.cpp file that corresponds to the target test in
-# the $(SRC_PATH) directory.
-$(EXEC_PATH)/%:       VCS_VFLAGS    += +rad -undef_vcs_macro
-$(EXEC_PATH)/%.debug: VCS_VFLAGS    += -debug_pp
-$(EXEC_PATH)/%.debug: VCS_VFLAGS    += +memcbk 
-$(EXEC_PATH)/% $(EXEC_PATH)/%.debug: $(SRC_PATH)/%.o $(SIMLIBS)
+# VCS Generates an executable file by linking the $(SRC_PATH)/%.o file with the
+# the VCS work libraries for the design, and the runtime shared libraries
+$(EXEC_PATH)/%.debug: VCS_VFLAGS += -debug_pp 
+$(EXEC_PATH)/%.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
+
+$(EXEC_PATH)/%.debug $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
-	vcs tb glbl -j$(NPROCS) $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
+	vcs tb glbl cosim_wrapper -j$(NPROCS) $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
 
 link.clean: 
@@ -96,4 +95,3 @@ link.clean:
 	rm -rf $(EXEC_PATH)/*.key $(EXEC_PATH)/*.vpd
 	rm -rf $(EXEC_PATH)/vc_hdrs.h
 	rm -rf .vlogansetup* stack.info*
-

@@ -71,25 +71,35 @@ include $(TESTBENCH_PATH)/cosimulation.mk
 # not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 
-# All SPMD programs require two arguments: The path to the RISC-V Binary loaded onto the manycore
-# (TEST_PATH), and the test name (TEST_NAME). SPMD_PATH is defined for convenience
+# All SPMD programs require two arguments: The path to the RISC-V Binary loaded
+# onto the manycore (TEST_PATH), and the test name (TEST_NAME). SPMD_PATH is
+# defined for convenience
 SPMD_PATH=$(BSG_MANYCORE_DIR)/software/spmd
-$(EXEC_PATH)/%.log: TEST_PATH=$(SPMD_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
-$(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
+%.vanilla_stats.csv %.vpd: TEST_NAME = $(basename $(basename $(notdir $@)))
+%.vanilla_stats.csv %.vpd: TEST_PATH = $(SPMD_PATH)/$(TEST_NAME:test_%=%)/main.riscv
 
-# The rule below defines how to run test_loader for SPMD tests. The loader
-# requires two arguments:
-$(EXEC_PATH)/%.log: $(EXEC_PATH)/test_loader %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
-		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
+$(EXEC_PATH)/%.log: %.vanilla_stats.csv ;
+%.vanilla_stats.csv %.vpd: C_ARGS = $(TEST_PATH) $(TEST_NAME)
 
-# The rule below defines how to run SPMD tests that do not use
-# test_loader. The output .vpd file will be named <test_name>.vpd. To
-# generate a trace file, run `make <test_name>.vanilla.log`
-INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
-$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
-		+c_args="$(TEST_PATH) $(TEST_NAME)" | tee $@
+$(UNIFIED_TESTS:%=%.vpd): $(EXEC_PATH)/test_loader.debug
+$(INDEPENDENT_TESTS:%=%.vpd): %.vpd : $(EXEC_PATH)/%.debug
+$(REGRESSION_TESTS:%=%.vpd): %.vpd : %.rule
+
+%.vpd: SIM_ARGS += +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
+%.vpd: SIM_ARGS += +vpdfile+$(EXEC_PATH)/$@
+
+$(UNIFIED_TESTS:%=%.vanilla_stats.csv): $(EXEC_PATH)/test_loader
+$(INDEPENDENT_TESTS:%=%.vanilla_stats.csv): %.vanilla_stats.csv : $(EXEC_PATH)/%
+$(REGRESSION_TESTS:%=%.vanilla_stats.csv): %.vanilla_stats.csv : %.rule
+
+# Generating both won't generate both
+%.vanilla_stats.csv %.vpd: 
+	cd .$(TEST_NAME) && \
+	$< 2>&1 $(SIM_ARGS) +c_args="$(C_ARGS)" | tee $(EXEC_PATH)/$(TEST_NAME).log
+	@mv .$(TEST_NAME)/vanilla_stats.csv $(TEST_NAME).vanilla_stats.csv
+
+
 
 # dve.mk defines the dve targets
 include $(TESTBENCH_PATH)/dve.mk
+

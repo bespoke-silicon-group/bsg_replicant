@@ -76,20 +76,23 @@ help:
 	@echo "      <test_name>: Build the cosimulation binary for a specific"
 	@echo "             test"
 	@echo "      <test_name.log>: Run a specific cosimulation test and "
-	@echo "             generate the log file"
+	@echo "             generate the log file (will not generate traces)"
 	@echo "      <test_name.vanilla.log>: Run a specific cosimulation test and "
-	@echo "             generate the vanilla log file"
+	@echo "             generate the vanilla.log and vanilla_operation_trace.csv "
+	@echo "             and vanilla_operation_trace.csv file"
+	@echo "      <test_name.vanilla_operation_trace.csv>: Same as above"
+	@echo ""
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
-test_loader $(REGRESSION_TESTS): %: $(EXEC_PATH)/%
+SIM_ARGS += +rad +ntb_random_seed_automatic 
 
-VANILLA_LOG_RULES = $(addsuffix .vanilla.log,$(REGRESSION_TESTS))
-$(VANILLA_LOG_RULES): SIM_ARGS +=+trace
-$(VANILLA_LOG_RULES): %.vanilla.log: $(EXEC_PATH)/%.log
-	@mv vanilla.log $@
-	@mv vcache_non_blocking_stats.log $(subst vanilla,vcache_non_blocking_stats,$@)
-	@mv vanilla_operation_trace.csv $(subst vanilla.log,vanilla_operation_trace.csv,$@)
-	@mv vanilla_stats.csv $(subst vanilla.log,vanilla_stats.csv,$@)
+%.vanilla_operation_trace.csv %.vanilla.log: SIM_ARGS += +trace
+%.vanilla_operation_trace.csv %.vanilla.log: $(EXEC_PATH)/%.log
+	$(eval TEST_NAME = $(basename $(basename $(notdir $@))))
+	@mv $(dir $@)/.$(TEST_NAME)/vanilla.log $(TEST_NAME).vanilla.log
+	@mv $(dir $@)/.$(TEST_NAME)/vanilla_operation_trace.csv $(TEST_NAME).vanilla_operation_trace.csv
+
+test_loader $(REGRESSION_TESTS): %: $(EXEC_PATH)/%
 
 clean: regression.clean compilation.clean link.clean $(USER_CLEAN_RULES)
 	rm -rf *.log
