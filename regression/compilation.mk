@@ -54,3 +54,4 @@ compilation.clean:
 	rm -rf $(foreach tgt, $(INDEPENDENT_TESTS), $(SRC_PATH)/$(tgt).o) $(SRC_PATH)/test_loader.o
 
 .PHONY: compilation.clean $(USER_RULES) $(USER_CLEAN_RULES)
+.PRECIOUS: %.o
