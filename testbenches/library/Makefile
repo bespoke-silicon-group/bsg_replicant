@@ -74,14 +74,8 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # The rule below defines how to run all Library tests. The output .vpd file will
 # be named <test_name>.vpd. To generate a trace file, run `make
 # <test_name>.vanilla.log`
-INDEPENDENT_LOGS=$(INDEPENDENT_TESTS:%=$(EXEC_PATH)/%.log)
-$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	time $< 2>&1 +ntb_random_seed_automatic +c_args="" | tee $@
-
-INDEPENDENT_VPDS=$(INDEPENDENT_TESTS:%=$(EXEC_PATH)/%.vpd)
-$(INDEPENDENT_VPDS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/%.debug %.rule
-	$< 2>&1 +ntb_random_seed_automatic +trace +c_args="" \
-		+vpdfile+$@ | tee $(@:.vpd=.log)
+%.vanilla_stats.csv %.vpd: TEST_NAME = $(basename $(basename $(notdir $@)))
+%.vanilla_stats.csv %.vpd: C_ARGS = ""
 
 # dve.mk defines the dve targets
 include $(TESTBENCH_PATH)/dve.mk

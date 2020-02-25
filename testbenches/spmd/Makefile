@@ -77,29 +77,4 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 SPMD_PATH=$(BSG_MANYCORE_DIR)/software/spmd
 %.vanilla_stats.csv %.vpd: TEST_NAME = $(basename $(basename $(notdir $@)))
 %.vanilla_stats.csv %.vpd: TEST_PATH = $(SPMD_PATH)/$(TEST_NAME:test_%=%)/main.riscv
-
-$(EXEC_PATH)/%.log: %.vanilla_stats.csv ;
 %.vanilla_stats.csv %.vpd: C_ARGS = $(TEST_PATH) $(TEST_NAME)
-
-$(UNIFIED_TESTS:%=%.vpd): $(EXEC_PATH)/test_loader.debug
-$(INDEPENDENT_TESTS:%=%.vpd): %.vpd : $(EXEC_PATH)/%.debug
-$(REGRESSION_TESTS:%=%.vpd): %.vpd : %.rule
-
-%.vpd: SIM_ARGS += +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-%.vpd: SIM_ARGS += +vpdfile+$(EXEC_PATH)/$@
-
-$(UNIFIED_TESTS:%=%.vanilla_stats.csv): $(EXEC_PATH)/test_loader
-$(INDEPENDENT_TESTS:%=%.vanilla_stats.csv): %.vanilla_stats.csv : $(EXEC_PATH)/%
-$(REGRESSION_TESTS:%=%.vanilla_stats.csv): %.vanilla_stats.csv : %.rule
-
-# Generating both won't generate both
-%.vanilla_stats.csv %.vpd: 
-	cd .$(TEST_NAME) && \
-	$< 2>&1 $(SIM_ARGS) +c_args="$(C_ARGS)" | tee $(EXEC_PATH)/$(TEST_NAME).log
-	@mv .$(TEST_NAME)/vanilla_stats.csv $(TEST_NAME).vanilla_stats.csv
-
-
-
-# dve.mk defines the dve targets
-include $(TESTBENCH_PATH)/dve.mk
-
