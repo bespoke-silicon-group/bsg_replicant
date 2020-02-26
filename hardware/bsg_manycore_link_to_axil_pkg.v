@@ -2,8 +2,9 @@
 `define BSG_MANYCORE_LINK_TO_AXIL_PKG_V
 
 
-// this macro inherited the parameters of bsg_manycore_pkg.v
-// it slices the manycore packet struct into fields of multiple bytes, and the size of new packet is N words
+// To ease the programming, we slices the fields in the bsg_manycore_packet_s
+// struct, and cast the fileds into multiple of bytes.
+//
 // assume 8 >= bsg_manycore_reg_id_width_gp
 // assume 8 >= $bits(bsg_manycore_packet_op_e)
 // assume 8 >= $bits(bsg_manycore_packet_op_ex_u)
@@ -52,6 +53,8 @@ package bsg_manycore_link_to_axil_pkg;
   parameter  mcl_edpt_fifo_els_gp = 4  ;
   localparam axil_data_width_gp   = 32 ;
   localparam axil_addr_width_gp   = 32 ;
+
+  localparam axil_resp_OKAY_gp = 2'b00;
 
   parameter mcl_rom_base_addr_gp   = 32'h0000_0000;
   parameter mcl_fifo_base_addr_gp  = 32'h0000_1000;

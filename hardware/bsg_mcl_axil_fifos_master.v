@@ -25,6 +25,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+/*
+*  bsg_mcl_axil_fifos_master.v
+*
+* The host is a master attached to the manycore endpoint.
+* It sends requests and receives response through AXIL write and read channels
+*/
 
 module bsg_mcl_axil_fifos_master
   import bsg_manycore_pkg::*;
@@ -38,7 +44,7 @@ module bsg_mcl_axil_fifos_master
 ) (
   input                          clk_i
   ,input                          reset_i
-  // axil side
+  // host side
   ,input  [axil_data_width_p-1:0] w_data_i
   ,input                          w_v_i
   ,output                         w_ready_o
@@ -68,7 +74,7 @@ module bsg_mcl_axil_fifos_master
 
 
   // --------------------------------------------------------
-  //                     Data Path Fwd
+  //                  host request to mc
   // --------------------------------------------------------
 
   // buf fifo tx
@@ -126,7 +132,7 @@ module bsg_mcl_axil_fifos_master
   );
 
   // --------------------------------------------------------
-  //                     Data Path Rev
+  //                  mc response to host
   // --------------------------------------------------------
 
   logic [fifo_width_p-1:0] rsp_buf_data_lo;
@@ -171,6 +177,7 @@ module bsg_mcl_axil_fifos_master
   // --------------------------------------------------------
   //                      Flow Control
   // --------------------------------------------------------
+
   wire [sipo_cnt_width_lp-1:0] cnt_down_li = (w_ready_o & w_v_i) ? sipo_cnt_width_lp'(1) : '0;
   wire [sipo_cnt_width_lp-1:0] cnt_up_li   = req_sipo_yumis_li                               ;
 

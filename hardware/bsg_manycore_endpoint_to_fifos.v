@@ -26,6 +26,14 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
+/*
+*  bsg_manycore_endpoint_to_fifos.v
+*
+* Convert the tx_fifo data stream into manycore packet
+* Or cast the manycore packet to the rx_fifo data stream
+*/
+
+
 module bsg_manycore_endpoint_to_fifos
   import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
@@ -49,11 +57,6 @@ module bsg_manycore_endpoint_to_fifos
   ,output                                     mc_req_v_o
   ,input                                      mc_req_ready_i
 
-  // host does not return data to the manycore
-  // ,input  [                 fifo_width_p-1:0] host_rsp_i
-  // ,input                                      host_rsp_v_i
-  // ,output                                     host_rsp_ready_o
-
   // host request
   ,input  [                 fifo_width_p-1:0] host_req_i
   ,input                                      host_req_v_i
@@ -63,6 +66,8 @@ module bsg_manycore_endpoint_to_fifos
   ,output [                 fifo_width_p-1:0] mc_rsp_o
   ,output                                     mc_rsp_v_o
   ,input                                      mc_rsp_ready_i
+
+  // host does not return data to the manycore
 
   // manycore link
   ,input  [            link_sif_width_lp-1:0] link_sif_i
@@ -90,8 +95,6 @@ module bsg_manycore_endpoint_to_fifos
   // manycore as master
   bsg_mcl_request_s mc_req_lo_cast;
   assign mc_req_o = mc_req_lo_cast;
-  // assign host_rsp_li_cast = host_rsp_i;
-  // bsg_mcl_response_s host_rsp_li_cast;
 
 
   // manycore endpoint signals
@@ -130,7 +133,6 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_out_packet_li.op         = bsg_manycore_packet_op_e'(host_req_li_cast.op);
   assign endpoint_out_packet_li.op_ex      = bsg_manycore_packet_op_ex_u'(host_req_li_cast.op_ex);
   assign endpoint_out_packet_li.reg_id     = bsg_manycore_reg_id_width_gp'(host_req_li_cast.reg_id);
-  // assign endpoint_out_packet_li.payload    = bsg_manycore_packet_payload_u'(host_req_li_cast.payload);
   assign endpoint_out_packet_li.src_y_cord = y_cord_width_p'(host_req_li_cast.src_y_cord);
   assign endpoint_out_packet_li.src_x_cord = x_cord_width_p'(host_req_li_cast.src_x_cord);
   assign endpoint_out_packet_li.y_cord     = y_cord_width_p'(host_req_li_cast.y_cord);
@@ -223,7 +225,7 @@ module bsg_manycore_endpoint_to_fifos
     .in_mask_o            (endpoint_in_mask_lo   ),
     .in_addr_o            (endpoint_in_addr_lo   ),
     .in_we_o              (endpoint_in_we_lo     ),
-    .in_load_info_o       (                      ), // not used since remote load is not supported on host interface.
+    .in_load_info_o       (                      ), // not used because the manycore will not issue read requests to the host
     .in_src_x_cord_o      (in_src_x_cord_lo      ),
     .in_src_y_cord_o      (in_src_y_cord_lo      ),
 

@@ -29,7 +29,20 @@
 /*
 *  bsg_manycore_link_to_axil.v
 *
-*      AXIL memory-mapped (HOST side)   <->   manycore endpoint standard (MC side)
+* This is an open-source module to bridge the manycore symmetric links with the
+* AXI-Lite master interface.
+* It handles the AXIL transactions differently based on the w/r address.
+* Write -> tx_FIFO -> SIPO -> host_request
+* Read  <- PISO <- rx_FIFO <- mc_response
+*       <- PISO <- rx_FIFO <- mc_request
+*       <- ROM
+*       <- vacancy of tx_FIFO + SIPO
+*       <- endpoint out credits
+*       <- occupancy of rx_FIFO (mc_request)
+* And it shall always complete the AXIL transaction if gets invalid address.
+*
+* Google doc:
+* https://docs.google.com/document/d/1-jSBELaYREEqtGOUD4_yAnl4EJRAZ0hOJfu-_1ZQllw
 *
 */
 
@@ -81,6 +94,17 @@ module bsg_manycore_link_to_axil
 );
 
 
+  // Dependencies between channel handshake signals
+  // -------------------------------------------------------
+  // axil write channels
+  // bvalid : must wait for wvalid & wready
+  // bresp: must be signaled only after the write data
+
+  // See details in ARM's DOC:
+  // https://developer.arm.com/docs/ihi0022/d ,A3.3.1
+  // -------------------------------------------------------
+
+
   // axil write data path
   // -----------------------
 
@@ -88,15 +112,6 @@ module bsg_manycore_link_to_axil
   logic [axil_data_width_p-1:0] tx_wdata_li ;
   logic                         tx_wen_li   ;
   logic                         tx_wready_lo;
-
-  // --------------------------------------------
-  // axil write channels
-  // --------------------------------------------
-  // typical dependency:
-  // awready : awvalid or wvalid or None
-  // wready : awvalid or wvalid or None
-  // bvalid : after the cycle of wvalid & wready
-  // The awvalid and wvalid can be asserted at the same cycle
 
   logic awready_lo;
   logic wready_lo ;
@@ -118,7 +133,7 @@ module bsg_manycore_link_to_axil
     tx_wdata_li = '0;
 
     bvalid_n = bvalid_r;
-    bresp_lo = 2'b00; // always OKAY even writing to the undefined address
+    bresp_lo = axil_resp_OKAY_gp; // always OKAY even writing to the undefined address
 
     if (axil_awvalid_i & axil_wvalid_i) begin
       wready_lo = is_write_to_tdr ? tx_wready_lo : 1'b1;
@@ -173,12 +188,6 @@ module bsg_manycore_link_to_axil
   logic [axil_addr_width_p-1:0] rx_rom_addr_li;
   logic [axil_data_width_p-1:0] rx_rom_data_lo;
 
-  // --------------------------------------------
-  // axil read channels
-  // --------------------------------------------
-  // typical dependency:
-  // arready : arvalid or None
-  // rvalid : arvalid & arready
 
   logic                         arready_lo;
   logic [axil_data_width_p-1:0] rdata_r, rdata_n;
@@ -196,7 +205,7 @@ module bsg_manycore_link_to_axil
   wire is_read_rdfo_mc_req   = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdfo_req_gp);
   wire is_read_rdr_req       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_req_gp) ;
   wire is_read_rom           = (axil_araddr_i >= mcl_rom_base_addr_gp) &&
-                               (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_p*rom_width_p/8)));
+                               (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_gp*rom_width_gp/8)));
 
   always_comb begin
 
@@ -204,7 +213,7 @@ module bsg_manycore_link_to_axil
     rdata_n = rdata_r;
     rvalid_n = rvalid_r;
 
-    rresp_lo = 2'b00; // always OKAY even reading from the undefined address
+    rresp_lo = axil_resp_OKAY_gp; // always OKAY even reading from the undefined address
 
     // ready from data paths to read
     tx_rready_li = 1'b0;
@@ -265,16 +274,16 @@ module bsg_manycore_link_to_axil
   // bladerunner rom
   // ----------------------------
   // The rom not necessarily in the mcl, so we put its parameters in other package.
-  localparam rom_addr_width_lp = `BSG_SAFE_CLOG2(rom_els_p); // TODO: _gp?
+  localparam rom_addr_width_lp = `BSG_SAFE_CLOG2(rom_els_gp);
 
-  wire [rom_addr_width_lp-1:0] br_rom_addr_li = rx_rom_addr_li[$clog2(rom_width_p/8)+:rom_addr_width_lp];
+  wire [rom_addr_width_lp-1:0] br_rom_addr_li = rx_rom_addr_li[$clog2(rom_width_gp/8)+:rom_addr_width_lp];
 
-  logic [rom_width_p-1:0] br_rom_data_lo;
+  logic [rom_width_gp-1:0] br_rom_data_lo;
 
   assign rx_rom_data_lo = axil_data_width_p'(br_rom_data_lo);
 
   bsg_bladerunner_configuration #(
-    .width_p     (rom_width_p      ),
+    .width_p     (rom_width_gp     ),
     .addr_width_p(rom_addr_width_lp)
   ) configuration_rom (
     .addr_i(br_rom_addr_li),
@@ -344,6 +353,8 @@ module bsg_manycore_link_to_axil
     .mc_req_words_o(mc_req_words_lo)
   );
 
+  // See reference below for how to attach modules to the manycore endpoint:
+  // Xie, S, Taylor, M. B. (2018). The BaseJump Manycore Accelerator Network. arXiv:1808.00650.
 
   // --------------------------------------------
   // fifo to manycore endpoint standard

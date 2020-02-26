@@ -25,6 +25,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+/*
+*  bsg_mcl_axil_fifos_slave.v
+*
+* The host is a slave attached to the manycore endpoint.
+* It receives the manycore's requests by reading the AXIL read channel.
+*/
+
 module bsg_mcl_axil_fifos_slave
   import bsg_manycore_link_to_axil_pkg::*;
 #(
@@ -36,7 +43,7 @@ module bsg_mcl_axil_fifos_slave
 ) (
   input                          clk_i
   ,input                          reset_i
-  // axil side
+  // host side
   ,output [axil_data_width_p-1:0] r_data_o
   ,output                         r_v_o
   ,input                          r_ready_i

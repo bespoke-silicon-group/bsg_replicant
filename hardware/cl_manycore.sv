@@ -31,7 +31,6 @@
 
 `include "bsg_bladerunner_rom_pkg.vh"
 
-// `undef COSIM
 
 module cl_manycore
   import cl_manycore_pkg::*;
@@ -352,6 +351,7 @@ module cl_manycore
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
 
+`ifdef COSIM
 
   // print stat signals for vanilla_core_profiler module
   logic print_stat_v;
@@ -369,8 +369,6 @@ module cl_manycore
     ,.print_stat_v_o(print_stat_v)
     ,.print_stat_tag_o(print_stat_tag)
   );
-
-`ifdef COSIM
 
    bsg_manycore_link_sif_s async_link_sif_li;
    bsg_manycore_link_sif_s async_link_sif_lo;
