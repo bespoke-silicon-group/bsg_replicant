@@ -95,8 +95,8 @@ test_loader $(REGRESSION_TESTS): %: $(EXEC_PATH)/%
 $(EXEC_PATH)/%.log: %.vanilla_stats.csv ;
 
 SIM_ARGS += +rad +ntb_random_seed_automatic 
-$(EXEC_PATH)/%.vpd: SIM_ARGS += +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-$(EXEC_PATH)/%.vpd: SIM_ARGS += +vpdfile+$@
+%.vpd: SIM_ARGS += +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
+%.vpd: SIM_ARGS += +vpdfile+$@
 
 $(UNIFIED_TESTS:%=%.vpd): $(EXEC_PATH)/test_loader.debug
 $(INDEPENDENT_TESTS:%=%.vpd): %.vpd : $(EXEC_PATH)/%.debug
@@ -115,8 +115,8 @@ $(REGRESSION_TESTS:%=%.vanilla_stats.csv): %.vanilla_stats.csv : %.rule
 %.vanilla_operation_trace.csv %.vanilla.log: TEST_NAME = $(basename $(basename $(notdir $@)))
 %.vanilla_operation_trace.csv %.vanilla.log: SIM_ARGS += +trace
 %.vanilla_operation_trace.csv %.vanilla.log: $(EXEC_PATH)/%.log
-	@mv $(dir $@)/.$(TEST_NAME)/vanilla.log $(TEST_NAME).vanilla.log
-	@mv $(dir $@)/.$(TEST_NAME)/vanilla_operation_trace.csv $(TEST_NAME).vanilla_operation_trace.csv
+	@mv .$(TEST_NAME)/vanilla.log $(TEST_NAME).vanilla.log
+	@mv .$(TEST_NAME)/vanilla_operation_trace.csv $(TEST_NAME).vanilla_operation_trace.csv
 
 
 %.dve: %.vpd
