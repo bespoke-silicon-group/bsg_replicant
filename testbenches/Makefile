@@ -51,21 +51,6 @@ include $(CL_DIR)/cadenv.mk
 #
 include simlibs.mk
 
-# -------------------- Arguments --------------------
-#
-# This Makefile has several optional "arguments" that are passed as Variables
-#
-# DEBUG: Opens the GUI during cosimulation. Default: 0
-# TURBO: Disables VPD generation. Default: 1
-# EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
-# 
-# If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
-# This is a COMPILATION ONLY option. Any subsequent runs, without compilation
-# will retain this setting
-
-DEBUG ?= 0
-TURBO ?= 1 # Use if you don't want debug information
-EXTRA_TURBO ?= 0 # Use at your own risk.
 
 # targets.mk defines the targets (sub-directories) for regression in
 # cosimulation
@@ -75,8 +60,7 @@ include $(REGRESSION_PATH)/targets.mk
 regression: $(TARGETS)
 	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
 $(TARGETS): $(SIMLIBS)
-	$(MAKE) -C $@ regression EXTRA_TURBO=$(EXTRA_TURBO)	\
-		DEBUG=$(DEBUG) TURBO=$(TURBO)
+	$(MAKE) -C $@ regression
 
 clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean
 	rm -rf *.log *.jou 

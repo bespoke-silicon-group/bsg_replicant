@@ -76,6 +76,3 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # <test_name>.vanilla.log`
 %.vanilla_stats.csv %.vpd: TEST_NAME = $(basename $(basename $(notdir $@)))
 %.vanilla_stats.csv %.vpd: C_ARGS = ""
-
-# dve.mk defines the dve targets
-include $(TESTBENCH_PATH)/dve.mk

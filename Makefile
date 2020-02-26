@@ -58,24 +58,8 @@ build:
 regression:
 	$(MAKE) -C regression $@ 
 
-# The following variables control different behaviors in C/C++
-# Co-simulation. These can be set from the command line, e.g: `make
-# cosim DEBUG=1`. They are passed as variables to the Makefile in the
-# testbenches directory.
-
-# DEBUG=1 Opens the Waveform GUI during simulation
-
-# TURBO=1 increases simulation speed, but disables waveform generation
-
-# EXTRA_TURBO=1 further increases simulation speed, but may affect
-# correctness.
-DEBUG ?=
-TURBO ?= 1 
-EXTRA_TURBO ?= 0
-
 cosim: 
-	$(MAKE) -C testbenches regression EXTRA_TURBO=$(EXTRA_TURBO)	\
-		DEBUG=$(DEBUG) TURBO=$(TURBO)
+	$(MAKE) -C testbenches regression
 
 clean:
 	$(MAKE) -C testbenches clean 
