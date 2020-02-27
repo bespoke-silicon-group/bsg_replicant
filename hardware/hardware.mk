@@ -186,8 +186,8 @@ $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh: $(HARDWARE_PATH)/bsg_bladerunner_co
 	@echo >> $@
 	@echo "package bsg_bladerunner_rom_pkg;" >> $@
 	@echo >> $@
-	@echo "parameter rom_width_p = 32;" >> $@
-	@echo "parameter rom_els_p = `wc -l < $<`;" >> $@
+	@echo "parameter rom_width_gp = 32;" >> $@
+	@echo "parameter rom_els_gp = `wc -l < $<`;" >> $@
 	@echo >> $@
 	@echo "endpackage" >> $@
 	@echo >> $@
