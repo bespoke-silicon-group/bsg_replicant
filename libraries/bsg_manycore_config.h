@@ -59,7 +59,21 @@ extern "C" {
 #define HB_MC_CONFIG_VCORE_BASE_X 0
 #define HB_MC_CONFIG_VCORE_BASE_Y 1
 
-#define HB_MC_CONFIG_MAX_REMOTE_LOADS 32
+typedef enum __hb_mc_remote_load_limit_t {
+        HB_MC_REMOTE_LOAD_MIN = 1,
+        HB_MC_REMOTE_LOAD_MAX = 32
+} __hb_mc_remote_load_limit_t;
+
+typedef enum __hb_mc_endpoint_out_credits_limit_t {
+        HB_MC_EP_OUT_CREDITS_MIN = 1,
+        HB_MC_EP_OUT_CREDITS_MAX = 64
+} __hb_mc_endpoint_out_credits_limit_t;
+
+typedef enum __hb_mc_host_credits_limit_t {
+        HB_MC_HOST_CREDITS_MIN = 1,
+        HB_MC_HOST_CREDITS_MAX = 512
+} __hb_mc_host_credits_limit_t;
+
 
         typedef uint32_t hb_mc_config_raw_t;
         /* Compilation Metadata */
