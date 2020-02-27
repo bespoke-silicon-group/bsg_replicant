@@ -59,6 +59,8 @@ extern "C" {
 #define HB_MC_CONFIG_VCORE_BASE_X 0
 #define HB_MC_CONFIG_VCORE_BASE_Y 1
 
+#define HB_MC_CONFIG_MAX_REMOTE_LOADS 32
+
         typedef uint32_t hb_mc_config_raw_t;
         /* Compilation Metadata */
         typedef struct __hb_mc_version_t {
@@ -386,9 +388,10 @@ extern "C" {
          * @param[in] cfg A configuration initialized from the manycore ROM.
          * @return the threshold for host to update its cached credits.
          */
-        static inline uint32_t hb_mc_config_get_io_credit_upate_threshold(const hb_mc_config_t *cfg)
+        static inline uint32_t hb_mc_config_get_io_credit_update_threshold(const hb_mc_config_t *cfg)
         {
                 return cfg->io_host_credits_cap;
+                // we can also set half of the max host credits.
                 // return cfg->io_host_credits_cap/2;
         }
 

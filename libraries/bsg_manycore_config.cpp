@@ -143,11 +143,20 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->vcache_stripe_words = idx;
 
-        config->io_remote_load_cap = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
+        idx = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
+        if ((idx > HB_MC_CONFIG_MAX_REMOTE_LOADS)){
+                bsg_pr_err("%s: Invalid remote load caps %d: %s\n",
+                           __func__, idx, error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->io_remote_load_cap = idx;
 
-        config->io_host_credits_cap = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
+
+        /* the flowing flow control parameters are checked at test_rom*/
 
         config->io_endpoint_max_out_credits = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
+        config->io_host_credits_cap = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
+
 
         return HB_MC_SUCCESS;
 }

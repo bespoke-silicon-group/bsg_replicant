@@ -59,33 +59,46 @@ int test_rom (int argc, char **argv) {
         config = hb_mc_manycore_get_config(&mc);
 
 
-        rc = hb_mc_manycore_get_endpoint_max_out_credits(&mc, &expected);
-        if(rc != HB_MC_SUCCESS){
-                bsg_pr_test_err("Failed to get the max out credits: %s\n",
-                                hb_mc_strerror(rc));
-                return HB_MC_FAIL;
-        }
-        bsg_pr_test_info("Checking from ROM that the expected out credits of endpoint is %d\n", expected);
-
+        /* Check the flow control parameters in IO */
+        dim = hb_mc_config_get_dimension_vcore(config);
         // check enough times to let the credit resume...
-        int max_trail_num = expected;
+        int max_trail_num = hb_mc_dimension_get_x(dim)*hb_mc_dimension_get_y(dim);
         uint32_t matched = 0;
+
+        // out credits from manycore endpoint standard
+        expected = hb_mc_config_get_io_endpoint_max_out_credits(config);
+        bsg_pr_test_info("Checking that the expected endpoint out credits is %d\n", expected);
         for (unsigned i = 0; i < max_trail_num; i++) {
-            result = hb_mc_manycore_get_host_credits(&mc);
-            bsg_pr_test_info("Try No. %d: out credits of endpoint is %d\n", i, result);
+            result = hb_mc_manycore_get_endpoint_out_credits(&mc);
+            bsg_pr_test_info("Try No. %d: endpoint out credits is %d\n", i, result);
             if(result == expected) {
                 matched = 1;
                 break;
             }
         }
-
         if (!matched) {
-            bsg_pr_test_err("Incorrect number of out credits. "
-                            "Got: %d, expected %d\n", result, expected);
-            bsg_pr_test_err("Have you programed your FPGA"
-                            " (fpga-load-local-image)\n");
+            bsg_pr_test_err("Incorrect number of out credits. Got: %d, expected %d\n", result, expected);
+            bsg_pr_test_err("Have you programed your FPGA fpga-load-local-image)\n");
             fail = 1;
-            goto cleanup; // Considered harmful
+            goto cleanup;
+        }
+
+        // max host credits
+        expected = hb_mc_config_get_io_host_credits_cap(config);
+        bsg_pr_test_info("Checking that the expected host request credits is %d\n", expected);
+        for (unsigned i = 0; i < max_trail_num; i++) {
+            result = hb_mc_manycore_get_host_request_credits(&mc);
+            bsg_pr_test_info("Try No. %d: host request credits is %d\n", i, result);
+            if(result == expected) {
+                matched = 1;
+                break;
+            }
+        }
+        if (!matched) {
+            bsg_pr_test_err("Incorrect number of out credits. Got: %d, expected %d\n", result, expected);
+            bsg_pr_test_err("Have you programed your FPGA fpga-load-local-image)\n");
+            fail = 1;
+            goto cleanup;
         }
 
 

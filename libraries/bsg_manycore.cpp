@@ -374,13 +374,6 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 /////////////////////////////////
 /* Flow Control Help Functions */
 /////////////////////////////////
-int hb_mc_manycore_get_endpoint_max_out_credits(hb_mc_manycore_t *mc, unsigned *max_credits)
-{
-        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        *max_credits = hb_mc_config_get_io_endpoint_max_out_credits(cfg);
-        return HB_MC_SUCCESS;
-}
-
 
 static int hb_mc_manycore_get_remote_load_cap(hb_mc_manycore_t *mc, unsigned *cap)
 {
@@ -388,7 +381,6 @@ static int hb_mc_manycore_get_remote_load_cap(hb_mc_manycore_t *mc, unsigned *ca
         *cap = hb_mc_config_get_io_remote_load_cap(cfg);
         return HB_MC_SUCCESS;
 }
-
 
 static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc)
 {
@@ -420,16 +412,14 @@ static int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc)
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
     cap = hb_mc_config_get_io_host_credits_cap(cfg);
-    err = hb_mc_manycore_get_endpoint_max_out_credits(mc, &max_credits);
-    if (err != HB_MC_SUCCESS)
-            return err;
+    max_credits = hb_mc_config_get_io_endpoint_max_out_credits(cfg);
 
     // wait until out credts are fully resumed, and the tx fifo vacancy equals to host credits
     while ((vacancy != cap) | (ep_out_credits != max_credits)) {
         err = hb_mc_manycore_tx_fifo_get_vacancy(mc, HB_MC_FIFO_TX_REQ, &vacancy);
         if (err != HB_MC_SUCCESS)
                 return err;
-        ep_out_credits = hb_mc_manycore_get_host_credits(mc);
+        ep_out_credits = hb_mc_manycore_get_endpoint_out_credits(mc);
     }
 
     return HB_MC_SUCCESS;
@@ -443,7 +433,7 @@ static int hb_mc_manycore_update_requests(hb_mc_manycore_t *mc)
 
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
-    threshold = hb_mc_config_get_io_credit_upate_threshold(cfg);
+    threshold = hb_mc_config_get_io_credit_update_threshold(cfg);
     cap = hb_mc_config_get_io_host_credits_cap(cfg);
 
     while (mc->htod_requests >= threshold) {
@@ -650,11 +640,11 @@ static int  hb_mc_manycore_mmio_read_pci(hb_mc_manycore_t *mc, uintptr_t offset,
 }
 
 /**
- * Read the number of remaining available host credits
+ * Read the number of remaining available endpoint out credits
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @return HB_MC_FAIL if an error occured. Number of remaining host credits otherwise
+ * @return HB_MC_FAIL if an error occured. Number of remaining endpoint out credits otherwise
  */
-int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc)
+int hb_mc_manycore_get_endpoint_out_credits(hb_mc_manycore_t *mc)
 {
         uint64_t addr;
         uint32_t value;
@@ -662,12 +652,31 @@ int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc)
         addr = hb_mc_mmio_out_credits_get_addr();
         err = hb_mc_manycore_mmio_read32(mc, addr, &value);
         if (err != HB_MC_SUCCESS) {
-                manycore_pr_err(mc, "%s: Failed to read Host Credits Register: %s\n",
+                manycore_pr_err(mc, "%s: Failed to read endpoint out credits: %s\n",
                                 __func__, hb_mc_strerror(err));
                 return err;
         }
         return value;
 }
+
+/**
+ * Read the number of remaining credits of host
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_FAIL if an error occured. Number of remaining credits of host otherwise
+ */
+int hb_mc_manycore_get_host_request_credits(hb_mc_manycore_t *mc)
+{
+        uint32_t value;
+        int err;
+        err = hb_mc_manycore_tx_fifo_get_vacancy(mc, HB_MC_FIFO_TX_REQ, &value);
+        if (err != HB_MC_SUCCESS) {
+                manycore_pr_err(mc, "%s: Failed to read Host Credits: %s\n",
+                                __func__, hb_mc_strerror(err));
+                return err;
+        }
+        return value;
+}
+
 
 static int hb_mc_manycore_mmio_read(hb_mc_manycore_t *mc, uintptr_t offset,
                                     void *vp, size_t sz)
