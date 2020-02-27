@@ -76,6 +76,5 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # onto the manycore (TEST_PATH), and the test name (TEST_NAME). CUDA_PATH is
 # defined for convenience
 CUDA_PATH=$(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/
-%.vanilla_stats.csv %.vpd: TEST_NAME = $(basename $(basename $(notdir $@)))
 %.vanilla_stats.csv %.vpd: TEST_PATH=$(CUDA_PATH)/$(TEST_NAME:test_%=%)/main.riscv
 %.vanilla_stats.csv %.vpd: C_ARGS = $(TEST_PATH) $(TEST_NAME)

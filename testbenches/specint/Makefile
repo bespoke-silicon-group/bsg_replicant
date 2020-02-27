@@ -74,6 +74,5 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # requires two arguments: The path to the RISC-V Binary loaded onto the manycore
 # (TEST_PATH), and the test name (TEST_NAME). SPECINT_PATH is defined for convenience
 SPECINT_PATH=$(BSG_MANYCORE_DIR)/software/spmd/specint2000
-%.vanilla_stats.csv %.vpd: TEST_NAME = $(basename $(basename $(notdir $@)))
 %.vanilla_stats.csv %.vpd: TEST_PATH=$(SPECINT_PATH)/$(TEST_NAME:test_%=%)/main.riscv
 %.vanilla_stats.csv %.vpd: C_ARGS = $(TEST_PATH) $(TEST_NAME)
