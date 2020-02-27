@@ -53,26 +53,21 @@ extern "C" {
 
         // We expect a 32-bit bus for Addresses, but two bits are removed because the
         // network uses word-level addressing and handles byte-writes with a mask
-#define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
-#define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
+        #define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
+        #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
-#define HB_MC_CONFIG_VCORE_BASE_X 0
-#define HB_MC_CONFIG_VCORE_BASE_Y 1
+        #define HB_MC_CONFIG_VCORE_BASE_X 0
+        #define HB_MC_CONFIG_VCORE_BASE_Y 1
 
-typedef enum __hb_mc_remote_load_limit_t {
-        HB_MC_REMOTE_LOAD_MIN = 1,
-        HB_MC_REMOTE_LOAD_MAX = 32
-} __hb_mc_remote_load_limit_t;
+        // normal limit for the flow-control parameters
+        #define HB_MC_REMOTE_LOAD_MIN 1
+        #define HB_MC_REMOTE_LOAD_MAX 32
 
-typedef enum __hb_mc_endpoint_out_credits_limit_t {
-        HB_MC_EP_OUT_CREDITS_MIN = 1,
-        HB_MC_EP_OUT_CREDITS_MAX = 64
-} __hb_mc_endpoint_out_credits_limit_t;
+        #define HB_MC_EP_OUT_CREDITS_MIN 1
+        #define HB_MC_EP_OUT_CREDITS_MAX 64
 
-typedef enum __hb_mc_host_credits_limit_t {
-        HB_MC_HOST_CREDITS_MIN = 1,
-        HB_MC_HOST_CREDITS_MAX = 512
-} __hb_mc_host_credits_limit_t;
+        #define HB_MC_HOST_CREDITS_MIN 1
+        #define HB_MC_HOST_CREDITS_MAX 512
 
 
         typedef uint32_t hb_mc_config_raw_t;
