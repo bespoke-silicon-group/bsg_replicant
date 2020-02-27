@@ -1454,9 +1454,6 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        err = hb_mc_manycore_host_requests_init(mc);
-        if (err != HB_MC_SUCCESS)
-                return err;
 
 #ifdef COSIM
         sv_set_virtual_dip_switch(0, 0);
