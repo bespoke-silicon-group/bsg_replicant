@@ -739,13 +739,13 @@ module cl_manycore
     // we do not support having fewer caches than channels
     localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/dram_channels_used_p);
     if (num_cache_per_hbm_channel_p <= 0) begin
-      $fatal("hbm channels (%d) must be less than or equal to l2 caches (%d)",
+      $fatal("dram channels (%d) must be less than or equal to l2 caches (%d)",
              dram_channels_used_p, num_tiles_x_p);
     end
     // caches:channels must be an integral ratio
     localparam real _num_tiles_x_real_p = num_tiles_x_p;
     if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/dram_channels_used_p)) begin
-      $fatal("l2 caches (%d) must be a multiple of hbm channels (%d)",
+      $fatal("l2 caches (%d) must be a multiple of dram channels (%d)",
              num_tiles_x_p, dram_channels_used_p);
     end
 
