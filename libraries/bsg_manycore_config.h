@@ -103,6 +103,8 @@ extern "C" {
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
+		uint32_t dram_channels;
+		uint32_t dram_bank_size_words;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -127,7 +129,9 @@ extern "C" {
                 HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
-                HB_MC_CONFIG_MAX = 20
+		HB_MC_CONFIG_DRAM_CHANNELS = 20,
+		HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 21,
+		HB_MC_CONFIG_MAX,
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -260,6 +264,11 @@ extern "C" {
                         log2(sizeof(uint32_t));
         }
 
+	static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
+	{
+		return cfg->dram_bank_size_words << 2;
+	}
+
         /* Returns the size of DRAM accessible to each manycore tile */
         static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
         {
@@ -267,8 +276,7 @@ extern "C" {
                 uint32_t awidth;
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
                 cols = hb_mc_dimension_get_x(dim);
-                awidth = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
-                return (cols * (1ull << awidth));
+                return hb_mc_config_get_dram_bank_size(cfg) * cols;
         }
 
         static inline uint8_t hb_mc_config_get_dmem_bitwidth_addr(const hb_mc_config_t *cfg)
@@ -421,11 +429,7 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_get_dram_channels(const hb_mc_config_t *cfg)
         {
-#if defined(USING_DRAMSIM3)
-                return 8; // currently a constant
-#else
-                return 1;
-#endif
+		return cfg->dram_channels;
         }
 
 

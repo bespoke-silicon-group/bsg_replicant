@@ -42,6 +42,9 @@ package cl_manycore_pkg;
   // the max number of outstanding requests from the host endpoint to the manycore
   parameter max_out_credits_p = `CL_MANYCORE_IO_EP_MAX_OUT_CREDITS;
 
+  // used dram channels
+  parameter dram_channels_used_p = `CL_MANYCORE_DRAM_CHANNELS;  
+  
 endpackage
 
 `endif

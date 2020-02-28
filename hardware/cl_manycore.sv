@@ -737,16 +737,16 @@ module cl_manycore
 
     // checks that this configuration is supported
     // we do not support having fewer caches than channels
-    localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/hbm_num_channels_p);
+    localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/dram_channels_used_p);
     if (num_cache_per_hbm_channel_p <= 0) begin
       $fatal("hbm channels (%d) must be less than or equal to l2 caches (%d)",
-             hbm_num_channels_p, num_tiles_x_p);
+             dram_channels_used_p, num_tiles_x_p);
     end
     // caches:channels must be an integral ratio
     localparam real _num_tiles_x_real_p = num_tiles_x_p;
-    if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/hbm_num_channels_p)) begin
+    if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/dram_channels_used_p)) begin
       $fatal("l2 caches (%d) must be a multiple of hbm channels (%d)",
-             num_tiles_x_p, hbm_num_channels_p);
+             num_tiles_x_p, dram_channels_used_p);
     end
 
     localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
@@ -779,7 +779,7 @@ module cl_manycore
     logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_li;
     logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
 
-    for (genvar ch_i = 0; ch_i < hbm_num_channels_p; ch_i++) begin
+    for (genvar ch_i = 0; ch_i < dram_channels_used_p; ch_i++) begin
       localparam cache_range_lo_p = ch_i * num_cache_per_hbm_channel_p;
       localparam cache_range_hi_p = (ch_i+1) * num_cache_per_hbm_channel_p - 1;
 
@@ -824,6 +824,12 @@ module cl_manycore
          );
     end
 
+    // tie-off handshake for the the unused hbm channels
+    for (genvar ch_i = dram_channels_used_p; ch_i < hbm_num_channels_p; ch_i++) begin
+      assign hbm_req_v_lo[ch_i]  = 1'b0;
+      assign hbm_data_v_lo[ch_i] = 1'b0;
+    end
+    
     // assign hbm clk and reset to core for now...
     //assign hbm_clk = core_clk;
     assign hbm_reset = core_reset;

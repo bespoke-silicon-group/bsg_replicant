@@ -30,7 +30,7 @@
 #include <bsg_manycore_npa.h>
 #include "test_vcache_flush.hpp"
 
-#define NUM_TESTS 32
+#define NUM_TESTS 3
 
 /* these are read from the designs ROM */
 uint32_t NUM_SETS = 0;
@@ -192,6 +192,8 @@ int test_vcache_flush() {
         hb_mc_idx_t dram_coord_x = -1;
         hb_mc_idx_t dram_xs[dim_x];
         size_t dram_size = hb_mc_config_get_dram_size(config);
+
+	bsg_pr_test_info("dram_size = 0x%08x\n", dram_size);
         // set all dram_xs to their unique column id
         for (hb_mc_idx_t x = 0; x < dim_x; ++x) dram_xs[x] = x;
 
