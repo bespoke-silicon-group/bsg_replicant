@@ -102,9 +102,11 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_test_dram_channel.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
 
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm_rx.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_ramulator_hbm_tx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_tx.v
+
 # Add files needed by DRAMSim3
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v

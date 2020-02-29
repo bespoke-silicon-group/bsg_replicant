@@ -777,21 +777,22 @@ module cl_manycore
     logic [hbm_num_channels_p-1:0]                               hbm_data_yumi_li;
 
     logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_li;
+    logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_li;
     logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
 
     for (genvar ch_i = 0; ch_i < dram_channels_used_p; ch_i++) begin
       localparam cache_range_lo_p = ch_i * num_cache_per_hbm_channel_p;
       localparam cache_range_hi_p = (ch_i+1) * num_cache_per_hbm_channel_p - 1;
 
-      bsg_cache_to_ramulator_hbm
+      bsg_cache_to_test_dram
         #(.num_cache_p(num_cache_per_hbm_channel_p)
           ,.data_width_p(data_width_p)
           ,.addr_width_p(cache_addr_width_lp)
           ,.block_size_in_words_p(block_size_in_words_p)
           ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
-          ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
-          ,.hbm_data_width_p(hbm_data_width_p))
-      cache_to_ramulator
+          ,.dram_channel_addr_width_p(hbm_channel_addr_width_p)
+          ,.dram_data_width_p(hbm_data_width_p))
+      cache_to_test_dram
         (.core_clk_i(core_clk)
          ,.core_reset_i(core_reset)
 
@@ -807,20 +808,21 @@ module cl_manycore
          ,.dma_data_v_i(lv1_dma.dma_data_v_lo[cache_range_hi_p:cache_range_lo_p])
          ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li[cache_range_hi_p:cache_range_lo_p])
 
-         ,.hbm_clk_i(hbm_clk)
-         ,.hbm_reset_i(hbm_reset)
+         ,.dram_clk_i(hbm_clk)
+         ,.dram_reset_i(hbm_reset)
 
-         ,.hbm_ch_addr_o(hbm_ch_addr_lo[ch_i])
-         ,.hbm_req_yumi_i(hbm_req_yumi_li[ch_i])
-         ,.hbm_req_v_o(hbm_req_v_lo[ch_i])
-         ,.hbm_write_not_read_o(hbm_write_not_read_lo[ch_i])
+         ,.dram_ch_addr_o(hbm_ch_addr_lo[ch_i])
+         ,.dram_req_yumi_i(hbm_req_yumi_li[ch_i])
+         ,.dram_req_v_o(hbm_req_v_lo[ch_i])
+         ,.dram_write_not_read_o(hbm_write_not_read_lo[ch_i])
 
-         ,.hbm_data_o(hbm_data_lo[ch_i])
-         ,.hbm_data_v_o(hbm_data_v_lo[ch_i])
-         ,.hbm_data_yumi_i(hbm_data_yumi_li[ch_i])
+         ,.dram_data_o(hbm_data_lo[ch_i])
+         ,.dram_data_v_o(hbm_data_v_lo[ch_i])
+         ,.dram_data_yumi_i(hbm_data_yumi_li[ch_i])
 
-         ,.hbm_data_i(hbm_data_li[ch_i])
-         ,.hbm_data_v_i(hbm_data_v_li[ch_i])
+         ,.dram_data_i(hbm_data_li[ch_i])
+         ,.dram_data_v_i(hbm_data_v_li[ch_i])
+	 ,.dram_ch_addr_i(hbm_ch_addr_li[ch_i])
          );
     end
 
@@ -948,7 +950,8 @@ module cl_manycore
        ,.data_yumi_o(lv2_ramulator_hbm.hbm_data_yumi_li)
 
        ,.data_o(lv2_ramulator_hbm.hbm_data_li)
-       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li));
+       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li)
+       ,.read_done_ch_addr_o(lv2_ramulator_hbm.hbm_ch_addr_li));
 `endif
   end
 
