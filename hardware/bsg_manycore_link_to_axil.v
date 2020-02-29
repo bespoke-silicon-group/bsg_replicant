@@ -221,7 +221,7 @@ module bsg_manycore_link_to_axil
     rx_rom_addr_li = '0;
 
     if (axil_arvalid_i) begin
-      if (is_read_credit) begin  // always accept and return the occupancy of rx words
+      if (is_read_credit) begin  // always accept and return the manycore endpoint out credits
         arready_lo = 1'b1;
         rdata_n = axil_data_width_p'(ep_out_credits_lo);
       end
