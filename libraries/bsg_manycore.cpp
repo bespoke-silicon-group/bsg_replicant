@@ -1489,6 +1489,11 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         /* send store requests one word at a time */
         for (size_t i = 0; i < n_words; i++) {
 
+                /* do we have capacity for another request? */
+                err = hb_mc_manycore_update_requests(mc);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+
                 err = hb_mc_manycore_write(mc, &addr, &word, 4);
                 if (err != HB_MC_SUCCESS) {
                         manycore_pr_err(mc, "%s: Failed to send write request: %s\n",
@@ -1496,9 +1501,17 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                         return err;
                 }
 
+                err = hb_mc_manycore_incr_host_requests(mc);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+
                 // increment EPA by 1: (EPA's address words)
                 hb_mc_npa_set_epa(&addr, hb_mc_npa_get_epa(&addr) + sizeof(uint32_t));
         }
+
+        err = hb_mc_manycore_host_request_fence(mc);
+        if (err != HB_MC_SUCCESS)
+                return err;
 
 #ifdef COSIM
         sv_set_virtual_dip_switch(0, 0);
