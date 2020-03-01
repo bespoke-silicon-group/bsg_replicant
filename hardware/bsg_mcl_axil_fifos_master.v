@@ -37,10 +37,10 @@ module bsg_mcl_axil_fifos_master
   import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter fifo_width_p = "inv"
-  , parameter host_read_credits_p = "inv"
+  , parameter host_credits_p = "inv"
   , parameter axil_data_width_p = 32
   , localparam integer sipo_els_lp = fifo_width_p/axil_data_width_p
-  , localparam credit_width_lp = `BSG_WIDTH(sipo_els_lp*host_read_credits_p)
+  , localparam credit_width_lp = `BSG_WIDTH(sipo_els_lp*host_credits_p)
 ) (
   input                          clk_i
   ,input                          reset_i
@@ -72,6 +72,12 @@ module bsg_mcl_axil_fifos_master
 
   localparam sipo_cnt_width_lp = $clog2(sipo_els_lp+1);
 
+  // set the two credits equal for simplicity, they can differ though. 
+  localparam host_read_credits_lp = host_credits_p;
+  localparam host_request_credits_lp = host_credits_p;
+  
+  localparam host_tx_fifo_els_lp = sipo_els_lp*host_request_credits_lp - (sipo_els_lp+1);
+
 
   // --------------------------------------------------------
   //                  host request to mc
@@ -100,9 +106,9 @@ module bsg_mcl_axil_fifos_master
   wire req_sipof_yumi_li = req_sipo_ready_li & host_req_v_o;
 
   bsg_fifo_1r1w_small #(
-    .width_p           (axil_data_width_p                  ),
-    .els_p             (sipo_els_lp*(host_read_credits_p-2)), // 2 comes from the two_fifo inside of sipof
-    .ready_THEN_valid_p(0                                  )
+    .width_p           (axil_data_width_p  ),
+    .els_p             (host_tx_fifo_els_lp),
+    .ready_THEN_valid_p(0                  )
   ) fifo_req (
     .clk_i  (clk_i          ),
     .reset_i(reset_i        ),
@@ -114,6 +120,7 @@ module bsg_mcl_axil_fifos_master
     .yumi_i (req_buf_yumi_li)
   );
 
+  // sipof has elements sipo_els_lp+1
   bsg_serial_in_parallel_out_full #(
     .width_p(axil_data_width_p),
     .els_p  (sipo_els_lp      )
@@ -144,7 +151,7 @@ module bsg_mcl_axil_fifos_master
 
   bsg_fifo_1r1w_small #(
     .width_p           (fifo_width_p       ),
-    .els_p             (host_read_credits_p),
+    .els_p             (host_read_credits_lp),
     .ready_THEN_valid_p(0                  )
   ) fifo_rsp (
     .clk_i  (clk_i          ),
@@ -183,10 +190,10 @@ module bsg_mcl_axil_fifos_master
 
   // Host will read this vacancy and update its request credits.
   // In general, we should set vacancy >= host credits to not overflow the fifo, here we set them equal
-  // vacancy [words] := sipo_els_lp*host_read_credits_p = elements of (req fifo + sipof) 
+  // vacancy [words] := sipo_els_lp*host_request_credits_lp = elements of (req fifo + sipof) 
   bsg_counter_up_down #(
-    .max_val_p (sipo_els_lp*host_read_credits_p),
-    .init_val_p(sipo_els_lp*host_read_credits_p),
+    .max_val_p (sipo_els_lp*host_request_credits_lp),
+    .init_val_p(sipo_els_lp*host_request_credits_lp),
     .max_step_p(sipo_els_lp                    )
   ) cnt_req_credit (
     .clk_i  (clk_i         ),
@@ -204,7 +211,7 @@ module bsg_mcl_axil_fifos_master
   bsg_mcl_request_s  host_req_lo_cast;
   assign host_req_lo_cast = host_req_o;
 
-  logic [`BSG_WIDTH(host_read_credits_p)-1:0] read_credits_lo;
+  logic [`BSG_WIDTH(host_read_credits_lp)-1:0] read_credits_lo;
 
   // pause the host request if:
   // 1) endpoint is out of credits (this is implemented outside)
@@ -217,8 +224,8 @@ module bsg_mcl_axil_fifos_master
   wire returned_read  = rsp_buf_yumi_li;
 
   bsg_counter_up_down #(
-    .max_val_p (host_read_credits_p),
-    .init_val_p(host_read_credits_p),
+    .max_val_p (host_read_credits_lp),
+    .init_val_p(host_read_credits_lp),
     .max_step_p(1                )
   ) cnt_rd_credit (
     .clk_i  (clk_i          ),

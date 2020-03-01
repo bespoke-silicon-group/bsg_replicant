@@ -171,12 +171,12 @@ module bsg_manycore_link_to_axil
   // 2. credit registers
 
   // host credit
-  localparam host_credits_width_lp = `BSG_WIDTH(fifo_width_p/axil_data_width_p*mcl_read_credits_gp);
+  localparam host_credits_width_lp = `BSG_WIDTH(fifo_width_p/axil_data_width_p*mcl_host_credits_gp);
   logic [host_credits_width_lp-1:0] host_credits_lo;
 
   // rx fifo occupancy for manycore request
   localparam integer piso_els_lp = fifo_width_p/axil_data_width_p;
-  localparam pkt_cnt_width_lp = `BSG_WIDTH(mcl_read_credits_gp*piso_els_lp);
+  localparam pkt_cnt_width_lp = `BSG_WIDTH(mcl_host_credits_gp*piso_els_lp);
   logic [pkt_cnt_width_lp-1:0] mc_req_words_lo;
 
   // 3. mc request
@@ -312,7 +312,7 @@ module bsg_manycore_link_to_axil
 
   bsg_mcl_axil_fifos_master #(
     .fifo_width_p       (fifo_width_p       ),
-    .host_read_credits_p(mcl_read_credits_gp),
+    .host_credits_p     (mcl_host_credits_gp),
     .axil_data_width_p  (axil_data_width_gp )
   ) tx (
     .clk_i           (clk_i            ),
@@ -337,7 +337,7 @@ module bsg_manycore_link_to_axil
 
   bsg_mcl_axil_fifos_slave #(
     .fifo_width_p       (fifo_width_p       ),
-    .mc_write_capacity_p(mcl_read_credits_gp),
+    .mc_write_capacity_p(mcl_mc_write_cap_gp),
     .axil_data_width_p  (axil_data_width_p  )
   ) rx (
     .clk_i         (clk_i          ),
