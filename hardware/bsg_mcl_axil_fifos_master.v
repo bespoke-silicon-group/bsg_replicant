@@ -86,25 +86,22 @@ module bsg_mcl_axil_fifos_master
   assign req_buf_yumi_li = req_buf_v_lo & req_sipo_ready_lo;
 
   // sipo tx
-  logic [fifo_width_p-1:0]    req_sipo_data_lo ;
-  logic [ sipo_els_lp-1:0]    req_sipo_v_lo    ;
-  logic                       req_sipo_ready_li;
+  logic [fifo_width_p-1:0] req_sipof_data_lo;
+  logic                    req_sipof_v_lo   ;
+  logic                    req_sipo_ready_li;
 
   // module tx
   logic pause_host_req;
 
-  assign host_req_o        = req_sipo_data_lo;
-  assign host_req_v_o      = (~pause_host_req) & (&req_sipo_v_lo);
-  assign req_sipo_ready_li = (~pause_host_req) & host_req_ready_i;
+  assign host_req_o        = req_sipof_data_lo;
+  assign host_req_v_o      = ~pause_host_req & req_sipof_v_lo;
+  assign req_sipo_ready_li = ~pause_host_req & host_req_ready_i;
 
-  wire [sipo_cnt_width_lp-1:0] req_sipo_yumis_li = (req_sipo_ready_li & host_req_v_o) ?
-                                                    sipo_cnt_width_lp'(sipo_els_lp) :
-                                                      '0;
+  wire req_sipof_yumi_li = req_sipo_ready_li & host_req_v_o;
 
-  // size of the req fifo >= host read credits, here we set equal for uniformity
   bsg_fifo_1r1w_small #(
     .width_p           (axil_data_width_p                  ),
-    .els_p             (sipo_els_lp*(host_read_credits_p-1)),
+    .els_p             (sipo_els_lp*(host_read_credits_p-2)), // 2 comes from the two_fifo inside of sipof
     .ready_THEN_valid_p(0                                  )
   ) fifo_req (
     .clk_i  (clk_i          ),
@@ -117,27 +114,28 @@ module bsg_mcl_axil_fifos_master
     .yumi_i (req_buf_yumi_li)
   );
 
-  bsg_serial_in_parallel_out #(
+  bsg_serial_in_parallel_out_full #(
     .width_p(axil_data_width_p),
     .els_p  (sipo_els_lp      )
-  ) sipo_req (
-    .clk_i     (clk_i            ),
-    .reset_i   (reset_i          ),
-    .valid_i   (req_buf_v_lo     ),
-    .data_i    (req_buf_data_lo  ),
-    .ready_o   (req_sipo_ready_lo),
-    .valid_o   (req_sipo_v_lo    ),
-    .data_o    (req_sipo_data_lo ),
-    .yumi_cnt_i(req_sipo_yumis_li)
+  ) sipof_req (
+    .clk_i  (clk_i            ),
+    .reset_i(reset_i          ),
+    .v_i    (req_buf_v_lo     ),
+    .ready_o(req_sipo_ready_lo),
+    .data_i (req_buf_data_lo  ),
+    .data_o (req_sipof_data_lo),
+    .v_o    (req_sipof_v_lo   ),
+    .yumi_i (req_sipof_yumi_li)
   );
+
 
   // --------------------------------------------------------
   //                  mc response to host
   // --------------------------------------------------------
 
   logic [fifo_width_p-1:0] rsp_buf_data_lo;
-  logic                        rsp_buf_v_lo   ;
-  logic                        rsp_buf_yumi_li;
+  logic                    rsp_buf_v_lo   ;
+  logic                    rsp_buf_yumi_li;
 
   logic rsp_piso_ready_lo;
   assign rsp_buf_yumi_li = rsp_piso_ready_lo & rsp_buf_v_lo;
@@ -179,9 +177,13 @@ module bsg_mcl_axil_fifos_master
   // --------------------------------------------------------
 
   wire [sipo_cnt_width_lp-1:0] cnt_down_li = (w_ready_o & w_v_i) ? sipo_cnt_width_lp'(1) : '0;
-  wire [sipo_cnt_width_lp-1:0] cnt_up_li   = req_sipo_yumis_li                               ;
+  wire [sipo_cnt_width_lp-1:0] cnt_up_li   = req_sipof_yumi_li ?
+                                              sipo_cnt_width_lp'(sipo_els_lp) :
+                                              '0;
 
-  // tracks the vacancy of the req fifo, in words
+  // Host will read this vacancy and update its request credits.
+  // In general, we should set vacancy >= host credits to not overflow the fifo, here we set them equal
+  // vacancy [words] := sipo_els_lp*host_read_credits_p = elements of (req fifo + sipof) 
   bsg_counter_up_down #(
     .max_val_p (sipo_els_lp*host_read_credits_p),
     .init_val_p(sipo_els_lp*host_read_credits_p),
