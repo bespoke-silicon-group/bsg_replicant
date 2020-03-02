@@ -108,6 +108,9 @@ VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_master.v
 VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_slave.v
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_endpoint_to_fifos.v
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
