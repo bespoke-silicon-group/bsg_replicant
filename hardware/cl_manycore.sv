@@ -454,7 +454,7 @@ module cl_manycore
    // LEVEL 1
   if (mem_cfg_p == e_infinite_mem) begin
     // each column has a nonsynth infinite memory
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    for (genvar i = 0; i < num_cache_p; i++) begin
       bsg_nonsynth_mem_infinite #(
         .data_width_p(data_width_p)
         ,.addr_width_p(addr_width_p)
