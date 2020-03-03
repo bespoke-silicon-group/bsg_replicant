@@ -26,7 +26,7 @@ package cl_manycore_pkg;
   parameter epa_byte_addr_width_p = 18;
   parameter branch_trace_en_p = `CL_MANYCORE_BRANCH_TRACE_EN;
 
-  parameter num_cache_p = `CL_MANYCORE_DIM_X;
+  parameter num_cache_p = ((`CL_MANYCORE_DIM_X)<<1);
   parameter sets_p = `CL_MANYCORE_VCACHE_SETS;
   parameter ways_p = `CL_MANYCORE_VCACHE_WAYS;
   parameter block_size_in_words_p = `CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS;
