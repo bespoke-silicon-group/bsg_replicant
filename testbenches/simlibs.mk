@@ -128,7 +128,7 @@ include $(TESTBENCH_PATH)/dramsim3.mk
 
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-SIMLIBS += $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper
+SIMLIBS += $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper/AN.DB
 
 # Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
 # tool-specific versions of the same variables. VHEADERS must be compiled before
@@ -183,18 +183,18 @@ VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps \
 # with `make squeakyclean` or an equivalent
 $(TESTBENCH_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && vivado -mode batch -source $<
-	echo "cosim_wrapper : $(TESTBENCH_PATH)/cosim_wrapper/64" >> $@
+	echo "cosim_wrapper : $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper/64" >> $@
 
-$(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper: $(TESTBENCH_PATH)/synopsys_sim.setup $(BSG_MACHINE_PATH)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
+$(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(BSG_MACHINE_PATH)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
 	cd $(TESTBENCH_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
 	XILINX_VIVADO=$(XILINX_VIVADO) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
 	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
 	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
-	vlogan -work $(notdir $@)  $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
+	vlogan -work cosim_wrapper $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
 		$(VLOGAN_SOURCES) -f $(TESTBENCH_PATH)/aws.vcs.f \
-		$(VLOGAN_INCLUDES) -l $(notdir $@).vlogan.log
+		$(VLOGAN_INCLUDES) -l cosim_wrapper.vlogan.log
 
 # The applications link against the BSG Manycore Libraries, and the FPGA
 # Management libaries, so we build them as necessary. They do NOT need to be
