@@ -97,7 +97,7 @@ module bsg_manycore_wrapper
     assign ver_link_sif_li[S][i] = cache_link_sif_i[i];
   end
 
-  // 0,0 for host io
+  // 0,1 for host io
   //
   assign loader_link_sif_o = io_link_sif_lo[0];
   assign io_link_sif_li[0] = loader_link_sif_i;
