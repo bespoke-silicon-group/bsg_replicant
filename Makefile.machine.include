@@ -52,7 +52,7 @@ BSG_MACHINE_DATA_WIDTH                = 32
 BSG_MACHINE_BRANCH_TRACE_EN          ?= 0
 
 CL_MANYCORE_HOST_COORD_X             := 0
-CL_MANYCORE_HOST_COORD_Y             := 0
+CL_MANYCORE_HOST_COORD_Y             := 1
 CL_MANYCORE_DIM_X                    := $(BSG_MACHINE_GLOBAL_X)
 CL_MANYCORE_DIM_Y                    := $(shell expr $(BSG_MACHINE_GLOBAL_Y) - 1)
 
