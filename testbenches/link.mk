@@ -32,9 +32,8 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-# This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this fragment...
-# 
+# This file REQUIRES several variables to be set. They are typically set by the
+# Makefile that includes this fragment...
 
 # SRC_PATH: The path to the directory containing the .c or cpp test files
 ifndef SRC_PATH
@@ -66,46 +65,27 @@ include $(CL_DIR)/cadenv.mk
 # of identical rules -- which causes errors.
 include $(TESTBENCH_PATH)/simlibs.mk
 
-# -------------------- Arguments --------------------
-# This Makefile has several optional "arguments" that are passed as Variables
-#
-# EXTRA_TURBO: Disables VPD Generation, and more optimization flags: Default 0
-# 
-# If you need additional speed, you can set EXTRA_TURBO=1 during compilation. 
-# This is a COMPILATION ONLY option. Any subsequent runs, without compilation
-# will retain this setting
-EXTRA_TURBO      ?= 0
-
 # -------------------- VARIABLES --------------------
 # We parallelize VCS compilation, but we leave a few cores on the table.
-NPROCS = $(shell echo "(`nproc`/4 + 1)" | bc)
+NPROCS   = $(shell echo "(`nproc`/4 + 1)" | bc)
 
-LDFLAGS    += -lbsg_manycore_runtime -lm
+LDFLAGS += -lbsg_manycore_runtime -lm
 # libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
-LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
+LDFLAGS += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
 
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
                 -timescale=1ps/1ps -sverilog -full64 -licqueue
 
-# NOTE: undef_vcs_macro is a HACK!!! 
-# `ifdef VCS is only used is in tb.sv top-level in the aws-fpga repository. This
-# macro guards against generating vpd files, which slow down simulation.
-ifeq ($(EXTRA_TURBO), 1)
-VCS_VFLAGS    += +rad -undef_vcs_macro
-else 
-VCS_VFLAGS    += -debug_pp
-VCS_VFLAGS    += +memcbk 
-endif
+# VCS Generates an executable file by linking the $(SRC_PATH)/%.o file with the
+# the VCS work libraries for the design, and the runtime shared libraries
+$(EXEC_PATH)/%.debug: VCS_VFLAGS += -debug_pp 
+$(EXEC_PATH)/%.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
-# VCS Generates an executable file by linking against the
-# $(SRC_PATH)/%.c or $(SRC_PATH)/%.o $(SRC_PATH)/%.cpp file that
-# corresponds to the target test in the $(SRC_PATH) directory.
-# WRAPPER_NAME is defined in simlibs.mk
-$(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
+$(EXEC_PATH)/%.debug $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
-	vcs tb glbl -j$(NPROCS) $(WRAPPER_NAME) $< -Mdirectory=$@.tmp \
-		$(VCS_LDFLAGS) $(VCS_VFLAGS) -o $@ -l $@.vcs.log
+	vcs tb glbl cosim_wrapper -j$(NPROCS) $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
+		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
 
 link.clean: 
 	rm -rf $(EXEC_PATH)/DVEfiles
@@ -115,4 +95,3 @@ link.clean:
 	rm -rf $(EXEC_PATH)/*.key $(EXEC_PATH)/*.vpd
 	rm -rf $(EXEC_PATH)/vc_hdrs.h
 	rm -rf .vlogansetup* stack.info*
-

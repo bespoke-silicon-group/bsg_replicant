@@ -62,24 +62,16 @@ include $(HDK_COMMON_DIR)/verif/tb/scripts/Makefile.common.inc
 # sub-directory.
 EXEC_PATH=$(TESTBENCH_PATH)/$(REGRESSION_TESTS_TYPE)
 
-# cosimulation.mk defines all of the re-used rules for cosimulation. 
+# cosimulation.mk defines all of the re-used rules for cosimulation.
 # (e.g. regression, clean, help, etc)
 include $(TESTBENCH_PATH)/cosimulation.mk
 
-# rules.mk defines rules for building RISC-V binaries associated with
-# the tests in this sub-directory. rules.mk must come after
-# compilation.mk so that <test_name>.rule and <test_name>.clean are
-# not overwritten.
+# rules.mk defines rules for building RISC-V binaries associated with the tests
+# in this sub-directory. rules.mk must come after compilation.mk so that
+# <test_name>.rule and <test_name>.clean are not overwritten.
 include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 
-
-# The rule below defines how to run all Library tests. The output .vpd
-# file will be named <test_name>.vpd. To generate a trace file, run
-# `make <test_name>.vanilla.log`
-INDEPENDENT_LOGS=$(foreach tgt, $(INDEPENDENT_TESTS), $(EXEC_PATH)/$(tgt).log)
-$(INDEPENDENT_LOGS): $(EXEC_PATH)/%.log: $(EXEC_PATH)/% %.rule
-	$< 2>&1 +ntb_random_seed_automatic +vpdfile+$(@:.log=.vpd) $(SIM_ARGS) \
-		+c_args="" | tee $@
-
-# dve.mk defines the dve targets
-include $(TESTBENCH_PATH)/dve.mk
+# The rule below defines how to run all Library tests. The output .vpd file will
+# be named <test_name>.vpd. To generate a trace file, run `make
+# <test_name>.vanilla.log`
+%.vanilla_stats.csv %.vpd: C_ARGS = ""

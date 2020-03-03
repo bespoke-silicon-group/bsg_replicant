@@ -204,3 +204,4 @@ hardware.clean:
 	rm -f $(HARDWARE_PATH)/f1_parameters.vh
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 
+.PRECIOUS: $(HARDWARE_PATH)/bsg_bladerunner_configuration.v $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom
