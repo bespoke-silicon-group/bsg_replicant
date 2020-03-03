@@ -43,6 +43,8 @@
 #include <stdio.h>
 #endif
 
+#define HB_MC_PACKET_PAYLOAD_REMOTE_LOAD 0
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,10 +59,11 @@ extern "C" {
                 uint8_t  x_src; //!< x coordinate of the requester
                 uint8_t  y_src; //!< y coordinate of the requester
                 uint32_t data;  //!< packet's payload data
-                uint8_t  mask;  //!< 4-bit byte mask
+                uint8_t  reg_id; //!< 5-bit id for load or amo
+                uint8_t  op_ex;  //!< 4-bit byte mask
                 uint8_t  op;    //!< opcode
                 uint32_t addr;  //!< address field (EPA)
-                uint8_t  reserved[2];
+                uint8_t  reserved[1];
         }  __attribute__((packed)) hb_mc_request_packet_t;
 
 
@@ -68,6 +71,7 @@ extern "C" {
                 HB_MC_PACKET_OP_REMOTE_LOAD  = 0,
                 HB_MC_PACKET_OP_REMOTE_STORE = 1
         } hb_mc_packet_op_t;
+
 
         typedef enum __hb_mc_packet_mask_t {
                 HB_MC_PACKET_REQUEST_MASK_BYTE  = 0x1,
@@ -130,7 +134,7 @@ extern "C" {
          */
         static inline uint8_t hb_mc_request_packet_get_mask(const hb_mc_request_packet_t *packet)
         {
-                return packet->mask;
+                return packet->op_ex;
         }
 
         /**
@@ -172,7 +176,7 @@ extern "C" {
         {
                 uint32_t valid = 0;
                 for (int i = 0; i < 4; i++) { /* TODO: hardcoded */
-                        if (hb_mc_get_bits(packet->mask, i, 1) == 1)
+                        if (hb_mc_get_bits(packet->op_ex, i, 1) == 1)
                                 valid |=  hb_mc_get_bits(packet->data, i*8, 8);
                 }
                 return le32toh(valid);
@@ -219,13 +223,23 @@ extern "C" {
         }
 
         /**
+         * Set the id in a load request packet
+         * @param[in] packet a request packet
+         * @param[in] id for int/float load
+         */
+        static inline void hb_mc_request_packet_set_load_id(hb_mc_request_packet_t *packet, uint8_t load_id)
+        {
+                packet->reg_id = load_id;
+        }
+
+        /**
          * Set the data mask in a request packet
          * @param[in] packet a request packet
-         * @param[in] mask a byte-mask value
+         * @param[in] mask a byte-mask value for remote store
          */
         static inline void hb_mc_request_packet_set_mask(hb_mc_request_packet_t *packet, hb_mc_packet_mask_t mask)
         {
-                packet->mask = mask;
+                packet->op_ex = mask;
         }
 
         /**

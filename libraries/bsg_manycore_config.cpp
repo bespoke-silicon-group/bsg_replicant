@@ -135,13 +135,41 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
 
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
-        if (idx < config->vcache_block_words) { 
+        if (idx < config->vcache_block_words) {
                 bsg_pr_err("%s: Invalid vcache stripe size %d: stripe size "
                            "cannot be smaller than vcache block size %d: %s\n",
                            __func__, idx, config->vcache_block_words, error_init_help);
                 return HB_MC_INVALID;
         }
         config->vcache_stripe_words = idx;
+
+
+        idx = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
+        if ((idx < HB_MC_REMOTE_LOAD_MIN) || (idx > HB_MC_REMOTE_LOAD_MAX)){
+                bsg_pr_err("%s: Invalid remote load caps %d: %s\n",
+                           __func__, idx, error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->io_remote_load_cap = idx;
+
+
+        idx = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
+        if ((idx < HB_MC_EP_OUT_CREDITS_MIN) || (idx > HB_MC_EP_OUT_CREDITS_MAX)){
+                bsg_pr_err("%s: Invalid endpoint max out credits %d: %s\n",
+                           __func__, idx, error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->io_endpoint_max_out_credits = idx;
+
+
+        idx = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
+        if ((idx < HB_MC_HOST_CREDITS_MIN) || (idx > HB_MC_HOST_CREDITS_MAX)){
+                bsg_pr_err("%s: Invalid host credits CAP %d: %s\n",
+                           __func__, idx, error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->io_host_credits_cap = idx;
+
 
         return HB_MC_SUCCESS;
 }

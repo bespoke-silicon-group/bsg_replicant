@@ -57,19 +57,50 @@ int test_rom (int argc, char **argv) {
         }
 
         config = hb_mc_manycore_get_config(&mc);
-        /* Test host credit return value. Expect 16 and fail otherwise */
-        expected = 16;
-        bsg_pr_test_info("Checking that the number of host credits is %d\n", expected);
-        bsg_pr_test_info("(I know it's a magic number...)\n");
-        result = hb_mc_manycore_get_host_credits(&mc);
-        if(result != expected){
-                bsg_pr_test_err("Incorrect number of host credits. "
-                                "Got: %d, expected %d\n", result, expected);
-                bsg_pr_test_err("Have you programed your FPGA"
-                                " (fpga-load-local-image)\n");
-                fail = 1;
-                goto cleanup; // Considered harmful
+
+
+        /* Check the flow control parameters in IO */
+        dim = hb_mc_config_get_dimension_vcore(config);
+        // check enough times to let the credit resume...
+        int max_trail_num = hb_mc_dimension_get_x(dim)*hb_mc_dimension_get_y(dim);
+        uint32_t matched = 0;
+
+        // out credits from manycore endpoint standard
+        expected = hb_mc_config_get_io_endpoint_max_out_credits(config);
+        bsg_pr_test_info("Checking that the expected endpoint out credits is %d\n", expected);
+        for (unsigned i = 0; i < max_trail_num; i++) {
+            result = hb_mc_manycore_get_endpoint_out_credits(&mc);
+            bsg_pr_test_info("Try No. %d: endpoint out credits is %d\n", i, result);
+            if(result == expected) {
+                matched = 1;
+                break;
+            }
         }
+        if (!matched) {
+            bsg_pr_test_err("Incorrect number of out credits. Got: %d, expected %d\n", result, expected);
+            bsg_pr_test_err("Have you programed your FPGA fpga-load-local-image)\n");
+            fail = 1;
+            goto cleanup;
+        }
+
+        // max host credits
+        expected = hb_mc_config_get_io_host_credits_cap(config);
+        bsg_pr_test_info("Checking that the expected host request credits is %d\n", expected);
+        for (unsigned i = 0; i < max_trail_num; i++) {
+            result = hb_mc_manycore_get_host_request_credits(&mc);
+            bsg_pr_test_info("Try No. %d: host request credits is %d\n", i, result);
+            if(result == expected) {
+                matched = 1;
+                break;
+            }
+        }
+        if (!matched) {
+            bsg_pr_test_err("Incorrect number of out credits. Got: %d, expected %d\n", result, expected);
+            bsg_pr_test_err("Have you programed your FPGA fpga-load-local-image)\n");
+            fail = 1;
+            goto cleanup;
+        }
+
 
         /* Read configuration and test values */
 #ifdef COSIM

@@ -30,7 +30,7 @@
 
 /* MAX AND DUSTIN'S RULE OF THUMB FOR WHAT GOES IN CONFIG
  *
- * An entity requires an accessor in config if: 
+ * An entity requires an accessor in config if:
  * 1. It is in the ROM (or other configuration register)
  * 2. It is trivially derivable from data in the ROM
  * 3. It is a top-level parameter that SHOULD BE in the ROM.
@@ -53,11 +53,22 @@ extern "C" {
 
         // We expect a 32-bit bus for Addresses, but two bits are removed because the
         // network uses word-level addressing and handles byte-writes with a mask
-#define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
-#define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
+        #define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
+        #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
-#define HB_MC_CONFIG_VCORE_BASE_X 0
-#define HB_MC_CONFIG_VCORE_BASE_Y 1
+        #define HB_MC_CONFIG_VCORE_BASE_X 0
+        #define HB_MC_CONFIG_VCORE_BASE_Y 1
+
+        // normal limit for the flow-control parameters
+        #define HB_MC_REMOTE_LOAD_MIN 1
+        #define HB_MC_REMOTE_LOAD_MAX 32
+
+        #define HB_MC_EP_OUT_CREDITS_MIN 1
+        #define HB_MC_EP_OUT_CREDITS_MAX 64
+
+        #define HB_MC_HOST_CREDITS_MIN 1
+        #define HB_MC_HOST_CREDITS_MAX 512
+
 
         typedef uint32_t hb_mc_config_raw_t;
         /* Compilation Metadata */
@@ -89,6 +100,9 @@ extern "C" {
                 uint32_t vcache_sets;
                 uint32_t vcache_block_words;
                 uint32_t vcache_stripe_words;
+                uint32_t io_remote_load_cap;
+                uint32_t io_host_credits_cap;
+                uint32_t io_endpoint_max_out_credits;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -109,11 +123,15 @@ extern "C" {
                 HB_MC_CONFIG_VCACHE_SETS = 13,
                 HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 14,
                 HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 15,
-                HB_MC_CONFIG_MAX = 16
+                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 16,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
+                HB_MC_CONFIG_MAX = 20
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
-                
+
         static inline uint64_t hb_mc_config_id_to_addr(uint64_t addr, hb_mc_config_id_t id)
         {
                 return (addr + (id << 2));
@@ -138,6 +156,10 @@ extern "C" {
                         [HB_MC_CONFIG_VCACHE_SETS]  = "BLADERUNNER VCACHE SETS",
                         [HB_MC_CONFIG_VCACHE_BLOCK_WORDS] = "BLADERUNNER VCACHE BLOCK SIZE IN WORDS",
                         [HB_MC_CONFIG_VCACHE_STRIPE_WORDS] = "BLADERUNNER VCACHE STRIPE SIZE IN WORDS",
+                        [HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS] = "BLADERUNNER VCACHE MISS FIFO ELS",
+                        [HB_MC_CONFIG_IO_REMOTE_LOAD_CAP] = "BLADERUNNER IO REMOTE LOAD CAPACITY",
+                        [HB_MC_CONFIG_IO_HOST_CREDITS_CAP] = "BLADERUNNER IO HOST REQUEST CREDITS CAPACITY",
+                        [HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS] = "BLADERUNNER IO ENDPOINT MAX OUT CREDITS",
                 };
                 return strtab[id];
         }
@@ -215,7 +237,7 @@ extern "C" {
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
                 // The Network has two additional Y rows: An IO Row, and a DRAM/Cache Row
-                return hb_mc_dimension(hb_mc_dimension_get_x(dim), 
+                return hb_mc_dimension(hb_mc_dimension_get_x(dim),
                                        hb_mc_dimension_get_y(dim) + 2);
         }
 
@@ -257,7 +279,7 @@ extern "C" {
         static inline size_t hb_mc_config_get_dmem_size(const hb_mc_config_t *cfg)
         {
                 // 4K: this might be read from ROM if the value ever changes
-                return (1 << hb_mc_config_get_dmem_bitwidth_addr(cfg)); 
+                return (1 << hb_mc_config_get_dmem_bitwidth_addr(cfg));
         }
 
         static inline uint8_t hb_mc_config_get_icache_bitwidth_addr(const hb_mc_config_t *cfg)
@@ -268,7 +290,7 @@ extern "C" {
         static inline size_t hb_mc_config_get_icache_size(const hb_mc_config_t *cfg)
         {
                 // 4K: this might be read from ROM if the value ever changes
-                return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg)); 
+                return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
@@ -348,6 +370,48 @@ extern "C" {
                 return hb_mc_config_get_vcache_block_size(cfg) *
                         hb_mc_config_get_vcache_sets(cfg) *
                         hb_mc_config_get_vcache_ways(cfg);
+        }
+
+        /**
+         * Return the host capacity for batching remote loads.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the host capacity for batching remote loads.
+         */
+        static inline uint32_t hb_mc_config_get_io_remote_load_cap(const hb_mc_config_t *cfg)
+        {
+                return cfg->io_remote_load_cap;
+        }
+
+        /**
+         * Return the host capacity for batching requests.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the host capacity for batching requests.
+         */
+        static inline uint32_t hb_mc_config_get_io_host_credits_cap(const hb_mc_config_t *cfg)
+        {
+                return cfg->io_host_credits_cap;
+        }
+
+        /**
+         * Return the threshold for host to update its cached credits.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the threshold for host to update its cached credits.
+         */
+        static inline uint32_t hb_mc_config_get_io_credit_update_threshold(const hb_mc_config_t *cfg)
+        {
+                return cfg->io_host_credits_cap;
+                // we can also set half of the max host credits.
+                // return cfg->io_host_credits_cap/2;
+        }
+
+        /**
+         * Return the max out credits of the manycore endpoint standard module in the IO interface.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the max out credits of the manycore endpoint standard module in the IO interface.
+         */
+        static inline uint32_t hb_mc_config_get_io_endpoint_max_out_credits(const hb_mc_config_t *cfg)
+        {
+                return cfg->io_endpoint_max_out_credits;
         }
 
 

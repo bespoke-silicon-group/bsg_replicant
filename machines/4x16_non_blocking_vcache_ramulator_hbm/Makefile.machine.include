@@ -37,6 +37,12 @@ BSG_MACHINE_MAX_EPA_WIDTH             = 28
 BSG_MACHINE_DRAM_SIZE_WORDS           = 1073741824
 BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = 67108864
 
+# IO flow control parameters.
+# max host loads; max host request credits; max out credits of manycore endpoint standard module
+BSG_MACHINE_IO_REMOTE_LOAD_CAP        = 32
+BSG_MACHINE_IO_HOST_CREDITS_CAP       = 256
+BSG_MACHINE_IO_EP_MAX_OUT_CREDITS     = 16
+
 BSG_MACHINE_DATA_WIDTH                = 32
 
 # This flag has to be always 0 by default. Conditional

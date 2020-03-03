@@ -410,11 +410,18 @@ extern "C" {
         }
 
         /**
-         * Read the number of remaining available host credits
+         * Read the number of remaining available endpoint out credits
          * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-         * @return HB_MC_FAIL if an error occured. Number of remaining host credits otherwise
+         * @return HB_MC_FAIL if an error occured. Number of remaining endpoint out credits otherwise
          */
-        int hb_mc_manycore_get_host_credits(hb_mc_manycore_t *mc);
+        int hb_mc_manycore_get_endpoint_out_credits(hb_mc_manycore_t *mc);
+
+        /**
+         * Read the number of remaining credits of host
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @return HB_MC_FAIL if an error occured. Number of remaining credits of host otherwise
+         */
+        int hb_mc_manycore_get_host_request_credits(hb_mc_manycore_t *mc);
 
 
 #ifdef __cplusplus

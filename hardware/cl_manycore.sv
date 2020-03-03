@@ -31,6 +31,7 @@
 
 `include "bsg_bladerunner_rom_pkg.vh"
 
+
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
@@ -65,7 +66,7 @@ module cl_manycore
 `include "unused_apppf_irq_template.inc"
 
    localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
-   
+
    //-------------------------------------------------
    // Wires
    //-------------------------------------------------
@@ -205,8 +206,8 @@ module cl_manycore
    //--------------------------------------------
    // AXI-Lite OCL System
    //---------------------------------------------
-   axi_register_slice_light 
-     AXIL_OCL_REG_SLC 
+   axi_register_slice_light
+     AXIL_OCL_REG_SLC
        (
         .aclk          (clk_main_a0),
         .aresetn       (rst_main_n_sync),
@@ -282,24 +283,24 @@ module cl_manycore
    // in during a clock switch. See the following datasheet for more
    // information:
    // www.xilinx.com/support/documentation/sw_manuals/xilinx2019_1/ug974-vivado-ultrascale-libraries.pdf
-   BUFGMUX 
+   BUFGMUX
      #(
        .CLK_SEL_TYPE("ASYNC") // SYNC, ASYNC
        )
-   BUFGMUX_inst 
+   BUFGMUX_inst
      (
       .O(core_clk), // 1-bit output: Clock output
       .I0(clk_main_a0), // 1-bit input: Clock input (S=0)
       .I1(ns_core_clk), // 1-bit input: Clock input (S=1)
       .S(sh_cl_status_vdip_q2[0]) // 1-bit input: Clock select
       );
-   
+
    // THIS IS AN UNSAFE CLOCK CROSSING. It is only guaranteed to work
    // because 1. We're in cosimulation, and 2. we don't have ongoing
    // transfers at the start or end of simulation. This means that
    // core_clk, and clk_main_a0 *are the same signal* (See BUFGMUX
    // above).
-   assign core_reset = ~rst_main_n_sync; 
+   assign core_reset = ~rst_main_n_sync;
 `else
    assign core_clk = clk_main_a0;
    assign core_reset = ~rst_main_n_sync;
@@ -318,7 +319,7 @@ module cl_manycore
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
 
-   bsg_manycore_wrapper 
+   bsg_manycore_wrapper
      #(
        .addr_width_p(addr_width_p)
        ,.data_width_p(data_width_p)
@@ -334,8 +335,8 @@ module cl_manycore
        ,.vcache_block_size_in_words_p(block_size_in_words_p)
        ,.vcache_sets_p(sets_p)
        ,.branch_trace_en_p(branch_trace_en_p)
-       ) 
-   manycore_wrapper 
+       )
+   manycore_wrapper
      (
       .clk_i(core_clk)
       ,.reset_i(core_reset)
@@ -349,8 +350,6 @@ module cl_manycore
       ,.loader_link_sif_i(loader_link_sif_li)
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
-
-
 
 `ifdef COSIM
 
@@ -449,7 +448,7 @@ module cl_manycore
     logic [num_tiles_x_p-1:0] dma_data_yumi_li;
 
   end
-  
+
 
 
    // LEVEL 1
@@ -557,10 +556,10 @@ module cl_manycore
       ) vcache_nb (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
-        
+
         ,.link_sif_i(cache_link_sif_lo[i])
         ,.link_sif_o(cache_link_sif_li[i])
-      
+
         ,.dma_pkt_o(lv1_dma.dma_pkt[i])
         ,.dma_pkt_v_o(lv1_dma.dma_pkt_v_lo[i])
         ,.dma_pkt_yumi_i(lv1_dma.dma_pkt_yumi_li[i])
@@ -614,7 +613,7 @@ module cl_manycore
     // synopsys translate_on
 
   end
-  
+
 
   // LEVEL 2
   //
@@ -955,7 +954,7 @@ module cl_manycore
        .C_AXI_ADDR_WIDTH(64),  // Width of s_axi_awaddr, s_axi_araddr, m_axi_awaddr and
        .C_AXI_DATA_WIDTH(512), // Width of WDATA and RDATA (either side).
        .C_S_AXI_ACLK_RATIO(1), // Clock frequency ratio of SI w.r.t. MI. (Slowest of all clock inputs should have ratio=1.)
-       .C_M_AXI_ACLK_RATIO(lc_core_clk_period_p/lc_clk_main_a0_p), 
+       .C_M_AXI_ACLK_RATIO(lc_core_clk_period_p/lc_clk_main_a0_p),
        // S:M or M:S must be integer ratio.
        // Format: Bit32; Range: >='h00000001.
        .C_AXI_IS_ACLK_ASYNC(1), // Indicates whether S and M clocks are asynchronous.
@@ -1125,58 +1124,51 @@ module cl_manycore
 
    // manycore link
 
-   logic [x_cord_width_p-1:0] mcl_x_cord_lp = '0;
-   logic [y_cord_width_p-1:0] mcl_y_cord_lp = '0;
+   logic [x_cord_width_p-1:0] mcl_x_cord_li = '0;
+   logic [y_cord_width_p-1:0] mcl_y_cord_li = '0;
 
-   logic                      print_stat_v_lo;
-   logic [data_width_p-1:0]   print_stat_tag_lo;
+   logic                    print_stat_v_lo  ;
+   logic [data_width_p-1:0] print_stat_tag_lo;
 
    bsg_manycore_link_sif_s axil_link_sif_li;
    bsg_manycore_link_sif_s axil_link_sif_lo;
 
-   axil_to_mcl 
-     #(.num_mcl_p        (1                )
-       ,.num_tiles_x_p    (num_tiles_x_p    )
-       ,.num_tiles_y_p    (num_tiles_y_p    )
-       ,.addr_width_p     (addr_width_p     )
-       ,.data_width_p     (data_width_p     )
-       ,.x_cord_width_p   (x_cord_width_p   )
-       ,.y_cord_width_p   (y_cord_width_p   )
-       ,.max_out_credits_p(max_out_credits_p)
-       ) 
-   axil_to_mcl_inst 
-     (
-      .clk_i             (clk_main_a0)
-      ,.reset_i           (~rst_main_n_sync)
-
-      // axil slave interface
-      ,.s_axil_mcl_awvalid(m_axil_ocl_awvalid)
-      ,.s_axil_mcl_awaddr (m_axil_ocl_awaddr )
-      ,.s_axil_mcl_awready(m_axil_ocl_awready)
-      ,.s_axil_mcl_wvalid (m_axil_ocl_wvalid )
-      ,.s_axil_mcl_wdata  (m_axil_ocl_wdata  )
-      ,.s_axil_mcl_wstrb  (m_axil_ocl_wstrb  )
-      ,.s_axil_mcl_wready (m_axil_ocl_wready )
-      ,.s_axil_mcl_bresp  (m_axil_ocl_bresp  )
-      ,.s_axil_mcl_bvalid (m_axil_ocl_bvalid )
-      ,.s_axil_mcl_bready (m_axil_ocl_bready )
-      ,.s_axil_mcl_araddr (m_axil_ocl_araddr )
-      ,.s_axil_mcl_arvalid(m_axil_ocl_arvalid)
-      ,.s_axil_mcl_arready(m_axil_ocl_arready)
-      ,.s_axil_mcl_rdata  (m_axil_ocl_rdata  )
-      ,.s_axil_mcl_rresp  (m_axil_ocl_rresp  )
-      ,.s_axil_mcl_rvalid (m_axil_ocl_rvalid )
-      ,.s_axil_mcl_rready (m_axil_ocl_rready )
-
-      // manycore link
-      ,.link_sif_i        (axil_link_sif_li)
-      ,.link_sif_o        (axil_link_sif_lo)
-      ,.my_x_i            (mcl_x_cord_lp     )
-      ,.my_y_i            (mcl_y_cord_lp     )
-
-      ,.print_stat_v_o(print_stat_v_lo)
-      ,.print_stat_tag_o(print_stat_tag_lo)
-      );
+  bsg_manycore_link_to_axil #(
+    .x_cord_width_p   (x_cord_width_p   ),
+    .y_cord_width_p   (y_cord_width_p   ),
+    .addr_width_p     (addr_width_p     ),
+    .data_width_p     (data_width_p     ),
+    .max_out_credits_p(max_out_credits_p)
+  ) mcl_to_axil (
+    .clk_i           (clk_main_a0       ),
+    .reset_i         (~rst_main_n_sync  ),
+    // axil slave interface
+    .axil_awvalid_i  (m_axil_ocl_awvalid),
+    .axil_awaddr_i   (m_axil_ocl_awaddr ),
+    .axil_awready_o  (m_axil_ocl_awready),
+    .axil_wvalid_i   (m_axil_ocl_wvalid ),
+    .axil_wdata_i    (m_axil_ocl_wdata  ),
+    .axil_wstrb_i    (m_axil_ocl_wstrb  ),
+    .axil_wready_o   (m_axil_ocl_wready ),
+    .axil_bresp_o    (m_axil_ocl_bresp  ),
+    .axil_bvalid_o   (m_axil_ocl_bvalid ),
+    .axil_bready_i   (m_axil_ocl_bready ),
+    .axil_araddr_i   (m_axil_ocl_araddr ),
+    .axil_arvalid_i  (m_axil_ocl_arvalid),
+    .axil_arready_o  (m_axil_ocl_arready),
+    .axil_rdata_o    (m_axil_ocl_rdata  ),
+    .axil_rresp_o    (m_axil_ocl_rresp  ),
+    .axil_rvalid_o   (m_axil_ocl_rvalid ),
+    .axil_rready_i   (m_axil_ocl_rready ),
+    // manycore link
+    .link_sif_i      (axil_link_sif_li  ),
+    .link_sif_o      (axil_link_sif_lo  ),
+    .my_x_i          (mcl_x_cord_li     ),
+    .my_y_i          (mcl_y_cord_li     ),
+    // trace
+    .print_stat_v_o  (print_stat_v_lo   ),
+    .print_stat_tag_o(print_stat_tag_lo )
+  );
 
 `ifdef COSIM
    assign axil_link_sif_li = async_link_sif_lo;
@@ -1202,7 +1194,7 @@ module cl_manycore
 
 
    // Integrated Logic Analyzers (ILA)
-   ila_0 CL_ILA_0 
+   ila_0 CL_ILA_0
      (
       .clk    (clk_main_a0),
       .probe0 (m_axil_ocl_awvalid)
@@ -1213,7 +1205,7 @@ module cl_manycore
       ,.probe5 (m_axil_ocl_arready)
       );
 
-   ila_0 CL_ILA_1 
+   ila_0 CL_ILA_1
      (
       .clk    (clk_main_a0)
       ,.probe0 (m_axil_ocl_bvalid)
@@ -1225,7 +1217,7 @@ module cl_manycore
       );
 
    // Debug Bridge
-   cl_debug_bridge CL_DEBUG_BRIDGE 
+   cl_debug_bridge CL_DEBUG_BRIDGE
      (
       .clk(clk_main_a0)
       ,.S_BSCAN_drck(drck)
@@ -1251,7 +1243,7 @@ module cl_manycore
       assign trace_en = $test$plusargs("trace");
    end
 
-   bind vanilla_core vanilla_core_trace 
+   bind vanilla_core vanilla_core_trace
      #(
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
@@ -1259,8 +1251,8 @@ module cl_manycore
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
        ,.dmem_size_p(dmem_size_p)
-       ) 
-   vtrace 
+       )
+   vtrace
      (
       .*
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
@@ -1271,7 +1263,7 @@ module cl_manycore
    //
    logic [31:0] global_ctr;
 
-   bsg_cycle_counter global_cc 
+   bsg_cycle_counter global_cc
      (
       .clk_i(core_clk)
       ,.reset_i(core_reset)
@@ -1279,7 +1271,7 @@ module cl_manycore
       );
 
 
-   bind vanilla_core vanilla_core_profiler 
+   bind vanilla_core vanilla_core_profiler
      #(
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
@@ -1287,7 +1279,7 @@ module cl_manycore
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
        ,.dmem_size_p(data_width_p)
-       ) 
+       )
    vcore_prof
      (
       .*
@@ -1296,6 +1288,7 @@ module cl_manycore
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag)
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
+
 
    // synopsys translate on
 

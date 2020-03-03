@@ -34,7 +34,7 @@
 
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
-# 
+#
 # : The path to the Makefile.machine.include that defines Machine parameters
 ifndef BSG_MACHINE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PATH is not defined$(NC)"))
@@ -65,6 +65,9 @@ CL_MANYCORE_VCACHE_SETS              := $(BSG_MACHINE_VCACHE_SET)
 CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS  := $(BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS)
 CL_MANYCORE_VCACHE_MISS_FIFO_ELS     := $(BSG_MACHINE_VCACHE_MISS_FIFO_ELS)
 CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS := $(BSG_MACHINE_VCACHE_STRIPE_SIZE_WORDS)
+CL_MANYCORE_IO_REMOTE_LOAD_CAP       := $(BSG_MACHINE_IO_REMOTE_LOAD_CAP)
+CL_MANYCORE_IO_HOST_CREDITS_CAP      := $(BSG_MACHINE_IO_HOST_CREDITS_CAP)
+CL_MANYCORE_IO_EP_MAX_OUT_CREDITS    := $(BSG_MACHINE_IO_EP_MAX_OUT_CREDITS)
 CL_MANYCORE_BRANCH_TRACE_EN          := $(BSG_MACHINE_BRANCH_TRACE_EN)
 CL_MANYCORE_RELEASE_VERSION          ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
 CL_MANYCORE_COMPILATION_DATE         ?= $(shell date +%m%d%Y)
@@ -99,15 +102,18 @@ VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 VSOURCES += $(HARDWARE_PATH)/bsg_print_stat_snoop.v
 
-VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_rom.v
-VSOURCES += $(HARDWARE_PATH)/axil_to_mcl.v
-VSOURCES += $(HARDWARE_PATH)/s_axil_mcl_adapter.v
-VSOURCES += $(HARDWARE_PATH)/axil_to_mem.sv
+VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil_pkg.v
+VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_master.v
+VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_slave.v
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_endpoint_to_fifos.v
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
 
 VHEADERS += $(HARDWARE_PATH)/f1_parameters.vh
-VHEADERS += $(HARDWARE_PATH)/axil_to_mcl.vh
 VHEADERS += $(HARDWARE_PATH)/bsg_axi_bus_pkg.vh
-VHEADERS += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 VHEADERS += $(HARDWARE_PATH)/cl_manycore_defines.vh
 VHEADERS += $(HARDWARE_PATH)/cl_id_defines.vh
 
@@ -151,6 +157,9 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS))  >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_STRIPE_SIZE_WORDS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_VCACHE_MISS_FIFO_ELS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_IO_REMOTE_LOAD_CAP)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_IO_HOST_CREDITS_CAP)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)) >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define
@@ -170,6 +179,7 @@ $(HARDWARE_PATH)/f1_parameters.vh: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo "\`define CL_MANYCORE_VCACHE_MISS_FIFO_ELS $(CL_MANYCORE_VCACHE_MISS_FIFO_ELS)" >> $@
 	@echo "\`define CL_MANYCORE_MEM_CFG $(CL_MANYCORE_MEM_CFG)" >> $@
 	@echo "\`define CL_MANYCORE_BRANCH_TRACE_EN $(CL_MANYCORE_BRANCH_TRACE_EN)" >> $@
+	@echo "\`define CL_MANYCORE_IO_EP_MAX_OUT_CREDITS $(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)" >> $@
 	@echo "\`endif" >> $@
 
 # This package defines the number of lines in the ROM
@@ -179,8 +189,8 @@ $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh: $(HARDWARE_PATH)/bsg_bladerunner_co
 	@echo >> $@
 	@echo "package bsg_bladerunner_rom_pkg;" >> $@
 	@echo >> $@
-	@echo "parameter rom_width_p = 32;" >> $@
-	@echo "parameter rom_els_p = `wc -l < $<`;" >> $@
+	@echo "parameter rom_width_gp = 32;" >> $@
+	@echo "parameter rom_els_gp = `wc -l < $<`;" >> $@
 	@echo >> $@
 	@echo "endpackage" >> $@
 	@echo >> $@
