@@ -171,6 +171,15 @@ VDEFINES   += RND_ECC_WEIGHT=0
 endif
 
 
+ifeq ($(CL_MANYCORE_MEM_CFG),e_infinite_mem)
+VDEFINES   += AXI_MEMORY_MODEL=1
+VDEFINES   += ECC_DIRECT_EN
+VDEFINES   += RND_ECC_EN
+VDEFINES   += ECC_ADDR_LO=0
+VDEFINES   += ECC_ADDR_HI=0
+VDEFINES   += RND_ECC_WEIGHT=0
+endif
+
 VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES) 
 VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
