@@ -185,7 +185,7 @@ $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 	mkdir -p $(dir $@)
 	cd $(dir $@) && \
 	$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $(LOG_NAME)
-	@cp $(dir $@)/$(LOG_NAME) $(LOG_NAME)
+	@mv $(dir $@)/$(LOG_NAME) $(LOG_NAME)
 
 # %.debug.log is just an alias for %.vpd
 %.debug.log: %.vpd ;
