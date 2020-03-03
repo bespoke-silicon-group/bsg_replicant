@@ -57,7 +57,7 @@ extern "C" {
         #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
         #define HB_MC_CONFIG_VCORE_BASE_X 0
-        #define HB_MC_CONFIG_VCORE_BASE_Y 1
+        #define HB_MC_CONFIG_VCORE_BASE_Y 2
 
         // normal limit for the flow-control parameters
         #define HB_MC_REMOTE_LOAD_MIN 1
@@ -68,7 +68,6 @@ extern "C" {
 
         #define HB_MC_HOST_CREDITS_MIN 1
         #define HB_MC_HOST_CREDITS_MAX 512
-
 
         typedef uint32_t hb_mc_config_raw_t;
         /* Compilation Metadata */
@@ -240,9 +239,9 @@ extern "C" {
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
-                // The Network has two additional Y rows: An IO Row, and a DRAM/Cache Row
+                // The Network has three additional Y rows: An IO Row, and two DRAM/Cache Rows
                 return hb_mc_dimension(hb_mc_dimension_get_x(dim),
-                                       hb_mc_dimension_get_y(dim) + 2);
+                                       hb_mc_dimension_get_y(dim) + 3);
         }
 
         static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
