@@ -24,7 +24,7 @@ module bsg_manycore_wrapper
     , parameter num_cache_p="inv"
 
     , parameter x_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_x_p)
-    , parameter y_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_y_p+2)
+    , parameter y_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_y_p+3)
   
     , parameter link_sif_width_lp=
       `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp)
