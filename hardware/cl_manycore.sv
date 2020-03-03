@@ -435,17 +435,17 @@ module cl_manycore
     import bsg_cache_pkg::*;
     localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(cache_addr_width_lp);
 
-    logic [num_tiles_x_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
-    logic [num_tiles_x_p-1:0] dma_pkt_v_lo;
-    logic [num_tiles_x_p-1:0] dma_pkt_yumi_li;
+    logic [num_cache_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
+    logic [num_cache_p-1:0] dma_pkt_v_lo;
+    logic [num_cache_p-1:0] dma_pkt_yumi_li;
 
-    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_li;
-    logic [num_tiles_x_p-1:0] dma_data_v_li;
-    logic [num_tiles_x_p-1:0] dma_data_ready_lo;
+    logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_li;
+    logic [num_cache_p-1:0] dma_data_v_li;
+    logic [num_cache_p-1:0] dma_data_ready_lo;
 
-    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_lo;
-    logic [num_tiles_x_p-1:0] dma_data_v_lo;
-    logic [num_tiles_x_p-1:0] dma_data_yumi_li;
+    logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_lo;
+    logic [num_cache_p-1:0] dma_data_v_lo;
+    logic [num_cache_p-1:0] dma_data_yumi_li;
 
   end
 
@@ -490,7 +490,7 @@ module cl_manycore
            mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_vcache
 
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
+    for (genvar i = 0; i < num_cache_p; i++) begin: vcache
 
       bsg_manycore_vcache_blocking #(
         .data_width_p(data_width_p)
@@ -498,7 +498,7 @@ module cl_manycore
         ,.block_size_in_words_p(block_size_in_words_p)
         ,.sets_p(sets_p)
         ,.ways_p(ways_p)
-
+        ,.dma_data_width_p(dma_data_width_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
       ) vcache (
@@ -542,7 +542,7 @@ module cl_manycore
            mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
            mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
+    for (genvar i = 0; i < num_cache_p; i++) begin: vcache
       bsg_manycore_vcache_non_blocking #(
         .data_width_p(data_width_p)
         ,.addr_width_p(addr_width_p)
