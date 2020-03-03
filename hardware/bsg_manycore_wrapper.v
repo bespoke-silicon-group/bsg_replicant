@@ -92,9 +92,18 @@ module bsg_manycore_wrapper
   //  south[1] : victim cache 1
   //  ...
   //
-  for (genvar i = 0; i < num_cache_p; i++) begin
-    assign cache_link_sif_o[i] = ver_link_sif_lo[S][i];
-    assign ver_link_sif_li[S][i] = cache_link_sif_i[i];
+  for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    assign cache_link_sif_o[i] = ver_link_sif_lo[N][i];
+    assign ver_link_sif_li[N][i] = cache_link_sif_i[i];
+    assign cache_x_o[i] = (x_cord_width_lp)'(i);
+    assign cache_y_o[i] = (y_cord_width_lp)'(0);
+  end
+
+  for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    assign cache_link_sif_o[num_tiles_x_p+i] = ver_link_sif_lo[S][i];
+    assign ver_link_sif_li[S][i] = cache_link_sif_i[num_tiles_x_p+i];
+    assign cache_x_o[num_tiles_x_p+i] = (x_cord_width_lp)'(i);
+    assign cache_y_o[num_tiles_x_p+i] = (y_cord_width_lp)'(num_tiles_y_p+2);
   end
 
   // 0,1 for host io
@@ -102,13 +111,6 @@ module bsg_manycore_wrapper
   assign loader_link_sif_o = io_link_sif_lo[0];
   assign io_link_sif_li[0] = loader_link_sif_i;
 
-  // x,y for cache
-  //
-  for (genvar i = 0; i < num_cache_p; i++) begin
-    assign cache_x_o[i] = (x_cord_width_lp)'(i);
-    assign cache_y_o[i] = (y_cord_width_lp)'(num_tiles_y_p+1);
-  end
-  
 
   // tie-off
   //
@@ -137,34 +139,6 @@ module bsg_manycore_wrapper
       ,.reset_i(reset_i)
       ,.link_sif_i(hor_link_sif_lo[E][i])
       ,.link_sif_o(hor_link_sif_li[E][i])
-    );
-  end
-
-  for (genvar i = 0; i < num_tiles_x_p; i++) begin
-    bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_lp)
-      ,.y_cord_width_p(y_cord_width_lp)
-    ) tieoff_n (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.link_sif_i(ver_link_sif_lo[N][i])
-      ,.link_sif_o(ver_link_sif_li[N][i])
-    );
-  end
-
-  for (genvar i = num_cache_p; i < num_tiles_x_p; i++) begin
-    bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_lp)
-      ,.y_cord_width_p(y_cord_width_lp)
-    ) tieoff_s (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.link_sif_i(ver_link_sif_lo[S][i])
-      ,.link_sif_o(ver_link_sif_li[S][i])
     );
   end
 
