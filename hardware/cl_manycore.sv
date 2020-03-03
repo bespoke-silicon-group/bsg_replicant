@@ -666,7 +666,7 @@ module cl_manycore
       .addr_width_p(cache_addr_width_lp)
       ,.block_size_in_words_p(block_size_in_words_p)
       ,.data_width_p(data_width_p)
-      ,.num_cache_p(num_tiles_x_p)
+      ,.num_cache_p(num_cache_p)
 
       ,.axi_id_width_p(axi_id_width_p)
       ,.axi_addr_width_p(axi_addr_width_p)
@@ -737,16 +737,16 @@ module cl_manycore
 
     // checks that this configuration is supported
     // we do not support having fewer caches than channels
-    localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/dram_channels_used_p);
+    localparam int num_cache_per_hbm_channel_p = $floor(num_cache_p/dram_channels_used_p);
     if (num_cache_per_hbm_channel_p <= 0) begin
       $fatal("dram channels (%d) must be less than or equal to l2 caches (%d)",
-             dram_channels_used_p, num_tiles_x_p);
+             dram_channels_used_p, num_cache_p);
     end
     // caches:channels must be an integral ratio
-    localparam real _num_tiles_x_real_p = num_tiles_x_p;
+    localparam real _num_tiles_x_real_p = num_cache_p;
     if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/dram_channels_used_p)) begin
       $fatal("l2 caches (%d) must be a multiple of dram channels (%d)",
-             num_tiles_x_p, dram_channels_used_p);
+             num_cache_p, dram_channels_used_p);
     end
 
     localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
