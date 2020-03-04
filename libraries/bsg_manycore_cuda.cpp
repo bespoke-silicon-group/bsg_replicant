@@ -946,20 +946,14 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
- * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned. 
  */
 int hb_mc_device_init (hb_mc_device_t *device,
                        const char *name,
                        hb_mc_manycore_id_t id){
 
-        const hb_mc_config_t *config = hb_mc_manycore_get_config(device->mc);
-        hb_mc_dimension_t init_dim = hb_mc_config_get_dimension_vcore(config);
-        
-        return hb_mc_device_init_custom_dimensions(device, name, id, init_dim);
+        return hb_mc_device_init_custom_dimensions(device, name, id, {0, 0});
 }
-
-
 
 
 /**
@@ -968,6 +962,7 @@ int hb_mc_device_init (hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
+ * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned. 
  */
 int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
@@ -986,7 +981,11 @@ int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
         if (error != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to initialize manycore.\n", __func__);
                 return HB_MC_UNINITIALIZED;
-        } 
+        }
+
+        if(!dim.x && !dim.y){
+                dim = hb_mc_config_get_dimension_vcore(hb_mc_manycore_get_config(device->mc));
+        }
         
         error = hb_mc_device_mesh_init(device, dim);
         if (error != HB_MC_SUCCESS) {
