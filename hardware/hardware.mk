@@ -102,6 +102,11 @@ VSOURCES += $(HARDWARE_PATH)/$(CL_TOP_MODULE).sv
 VSOURCES += $(HARDWARE_PATH)/bsg_manycore_wrapper.v
 VSOURCES += $(HARDWARE_PATH)/bsg_print_stat_snoop.v
 
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_tx.v
+VSOURCES += $(BSG_MANYCORE_DIR)/v/vanilla_bean/hash_function_reverse.v
+VSOURCES += $(BSG_MANYCORE_DIR)/v/vanilla_bean/bsg_cache_to_axi_hashed.v
+
 VSOURCES += $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil_pkg.v
 VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_master.v
