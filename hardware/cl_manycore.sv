@@ -787,6 +787,7 @@ module cl_manycore
       bsg_cache_to_test_dram
         #(.num_cache_p(num_cache_per_hbm_channel_p)
           ,.data_width_p(data_width_p)
+	  ,.dma_data_width_p(dma_data_width_p)
           ,.addr_width_p(cache_addr_width_lp)
           ,.block_size_in_words_p(block_size_in_words_p)
           ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
