@@ -186,7 +186,7 @@ int test_rom (int argc, char **argv) {
         }
 
         dim = hb_mc_config_get_dimension_vcore(config);
-        expected = hb_mc_dimension_get_y(dim) + 2;
+        expected = hb_mc_dimension_get_y(dim) + 3;
 
         dim = hb_mc_config_get_dimension_network(config);
 
