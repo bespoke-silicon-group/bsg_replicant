@@ -12,7 +12,6 @@ This repository contains the following folders:
 - `libraries`: C/C++ driver and CUDA-lite Runtime library sources
 - `regression`: C/C++ Regression tests for co-simuation and AWS F1 Execution
 - `testbenches`: Testbench makefiles for C/C++ Co-Simulation
-- `scripts`: Scripts used to upload Amazon FPGA images (AFIs) and configure Amazon Machine Images (AMIs).
 - `machines`: Customized `Makefile.machine.include` file for different designs.
 
 This repository contains the following files:
