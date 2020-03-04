@@ -222,7 +222,7 @@ int test_manycore_eva_read_write () {
         int err, r = HB_MC_FAIL, i;
         uint32_t write_data[DATA_WORDS], read_data[DATA_WORDS] = {0};
         hb_mc_eva_t eva_dest, eva_src;
-        hb_mc_coordinate_t target = { .x = 1, .y = 1 };
+        hb_mc_coordinate_t target;
         hb_mc_idx_t x, y;
         uint8_t memset_char;
         uint32_t memset_word;
@@ -245,6 +245,7 @@ int test_manycore_eva_read_write () {
         /*********************************************/
         /* Test RW to Local DMEM (DMEM within target)*/
         /*********************************************/
+	target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
         eva_dest = TEST_BASE_EVA;
 
         r = test_eva_srwr(mc, &default_map, &target, &eva_dest, memset_char, write_data, DATA_WORDS);
@@ -270,7 +271,7 @@ int test_manycore_eva_read_write () {
         /*********************************************/
         /* Test RW to Group DMEM (DMEM within Group)*/
         /*********************************************/
-        x = 1, y = 1;
+        x = 1, y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
         eva_dest = TEST_BASE_EVA;
         eva_dest = (GROUP_INDICATOR) | (x << GROUP_X_OFFSET) |
                 (y << GROUP_Y_OFFSET) | (eva_dest);
@@ -298,7 +299,7 @@ int test_manycore_eva_read_write () {
         /*********************************************/
         /* Test RW to Group DMEM (DMEM within Group)*/
         /*********************************************/
-        x = 2, y = 2;
+        x = 2, y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc)) + 1;
         eva_dest = TEST_BASE_EVA;
         eva_dest = (GLOBAL_INDICATOR) | (x << GLOBAL_X_OFFSET) |
                 (y << GLOBAL_Y_OFFSET) | (eva_dest);
