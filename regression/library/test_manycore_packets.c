@@ -76,8 +76,8 @@ int test_manycore_packets() {
         uint32_t host_x = hb_mc_coordinate_get_x(host);
         uint32_t host_y = hb_mc_coordinate_get_y(host);
 
-        uint8_t target_x = 0;
-        uint8_t target_y = 1;
+        uint8_t target_x = hb_mc_config_get_vcore_base_x(hb_mc_manycore_get_config(mc));
+        uint8_t target_y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
         uint32_t addr = DMEM_BASE >> 2; // EPA
         uint32_t data  = rand();
 
