@@ -105,8 +105,9 @@ int test_scalar_print (int argc, char **argv) {
         }
 
         /* initialize the tile */
-        hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
-        hb_mc_coordinate_t origin = hb_mc_coordinate(0,1);
+        hb_mc_coordinate_t target
+	    = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
+        hb_mc_coordinate_t origin = target;
 
         // freeze the tile
         err = hb_mc_tile_freeze(mc, &target);
