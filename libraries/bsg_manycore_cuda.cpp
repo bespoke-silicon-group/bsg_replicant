@@ -962,7 +962,7 @@ int hb_mc_device_init (hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
- * @param[in]  dim           Tile pool (mesh) dimensions
+ * @param[in]  dim           Tile pool (mesh) dimensions. If (0,0) this method will initialize the whole array.
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned. 
  */
 int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
@@ -983,6 +983,7 @@ int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
                 return HB_MC_UNINITIALIZED;
         }
 
+        // If the input dimensions are (0,0) this will initialize the whole array.
         if(!dim.x && !dim.y){
                 dim = hb_mc_config_get_dimension_vcore(hb_mc_manycore_get_config(device->mc));
         }
