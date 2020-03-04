@@ -35,6 +35,11 @@
 
 #include "test_bsg_dram_loopback_cache.h"
 
+static hb_mc_coordinate_t get_target(hb_mc_manycore_t *mc)
+{
+	return hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
+}
+
 static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
 {
         struct stat st;
@@ -98,8 +103,8 @@ int test_loopback (int argc, char **argv) {
         }
 
         /* initialize the tile */
-        hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
-        hb_mc_coordinate_t origin = hb_mc_coordinate(0,1);
+        hb_mc_coordinate_t target = get_target(mc);
+        hb_mc_coordinate_t origin = get_target(mc);
 
         // freeze the tile
         err = hb_mc_tile_freeze(mc, &target);
