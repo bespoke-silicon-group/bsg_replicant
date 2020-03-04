@@ -946,48 +946,14 @@ static int hb_mc_tile_group_kernel_exit (hb_mc_kernel_t *kernel) {
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
- * @param[in]  dim           Tile pool (mesh) dimensions
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned. 
  */
 int hb_mc_device_init (hb_mc_device_t *device,
                        const char *name,
                        hb_mc_manycore_id_t id){
-        device->mc = (hb_mc_manycore_t*) malloc (sizeof (hb_mc_manycore_t));
-        if (device->mc == NULL) { 
-                bsg_pr_err("%s: failed to allocate space on host for hb_mc_manycore_t.\n", __func__);
-                return HB_MC_NOMEM;
-        }
-        *(device->mc) = {0};
-        
-        int error = hb_mc_manycore_init(device->mc, name, id); 
-        if (error != HB_MC_SUCCESS) { 
-                bsg_pr_err("%s: failed to initialize manycore.\n", __func__);
-                return HB_MC_UNINITIALIZED;
-        } 
 
-
-        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
-        hb_mc_dimension_t max_dim = hb_mc_config_get_dimension_vcore(cfg);       
-
-        error = hb_mc_device_mesh_init(device, max_dim);
-        if (error != HB_MC_SUCCESS) {
-                bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
-                return HB_MC_UNINITIALIZED;
-        }
-
-        error = hb_mc_device_tile_groups_init (device); 
-        if (error != HB_MC_SUCCESS) { 
-                bsg_pr_err("%s: failed to initialize device's tile group structure.\n", __func__);
-                return error; 
-        }
-
-        device->num_grids = 0;
-
-        return HB_MC_SUCCESS;
-
+        return hb_mc_device_init_custom_dimensions(device, name, id, {0, 0});
 }
-
-
 
 
 /**
@@ -996,6 +962,7 @@ int hb_mc_device_init (hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @param[in]  name          Device name
  * @param[in]  id            Device id
+ * @param[in]  dim           Tile pool (mesh) dimensions. If (0,0) this method will initialize the whole array.
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned. 
  */
 int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
@@ -1014,9 +981,13 @@ int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
         if (error != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to initialize manycore.\n", __func__);
                 return HB_MC_UNINITIALIZED;
-        } 
-        
+        }
 
+        // If the input dimensions are (0,0) this will initialize the whole array.
+        if(!dim.x && !dim.y){
+                dim = hb_mc_config_get_dimension_vcore(hb_mc_manycore_get_config(device->mc));
+        }
+        
         error = hb_mc_device_mesh_init(device, dim);
         if (error != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to initialize mesh.\n", __func__);
