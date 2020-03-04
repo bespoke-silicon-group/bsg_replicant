@@ -60,8 +60,10 @@ int test_vcache_simplified() {
         uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
         uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
 
-        uint32_t dram_coord_x = 0;
-        uint32_t dram_coord_y = manycore_dim_y + 1;
+	// get the coordinate of the 1st logical victim cache
+	hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, 0);
+        uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
+        uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
         int mismatch = 0; 
 
         uint32_t tag_reset_addr;
