@@ -213,7 +213,7 @@ static int run_finish_packet_test(test_t *test)
         unsigned char *program_data;
         size_t program_size;
         int rc = HB_MC_FAIL, err;
-        hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
+        hb_mc_coordinate_t target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
 
         err = run_freeze_and_load(test, target, &program_data, &program_size);
         if (err != HB_MC_SUCCESS)
@@ -336,8 +336,7 @@ static test_t npa_to_eva_tests [] = {
 
 static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc)
 {
-        hb_mc_coordinate_t dim = hb_mc_config_get_dimension_network(hb_mc_manycore_get_config(mc));
-        return hb_mc_coordinate_get_y(dim) - 1;
+	return hb_mc_config_get_dram_low_y(hb_mc_manycore_get_config(mc));
 }
 
 static int run_npa_to_eva_test(test_t *test)
@@ -357,7 +356,7 @@ static int run_npa_to_eva_test(test_t *test)
         unsigned char *program_data;
         size_t program_size;
         int rc = HB_MC_FAIL, err;
-        hb_mc_coordinate_t target = hb_mc_coordinate(0,1);
+        hb_mc_coordinate_t target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
         hb_mc_npa_t npa = test->npa;
         uint32_t data   = test->data;
         char npa_str [64];
@@ -371,7 +370,12 @@ static int run_npa_to_eva_test(test_t *test)
                 hb_mc_coordinate_t hostif = hb_mc_config_get_host_interface(config);
                 hb_mc_npa_set_x(&npa, hb_mc_coordinate_get_x(hostif));
                 hb_mc_npa_set_y(&npa, hb_mc_coordinate_get_y(hostif));
-        }
+        } else { // if this is a vcore address add a base x-y
+		const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
+		hb_mc_coordinate_t tile = hb_mc_config_get_origin_vcore(config);
+		hb_mc_npa_set_x(&npa, hb_mc_npa_get_x(&npa) + hb_mc_coordinate_get_x(tile));
+		hb_mc_npa_set_y(&npa, hb_mc_npa_get_y(&npa) + hb_mc_coordinate_get_y(tile));
+	}
 
         // format npa as a string
         hb_mc_npa_to_string(&npa, npa_str, sizeof(npa_str));
