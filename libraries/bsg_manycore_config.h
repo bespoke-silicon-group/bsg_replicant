@@ -300,12 +300,74 @@ extern "C" {
                 return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
+	__attribute__((deprecated))
         static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
         {
                 hb_mc_coordinate_t dims;
                 dims = hb_mc_config_get_dimension_network(cfg);
                 return hb_mc_coordinate_get_y(dims) - 1;
         }
+
+
+	static inline hb_mc_idx_t hb_mc_config_get_dram_low_y(const hb_mc_config_t *cfg)
+	{
+		return 0;
+	}
+
+	static inline hb_mc_idx_t hb_mc_config_get_dram_high_y(const hb_mc_config_t *cfg)
+	{
+		return hb_mc_coordinate_get_y(hb_mc_config_get_dimension_network(cfg))-1;
+	}
+
+
+	static inline int hb_mc_config_is_dram_y(const hb_mc_config_t *cfg, hb_mc_idx_t y)
+	{
+		return y == hb_mc_config_get_dram_low_y(cfg)
+			|| y == hb_mc_config_get_dram_high_y(cfg);
+	}
+
+	static inline int hb_mc_config_coordinate_is_dram(const hb_mc_config_t *cfg, hb_mc_coordinate_t xy)
+        {
+		return hb_mc_config_is_dram_y(cfg, hb_mc_coordinate_get_y(xy));
+        }
+
+	static inline hb_mc_coordinate_t
+	hb_mc_config_get_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_idx_t cache_id)
+	{
+		hb_mc_coordinate_t dims;
+                dims = hb_mc_config_get_dimension_network(cfg);
+
+		hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims);
+		hb_mc_idx_t y = cache_id / hb_mc_dimension_get_x(dims) == 0
+			? hb_mc_config_get_dram_low_y(cfg)
+			: hb_mc_config_get_dram_high_y(cfg);
+
+		return hb_mc_coordinate(x,y);
+	}
+
+	static inline
+	hb_mc_idx_t hb_mc_config_get_num_dram_coordinates(const hb_mc_config_t *cfg)
+	{
+		/* there are victim caches at the top and bottom of the mesh */
+		return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_network(cfg))*2;
+	}
+
+	static inline hb_mc_idx_t hb_mc_config_get_dram_id
+	(const hb_mc_config_t *cfg, hb_mc_coordinate_t dram_xy)
+	{
+		hb_mc_idx_t y = hb_mc_coordinate_get_y(dram_xy);
+		if (y == hb_mc_config_get_dram_low_y(cfg)) {
+			// northern cache
+			return hb_mc_coordinate_get_x(dram_xy);
+		} else if (y == hb_mc_config_get_dram_high_y(cfg)) {
+			// southern cache
+			return hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg))
+				+ hb_mc_coordinate_get_x(dram_xy);
+		} else {
+			// error
+			return -1;
+		}
+	}
 
         /**
          * Return the associativity of the victim cache from the configuration.

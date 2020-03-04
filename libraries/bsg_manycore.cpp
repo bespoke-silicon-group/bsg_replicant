@@ -1341,6 +1341,23 @@ int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
 
 
 /**
+ * Validate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
+{
+	return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+			char npa_str[256];
+			uint32_t tag = HB_MC_VCACHE_VALID | hb_mc_vcache_way(mc, hb_mc_npa_get_epa(way_addr));
+			manycore_pr_dbg(mc, "Validating vcache tag @ %s with tag = 0x%08" PRIx32 "\n",
+					hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)), tag);
+
+			// write the way_id or'd with the valid bit
+			return hb_mc_manycore_write32(mc, way_addr, tag);
+		});
+}
+
+/**
  * Flush entire victim cache.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
@@ -1383,7 +1400,7 @@ int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
 int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
 {
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-    return hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_y(cfg);
+    return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
 }
 
 #if defined(DRAM_HACK_WRITE) || defined(DRAM_HACK_READ)
@@ -1414,7 +1431,7 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
       Get system parameters for performing the address mapping
      */
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-    unsigned long caches = hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg));
+    unsigned long caches = hb_mc_vcache_num_caches(mc);
     unsigned long channels = hb_mc_config_get_dram_channels(cfg);
     unsigned long caches_per_channel = caches/channels;
 
@@ -1424,9 +1441,9 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
     /*
       Figure out which memory channel and bank this NPA maps to.
      */
-    hb_mc_idx_t cache_x = hb_mc_npa_get_x(npa); // which cache - same as the column
-    parameter_t id = cache_x / caches_per_channel; // which channel
-    parameter_t bank = cache_x % caches_per_channel; // which bank within channel
+    hb_mc_idx_t cache_id = hb_mc_config_get_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
+    parameter_t id = cache_id / caches_per_channel; // which channel
+    parameter_t bank = cache_id % caches_per_channel; // which bank within channel
 
     /*
       Use the backdoor to our non-synthesizable memory.

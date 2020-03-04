@@ -360,8 +360,21 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
                                         const hb_mc_eva_t *eva,
                                         hb_mc_idx_t *y) { 
-        // Y dimension is fixed at the bottom column
-        *y = hb_mc_config_get_dram_y(cfg);
+
+        // Y can either be the North or South boundary of the chip
+	uint32_t shift
+		= default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
+		+ default_get_x_dimlog(cfg); // x-coordinate bits
+
+	uint32_t is_south = (hb_mc_eva_addr(eva) >> shift) & 1;
+
+	*y = is_south
+		? hb_mc_config_get_dram_high_y(cfg)
+		: hb_mc_config_get_dram_low_y(cfg);
+
+	bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
+		   __func__, *y, *eva);
+
         return HB_MC_SUCCESS;
 }
 
@@ -374,7 +387,10 @@ static int default_eva_get_epa_dram (const hb_mc_manycore_t *mc,
  
         uint32_t xdimlog    = default_get_x_dimlog(cfg);
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
-        uint32_t shift      = stripe_log + xdimlog;
+        uint32_t shift
+		= stripe_log // stripe byte-offset bits
+		+ xdimlog    // x-coordinate bits
+		+ 1;         // north-south bit
 
         // Refer to comments on default_eva_to_npa_dram for more clarification
         // DRAM EPA  =  EPA_top + block_offset + word_addressible  
@@ -494,74 +510,6 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
- 
-/**
- * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
- * size (contiguous bytes following the specified EVA)
- * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  o      Coordinate of the origin for this tile's group
- * @param[in]  src    Coordinate of the tile issuing this #eva
- * @param[in]  eva    An eva to translate
- * @param[out] npa    An npa to be set by translating #eva
- * @param[out] sz     The size in bytes of the NPA segment for the #eva
- * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
- */
-__attribute__((deprecated))
-static int default_eva_to_npa_dram_dep(const hb_mc_manycore_t *mc,
-                                       const hb_mc_coordinate_t *o,
-                                       const hb_mc_coordinate_t *src,
-                                       const hb_mc_eva_t *eva,
-                                       hb_mc_npa_t *npa, size_t *sz)
-{
-        uint32_t xmask, xdimlog, addrbits, shift, errmask;
-        size_t maxsz;
-        hb_mc_idx_t x, y;
-        hb_mc_epa_t epa;
-        hb_mc_dimension_t dim;
-        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        dim = hb_mc_config_get_dimension_network(cfg);
-
-        xdimlog = default_get_x_dimlog(cfg);
-        xmask   = default_get_dram_x_bitidx(cfg);
-        shift   = default_get_dram_x_shift_dep(mc);
-
-        x = (hb_mc_eva_addr(eva) >> shift) & xmask;
-        y = hb_mc_config_get_dram_y(cfg);
-
-        addrbits = shift;
-        maxsz = 1 << addrbits;
-
-        // The EPA portion of an EVA is technically determined by addrbits
-        // above.  However, this creates undefined behavior when (addrbits + 1 +
-        // xdimlog) != DEFAULT_DRAM_BITIDX, since there are unused bits between
-        // the x index and EPA.  To avoid really awful debugging, we check this
-        // situation.
-        errmask = MAKE_MASK(addrbits);
-
-        epa = (hb_mc_eva_addr(eva) & errmask);
-
-        if (epa >= maxsz){
-                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. EPA requested is "
-                           "outside of addressible range in DRAM.",
-                           __func__, hb_mc_eva_addr(eva));
-                return HB_MC_INVALID;
-        }
-
-        *sz = maxsz - epa;
-        *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
-
-        bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "} sz = %08x. \n",
-                   __func__, hb_mc_eva_addr(eva),
-                   hb_mc_coordinate_get_x(*src),
-                   hb_mc_coordinate_get_y(*src),
-                   hb_mc_npa_get_x(npa),
-                   hb_mc_npa_get_y(npa),
-                   hb_mc_npa_get_epa(npa),
-                   uint32_t(*sz));
-
-        return HB_MC_SUCCESS;
-}
-
 /**
  * Translate an Endpoint Virtual Address in a source tile's address space
  * to a Network Physical Address
@@ -646,7 +594,8 @@ static bool default_npa_is_dram(const hb_mc_manycore_t *mc,
 {
         char npa_str[64];
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-        bool is_dram = (hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_y(config))
+        bool is_dram
+		= hb_mc_config_is_dram_y(config, hb_mc_npa_get_y(npa))
                 && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt);
 
         bsg_pr_dbg("%s: npa %s %s DRAM\n",
@@ -745,14 +694,16 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
         hb_mc_eva_t addr = 0;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         uint32_t stripe_log, xdimlog;
+	uint32_t is_south = hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_high_y(cfg);
 
-        stripe_log = default_get_dram_stripe_size_log(mc); 
+	stripe_log = default_get_dram_stripe_size_log(mc);
         xdimlog    = default_get_x_dimlog(cfg);
 
         // See comments on default_eva_to_npa_dram for clarification
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
         addr |= (hb_mc_npa_get_x(npa) << stripe_log); // Set the x coordinate
-        addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog)); // Set the EPA section
+	addr |= (is_south << (stripe_log + xdimlog)); // Set the N-S bit
+        addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
         *eva  = addr;
 

@@ -424,6 +424,12 @@ extern "C" {
 	__attribute__((warn_unused_result))
 	int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc);
 
+       /**
+	* Mark each way in victim cache as valid.
+	* @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+	*/
+	__attribute__((warn_unused_result))
+	int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc);
 
 	/**
 	 * Flush entire victim cache.

@@ -119,8 +119,8 @@ static
 hb_mc_npa_t hb_mc_vcache_way_npa(const hb_mc_manycore_t *mc, hb_mc_idx_t cache, hb_mc_epa_t set, hb_mc_epa_t way)
 {
 	const hb_mc_config_t *cfg  = hb_mc_manycore_get_config(mc);
-	hb_mc_idx_t vcache_y = hb_mc_config_get_dram_y(cfg);
-	return hb_mc_npa(hb_mc_coordinate(cache, vcache_y), hb_mc_vcache_way_addr(mc, set, way));
+	hb_mc_coordinate_t cache_xy = hb_mc_config_get_dram_coordinate(cfg, cache);
+	return hb_mc_npa(cache_xy, hb_mc_vcache_way_addr(mc, set, way));
 }
 
 static
@@ -141,7 +141,8 @@ static
 hb_mc_epa_t hb_mc_vcache_num_caches(const hb_mc_manycore_t *mc)
 {
 	const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-	return hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg));
+
+	return hb_mc_config_get_num_dram_coordinates(cfg);
 }
 
 static
