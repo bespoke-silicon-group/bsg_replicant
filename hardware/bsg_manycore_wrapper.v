@@ -61,11 +61,6 @@ module bsg_manycore_wrapper
     ,.num_tiles_x_p(num_tiles_x_p)
     ,.num_tiles_y_p(num_tiles_y_p+1)
 
-    ,.stub_n_p({num_tiles_x_p{1'b0}})
-    ,.stub_e_p({num_tiles_y_p{1'b0}})
-    ,.stub_w_p({num_tiles_y_p{1'b0}})
-    ,.stub_s_p({num_tiles_x_p{1'b0}})
-
     ,.debug_p(0)
     ,.addr_width_p(addr_width_p)
     ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
