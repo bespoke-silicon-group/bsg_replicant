@@ -258,7 +258,8 @@ int test_rom (int argc, char **argv) {
         if (vcache_block_words != vcache_block_words_expect) {
                 bsg_pr_test_err("Unexpected V-Cache block size: "
                                 "Got %" PRIu32 " words, "
-                                "Expected %" PRIu32 " words\n");
+                                "Expected %" PRIu32 " words\n",
+				vcache_block_words, vcache_block_words_expect);
                 fail = 1;
         }
 
