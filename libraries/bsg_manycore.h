@@ -407,36 +407,36 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz);
 
-	/**
-	 * Flush a cache tag.
-	 * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+        /**
+         * Flush a cache tag.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
          * @param[in]  npa    A valid hb_mc_npa_t (must map to a cache tag) - start of the range to flush
          * @param[in]  sz     The size of the range to flush in bytes
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
-	 */
-	__attribute__((warn_unused_result))
-	int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *way_npa);
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *way_npa);
 
-	/**
-	 * Invalidate entire victim cache.
-	 * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-	 */
-	__attribute__((warn_unused_result))
-	int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc);
+        /**
+         * Invalidate entire victim cache.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc);
 
        /**
-	* Mark each way in victim cache as valid.
-	* @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-	*/
-	__attribute__((warn_unused_result))
-	int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc);
+        * Mark each way in victim cache as valid.
+        * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+        */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc);
 
-	/**
-	 * Flush entire victim cache.
-	 * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-	 */
-	__attribute__((warn_unused_result))
-	int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc);
+        /**
+         * Flush entire victim cache.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc);
 
         /************/
         /* MMIO API */
