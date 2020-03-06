@@ -74,15 +74,17 @@ LDFLAGS += -lbsg_manycore_runtime -lm
 LDFLAGS += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
 
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS     += -M +lint=TFIPC-L -ntb_opts tb_timescale=1ps/1ps -lca -v2005 \
-                -timescale=1ps/1ps -sverilog -full64 -licqueue
+VCS_VFLAGS     += -M +lint=TFIPC -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005
+VCS_VFLAGS     += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
+VCS_VFLAGS     += +warn=noLCA_FEATURES_ENABLED -q 
+VCS_VFLAGS     += -msg_config=$(TESTBENCH_PATH)/msg_config
 
 # VCS Generates an executable file by linking the $(SRC_PATH)/%.o file with the
 # the VCS work libraries for the design, and the runtime shared libraries
 $(EXEC_PATH)/%.debug: VCS_VFLAGS += -debug_pp 
 $(EXEC_PATH)/%.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
-$(EXEC_PATH)/%.debug $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS)
+$(EXEC_PATH)/%.debug $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS) $(TESTBENCH_PATH)/msg_config
 	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
 	vcs tb glbl cosim_wrapper -j$(NPROCS) $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log

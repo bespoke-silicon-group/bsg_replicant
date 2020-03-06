@@ -196,6 +196,39 @@ $(TESTBENCH_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && vivado -mode batch -source $<
 	echo "cosim_wrapper : $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper/64" >> $@
 
+# To reduce the number of warnings to ones we control, we dynamically genrate msg_config file
+$(TESTBENCH_PATH)/msg_config:
+	$(eval XILINX_VIVADO=$(realpath $(XILINX_VIVADO)))
+
+	@echo "{+warn=noTFIPC;  +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/sh_ddr.sv;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/sh_ddr.sv;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/sh_ddr.sv;}" >> $@
+
+	@echo "{+warn=noTFIPC;  +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_1/simulation/fifo_generator_vlog_beh.v;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_1/simulation/fifo_generator_vlog_beh.v;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_1/simulation/fifo_generator_vlog_beh.v;}" >> $@
+
+	@echo "{+warn=noTFIPC;  +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v;}" >> $@
+
+	@echo "{+warn=noTFIPC;  +file=$(HDK_SHELL_DESIGN_DIR)/interfaces/unused_ddr_a_b_d_template.inc;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(HDK_SHELL_DESIGN_DIR)/interfaces/unused_ddr_a_b_d_template.inc;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(HDK_SHELL_DESIGN_DIR)/interfaces/unused_ddr_a_b_d_template.inc;}" >> $@
+
+
+	@echo "{+warn=noTFIPC;  +file=$(HDK_DIR)/common/verif/models/fpga/fpga.sv;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(HDK_DIR)/common/verif/models/fpga/fpga.sv;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(HDK_DIR)/common/verif/models/fpga/fpga.sv;}" >> $@
+
+	@echo "{+warn=noTFIPC;  +file=$(HDK_DIR)/common/verif/models/fpga/card.sv;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(HDK_DIR)/common/verif/models/fpga/card.sv;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(HDK_DIR)/common/verif/models/fpga/card.sv;}" >> $@
+
+	@echo "{+warn=noTFIPC;  +file=$(HDK_DIR)/common/verif/models/sh_bfm/sh_bfm.sv;}" >> $@
+	@echo "{+warn=noSIOB;   +file=$(HDK_DIR)/common/verif/models/sh_bfm/sh_bfm.sv;}" >> $@
+	@echo "{+warn=noPCWM-W; +file=$(HDK_DIR)/common/verif/models/sh_bfm/sh_bfm.sv;}" >> $@
+
 $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(BSG_MACHINE_PATH)/Makefile.machine.include $(VHEADERS) $(VSOURCES)
 	cd $(TESTBENCH_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
