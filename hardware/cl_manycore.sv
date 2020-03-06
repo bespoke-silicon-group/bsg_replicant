@@ -1134,8 +1134,8 @@ module cl_manycore
 
    // manycore link
 
-   logic [x_cord_width_p-1:0] mcl_x_cord_lp = (y_cord_width_p)'(0);
-   logic [y_cord_width_p-1:0] mcl_y_cord_lp = (y_cord_width_p)'(1);
+   logic [x_cord_width_p-1:0] mcl_x_cord_li = (x_cord_width_p)'(0);
+   logic [y_cord_width_p-1:0] mcl_y_cord_li = (y_cord_width_p)'(1);
 
    logic                    print_stat_v_lo  ;
    logic [data_width_p-1:0] print_stat_tag_lo;
