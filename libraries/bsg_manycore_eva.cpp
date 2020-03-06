@@ -37,10 +37,6 @@
 #include <math.h>
 #endif
 
-#include <vector>
-#include <map>
-
-
 #define MAKE_MASK(WIDTH) ((1ULL << (WIDTH)) - 1ULL)
 
 #define DEFAULT_GROUP_X_LOGSZ 6
