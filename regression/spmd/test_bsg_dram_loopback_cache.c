@@ -37,7 +37,7 @@
 
 static hb_mc_coordinate_t get_target(hb_mc_manycore_t *mc)
 {
-	return hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
+        return hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
 }
 
 static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
