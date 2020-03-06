@@ -86,10 +86,15 @@ module bsg_manycore_wrapper
 
   // connecting link_sif to outside
   //
-  //  north[0]: host
+  //  north[0]  : victim cache 0
+  //  north[1]  : victim cache 1
+  //  ...
+  //  x[0].y[1] : host interface
+  //  x[1].y[1] : unused
+  //  ...
 
-  //  south[0] : victim cache 0
-  //  south[1] : victim cache 1
+  //  south[0] : victim cache X
+  //  south[1] : victim cache X+1
   //  ...
   //
   for (genvar i = 0; i < num_tiles_x_p; i++) begin
