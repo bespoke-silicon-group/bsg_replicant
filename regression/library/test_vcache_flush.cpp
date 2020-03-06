@@ -30,7 +30,7 @@
 #include <bsg_manycore_npa.h>
 #include "test_vcache_flush.hpp"
 
-#define NUM_TESTS 3
+#define NUM_TESTS 32
 
 /* these are read from the designs ROM */
 uint32_t NUM_SETS = 0;
