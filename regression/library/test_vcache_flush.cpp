@@ -190,7 +190,7 @@ int test_vcache_flush() {
         int dram = 0, ndrams = hb_mc_config_get_num_dram_coordinates(config);
         size_t dram_size = hb_mc_config_get_dram_size(config);
 
-	bsg_pr_test_info("dram_size = 0x%08x\n", dram_size);
+        bsg_pr_test_info("dram_size = 0x%08x\n", dram_size);
         addrs[0] = 0;
         // VCaches partition DRAM evently amongst themselves
         addrs[NUM_TESTS - 1] = std::min(static_cast<hb_mc_epa_t>((1 << addr_bitwidth) - 1),
@@ -201,9 +201,9 @@ int test_vcache_flush() {
                 addrs[i] = (rand() % addrs[NUM_TESTS - 1]) & ALIGN_4_MASK;
 
         for (dram = 0; dram < ndrams; ++dram) {
-		hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, dram);
+                hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, dram);
                 hb_mc_idx_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
-		hb_mc_idx_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
+                hb_mc_idx_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
                 for(i = 0; i < NUM_TESTS; ++i) {
                         addr = addrs[i];
 
