@@ -336,7 +336,7 @@ static test_t npa_to_eva_tests [] = {
 
 static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc)
 {
-	return hb_mc_config_get_dram_low_y(hb_mc_manycore_get_config(mc));
+        return hb_mc_config_get_dram_low_y(hb_mc_manycore_get_config(mc));
 }
 
 static int run_npa_to_eva_test(test_t *test)
@@ -371,11 +371,11 @@ static int run_npa_to_eva_test(test_t *test)
                 hb_mc_npa_set_x(&npa, hb_mc_coordinate_get_x(hostif));
                 hb_mc_npa_set_y(&npa, hb_mc_coordinate_get_y(hostif));
         } else { // if this is a vcore address add a base x-y
-		const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-		hb_mc_coordinate_t tile = hb_mc_config_get_origin_vcore(config);
-		hb_mc_npa_set_x(&npa, hb_mc_npa_get_x(&npa) + hb_mc_coordinate_get_x(tile));
-		hb_mc_npa_set_y(&npa, hb_mc_npa_get_y(&npa) + hb_mc_coordinate_get_y(tile));
-	}
+                const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
+                hb_mc_coordinate_t tile = hb_mc_config_get_origin_vcore(config);
+                hb_mc_npa_set_x(&npa, hb_mc_npa_get_x(&npa) + hb_mc_coordinate_get_x(tile));
+                hb_mc_npa_set_y(&npa, hb_mc_npa_get_y(&npa) + hb_mc_coordinate_get_y(tile));
+        }
 
         // format npa as a string
         hb_mc_npa_to_string(&npa, npa_str, sizeof(npa_str));
