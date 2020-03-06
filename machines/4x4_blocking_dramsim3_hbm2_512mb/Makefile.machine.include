@@ -35,6 +35,12 @@ BSG_MACHINE_VCACHE_DMA_DATA_WIDTH     = 32
 BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
 BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MAX_EPA_WIDTH             = 28
+
+# IO flow control parameters.
+# max host loads; max host request credits; max out credits of manycore endpoint standard module
+BSG_MACHINE_IO_REMOTE_LOAD_CAP        = 32
+BSG_MACHINE_IO_HOST_CREDITS_CAP       = 256
+BSG_MACHINE_IO_EP_MAX_OUT_CREDITS     = 16
 BSG_MACHINE_DRAM_SIZE_WORDS           = 134217728
 BSG_MACHINE_DRAM_BANK_SIZE_WORDS      =  16777216
 
