@@ -245,7 +245,7 @@ int test_manycore_eva_read_write () {
         /*********************************************/
         /* Test RW to Local DMEM (DMEM within target)*/
         /*********************************************/
-	target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
+        target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
         eva_dest = TEST_BASE_EVA;
 
         r = test_eva_srwr(mc, &default_map, &target, &eva_dest, memset_char, write_data, DATA_WORDS);
