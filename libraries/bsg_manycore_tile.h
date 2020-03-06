@@ -163,7 +163,7 @@ extern "C" {
         /****************************************************************************************/
         /* TODO: these should actually check if there's a vanilla core at the given tile.       */
         /* At the moment that would mean checking the coordinates according to a static config. */
-        /* In the future some sort of ID register would be a nice feature.		        */
+        /* In the future some sort of ID register would be a nice feature.                      */
         /****************************************************************************************/
 
         /**
