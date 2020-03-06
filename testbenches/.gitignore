@@ -16,3 +16,4 @@ checkpoints
 *.tmp
 *.prelim
 test_*
+msg_config
