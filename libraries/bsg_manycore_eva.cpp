@@ -358,18 +358,18 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                                         hb_mc_idx_t *y) { 
 
         // Y can either be the North or South boundary of the chip
-	uint32_t shift
-		= default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-		+ default_get_x_dimlog(cfg); // x-coordinate bits
+        uint32_t shift
+                = default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
+                + default_get_x_dimlog(cfg); // x-coordinate bits
 
-	uint32_t is_south = (hb_mc_eva_addr(eva) >> shift) & 1;
+        uint32_t is_south = (hb_mc_eva_addr(eva) >> shift) & 1;
 
-	*y = is_south
-		? hb_mc_config_get_dram_high_y(cfg)
-		: hb_mc_config_get_dram_low_y(cfg);
+        *y = is_south
+                ? hb_mc_config_get_dram_high_y(cfg)
+                : hb_mc_config_get_dram_low_y(cfg);
 
-	bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
-		   __func__, *y, *eva);
+        bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
+                   __func__, *y, *eva);
 
         return HB_MC_SUCCESS;
 }
@@ -384,9 +384,9 @@ static int default_eva_get_epa_dram (const hb_mc_manycore_t *mc,
         uint32_t xdimlog    = default_get_x_dimlog(cfg);
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
         uint32_t shift
-		= stripe_log // stripe byte-offset bits
-		+ xdimlog    // x-coordinate bits
-		+ 1;         // north-south bit
+                = stripe_log // stripe byte-offset bits
+                + xdimlog    // x-coordinate bits
+                + 1;         // north-south bit
 
         // Refer to comments on default_eva_to_npa_dram for more clarification
         // DRAM EPA  =  EPA_top + block_offset + word_addressible  
@@ -591,7 +591,7 @@ static bool default_npa_is_dram(const hb_mc_manycore_t *mc,
         char npa_str[64];
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
         bool is_dram
-		= hb_mc_config_is_dram_y(config, hb_mc_npa_get_y(npa))
+                = hb_mc_config_is_dram_y(config, hb_mc_npa_get_y(npa))
                 && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt);
 
         bsg_pr_dbg("%s: npa %s %s DRAM\n",
@@ -690,15 +690,15 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
         hb_mc_eva_t addr = 0;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         uint32_t stripe_log, xdimlog;
-	uint32_t is_south = hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_high_y(cfg);
+        uint32_t is_south = hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_high_y(cfg);
 
-	stripe_log = default_get_dram_stripe_size_log(mc);
+        stripe_log = default_get_dram_stripe_size_log(mc);
         xdimlog    = default_get_x_dimlog(cfg);
 
         // See comments on default_eva_to_npa_dram for clarification
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
         addr |= (hb_mc_npa_get_x(npa) << stripe_log); // Set the x coordinate
-	addr |= (is_south << (stripe_log + xdimlog)); // Set the N-S bit
+        addr |= (is_south << (stripe_log + xdimlog)); // Set the N-S bit
         addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
         *eva  = addr;
@@ -1016,11 +1016,11 @@ static size_t min_size_t(size_t x, size_t y)
  */
 template <typename WriteFunction>
 int hb_mc_manycore_eva_write_internal(hb_mc_manycore_t *mc,
-				      const hb_mc_eva_map_t *map,
-				      const hb_mc_coordinate_t *tgt,
-				      const hb_mc_eva_t *eva,
-				      const void *data, size_t sz,
-				      WriteFunction write_function)
+                                      const hb_mc_eva_map_t *map,
+                                      const hb_mc_coordinate_t *tgt,
+                                      const hb_mc_eva_t *eva,
+                                      const void *data, size_t sz,
+                                      WriteFunction write_function)
 {
         int err;
         size_t dest_sz, xfer_sz;
@@ -1075,8 +1075,8 @@ int hb_mc_manycore_eva_write_dma(hb_mc_manycore_t *mc,
                                  const hb_mc_eva_t *eva,
                                  const void *data, size_t sz)
 {
-	return hb_mc_manycore_eva_write_internal(mc, map, tgt, eva, data, sz,
-						 hb_mc_manycore_dma_write_no_cache_ainv);
+        return hb_mc_manycore_eva_write_internal(mc, map, tgt, eva, data, sz,
+                                                 hb_mc_manycore_dma_write_no_cache_ainv);
 }
 
 /**
@@ -1095,9 +1095,9 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
                              const hb_mc_eva_t *eva,
                              const void *data, size_t sz)
 {
-	// otherwise do write using the manycore mesh network
+        // otherwise do write using the manycore mesh network
         return hb_mc_manycore_eva_write_internal(mc,map, tgt, eva, data, sz,
-						 hb_mc_manycore_write_mem);
+                                                 hb_mc_manycore_write_mem);
 }
 
 
@@ -1115,11 +1115,11 @@ int hb_mc_manycore_eva_write(hb_mc_manycore_t *mc,
  */
 template <typename ReadFunction>
 int hb_mc_manycore_eva_read_internal(hb_mc_manycore_t *mc,
-				     const hb_mc_eva_map_t *map,
-				     const hb_mc_coordinate_t *tgt,
-				     const hb_mc_eva_t *eva,
-				     void *data, size_t sz,
-				     ReadFunction read_function)
+                                     const hb_mc_eva_map_t *map,
+                                     const hb_mc_coordinate_t *tgt,
+                                     const hb_mc_eva_t *eva,
+                                     void *data, size_t sz,
+                                     ReadFunction read_function)
 {
         int err;
         size_t src_sz, xfer_sz;
@@ -1170,13 +1170,13 @@ int hb_mc_manycore_eva_read_internal(hb_mc_manycore_t *mc,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_manycore_eva_read_dma(hb_mc_manycore_t *mc,
-				const hb_mc_eva_map_t *map,
-				const hb_mc_coordinate_t *tgt,
-				const hb_mc_eva_t *eva,
-				void *data, size_t sz)
+                                const hb_mc_eva_map_t *map,
+                                const hb_mc_coordinate_t *tgt,
+                                const hb_mc_eva_t *eva,
+                                void *data, size_t sz)
 {
-	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
-						hb_mc_manycore_dma_read_no_cache_afl);
+        return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
+                                                hb_mc_manycore_dma_read_no_cache_afl);
 }
 
 /**
@@ -1195,8 +1195,8 @@ int hb_mc_manycore_eva_read(hb_mc_manycore_t *mc,
                             const hb_mc_eva_t *eva,
                             void *data, size_t sz)
 {
-	return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
-						hb_mc_manycore_read_mem);
+        return hb_mc_manycore_eva_read_internal(mc, map, tgt, eva, data, sz,
+                                                hb_mc_manycore_read_mem);
 }
 
 /**
