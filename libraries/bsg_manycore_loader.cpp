@@ -733,7 +733,7 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                            __func__,
                            hb_mc_manycore_dram_is_enabled(mc) ? "set" : "clear",
                            hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)),
-			   hb_mc_strerror(rc));
+                           hb_mc_strerror(rc));
                 return rc;
         }
 
@@ -775,7 +775,7 @@ static int hb_mc_loader_tile_initialize(hb_mc_manycore_t *mc,
 static int hb_mc_loader_columns_validate_victim_cache(hb_mc_manycore_t *mc,
                                                       const hb_mc_eva_map_t *map)
 {
-	return hb_mc_manycore_validate_vcache(mc);
+        return hb_mc_manycore_validate_vcache(mc);
 }
 
 /**
