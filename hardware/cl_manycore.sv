@@ -328,8 +328,6 @@ module cl_manycore
        ,.dmem_size_p(dmem_size_p)
        ,.icache_entries_p(icache_entries_p)
        ,.icache_tag_width_p(icache_tag_width_p)
-       ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
-       ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
        ,.num_cache_p(num_cache_p)
        ,.vcache_size_p(vcache_size_p)
        ,.vcache_block_size_in_words_p(block_size_in_words_p)

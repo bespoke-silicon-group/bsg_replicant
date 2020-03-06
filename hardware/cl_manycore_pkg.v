@@ -22,8 +22,6 @@ package cl_manycore_pkg;
   parameter dmem_size_p = 1024;
   parameter icache_entries_p = 1024;
   parameter icache_tag_width_p = 12;
-  parameter dram_ch_addr_width_p = 27;
-  parameter epa_byte_addr_width_p = 18;
   parameter branch_trace_en_p = `CL_MANYCORE_BRANCH_TRACE_EN;
 
   parameter num_cache_p = ((`CL_MANYCORE_DIM_X)<<1);
