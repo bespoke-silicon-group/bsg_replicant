@@ -84,11 +84,11 @@ extern "C" {
          * @param[in] npa   A Network Physical Address. Behavior is undefined if #npa is NULL.
          * @return the XY coordinate of #npa.
          */
-	static inline hb_mc_coordinate_t hb_mc_npa_get_xy(const hb_mc_npa_t *npa)
-	{
-		return hb_mc_coordinate(hb_mc_npa_get_x(npa),
-					hb_mc_npa_get_y(npa));
-	}
+        static inline hb_mc_coordinate_t hb_mc_npa_get_xy(const hb_mc_npa_t *npa)
+        {
+                return hb_mc_coordinate(hb_mc_npa_get_x(npa),
+                                        hb_mc_npa_get_y(npa));
+        }
 
         /**
          * Get the Endpoint Physical Address from #npa.
