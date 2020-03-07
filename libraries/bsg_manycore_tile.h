@@ -160,6 +160,12 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_tile_clear_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
 
+        /****************************************************************************************/
+        /* TODO: these should actually check if there's a vanilla core at the given tile.       */
+        /* At the moment that would mean checking the coordinates according to a static config. */
+        /* In the future some sort of ID register would be a nice feature.                      */
+        /****************************************************************************************/
+
         /**
          * Get the size of a tiles local data memory.
          * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().

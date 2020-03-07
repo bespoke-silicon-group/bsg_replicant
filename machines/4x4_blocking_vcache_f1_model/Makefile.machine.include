@@ -51,11 +51,12 @@ BSG_MACHINE_DATA_WIDTH                = 32
 BSG_MACHINE_BRANCH_TRACE_EN          ?= 0
 
 CL_MANYCORE_HOST_COORD_X             := 0
-CL_MANYCORE_HOST_COORD_Y             := 0
+CL_MANYCORE_HOST_COORD_Y             := 1
 CL_MANYCORE_DIM_X                    := $(BSG_MACHINE_GLOBAL_X)
 CL_MANYCORE_DIM_Y                    := $(shell expr $(BSG_MACHINE_GLOBAL_Y) - 1)
 
 CL_MANYCORE_MEM_CFG                  := e_vcache_blocking_axi4_f1_model
+CL_MANYCORE_DRAM_CHANNELS            := 1
 
 # Define BSG_MACHINE_NAME using the Y and X dimensions, and CL_MANYCORE_MEM_CFG
 BSG_MACHINE_NAME                      =Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHINE_GLOBAL_X)

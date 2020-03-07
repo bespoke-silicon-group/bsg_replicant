@@ -30,11 +30,15 @@
 #define BSG_MANYCORE_VCACHE_H
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_epa.h>
-
+#include <bsg_manycore_config.h>
+#include <bsg_manycore.h>
+#include <bsg_manycore_coordinate.h>
 #ifdef __cplusplus
 #include <cstdint>
+#include <cstdio>
 #else
 #include <stdint.h>
+#include <stdio.h>
 #endif
 
 #ifdef __cplusplus
@@ -60,6 +64,101 @@ extern "C" {
         /* Victim Cache Data Bits */
 #define HB_MC_VCACHE_VALID_BITIDX 31
 #define HB_MC_VCACHE_VALID (1 << HB_MC_VCACHE_VALID_BITIDX)
+
+static
+hb_mc_epa_t hb_mc_vcache_set_mask(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_epa_t sets = hb_mc_config_get_vcache_sets(cfg);
+        return sets-1;
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_set_shift(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_epa_t bsize = hb_mc_config_get_vcache_block_size(cfg);
+        return __builtin_popcount(bsize - 1);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_set(const hb_mc_manycore_t *mc, hb_mc_epa_t epa)
+{
+        return (epa >> hb_mc_vcache_set_shift(mc)) & hb_mc_vcache_set_mask(mc);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_way_mask(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_epa_t ways = hb_mc_config_get_vcache_ways(cfg);
+        return ways - 1;
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_way_shift(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_epa_t sets = hb_mc_config_get_vcache_sets(cfg);
+        return __builtin_popcount(sets-1) + hb_mc_vcache_set_shift(mc);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_way(const hb_mc_manycore_t *mc, hb_mc_epa_t epa)
+{
+        return (epa >> hb_mc_vcache_way_shift(mc)) & hb_mc_vcache_way_mask(mc);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_way_addr(const hb_mc_manycore_t *mc, hb_mc_epa_t set, hb_mc_epa_t way)
+{
+        return HB_MC_VCACHE_EPA_TAG | (way <<  hb_mc_vcache_way_shift(mc)) | (set << hb_mc_vcache_set_shift(mc));
+}
+
+static
+hb_mc_npa_t hb_mc_vcache_way_npa(const hb_mc_manycore_t *mc, hb_mc_idx_t cache, hb_mc_epa_t set, hb_mc_epa_t way)
+{
+        const hb_mc_config_t *cfg  = hb_mc_manycore_get_config(mc);
+        hb_mc_coordinate_t cache_xy = hb_mc_config_get_dram_coordinate(cfg, cache);
+        return hb_mc_npa(cache_xy, hb_mc_vcache_way_addr(mc, set, way));
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_num_ways(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        return hb_mc_config_get_vcache_ways(cfg);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_num_sets(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        return hb_mc_config_get_vcache_sets(cfg);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_num_caches(const hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+        return hb_mc_config_get_num_dram_coordinates(cfg);
+}
+
+static
+hb_mc_epa_t hb_mc_vcache_tag_epa(const hb_mc_manycore *mc, uint32_t tag)
+{
+    return tag;
+}
+
+static
+const char *hb_mc_vcache_tag_to_string(const hb_mc_manycore_t *mc, uint32_t tag, char *buf, size_t sz)
+{
+    snprintf(buf, sz,
+             "tag { .epa = 0x%08" PRIx32 " }",
+             hb_mc_vcache_tag_epa(mc, tag));
+    return buf;
+}
 
 #ifdef __cplusplus
 };

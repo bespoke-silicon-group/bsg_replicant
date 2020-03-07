@@ -235,7 +235,7 @@ extern "C" {
          * @parma[in]  src           EVA address of source to be copied from
          * @parma[in]  dst           EVA address of destination to be copied into
          * @param[in]  name          EVA address of dst
-         * @param[in]  count         Size of buffer (number of words) to be copied
+         * @param[in]  count         Size of buffer (number of bytes) to be copied
          * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
@@ -331,6 +331,38 @@ extern "C" {
 
 
 
+        /***********/
+        /* DMA API */
+        /***********/
+        typedef struct {
+                hb_mc_eva_t d_addr; //!< Target EVA on the manycore
+                const void* h_addr; //!< Target address on the host
+                size_t      size;   //!< Size in bytes of the buffer to be copied
+        } hb_mc_dma_htod_t;
+
+        typedef struct {
+                hb_mc_eva_t d_addr; //!< Target EVA on the manycore
+                void*       h_addr; //!< Target address on the host
+                size_t      size;   //!< Size in bytes of the buffer to be copied
+        } hb_mc_dma_dtoh_t;
+
+        /**
+         * Copy data using DMA from the host to the device.
+         * @param[in] device  Pointer to device
+         * @param[in] jobs    Vector of host-to-device DMA jobs
+         * @param[in] count   Number of host-to-device jobs
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_dma_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count);
+
+        /**
+         * Copy data using DMA from the host to the device.
+         * @param[in] device  Pointer to device
+         * @param[in] jobs    Vector of device-to-host DMA jobs
+         * @param[in] count   Number of device-to-host jobs
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count);
 
 
 #ifdef __cplusplus

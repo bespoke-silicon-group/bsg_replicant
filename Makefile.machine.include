@@ -31,6 +31,7 @@ BSG_MACHINE_VCACHE_SET                = 64
 BSG_MACHINE_VCACHE_WAY                = 8
 BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS   = 16
 BSG_MACHINE_VCACHE_STRIPE_SIZE_WORDS  = $(BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS)
+BSG_MACHINE_VCACHE_DMA_DATA_WIDTH     = 32
 BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
 BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MAX_EPA_WIDTH             = 28
@@ -51,11 +52,12 @@ BSG_MACHINE_DATA_WIDTH                = 32
 BSG_MACHINE_BRANCH_TRACE_EN          ?= 0
 
 CL_MANYCORE_HOST_COORD_X             := 0
-CL_MANYCORE_HOST_COORD_Y             := 0
+CL_MANYCORE_HOST_COORD_Y             := 1
 CL_MANYCORE_DIM_X                    := $(BSG_MACHINE_GLOBAL_X)
 CL_MANYCORE_DIM_Y                    := $(shell expr $(BSG_MACHINE_GLOBAL_Y) - 1)
 
-CL_MANYCORE_MEM_CFG                  :=e_vcache_non_blocking_axi4_f1_model
+CL_MANYCORE_MEM_CFG                  :=e_vcache_blocking_axi4_f1_model
+CL_MANYCORE_DRAM_CHANNELS            :=1
 
 # Define BSG_MACHINE_NAME using the Y and X dimensions, and CL_MANYCORE_MEM_CFG
 BSG_MACHINE_NAME                      =Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHINE_GLOBAL_X)

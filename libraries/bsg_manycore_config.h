@@ -57,7 +57,7 @@ extern "C" {
         #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
         #define HB_MC_CONFIG_VCORE_BASE_X 0
-        #define HB_MC_CONFIG_VCORE_BASE_Y 1
+        #define HB_MC_CONFIG_VCORE_BASE_Y 2
 
         // normal limit for the flow-control parameters
         #define HB_MC_REMOTE_LOAD_MIN 1
@@ -68,7 +68,6 @@ extern "C" {
 
         #define HB_MC_HOST_CREDITS_MIN 1
         #define HB_MC_HOST_CREDITS_MAX 512
-
 
         typedef uint32_t hb_mc_config_raw_t;
         /* Compilation Metadata */
@@ -103,6 +102,8 @@ extern "C" {
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
+                uint32_t dram_channels;
+                uint32_t dram_bank_size_words;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -127,7 +128,9 @@ extern "C" {
                 HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
-                HB_MC_CONFIG_MAX = 20
+                HB_MC_CONFIG_DRAM_CHANNELS = 20,
+                HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 21,
+                HB_MC_CONFIG_MAX,
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -236,9 +239,9 @@ extern "C" {
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
-                // The Network has two additional Y rows: An IO Row, and a DRAM/Cache Row
+                // The Network has three additional Y rows: An IO Row, and two DRAM/Cache Rows
                 return hb_mc_dimension(hb_mc_dimension_get_x(dim),
-                                       hb_mc_dimension_get_y(dim) + 2);
+                                       hb_mc_dimension_get_y(dim) + 3);
         }
 
         static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
@@ -260,6 +263,11 @@ extern "C" {
                         log2(sizeof(uint32_t));
         }
 
+        static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
+        {
+                return cfg->dram_bank_size_words << 2;
+        }
+
         /* Returns the size of DRAM accessible to each manycore tile */
         static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
         {
@@ -267,8 +275,7 @@ extern "C" {
                 uint32_t awidth;
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
                 cols = hb_mc_dimension_get_x(dim);
-                awidth = hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
-                return (cols * (1ull << awidth));
+                return hb_mc_config_get_dram_bank_size(cfg) * cols;
         }
 
         static inline uint8_t hb_mc_config_get_dmem_bitwidth_addr(const hb_mc_config_t *cfg)
@@ -293,11 +300,73 @@ extern "C" {
                 return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
+        __attribute__((deprecated))
         static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
         {
                 hb_mc_coordinate_t dims;
                 dims = hb_mc_config_get_dimension_network(cfg);
                 return hb_mc_coordinate_get_y(dims) - 1;
+        }
+
+
+        static inline hb_mc_idx_t hb_mc_config_get_dram_low_y(const hb_mc_config_t *cfg)
+        {
+                return 0;
+        }
+
+        static inline hb_mc_idx_t hb_mc_config_get_dram_high_y(const hb_mc_config_t *cfg)
+        {
+                return hb_mc_coordinate_get_y(hb_mc_config_get_dimension_network(cfg))-1;
+        }
+
+
+        static inline int hb_mc_config_is_dram_y(const hb_mc_config_t *cfg, hb_mc_idx_t y)
+        {
+                return y == hb_mc_config_get_dram_low_y(cfg)
+                        || y == hb_mc_config_get_dram_high_y(cfg);
+        }
+
+        static inline int hb_mc_config_coordinate_is_dram(const hb_mc_config_t *cfg, hb_mc_coordinate_t xy)
+        {
+                return hb_mc_config_is_dram_y(cfg, hb_mc_coordinate_get_y(xy));
+        }
+
+        static inline hb_mc_coordinate_t
+        hb_mc_config_get_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_idx_t cache_id)
+        {
+                hb_mc_coordinate_t dims;
+                dims = hb_mc_config_get_dimension_network(cfg);
+
+                hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims);
+                hb_mc_idx_t y = cache_id / hb_mc_dimension_get_x(dims) == 0
+                        ? hb_mc_config_get_dram_low_y(cfg)
+                        : hb_mc_config_get_dram_high_y(cfg);
+
+                return hb_mc_coordinate(x,y);
+        }
+
+        static inline
+        hb_mc_idx_t hb_mc_config_get_num_dram_coordinates(const hb_mc_config_t *cfg)
+        {
+                /* there are victim caches at the top and bottom of the mesh */
+                return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_network(cfg))*2;
+        }
+
+        static inline hb_mc_idx_t hb_mc_config_get_dram_id
+        (const hb_mc_config_t *cfg, hb_mc_coordinate_t dram_xy)
+        {
+                hb_mc_idx_t y = hb_mc_coordinate_get_y(dram_xy);
+                if (y == hb_mc_config_get_dram_low_y(cfg)) {
+                        // northern cache
+                        return hb_mc_coordinate_get_x(dram_xy);
+                } else if (y == hb_mc_config_get_dram_high_y(cfg)) {
+                        // southern cache
+                        return hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg))
+                                + hb_mc_coordinate_get_x(dram_xy);
+                } else {
+                        // error
+                        return -1;
+                }
         }
 
         /**
@@ -412,6 +481,16 @@ extern "C" {
         static inline uint32_t hb_mc_config_get_io_endpoint_max_out_credits(const hb_mc_config_t *cfg)
         {
                 return cfg->io_endpoint_max_out_credits;
+	}
+
+        /**
+         * Return the number of DRAM channels in the system.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return the number of DRAM channels in the system.
+         */
+        static inline uint32_t hb_mc_config_get_dram_channels(const hb_mc_config_t *cfg)
+        {
+                return cfg->dram_channels;
         }
 
 

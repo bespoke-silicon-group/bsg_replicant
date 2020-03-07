@@ -92,6 +92,9 @@ VDEFINES   += DRAMSIM3_MEM_PKG=$(DRAMSIM3_MEM_PKG)
 SIMLIBS += $(TESTBENCH_PATH)/libdramsim3.so
 LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldramsim3
 
+# Define USING_DRAMSIM3 for host library
+$(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1
+
 # Add a clean rule
 .PHONY: dramsim3.clean
 dramsim3.clean:
@@ -105,6 +108,7 @@ $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fP
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/src
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/headers
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/fmt/include
+$(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_test
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -DFMT_HEADER_ONLY=1
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
 $(TESTBENCH_PATH)/libdramsim3.so: CXX=g++
@@ -122,6 +126,7 @@ $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/refre
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/simple_stats.cc
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/timing.cc
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
+$(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_test_dram_channel.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
 endif # ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)

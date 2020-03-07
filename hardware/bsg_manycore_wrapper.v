@@ -14,8 +14,6 @@ module bsg_manycore_wrapper
     , parameter dmem_size_p="inv"
     , parameter icache_entries_p="inv"
     , parameter icache_tag_width_p="inv"
-    , parameter epa_byte_addr_width_p="inv"
-    , parameter dram_ch_addr_width_p="inv"
     , parameter vcache_size_p="inv"
     , parameter vcache_block_size_in_words_p="inv"
     , parameter vcache_sets_p="inv"
@@ -24,7 +22,7 @@ module bsg_manycore_wrapper
     , parameter num_cache_p="inv"
 
     , parameter x_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_x_p)
-    , parameter y_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_y_p+2)
+    , parameter y_cord_width_lp=`BSG_SAFE_CLOG2(num_tiles_y_p+3)
   
     , parameter link_sif_width_lp=
       `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_lp,y_cord_width_lp)
@@ -63,8 +61,6 @@ module bsg_manycore_wrapper
 
     ,.debug_p(0)
     ,.addr_width_p(addr_width_p)
-    ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
-    ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
     ,.data_width_p(data_width_p)
     ,.vcache_size_p(vcache_size_p)
     ,.vcache_block_size_in_words_p(vcache_block_size_in_words_p)
@@ -86,29 +82,36 @@ module bsg_manycore_wrapper
 
   // connecting link_sif to outside
   //
-  //  north[0]: host
+  //  north[0]  : victim cache 0
+  //  north[1]  : victim cache 1
+  //  ...
+  //  x[0].y[1] : host interface
+  //  x[1].y[1] : unused
+  //  ...
 
-  //  south[0] : victim cache 0
-  //  south[1] : victim cache 1
+  //  south[0] : victim cache X
+  //  south[1] : victim cache X+1
   //  ...
   //
-  for (genvar i = 0; i < num_cache_p; i++) begin
-    assign cache_link_sif_o[i] = ver_link_sif_lo[S][i];
-    assign ver_link_sif_li[S][i] = cache_link_sif_i[i];
+  for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    assign cache_link_sif_o[i] = ver_link_sif_lo[N][i];
+    assign ver_link_sif_li[N][i] = cache_link_sif_i[i];
+    assign cache_x_o[i] = (x_cord_width_lp)'(i);
+    assign cache_y_o[i] = (y_cord_width_lp)'(0);
   end
 
-  // 0,0 for host io
+  for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    assign cache_link_sif_o[num_tiles_x_p+i] = ver_link_sif_lo[S][i];
+    assign ver_link_sif_li[S][i] = cache_link_sif_i[num_tiles_x_p+i];
+    assign cache_x_o[num_tiles_x_p+i] = (x_cord_width_lp)'(i);
+    assign cache_y_o[num_tiles_x_p+i] = (y_cord_width_lp)'(num_tiles_y_p+2);
+  end
+
+  // 0,1 for host io
   //
   assign loader_link_sif_o = io_link_sif_lo[0];
   assign io_link_sif_li[0] = loader_link_sif_i;
 
-  // x,y for cache
-  //
-  for (genvar i = 0; i < num_cache_p; i++) begin
-    assign cache_x_o[i] = (x_cord_width_lp)'(i);
-    assign cache_y_o[i] = (y_cord_width_lp)'(num_tiles_y_p+1);
-  end
-  
 
   // tie-off
   //
@@ -137,34 +140,6 @@ module bsg_manycore_wrapper
       ,.reset_i(reset_i)
       ,.link_sif_i(hor_link_sif_lo[E][i])
       ,.link_sif_o(hor_link_sif_li[E][i])
-    );
-  end
-
-  for (genvar i = 0; i < num_tiles_x_p; i++) begin
-    bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_lp)
-      ,.y_cord_width_p(y_cord_width_lp)
-    ) tieoff_n (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.link_sif_i(ver_link_sif_lo[N][i])
-      ,.link_sif_o(ver_link_sif_li[N][i])
-    );
-  end
-
-  for (genvar i = num_cache_p; i < num_tiles_x_p; i++) begin
-    bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_lp)
-      ,.y_cord_width_p(y_cord_width_lp)
-    ) tieoff_s (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.link_sif_i(ver_link_sif_lo[S][i])
-      ,.link_sif_o(ver_link_sif_li[S][i])
     );
   end
 

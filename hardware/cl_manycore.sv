@@ -328,8 +328,6 @@ module cl_manycore
        ,.dmem_size_p(dmem_size_p)
        ,.icache_entries_p(icache_entries_p)
        ,.icache_tag_width_p(icache_tag_width_p)
-       ,.epa_byte_addr_width_p(epa_byte_addr_width_p)
-       ,.dram_ch_addr_width_p(dram_ch_addr_width_p)
        ,.num_cache_p(num_cache_p)
        ,.vcache_size_p(vcache_size_p)
        ,.vcache_block_size_in_words_p(block_size_in_words_p)
@@ -435,17 +433,17 @@ module cl_manycore
     import bsg_cache_pkg::*;
     localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(cache_addr_width_lp);
 
-    logic [num_tiles_x_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
-    logic [num_tiles_x_p-1:0] dma_pkt_v_lo;
-    logic [num_tiles_x_p-1:0] dma_pkt_yumi_li;
+    logic [num_cache_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
+    logic [num_cache_p-1:0] dma_pkt_v_lo;
+    logic [num_cache_p-1:0] dma_pkt_yumi_li;
 
-    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_li;
-    logic [num_tiles_x_p-1:0] dma_data_v_li;
-    logic [num_tiles_x_p-1:0] dma_data_ready_lo;
+    logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_li;
+    logic [num_cache_p-1:0] dma_data_v_li;
+    logic [num_cache_p-1:0] dma_data_ready_lo;
 
-    logic [num_tiles_x_p-1:0][data_width_p-1:0] dma_data_lo;
-    logic [num_tiles_x_p-1:0] dma_data_v_lo;
-    logic [num_tiles_x_p-1:0] dma_data_yumi_li;
+    logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_lo;
+    logic [num_cache_p-1:0] dma_data_v_lo;
+    logic [num_cache_p-1:0] dma_data_yumi_li;
 
   end
 
@@ -454,7 +452,7 @@ module cl_manycore
    // LEVEL 1
   if (mem_cfg_p == e_infinite_mem) begin
     // each column has a nonsynth infinite memory
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin
+    for (genvar i = 0; i < num_cache_p; i++) begin
       bsg_nonsynth_mem_infinite #(
         .data_width_p(data_width_p)
         ,.addr_width_p(addr_width_p)
@@ -490,7 +488,7 @@ module cl_manycore
            mem_cfg_p == e_vcache_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_vcache
 
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
+    for (genvar i = 0; i < num_cache_p; i++) begin: vcache
 
       bsg_manycore_vcache_blocking #(
         .data_width_p(data_width_p)
@@ -498,7 +496,7 @@ module cl_manycore
         ,.block_size_in_words_p(block_size_in_words_p)
         ,.sets_p(sets_p)
         ,.ways_p(ways_p)
-
+        ,.dma_data_width_p(dma_data_width_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
       ) vcache (
@@ -528,6 +526,7 @@ module cl_manycore
     bind bsg_cache vcache_profiler #(
       .data_width_p(data_width_p)
       ,.addr_width_p(addr_width_p)
+      ,.header_print_p("vcache[0]")
     ) vcache_prof (
       .*
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
@@ -542,7 +541,7 @@ module cl_manycore
            mem_cfg_p == e_vcache_non_blocking_ramulator_hbm ||
            mem_cfg_p == e_vcache_non_blocking_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
 
-    for (genvar i = 0; i < num_tiles_x_p; i++) begin: vcache
+    for (genvar i = 0; i < num_cache_p; i++) begin: vcache
       bsg_manycore_vcache_non_blocking #(
         .data_width_p(data_width_p)
         ,.addr_width_p(addr_width_p)
@@ -666,7 +665,7 @@ module cl_manycore
       .addr_width_p(cache_addr_width_lp)
       ,.block_size_in_words_p(block_size_in_words_p)
       ,.data_width_p(data_width_p)
-      ,.num_cache_p(num_tiles_x_p)
+      ,.num_cache_p(num_cache_p)
 
       ,.axi_id_width_p(axi_id_width_p)
       ,.axi_addr_width_p(axi_addr_width_p)
@@ -737,16 +736,16 @@ module cl_manycore
 
     // checks that this configuration is supported
     // we do not support having fewer caches than channels
-    localparam int num_cache_per_hbm_channel_p = $floor(num_tiles_x_p/hbm_num_channels_p);
+    localparam int num_cache_per_hbm_channel_p = $floor(num_cache_p/dram_channels_used_p);
     if (num_cache_per_hbm_channel_p <= 0) begin
-      $fatal("hbm channels (%d) must be less than or equal to l2 caches (%d)",
-             hbm_num_channels_p, num_tiles_x_p);
+      $fatal("dram channels (%d) must be less than or equal to l2 caches (%d)",
+             dram_channels_used_p, num_cache_p);
     end
     // caches:channels must be an integral ratio
-    localparam real _num_tiles_x_real_p = num_tiles_x_p;
-    if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/hbm_num_channels_p)) begin
-      $fatal("l2 caches (%d) must be a multiple of hbm channels (%d)",
-             num_tiles_x_p, hbm_num_channels_p);
+    localparam real _num_tiles_x_real_p = num_cache_p;
+    if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/dram_channels_used_p)) begin
+      $fatal("l2 caches (%d) must be a multiple of dram channels (%d)",
+             num_cache_p, dram_channels_used_p);
     end
 
     localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
@@ -777,21 +776,23 @@ module cl_manycore
     logic [hbm_num_channels_p-1:0]                               hbm_data_yumi_li;
 
     logic [hbm_num_channels_p-1:0][hbm_data_width_p-1:0]         hbm_data_li;
+    logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_li;
     logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
 
-    for (genvar ch_i = 0; ch_i < hbm_num_channels_p; ch_i++) begin
+    for (genvar ch_i = 0; ch_i < dram_channels_used_p; ch_i++) begin
       localparam cache_range_lo_p = ch_i * num_cache_per_hbm_channel_p;
       localparam cache_range_hi_p = (ch_i+1) * num_cache_per_hbm_channel_p - 1;
 
-      bsg_cache_to_ramulator_hbm
+      bsg_cache_to_test_dram
         #(.num_cache_p(num_cache_per_hbm_channel_p)
           ,.data_width_p(data_width_p)
+	  ,.dma_data_width_p(dma_data_width_p)
           ,.addr_width_p(cache_addr_width_lp)
           ,.block_size_in_words_p(block_size_in_words_p)
           ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
-          ,.hbm_channel_addr_width_p(hbm_channel_addr_width_p)
-          ,.hbm_data_width_p(hbm_data_width_p))
-      cache_to_ramulator
+          ,.dram_channel_addr_width_p(hbm_channel_addr_width_p)
+          ,.dram_data_width_p(hbm_data_width_p))
+      cache_to_test_dram
         (.core_clk_i(core_clk)
          ,.core_reset_i(core_reset)
 
@@ -807,23 +808,30 @@ module cl_manycore
          ,.dma_data_v_i(lv1_dma.dma_data_v_lo[cache_range_hi_p:cache_range_lo_p])
          ,.dma_data_yumi_o(lv1_dma.dma_data_yumi_li[cache_range_hi_p:cache_range_lo_p])
 
-         ,.hbm_clk_i(hbm_clk)
-         ,.hbm_reset_i(hbm_reset)
+         ,.dram_clk_i(hbm_clk)
+         ,.dram_reset_i(hbm_reset)
 
-         ,.hbm_ch_addr_o(hbm_ch_addr_lo[ch_i])
-         ,.hbm_req_yumi_i(hbm_req_yumi_li[ch_i])
-         ,.hbm_req_v_o(hbm_req_v_lo[ch_i])
-         ,.hbm_write_not_read_o(hbm_write_not_read_lo[ch_i])
+         ,.dram_ch_addr_o(hbm_ch_addr_lo[ch_i])
+         ,.dram_req_yumi_i(hbm_req_yumi_li[ch_i])
+         ,.dram_req_v_o(hbm_req_v_lo[ch_i])
+         ,.dram_write_not_read_o(hbm_write_not_read_lo[ch_i])
 
-         ,.hbm_data_o(hbm_data_lo[ch_i])
-         ,.hbm_data_v_o(hbm_data_v_lo[ch_i])
-         ,.hbm_data_yumi_i(hbm_data_yumi_li[ch_i])
+         ,.dram_data_o(hbm_data_lo[ch_i])
+         ,.dram_data_v_o(hbm_data_v_lo[ch_i])
+         ,.dram_data_yumi_i(hbm_data_yumi_li[ch_i])
 
-         ,.hbm_data_i(hbm_data_li[ch_i])
-         ,.hbm_data_v_i(hbm_data_v_li[ch_i])
+         ,.dram_data_i(hbm_data_li[ch_i])
+         ,.dram_data_v_i(hbm_data_v_li[ch_i])
+	 ,.dram_ch_addr_i(hbm_ch_addr_li[ch_i])
          );
     end
 
+    // tie-off handshake for the the unused hbm channels
+    for (genvar ch_i = dram_channels_used_p; ch_i < hbm_num_channels_p; ch_i++) begin
+      assign hbm_req_v_lo[ch_i]  = 1'b0;
+      assign hbm_data_v_lo[ch_i] = 1'b0;
+    end
+    
     // assign hbm clk and reset to core for now...
     //assign hbm_clk = core_clk;
     assign hbm_reset = core_reset;
@@ -942,7 +950,8 @@ module cl_manycore
        ,.data_yumi_o(lv2_ramulator_hbm.hbm_data_yumi_li)
 
        ,.data_o(lv2_ramulator_hbm.hbm_data_li)
-       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li));
+       ,.data_v_o(lv2_ramulator_hbm.hbm_data_v_li)
+       ,.read_done_ch_addr_o(lv2_ramulator_hbm.hbm_ch_addr_li));
 `endif
   end
 
@@ -1124,8 +1133,8 @@ module cl_manycore
 
    // manycore link
 
-   logic [x_cord_width_p-1:0] mcl_x_cord_li = '0;
-   logic [y_cord_width_p-1:0] mcl_y_cord_li = '0;
+   logic [x_cord_width_p-1:0] mcl_x_cord_li = (x_cord_width_p)'(0);
+   logic [y_cord_width_p-1:0] mcl_y_cord_li = (y_cord_width_p)'(1);
 
    logic                    print_stat_v_lo  ;
    logic [data_width_p-1:0] print_stat_tag_lo;
@@ -1275,6 +1284,8 @@ module cl_manycore
      #(
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
+       ,.header_print_x_cord_p(0)
+       ,.header_print_y_cord_p(2)
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)

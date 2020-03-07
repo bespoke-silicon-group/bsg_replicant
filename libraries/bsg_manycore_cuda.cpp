@@ -2286,8 +2286,110 @@ static int hb_mc_device_tiles_set_runtime_symbols (     hb_mc_device_t *device,
         return HB_MC_SUCCESS;
 }
 
+/**
+ * Copy data using DMA from the host to the device.
+ * @param[in] device  Pointer to device
+ * @param[in] jobs    Vector of host-to-device DMA jobs
+ * @param[in] count   Number of host-to-device jobs
+ */
+int hb_mc_device_dma_to_device (hb_mc_device_t *device,
+                                const hb_mc_dma_htod_t *jobs,
+                                size_t count)
+{
+        int err;
 
+        if (!hb_mc_manycore_supports_dma_read(device->mc))
+                return HB_MC_NOIMPL;
 
+        // flush cache
+        err = hb_mc_manycore_flush_vcache(device->mc);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to flush victim cache: %s\n",
+                           __func__,
+                           hb_mc_strerror(err));
+                return err;
+        }
 
+        hb_mc_coordinate_t host =
+                hb_mc_manycore_get_host_coordinate(device->mc);
 
+        // for each job...
+        for (size_t i = 0; i < count; i++) {
 
+                // perform dma write
+                const hb_mc_dma_htod_t *dma = &jobs[i];
+                err = hb_mc_manycore_eva_write_dma
+                        (device->mc,
+                         &default_map,
+                         &host,
+                         &dma->d_addr,
+                         dma->h_addr,
+                         dma->size);
+
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("%s: failed to perform DMA write to 0x%" PRIx32 ": %s\n",
+                                   __func__,
+                                   dma->d_addr,
+                                   hb_mc_strerror(err));
+                        return err;
+                }
+        }
+
+        // invalidate cache
+        err = hb_mc_manycore_invalidate_vcache(device->mc);
+        if (err != HB_MC_SUCCESS) {
+                return err;
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Copy data using DMA from the host to the device.
+ * @param[in] device  Pointer to device
+ * @param[in] jobs    Vector of device-to-host DMA jobs
+ * @param[in] count   Number of device-to-host jobs
+ */
+int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
+{
+        int err;
+
+        if (!hb_mc_manycore_supports_dma_read(device->mc))
+                return HB_MC_NOIMPL;
+
+        // flush cache
+        err = hb_mc_manycore_flush_vcache(device->mc);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to flush victim cache: %s\n",
+                           __func__,
+                           hb_mc_strerror(err));
+                return err;
+        }
+
+        hb_mc_coordinate_t host =
+                hb_mc_manycore_get_host_coordinate(device->mc);
+
+        // for each job...
+        for (size_t i = 0; i < count; i++) {
+
+                // perform dma read
+                const hb_mc_dma_dtoh_t *dma = &jobs[i];
+                err = hb_mc_manycore_eva_read_dma
+                        (device->mc,
+                         &default_map,
+                         &host,
+                         &dma->d_addr,
+                         dma->h_addr,
+                         dma->size);
+
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("%s: failed to perform DMA read from 0x%" PRIx32 ": %s\n",
+                                   __func__,
+                                   dma->d_addr,
+                                   hb_mc_strerror(err));
+                        return err;
+                }
+        }
+
+        return HB_MC_SUCCESS;
+}

@@ -732,7 +732,8 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                 bsg_pr_dbg("%s: failed to %s DRAM-enabled for %s: %s\n",
                            __func__,
                            hb_mc_manycore_dram_is_enabled(mc) ? "set" : "clear",
-                           hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)));
+                           hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)),
+                           hb_mc_strerror(rc));
                 return rc;
         }
 
@@ -764,54 +765,6 @@ static int hb_mc_loader_tile_initialize(hb_mc_manycore_t *mc,
 }
 
 /**
- * Performance miscellaneous initialization on one tile.
- * @param[in] mc      A manycore instance.
- * @param[in] map     An EVA<->NPA map.
- * @param[in] col     The column whose victim cache to validate.
- * @return HB_MC_SUCCESS if an error occured. Otherwise an error code is returned.
- */
-static int hb_mc_loader_column_validate_victim_cache(hb_mc_manycore_t *mc,
-                                                     const hb_mc_eva_map_t *map,
-                                                     hb_mc_idx_t col)
-{
-        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        hb_mc_idx_t x = hb_mc_config_get_vcore_base_x(cfg) + col;
-        hb_mc_idx_t y = hb_mc_config_get_dram_y(cfg);
-        uint32_t n_ways = hb_mc_config_get_vcache_ways(cfg);
-        uint32_t n_sets = hb_mc_config_get_vcache_sets(cfg);
-        uint32_t line_size = hb_mc_config_get_vcache_block_size(cfg);
-        hb_mc_npa_t tag_addr = hb_mc_npa_from_x_y(x, y, HB_MC_VCACHE_EPA_TAG);
-        int rc;
-
-        bsg_pr_dbg("validating victim cache "
-                   "(%" PRIu32 " ways, "
-                   "%" PRIu32 " sets, "
-                   "line size = %" PRIu32 ") "
-                   "for column %" PRIu8 "\n",
-                   n_ways,
-                   n_sets,
-                   line_size,
-                   x);
-
-        /* for each cache line... */
-        for (uint32_t cache_way = 0; cache_way < n_ways; cache_way++) {
-                for (uint32_t cache_set = 0; cache_set < n_sets; cache_set++) {
-                        /* set the tag to the way index and set the valid bit */
-                        rc = hb_mc_manycore_write32(mc, &tag_addr,
-                                                    HB_MC_VCACHE_VALID | cache_way);
-                        if (rc != HB_MC_SUCCESS)
-                                return rc;
-
-                        /* increment to the next line */
-                        hb_mc_npa_set_epa(&tag_addr,
-                                          hb_mc_npa_get_epa(&tag_addr) + line_size);
-                }
-        }
-
-        return HB_MC_SUCCESS;
-}
-
-/**
  * Validate all victim cache tags.
  * @param[in] mc      A manycore instance.
  * @param[in] map     An EVA<->NPA map.
@@ -822,18 +775,7 @@ static int hb_mc_loader_column_validate_victim_cache(hb_mc_manycore_t *mc,
 static int hb_mc_loader_columns_validate_victim_cache(hb_mc_manycore_t *mc,
                                                       const hb_mc_eva_map_t *map)
 {
-        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        hb_mc_idx_t n_columns = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
-        int rc;
-
-        /* for each column... */
-        for (hb_mc_idx_t col = 0; col < n_columns; col++) {
-                rc = hb_mc_loader_column_validate_victim_cache(mc, map, col);
-                if (rc != HB_MC_SUCCESS)
-                        return rc;
-        }
-
-        return HB_MC_SUCCESS;
+        return hb_mc_manycore_validate_vcache(mc);
 }
 
 /**

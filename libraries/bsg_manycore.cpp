@@ -32,6 +32,7 @@
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_responder.h>
 #include <bsg_manycore_epa.h>
+#include <bsg_manycore_vcache.h>
 
 #ifndef COSIM
 #include <fpga_pci.h>
@@ -39,6 +40,12 @@
 #else
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
+#if defined(USING_DRAMSIM3)
+#include <bsg_test_dram_channel.hpp>
+#define DRAM_HACK_WRITE
+#define DRAM_HACK_READ
+#endif
+
 #endif
 
 #ifdef __cplusplus
@@ -1154,6 +1161,536 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
         hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
 
         return 0;
+}
+
+static int hb_mc_manycore_format_cache_op_request_packet(hb_mc_manycore_t *mc,
+                                                         hb_mc_request_packet_t *pkt,
+                                                         const hb_mc_npa_t *npa,
+                                                         hb_mc_packet_cache_op_t opcode)
+{
+        int r;
+
+        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+                return r;
+
+        hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_CACHE_OP);
+        hb_mc_request_packet_set_cache_op(pkt, opcode);
+
+        return 0;
+}
+
+
+/************************/
+/* Cache Operations API */
+/************************/
+
+/**
+ * Apply cache operation to NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM) - start of the range to invalidate
+ * @param[in]  sz     The size of the range to invalidate in bytes
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+static
+int hb_mc_manycore_vcache_apply_to_npa(hb_mc_manycore_t *mc,
+                                       const hb_mc_npa_t *npa,
+                                       hb_mc_packet_cache_op_t cache_op)
+{
+        int err;
+        hb_mc_request_packet_t pkt;
+
+        if ((err = hb_mc_manycore_format_cache_op_request_packet(mc, &pkt, npa, cache_op)))
+                return err;
+
+        err = hb_mc_manycore_request_tx(mc, &pkt, -1);
+        if (err != HB_MC_SUCCESS) {
+                manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
+                                __func__, hb_mc_strerror(err));
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Apply cache operation to a range of NPAs
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM) - start of the range to invalidate
+ * @param[in]  sz     The size of the range to invalidate in bytes
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+static int hb_mc_manycore_vcache_apply_to_npa_range(hb_mc_manycore_t *mc,
+                                                    const hb_mc_npa_t *npa,
+                                                    size_t range_sz,
+                                                    hb_mc_packet_cache_op_t cache_op)
+{
+        hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        ssize_t sz = static_cast<ssize_t>(range_sz);
+        ssize_t bsize = static_cast<ssize_t>(hb_mc_config_get_vcache_block_size(cfg));
+        int err;
+
+        // align npa to closest cache line
+        sz += (epa & (bsize - 1));
+        epa &= -bsize;
+
+        // until we've applied op the entire range...
+        while (sz > 0) {
+                // apply op to line address
+                hb_mc_npa_t line_npa = *npa;
+                hb_mc_npa_set_epa(&line_npa, epa);
+
+                err = hb_mc_manycore_vcache_apply_to_npa(mc, npa, cache_op);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+
+                // next line
+                sz -= std::min(sz, bsize);
+                epa += bsize;
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Invalidate a range of manycore DRAM addresses.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM) - start of the range to invalidate
+ * @param[in]  sz     The size of the range to invalidate in bytes
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_vcache_invalidate_npa_range(hb_mc_manycore_t *mc,
+                                               const hb_mc_npa_t *npa,
+                                               size_t sz)
+{
+        return hb_mc_manycore_vcache_apply_to_npa_range(mc, npa, sz,
+                                                        HB_MC_PACKET_CACHE_OP_AINV);
+}
+
+/**
+ * Flush a range of manycore DRAM addresses.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM) - start of the range to flush
+ * @param[in]  sz     The size of the range to flush in bytes
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc,
+                                          const hb_mc_npa_t *npa,
+                                          size_t sz)
+{
+        int err;
+        err = hb_mc_manycore_vcache_apply_to_npa_range(mc, npa, sz,
+                                                       HB_MC_PACKET_CACHE_OP_AFL);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        // read a single word from cache - when it completes, assume flush is done
+        uint32_t dummy;
+        return hb_mc_manycore_read32(mc, npa, &dummy);
+}
+
+int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
+{
+        int err;
+        hb_mc_request_packet_t pkt;
+
+        err = hb_mc_manycore_format_cache_op_request_packet(mc, &pkt, npa, HB_MC_PACKET_CACHE_OP_TAGFL);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        return hb_mc_manycore_request_tx(mc, &pkt, -1);
+}
+
+template <typename ApplyFunction>
+static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction apply_function)
+{
+        hb_mc_epa_t ways = hb_mc_vcache_num_ways(mc);
+        hb_mc_epa_t sets = hb_mc_vcache_num_sets(mc);
+        hb_mc_epa_t caches = hb_mc_vcache_num_caches(mc);
+        int err;
+
+        for (hb_mc_epa_t way_id = 0; way_id < ways; way_id++) {
+                for (hb_mc_epa_t set_id = 0; set_id < sets; set_id++) {
+                        for (hb_mc_epa_t cache_id = 0; cache_id < caches; cache_id++) {
+                                // build the address for the way
+                                hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, set_id, way_id);
+                                // apply
+                                err = apply_function(mc, &way_addr);
+                                if (err != HB_MC_SUCCESS)
+                                        return err;
+                        }
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Invalidate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
+{
+        return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+                        // write way_id (no valid bit)
+                        char npa_str [256];
+                        manycore_pr_dbg(mc, "Invalidating vcache tag @ %s\n",
+                                        hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
+
+                        return hb_mc_manycore_write32(mc, way_addr, 0);
+                });
+}
+
+
+/**
+ * Validate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
+{
+        return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+                        char npa_str[256];
+                        uint32_t tag = HB_MC_VCACHE_VALID | hb_mc_vcache_way(mc, hb_mc_npa_get_epa(way_addr));
+                        manycore_pr_dbg(mc, "Validating vcache tag @ %s with tag = 0x%08" PRIx32 "\n",
+                                        hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)), tag);
+
+                        // write the way_id or'd with the valid bit
+                        return hb_mc_manycore_write32(mc, way_addr, tag);
+                });
+}
+
+/**
+ * Flush entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
+{
+        int err = hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+                        // flush tag
+                        char npa_str[256];
+                        manycore_pr_dbg(mc, "Flushing vcach tag @ %s\n",
+                                        hb_mc_npa_to_string(way_addr, npa_str, sizeof(npa_str)));
+                        return hb_mc_manycore_vcache_flush_tag(mc, way_addr);
+                });
+
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        // read a word from each cache
+        for (hb_mc_epa_t cache_id = 0; cache_id < hb_mc_vcache_num_caches(mc); cache_id++) {
+                hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, 0, 0);
+                hb_mc_npa_set_epa(&way_addr, 0);
+                uint32_t dummy;
+                err = hb_mc_manycore_read32(mc, &way_addr, &dummy);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+
+/////////////
+// DMA API //
+/////////////
+
+/**
+ * Check if NPA is in DRAM.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t
+ * @return One if the NPA maps to DRAM - Zero otherwise.
+ */
+int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
+{
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+    return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
+}
+
+#if defined(DRAM_HACK_WRITE) || defined(DRAM_HACK_READ)
+/**
+ * Given an NPA that maps to DRAM, return a buffer that holds the data for that address.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
+ * @param[in]  sz     The number of bytes to write to manycore hardware - used for sanity check
+ * @param[out] buffer The valid buffer
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz,
+                                                   unsigned char **buffer)
+{
+    using namespace bsg_test_dram_channel;
+
+    /*
+      Our system supports having multiple caches per memory channel.
+      Currently, we do this by splitting the channels evenly into even 'banks' for each cache.
+
+      IF THE ADDRESS MAPPING SCHEME FROM CACHES TO DRAM CHANGES THIS FUNCTION WILL BREAK!!!!!
+
+      As of the time of this writing we are in the process of designing the memory system.
+      So take note...
+     */
+
+    /*
+      Get system parameters for performing the address mapping
+     */
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+    unsigned long caches = hb_mc_vcache_num_caches(mc);
+    unsigned long channels = hb_mc_config_get_dram_channels(cfg);
+    unsigned long caches_per_channel = caches/channels;
+
+    manycore_pr_dbg(mc, "%s: caches = %lu, channels = %lu, caches_per_channel = %lu\n",
+                    __func__, caches, channels, caches_per_channel);
+
+    /*
+      Figure out which memory channel and bank this NPA maps to.
+     */
+    hb_mc_idx_t cache_id = hb_mc_config_get_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
+    parameter_t id = cache_id / caches_per_channel; // which channel
+    parameter_t bank = cache_id % caches_per_channel; // which bank within channel
+
+    /*
+      Use the backdoor to our non-synthesizable memory.
+     */
+    Memory *memory = bsg_test_dram_channel_get_memory(id);
+    parameter_t bank_size = memory->_data.size()/caches_per_channel;
+
+    hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+
+    char npa_str[256];
+
+    if (memory == nullptr) {
+        manycore_pr_err(mc, " %s: Could not get the memory for endpoint at %s\n",
+                        __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+
+        return HB_MC_FAIL;
+    }
+
+    address_t addr = bank*bank_size + epa;
+
+    manycore_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",
+                    __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
+
+    /*
+      Don't overflow memory if you can help it.
+    */
+    assert(addr + sz <= memory->_data.size());
+
+    *buffer = &memory->_data[addr];
+
+    return HB_MC_SUCCESS;
+}
+
+/**
+ * Write memory out to manycore DRAM via C++ backdoor
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                                const void *data, size_t sz)
+{
+
+    unsigned char *membuffer;
+    int err = hb_mc_manycore_npa_to_buffer_cosim_only(mc, npa, sz, &membuffer);
+    if (err != HB_MC_SUCCESS)
+        return err;
+
+    char npa_str[256];
+
+    manycore_pr_dbg(mc, "%s: Writing %3zu bytes to %s\n",
+                    __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+
+    memcpy(reinterpret_cast<void*>(membuffer), data, sz);
+
+    return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Read memory from manycore DRAM via C++ backdoor
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t - must be an L2 cache coordinate
+ * @param[in]  data   A host buffer to be read into from manycore hardware
+ * @param[in]  sz     The number of bytes to read from manycore hardware
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                               void *data, size_t sz)
+{
+
+    unsigned char *membuffer;
+    int err = hb_mc_manycore_npa_to_buffer_cosim_only(mc, npa, sz, &membuffer);
+    if (err != HB_MC_SUCCESS)
+        return err;
+
+    char npa_str[256];
+
+    manycore_pr_dbg(mc, "%s: Reading %3zu bytes from %s\n",
+                    __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+
+    memcpy(data, reinterpret_cast<void*>(membuffer), sz);
+
+    return HB_MC_SUCCESS;
+}
+
+#endif
+
+
+/**
+ * Check if DMA writing is supported.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DMA writing is supported - Zero otherwise.
+ */
+int hb_mc_manycore_supports_dma_write(const hb_mc_manycore *mc)
+{
+#if defined(COSIM) && defined(DRAM_HACK_WRITE)
+        return 1;
+#else
+        return 0;
+#endif
+}
+
+/**
+ * Check if DMA reading is supported.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @return One if DMA reading is supported - Zero otherwise.
+ */
+int hb_mc_manycore_supports_dma_read(const hb_mc_manycore *mc)
+{
+#if defined(COSIM) && defined(DRAM_HACK_READ)
+        return 1;
+#else
+        return 0;
+#endif
+}
+
+/**
+ * Write memory via DMA to manycore DRAM starting at a given NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ *
+ * This function is used to write to HammerBlade DRAM directly via DMA.
+ * Any data in the cache that becomes stale will be invalidated - this function is 'safe' in that respect.
+ *
+ * However, invalidating every address might be expensive - and perhaps unnecessary if you 'know'
+ * that the memory being written is guaranteed to be un-cached.
+ * See hb_mc_manycore_dma_write_no_cache_ainv() for an unsafe version of this function.
+ *
+ * This function is not supported on all HammerBlade platforms.
+ * Please check the return code for HB_MC_NOIMPL.
+ */
+int hb_mc_manycore_dma_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                             const void *data, size_t sz)
+{
+        int err;
+
+        err = hb_mc_manycore_dma_write_no_cache_ainv(mc, npa, data, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        return hb_mc_manycore_vcache_invalidate_npa_range(mc, npa, sz);
+}
+
+/**
+ * Write memory via DMA to manycore DRAM starting at a given NPA - unsafe
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+ * @param[in]  data   A buffer to be written out manycore hardware
+ * @param[in]  sz     The number of bytes to write to manycore hardware
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ *
+ * This function is used to write to HammerBlade DRAM directly via DMA.
+ * Stale data may remain in the cache - this function is unsafe in that respect.
+ * This function is not supported on all HammerBlade platforms.
+ * Please check the return code for HB_MC_NOIMPL.
+ */
+int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                           const void *data, size_t sz)
+{
+        int err;
+
+#if defined(COSIM) && defined(DRAM_HACK_WRITE)
+        // is dram?
+        if (!hb_mc_manycore_npa_is_dram(mc, npa))
+                return HB_MC_INVALID;
+
+
+        err = hb_mc_manycore_write_dram_cosim_only(mc, npa, data, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        return HB_MC_SUCCESS;
+#else
+        return HB_MC_NOIMPL;
+#endif
+}
+
+
+/**
+ * Read memory via DMA from manycore DRAM starting at a given NPA - unsafe
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+ * @param[in]  data   A buffer into which data will be read
+ * @param[in]  sz     The number of bytes to read from manycore hardware
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ *
+ * This function is used to read from HammerBlade DRAM directly via DMA.
+ * Cached data for this memory range migth not be flushed - this function is 'unsafe' in that respect.
+ *
+ * This function is not supported on all HammerBlade platforms.
+ * Please check the return code for HB_MC_NOIMPL.
+ */
+int hb_mc_manycore_dma_read_no_cache_afl(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                         void *data, size_t sz)
+{
+        int err;
+#if defined(COSIM) && defined(DRAM_HACK_READ)
+        // is dram?
+        if (!hb_mc_manycore_npa_is_dram(mc, npa))
+                return HB_MC_INVALID;
+
+        return hb_mc_manycore_read_dram_cosim_only(mc, npa, data, sz);
+#else
+        return HB_MC_NOIMPL;
+#endif
+}
+
+/**
+ * Read memory via DMA from manycore DRAM starting at a given NPA
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+ * @param[in]  data   A buffer into which data will be read
+ * @param[in]  sz     The number of bytes to read from manycore hardware
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ *
+ * This function is used to read from HammerBlade DRAM directly via DMA.
+ * Any cached data for this memory range will be flushed - this function is 'safe' in that respect.
+ *
+ * However, sending a flush packet for every address in this range might be expensive -
+ * and perhaps unnecessary if you 'know'  the data is uncached.
+ * See hb_mc_manycore_dma_read_no_cache_afl() for an unsafe alternative to this function.
+ *
+ * This function is not supported on all HammerBlade platforms.
+ * Please check the return code for HB_MC_NOIMPL.
+ */
+int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                            void *data, size_t sz)
+{
+        int err;
+#if defined(COSIM) && defined(DRAM_HACK_READ)
+        if (!hb_mc_manycore_npa_is_dram(mc, npa))
+                return HB_MC_INVALID;
+
+        err = hb_mc_manycore_vcache_flush_npa_range(mc, npa, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        return hb_mc_manycore_dma_read_no_cache_afl(mc, npa, data, sz);
+#else
+        return HB_MC_NOIMPL;
+#endif
 }
 
 ////////////////

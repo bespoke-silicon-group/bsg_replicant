@@ -18,19 +18,18 @@ package cl_manycore_pkg;
   parameter num_tiles_x_p = `CL_MANYCORE_DIM_X;
   parameter num_tiles_y_p = `CL_MANYCORE_DIM_Y;
   parameter x_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_x_p);
-  parameter y_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_y_p+2);
+  parameter y_cord_width_p = `BSG_SAFE_CLOG2(num_tiles_y_p+3);
   parameter dmem_size_p = 1024;
   parameter icache_entries_p = 1024;
   parameter icache_tag_width_p = 12;
-  parameter dram_ch_addr_width_p = 27;
-  parameter epa_byte_addr_width_p = 18;
   parameter branch_trace_en_p = `CL_MANYCORE_BRANCH_TRACE_EN;
 
-  parameter num_cache_p = `CL_MANYCORE_DIM_X;
+  parameter num_cache_p = ((`CL_MANYCORE_DIM_X)<<1);
   parameter sets_p = `CL_MANYCORE_VCACHE_SETS;
   parameter ways_p = `CL_MANYCORE_VCACHE_WAYS;
   parameter block_size_in_words_p = `CL_MANYCORE_VCACHE_BLOCK_SIZE_WORDS;
   parameter vcache_size_p = sets_p * ways_p * block_size_in_words_p;
+  parameter dma_data_width_p = `CL_MANYCORE_VCACHE_DMA_DATA_WIDTH;  
   parameter miss_fifo_els_p = `CL_MANYCORE_VCACHE_MISS_FIFO_ELS;
 
   parameter axi_id_width_p = 6;
@@ -42,6 +41,9 @@ package cl_manycore_pkg;
   // the max number of outstanding requests from the host endpoint to the manycore
   parameter max_out_credits_p = `CL_MANYCORE_IO_EP_MAX_OUT_CREDITS;
 
+  // used dram channels
+  parameter dram_channels_used_p = `CL_MANYCORE_DRAM_CHANNELS;  
+  
 endpackage
 
 `endif

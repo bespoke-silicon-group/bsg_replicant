@@ -76,6 +76,7 @@ $(LIB_OBJECTS): INCLUDES  = -I$(LIBRARIES_PATH)
 $(LIB_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(LIB_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
+$(LIB_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test
 $(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 $(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 $(LIB_OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC

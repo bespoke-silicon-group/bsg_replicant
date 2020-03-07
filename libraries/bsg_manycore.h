@@ -285,6 +285,159 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_manycore_read_mem_scatter_gather(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                                                    uint32_t *data, size_t words);
+
+        /***********/
+        /* DMA API */
+        /***********/
+
+        /**
+         * Check if DMA writing is supported.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @return One if DMA writing is supported - Zero otherwise.
+         */
+        int hb_mc_manycore_supports_dma_write(const hb_mc_manycore_t *mc);
+
+        /**
+         * Check if DMA reading is supported.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @return One if DMA reading is supported - Zero otherwise.
+         */
+        int hb_mc_manycore_supports_dma_read(const hb_mc_manycore_t *mc);
+
+        /**
+         * Write memory via DMA to manycore DRAM starting at a given NPA
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+         * @param[in]  data   A buffer to be written out manycore hardware
+         * @param[in]  sz     The number of bytes to write to manycore hardware
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         *
+         * This function is used to write to HammerBlade DRAM directly via DMA.
+         * Any data in the cache that becomes stale will be invalidated - this function is 'safe' in that respect.
+         *
+         * However, invalidating every address might be expensive - and perhaps unnecessary if you 'know'
+         * that the memory being written is guaranteed to be un-cached.
+         * See hb_mc_manycore_dma_write_no_cache_ainv() for an unsafe version of this function.
+         *
+         * This function is not supported on all HammerBlade platforms.
+         * Please check the return code for HB_MC_NOIMPL.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_dma_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                     const void *data, size_t sz);
+
+        /**
+         * Write memory via DMA to manycore DRAM starting at a given NPA - unsafe
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+         * @param[in]  data   A buffer to be written out manycore hardware
+         * @param[in]  sz     The number of bytes to write to manycore hardware
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         *
+         * This function is used to write to HammerBlade DRAM directly via DMA.
+         * Stale data may remain in the cache - this function is unsafe in that respect.
+         * This function is not supported on all HammerBlade platforms.
+         * Please check the return code for HB_MC_NOIMPL.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                                  const void *data, size_t sz);
+
+        /**
+         * Read memory via DMA from manycore DRAM starting at a given NPA
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+         * @param[in]  data   A buffer into which data will be read
+         * @param[in]  sz     The number of bytes to read from manycore hardware
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         *
+         * This function is used to read from HammerBlade DRAM directly via DMA.
+         * Any cached data for this memory range will be flushed - this function is 'safe' in that respect.
+         *
+         * However, sending a flush packet for every address in this range might be expensive -
+         * and perhaps unnecessary if you 'know'  the data is uncached.
+         * See hb_mc_manycore_dma_read_no_cache_afl() for an unsafe alternative to this function.
+         *
+         * This function is not supported on all HammerBlade platforms.
+         * Please check the return code for HB_MC_NOIMPL.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                    void *data, size_t sz);
+
+        /**
+         * Read memory via DMA from manycore DRAM starting at a given NPA - unsafe
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM)
+         * @param[in]  data   A buffer into which data will be read
+         * @param[in]  sz     The number of bytes to read from manycore hardware
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         *
+         * This function is used to read from HammerBlade DRAM directly via DMA.
+         * Cached data for this memory range migth not be flushed - this function is 'unsafe' in that respect.
+         *
+         * This function is not supported on all HammerBlade platforms.
+         * Please check the return code for HB_MC_NOIMPL.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_dma_read_no_cache_afl(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
+                                                 void *data, size_t sz);
+
+        /************************/
+        /* Cache Operations API */
+        /************************/
+
+        /**
+         * Invalidate a range of manycore DRAM addresses.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM) - start of the range to invalidate
+         * @param[in]  sz     The size of the range to invalidate in bytes
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_vcache_invalidate_npa_range(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz);
+
+        /**
+         * Flush a range of manycore DRAM addresses.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to DRAM) - start of the range to flush
+         * @param[in]  sz     The size of the range to flush in bytes
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz);
+
+        /**
+         * Flush a cache tag.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t (must map to a cache tag) - start of the range to flush
+         * @param[in]  sz     The size of the range to flush in bytes
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *way_npa);
+
+        /**
+         * Invalidate entire victim cache.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc);
+
+       /**
+        * Mark each way in victim cache as valid.
+        * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+        */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc);
+
+        /**
+         * Flush entire victim cache.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc);
+
         /************/
         /* MMIO API */
         /************/
@@ -377,6 +530,15 @@ extern "C" {
          * @return One if DRAM is enabled. Zero otherwise.
          */
         int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc);
+
+
+        /**
+         * Check if NPA is in DRAM.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t
+         * @return One if the NPA maps to DRAM - Zero otherwise.
+         */
+        int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa);
 
         /**
          * Get a pointer to the configuration struct
