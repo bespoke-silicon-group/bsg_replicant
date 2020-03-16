@@ -74,7 +74,7 @@ LDFLAGS += -lbsg_manycore_runtime -lm
 LDFLAGS += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
 
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS     += -M +lint=TFIPC -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005
+VCS_VFLAGS     += -M -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005
 VCS_VFLAGS     += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
 VCS_VFLAGS     += +warn=noLCA_FEATURES_ENABLED
 VCS_VFLAGS     += +warn=noMC-FCNAFTMI
