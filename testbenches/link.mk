@@ -78,7 +78,8 @@ VCS_VFLAGS     += -M -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005
 VCS_VFLAGS     += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
 VCS_VFLAGS     += +warn=noLCA_FEATURES_ENABLED
 VCS_VFLAGS     += +warn=noMC-FCNAFTMI
-VCS_VFLAGS     += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE
+VCS_VFLAGS     += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
+VCS_VFLAGS     += -error=IWU:1000
 VCS_VFLAGS     += -msg_config=$(TESTBENCH_PATH)/msg_config
 
 # VCS Generates an executable file by linking the $(SRC_PATH)/%.o file with the

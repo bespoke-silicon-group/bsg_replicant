@@ -205,6 +205,7 @@ $(TESTBENCH_PATH)/msg_config:
 
 	@echo "{+warn=none;  +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/flop_ccf.sv;}" >> $@
 	@echo "{+lint=none;  +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/flop_ccf.sv;}" >> $@
+	@echo "{-error=none; +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/flop_ccf.sv;}" >> $@
 
 	@echo "{+warn=none;  +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/axi4_slave_bfm.sv;}" >> $@
 	@echo "{+lint=none;  +file=$(HDK_SHELL_DESIGN_DIR)/sh_ddr/sim/axi4_slave_bfm.sv;}" >> $@
@@ -229,9 +230,11 @@ $(TESTBENCH_PATH)/msg_config:
 
 	@echo "{+warn=none;  +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_1/simulation/fifo_generator_vlog_beh.v;}" >> $@
 	@echo "{+lint=none;  +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_1/simulation/fifo_generator_vlog_beh.v;}" >> $@
+	@echo "{-error=none; +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_1/simulation/fifo_generator_vlog_beh.v;}" >> $@
 
 	@echo "{+warn=none;  +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v;}" >> $@
 	@echo "{+lint=none;  +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v;}" >> $@
+	@echo "{-error=none; +file=$(XILINX_VIVADO)/data/ip/xilinx/fifo_generator_v13_2/hdl/fifo_generator_v13_2_rfs.v;}" >> $@
 
 	@echo "{+warn=none;  +file=$(XILINX_VIVADO)/data/ip/xilinx/axi_infrastructure_v1_1/hdl/axi_infrastructure_v1_1_vl_rfs.v;}" >> $@
 	@echo "{+lint=none;  +file=$(XILINX_VIVADO)/data/ip/xilinx/axi_infrastructure_v1_1/hdl/axi_infrastructure_v1_1_vl_rfs.v;}" >> $@
@@ -278,8 +281,11 @@ $(TESTBENCH_PATH)/msg_config:
 
 	@echo "{+warn=none;  +file=$(HDK_DIR)/common/verif/models/fpga/fpga.sv;}" >> $@
 	@echo "{+lint=none;  +file=$(HDK_DIR)/common/verif/models/fpga/fpga.sv;}" >> $@
+	@echo "{-error=none;  +file=$(HDK_DIR)/common/verif/models/fpga/fpga.sv;}" >> $@
+
 	@echo "{+warn=none;  +file=$(HDK_DIR)/common/verif/models/fpga/card.sv;}" >> $@
 	@echo "{+lint=none;  +file=$(HDK_DIR)/common/verif/models/fpga/card.sv;}" >> $@
+
 	@echo "{+warn=none;  +file=$(HDK_DIR)/common/verif/models/sh_bfm/sh_bfm.sv;}" >> $@
 	@echo "{+lint=none;  +file=$(HDK_DIR)/common/verif/models/sh_bfm/sh_bfm.sv;}" >> $@
 

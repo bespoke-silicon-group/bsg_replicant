@@ -90,12 +90,12 @@ module cl_manycore
    always_ff @(negedge rst_main_n or posedge clk_main_a0)
      if (!rst_main_n)
        begin
-          pre_sync_rst_n  <= 0;
-          rst_main_n_sync <= 0;
+          pre_sync_rst_n  <= 1'b0;
+          rst_main_n_sync <= 1'b0;
        end
      else
        begin
-          pre_sync_rst_n  <= 1;
+          pre_sync_rst_n  <= 1'b1;
           rst_main_n_sync <= pre_sync_rst_n;
        end
 
@@ -1039,11 +1039,11 @@ module cl_manycore
       .m_axi_awlen(cl_sh_ddr_awlen),
       .m_axi_awsize(cl_sh_ddr_awsize),
       .m_axi_awburst(cl_sh_ddr_awburst),
-      .m_axi_awlock(cl_sh_ddr_awlock),
-      .m_axi_awcache(cl_sh_ddr_awcache),
-      .m_axi_awprot(cl_sh_ddr_awprot),
-      .m_axi_awregion(cl_sh_ddr_awregion),
-      .m_axi_awqos(cl_sh_ddr_awqos),
+      .m_axi_awlock(),
+      .m_axi_awcache(),
+      .m_axi_awprot(),
+      .m_axi_awregion(),
+      .m_axi_awqos(),
       .m_axi_awvalid(cl_sh_ddr_awvalid),
       .m_axi_awready(sh_cl_ddr_awready),
 
@@ -1066,11 +1066,11 @@ module cl_manycore
       .m_axi_arlen(cl_sh_ddr_arlen),
       .m_axi_arsize(cl_sh_ddr_arsize),
       .m_axi_arburst(cl_sh_ddr_arburst),
-      .m_axi_arlock(cl_sh_ddr_arlock),
-      .m_axi_arcache(cl_sh_ddr_arcache),
-      .m_axi_arprot(cl_sh_ddr_arprot),
-      .m_axi_arregion(cl_sh_ddr_arregion),
-      .m_axi_arqos(cl_sh_ddr_arqos),
+      .m_axi_arlock(),
+      .m_axi_arcache(),
+      .m_axi_arprot(),
+      .m_axi_arregion(),
+      .m_axi_arqos(),
       .m_axi_arvalid(cl_sh_ddr_arvalid),
       .m_axi_arready(sh_cl_ddr_arready),
 
