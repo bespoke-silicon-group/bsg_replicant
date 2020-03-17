@@ -1034,7 +1034,7 @@ module cl_manycore
       .m_axi_aresetn(rst_main_n),
 
       // Master Interface Write Address Port
-      .m_axi_awid(cl_sh_ddr_awid),
+      .m_axi_awid(cl_sh_ddr_awid[5:0]),
       .m_axi_awaddr(cl_sh_ddr_awaddr),
       .m_axi_awlen(cl_sh_ddr_awlen),
       .m_axi_awsize(cl_sh_ddr_awsize),
@@ -1055,13 +1055,13 @@ module cl_manycore
       .m_axi_wready(sh_cl_ddr_wready),
 
       // Master Interface Write Response Ports
-      .m_axi_bid(sh_cl_ddr_bid),
+      .m_axi_bid(sh_cl_ddr_bid[5:0]),
       .m_axi_bresp(sh_cl_ddr_bresp),
       .m_axi_bvalid(sh_cl_ddr_bvalid),
       .m_axi_bready(cl_sh_ddr_bready),
 
       // Master Interface Read Address Port
-      .m_axi_arid(cl_sh_ddr_arid),
+      .m_axi_arid(cl_sh_ddr_arid[5:0]),
       .m_axi_araddr(cl_sh_ddr_araddr),
       .m_axi_arlen(cl_sh_ddr_arlen),
       .m_axi_arsize(cl_sh_ddr_arsize),
@@ -1075,7 +1075,7 @@ module cl_manycore
       .m_axi_arready(sh_cl_ddr_arready),
 
       // Master Interface Read Data Ports
-      .m_axi_rid(sh_cl_ddr_rid),
+      .m_axi_rid(sh_cl_ddr_rid[5:0]),
       .m_axi_rdata(sh_cl_ddr_rdata),
       .m_axi_rresp(sh_cl_ddr_rresp),
       .m_axi_rlast(sh_cl_ddr_rlast),
@@ -1117,7 +1117,7 @@ module cl_manycore
    assign m_axi4_manycore_bvalid = sh_cl_ddr_bvalid;
    assign cl_sh_ddr_bready = m_axi4_manycore_bready;
 
-   assign cl_sh_ddr_arid = m_axi4_manycore_arid;
+   assign cl_sh_ddr_arid[5:0] = m_axi4_manycore_arid;
    assign cl_sh_ddr_araddr = m_axi4_manycore_araddr;
    assign cl_sh_ddr_arlen = m_axi4_manycore_arlen;
    assign cl_sh_ddr_arsize = m_axi4_manycore_arsize;
