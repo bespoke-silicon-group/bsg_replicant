@@ -57,23 +57,27 @@ $(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
 endif
 
 # Don't include more than once
-ifndef (_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
-_BSG_F1_TESTBENCHES_INFINITE_MEM_MK := 1
-_INFINITE_MEM_CFGS := e_infinite_mem
+ifndef (_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
+_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK := 1
 
-# Check if ramulator is the memory model for this design
-ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
+# Add DRAMSim3 to the simlibs
+SIMLIBS += $(TESTBENCH_PATH)/libdmamem.so
+LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldmamem
 
-# Disable the micron memory model (it's unused and slows simulation WAY down)
-VDEFINES   += AXI_MEMORY_MODEL=1
-VDEFINES   += ECC_DIRECT_EN
-VDEFINES   += RND_ECC_EN
-VDEFINES   += ECC_ADDR_LO=0
-VDEFINES   += ECC_ADDR_HI=0
-VDEFINES   += RND_ECC_WEIGHT=0
+# Add a clean rule
+.PHONY: dmamem.clean
+dmamem.clean:
+	rm -f $(TESTBENCH_PATH)/libdmamem.so
 
-# Library for DMA-able memory
-include $(TESTBENCH_PATH)/libdmamem.mk
+# Add as a subrule to simlibs.clean
+simlibs.clean: dmamem.clean
 
-endif # ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
-endif # ifndef(_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
+# Rules for building ramulator library
+$(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
+$(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
+$(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
+$(TESTBENCH_PATH)/libdmamem.so: CXX=g++
+$(TESTBENCH_PATH)/libdmamem.so: $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
+
+endif # ifndef(_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)

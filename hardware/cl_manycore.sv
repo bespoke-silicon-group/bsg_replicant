@@ -458,6 +458,7 @@ module cl_manycore
         ,.addr_width_p(addr_width_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
+        ,.id_p(i)
       ) mem_infty (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
