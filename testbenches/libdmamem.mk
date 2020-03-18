@@ -60,9 +60,11 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
 _BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK := 1
 
-# Add DRAMSim3 to the simlibs
+# Add DMA to the simlibs
 SIMLIBS += $(TESTBENCH_PATH)/libdmamem.so
 LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldmamem
+
+$(LIB_OBJECTS): CXXFLAGS += -DUSING_LIBDMAMEM=1
 
 # Add a clean rule
 .PHONY: dmamem.clean

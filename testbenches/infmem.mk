@@ -72,6 +72,8 @@ VDEFINES   += ECC_ADDR_LO=0
 VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
 
+$(LIB_OBJECTS): CXXFLAGS += -DUSING_INFMEM=1
+
 # Library for DMA-able memory
 include $(TESTBENCH_PATH)/libdmamem.mk
 

@@ -40,7 +40,7 @@
 #else
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
-#if defined(USING_DRAMSIM3)
+#if defined(USING_LIBDMAMEM)
 #include <bsg_mem_dma.hpp>
 #define DRAM_HACK_WRITE
 #define DRAM_HACK_READ
@@ -1196,6 +1196,7 @@ int hb_mc_manycore_vcache_apply_to_npa(hb_mc_manycore_t *mc,
                                        const hb_mc_npa_t *npa,
                                        hb_mc_packet_cache_op_t cache_op)
 {
+#if !defined(USING_INFMEM) // infinite memory is cache-less; none of these operations are needed
         int err;
         hb_mc_request_packet_t pkt;
 
@@ -1207,7 +1208,7 @@ int hb_mc_manycore_vcache_apply_to_npa(hb_mc_manycore_t *mc,
                 manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
                                 __func__, hb_mc_strerror(err));
         }
-
+#endif
         return HB_MC_SUCCESS;
 }
 
@@ -1290,6 +1291,7 @@ int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc,
 
 int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
 {
+#if !defined(USING_INFMEM) // infinite memory is cache-less; none of these operations are needed
         int err;
         hb_mc_request_packet_t pkt;
 
@@ -1298,11 +1300,15 @@ int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa
                 return err;
 
         return hb_mc_manycore_request_tx(mc, &pkt, -1);
+#else
+        return HB_MC_SUCCESS;
+#endif
 }
 
 template <typename ApplyFunction>
 static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction apply_function)
 {
+#if !defined(USING_INFMEM) // infinite memory is cache-less; none of these operations are needed
         hb_mc_epa_t ways = hb_mc_vcache_num_ways(mc);
         hb_mc_epa_t sets = hb_mc_vcache_num_sets(mc);
         hb_mc_epa_t caches = hb_mc_vcache_num_caches(mc);
@@ -1320,6 +1326,7 @@ static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction ap
                         }
                 }
         }
+#endif
         return HB_MC_SUCCESS;
 }
 
