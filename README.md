@@ -17,7 +17,7 @@ This repository contains the following folders:
 This repository contains the following files:
 
 - `Makefile`: Contains targets for Co-Simulation, Bitstream Generation, F1 Regression
-- `Makefile.machine.include`: Defines the Manycore configuration for co-simulation and bitstream compilation
+- `machine.mk`: Defines the path to the current Machine Configuration for co-simulation
 - `README.md`: This file
 - `cadenv.mk`: A makefile fragment for deducing the CAD tool environment
 - `environment.mk`: A makefile fragment for deducing the build environment. 
