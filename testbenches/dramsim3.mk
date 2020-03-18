@@ -97,11 +97,6 @@ $(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1
 
 # Add a clean rule
 .PHONY: dramsim3.clean
-dramsim3.clean:
-	rm -f $(TESTBENCH_PATH)/libdramsim3.so
-
-# Add as a subrule to simlibs.clean
-simlibs.clean: dramsim3.clean
 
 # Rules for building ramulator library
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
@@ -131,3 +126,9 @@ $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_test_dram_cha
 
 endif # ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 endif # ifndef(_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
+
+dramsim3.clean:
+	rm -f $(TESTBENCH_PATH)/libdramsim3.so
+
+# Add as a subrule to simlibs.clean
+simlibs.clean: dramsim3.clean
