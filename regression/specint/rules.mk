@@ -45,7 +45,7 @@ $(USER_CLEAN_RULES):
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -C $(SPECINT_SRC_PATH) -f Makefile.$(subst .clean,,$(subst test_,,$@)) clean
 
-$(SPECINT_SRC_PATH)/%.riscv: $(CL_DIR)/Makefile.machine.include
+$(SPECINT_SRC_PATH)/%.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
