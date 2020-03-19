@@ -131,6 +131,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 include $(TESTBENCH_PATH)/ramulator.mk
 include $(TESTBENCH_PATH)/dramsim3.mk
 include $(TESTBENCH_PATH)/infmem.mk
+include $(TESTBENCH_PATH)/libdmamem.mk
 
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so

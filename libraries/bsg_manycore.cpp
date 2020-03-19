@@ -40,12 +40,7 @@
 #else
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
-#if defined(USING_LIBDMAMEM)
 #include <bsg_mem_dma.hpp>
-#define DRAM_HACK_WRITE
-#define DRAM_HACK_READ
-#endif
-
 #endif
 
 #ifdef __cplusplus
@@ -1196,7 +1191,9 @@ int hb_mc_manycore_vcache_apply_to_npa(hb_mc_manycore_t *mc,
                                        const hb_mc_npa_t *npa,
                                        hb_mc_packet_cache_op_t cache_op)
 {
-#if !defined(USING_INFMEM) // infinite memory is cache-less; none of these operations are needed
+        if (!hb_mc_manycore_has_cache(mc))
+                return HB_MC_SUCCESS;
+
         int err;
         hb_mc_request_packet_t pkt;
 
@@ -1208,7 +1205,7 @@ int hb_mc_manycore_vcache_apply_to_npa(hb_mc_manycore_t *mc,
                 manycore_pr_err(mc, "%s: Failed to send request packet: %s\n",
                                 __func__, hb_mc_strerror(err));
         }
-#endif
+
         return HB_MC_SUCCESS;
 }
 
@@ -1278,6 +1275,9 @@ int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc,
                                           const hb_mc_npa_t *npa,
                                           size_t sz)
 {
+        if (!hb_mc_manycore_has_cache(mc))
+                return HB_MC_SUCCESS;
+
         int err;
         err = hb_mc_manycore_vcache_apply_to_npa_range(mc, npa, sz,
                                                        HB_MC_PACKET_CACHE_OP_AFL);
@@ -1291,24 +1291,26 @@ int hb_mc_manycore_vcache_flush_npa_range(hb_mc_manycore_t *mc,
 
 int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
 {
-#if !defined(USING_INFMEM) // infinite memory is cache-less; none of these operations are needed
+
         int err;
         hb_mc_request_packet_t pkt;
+
+        if (!hb_mc_manycore_has_cache(mc))
+                return HB_MC_SUCCESS;
 
         err = hb_mc_manycore_format_cache_op_request_packet(mc, &pkt, npa, HB_MC_PACKET_CACHE_OP_TAGFL);
         if (err != HB_MC_SUCCESS)
                 return err;
 
         return hb_mc_manycore_request_tx(mc, &pkt, -1);
-#else
-        return HB_MC_SUCCESS;
-#endif
 }
 
 template <typename ApplyFunction>
 static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction apply_function)
 {
-#if !defined(USING_INFMEM) // infinite memory is cache-less; none of these operations are needed
+        if (!hb_mc_manycore_has_cache(mc))
+                return HB_MC_SUCCESS;
+
         hb_mc_epa_t ways = hb_mc_vcache_num_ways(mc);
         hb_mc_epa_t sets = hb_mc_vcache_num_sets(mc);
         hb_mc_epa_t caches = hb_mc_vcache_num_caches(mc);
@@ -1326,7 +1328,7 @@ static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction ap
                         }
                 }
         }
-#endif
+
         return HB_MC_SUCCESS;
 }
 
@@ -1370,6 +1372,9 @@ int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
  */
 int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
 {
+        if (!hb_mc_manycore_has_cache(mc))
+                return HB_MC_SUCCESS;
+
         int err = hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         // flush tag
                         char npa_str[256];
@@ -1410,7 +1415,6 @@ int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
     return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
 }
 
-#if defined(DRAM_HACK_WRITE) || defined(DRAM_HACK_READ)
 /**
  * Given an NPA that maps to DRAM, return a buffer that holds the data for that address.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
@@ -1422,6 +1426,7 @@ int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
 static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, size_t sz,
                                                    unsigned char **buffer)
 {
+#ifdef COSIM
     using namespace bsg_mem_dma;
 
     /*
@@ -1482,6 +1487,9 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
     *buffer = &memory->_data[addr];
 
     return HB_MC_SUCCESS;
+#else
+    return HB_MC_NOIMPL;
+#endif
 }
 
 /**
@@ -1495,7 +1503,7 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
 static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                                                 const void *data, size_t sz)
 {
-
+#ifdef COSIM
     unsigned char *membuffer;
     int err = hb_mc_manycore_npa_to_buffer_cosim_only(mc, npa, sz, &membuffer);
     if (err != HB_MC_SUCCESS)
@@ -1509,6 +1517,9 @@ static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_m
     memcpy(reinterpret_cast<void*>(membuffer), data, sz);
 
     return HB_MC_SUCCESS;
+#else
+    return HB_MC_NOIMPL;
+#endif
 }
 
 
@@ -1523,7 +1534,7 @@ static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_m
 static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                                                void *data, size_t sz)
 {
-
+#ifdef COSIM
     unsigned char *membuffer;
     int err = hb_mc_manycore_npa_to_buffer_cosim_only(mc, npa, sz, &membuffer);
     if (err != HB_MC_SUCCESS)
@@ -1537,9 +1548,10 @@ static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc
     memcpy(data, reinterpret_cast<void*>(membuffer), sz);
 
     return HB_MC_SUCCESS;
-}
-
+#else
+    return HB_MC_NOIMPL;
 #endif
+}
 
 
 /**
@@ -1549,11 +1561,7 @@ static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc
  */
 int hb_mc_manycore_supports_dma_write(const hb_mc_manycore *mc)
 {
-#if defined(COSIM) && defined(DRAM_HACK_WRITE)
-        return 1;
-#else
-        return 0;
-#endif
+        return hb_mc_config_memsys_feature_dma(hb_mc_manycore_get_config(mc)) == 1;
 }
 
 /**
@@ -1563,11 +1571,7 @@ int hb_mc_manycore_supports_dma_write(const hb_mc_manycore *mc)
  */
 int hb_mc_manycore_supports_dma_read(const hb_mc_manycore *mc)
 {
-#if defined(COSIM) && defined(DRAM_HACK_READ)
-        return 1;
-#else
-        return 0;
-#endif
+        return hb_mc_config_memsys_feature_dma(hb_mc_manycore_get_config(mc)) == 1;
 }
 
 /**
@@ -1592,6 +1596,8 @@ int hb_mc_manycore_dma_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                              const void *data, size_t sz)
 {
         int err;
+        if (!hb_mc_manycore_supports_dma_write(mc))
+                return HB_MC_INVALID;
 
         err = hb_mc_manycore_dma_write_no_cache_ainv(mc, npa, data, sz);
         if (err != HB_MC_SUCCESS)
@@ -1617,8 +1623,9 @@ int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa
                                            const void *data, size_t sz)
 {
         int err;
+        if (!hb_mc_manycore_supports_dma_write(mc))
+                return HB_MC_NOIMPL;
 
-#if defined(COSIM) && defined(DRAM_HACK_WRITE)
         // is dram?
         if (!hb_mc_manycore_npa_is_dram(mc, npa))
                 return HB_MC_INVALID;
@@ -1629,9 +1636,6 @@ int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa
                 return err;
 
         return HB_MC_SUCCESS;
-#else
-        return HB_MC_NOIMPL;
-#endif
 }
 
 
@@ -1653,15 +1657,14 @@ int hb_mc_manycore_dma_read_no_cache_afl(hb_mc_manycore_t *mc, const hb_mc_npa_t
                                          void *data, size_t sz)
 {
         int err;
-#if defined(COSIM) && defined(DRAM_HACK_READ)
+        if (!hb_mc_manycore_supports_dma_read(mc))
+                return HB_MC_NOIMPL;
+
         // is dram?
         if (!hb_mc_manycore_npa_is_dram(mc, npa))
                 return HB_MC_INVALID;
 
         return hb_mc_manycore_read_dram_cosim_only(mc, npa, data, sz);
-#else
-        return HB_MC_NOIMPL;
-#endif
 }
 
 /**
@@ -1686,7 +1689,9 @@ int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                             void *data, size_t sz)
 {
         int err;
-#if defined(COSIM) && defined(DRAM_HACK_READ)
+        if (!hb_mc_manycore_supports_dma_read(mc))
+                return HB_MC_NOIMPL;
+
         if (!hb_mc_manycore_npa_is_dram(mc, npa))
                 return HB_MC_INVALID;
 
@@ -1695,9 +1700,6 @@ int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
                 return err;
 
         return hb_mc_manycore_dma_read_no_cache_afl(mc, npa, data, sz);
-#else
-        return HB_MC_NOIMPL;
-#endif
 }
 
 ////////////////
