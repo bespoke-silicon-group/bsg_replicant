@@ -35,25 +35,9 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 #
 
-# CL_DIR: The path to the root of the BSG F1 Repository
-ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
-endif
-
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
 ifndef TESTBENCH_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
-endif
-
-# LIBRARIES_PATH: The path to the regression folder in BSG F1
-ifndef LIBRARIES_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
-endif
-
-# PROJECT: The project name, used to as the work directory of the hardware
-# library during analysis
-ifndef PROJECT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
 endif
 
 # Don't include more than once
@@ -71,8 +55,6 @@ VDEFINES   += RND_ECC_EN
 VDEFINES   += ECC_ADDR_LO=0
 VDEFINES   += ECC_ADDR_HI=0
 VDEFINES   += RND_ECC_WEIGHT=0
-
-$(LIB_OBJECTS): CXXFLAGS += -DUSING_INFMEM=1
 
 # Library for DMA-able memory
 include $(TESTBENCH_PATH)/libdmamem.mk

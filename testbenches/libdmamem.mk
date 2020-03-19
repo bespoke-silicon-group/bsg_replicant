@@ -35,25 +35,13 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 #
 
-# CL_DIR: The path to the root of the BSG F1 Repository
-ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
-endif
-
 # TESTBENCH_PATH: The path to the testbenches folder in BSG F1
 ifndef TESTBENCH_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
 endif
 
-# LIBRARIES_PATH: The path to the regression folder in BSG F1
-ifndef LIBRARIES_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
-endif
-
-# PROJECT: The project name, used to as the work directory of the hardware
-# library during analysis
-ifndef PROJECT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
+ifndef BASEJUMP_STL_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BASEJUMP_STL_DIR is not defined$(NC)"))
 endif
 
 # Don't include more than once
@@ -63,8 +51,6 @@ _BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK := 1
 # Add DMA to the simlibs
 SIMLIBS += $(TESTBENCH_PATH)/libdmamem.so
 LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldmamem
-
-$(LIB_OBJECTS): CXXFLAGS += -DUSING_LIBDMAMEM=1
 
 # Add a clean rule
 .PHONY: dmamem.clean
