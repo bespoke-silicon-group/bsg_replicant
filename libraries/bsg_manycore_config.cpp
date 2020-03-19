@@ -191,5 +191,23 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->dram_bank_size_words = idx;
 
+        idx = raw[HB_MC_CONFIG_MEMSYS_FEATURE_DMA];
+        if (idx != 0 && idx != 1) {
+                bsg_pr_err("%s: Invalid value for DMA support: %s\n",
+                           __func__,
+                           error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->memsys_feature_dma = idx;
+
+        idx = raw[HB_MC_CONFIG_MEMSYS_FEATURE_CACHE];
+        if (idx != 0 && idx != 1) {
+                bsg_pr_err("%s: Invalid value for cache existence: %s\n",
+                           __func__,
+                           error_init_help);
+                return HB_MC_INVALID;
+        }
+        config->memsys_feature_cache = idx;
+
         return HB_MC_SUCCESS;
 }

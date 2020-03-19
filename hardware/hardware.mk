@@ -144,6 +144,23 @@ $(HARDWARE_PATH)/%.v: $(HARDWARE_PATH)/%.rom
 	env python2 $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
                bsg_bladerunner_configuration > $@
 
+
+# the default case for memory config features
+CL_MANYCORE_MEMSYS_FEATURE_DMA   := 0
+CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
+
+# do we use dramsim3?
+ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
+CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
+endif
+
+# do we use infinite memory?
+ifneq ($(filter infinite, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
+CL_MANYCORE_MEMSYS_FEATURE_CACHE := 0
+endif
+
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
 $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
@@ -169,6 +186,8 @@ $(HARDWARE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_CHANNELS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_BANK_SIZE_WORDS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_FEATURE_DMA))   >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_FEATURE_CACHE)) >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define

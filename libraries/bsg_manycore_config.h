@@ -104,6 +104,8 @@ extern "C" {
                 uint32_t io_endpoint_max_out_credits;
                 uint32_t dram_channels;
                 uint32_t dram_bank_size_words;
+                uint32_t memsys_feature_dma;
+                uint32_t memsys_feature_cache;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -130,6 +132,8 @@ extern "C" {
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
                 HB_MC_CONFIG_DRAM_CHANNELS = 20,
                 HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 21,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DMA = 22,
+                HB_MC_CONFIG_MEMSYS_FEATURE_CACHE = 23,
                 HB_MC_CONFIG_MAX,
         } hb_mc_config_id_t;
 
@@ -491,6 +495,26 @@ extern "C" {
         static inline uint32_t hb_mc_config_get_dram_channels(const hb_mc_config_t *cfg)
         {
                 return cfg->dram_channels;
+        }
+
+        /**
+         * Return the number of DRAM channels in the system.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return 1 if DMA is a supported memory system feature, 0 otherwise.
+         */
+        static inline uint32_t hb_mc_config_memsys_feature_dma(const hb_mc_config_t *cfg)
+        {
+                return cfg->memsys_feature_dma;
+        }
+
+        /**
+         * Return the number of DRAM channels in the system.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return 1 if cache is a supported memory system feature, 0 otherwise.
+         */
+        static inline uint32_t hb_mc_config_memsys_feature_cache(const hb_mc_config_t *cfg)
+        {
+                return cfg->memsys_feature_cache;
         }
 
 
