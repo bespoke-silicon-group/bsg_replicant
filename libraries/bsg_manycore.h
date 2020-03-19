@@ -73,6 +73,16 @@ extern "C" {
                 return hb_mc_config_get_host_interface(&mc->config);
         }
 
+        /**
+         * Get a pointer to the configuration struct
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @return NULL if uninitialized, else hb_mc_config_t*
+         */
+        static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manycore_t *mc)
+        {
+                return &mc->config;
+        }
+
         ///////////////////
         // Init/Exit API //
         ///////////////////
@@ -386,6 +396,16 @@ extern "C" {
         /************************/
         /* Cache Operations API */
         /************************/
+        /**
+         * Check if DMA reading is supported.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @return One if there's cache, zero otherwise.
+         */
+        static int hb_mc_manycore_has_cache(hb_mc_manycore_t *mc)
+        {
+                return hb_mc_config_memsys_feature_cache(hb_mc_manycore_get_config(mc)) == 1;
+        }
+
 
         /**
          * Invalidate a range of manycore DRAM addresses.
@@ -539,16 +559,6 @@ extern "C" {
          * @return One if the NPA maps to DRAM - Zero otherwise.
          */
         int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa);
-
-        /**
-         * Get a pointer to the configuration struct
-         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-         * @return NULL if uninitialized, else hb_mc_config_t*
-         */
-        static inline const hb_mc_config_t* hb_mc_manycore_get_config(const hb_mc_manycore_t *mc)
-        {
-                return &mc->config;
-        }
 
         /**
          * Get the max size of program text.
