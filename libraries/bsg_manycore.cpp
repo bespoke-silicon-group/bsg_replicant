@@ -1488,6 +1488,8 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
 
     return HB_MC_SUCCESS;
 #else
+    manycore_pr_err(mc, "%s: This function should only be called in simulation\n",
+                    __func__);
     return HB_MC_NOIMPL;
 #endif
 }
@@ -1518,6 +1520,8 @@ static int hb_mc_manycore_write_dram_cosim_only(hb_mc_manycore_t *mc, const hb_m
 
     return HB_MC_SUCCESS;
 #else
+    manycore_pr_err(mc, "%s: This function should only be called in simulation\n",
+                    __func__);
     return HB_MC_NOIMPL;
 #endif
 }
@@ -1549,6 +1553,8 @@ static int hb_mc_manycore_read_dram_cosim_only(hb_mc_manycore_t *mc, const hb_mc
 
     return HB_MC_SUCCESS;
 #else
+    manycore_pr_err(mc, "%s: This function should only be called in simulation\n",
+                    __func__);
     return HB_MC_NOIMPL;
 #endif
 }
