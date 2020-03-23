@@ -1284,8 +1284,8 @@ module cl_manycore
      #(
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
-       ,.header_print_x_cord_p(0)
-       ,.header_print_y_cord_p(2)
+       ,.origin_x_cord_p(0)
+       ,.origin_y_cord_p(2)
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
