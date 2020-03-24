@@ -126,10 +126,10 @@ $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
 endif # ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
-endif # ifndef(_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
-
 dramsim3.clean:
 	rm -f $(TESTBENCH_PATH)/libdramsim3.so
 
 # Add as a subrule to simlibs.clean
 simlibs.clean: dramsim3.clean
+endif # ifndef(_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
+
