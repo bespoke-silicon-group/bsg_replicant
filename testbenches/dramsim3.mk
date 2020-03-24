@@ -79,10 +79,10 @@ include $(TESTBENCH_PATH)/libdmamem.mk
 VDEFINES   += USING_DRAMSIM3=1
 
 # Define the name and package of the memory technology
-DRAMSIM3_MEMORY:=$(patsubst e_vcache_blocking_dramsim3_%, %, \
+DRAMSIM3_MEMORY:=$(patsubst e_vcache_blocking_test_dramsim3_%, %, \
 	$(filter e_vcache_blocking_%, $(CL_MANYCORE_MEM_CFG)))
 
-DRAMSIM3_MEMORY+=$(patsubst e_vcache_non_blocking_dramsim3_%, %, \
+DRAMSIM3_MEMORY+=$(patsubst e_vcache_non_blocking_test_dramsim3_%, %, \
 	$(filter e_vcache_non_blocking_%, $(CL_MANYCORE_MEM_CFG)))
 
 DRAMSIM3_MEMORY:=$(strip $(DRAMSIM3_MEMORY))
