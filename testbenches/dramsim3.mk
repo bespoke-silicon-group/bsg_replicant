@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building the ramulator library for
+# This Makefile fragment is for building the dramsim3 library for
 # cosimulation
 ORANGE=\033[0;33m
 RED=\033[0;31m
@@ -59,9 +59,9 @@ endif
 # Don't include more than once
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
-_DRAMSIM3_MEM_CFGS := e_vcache_non_blocking_dramsim3_hbm2_4gb_x128
-_DRAMSIM3_MEM_CFGS += e_vcache_blocking_dramsim3_hbm2_4gb_x128
-# Check if ramulator is the memory model for this design
+_DRAMSIM3_MEM_CFGS := e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128
+_DRAMSIM3_MEM_CFGS += e_vcache_blocking_test_dramsim3_hbm2_4gb_x128
+# Check if dramsim3 is the memory model for this design
 ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 
 # Disable the micron memory model (it's unused and slows simulation WAY down)
@@ -79,10 +79,10 @@ include $(TESTBENCH_PATH)/libdmamem.mk
 VDEFINES   += USING_DRAMSIM3=1
 
 # Define the name and package of the memory technology
-DRAMSIM3_MEMORY:=$(patsubst e_vcache_blocking_dramsim3_%, %, \
+DRAMSIM3_MEMORY:=$(patsubst e_vcache_blocking_test_dramsim3_%, %, \
 	$(filter e_vcache_blocking_%, $(CL_MANYCORE_MEM_CFG)))
 
-DRAMSIM3_MEMORY+=$(patsubst e_vcache_non_blocking_dramsim3_%, %, \
+DRAMSIM3_MEMORY+=$(patsubst e_vcache_non_blocking_test_dramsim3_%, %, \
 	$(filter e_vcache_non_blocking_%, $(CL_MANYCORE_MEM_CFG)))
 
 DRAMSIM3_MEMORY:=$(strip $(DRAMSIM3_MEMORY))
@@ -101,7 +101,7 @@ $(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1
 # Add a clean rule
 .PHONY: dramsim3.clean
 
-# Rules for building ramulator library
+# Rules for building dramsim3 library
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/src
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/headers

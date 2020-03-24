@@ -15,5 +15,6 @@ checkpoints
 *.so
 *.tmp
 *.prelim
+.test_*
 test_*
 msg_config

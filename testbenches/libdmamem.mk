@@ -25,8 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building the ramulator library for
-# cosimulation
+# This Makefile fragment is for building the simulation "DMA Engine"
+# library for cosimulation
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
@@ -60,7 +60,7 @@ dmamem.clean:
 # Add as a subrule to simlibs.clean
 simlibs.clean: dmamem.clean
 
-# Rules for building ramulator library
+# Rules for building Simulation "DMA library"
 $(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
 $(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
 $(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
