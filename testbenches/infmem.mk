@@ -25,8 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building the ramulator library for
-# cosimulation
+# This Makefile fragment is for building the infinite memory
+# simulation library for cosimulation
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
@@ -45,7 +45,7 @@ ifndef (_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
 _BSG_F1_TESTBENCHES_INFINITE_MEM_MK := 1
 _INFINITE_MEM_CFGS := e_infinite_mem
 
-# Check if ramulator is the memory model for this design
+# Check if Infinite Memory is the memory model for this design
 ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 
 # Disable the micron memory model (it's unused and slows simulation WAY down)
