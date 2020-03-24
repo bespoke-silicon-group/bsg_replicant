@@ -34,3 +34,5 @@ CL_DIR           ?= $(shell git rev-parse --show-toplevel)
 # another directory with a Makefile.machine.include file.
 BSG_MACHINE_PATH ?= $(CL_DIR)/machines/4x4_blocking_vcache_f1_model/
 
+# Convert the machine path to an abspath
+override BSG_MACHINE_PATH := $(abspath $(BSG_MACHINE_PATH))

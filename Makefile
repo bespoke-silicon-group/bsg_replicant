@@ -58,8 +58,9 @@ build:
 regression:
 	$(MAKE) -C regression $@ 
 
+__BSG_MACHINES=$(wildcard machines/*)
 cosim: 
-	$(MAKE) -C testbenches regression
+	$(foreach m,$(__BSG_MACHINES),$(MAKE) -j20 -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m;)
 
 clean:
 	$(MAKE) -C testbenches clean 
