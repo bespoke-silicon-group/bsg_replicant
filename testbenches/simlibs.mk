@@ -196,20 +196,21 @@ VLOGAN_VFLAGS   += -undef_vcs_macro
 $(TESTBENCH_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/gen_simlibs.tcl
 	cd $(TESTBENCH_PATH) && vivado -mode batch -source $<
 
+$(BSG_MACHINE_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
+	cp $< $@
+	echo "$(BSG_MACHINE_NAME) : $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/64" >> $@;
+
 # We check synopsys_sim.setup for the library location before
 # modifying it. This avoids repeating the line at the end of the file
 # every single time.
-$(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(TESTBENCH_PATH)/synopsys_sim.setup $(VHEADERS) $(VSOURCES)
-	@if [ `grep -c $(BSG_MACHINE_NAME) $<` -lt 1 ] ; then\
-		echo "$(BSG_MACHINE_NAME) : $(dir $@)64" >> $<;\
-	fi
-
+$(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/synopsys_sim.setup $(VHEADERS) $(VSOURCES)
 	cd $(TESTBENCH_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
 	XILINX_VIVADO=$(XILINX_VIVADO) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
 	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
 	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
+	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
 	vlogan -work $(BSG_MACHINE_NAME) $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
 		$(VLOGAN_SOURCES) -f $(TESTBENCH_PATH)/aws.vcs.f \
 		$(VLOGAN_INCLUDES) -l $(BSG_MACHINE_NAME).vlogan.log

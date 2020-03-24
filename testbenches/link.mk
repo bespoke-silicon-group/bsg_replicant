@@ -91,8 +91,8 @@ $(EXEC_PATH)/%.debug: VCS_VFLAGS += -debug_pp
 $(EXEC_PATH)/%.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
 $(EXEC_PATH)/%.debug $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS) $(TESTBENCH_PATH)/msg_config
-	SYNOPSYS_SIM_SETUP=$(TESTBENCH_PATH)/synopsys_sim.setup \
-	vcs tb glbl $(BSG_MACHINE_NAME) -j$(NPROCS) $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
+	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
+	vcs $(BSG_MACHINE_NAME) tb glbl -j$(NPROCS) $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
 
 link.clean: 

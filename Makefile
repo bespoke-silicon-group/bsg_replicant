@@ -60,7 +60,7 @@ regression:
 
 __BSG_MACHINES=$(wildcard machines/*)
 cosim: 
-	$(foreach m,$(__BSG_MACHINES),$(MAKE) -j20 -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m;)
+	$(foreach m,$(__BSG_MACHINES),$(MAKE) -j20 -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m &&)
 
 clean:
 	$(MAKE) -C testbenches clean 

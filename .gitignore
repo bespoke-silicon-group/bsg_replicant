@@ -1,3 +1,4 @@
+synopsys_sim.setup*
 *.wcfg
 *.swp
 *.str
