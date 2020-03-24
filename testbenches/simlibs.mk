@@ -246,6 +246,10 @@ $(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(HDK_DIR)/common/software/src/fpga_pci_s
 .PHONY: simlibs.clean
 simlibs.clean: libraries.clean hardware.clean
 	rm -rf $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)
+	rm -rf $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper
 	rm -rf $(TESTBENCH_PATH)/libfpga_mgmt.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
 	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1
+
+bleach:
+	rm -rf $(TESTBENCH_PATH)/vcs_simlibs $(TESTBENCH_PATH)/synopsys_sim.setup
