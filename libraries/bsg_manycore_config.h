@@ -106,6 +106,19 @@ extern "C" {
                 uint32_t dram_bank_size_words;
                 uint32_t memsys_feature_dma;
                 uint32_t memsys_feature_cache;
+                // dram system
+                // bits
+                uint32_t dram_ro_bits;
+                uint32_t dram_bg_bits;
+                uint32_t dram_ba_bits;
+                uint32_t dram_co_bits;
+                uint32_t dram_byte_offset_bits;
+                // bit index
+                uint32_t dram_ro_bitidx;
+                uint32_t dram_bg_bitidx;
+                uint32_t dram_ba_bitidx;
+                uint32_t dram_co_bitidx;
+                uint32_t dram_byte_offset_bitidx;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -134,6 +147,16 @@ extern "C" {
                 HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 21,
                 HB_MC_CONFIG_MEMSYS_FEATURE_DMA = 22,
                 HB_MC_CONFIG_MEMSYS_FEATURE_CACHE = 23,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITS,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITS,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITS,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITS,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITS,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITIDX,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITIDX,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITIDX,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITIDX,
+                HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITIDX,
                 HB_MC_CONFIG_MAX,
         } hb_mc_config_id_t;
 
