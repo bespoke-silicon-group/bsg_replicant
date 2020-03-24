@@ -168,6 +168,8 @@ CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
 CL_MANYCORE_MEMSYS_FEATURE_CACHE := 0
 endif
 
+include $(HARDWARE_PATH)/memsys.mk
+
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
 $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
@@ -195,6 +197,16 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_BANK_SIZE_WORDS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_FEATURE_DMA))   >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_FEATURE_CACHE)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CO_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CO_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX)) >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define
