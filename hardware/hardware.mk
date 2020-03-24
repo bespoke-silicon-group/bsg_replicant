@@ -135,11 +135,11 @@ VHEADERS += $(HARDWARE_PATH)/cl_id_defines.vh
 # and a hexadecimal string (WITHOUT the preceeding 0x) into binary
 # strings of 32-characters in length
 define dec2bin
-	`perl -e 'printf "%032b\n",'$(1)`
+	`perl -e 'printf "%032b\n",'$(strip $(1))`
 endef
 
 define hex2bin
-	`perl -e 'printf "%032b\n",'0x$(1)`
+	`perl -e 'printf "%032b\n",'0x$(strip $(1))`
 endef
 
 # Each manycore design contains a Read-Only Memory (ROM) that
