@@ -458,6 +458,7 @@ module cl_manycore
         ,.addr_width_p(addr_width_p)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
+        ,.id_p(i)
       ) mem_infty (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
@@ -472,8 +473,10 @@ module cl_manycore
 
     bind bsg_nonsynth_mem_infinite infinite_mem_profiler #(
       .data_width_p(data_width_p)
+      ,.addr_width_p(addr_width_p)
       ,.x_cord_width_p(x_cord_width_p)
       ,.y_cord_width_p(y_cord_width_p)
+      ,.logfile_p("infinite_mem_stats.csv")
     ) infinite_mem_prof (
       .*
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)

@@ -79,6 +79,7 @@ INDEPENDENT_TESTS += test_softmax
 INDEPENDENT_TESTS += test_log_softmax
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
+INDEPENDENT_TESTS += test_hammer_cache
 
 # REGRESSION_TESTS is a list of all regression tests to run.
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
