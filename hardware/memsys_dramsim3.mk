@@ -36,6 +36,9 @@ __HARDWARE_MEMSYS_DRAMSIM3_MK := 1
 # is this a dramsim3 memory configuration?
 ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 
+CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
+CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
+
 # hbm2_4gb_x128?
 ifneq ($(filter %_hbm2_4gb_x128, $(CL_MANYCORE_MEM_CFG)),)
 # memory hierarchy bits

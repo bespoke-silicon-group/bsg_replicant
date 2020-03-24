@@ -152,22 +152,6 @@ $(BSG_MACHINE_PATH)/%.v: $(BSG_MACHINE_PATH)/%.rom
                bsg_bladerunner_configuration > $@
 
 
-# the default case for memory config features
-CL_MANYCORE_MEMSYS_FEATURE_DMA   := 0
-CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
-
-# do we use dramsim3?
-ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
-CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
-CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
-endif
-
-# do we use infinite memory?
-ifneq ($(filter infinite, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
-CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
-CL_MANYCORE_MEMSYS_FEATURE_CACHE := 0
-endif
-
 include $(HARDWARE_PATH)/memsys.mk
 
 # This target generates the ASCII file for the ROM. To add entries to
