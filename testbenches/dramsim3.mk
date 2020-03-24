@@ -59,8 +59,8 @@ endif
 # Don't include more than once
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
-_DRAMSIM3_MEM_CFGS := e_vcache_non_blocking_dramsim3_hbm2_4gb_x128
-_DRAMSIM3_MEM_CFGS += e_vcache_blocking_dramsim3_hbm2_4gb_x128
+_DRAMSIM3_MEM_CFGS := e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128
+_DRAMSIM3_MEM_CFGS += e_vcache_blocking_test_dramsim3_hbm2_4gb_x128
 # Check if dramsim3 is the memory model for this design
 ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 
