@@ -218,25 +218,73 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }                                                               \
         config->field = idx;
 
-        SET_CONFIG_FIELD(dram_ro_bits,            HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITS,         ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_bg_bits,            HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITS,         ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_ba_bits,            HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITS,         ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_co_bits,            HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITS,         ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_byte_offset_bits,   HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITS,   ((0 <= idx) && (idx <= 30)));
+        SET_CONFIG_FIELD(memsys_feature_dram_ro_bits,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITS,
+                         ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(dram_ro_bitidx,          HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITIDX,       ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_bg_bitidx,          HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITIDX,       ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_ba_bitidx,          HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITIDX,       ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_co_bitidx,          HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITIDX,       ((0 <= idx) && (idx <= 30)));
-        SET_CONFIG_FIELD(dram_byte_offset_bitidx, HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITIDX, ((0 <= idx) && (idx <= 30)));
+        SET_CONFIG_FIELD(memsys_feature_dram_bg_bits,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITS,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_ba_bits,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITS,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_co_bits,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITS,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_byte_offset_bits,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITS,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_ro_bitidx,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITIDX,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_bg_bitidx,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITIDX,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_ba_bitidx,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITIDX,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_co_bitidx,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITIDX,
+                         ((0 <= idx) && (idx <= 30)));
+
+        SET_CONFIG_FIELD(memsys_feature_dram_byte_offset_bitidx,
+                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITIDX,
+                         ((0 <= idx) && (idx <= 30)));
+
 
 #undef SET_CONFIG_FIELD
 
-        bsg_pr_dbg("ro { bits = %llu, idx = %llu}\n", config->dram_ro_bits, config->dram_ro_bitidx);
-        bsg_pr_dbg("bg { bits = %llu, idx = %llu}\n", config->dram_bg_bits, config->dram_bg_bitidx);
-        bsg_pr_dbg("ba { bits = %llu, idx = %llu}\n", config->dram_ba_bits, config->dram_ba_bitidx);
-        bsg_pr_dbg("co { bits = %llu, idx = %llu}\n", config->dram_co_bits, config->dram_co_bitidx);
-        bsg_pr_dbg("bo { bits = %llu, idx = %llu}\n", config->dram_byte_offset_bits, config->dram_byte_offset_bitidx);
+        bsg_pr_dbg("%s: ro { bits = %llu, idx = %llu}\n",
+                   __func__,
+                   config->memsys_feature_dram_ro_bits,
+                   config->memsys_feature_dram_ro_bitidx);
+
+        bsg_pr_dbg("%s: bg { bits = %llu, idx = %llu}\n",
+                   __func__,
+                   config->memsys_feature_dram_bg_bits,
+                   config->memsys_feature_dram_bg_bitidx);
+
+        bsg_pr_dbg("%s: ba { bits = %llu, idx = %llu}\n",
+                   __func__,
+                   config->memsys_feature_dram_ba_bits,
+                   config->memsys_feature_dram_ba_bitidx);
+
+        bsg_pr_dbg("%s: co { bits = %llu, idx = %llu}\n",
+                   __func__,
+                   config->memsys_feature_dram_co_bits,
+                   config->memsys_feature_dram_co_bitidx);
+
+        bsg_pr_dbg("%s: bo { bits = %llu, idx = %llu}\n",
+                   __func__,
+                   config->memsys_feature_dram_byte_offset_bits,
+                   config->memsys_feature_dram_byte_offset_bitidx);
 
         return HB_MC_SUCCESS;
 }

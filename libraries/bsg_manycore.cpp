@@ -1423,8 +1423,8 @@ static unsigned long long hb_mc_cache_to_test_dram_addr_to_dramsim3(
 
 #define GET_DRAM_ADDR_FIELD(addr, field)                                \
         ({                                                              \
-                unsigned long long _mask  = (1<<cfg->dram_##field##_bits) - 1; \
-                unsigned long long _shift = cfg->dram_##field##_bitidx; \
+                unsigned long long _mask  = (1<<cfg->memsys_feature_dram_##field##_bits) - 1; \
+                unsigned long long _shift = cfg->memsys_feature_dram_##field##_bitidx; \
                 (addr >> _shift) & _mask;                               \
         })
 
@@ -1440,10 +1440,10 @@ static unsigned long long hb_mc_cache_to_test_dram_addr_to_dramsim3(
         // dramsim3 mapping is ro,bg,ba,co,byte_offset
         unsigned long dram_address = 0;
         dram_address = (dram_address | ro);
-        dram_address = (dram_address << cfg->dram_bg_bits) | bg;
-        dram_address = (dram_address << cfg->dram_ba_bits) | ba;
-        dram_address = (dram_address << cfg->dram_co_bits) | co;
-        dram_address = (dram_address << cfg->dram_byte_offset_bits) | byte_offset;
+        dram_address = (dram_address << cfg->memsys_feature_dram_bg_bits) | bg;
+        dram_address = (dram_address << cfg->memsys_feature_dram_ba_bits) | ba;
+        dram_address = (dram_address << cfg->memsys_feature_dram_co_bits) | co;
+        dram_address = (dram_address << cfg->memsys_feature_dram_byte_offset_bits) | byte_offset;
 
         manycore_pr_dbg(mc, "%s: mapping %09llx to %09llx\n",
                         __func__, address, dram_address);

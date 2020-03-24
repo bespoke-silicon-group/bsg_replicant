@@ -108,17 +108,17 @@ extern "C" {
                 uint32_t memsys_feature_cache;
                 // dram system
                 // bits
-                uint32_t dram_ro_bits;
-                uint32_t dram_bg_bits;
-                uint32_t dram_ba_bits;
-                uint32_t dram_co_bits;
-                uint32_t dram_byte_offset_bits;
+                uint32_t memsys_feature_dram_ro_bits;
+                uint32_t memsys_feature_dram_bg_bits;
+                uint32_t memsys_feature_dram_ba_bits;
+                uint32_t memsys_feature_dram_co_bits;
+                uint32_t memsys_feature_dram_byte_offset_bits;
                 // bit index
-                uint32_t dram_ro_bitidx;
-                uint32_t dram_bg_bitidx;
-                uint32_t dram_ba_bitidx;
-                uint32_t dram_co_bitidx;
-                uint32_t dram_byte_offset_bitidx;
+                uint32_t memsys_feature_dram_ro_bitidx;
+                uint32_t memsys_feature_dram_bg_bitidx;
+                uint32_t memsys_feature_dram_ba_bitidx;
+                uint32_t memsys_feature_dram_co_bitidx;
+                uint32_t memsys_feature_dram_byte_offset_bitidx;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
