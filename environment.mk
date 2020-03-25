@@ -46,6 +46,7 @@ HARDWARE_PATH    := $(CL_DIR)/hardware
 REGRESSION_PATH  := $(CL_DIR)/regression
 TESTBENCH_PATH   := $(CL_DIR)/testbenches
 LIBRARIES_PATH   := $(CL_DIR)/libraries
+MACHINES_PATH    := $(CL_DIR)/machines
 
 # machine.mk defines BSG_MACHINE_PATH, which is the path to the current target
 # machine.

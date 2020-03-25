@@ -238,8 +238,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_rom_pkg.vh: $(BSG_MACHINE_PATH)/bsg_bladerun
 .PHONY: hardware.clean
 
 hardware.clean:
-	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.{rom,v}
-	rm -f $(BSG_MACHINE_PATH)/f1_parameters.vh
-	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_rom_pkg.vh
+	rm -f $(MACHINES_PATH)/*/bsg_bladerunner_configuration.{rom,v}
+	rm -f $(MACHINES_PATH)/*/f1_parameters.vh
+	rm -f $(MACHINES_PATH)/*/bsg_bladerunner_rom_pkg.vh
 
 .PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom

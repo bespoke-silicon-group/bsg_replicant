@@ -237,7 +237,8 @@ clean: regression.clean compilation.clean link.clean $(USER_CLEAN_RULES)
 	rm -rf *.log
 	rm -rf *.vanilla_operation_trace.csv *.vanilla_stats.csv
 	rm -rf *.vcache_stats.csv *.infinite_mem_stats.csv
-	rm -rf $(BSG_MACHINE_PATH)/synopsys_sim.setup
+	rm -rf $(MACHINES_PATH)/*/synopsys_sim.setup
+	rm -rf $(MACHINES_PATH)/*/regression.log
 	rm -rf $(REGRESSION_TESTS) test_loader
 	rm -rf $(REGRESSION_TESTS:%=%.debug) test_loader.debug
 	rm -rf $(REGRESSION_TESTS:%=.%)
