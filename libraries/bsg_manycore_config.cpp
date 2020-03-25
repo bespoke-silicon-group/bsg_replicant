@@ -191,6 +191,12 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->dram_bank_size_words = idx;
 
+        if (hb_mc_memsys_get_id_from_rom_value(
+                    raw[HB_MC_CONFIG_MEMSYS_ID],
+                    &config->memsys_id)
+            != HB_MC_SUCCESS)
+                return HB_MC_INVALID;
+
         idx = raw[HB_MC_CONFIG_MEMSYS_FEATURE_DMA];
         if (idx != 0 && idx != 1) {
                 bsg_pr_err("%s: Invalid value for DMA support: %s\n",
@@ -218,44 +224,44 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }                                                               \
         config->field = idx;
 
-        SET_CONFIG_FIELD(memsys_feature_dram_ro_bits,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITS,
+        SET_CONFIG_FIELD(memsys_dram_ro_bits,
+                         HB_MC_CONFIG_MEMSYS_DRAM_RO_BITS,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_bg_bits,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITS,
+        SET_CONFIG_FIELD(memsys_dram_bg_bits,
+                         HB_MC_CONFIG_MEMSYS_DRAM_BG_BITS,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_ba_bits,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITS,
+        SET_CONFIG_FIELD(memsys_dram_ba_bits,
+                         HB_MC_CONFIG_MEMSYS_DRAM_BA_BITS,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_co_bits,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITS,
+        SET_CONFIG_FIELD(memsys_dram_co_bits,
+                         HB_MC_CONFIG_MEMSYS_DRAM_CO_BITS,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_byte_offset_bits,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITS,
+        SET_CONFIG_FIELD(memsys_dram_byte_offset_bits,
+                         HB_MC_CONFIG_MEMSYS_DRAM_BYTE_OFF_BITS,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_ro_bitidx,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_RO_BITIDX,
+        SET_CONFIG_FIELD(memsys_dram_ro_bitidx,
+                         HB_MC_CONFIG_MEMSYS_DRAM_RO_BITIDX,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_bg_bitidx,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BG_BITIDX,
+        SET_CONFIG_FIELD(memsys_dram_bg_bitidx,
+                         HB_MC_CONFIG_MEMSYS_DRAM_BG_BITIDX,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_ba_bitidx,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BA_BITIDX,
+        SET_CONFIG_FIELD(memsys_dram_ba_bitidx,
+                         HB_MC_CONFIG_MEMSYS_DRAM_BA_BITIDX,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_co_bitidx,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_CO_BITIDX,
+        SET_CONFIG_FIELD(memsys_dram_co_bitidx,
+                         HB_MC_CONFIG_MEMSYS_DRAM_CO_BITIDX,
                          ((0 <= idx) && (idx <= 30)));
 
-        SET_CONFIG_FIELD(memsys_feature_dram_byte_offset_bitidx,
-                         HB_MC_CONFIG_MEMSYS_FEATURE_DRAM_BYTE_OFF_BITIDX,
+        SET_CONFIG_FIELD(memsys_dram_byte_offset_bitidx,
+                         HB_MC_CONFIG_MEMSYS_DRAM_BYTE_OFF_BITIDX,
                          ((0 <= idx) && (idx <= 30)));
 
 

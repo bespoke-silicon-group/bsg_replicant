@@ -33,6 +33,8 @@ endif
 ifndef __HARDWARE_MEMSYS_MEMSYS_MK
 __HARDWARE_MEMSYS_MEMSYS_MK := 1
 
+# identify the dram backend
+CL_MANYCORE_MEMSYS_ID    := "NONE"
 
 # the default case for memory config features
 CL_MANYCORE_MEMSYS_FEATURE_DMA   := 0

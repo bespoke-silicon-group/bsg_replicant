@@ -1415,7 +1415,7 @@ int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa)
     return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
 }
 
-static unsigned long long hb_mc_cache_to_test_dram_addr_to_dramsim3(
+static unsigned long long hb_mc_address_cache_to_dramsim3(
         hb_mc_manycore_t *mc,
         unsigned long long address)
 {
@@ -1423,12 +1423,11 @@ static unsigned long long hb_mc_cache_to_test_dram_addr_to_dramsim3(
 
 #define GET_DRAM_ADDR_FIELD(addr, field)                                \
         ({                                                              \
-                unsigned long long _mask  = (1<<cfg->memsys_feature_dram_##field##_bits) - 1; \
-                unsigned long long _shift = cfg->memsys_feature_dram_##field##_bitidx; \
+                unsigned long long _mask  = (1<<cfg->memsys_dram_##field##_bits) - 1; \
+                unsigned long long _shift = cfg->memsys_dram_##field##_bitidx; \
                 (addr >> _shift) & _mask;                               \
         })
 
-        // get the row
         unsigned long long ro = GET_DRAM_ADDR_FIELD(address, ro);
         unsigned long long bg = GET_DRAM_ADDR_FIELD(address, bg);
         unsigned long long ba = GET_DRAM_ADDR_FIELD(address, ba);
@@ -1440,16 +1439,37 @@ static unsigned long long hb_mc_cache_to_test_dram_addr_to_dramsim3(
         // dramsim3 mapping is ro,bg,ba,co,byte_offset
         unsigned long dram_address = 0;
         dram_address = (dram_address | ro);
-        dram_address = (dram_address << cfg->memsys_feature_dram_bg_bits) | bg;
-        dram_address = (dram_address << cfg->memsys_feature_dram_ba_bits) | ba;
-        dram_address = (dram_address << cfg->memsys_feature_dram_co_bits) | co;
-        dram_address = (dram_address << cfg->memsys_feature_dram_byte_offset_bits) | byte_offset;
+        dram_address = (dram_address << cfg->memsys_dram_bg_bits) | bg;
+        dram_address = (dram_address << cfg->memsys_dram_ba_bits) | ba;
+        dram_address = (dram_address << cfg->memsys_dram_co_bits) | co;
+        dram_address = (dram_address << cfg->memsys_dram_byte_offset_bits) | byte_offset;
 
         manycore_pr_dbg(mc, "%s: mapping %09llx to %09llx\n",
                         __func__, address, dram_address);
 
         return dram_address;
 }
+
+static
+unsigned long long hb_mc_address_cache_to_dram(
+        hb_mc_manycore_t *mc,
+        unsigned long long address)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_memsys_id_t memsys_id = hb_mc_config_memsys_id(cfg);
+        switch (memsys_id) {
+        case HB_MC_MEMSYS_ID_INFMEM:
+                return address;
+        case HB_MC_MEMSYS_ID_DRAMSIM3:
+                return hb_mc_address_cache_to_dramsim3(mc, address);
+        default: // should never happen
+                manycore_pr_err(mc, "%s: this function is not supported for %s\n",
+                                __func__,
+                                hb_mc_memsys_id_to_string(memsys_id));
+                return address;
+        }
+}
+
 
 /**
  * Given an NPA that maps to DRAM, return a buffer that holds the data for that address.
@@ -1511,7 +1531,7 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
 
     // this is the address that comes out of cache_to_test_dram_tx
     address_t cache_addr = bank*bank_size + epa;
-    address_t addr = hb_mc_cache_to_test_dram_addr_to_dramsim3(mc, cache_addr);
+    address_t addr = hb_mc_address_cache_to_dram(mc, cache_addr);
 
 
     manycore_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",

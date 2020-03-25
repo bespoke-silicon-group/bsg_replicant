@@ -37,6 +37,8 @@ __HARDWARE_MEMSYS_AXI4_F1_MK := 1
 ifneq ($(filter axi4, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 ifneq ($(filter f1,   $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 
+CL_MANYCORE_MEMSYS_ID := "AXI4" # AXI4
+
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 0
 CL_MANYCORE_MEMSYS_DRAM_BG_BITS := 0
