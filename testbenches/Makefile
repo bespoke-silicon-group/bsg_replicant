@@ -57,8 +57,11 @@ include simlibs.mk
 include $(REGRESSION_PATH)/targets.mk
 .PHONY: clean %.clean regression $(TARGETS)
 
-regression: $(TARGETS)
-	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log)
+regression: regression.log
+
+regression.log: $(TARGETS)
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) > regression.log
+
 $(TARGETS): $(SIMLIBS)
 	$(MAKE) -C $@ regression
 
