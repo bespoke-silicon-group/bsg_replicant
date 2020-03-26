@@ -16,6 +16,7 @@ const char * hb_mc_memsys_id_to_string(hb_mc_memsys_id_t id)
         return strtab[id];
 }
 
+// Decode a raw memory system ID read from the ROM and translate it to an integer ID
 static
 int hb_mc_memsys_get_id_from_rom_value(
         uint32_t rom_id,
@@ -41,6 +42,7 @@ int hb_mc_memsys_get_id_from_rom_value(
         return HB_MC_SUCCESS;
 }
 
+// Set the features supported by the memory system
 static
 int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
 {
@@ -63,6 +65,9 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
         return HB_MC_SUCCESS;
 }
 
+/*
+  check if a condition is true and print a helpful error message if it fails
+*/
 #define CHECK(value, condition)                                         \
         do {                                                            \
                 if (!(condition)) {                                     \
@@ -72,9 +77,13 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
                 }                                                       \
         } while (0)
 
+/*
+  check that a bit index is in [0,30] and print a helpful error message if not
+ */
 #define DRAMSIM3_CHECK_BITIDX(value)                    \
         CHECK(value, (value >= 0 && value <= 30))
 
+// dramsim3 verification function
 static
 int hb_mc_memsys_check_dram_address_map_info_dramsim3(const hb_mc_memsys_t *memsys)
 {
@@ -137,9 +146,11 @@ int hb_mc_memsys_check_dram_address_map_info_dramsim3(const hb_mc_memsys_t *mems
         return HB_MC_SUCCESS;
 }
 
+// check that value is zero and print a helpful error message if not
 #define CHECK_ZERO(value) \
         CHECK(value, (value == 0))
 
+// default memory system verification function
 static
 int hb_mc_memsys_check_dram_address_map_info_generic(const hb_mc_memsys_t *memsys)
 {
@@ -151,6 +162,7 @@ int hb_mc_memsys_check_dram_address_map_info_generic(const hb_mc_memsys_t *memsy
         return HB_MC_SUCCESS;
 }
 
+// default memory system verification function
 static
 int hb_mc_memsys_set_dram_address_map_info(hb_mc_memsys_t *memsys,
                                            const hb_mc_rom_word_t *rom_data)
