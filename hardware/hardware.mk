@@ -245,10 +245,17 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_rom_pkg.vh: $(BSG_MACHINE_PATH)/bsg_bladerun
 
 .PHONY: hardware.clean
 
+# The rm commands on the hardware path are legacy, but we keep them
+# because NOT cleaning those files can really F*** with running
+# VCS. You can thank Max and I later
 hardware.clean:
 	rm -f $(MACHINES_PATH)/*/bsg_bladerunner_configuration.{rom,v}
 	rm -f $(MACHINES_PATH)/*/bsg_bladerunner_memsys.rom
 	rm -f $(MACHINES_PATH)/*/f1_parameters.vh
 	rm -f $(MACHINES_PATH)/*/bsg_bladerunner_rom_pkg.vh
+	rm -f $(HARDWARE_PATH)/bsg_bladerunner_configuration.{rom,v}
+	rm -f $(HARDWARE_PATH)/bsg_bladerunner_memsys.rom
+	rm -f $(HARDWARE_PATH)/f1_parameters.vh
+	rm -f $(HARDWARE_PATH)/bsg_bladerunner_rom_pkg.vh
 
 .PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
