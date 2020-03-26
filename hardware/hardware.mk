@@ -178,7 +178,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom: $(BSG_MACHINE_PATH)/Makefile.mac
 
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
-$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/bsg_bladerunnner_memsys.rom
+$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom
 $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo $(call hex2bin,$(CL_MANYCORE_RELEASE_VERSION))   > $@.temp
 	@echo $(call hex2bin,$(CL_MANYCORE_COMPILATION_DATE))  >> $@.temp
