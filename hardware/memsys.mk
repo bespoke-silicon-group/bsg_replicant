@@ -36,10 +36,6 @@ __HARDWARE_MEMSYS_MEMSYS_MK := 1
 # identify the dram backend
 CL_MANYCORE_MEMSYS_ID    := "NONE"
 
-# the default case for memory config features
-CL_MANYCORE_MEMSYS_FEATURE_DMA   := 0
-CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
-
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 0
 CL_MANYCORE_MEMSYS_DRAM_BG_BITS := 0

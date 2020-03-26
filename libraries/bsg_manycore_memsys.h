@@ -54,8 +54,6 @@ typedef struct __hb_mc_memsys_t {
 
 typedef enum {
         HB_MC_MEMSYS_ROM_IDX_ID,
-        HB_MC_MEMSYS_ROM_IDX_FEATURE_DMA,
-        HB_MC_MEMSYS_ROM_IDX_FEATURE_CACHE,
         HB_MC_MEMSYS_ROM_IDX_DRAM_RO_BITS,
         HB_MC_MEMSYS_ROM_IDX_DRAM_BG_BITS,
         HB_MC_MEMSYS_ROM_IDX_DRAM_BA_BITS,

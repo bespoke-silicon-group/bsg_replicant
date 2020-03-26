@@ -38,9 +38,6 @@ ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 
 CL_MANYCORE_MEMSYS_ID := "DRS3"
 
-CL_MANYCORE_MEMSYS_FEATURE_DMA   := 1
-CL_MANYCORE_MEMSYS_FEATURE_CACHE := 1
-
 # hbm2_4gb_x128?
 ifneq ($(filter %_hbm2_4gb_x128, $(CL_MANYCORE_MEM_CFG)),)
 # memory hierarchy bits

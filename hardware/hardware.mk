@@ -186,8 +186,6 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_CHANNELS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_BANK_SIZE_WORDS)) >> $@.temp
 	@echo $(call charv2bin,$(CL_MANYCORE_MEMSYS_ID)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_FEATURE_DMA))   >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_FEATURE_CACHE)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITS)) >> $@.temp
