@@ -37,11 +37,6 @@
 
 static const char error_init_help [] = "Is your FPGA initialized with an AGFI?";
 
-static bool is_power2(hb_mc_idx_t u)
-{
-        return __builtin_popcount(u) == 1;
-}
-
 // perform additional checks on the memory system
 static
 int hb_mc_config_init_check_memsys(hb_mc_config_t *config)
@@ -194,14 +189,6 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                 return HB_MC_INVALID;
         }
         config->io_host_credits_cap = idx;
-
-        idx = raw[HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS];
-        if (!is_power2(idx)) {
-                bsg_pr_err("%s: Invalid DRAM Bank size: %" PRIu32 ": %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
-        config->dram_bank_size_words = idx;
 
         err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
         if (err != HB_MC_SUCCESS) {

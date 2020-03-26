@@ -4,6 +4,11 @@
 #include <string.h>
 #include <inttypes.h>
 
+static inline int is_power2(uint32_t x)
+{
+        return __builtin_popcount(x) == 1;
+}
+
 const char * hb_mc_memsys_id_to_string(hb_mc_memsys_id_t id)
 {
         static const char * strtab [] = {
@@ -210,6 +215,16 @@ int hb_mc_memsys_set_dram_channels(hb_mc_memsys_t *memsys,
         return HB_MC_SUCCESS;
 }
 
+static
+int hb_mc_memsys_set_dram_bank_size(hb_mc_memsys_t *memsys,
+                                    const hb_mc_rom_word_t *rom_data)
+{
+        memsys->dram_bank_size = rom_data[HB_MC_MEMSYS_ROM_IDX_DRAM_BANK_SIZE];
+        CHECK(memsys->dram_bank_size, is_power2(memsys->dram_bank_size));
+
+        return HB_MC_SUCCESS;
+}
+
 int hb_mc_memsys_init(const hb_mc_rom_word_t *rom_data, hb_mc_memsys_t *memsys)
 {
         int err;
@@ -232,6 +247,11 @@ int hb_mc_memsys_init(const hb_mc_rom_word_t *rom_data, hb_mc_memsys_t *memsys)
         bsg_pr_dbg("%s: setting DRAM channels\n", __func__);
 
         err = hb_mc_memsys_set_dram_channels(memsys, rom_data);
+        if (err != HB_MC_SUCCESS)
+                return HB_MC_INVALID;
+
+        bsg_pr_dbg("%s: setting DRAM bank size\n", __func__);
+        err = hb_mc_memsys_set_dram_bank_size(memsys, rom_data);
         if (err != HB_MC_SUCCESS)
                 return HB_MC_INVALID;
 

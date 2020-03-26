@@ -105,7 +105,6 @@ extern "C" {
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
-                uint32_t dram_bank_size_words;
                 hb_mc_memsys_t memsys;
         } hb_mc_config_t;
 
@@ -131,8 +130,7 @@ extern "C" {
                 HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
-                HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 20,
-                HB_MC_CONFIG_MEMSYS = 21,
+                HB_MC_CONFIG_MEMSYS = 20,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
@@ -268,7 +266,7 @@ extern "C" {
 
         static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
         {
-                return cfg->dram_bank_size_words << 2;
+                return cfg->memsys.dram_bank_size;
         }
 
         /* Returns the size of DRAM accessible to each manycore tile */
