@@ -50,6 +50,11 @@ help:
 	@echo "             upload to AWS."
 	@echo "      regression: Runs all software regression tests on F1"
 	@echo "      cosim: Runs all regression tests in C/C++ Co-simulation"
+	@echo "             on the machine specified by machine.mk"
+	@echo "      multiverse: Runs all regression tests on all machines"
+	@echo "             and copies the resulting regression.log to the"
+	@echo "             corresponding directory in machines"
+	@echo "             (multiverse takes a good long while)"
 	@echo "      clean: Remove all build files"
 
 build:
@@ -60,6 +65,10 @@ regression:
 
 cosim: 
 	$(MAKE) -C testbenches regression
+
+__BSG_MACHINES := $(wildcard machines/*)
+multiverse:
+	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m && cp testbenches/regression.log $m &&) echo ;
 
 clean:
 	$(MAKE) -C testbenches clean 

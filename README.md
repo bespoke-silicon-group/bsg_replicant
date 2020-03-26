@@ -17,7 +17,7 @@ This repository contains the following folders:
 This repository contains the following files:
 
 - `Makefile`: Contains targets for Co-Simulation, Bitstream Generation, F1 Regression
-- `Makefile.machine.include`: Defines the Manycore configuration for co-simulation and bitstream compilation
+- `machine.mk`: Defines the path to the current Machine Configuration for co-simulation
 - `README.md`: This file
 - `cadenv.mk`: A makefile fragment for deducing the CAD tool environment
 - `environment.mk`: A makefile fragment for deducing the build environment. 
@@ -46,14 +46,13 @@ BaseJump STL repositories as submodules and maintains a monotonic
 versionining scheme. BSG Bladerunner also contains cosimulation
 instructions. 
 
-## Customized Design Configurations
+## Custom Machine Configurations
 
-`Makefile.machine.include` contains the default design for the testbenches but the `machines` directory contains
-other designs. To use one of these other designs, just copy the `Makefile.machine.include` to this directory.
-
-```
-cp machines/<design_name>/Makefile.machine.include .
-```
+Each Manycore configuration is called a "Machine". Each machine is defined with
+a `Makefile.machine.include` file. Use `BSG_MACHINE_PATH`, defined in
+machine.mk, to define the current target for simulation. To switch machines,
+modify the value of `BSG_MACHINE_PATH` to point to any subdirectory of the
+`machines` directory.
 
 
 

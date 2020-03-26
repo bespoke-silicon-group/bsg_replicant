@@ -25,7 +25,10 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-module cosim_wrapper();
+// This file wraps the cosimulation machine. We use BSG_MACHINE_NAME to define
+// the top level so that each machine resides in its own VCS worklib.
+
+module `BSG_MACHINE_NAME();
    import cl_manycore_pkg::*;
    initial begin
       int exit_code;

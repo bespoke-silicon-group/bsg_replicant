@@ -25,33 +25,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment defines rules for building RISC-V binaries
-# associated with the tests in this sub-directory
+CL_DIR           ?= $(shell git rev-parse --show-toplevel)
 
-# SPMD_SRC_PATH is the path to the software/spmd directory in BSG
-# Manycore. It contains directories with RISC-V programs.
-SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
+# BSG Machine Path is the path to the target Makefile.machine.include
+# file. We allow it to be overriden.
 
-.PHONY: test_%.clean $(USER_RULES)
+# To switch machines, simply switch the path of BSG_MACHINE_PATH to
+# another directory with a Makefile.machine.include file.
+BSG_MACHINE_PATH ?= $(CL_DIR)/machines/4x4_blocking_vcache_f1_model/
 
-$(USER_RULES): test_%.rule: $(SPMD_SRC_PATH)/%/main.riscv
-
-$(USER_CLEAN_RULES): 
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(SPMD_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
-
-$(SPMD_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -C $(dir $@) clean $(notdir $@)
+# Convert the machine path to an abspath
+override BSG_MACHINE_PATH := $(abspath $(BSG_MACHINE_PATH))
