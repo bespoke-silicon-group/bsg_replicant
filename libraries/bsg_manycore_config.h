@@ -38,6 +38,7 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_rom.h>
 #include <bsg_manycore_memsys.h>
 
 #ifdef __cplusplus
@@ -70,7 +71,8 @@ extern "C" {
         #define HB_MC_HOST_CREDITS_MIN 1
         #define HB_MC_HOST_CREDITS_MAX 512
 
-        typedef uint32_t hb_mc_config_raw_t;
+        typedef hb_mc_rom_word_t hb_mc_config_raw_t;
+
         /* Compilation Metadata */
         typedef struct __hb_mc_version_t {
                 uint8_t major;
@@ -105,24 +107,7 @@ extern "C" {
                 uint32_t io_endpoint_max_out_credits;
                 uint32_t dram_channels;
                 uint32_t dram_bank_size_words;
-                // memory system parameters
-                hb_mc_memsys_id_t memsys_id;
-                // memory system features
-                uint32_t memsys_feature_dma;
-                uint32_t memsys_feature_cache;
-                // dram address bits
-                // bits
-                uint32_t memsys_dram_ro_bits;
-                uint32_t memsys_dram_bg_bits;
-                uint32_t memsys_dram_ba_bits;
-                uint32_t memsys_dram_co_bits;
-                uint32_t memsys_dram_byte_offset_bits;
-                // bit index
-                uint32_t memsys_dram_ro_bitidx;
-                uint32_t memsys_dram_bg_bitidx;
-                uint32_t memsys_dram_ba_bitidx;
-                uint32_t memsys_dram_co_bitidx;
-                uint32_t memsys_dram_byte_offset_bitidx;
+                hb_mc_memsys_t memsys;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -149,20 +134,8 @@ extern "C" {
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
                 HB_MC_CONFIG_DRAM_CHANNELS = 20,
                 HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 21,
-                HB_MC_CONFIG_MEMSYS_ID,
-                HB_MC_CONFIG_MEMSYS_FEATURE_DMA,
-                HB_MC_CONFIG_MEMSYS_FEATURE_CACHE,
-                HB_MC_CONFIG_MEMSYS_DRAM_RO_BITS,
-                HB_MC_CONFIG_MEMSYS_DRAM_BG_BITS,
-                HB_MC_CONFIG_MEMSYS_DRAM_BA_BITS,
-                HB_MC_CONFIG_MEMSYS_DRAM_CO_BITS,
-                HB_MC_CONFIG_MEMSYS_DRAM_BYTE_OFF_BITS,
-                HB_MC_CONFIG_MEMSYS_DRAM_RO_BITIDX,
-                HB_MC_CONFIG_MEMSYS_DRAM_BG_BITIDX,
-                HB_MC_CONFIG_MEMSYS_DRAM_BA_BITIDX,
-                HB_MC_CONFIG_MEMSYS_DRAM_CO_BITIDX,
-                HB_MC_CONFIG_MEMSYS_DRAM_BYTE_OFF_BITIDX,
-                HB_MC_CONFIG_MAX,
+                HB_MC_CONFIG_MEMSYS = 22,
+                HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -525,10 +498,6 @@ extern "C" {
                 return cfg->dram_channels;
         }
 
-        static inline hb_mc_memsys_id_t hb_mc_config_get_memsys_id(const hb_mc_config_t *cfg)
-        {
-                return cfg->memsys_id;
-        }
         /**
          * Return the number of DRAM channels in the system.
          * @param[in] cfg A configuration initialized from the manycore ROM.
@@ -536,7 +505,7 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_memsys_feature_dma(const hb_mc_config_t *cfg)
         {
-                return cfg->memsys_feature_dma;
+                return cfg->memsys.feature_dma;
         }
 
         /**
@@ -546,7 +515,7 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_memsys_feature_cache(const hb_mc_config_t *cfg)
         {
-                return cfg->memsys_feature_cache;
+                return cfg->memsys.feature_cache;
         }
 
         /**
@@ -556,7 +525,7 @@ extern "C" {
          */
         static inline hb_mc_memsys_id_t hb_mc_config_memsys_id(const hb_mc_config_t *cfg)
         {
-                return cfg->memsys_id;
+                return cfg->memsys.id;
         }
 
 #ifdef __cplusplus

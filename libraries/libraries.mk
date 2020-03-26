@@ -70,6 +70,7 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_response_packet.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_request_packet.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_fifo.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_memsys.h
+LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_rom.h
 
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
