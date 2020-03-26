@@ -42,6 +42,25 @@ static bool is_power2(hb_mc_idx_t u)
         return __builtin_popcount(u) == 1;
 }
 
+// perform additional checks on the memory system
+static
+int hb_mc_config_init_check_memsys(hb_mc_config_t *config)
+{
+        if (config->memsys.id == HB_MC_MEMSYS_ID_INFMEM) {
+                uint32_t dram_cos = hb_mc_config_get_num_dram_coordinates(config);
+                uint32_t dram_chs = config->memsys.dram_channels;
+                if (dram_cos != dram_chs) {
+                        bsg_pr_err("%s: %s has %" PRIu32 " DRAM channels - but %" PRIu32 " expected\n",
+                                   __func__,
+                                   hb_mc_memsys_id_to_string(config->memsys.id),
+                                   dram_chs,
+                                   dram_cos);
+                        return HB_MC_INVALID;
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                       hb_mc_config_t *config)
 {
@@ -49,6 +68,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         hb_mc_config_raw_t cur;
         hb_mc_idx_t idx;
         char date[8], version[3];
+        int err;
 
         /* Parse the Version */
         cur = raw[HB_MC_CONFIG_VERSION];
@@ -183,5 +203,12 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->dram_bank_size_words = idx;
 
-        return hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
+        err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: Failed to initialize memory system: %s\n",
+                           __func__, error_init_help);
+                return err;
+        }
+
+        return hb_mc_config_init_check_memsys(config);
 }
