@@ -52,6 +52,7 @@ hb_mc_dram_pa_bitfield_get(const hb_mc_dram_pa_bitfield *bf, unsigned long long 
 typedef struct __hb_mc_memsys_t {
         // memory system parameters
         hb_mc_memsys_id_t id; //!< What am I?
+        uint32_t dram_channels; //!< How many DRAM channels?
         // memory system features
         uint32_t feature_dma; //!< Can I do DMA?
         uint32_t feature_cache; //!< Do I have DMA?
@@ -66,6 +67,7 @@ typedef struct __hb_mc_memsys_t {
 /* Word address of memory system values read from the ROM */
 typedef enum {
         HB_MC_MEMSYS_ROM_IDX_ID,
+        HB_MC_MEMSYS_ROM_IDX_DRAM_CHANNELS,
         HB_MC_MEMSYS_ROM_IDX_DRAM_RO_BITS,
         HB_MC_MEMSYS_ROM_IDX_DRAM_BG_BITS,
         HB_MC_MEMSYS_ROM_IDX_DRAM_BA_BITS,

@@ -150,6 +150,10 @@ int hb_mc_memsys_check_dram_address_map_info_dramsim3(const hb_mc_memsys_t *mems
 #define CHECK_ZERO(value) \
         CHECK(value, (value == 0))
 
+// check that value is one and print a helpful error message if not
+#define CHECK_ONE(value) \
+        CHECK(value, (value == 1))
+
 // default memory system verification function
 static
 int hb_mc_memsys_check_dram_address_map_info_generic(const hb_mc_memsys_t *memsys)
@@ -186,6 +190,26 @@ int hb_mc_memsys_set_dram_address_map_info(hb_mc_memsys_t *memsys,
         }
 }
 
+static
+int hb_mc_memsys_set_dram_channels(hb_mc_memsys_t *memsys,
+                                   const hb_mc_rom_word_t *rom_data)
+{
+        memsys->dram_channels = rom_data[HB_MC_MEMSYS_ROM_IDX_DRAM_CHANNELS];
+
+        switch (memsys->id) {
+        case HB_MC_MEMSYS_ID_DRAMSIM3:
+                CHECK(memsys->dram_channels,
+                      memsys->dram_channels <= 8);
+                break;
+        case HB_MC_MEMSYS_ID_INFMEM:
+                break; // can be arbitrarily large
+        default: // by default we should expect one channel
+                CHECK_ONE(memsys->dram_channels);
+        }
+
+        return HB_MC_SUCCESS;
+}
+
 int hb_mc_memsys_init(const hb_mc_rom_word_t *rom_data, hb_mc_memsys_t *memsys)
 {
         int err;
@@ -202,6 +226,12 @@ int hb_mc_memsys_init(const hb_mc_rom_word_t *rom_data, hb_mc_memsys_t *memsys)
                    __func__);
 
         err = hb_mc_memsys_set_features(memsys);
+        if (err != HB_MC_SUCCESS)
+                return HB_MC_INVALID;
+
+        bsg_pr_dbg("%s: setting DRAM channels\n", __func__);
+
+        err = hb_mc_memsys_set_dram_channels(memsys, rom_data);
         if (err != HB_MC_SUCCESS)
                 return HB_MC_INVALID;
 

@@ -164,6 +164,7 @@ include $(HARDWARE_PATH)/memsys.mk
 # It is important to keep these grouped together.
 $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo $(call charv2bin,$(CL_MANYCORE_MEMSYS_ID)) > $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CHANNELS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITS)) >> $@.temp
@@ -200,7 +201,6 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_REMOTE_LOAD_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_HOST_CREDITS_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_CHANNELS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_BANK_SIZE_WORDS)) >> $@.temp
 	@cat $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom >> $@.temp
 	mv $@.temp $@
