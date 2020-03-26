@@ -160,10 +160,6 @@ $(BSG_MACHINE_PATH)/%.v: $(BSG_MACHINE_PATH)/%.rom
 
 include $(HARDWARE_PATH)/memsys.mk
 
-.PHONY: charvtobin-debug
-charvtobin-debug:
-	@echo $(CL_MANYCORE_MEMSYS_ID) = $(call charv2bin, $(CL_MANYCORE_MEMSYS_ID))
-
 # This target generates the ASCII file for the memory system ROM data.
 # It is important to keep these grouped together.
 $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
