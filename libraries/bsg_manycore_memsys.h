@@ -52,6 +52,7 @@ typedef struct __hb_mc_memsys_t {
         hb_mc_dram_pa_bitfield dram_byte_offset;
 } hb_mc_memsys_t;
 
+/* Word address of memory system values read from the ROM */
 typedef enum {
         HB_MC_MEMSYS_ROM_IDX_ID,
         HB_MC_MEMSYS_ROM_IDX_DRAM_RO_BITS,
