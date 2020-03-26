@@ -160,8 +160,29 @@ $(BSG_MACHINE_PATH)/%.v: $(BSG_MACHINE_PATH)/%.rom
 
 include $(HARDWARE_PATH)/memsys.mk
 
+.PHONY: charvtobin-debug
+charvtobin-debug:
+	@echo $(CL_MANYCORE_MEMSYS_ID) = $(call charv2bin, $(CL_MANYCORE_MEMSYS_ID))
+
+# This target generates the ASCII file for the memory system ROM data.
+# It is important to keep these grouped together.
+$(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
+	@echo $(call charv2bin,$(CL_MANYCORE_MEMSYS_ID)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CO_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITS)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CO_BITIDX)) >> $@.temp
+	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX)) >> $@.temp
+	mv $@.temp $@
+
 # This target generates the ASCII file for the ROM. To add entries to
 # the ROM, add more commands below.
+$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/bsg_bladerunnner_memsys.rom
 $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	@echo $(call hex2bin,$(CL_MANYCORE_RELEASE_VERSION))   > $@.temp
 	@echo $(call hex2bin,$(CL_MANYCORE_COMPILATION_DATE))  >> $@.temp
@@ -185,17 +206,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(CL_MANYCORE_IO_EP_MAX_OUT_CREDITS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_CHANNELS)) >> $@.temp
 	@echo $(call dec2bin,$(CL_MANYCORE_DRAM_BANK_SIZE_WORDS)) >> $@.temp
-	@echo $(call charv2bin,$(CL_MANYCORE_MEMSYS_ID)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITS)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITS)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITS)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CO_BITS)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITS)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_RO_BITIDX)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BG_BITIDX)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BA_BITIDX)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_CO_BITIDX)) >> $@.temp
-	@echo $(call dec2bin,$(CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX)) >> $@.temp
+	@cat $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom >> $@.temp
 	mv $@.temp $@
 
 # Each manycore design on has a set of parameters that define
