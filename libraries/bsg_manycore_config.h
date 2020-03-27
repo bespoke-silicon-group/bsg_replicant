@@ -264,21 +264,6 @@ extern "C" {
                         log2(sizeof(uint32_t));
         }
 
-        static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
-        {
-                return cfg->memsys.dram_bank_size;
-        }
-
-        /* Returns the size of DRAM accessible to each manycore tile */
-        static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
-        {
-                hb_mc_idx_t cols;
-                uint32_t awidth;
-                hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
-                cols = hb_mc_dimension_get_x(dim);
-                return hb_mc_config_get_dram_bank_size(cfg) * cols;
-        }
-
         static inline uint8_t hb_mc_config_get_dmem_bitwidth_addr(const hb_mc_config_t *cfg)
         {
                 return 12; // 12 bits, this might be read from ROM
@@ -368,6 +353,19 @@ extern "C" {
                         // error
                         return -1;
                 }
+        }
+
+        static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
+        {
+                return cfg->memsys.dram_bank_size;
+        }
+
+        /* Returns the size of DRAM accessible to each manycore tile */
+        static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
+        {
+                hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
+                return hb_mc_config_get_dram_bank_size(cfg)
+                    *  hb_mc_config_get_num_dram_coordinates(cfg);
         }
 
         /**
