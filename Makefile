@@ -66,8 +66,7 @@ regression:
 cosim: 
 	$(MAKE) -C testbenches regression
 
-reverse = $(if $(1),$(call reverse,$(wordlist 2,$(words $(1)),$(1)))) $(firstword $(1))
-__BSG_MACHINES := $(call reverse,$(wildcard machines/*))
+__BSG_MACHINES := $(wildcard machines/*)
 multiverse:
 	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m && cp testbenches/regression.log $m &&) echo ;
 

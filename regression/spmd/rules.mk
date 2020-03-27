@@ -32,15 +32,12 @@
 # Manycore. It contains directories with RISC-V programs.
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
-.PHONY: test_%.clean test_%.rule
-
-.FORCE:
+.PHONY: test_%.clean $(USER_RULES)
 
 $(USER_RULES): test_%.rule: $(SPMD_SRC_PATH)/%/main.riscv
 
 $(USER_CLEAN_RULES): 
 	CL_DIR=$(CL_DIR) \
-	LINK_SCRIPT=$(LINK_SCRIPT) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
@@ -48,10 +45,8 @@ $(USER_CLEAN_RULES):
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -C $(SPMD_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
 
-$(SPMD_SRC_PATH)/%/main.riscv: LINK_SCRIPT=$(BSG_MACHINE_PATH)/bsg_link.ld
-$(SPMD_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include .FORCE
+$(SPMD_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	CL_DIR=$(CL_DIR) \
-	LINK_SCRIPT=$(LINK_SCRIPT) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
