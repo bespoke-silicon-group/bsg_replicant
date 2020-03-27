@@ -44,7 +44,7 @@ CL_MANYCORE_MEMSYS_DRAM_CHANNELS := 1
 endif
 
 # size of dram owned by a single hammerblade victim cache
-CL_MANYCORE_MEMSYS_DRAM_BANK_SIZE := $(shell echo 4*$(BSG_MACHINE_DRAM_BANK_SIZE) | bc)
+CL_MANYCORE_MEMSYS_DRAM_BANK_SIZE := $(shell echo 4*$(BSG_MACHINE_DRAM_BANK_SIZE_WORDS) | bc)
 
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 0
