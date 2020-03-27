@@ -43,17 +43,8 @@ else
 CL_MANYCORE_MEMSYS_DRAM_CHANNELS := 1
 endif
 
-# memory bank size
-# one word = four bytes
-ifdef BSG_MACHINE_DRAM_BANK_SIZE_WORDS
-CL_MANYCORE_MEMSYS_DRAM_BANK_SIZE := $(shell echo 4*$(BSG_MACHINE_DRAM_BANK_SIZE_WORDS) | bc)
-else
-ifdef BSG_MACHINE_DRAM_SIZE_WORDS
-CL_MANYCORE_MEMSYS_DRAM_BANK_SIZE := $(shell echo 4*$(BSG_MACHINE_DRAM_SIZE_WORDS)/$(BSG_MACHINE_GLOBAL_X)/2 | bc)
-else
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: Please define BSG_MACHINE_DRAM_SIZE_WORDS$(NC)")
-endif
-endif
+# size of dram owned by a single hammerblade victim cache
+CL_MANYCORE_MEMSYS_DRAM_BANK_SIZE := $(shell echo 4*$(BSG_MACHINE_DRAM_BANK_SIZE) | bc)
 
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 0
