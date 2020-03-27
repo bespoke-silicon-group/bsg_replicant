@@ -38,6 +38,8 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_rom.h>
+#include <bsg_manycore_memsys.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -69,7 +71,8 @@ extern "C" {
         #define HB_MC_HOST_CREDITS_MIN 1
         #define HB_MC_HOST_CREDITS_MAX 512
 
-        typedef uint32_t hb_mc_config_raw_t;
+        typedef hb_mc_rom_word_t hb_mc_config_raw_t;
+
         /* Compilation Metadata */
         typedef struct __hb_mc_version_t {
                 uint8_t major;
@@ -102,10 +105,7 @@ extern "C" {
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
-                uint32_t dram_channels;
-                uint32_t dram_bank_size_words;
-                uint32_t memsys_feature_dma;
-                uint32_t memsys_feature_cache;
+                hb_mc_memsys_t memsys;
         } hb_mc_config_t;
 
         typedef enum __hb_mc_config_id_t {
@@ -130,11 +130,8 @@ extern "C" {
                 HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
-                HB_MC_CONFIG_DRAM_CHANNELS = 20,
-                HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS = 21,
-                HB_MC_CONFIG_MEMSYS_FEATURE_DMA = 22,
-                HB_MC_CONFIG_MEMSYS_FEATURE_CACHE = 23,
-                HB_MC_CONFIG_MAX,
+                HB_MC_CONFIG_MEMSYS = 20,
+                HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
@@ -269,7 +266,7 @@ extern "C" {
 
         static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
         {
-                return cfg->dram_bank_size_words << 2;
+                return cfg->memsys.dram_bank_size;
         }
 
         /* Returns the size of DRAM accessible to each manycore tile */
@@ -494,7 +491,7 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_get_dram_channels(const hb_mc_config_t *cfg)
         {
-                return cfg->dram_channels;
+                return cfg->memsys.dram_channels;
         }
 
         /**
@@ -504,7 +501,7 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_memsys_feature_dma(const hb_mc_config_t *cfg)
         {
-                return cfg->memsys_feature_dma;
+                return cfg->memsys.feature_dma;
         }
 
         /**
@@ -514,9 +511,18 @@ extern "C" {
          */
         static inline uint32_t hb_mc_config_memsys_feature_cache(const hb_mc_config_t *cfg)
         {
-                return cfg->memsys_feature_cache;
+                return cfg->memsys.feature_cache;
         }
 
+        /**
+         * Return the number of DRAM channels in the system.
+         * @param[in] cfg A configuration initialized from the manycore ROM.
+         * @return 1 if cache is a supported memory system feature, 0 otherwise.
+         */
+        static inline hb_mc_memsys_id_t hb_mc_config_memsys_id(const hb_mc_config_t *cfg)
+        {
+                return cfg->memsys.id;
+        }
 
 #ifdef __cplusplus
 }

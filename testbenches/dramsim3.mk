@@ -59,37 +59,11 @@ endif
 # Don't include more than once
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
-_DRAMSIM3_MEM_CFGS := e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128
-_DRAMSIM3_MEM_CFGS += e_vcache_blocking_test_dramsim3_hbm2_4gb_x128
 # Check if dramsim3 is the memory model for this design
-ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
-
-# Disable the micron memory model (it's unused and slows simulation WAY down)
-VDEFINES   += AXI_MEMORY_MODEL=1
-VDEFINES   += ECC_DIRECT_EN
-VDEFINES   += RND_ECC_EN
-VDEFINES   += ECC_ADDR_LO=0
-VDEFINES   += ECC_ADDR_HI=0
-VDEFINES   += RND_ECC_WEIGHT=0
+ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 
 # Library for DMA-able memory
 include $(TESTBENCH_PATH)/libdmamem.mk
-
-# Flag that DRAMSim3 is being used
-VDEFINES   += USING_DRAMSIM3=1
-
-# Define the name and package of the memory technology
-DRAMSIM3_MEMORY:=$(patsubst e_vcache_blocking_test_dramsim3_%, %, \
-	$(filter e_vcache_blocking_%, $(CL_MANYCORE_MEM_CFG)))
-
-DRAMSIM3_MEMORY+=$(patsubst e_vcache_non_blocking_test_dramsim3_%, %, \
-	$(filter e_vcache_non_blocking_%, $(CL_MANYCORE_MEM_CFG)))
-
-DRAMSIM3_MEMORY:=$(strip $(DRAMSIM3_MEMORY))
-DRAMSIM3_MEM_PKG:=bsg_dramsim3_$(DRAMSIM3_MEMORY)_pkg
-
-VDEFINES   += DRAMSIM3_MEMORY=$(DRAMSIM3_MEMORY)
-VDEFINES   += DRAMSIM3_MEM_PKG=$(DRAMSIM3_MEM_PKG)
 
 # Add DRAMSim3 to the simlibs
 SIMLIBS += $(TESTBENCH_PATH)/libdramsim3.so
@@ -125,7 +99,7 @@ $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/timin
 $(TESTBENCH_PATH)/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
-endif # ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
+endif # ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 dramsim3.clean:
 	rm -f $(TESTBENCH_PATH)/libdramsim3.so
 

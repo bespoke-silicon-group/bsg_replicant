@@ -893,6 +893,42 @@ module cl_manycore
   else if (mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128 ||
            mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv3_dramsim3
 `ifdef USING_DRAMSIM3
+
+    `declare_dramsim3_ch_addr_s_with_pkg(dram_ch_addr_dramsim3_s, `DRAMSIM3_MEM_PKG);
+    dram_ch_addr_dramsim3_s [hbm_num_channels_p-1:0] dramsim3_ch_addr_lo;
+    dram_ch_addr_dramsim3_s [hbm_num_channels_p-1:0] dramsim3_ch_addr_li;
+
+    typedef struct packed {
+      // the cache id is in the MSBs from cach_to_test_dram
+      // we map each cache to its own banks (if there less caches than banks)
+      logic [`dramsim3_bg_width_pkg(`DRAMSIM3_MEM_PKG)-1:0] bg;
+      logic [`dramsim3_ba_width_pkg(`DRAMSIM3_MEM_PKG)-1:0] ba;
+      logic [`dramsim3_ro_width_pkg(`DRAMSIM3_MEM_PKG)-1:0] ro;
+      logic [`dramsim3_co_width_pkg(`DRAMSIM3_MEM_PKG)-1:0] co;
+      logic [`dramsim3_byte_offset_width_pkg(`DRAMSIM3_MEM_PKG)-1:0] byte_offset;
+    } dram_ch_addr_cache_to_test_dram_s;
+
+    dram_ch_addr_cache_to_test_dram_s [hbm_num_channels_p-1:0] hbm_ch_addr_lo_cast;
+    dram_ch_addr_cache_to_test_dram_s [hbm_num_channels_p-1:0] hbm_ch_addr_li_cast;
+
+    assign hbm_ch_addr_lo_cast = lv2_simulated_hbm.hbm_ch_addr_lo;
+    assign lv2_simulated_hbm.hbm_ch_addr_li = hbm_ch_addr_li_cast;
+
+    for (genvar i = 0; i < hbm_num_channels_p; i++) begin
+      // mapping cache_to_test_dram => dramsim3
+      assign dramsim3_ch_addr_li[i].bg          = hbm_ch_addr_lo_cast[i].bg;
+      assign dramsim3_ch_addr_li[i].ba          = hbm_ch_addr_lo_cast[i].ba;
+      assign dramsim3_ch_addr_li[i].ro          = hbm_ch_addr_lo_cast[i].ro;
+      assign dramsim3_ch_addr_li[i].co          = hbm_ch_addr_lo_cast[i].co;
+      assign dramsim3_ch_addr_li[i].byte_offset = hbm_ch_addr_lo_cast[i].byte_offset;
+      // mapping dramsim3 => cache_to_test_dram
+      assign hbm_ch_addr_li_cast[i].bg          = dramsim3_ch_addr_lo[i].bg;
+      assign hbm_ch_addr_li_cast[i].ba          = dramsim3_ch_addr_lo[i].ba;
+      assign hbm_ch_addr_li_cast[i].ro          = dramsim3_ch_addr_lo[i].ro;
+      assign hbm_ch_addr_li_cast[i].co          = dramsim3_ch_addr_lo[i].co;
+      assign hbm_ch_addr_li_cast[i].byte_offset = dramsim3_ch_addr_lo[i].byte_offset;
+    end
+
     bsg_nonsynth_dramsim3
       #(.channel_addr_width_p(`DRAMSIM3_MEM_PKG::channel_addr_width_p)
         ,.data_width_p(`DRAMSIM3_MEM_PKG::data_width_p)
@@ -909,7 +945,7 @@ module cl_manycore
 
        ,.v_i(lv2_simulated_hbm.hbm_req_v_lo)
        ,.write_not_read_i(lv2_simulated_hbm.hbm_write_not_read_lo)
-       ,.ch_addr_i(lv2_simulated_hbm.hbm_ch_addr_lo)
+       ,.ch_addr_i(dramsim3_ch_addr_li)
        ,.yumi_o(lv2_simulated_hbm.hbm_req_yumi_li)
 
        ,.data_v_i(lv2_simulated_hbm.hbm_data_v_lo)
@@ -918,7 +954,7 @@ module cl_manycore
 
        ,.data_o(lv2_simulated_hbm.hbm_data_li)
        ,.data_v_o(lv2_simulated_hbm.hbm_data_v_li)
-       ,.read_done_ch_addr_o(lv2_simulated_hbm.hbm_ch_addr_li));
+       ,.read_done_ch_addr_o(dramsim3_ch_addr_lo));
 `endif
   end
 

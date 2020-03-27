@@ -25,31 +25,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building the infinite memory
-# simulation library for cosimulation
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
-
-# This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this makefile..
-#
-
-# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
-ifndef TESTBENCH_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+# HARDWARE_PATH: The path to the hardware folder in BSG F1
+ifndef HARDWARE_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
 endif
 
-# Don't include more than once
-ifndef (_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
-_BSG_F1_TESTBENCHES_INFINITE_MEM_MK := 1
-_INFINITE_MEM_CFGS := e_infinite_mem
+ifndef __HARDWARE_MEMSYS_INFMEM_MK
+__HARDWARE_MEMSYS_INFMEM_MK := 1
 
-# Check if Infinite Memory is the memory model for this design
-ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
+# is this an inifinite memory configuration?
+ifneq ($(filter infinite, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 
-# Library for DMA-able memory
-include $(TESTBENCH_PATH)/libdmamem.mk
+CL_MANYCORE_MEMSYS_ID := "INFM"
 
-endif # ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
-endif # ifndef(_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
+endif
+endif

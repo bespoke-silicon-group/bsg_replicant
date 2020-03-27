@@ -37,9 +37,23 @@
 
 static const char error_init_help [] = "Is your FPGA initialized with an AGFI?";
 
-static bool is_power2(hb_mc_idx_t u)
+// perform additional checks on the memory system
+static
+int hb_mc_config_init_check_memsys(hb_mc_config_t *config)
 {
-        return __builtin_popcount(u) == 1;
+        if (config->memsys.id == HB_MC_MEMSYS_ID_INFMEM) {
+                uint32_t dram_cos = hb_mc_config_get_num_dram_coordinates(config);
+                uint32_t dram_chs = config->memsys.dram_channels;
+                if (dram_cos != dram_chs) {
+                        bsg_pr_err("%s: %s has %" PRIu32 " DRAM channels - but %" PRIu32 " expected\n",
+                                   __func__,
+                                   hb_mc_memsys_id_to_string(config->memsys.id),
+                                   dram_chs,
+                                   dram_cos);
+                        return HB_MC_INVALID;
+                }
+        }
+        return HB_MC_SUCCESS;
 }
 
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
@@ -49,6 +63,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         hb_mc_config_raw_t cur;
         hb_mc_idx_t idx;
         char date[8], version[3];
+        int err;
 
         /* Parse the Version */
         cur = raw[HB_MC_CONFIG_VERSION];
@@ -175,39 +190,12 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->io_host_credits_cap = idx;
 
-        idx = raw[HB_MC_CONFIG_DRAM_CHANNELS];
-        if (!is_power2(idx) || idx > 32) {
-                bsg_pr_err("%s: Invalid DRAM channels: %" PRIu32 ": %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
+        err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: Failed to initialize memory system: %s\n",
+                           __func__, error_init_help);
+                return err;
         }
-        config->dram_channels = idx;
 
-        idx = raw[HB_MC_CONFIG_DRAM_BANK_SIZE_WORDS];
-        if (!is_power2(idx)) {
-                bsg_pr_err("%s: Invalid DRAM Bank size: %" PRIu32 ": %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
-        config->dram_bank_size_words = idx;
-
-        idx = raw[HB_MC_CONFIG_MEMSYS_FEATURE_DMA];
-        if (idx != 0 && idx != 1) {
-                bsg_pr_err("%s: Invalid value for DMA support: %s\n",
-                           __func__,
-                           error_init_help);
-                return HB_MC_INVALID;
-        }
-        config->memsys_feature_dma = idx;
-
-        idx = raw[HB_MC_CONFIG_MEMSYS_FEATURE_CACHE];
-        if (idx != 0 && idx != 1) {
-                bsg_pr_err("%s: Invalid value for cache existence: %s\n",
-                           __func__,
-                           error_init_help);
-                return HB_MC_INVALID;
-        }
-        config->memsys_feature_cache = idx;
-
-        return HB_MC_SUCCESS;
+        return hb_mc_config_init_check_memsys(config);
 }

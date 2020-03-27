@@ -1464,7 +1464,6 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
     parameter_t bank_size = memory->_data.size()/caches_per_channel;
 
     hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
-
     char npa_str[256];
 
     if (memory == nullptr) {
@@ -1474,7 +1473,10 @@ static int hb_mc_manycore_npa_to_buffer_cosim_only(hb_mc_manycore_t *mc, const h
         return HB_MC_FAIL;
     }
 
-    address_t addr = bank*bank_size + epa;
+    // this is the address that comes out of cache_to_test_dram_tx
+    address_t cache_addr = bank*bank_size + epa;
+    address_t addr = hb_mc_memsys_map_to_physical_channel_address(&cfg->memsys, cache_addr);
+
 
     manycore_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",
                     __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
