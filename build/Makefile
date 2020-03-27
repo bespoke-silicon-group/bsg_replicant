@@ -39,6 +39,10 @@
 # PROJECT: The name of this project
 include ../environment.mk
 
+# Set the machine path so that we don't try to compile an
+# unsynthesizable machine.
+BSG_MACHINE_PATH := $(MACHINE_DIR)/4x4_blocking_vcache_f1_model
+
 # The following variables are set by $(CL_DIR)/hdk.mk, which will fail if
 # hdk_setup.sh has not been run, or environment.mk is not included
 #
