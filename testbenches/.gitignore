@@ -1,8 +1,9 @@
 vcs_simlibs
+synopsys_sim.setup
 .cxl.*
 .vlogan*
 AN.DB
-ucli.key
+ucli.keyOf
 csrc
 vc_hdrs.h
 *.jou
