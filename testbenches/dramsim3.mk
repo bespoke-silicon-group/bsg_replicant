@@ -64,14 +64,6 @@ _DRAMSIM3_MEM_CFGS += e_vcache_blocking_test_dramsim3_hbm2_4gb_x128
 # Check if dramsim3 is the memory model for this design
 ifneq ($(filter $(_DRAMSIM3_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 
-# Disable the micron memory model (it's unused and slows simulation WAY down)
-VDEFINES   += AXI_MEMORY_MODEL=1
-VDEFINES   += ECC_DIRECT_EN
-VDEFINES   += RND_ECC_EN
-VDEFINES   += ECC_ADDR_LO=0
-VDEFINES   += ECC_ADDR_HI=0
-VDEFINES   += RND_ECC_WEIGHT=0
-
 # Library for DMA-able memory
 include $(TESTBENCH_PATH)/libdmamem.mk
 
