@@ -3,7 +3,7 @@ synopsys_sim.setup
 .cxl.*
 .vlogan*
 AN.DB
-ucli.keyOf
+ucli.key
 csrc
 vc_hdrs.h
 *.jou
