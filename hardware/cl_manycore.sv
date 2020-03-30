@@ -57,9 +57,8 @@ module cl_manycore
    // where developer may forget to remove it from the end of the file
 
 `include "unused_flr_template.inc"
-   `ifndef COSIM
-    `include "unused_ddr_a_b_d_template.inc"
-   `endif
+// This file includes encrypted modules
+`include "unused_ddr_a_b_d_template.inc"
 // Could be en/disabled with a macro
    //`include "unused_ddr_c_template.inc"
 `include "unused_pcim_template.inc"
