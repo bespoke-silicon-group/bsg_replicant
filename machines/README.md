@@ -48,6 +48,13 @@ Makefile.machine.include file.
 
 - 4x4_amo_support: Same as 4x4_blocking_vcache_f1_model
 
+- 4x4_blocking_vcache_f1_dram: This is a 4x4 array of RISC-V Vanilla
+  Cores with 1 DRAM DIM with bounded/low latency attached through an
+  AXI-4 interface to the top and bottom of the array. The DRAM is a
+  Micron model provided by Xilinx. This models the configuration on F1
+  and is used to build the F1 image. *This machine simulates very
+  slowly*
+
 ## Legacy Machines
 
 **DO NOT USE THESE MACHINES**
