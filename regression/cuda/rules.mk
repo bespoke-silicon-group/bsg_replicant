@@ -32,6 +32,8 @@ CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
 
 .PHONY: test_%.clean test_%.rule
 
+# Force rebuild targets that depend on .FORCE, like the
+# Manycore/SPMD/CUDA Binaries
 .FORCE:
 
 $(USER_RULES): test_%.rule: $(CUDALITE_SRC_PATH)/%/main.riscv
@@ -45,7 +47,6 @@ $(USER_CLEAN_RULES):
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -C $(CUDALITE_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
 
-$(CUDALITE_SRC_PATH)/%/main.riscv: LINK_SCRIPT=$(BSG_MACHINE_PATH)/bsg_link.ld
 $(CUDALITE_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include .FORCE
 	CL_DIR=$(CL_DIR) \
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
