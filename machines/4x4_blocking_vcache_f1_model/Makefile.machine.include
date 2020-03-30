@@ -36,7 +36,7 @@ BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
 BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MAX_EPA_WIDTH             = 28
 BSG_MACHINE_DRAM_SIZE_WORDS           = 536870912
-BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = 134217728
+BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_SIZE_WORDS) / (2 * $(BSG_MACHINE_GLOBAL_X))" | bc)
 
 # IO flow control parameters.
 # max host loads; max host request credits; max out credits of manycore endpoint standard module
