@@ -52,7 +52,11 @@ include $(BSG_F1_DIR)/hdk.mk
 VDEFINES += CARD_1=card
 
 # AWS source library directories
-# No encrypted source files.
+# No encrypted source files. 
+
+# HOWEVER, unused_ddr_a_b_d_template.inc in
+# $(HDK_SHELL_DESIGN_DIR)/interfaces instantiates sh_ddr, which is
+# encrypted.
 VLIBS += $(HDK_SHELL_DESIGN_DIR)/lib
 VLIBS += $(HDK_SHELL_DESIGN_DIR)/interfaces
 
@@ -67,7 +71,7 @@ VINCLUDES += $(HDK_SHELL_DESIGN_DIR)/interfaces
 VSOURCES += $(HDK_COMMON_DIR)/verif/tb/sv/tb_type_defines_pkg.sv
 
 ################################################################################
-# SH BFM (Bus Functional model) Files
+# SH BFM (Bus Functional Model) Files
 ################################################################################
 
 # Both contain encrypted files, notably sh_ddr (Encrypted) and
@@ -82,9 +86,11 @@ VSOURCES += $(HDK_COMMON_DIR)/verif/models/xilinx_axi_pc/axi_protocol_checker_v1
 # Not encrypted, no submodules
 VSOURCES += $(HDK_COMMON_DIR)/verif/models/sh_bfm/axil_bfm.sv
 
-# sh_bfm.sv -> (axil_bfm, axil_protocol_checker, 
-# (IF DDR MODEL) axi_register_slice, axi_clock_converter, ddr4_core
-# (IF AXI Memory Model) axi4_slave_bfm (AXI memory model)
+# sh_bfm.sv -> (axil_bfm, axil_protocol_checker, ...)
+#   (IF DDR MODEL) axi_register_slice, axi_clock_converter, ddr4_core
+#                                      (Encrypted)          (Encrypted)
+#   (IF AXI MODEL) axi4_slave_bfm (1 cycle memory model)
+#                  (Not Encrypted)
 VSOURCES += $(HDK_COMMON_DIR)/verif/models/sh_bfm/sh_bfm.sv
 
 ################################################################################
