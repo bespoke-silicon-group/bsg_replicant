@@ -57,7 +57,10 @@ module cl_manycore
    // where developer may forget to remove it from the end of the file
 
 `include "unused_flr_template.inc"
-`include "unused_ddr_a_b_d_template.inc"
+   `ifndef COSIM
+    `include "unused_ddr_a_b_d_template.inc"
+   `endif
+// Could be en/disabled with a macro
    //`include "unused_ddr_c_template.inc"
 `include "unused_pcim_template.inc"
 `include "unused_dma_pcis_template.inc"
@@ -1200,7 +1203,7 @@ module cl_manycore
    //-----------------------------------------------
    // Debug bridge, used if need Virtual JTAG
    //-----------------------------------------------
-`ifndef DISABLE_VJTAG_DEBUG
+`ifdef ENABLE_VJTAG_DEBUG
 
    // Flop for timing global clock counter
    logic [63:0]               sh_cl_glcount0_q;
@@ -1253,7 +1256,7 @@ module cl_manycore
       ,.S_BSCAN_bscanid_en(bscanid_en)
       );
 
-`endif //  `ifndef DISABLE_VJTAG_DEBUG
+`endif //  ifdef ENABLE_VJTAG_DEBUG
 
    // synopsys translate off
    int                        status;

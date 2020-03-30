@@ -83,6 +83,18 @@ endif
 
 # The manycore architecture uses unsynthesizable sources for simulation
 
+# VIVADO Simulation Primitives
+VLIBS     += $(XILINX_VIVADO)/data/verilog/src/unisims
+VINCLUDES += $(XILINX_VIVADO)/data/verilog/src
+VSOURCES  += $(XILINX_VIVADO)/data/verilog/src/glbl.v
+VSOURCES  += $(XILINX_VIVADO)/data/verilog/src/unisim_retarget_comp.v
+
+# The following include and two sources are needed for the register
+# slice in cl_manycore. They can be removed when that IP is removed
+VINCLUDES += $(HDK_SHELL_DESIGN_DIR)/ip/axi_register_slice_light/hdl
+VSOURCES  += $(HDK_SHELL_DESIGN_DIR)/ip/axi_register_slice_light/sim/axi_register_slice_light.v
+VSOURCES  += $(HDK_SHELL_DESIGN_DIR)/ip/axi_register_slice_light/hdl/axi_register_slice_v2_1_vl_rfs.v
+
 # machine_wrapper.sv is the top-level work library for each individual
 # machine.
 VSOURCES += $(TESTBENCH_PATH)/machine_wrapper.sv
@@ -110,7 +122,6 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 
-
 # Profiling
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
@@ -128,6 +139,9 @@ VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 include $(TESTBENCH_PATH)/dramsim3.mk
 include $(TESTBENCH_PATH)/infmem.mk
 include $(TESTBENCH_PATH)/libdmamem.mk
+
+# Include file for AWS Sources
+include $(TESTBENCH_PATH)/aws.mk
 
 SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
@@ -151,6 +165,8 @@ VDEFINES   += ENABLE_PROTOCOL_CHK
 VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES) 
 VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
+VLOGAN_VLIBS    += $(foreach lib,$(VLIBS),-y "$(lib)")
+VLOGAN_FLISTS   += $(foreach flist,$(VFLISTS),-f "$(flist)")
 VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps
 VLOGAN_VFLAGS   += -sverilog -v2005 +v2k
 VLOGAN_VFLAGS   += +systemverilogext+.svh +systemverilogext+.sv
@@ -179,13 +195,11 @@ $(BSG_MACHINE_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
 $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/synopsys_sim.setup $(VHEADERS) $(VSOURCES)
 	cd $(TESTBENCH_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
-	XILINX_VIVADO=$(XILINX_VIVADO) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
-	HDK_SHELL_DESIGN_DIR=$(HDK_SHELL_DESIGN_DIR) \
-	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
 	vlogan -work $(BSG_MACHINE_NAME) $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
-		$(VLOGAN_SOURCES) -f $(TESTBENCH_PATH)/aws.vcs.f \
+		$(VLOGAN_VLIBS) $(VLOGAN_FLISTS) \
+		$(VLOGAN_SOURCES) \
 		$(VLOGAN_INCLUDES) -l $(BSG_MACHINE_NAME).vlogan.log
 
 # The applications link against the BSG Manycore Libraries, and the FPGA

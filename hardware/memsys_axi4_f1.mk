@@ -25,6 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+
 # HARDWARE_PATH: The path to the hardware folder in BSG F1
 ifndef HARDWARE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
@@ -42,6 +43,15 @@ CL_MANYCORE_MEMSYS_ID := "AXI4" # AXI4
 # are we using the AXI or the micron memory model?
 ifneq ($(filter dram, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 DISABLE_MICRON_MEMORY_MODEL := no
+
+VINCLUDES += $(HDK_SHELL_DESIGN_DIR)/ip/axi_register_slice/hdl
+VSOURCES += $(HDK_SHELL_DESIGN_DIR)/ip/axi_register_slice/sim/axi_register_slice.v
+VSOURCES += $(HDK_SHELL_DESIGN_DIR)/ip/axi_clock_converter_0/hdl/axi_clock_converter_v2_1_vl_rfs.v
+VSOURCES += $(HDK_SHELL_DESIGN_DIR)/ip/axi_clock_converter_0/hdl/fifo_generator_v13_2_rfs.v
+VSOURCES += $(HDK_SHELL_DESIGN_DIR)/ip/axi_clock_converter_0/sim/axi_clock_converter_0.v
+# Encrypted, Used in AWS DDR Model for SH BFM
+VFLISTS += $(HDK_COMMON_DIR)/verif/tb/filelists/ddr.vcs.f
+
 endif
 
 endif
