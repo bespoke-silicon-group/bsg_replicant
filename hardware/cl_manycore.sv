@@ -274,7 +274,8 @@ module cl_manycore
 
    logic         core_clk;
    logic         core_reset;
-
+   logic         mem_clk;
+   
 `ifdef COSIM
    // This clock mux switches between the "fast" IO Clock and the Slow
    // Unsynthesizable "Core Clk". The assign logic below introduces
@@ -290,7 +291,7 @@ module cl_manycore
    BUFGMUX_inst
      (
       .O(core_clk), // 1-bit output: Clock output
-      .I0(clk_main_a0), // 1-bit input: Clock input (S=0)
+      .I0(mem_clk), // 1-bit input: Clock input (S=0)
       .I1(ns_core_clk), // 1-bit input: Clock input (S=1)
       .S(sh_cl_status_vdip_q2[0]) // 1-bit input: Clock select
       );
@@ -301,6 +302,16 @@ module cl_manycore
    // core_clk, and clk_main_a0 *are the same signal* (See BUFGMUX
    // above).
    assign core_reset = ~rst_main_n_sync;
+
+   // If we're using DRAMSIM3 we want the manycore clock to run at the
+   // same frequency as the memory interface clock. Otherwise, assume
+   // we want to run at the default F1 frequency.
+ `ifndef USING_DRAMSIM3
+   assign mem_clk = clk_main_a0;
+ `else
+   assign mem_clk = hbm_clk;
+ `endif
+
 `else
    assign core_clk = clk_main_a0;
    assign core_reset = ~rst_main_n_sync;
@@ -754,11 +765,7 @@ module cl_manycore
 
     //500MHz
     bsg_nonsynth_clock_gen
-`ifdef USING_DRAMSIM3
       #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
-`else
-      #(.cycle_time_p(2000))
-`endif
     clk_gen
       (.o(hbm_clk));
 
