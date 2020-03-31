@@ -273,6 +273,8 @@ module cl_manycore
    logic         core_clk;
    logic         core_reset;
    logic         mem_clk;
+
+
    
 `ifdef COSIM
    // This clock mux switches between the "fast" IO Clock and the Slow
@@ -304,7 +306,9 @@ module cl_manycore
    // If we're using DRAMSIM3 we want the manycore clock to run at the
    // same frequency as the memory interface clock. Otherwise, assume
    // we want to run at the default F1 frequency.
- `ifndef USING_DRAMSIM3
+ `ifdef USING_DRAMSIM3
+   logic         hbm_clk;
+   logic         hbm_reset;
    localparam lc_clk_main_a0_p = `DRAMSIM3_MEM_PKG::tck_ps;
    assign mem_clk = hbm_clk;
  `else
@@ -760,9 +764,6 @@ module cl_manycore
     // DDR is unused
 `include "unused_ddr_c_template.inc"
 
-    logic hbm_clk;
-    logic hbm_reset;
-
     //500MHz
     bsg_nonsynth_clock_gen
       #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
@@ -947,8 +948,8 @@ module cl_manycore
         //,.debug_p(1)
         ,.init_mem_p(1))
     dram
-      (.clk_i(lv2_simulated_hbm.hbm_clk)
-       ,.reset_i(lv2_simulated_hbm.hbm_reset)
+      (.clk_i(hbm_clk)
+       ,.reset_i(hbm_reset)
 
        ,.v_i(lv2_simulated_hbm.hbm_req_v_lo)
        ,.write_not_read_i(lv2_simulated_hbm.hbm_write_not_read_lo)
