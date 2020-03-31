@@ -41,6 +41,10 @@ Makefile.machine.include file.
   but no performance analysis should be done, and no optimization
   decisions made based on this model.
 
+- 16x8_fast_n_fake: this is like 4x4_fast_n_fake except the RISC-V
+  Vanilla Core array is 16x8. This can be used for getting code running
+  and debugged or observing performance with and ideal memory system.
+
 - 4x4_blocking_vcache_f1_model: This is a 4x4 array of RISC-V Vanilla
   Cores with 1 FAKE DRAM DIM with bounded/low latency attached through
   an AXI-4 interface to the top and bottom of the array. This models
