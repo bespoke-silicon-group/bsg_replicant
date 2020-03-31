@@ -60,7 +60,7 @@ include $(REGRESSION_PATH)/targets.mk
 regression: regression.log
 
 regression.log: $(TARGETS)
-	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) > regression.log
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee regression.log
 
 $(TARGETS): $(SIMLIBS)
 	$(MAKE) -C $@ regression
