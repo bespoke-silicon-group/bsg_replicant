@@ -1,4 +1,5 @@
 vcs_simlibs
+synopsys_sim.setup
 .cxl.*
 .vlogan*
 AN.DB

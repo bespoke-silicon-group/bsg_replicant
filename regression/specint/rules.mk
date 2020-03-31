@@ -32,6 +32,10 @@
 # Manycore. It contains makefiles to compile specint programs.
 SPECINT_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd/specint2000
 
+# Force rebuild targets that depend on .FORCE, like the
+# Manycore/SPMD/CUDA Binaries
+.FORCE:
+
 .PHONY: test_%.clean $(USER_RULES)
 
 $(USER_RULES): test_%.rule: $(SPECINT_SRC_PATH)/%.riscv
