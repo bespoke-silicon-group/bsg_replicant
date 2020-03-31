@@ -65,8 +65,6 @@ module cl_manycore
 `include "unused_sh_bar1_template.inc"
 `include "unused_apppf_irq_template.inc"
 
-   localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
-
    //-------------------------------------------------
    // Wires
    //-------------------------------------------------
@@ -307,9 +305,11 @@ module cl_manycore
    // same frequency as the memory interface clock. Otherwise, assume
    // we want to run at the default F1 frequency.
  `ifndef USING_DRAMSIM3
-   assign mem_clk = clk_main_a0;
- `else
+   localparam lc_clk_main_a0_p = `DRAMSIM3_MEM_PKG::tck_ps;
    assign mem_clk = hbm_clk;
+ `else
+   localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
+   assign mem_clk = clk_main_a0;
  `endif
 
 `else
