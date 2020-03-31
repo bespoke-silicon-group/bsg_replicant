@@ -310,6 +310,10 @@ module cl_manycore
    logic         hbm_clk;
    logic         hbm_reset;
    localparam lc_clk_main_a0_p = `DRAMSIM3_MEM_PKG::tck_ps;
+    bsg_nonsynth_clock_gen
+      #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
+    clk_gen
+      (.o(hbm_clk));
    assign mem_clk = hbm_clk;
  `else
    localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
@@ -764,11 +768,6 @@ module cl_manycore
     // DDR is unused
 `include "unused_ddr_c_template.inc"
 
-    //500MHz
-    bsg_nonsynth_clock_gen
-      #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
-    clk_gen
-      (.o(hbm_clk));
 
     logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_lo;
     logic [hbm_num_channels_p-1:0]                               hbm_req_yumi_li;
