@@ -67,6 +67,7 @@ cosim:
 	$(MAKE) -C testbenches regression
 
 __BSG_MACHINES := $(wildcard machines/*)
+__BSG_MACHINES := $(filter-out machines/README.md,$(__BSG_MACHINES))
 __BSG_MACHINES := $(filter-out machines/timing_v0_32_16,$(__BSG_MACHINES))
 __BSG_MACHINES := $(filter-out machines/timing_v0_64_32,$(__BSG_MACHINES))
 # F1 with realistic DRAM Takes forever, so we'll leave it out for now
