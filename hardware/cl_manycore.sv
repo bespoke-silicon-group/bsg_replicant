@@ -550,6 +550,7 @@ module cl_manycore
       ,.global_ctr_i($root.tb.card.fpga.CL.global_ctr)
       ,.print_stat_v_i($root.tb.card.fpga.CL.print_stat_v_lo)
       ,.print_stat_tag_i($root.tb.card.fpga.CL.print_stat_tag_lo)
+      ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
     );
     // synopsys translate_on
 
