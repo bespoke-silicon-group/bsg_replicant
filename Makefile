@@ -58,7 +58,7 @@ help:
 	@echo "      clean: Remove all build files"
 
 build:
-	$(MAKE) -C $@ $@
+	$(MAKE) -C $@ $@ BSG_MACHINE_PATH=$(MACHINES_PATH)/4x4_blocking_vcache_f1_model 
 
 regression:
 	$(MAKE) -C regression $@ 
