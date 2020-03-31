@@ -40,7 +40,7 @@ ifneq ($(filter f1,   $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 CL_MANYCORE_MEMSYS_ID := "AXI4" # AXI4
 
 # are we using the AXI or the micron memory model?
-ifneq ($(filter dram, $(subst _, ,$(CL_MANYCORE_MEMSYS_ID))),)
+ifneq ($(filter dram, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 DISABLE_MICRON_MEMORY_MODEL := no
 endif
 
