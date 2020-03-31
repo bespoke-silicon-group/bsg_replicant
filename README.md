@@ -48,11 +48,17 @@ instructions.
 
 ## Custom Machine Configurations
 
-Each Manycore configuration is called a "Machine". Each machine is defined with
-a `Makefile.machine.include` file. Use `BSG_MACHINE_PATH`, defined in
-machine.mk, to define the current target for simulation. To switch machines,
-modify the value of `BSG_MACHINE_PATH` to point to any subdirectory of the
-`machines` directory.
+Each Manycore configuration is called a "Machine" and defines a size,
+memory type, memory hierarchy, cache type, and many other
+parameters. Each machine is defined by  `Makefile.machine.include`
+file. 
+
+To switch machines set `BSG_MACHINE_PATH`, defined in
+[machine.mk](machine.mk), to define the current target for
+simulation. To switch machines, modify the value of `BSG_MACHINE_PATH`
+to point to any subdirectory of the `machines` directory.
+
+See [machines/README.md](machines/README.md) for more documentation.
 
 
 
