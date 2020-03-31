@@ -48,10 +48,6 @@ TESTBENCH_PATH   := $(CL_DIR)/testbenches
 LIBRARIES_PATH   := $(CL_DIR)/libraries
 MACHINES_PATH    := $(CL_DIR)/machines
 
-# machine.mk defines BSG_MACHINE_PATH, which is the path to the current target
-# machine.
-include $(CL_DIR)/machine.mk
-
 # Check if we are running inside of the BSG Bladerunner repository by searching
 # for project.mk. If project.mk is found, then we are and we should use
 # that to define BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR and
@@ -109,3 +105,7 @@ endif
 ifndef BSG_MANYCORE_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MANYCORE_DIR environment variable undefined. Defining is not recommended. Are you running from within Bladerunner?$(NC)"))
 endif
+
+# machine.mk defines BSG_MACHINE_PATH, which is the path to the current target
+# machine.
+include $(CL_DIR)/machine.mk
