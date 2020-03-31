@@ -65,8 +65,6 @@ module cl_manycore
 `include "unused_sh_bar1_template.inc"
 `include "unused_apppf_irq_template.inc"
 
-   localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
-
    //-------------------------------------------------
    // Wires
    //-------------------------------------------------
@@ -274,7 +272,10 @@ module cl_manycore
 
    logic         core_clk;
    logic         core_reset;
+   logic         mem_clk;
 
+
+   
 `ifdef COSIM
    // This clock mux switches between the "fast" IO Clock and the Slow
    // Unsynthesizable "Core Clk". The assign logic below introduces
@@ -290,7 +291,7 @@ module cl_manycore
    BUFGMUX_inst
      (
       .O(core_clk), // 1-bit output: Clock output
-      .I0(clk_main_a0), // 1-bit input: Clock input (S=0)
+      .I0(mem_clk), // 1-bit input: Clock input (S=0)
       .I1(ns_core_clk), // 1-bit input: Clock input (S=1)
       .S(sh_cl_status_vdip_q2[0]) // 1-bit input: Clock select
       );
@@ -301,6 +302,20 @@ module cl_manycore
    // core_clk, and clk_main_a0 *are the same signal* (See BUFGMUX
    // above).
    assign core_reset = ~rst_main_n_sync;
+
+   // If we're using DRAMSIM3 we want the manycore clock to run at the
+   // same frequency as the memory interface clock. Otherwise, assume
+   // we want to run at the default F1 frequency.
+ `ifdef USING_DRAMSIM3
+   logic         hbm_clk;
+   logic         hbm_reset;
+   localparam lc_clk_main_a0_p = `DRAMSIM3_MEM_PKG::tck_ps;
+   assign mem_clk = hbm_clk;
+ `else
+   localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
+   assign mem_clk = clk_main_a0;
+ `endif
+
 `else
    assign core_clk = clk_main_a0;
    assign core_reset = ~rst_main_n_sync;
@@ -749,16 +764,9 @@ module cl_manycore
     // DDR is unused
 `include "unused_ddr_c_template.inc"
 
-    logic hbm_clk;
-    logic hbm_reset;
-
     //500MHz
     bsg_nonsynth_clock_gen
-`ifdef USING_DRAMSIM3
       #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
-`else
-      #(.cycle_time_p(2000))
-`endif
     clk_gen
       (.o(hbm_clk));
 
@@ -940,8 +948,8 @@ module cl_manycore
         //,.debug_p(1)
         ,.init_mem_p(1))
     dram
-      (.clk_i(lv2_simulated_hbm.hbm_clk)
-       ,.reset_i(lv2_simulated_hbm.hbm_reset)
+      (.clk_i(hbm_clk)
+       ,.reset_i(hbm_reset)
 
        ,.v_i(lv2_simulated_hbm.hbm_req_v_lo)
        ,.write_not_read_i(lv2_simulated_hbm.hbm_write_not_read_lo)
