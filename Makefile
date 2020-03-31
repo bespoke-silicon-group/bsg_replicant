@@ -67,6 +67,8 @@ cosim:
 	$(MAKE) -C testbenches regression
 
 __BSG_MACHINES := $(wildcard machines/*)
+__BSG_MACHINES := $(filter-out machines/timing_v0_32_16,$(__BSG_MACHINES))
+__BSG_MACHINES := $(filter-out machines/timing_v0_64_32,$(__BSG_MACHINES))
 multiverse:
 	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m && cp testbenches/regression.log $m &&) echo ;
 
