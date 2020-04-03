@@ -57,10 +57,16 @@ include simlibs.mk
 include $(REGRESSION_PATH)/targets.mk
 .PHONY: clean %.clean regression $(TARGETS)
 
-regression: regression.log
+regression: $(BSG_MACHINE_PATH)/regression.log $(BSG_MACHINE_PATH)/runtime.log
+
+$(BSG_MACHINE_PATH)/regression.log: regression.log
+	cp $< $@
 
 regression.log: $(TARGETS)
-	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee regression.log
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee $@
+
+$(BSG_MACHINE_PATH)/runtime.log: $(BSG_MACHINE_PATH)/regression.log
+	grep -H "CPU Time:" */test_*.log | sed 's/:CPU Time:\s*\([0-9]*.[0-9]*\).*/,\1 seconds/' > $@
 
 $(TARGETS): $(SIMLIBS)
 	$(MAKE) -C $@ regression
