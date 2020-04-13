@@ -65,7 +65,7 @@ $(BSG_MACHINE_PATH)/regression.log: regression.log
 regression.log: $(TARGETS)
 	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee $@
 
-runtime.log: #$(BSG_MACHINE_PATH)/regression.log
+runtime.log: $(BSG_MACHINE_PATH)/regression.log
 	@grep -H "CPU Time:" */test_*.log > $@
 	@sed -i 's/:CPU Time:\s*\([0-9]*.[0-9]*\).*/,\1/' $@
 	@sed -i 's/.log//'  $@
