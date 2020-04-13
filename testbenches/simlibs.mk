@@ -124,6 +124,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
 # Include makefile for dramsim3 sources
 include $(TESTBENCH_PATH)/dramsim3.mk
 include $(TESTBENCH_PATH)/infmem.mk

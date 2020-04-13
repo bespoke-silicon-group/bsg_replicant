@@ -1313,6 +1313,12 @@ module cl_manycore
       ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
       );
 
+    bind vanilla_core nb_waw_detector #(
+      .data_width_p(data_width_p)
+      ,.x_cord_width_p(x_cord_width_p)
+      ,.y_cord_width_p(y_cord_width_p)
+    ) waw0 (.*);
+
 
    // synopsys translate on
 
