@@ -469,10 +469,13 @@ module cl_manycore
    // LEVEL 1
   if (mem_cfg_p == e_infinite_mem) begin
     // each column has a nonsynth infinite memory
+    localparam infmem_els_lp = 1<<(addr_width_p-$clog2(num_cache_p));
+
     for (genvar i = 0; i < num_cache_p; i++) begin
       bsg_nonsynth_mem_infinite #(
         .data_width_p(data_width_p)
         ,.addr_width_p(addr_width_p)
+        ,.mem_els_p(infmem_els_lp)
         ,.x_cord_width_p(x_cord_width_p)
         ,.y_cord_width_p(y_cord_width_p)
         ,.id_p(i)
