@@ -133,7 +133,7 @@ test_loader $(INDEPENDENT_TESTS): %: $(EXEC_PATH)/%
 # simulations have the same starting seed.
 SIM_ARGS += +ntb_random_seed_automatic 
 
-#$(EXEC_PATH)/%.debug.log: %.vpd ;
+$(EXEC_PATH)/%.debug.log: %.vpd ;
 
 # OK, here's where things get complicated. 
 
@@ -179,13 +179,16 @@ $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 # is being generated, then it writes to <test_name>.debug.log, otherwise
 # <test_name>.log. Finally, depend on <test_name>.rule so that we rebuild the
 # RISC-V binaries.
+
 .%/vcdplus.vpd .%/vanilla_stats.csv: TEST_NAME=$(@:.%/$(notdir $@)=%)
-.%/vcdplus.vpd .%/vanilla_stats.csv: LOG_NAME=$(subst ..,.,$(TEST_NAME).$(suffix $<).log)
+.%/vcdplus.vpd: LOG_NAME=$(subst ..,.,$(TEST_NAME).debug.log)
+.%/vanilla_stats.csv: LOG_NAME=$(subst ..,.,$(TEST_NAME).log)
+
 .%/vcdplus.vpd .%/vanilla_stats.csv:
-	mkdir -p $(dir $@)
-	cd $(dir $@) && \
+	mkdir -p $(EXEC_PATH)/.$(TEST_NAME)
+	cd $(EXEC_PATH)/.$(TEST_NAME) && \
 	$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $(LOG_NAME)
-	@mv $(dir $@)/$(LOG_NAME) $(LOG_NAME)
+	@mv $(EXEC_PATH)/.$(TEST_NAME)/$(LOG_NAME) $(LOG_NAME)
 
 # %.debug.log is just an alias for %.vpd
 %.debug.log: %.vpd ;
