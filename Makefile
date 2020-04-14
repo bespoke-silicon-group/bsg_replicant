@@ -66,14 +66,17 @@ regression:
 cosim: 
 	$(MAKE) -C testbenches regression
 
-__BSG_MACHINES := $(wildcard machines/*)
-__BSG_MACHINES := $(filter-out machines/README.md,$(__BSG_MACHINES))
-__BSG_MACHINES := $(filter-out machines/timing_v0_32_16,$(__BSG_MACHINES))
-__BSG_MACHINES := $(filter-out machines/timing_v0_64_32,$(__BSG_MACHINES))
-# F1 with realistic DRAM Takes forever, so we'll leave it out for now
-__BSG_MACHINES := $(filter-out machines/4x4_blocking_vcache_f1_dram,$(__BSG_MACHINES))
+__BSG_MACHINES += machines/16x8_fast_n_fake
+__BSG_MACHINES += machines/4x4_fast_n_fake
+__BSG_MACHINES += machines/4x4_blocking_dramsim3_hbm2_512mb
+__BSG_MACHINES += machines/8x4_blocking_dramsim3_hbm2_4gb
+__BSG_MACHINES += machines/4x4_blocking_vcache_f1_model
+__BSG_MACHINES += machines/timing_v0_8_4
+__BSG_MACHINES += machines/timing_v0_16_8
+#__BSG_MACHINES += machines/timing_v0_32_16
+#__BSG_MACHINES += machines/timing_v0_64_32  
 multiverse:
-	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m && cp testbenches/regression.log $m &&) echo ;
+	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C testbenches regression BSG_MACHINE_PATH=`pwd`/$m &&) echo ;
 
 clean:
 	$(MAKE) -C testbenches clean 
