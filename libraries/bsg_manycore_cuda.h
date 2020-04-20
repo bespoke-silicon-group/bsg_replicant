@@ -247,7 +247,33 @@ extern "C" {
                                  enum hb_mc_memcpy_kind kind);
 
 
+        /**
+         * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
+         * @param[in]  device        Pointer to device
+         * @parma[in]  daddr         EVA address of destination to be copied into
+         * @parma[in]  haddr         Host address of source to be copied from
+         * @param[in]  bytes         Size of buffer to be copied
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_memcpy_to_device(hb_mc_device_t *device,
+                                          hb_mc_eva_t daddr,
+                                          const void *haddr,
+                                          uint32_t bytes);
 
+        /**
+         * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
+         * @param[in]  device        Pointer to device
+         * @parma[in]  haddr         Host address of source to be copied into
+         * @parma[in]  daddr         EVA address of destination to be copied from
+         * @param[in]  bytes         Size of buffer to be copied
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_memcpy_to_host(hb_mc_device_t *device,
+                                        void       *haddr,
+                                        hb_mc_eva_t daddr,
+                                        uint32_t bytes);
 
 
         /**

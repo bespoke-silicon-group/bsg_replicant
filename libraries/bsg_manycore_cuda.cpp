@@ -1652,36 +1652,78 @@ int hb_mc_device_memcpy (hb_mc_device_t *device,
 
         if (kind == HB_MC_MEMCPY_TO_DEVICE) {
                 hb_mc_eva_t dst_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(dst);
-
-                error =  hb_mc_manycore_eva_write(device->mc, &default_map, &host_coordinate, &dst_eva, src, sz);
-                if (error != HB_MC_SUCCESS) { 
-                        bsg_pr_err("%s: failed to copy memory to device.\n", __func__);
-                        return error;
-                }
+                return hb_mc_device_memcpy_to_device(device, dst_eva, src, sz);
         }
         
         else if (kind == HB_MC_MEMCPY_TO_HOST) { 
                 hb_mc_eva_t src_eva = (hb_mc_eva_t) reinterpret_cast<uintptr_t>(src);
-
-                error = hb_mc_manycore_eva_read(device->mc, &default_map, &host_coordinate, &src_eva, dst, sz); 
-                if (error != HB_MC_SUCCESS) { 
-                        bsg_pr_err("%s: failed to copy memory from device.\n", __func__);
-                        return error;
-                }
-
+                return hb_mc_device_memcpy_to_host(device, dst, src_eva, sz);
         }
 
         else {
                 bsg_pr_err("%s: invalid copy type. Copy type can be one of \
                             HB_MC_MEMCPY_TO_DEVICE or HB_MC_MEMCPY_TO_HOST.\n", __func__);
                 return HB_MC_INVALID; 
+
+/**
+ * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  daddr         EVA address of destination to be copied into
+ * @parma[in]  haddr         Host address of source to be copied from
+ * @param[in]  bytes         Size of buffer to be copied
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+
+int hb_mc_device_memcpy_to_device(hb_mc_device_t *device,
+                                  hb_mc_eva_t daddr,
+                                  const void *haddr,
+                                  uint32_t bytes)
+{
+        int err;
+        hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(device->mc);
+        err = hb_mc_manycore_eva_write(device->mc,
+                                       &default_map,
+                                       &host,
+                                       &daddr, haddr, bytes);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to copy memory to device: %s\n",
+                           __func__,
+                           hb_mc_strerror(err));
+                return err;
         }
 
         return HB_MC_SUCCESS;
 }
 
+/**
+ * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
+ * @param[in]  device        Pointer to device
+ * @parma[in]  haddr         Host address of source to be copied into
+ * @parma[in]  daddr         EVA address of destination to be copied from
+ * @param[in]  bytes         Size of buffer to be copied
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_memcpy_to_host(hb_mc_device_t *device,
+                                void       *haddr,
+                                hb_mc_eva_t daddr,
+                                uint32_t bytes)
+{
+        int err;
+        hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(device->mc);
 
+        err = hb_mc_manycore_eva_read(device->mc,
+                                      &default_map,
+                                      &host,
+                                      &daddr, haddr, bytes);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to copy memory from device: %s\n",
+                           __func__,
+                           hb_mc_strerror(err));
+                return err;
+        }
 
+        return HB_MC_SUCCESS;
+}
 
 /**
  * Sets memory to a give value starting from an address in device's DRAM.
