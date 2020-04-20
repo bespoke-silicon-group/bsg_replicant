@@ -31,65 +31,29 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include <libgen.h>
-#include <string.h>
+#include <limits.h>
 #include "pytorch_tests.h"
 
 int test_pytorch(int argc, char **argv) {
-        // argc: no. of python options + 2
-        // argv: <this program's path> <python script> <python options>
-        char* python_script = argv[1];
-        int err;
-
-
-        /* Initialize the interpreter */
-
+        // Initialize the interpreter
         Py_Initialize();
 
-
-        /* Append script dir to current path */
-
-        char* dirc = strdup(python_script);
-
+        // Append cwd to sys path
+        char* cwd[PATH_MAX];
         PyObject* sysPath = PySys_GetObject((char*)"path");
-        PyObject* programName = PyUnicode_FromString(dirname(dirc));
+        PyObject* programName = PyUnicode_FromString(getcwd(cwd, sizeof(cwd)));
         PyList_Append(sysPath, programName);
         Py_DECREF(programName);
-        free(dirc);
 
-
-        /* Set Python sys argv */
-
-        int py_argc = argc - 1;
+        // Set Python sys argv
+        int py_argc = argc;
         wchar_t* py_argv[py_argc];
 
         for(int i = 0; i < py_argc; ++i) {
-                py_argv[i] = Py_DecodeLocale(argv[i+1], NULL);
+                py_argv[i] = Py_DecodeLocale(argv[i], NULL);
         }
 
-        PySys_SetArgvEx(py_argc, py_argv, 0);
-
-
-        /* Execute the script */
-
-        PyObject *obj = Py_BuildValue("s", python_script);
-        FILE *fp = _Py_fopen_obj(obj, "r+");
-        if (fp == NULL) {
-                bsg_pr_test_err("Failed to open Python script: %s\n", python_script);
-                exit(120);
-        }
-
-        err = PyRun_SimpleFileEx(fp, python_script, 0);
-
-
-        /* Exit the interpreter */
-
-        if (Py_FinalizeEx() < 0) {
-                exit(120);
-        }
-        fclose(fp);
-
-        return err;
+        return Py_Main(py_argc, py_argv);
 }
 
 #ifdef COSIM
