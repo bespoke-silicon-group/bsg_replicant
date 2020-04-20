@@ -31,6 +31,8 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <libgen.h>
+#include <string.h>
 #include "pytorch_tests.h"
 
 int test_pytorch(int argc, char **argv) {
@@ -43,6 +45,17 @@ int test_pytorch(int argc, char **argv) {
         /* Initialize the interpreter */
 
         Py_Initialize();
+
+
+        /* Append script dir to current path */
+
+        char* dirc = strdup(python_script);
+
+        PyObject* sysPath = PySys_GetObject((char*)"path");
+        PyObject* programName = PyUnicode_FromString(dirname(dirc));
+        PyList_Append(sysPath, programName);
+        Py_DECREF(programName);
+        free(dirc);
 
 
         /* Set Python sys argv */
