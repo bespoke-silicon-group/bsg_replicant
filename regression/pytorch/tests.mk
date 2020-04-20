@@ -25,14 +25,28 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import torch
+# This Makefile fragment defines all of the regression tests (and the
+# source path) for this sub-directory.
 
-print('\n', torch.__config__.show())
+REGRESSION_TESTS_TYPE = pytorch
+SRC_PATH=$(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/
 
-a = torch.rand(3,4)
-b = torch.rand(3,4)
-c = a + b
+# "Unified tests" all use the generic test top-level:
+# test_unified_main.c
+UNIFIED_TESTS = test_pytorch
 
-print('a =', a)
-print('b =', b)
-print('a+b =', c, '\n')
+# "Independent Tests" use a per-test <test_name>.c file
+INDEPENDENT_TESTS := test_lenet5
+
+# REGRESSION_TESTS is a list of all regression tests to run.
+REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
+
+DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+
+CDEFINES   += $(DEFINES)
+CXXDEFINES += $(DEFINES)
+
+FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 
+CFLAGS   += -std=c99 $(FLAGS)
+CXXFLAGS += -std=c++11 $(FLAGS) 
+LDFLAGS  += $(shell python3-config --ldflags)
