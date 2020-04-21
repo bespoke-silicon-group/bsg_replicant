@@ -45,7 +45,7 @@ module bsg_manycore_endpoint_to_fifos
   , parameter addr_width_p = "inv"
   , localparam addr_width_pad_lp = `BSG_CDIV(addr_width_p,8)*8
   , parameter data_width_p = "inv"
-  , parameter data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8
+  , localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8
   , parameter max_out_credits_p = "inv"
   , parameter ep_fifo_els_p = "inv"
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
