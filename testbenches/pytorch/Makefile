@@ -76,4 +76,4 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # requires two arguments: The PyTorch Test Directoty (PYTORCH_TEST_PATH) and the
 # test name (TEST_NAME)
 PYTORCH_TEST_PATH = $(BSG_F1_DIR)/regression/pytorch/
-%.vanilla_stats.csv %.vpd: C_ARGS = $(PYTORCH_TEST_PATH) $(TEST_NAME)
+%.vanilla_stats.csv %.vpd: C_ARGS = $(PYTORCH_TEST_PATH)/$(TEST_NAME).py
