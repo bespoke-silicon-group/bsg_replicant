@@ -76,4 +76,4 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # requires two arguments: The Python Test Directoty (PYTHON_TEST_PATH) and the
 # test name (TEST_NAME)
 PYTHON_TEST_PATH = $(BSG_F1_DIR)/regression/python/
-%.vanilla_stats.csv %.vpd: C_ARGS = $(PYTHON_TEST_PATH) $(TEST_NAME)
+%.vanilla_stats.csv %.vpd: C_ARGS = $(PYTHON_TEST_PATH)/$(TEST_NAME).py
