@@ -1330,7 +1330,7 @@ static int hb_mc_program_allocator_init (const hb_mc_config_t *cfg,
                 return HB_MC_INVALID;
         }
 
-        uint32_t alignment = 32;
+        uint32_t alignment = hb_mc_config_get_vcache_block_size(cfg);
         uint32_t start = program_end_eva + alignment - (program_end_eva % alignment); /* start at the next aligned block */
         size_t dram_size = hb_mc_config_get_dram_size(cfg); 
         program->allocator->memory_manager = (awsbwhal::MemoryManager *) new awsbwhal::MemoryManager(dram_size, start, alignment); 
