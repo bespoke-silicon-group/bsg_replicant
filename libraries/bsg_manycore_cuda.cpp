@@ -1664,6 +1664,10 @@ int hb_mc_device_memcpy (hb_mc_device_t *device,
                 bsg_pr_err("%s: invalid copy type. Copy type can be one of \
                             HB_MC_MEMCPY_TO_DEVICE or HB_MC_MEMCPY_TO_HOST.\n", __func__);
                 return HB_MC_INVALID; 
+        }
+
+        return HB_MC_SUCCESS;
+}
 
 /**
  * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
