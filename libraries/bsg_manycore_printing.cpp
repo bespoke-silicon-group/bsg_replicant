@@ -26,6 +26,9 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <bsg_manycore_printing.h>
+#ifdef COSIM
+#include <bsg_nonsynth_dpi_clock_gen.hpp>
+#endif
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
@@ -136,8 +139,7 @@ int bsg_pr_prefix(const char *prefix, const char *fmt, ...)
 }
 #ifdef COSIM
 uint64_t bsg_time(){
-        uint64_t val;
-        sv_bsg_time(&val);
-        return val;
+        double time = sc_time_stamp();
+        return time;
 }
 #endif

@@ -59,7 +59,6 @@ extern "C" {
 #define BSG_PRINT_STREAM_INFO  stderr
 
 #ifdef COSIM
-        extern void sv_bsg_time(uint64_t*);
         uint64_t bsg_time();
 #endif
 

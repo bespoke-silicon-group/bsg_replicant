@@ -89,10 +89,8 @@ include $(TESTBENCH_PATH)/msg_config.mk
 $(EXEC_PATH)/%.debug: VCS_VFLAGS += -debug_pp 
 $(EXEC_PATH)/%.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
-$(EXEC_PATH)/%.debug $(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS) $(TESTBENCH_PATH)/msg_config
-	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
-	vcs $(BSG_MACHINE_NAME) tb glbl $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
-		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
+$(EXEC_PATH)/%: $(SRC_PATH)/%.o $(SIMLIBS) $(BSG_MACHINE_PATH)/libmachine.so 
+	g++ -std=c++11 $^ -o $@ $(LDFLAGS) -Wl,-rpath=$(BSG_MACHINE_PATH) -lmachine  -L$(BSG_MACHINE_PATH)
 
 link.clean: 
 	rm -rf $(EXEC_PATH)/DVEfiles

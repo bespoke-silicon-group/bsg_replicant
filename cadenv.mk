@@ -56,3 +56,6 @@ endif # Matches: else ifndef VCS_HOME
 ifndef XILINX_VIVADO
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: XILINX_VIVADO environment variable undefined. Are you sure Vivado is installed?$(NC)"))
 endif
+
+VERILATOR_ROOT =/home/drichmond/Research/repositories/git/verilator
+VERILATOR = /home/drichmond/Research/repositories/git/verilator/bin/verilator

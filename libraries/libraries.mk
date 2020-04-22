@@ -42,6 +42,9 @@ LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_responder.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_trace_responder.cpp
+
+LIB_CXXSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
+
 LIB_CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore.h
@@ -72,17 +75,26 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_fifo.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_memsys.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_rom.h
 
+LIB_HEADERS += $(BASEJUMP_STL)/bsg_test/bsg_nonsynth_dpi.hpp
+LIB_HEADERS += $(BASEJUMP_STL)/bsg_test/bsg_nonsynth_dpi_fifo.hpp
+LIB_HEADERS += $(BASEJUMP_STL)/bsg_test/bsg_nonsynth_clock_gen.hpp
+LIB_HEADERS += $(BSG_MANYCORE_DIR)/testbenches/dpi/bsg_nonsynth_dpi_manycore.h
+
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
 
-$(LIB_OBJECTS): INCLUDES  = -I$(LIBRARIES_PATH)
+$(LIB_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace/
+$(LIB_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
+$(LIB_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/
+$(LIB_OBJECTS): INCLUDES += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/
+$(LIB_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test/
 $(LIB_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(LIB_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 $(LIB_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_mem
-$(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC
+$(LIB_OBJECTS): CFLAGS    = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES) -g
+$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES) -g
+$(LIB_OBJECTS): LDFLAGS   = -fPIC
 
 # Objects that should be compiled with debug flags
 LIB_DEBUG_OBJECTS  +=
@@ -106,7 +118,7 @@ $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-function
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
 
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS = -lfpga_mgmt -fPIC
+$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS = -fPIC
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS) $(HEADERS)
 	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
 

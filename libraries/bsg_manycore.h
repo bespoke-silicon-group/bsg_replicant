@@ -34,6 +34,7 @@
 #include <bsg_manycore_epa.h>
 #include <bsg_manycore_packet.h>
 #include <bsg_manycore_fifo.h>
+#include <bsg_nonsynth_dpi_manycore.hpp>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -57,11 +58,15 @@ extern "C" {
         typedef struct hb_mc_manycore {
                 hb_mc_manycore_id_t id; //!< which manycore instance is this
                 const char    *name;     //!< the name of this manycore
-                uintptr_t      mmio;     //!< pointer to memory mapped io
                 hb_mc_config_t config;   //!< configuration of the manycore
                 void    *private_data;   //!< implementation private data
                 unsigned htod_requests;  //!< outstanding host requests
                 int dram_enabled;        //!< operating in no-dram mode?
+                uintptr_t      mmio;     //!< pointer to memory mapped io
+
+#ifdef VERILATOR
+                bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
+#endif                
         } hb_mc_manycore_t;
 
 #define HB_MC_MANYCORE_INIT {0}
@@ -595,7 +600,7 @@ extern "C" {
          */
         int hb_mc_manycore_get_host_request_credits(hb_mc_manycore_t *mc);
 
-
+        int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc);
 #ifdef __cplusplus
 }
 #endif

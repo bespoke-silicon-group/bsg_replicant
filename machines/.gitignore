@@ -4,3 +4,9 @@ bsg_bladerunner_configuration.rom
 bsg_bladerunner_memsys.rom
 bsg_bladerunner_configuration.v
 bsg_bladerunner_pkg.vh
+notrace
+trace
+libmachine.so
+verilated.o
+verilated_dpi.o
+verilated_vcd_c.o
