@@ -561,7 +561,9 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         r = err;
         hb_mc_manycore_cleanup_fifos(mc);
         hb_mc_manycore_cleanup_mmio(mc);
+#ifdef COSIM
         hb_mc_manycore_cleanup_dpi(mc);
+#endif
         hb_mc_manycore_cleanup_private_data(mc);
         free((void*)mc->name);
 
