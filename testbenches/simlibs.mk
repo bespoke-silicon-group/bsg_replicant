@@ -201,6 +201,7 @@ $(LIB_OBJECTS): CXXFLAGS += -DCOSIM
 $(LIB_OBJECTS): CFLAGS   += -DCOSIM
 
 # libfpga_mgmt will be compiled in $(TESTBENCH_PATH), so direct the linker there
+$(LIB_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(TESTBENCH_PATH) 
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-Wl,-rpath=$(TESTBENCH_PATH)
 $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: $(TESTBENCH_PATH)/libfpga_mgmt.so

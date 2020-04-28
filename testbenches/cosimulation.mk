@@ -50,7 +50,6 @@ endif
 
 # The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
 INCLUDES   += -I$(LIBRARIES_PATH) 
-INCLUDES   += -I$(VCS_HOME)/linux64/lib/
 
 # CSOURCES/HEADERS should probably go in some regression file list.
 CDEFINES   += -DCOSIM -DVCS
