@@ -3,12 +3,13 @@ module manycore_tb_top
   import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
   import bsg_manycore_addr_pkg::*;
-  import bsg_bladerunner_rom_pkg::*;
+  import bsg_bladerunner_pkg::*;
   import bsg_bladerunner_mem_cfg_pkg::*;
   import bsg_manycore_endpoint_to_fifos_pkg::*;
      ();
 /*verilator tracing_on*/
    localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)));
+   localparam dpi_fifo_els_lp = dpi_fifo_els_gp;
    localparam ep_fifo_els_lp = 4;
    localparam async_fifo_els_lp = 16;
    localparam global_counter_width_lp = 64;
@@ -45,23 +46,6 @@ module manycore_tb_top
 
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
-
-   // IO Request to FIFO Interface
-   logic [dpi_fifo_width_lp-1:0]               host_req_lo;
-   logic                                       host_req_v_lo;
-   logic                                       host_req_ready_li;
-
-   // Response FIFO to IO Interface
-   logic [dpi_fifo_width_lp-1:0]               mc_rsp_li;
-   logic                                       mc_rsp_v_li;
-   logic                                       mc_rsp_ready_lo;
-
-   // Request FIFO to IO Interface
-   logic [dpi_fifo_width_lp-1:0]               mc_req_li;
-   logic                                       mc_req_v_li;
-   logic                                       mc_req_ready_lo;
-
-   logic [`BSG_WIDTH(max_out_credits_p)-1:0]   ep_out_credits_lo;
 
    // Snoop wires for Print Stat
    logic                                       print_stat_v_lo;
@@ -124,12 +108,16 @@ module manycore_tb_top
    assign io_reset = core_reset;
    
    bsg_nonsynth_dpi_manycore
-     #(.x_cord_width_p(x_cord_width_p),
-       .y_cord_width_p(y_cord_width_p),
-       .addr_width_p(addr_width_p),
-       .data_width_p(data_width_p),
-       .ep_fifo_els_p(ep_fifo_els_lp),
-       .max_out_credits_p(max_out_credits_p) // from cl_manycore_pkg.sv
+     #(.x_cord_width_p(x_cord_width_p)
+       ,.y_cord_width_p(y_cord_width_p)
+       ,.addr_width_p(addr_width_p)
+       ,.data_width_p(data_width_p)
+       ,.ep_fifo_els_p(ep_fifo_els_lp)
+       ,.dpi_fifo_els_p(dpi_fifo_els_lp)
+       ,.rom_els_p(rom_els_gp)
+       ,.rom_width_p(rom_width_gp)
+       ,.rom_arr_p(rom_arr_gp)
+       ,.max_out_credits_p(max_out_credits_p) // from cl_manycore_pkg.sv
        )
    mc_dpi
      (.clk_i(io_clk)

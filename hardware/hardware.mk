@@ -225,10 +225,13 @@ $(BSG_MACHINE_PATH)/f1_parameters.vh: $(BSG_MACHINE_PATH)/Makefile.machine.inclu
 
 # This package defines the number of lines in the ROM
 $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.vh: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
+	$(eval ROM_STR=$(shell tac $< | sed "s/^\(.*\)$$/32'b\1,/" | sed '$$s/,$$//'))
 	@echo "\`ifndef BSG_BLADERUNNER_PKG" > $@
 	@echo "\`define BSG_BLADERUNNER_PKG" >> $@
 	@echo >> $@
 	@echo "package bsg_bladerunner_pkg;" >> $@
+	@echo >> $@
+	@echo "parameter dpi_fifo_els_gp = $(CL_MANYCORE_IO_REMOTE_LOAD_CAP);" >> $@
 	@echo >> $@
 	@echo "parameter rom_width_gp = 32;" >> $@
 	@echo "parameter rom_els_gp = `wc -l < $<`;" >> $@
