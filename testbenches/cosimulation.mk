@@ -56,8 +56,8 @@ INCLUDES   += -I$(BASEJUMP_STL_DIR)/bsg_test/
 INCLUDES   += -I$(VERILATOR_ROOT)/include/
 
 # CSOURCES/HEADERS should probably go in some regression file list.
-CDEFINES   += -DCOSIM -DVCS -DVERILATOR
-CXXDEFINES += -DCOSIM -DVCS -DVERILATOR
+CDEFINES   += -DVCS -DVERILATOR
+CXXDEFINES += -DVCS -DVERILATOR
 CXXFLAGS   += -lstdc++
 
 include $(REGRESSION_PATH)/compilation.mk
@@ -192,7 +192,7 @@ $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 .%/vcdplus.vpd .%/vanilla_stats.csv:
 	mkdir -p $(dir $@)
 	cd $(dir $@) && \
-	$< $(SIM_ARGS) 2>&1 | tee $(LOG_NAME)
+	$< $(SIM_ARGS) $(C_ARGS) 2>&1 | tee $(LOG_NAME)
 	@mv $(dir $@)/$(LOG_NAME) $(LOG_NAME)
 
 # %.debug.log is just an alias for %.vpd

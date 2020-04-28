@@ -39,6 +39,7 @@
 #include <verilated.h>
 #include <verilated_vcd_c.h>
 #include <svdpi.h>
+#include <bsg_nonsynth_dpi_errno.hpp>
 #include <bsg_nonsynth_dpi_manycore.hpp>
 #include <bsg_nonsynth_dpi_clock_gen.hpp>
 #include <Vmanycore_tb_top.h>
@@ -91,8 +92,11 @@
 // #undef manycore_pr_err
 // #define manycore_pr_err(...)
 
-typedef Vmanycore_tb_top hb_mc_manycore_private_t;
-
+typedef struct verilator_t {
+        Vmanycore_tb_top * top;
+        bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
+        VerilatedVcdC *trace_object;
+} verilator_t;
 
 static int  hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id);
 static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc);
@@ -126,7 +130,9 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 // VerilatedVcdC *trace_object;
 
 static int hb_mc_dpi_get_credits(hb_mc_manycore_t *mc, int &credits, long timeout){
-        Vmanycore_tb_top *top = reinterpret_cast<Vmanycore_tb_top*>(mc->private_data);
+        int res;
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
@@ -137,21 +143,29 @@ static int hb_mc_dpi_get_credits(hb_mc_manycore_t *mc, int &credits, long timeou
                 bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
                 //trace_object->dump(sc_time_stamp());
+                res = priv->dpi->get_credits(credits);
+        } while(res == BSG_NONSYNTH_DPI_NOT_WINDOW);
 
-        } while(!mc->dpi->try_get_credits(credits));
+        if(res != BSG_NONSYNTH_DPI_SUCCESS){
+                manycore_pr_err(mc, "%s: Unexpected return value.\n",
+                                __func__);
+                return HB_MC_INVALID;
+        }
 
         if(credits < 0){
                 manycore_pr_err(mc, "%s: Invalid credit value. Must be non-negative\n",
                                 __func__, credits);
                 return HB_MC_INVALID;
         }
+        
 
         return HB_MC_SUCCESS;
 }
 
 static int hb_mc_dpi_transmit(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
-        Vmanycore_tb_top *top = reinterpret_cast<Vmanycore_tb_top*>(mc->private_data);
-        bool res;
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
+        int err;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
@@ -161,15 +175,26 @@ static int hb_mc_dpi_transmit(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
         do {
                 bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
+                err = priv->dpi->tx_req(*pkt);
                 //trace_object->dump(sc_time_stamp());
-  
-        } while(!mc->dpi->try_tx_req(*pkt));
+        } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
+                 (err == BSG_NONSYNTH_DPI_NO_CREDITS || 
+                  err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+                  err == BSG_NONSYNTH_DPI_NOT_READY    ));
+
+        if(err != BSG_NONSYNTH_DPI_SUCCESS){
+                manycore_pr_err(mc, "%s: Failed to transmit packet: %s\n",
+                                __func__, bsg_nonsynth_dpi_strerror(err));
+                return HB_MC_INVALID;
+        }
 
         return HB_MC_SUCCESS;
 }
 static int hb_mc_dpi_receive(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
-        static bool order = false, rcvd;
-        Vmanycore_tb_top *top = reinterpret_cast<Vmanycore_tb_top*>(mc->private_data);
+        static bool order = false;
+        int err;
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
 
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -177,23 +202,31 @@ static int hb_mc_dpi_receive(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
                 return HB_MC_INVALID;
         }
 
-        order ^= 1;
-
         do {
                 bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
-                //trace_object->dump(sc_time_stamp());
 
                 if(order){
-                        rcvd = mc->dpi->try_rx_rsp(*pkt);
-                        if(!rcvd)
-                                rcvd = mc->dpi->try_rx_req(*pkt);
+                        err = priv->dpi->rx_rsp(*pkt);
                 } else {
-                        rcvd = mc->dpi->try_rx_req(*pkt);
-                        if(!rcvd)
-                                rcvd = mc->dpi->try_rx_rsp(*pkt);
+                        err = priv->dpi->rx_req(*pkt);
                 }
-        } while(!rcvd);
+
+                if(err == BSG_NONSYNTH_DPI_NOT_VALID)
+                        order ^= 1;
+
+                //trace_object->dump(sc_time_stamp());
+        } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
+                 (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+                  err == BSG_NONSYNTH_DPI_NOT_VALID));
+
+        order ^= 1;
+
+        if(err != BSG_NONSYNTH_DPI_SUCCESS){
+                manycore_pr_err(mc, "%s: Failed to receive packet: %s\n",
+                                __func__, bsg_nonsynth_dpi_strerror(err));
+                return HB_MC_INVALID;
+        }
 
         return HB_MC_SUCCESS;
 }
@@ -230,32 +263,24 @@ static int hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id
         return HB_MC_SUCCESS;
 }
 
-#ifdef COSIM
 static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc)
 {
         svScope scope;
         int credits = 0, err;
-        Vmanycore_tb_top *top = reinterpret_cast<Vmanycore_tb_top*>(mc->private_data);
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
         std::string hier;
 
         top->eval();
-                //trace_object->dump(sc_time_stamp());
+        //trace_object->dump(sc_time_stamp());
 
-        scope = svGetScopeFromName("TOP.manycore_tb_top");
-        svSetScope(scope);
         hier = std::string("TOP.manycore_tb_top.mc_dpi");
-        mc->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hier);
+        priv->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hier);
 
-        err = hb_mc_dpi_get_credits(mc, credits, -1);
-        if(err != HB_MC_SUCCESS){
-                return err;
-        }
-
-        manycore_pr_dbg(mc, "%s: mc->dpi = 0x%" PRIxPTR "\n", __func__, mc->dpi);
+        manycore_pr_dbg(mc, "%s: priv->dpi = 0x%" PRIxPTR "\n", __func__, priv->dpi);
 
         return HB_MC_SUCCESS;
 }
-#endif
 
 /* cleanup manycore MMIO */
 static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc)
@@ -269,10 +294,13 @@ static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc)
 static int hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc)
 {
         int r = HB_MC_FAIL, err;
-
+        
+        verilator_t * priv = new verilator_t;
         std::string hierarchy = "TOP.manycore_tb_top.mc_dpi";
         Vmanycore_tb_top *top = new Vmanycore_tb_top();
-        mc->private_data = reinterpret_cast<void *>(top);
+        priv->top = top;
+
+        mc->private_data = reinterpret_cast<void *>(priv);
 
 
         //Verilated::traceEverOn(true);
@@ -287,20 +315,25 @@ static int hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc)
 /* cleanup manycore private data */
 static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc)
 {
-        Vmanycore_tb_top *top = reinterpret_cast<Vmanycore_tb_top*>(mc->private_data);
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
+
         delete top;
 }
 
 /* initialize configuration */
 static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 {
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
+
         int err;
         uintptr_t addr;
         int idx;
         hb_mc_config_raw_t config[HB_MC_CONFIG_MAX];
 
         for (idx = HB_MC_CONFIG_MIN; idx < HB_MC_CONFIG_MAX; idx++) {
-                config[idx] = mc->dpi->config[idx];
+                config[idx] = priv->dpi->config[idx];
         }
 
         err = hb_mc_config_init(config, &(mc->config));
@@ -347,7 +380,8 @@ static int hb_mc_manycore_decr_host_requests(hb_mc_manycore_t *mc)
 
 int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc)
 {
-        Vmanycore_tb_top *top = reinterpret_cast<Vmanycore_tb_top*>(mc->private_data);
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         int res;
         int credits = 0;
@@ -429,11 +463,10 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_init_mmio(mc, id)) != HB_MC_SUCCESS)
                 goto cleanup;
 
-        //#ifdef VERILATOR
+        // initialize manycore for DPI
         if((err = hb_mc_manycore_init_dpi(mc)) != HB_MC_SUCCESS){
                 goto cleanup;
         }
-        //#endif
 
         // read configuration
         if ((err = hb_mc_manycore_init_config(mc)) != HB_MC_SUCCESS)
@@ -496,12 +529,14 @@ int hb_mc_manycore_exit(hb_mc_manycore_t *mc)
  */
 int hb_mc_manycore_get_endpoint_out_credits(hb_mc_manycore_t *mc)
 {
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
+
         int value;
-        int err = HB_MC_FAIL;
-        bool res = mc->dpi->try_get_credits(value);
-        if (!res) {
+        int err = priv->dpi->get_credits(value);
+        if (err != BSG_NONSYNTH_DPI_SUCCESS) {
                 manycore_pr_err(mc, "%s: Failed to read endpoint out credits: %s\n",
-                                __func__, hb_mc_strerror(err));
+                                __func__, bsg_nonsynth_dpi_strerror(err));
                 return err;
         }
         return value;

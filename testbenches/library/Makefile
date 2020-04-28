@@ -74,4 +74,4 @@ include $(REGRESSION_PATH)/$(REGRESSION_TESTS_TYPE)/rules.mk
 # The rule below defines how to run all Library tests. The output .vpd file will
 # be named <test_name>.vpd. To generate a trace file, run `make
 # <test_name>.vanilla.log`
-%.vanilla_stats.csv %.vpd: C_ARGS = ""
+%.vanilla_stats.csv %.vpd: C_ARGS = 
