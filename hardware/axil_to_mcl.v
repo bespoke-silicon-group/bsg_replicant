@@ -18,12 +18,11 @@
 `include "bsg_axi_bus_pkg.vh"
 `include "bsg_defines.v"
 `include "axil_to_mcl.vh"
-`include "bsg_bladerunner_rom_pkg.vh"
 
 module axil_to_mcl
   import bsg_manycore_pkg::*;
   import cl_mcl_pkg::*;
-  import bsg_bladerunner_rom_pkg::*;
+  import bsg_bladerunner_pkg::*;
   #(
   // manycore link paramters
   num_mcl_p="inv"
