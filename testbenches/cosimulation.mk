@@ -77,16 +77,6 @@ help:
 	@echo "             for this subdirectory and generate traces for each"
 	@echo "             test. Does not print aggregate pass/fail results."
 	@echo ""
-	@echo "      regression+waveforms: Run all cosimulation regression "
-	@echo "             tests for this subdirectory and generate waveforms"
-	@echo "             for each test. Does not print aggregate pass/fail"
-	@echo "             results."
-	@echo ""
-	@echo "      regression+traces+waveforms: Run all cosimulation "
-	@echo "             regression tests for this subdirectory and generate"
-	@echo "             traces and waveforms for each test. Does not print"
-	@echo "             aggregate pass/fail results."
-	@echo ""
 	@echo "      <test_name>: Build the cosimulation binary for a specific"
 	@echo "             test"
 	@echo ""
@@ -108,56 +98,8 @@ help:
 	@echo "$(REGRESSION_TESTS)" | fold -s -w70 | sed -e "s|^ ||g;s|^|\t|g"
 
 
-# Define the global targets, as documented above
-regression+traces: $(REGRESSION_TESTS:%=%.vanilla.log) 
-regression+traces: $(REGRESSION_TESTS:%=%.operation_trace.csv) 
-regression+traces: $(REGRESSION_TESTS:%=%.vanilla_operation_trace.csv)
-regression+traces: $(REGRESSION_TESTS:%=%.vcache_operation_trace.csv)
-regression+traces: $(REGRESSION_TESTS:%=%.vanilla_stats.csv)
-
-regression+waveforms: $(REGRESSION_TESTS:%=%.debug.log)
-
-# By adding +trace to SIM_ARGS this SHOULD will produce the trace files. By
-# running regression+waveforms first it will produce traces AND waveforms and
-# prevent regression+traces from re-running. #makemagic
-regression+traces+waveforms: SIM_ARGS += +trace
-regression+traces+waveforms: regression+waveforms regression+traces
-
 # This defines "local" goals for each regression test target
 test_loader $(INDEPENDENT_TESTS): %: $(EXEC_PATH)/%
-
-# All simulations should run with +ntb_random_seed_automatic.
-# 
-# From the VCS MX User-Guide: +ntb_random_seed_automatic Picks a unique value to
-# supply as the first seed used by a testbench. The value is determined by
-# combining the time of day, host name and process id. This ensures that no two
-# simulations have the same starting seed.
-#SIM_ARGS += +ntb_random_seed_automatic 
-
-$(EXEC_PATH)/%.debug.log: %.vpd ;
-
-# OK, here's where things get complicated. 
-
-# Each regression that generates a waveform generates it in the .<test_name>
-# directory, named vcdplus.vpd. To generate a waveform we must provide the
-# following arguments to the simulation through SIM_ARGS.
-.%/vcdplus.vpd: SIM_ARGS += +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-
-
-# Generating a waveform requires a simulation binary compiled with different VCS
-# flags. We call this binary <test_name>.debug, and its build rule is defined in
-# link.mk.
-#
-# UNIFIED_TESTS all use test_loader.debug. INDEPENDENT_TESTS use their own
-# top-level. Encode dependencies for each differently.
-#
-# The ORDER of these dependencies are important because the actual rule uses $<
-# to get the name of the executable.
-#$(UNIFIED_TESTS:%=.%/vcdplus.vpd): $(EXEC_PATH)/test_loader.debug
-#$(INDEPENDENT_TESTS:%=.%/vcdplus.vpd):.%/vcdplus.vpd : $(EXEC_PATH)/%.debug
-# Each regression test can define its dependencies in <test_name>.rule, but we
-# must satisfy that rule before generating the .vpd file
-$(REGRESSION_TESTS:%=.%/vcdplus.vpd): .%/vcdplus.vpd : %.rule
 
 # Normal cosimulation requires a simulation binary without waveform flags (it
 # executes faster...). We call this binary <test_name>, and its build rule is
@@ -175,26 +117,20 @@ $(INDEPENDENT_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : $(EXEC_PATH)
 # must satisfy that rule before generating the .csv file
 $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 
-# These are the execution rules for the binaries. We define TEST_NAME so that it
-# can be used in C_ARGS, and LOG_NAME so that we can write a log. If a waveform
-# is being generated, then it writes to <test_name>.debug.log, otherwise
-# <test_name>.log. Finally, depend on <test_name>.rule so that we rebuild the
-# RISC-V binaries.
+# These are the execution rules for the binaries. We define TEST_NAME
+# so that it can be used in C_ARGS, and LOG_NAME so that we can write
+# a log, <test_name>.log. Finally, depend on <test_name>.rule so that
+# we rebuild the RISC-V binaries.
 
-.%/vcdplus.vpd .%/vanilla_stats.csv: TEST_NAME=$(@:.%/$(notdir $@)=%)
-.%/vcdplus.vpd: LOG_NAME=$(subst ..,.,$(TEST_NAME).debug.log)
+.%/vanilla_stats.csv: TEST_NAME=$(@:.%/$(notdir $@)=%)
 .%/vanilla_stats.csv: LOG_NAME=$(subst ..,.,$(TEST_NAME).log)
 
-.%/vcdplus.vpd .%/vanilla_stats.csv:
+.%/vanilla_stats.csv:
 	mkdir -p $(dir $@)
 	cd $(dir $@) && \
 	$< $(SIM_ARGS) $(C_ARGS) 2>&1 | tee $(LOG_NAME)
 	@mv $(dir $@)/$(LOG_NAME) $(LOG_NAME)
 
-# %.debug.log is just an alias for %.vpd
-%.debug.log: %.vpd ;
-# Running simulation generates <test_name>/vcdplus.vpd. Move it to
-# <test_name>.vpd
 
 # set the the name for MEMSYS_STATS
 ifneq ($(filter e_vcache_%, $(CL_MANYCORE_MEM_CFG)),)
@@ -204,9 +140,6 @@ endif
 ifneq ($(filter e_infinite_mem, $(CL_MANYCORE_MEM_CFG)),)
 MEMSYS_STATS := infinite_mem_stats
 endif
-
-%.vpd: .%/vcdplus.vpd %.vanilla_stats.csv %.$(MEMSYS_STATS).csv
-	@mv $< $@
 
 # Vcache stats are generated by default, at the same time as
 # vanilla_stats.
@@ -242,12 +175,6 @@ $(EXEC_PATH)/%.log: %.vanilla_stats.csv ;
 %.vanilla.log: .%/vanilla.log
 	@mv $< $@
 
-
-
-
-%.dve: %.vpd
-	$(DVE) -full64 -vpd $< &
-
 clean: regression.clean compilation.clean link.clean $(USER_CLEAN_RULES)
 	rm -rf *.log
 	rm -rf *.vanilla_operation_trace.csv *.vcache_operation_trace.csv *.vanilla_stats.csv
@@ -255,9 +182,8 @@ clean: regression.clean compilation.clean link.clean $(USER_CLEAN_RULES)
 	rm -rf $(MACHINES_PATH)/*/synopsys_sim.setup
 	rm -rf $(MACHINES_PATH)/*/regression.log
 	rm -rf $(REGRESSION_TESTS) test_loader
-	rm -rf $(REGRESSION_TESTS:%=%.debug) test_loader.debug
 	rm -rf $(REGRESSION_TESTS:%=.%)
 
 
 .PHONY: %.dve
-.PRECIOUS: %.csv %.vanilla_stats.csv %.log %.debug.log %.vpd %.$(MEMSYS_STATS).csv
+.PRECIOUS: %.csv %.vanilla_stats.csv %.log %.$(MEMSYS_STATS).csv
