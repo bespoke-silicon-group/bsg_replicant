@@ -48,7 +48,7 @@
 
 module bsg_manycore_link_to_axil
   import bsg_manycore_pkg::*;
-  import bsg_bladerunner_rom_pkg::*;
+  import bsg_bladerunner_pkg::*;
   import bsg_manycore_link_to_axil_pkg::*;
 #(
   // maycore link params

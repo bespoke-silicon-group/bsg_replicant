@@ -29,14 +29,11 @@
  *  cl_manycore.v
  */
 
-`include "bsg_bladerunner_rom_pkg.vh"
-
-
 module cl_manycore
   import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
   import bsg_manycore_addr_pkg::*;
-  import bsg_bladerunner_rom_pkg::*;
+  import bsg_bladerunner_pkg::*;
   import bsg_bladerunner_mem_cfg_pkg::*;
    (
   `include "cl_ports.vh"
