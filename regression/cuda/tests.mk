@@ -46,7 +46,7 @@ UNIFIED_TESTS += test_striped
 # "Independent Tests" use a per-test <test_name>.c file
 INDEPENDENT_TESTS += test_binary_load_buffer
 INDEPENDENT_TESTS += test_empty_parallel
-INDEPENDENT_TESTS += test_multiple_binary_load
+#INDEPENDENT_TESTS += test_multiple_binary_load
 INDEPENDENT_TESTS += test_host_memset
 INDEPENDENT_TESTS += test_stack_load
 INDEPENDENT_TESTS += test_dram_load_store
