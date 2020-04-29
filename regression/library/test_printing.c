@@ -47,6 +47,7 @@
 #include "test_printing.h"
 static int test_printing(void)
 {
+        int rc;
         hb_mc_manycore_t mc = {0};
         rc = hb_mc_manycore_init(&mc, "manycore@test_rom", 0);
         if(rc != HB_MC_SUCCESS){
