@@ -118,6 +118,7 @@ VSOURCES += $(BSG_MACHINE_PATH)/bsg_bladerunner_rom_pkg.vh
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil_pkg.v
 VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_master.v
 VSOURCES += $(CL_DIR)/hardware/bsg_mcl_axil_fifos_slave.v
+VSOURCES += $(CL_DIR)/hardware/bsg_manycore_endpoint_to_fifos_pkg.v
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_endpoint_to_fifos.v
 VSOURCES += $(CL_DIR)/hardware/bsg_manycore_link_to_axil.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v

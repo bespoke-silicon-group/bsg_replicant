@@ -61,6 +61,7 @@ module bsg_manycore_link_to_axil
   , parameter addr_width_p = "inv"
   , parameter data_width_p = "inv"
   , parameter max_out_credits_p = "inv"
+  , localparam ep_fifo_els_lp = 4
   , localparam link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
 ) (
   input                                clk_i
@@ -89,8 +90,6 @@ module bsg_manycore_link_to_axil
   ,input  [         x_cord_width_p-1:0] my_x_i
   ,input  [         y_cord_width_p-1:0] my_y_i
   // print stat
-  ,output                               print_stat_v_o
-  ,output [           data_width_p-1:0] print_stat_tag_o
 );
 
 
@@ -366,6 +365,7 @@ module bsg_manycore_link_to_axil
     .y_cord_width_p   (y_cord_width_p   ),
     .addr_width_p     (addr_width_p     ),
     .data_width_p     (data_width_p     ),
+    .ep_fifo_els_p    (ep_fifo_els_lp   ),
     .max_out_credits_p(max_out_credits_p)
   ) mc_ep_to_fifos (
     .clk_i           (clk_i            ),
@@ -389,10 +389,7 @@ module bsg_manycore_link_to_axil
     .link_sif_o      (link_sif_o       ),
     .my_x_i          (my_x_i           ),
     .my_y_i          (my_y_i           ),
-    .out_credits_o   (ep_out_credits_lo),
-    // stat log
-    .print_stat_v_o  (print_stat_v_o   ),
-    .print_stat_tag_o(print_stat_tag_o )
+    .out_credits_o   (ep_out_credits_lo)
   );
 
 endmodule

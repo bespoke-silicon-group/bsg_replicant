@@ -33,20 +33,21 @@
 * Or cast the manycore packet to the rx_fifo data stream
 */
 
-
 module bsg_manycore_endpoint_to_fifos
-  import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
-  import bsg_manycore_link_to_axil_pkg::*;
-  import bsg_manycore_addr_pkg::bsg_print_stat_epa_gp;
 #(
   parameter fifo_width_p = "inv"
   // these are endpoint parameters
   , parameter x_cord_width_p = "inv"
+  , localparam x_cord_width_pad_lp = `BSG_CDIV(x_cord_width_p,8)*8
   , parameter y_cord_width_p = "inv"
+  , localparam y_cord_width_pad_lp = `BSG_CDIV(y_cord_width_p,8)*8
   , parameter addr_width_p = "inv"
+  , localparam addr_width_pad_lp = `BSG_CDIV(addr_width_p,8)*8
   , parameter data_width_p = "inv"
+  , localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8
   , parameter max_out_credits_p = "inv"
+  , parameter ep_fifo_els_p = "inv"
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
 ) (
   input                                      clk_i
@@ -77,13 +78,9 @@ module bsg_manycore_endpoint_to_fifos
 
   ,output [`BSG_WIDTH(max_out_credits_p)-1:0] out_credits_o
 
-
-  // print stat
-  ,output                                     print_stat_v_o
-  ,output [                 data_width_p-1:0] print_stat_tag_o
 );
 
-  `declare_bsg_manycore_link_fifo_s(fifo_width_p, mcl_addr_width_gp, mcl_data_width_gp, mcl_x_cord_width_gp, mcl_y_cord_width_gp);
+  `declare_bsg_manycore_link_fifo_s(fifo_width_p, addr_width_pad_lp, data_width_pad_lp, x_cord_width_pad_lp, y_cord_width_pad_lp);
 
   // host as master
   bsg_mcl_request_s  host_req_li_cast;
@@ -166,10 +163,10 @@ module bsg_manycore_endpoint_to_fifos
 
   assign mc_rsp_lo_cast.padding  = '0;
   assign mc_rsp_lo_cast.pkt_type = 8'(returned_pkt_type_r_lo);
-  assign mc_rsp_lo_cast.data     = mcl_data_width_gp'(returned_data_r_lo);
+  assign mc_rsp_lo_cast.data     = data_width_pad_lp'(returned_data_r_lo);
   assign mc_rsp_lo_cast.reg_id   = 8'(returned_reg_id_r_lo);
-  assign mc_rsp_lo_cast.y_cord   = mcl_y_cord_width_gp'(my_y_i);
-  assign mc_rsp_lo_cast.x_cord   = mcl_x_cord_width_gp'(my_x_i);
+  assign mc_rsp_lo_cast.y_cord   = y_cord_width_pad_lp'(my_y_i);
+  assign mc_rsp_lo_cast.x_cord   = x_cord_width_pad_lp'(my_x_i);
 
 
   // manycore request to host
@@ -178,14 +175,14 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_in_yumi_li = mc_req_ready_i & mc_req_v_o;
 
   assign mc_req_lo_cast.padding      = '0;
-  assign mc_req_lo_cast.addr         = mcl_addr_width_gp'(endpoint_in_addr_lo);
+  assign mc_req_lo_cast.addr         = addr_width_pad_lp'(endpoint_in_addr_lo);
   assign mc_req_lo_cast.op           = 8'(endpoint_in_we_lo);
   assign mc_req_lo_cast.op_ex        = 8'(endpoint_in_mask_lo);
-  assign mc_req_lo_cast.payload.data = mcl_data_width_gp'(endpoint_in_data_lo);
-  assign mc_req_lo_cast.src_y_cord   = mcl_y_cord_width_gp'(in_src_y_cord_lo);
-  assign mc_req_lo_cast.src_x_cord   = mcl_x_cord_width_gp'(in_src_x_cord_lo);
-  assign mc_req_lo_cast.y_cord       = mcl_y_cord_width_gp'(my_y_i);
-  assign mc_req_lo_cast.x_cord       = mcl_x_cord_width_gp'(my_x_i);
+  assign mc_req_lo_cast.payload.data = data_width_p'(endpoint_in_data_lo);
+  assign mc_req_lo_cast.src_y_cord   = y_cord_width_pad_lp'(in_src_y_cord_lo);
+  assign mc_req_lo_cast.src_x_cord   = x_cord_width_pad_lp'(in_src_x_cord_lo);
+  assign mc_req_lo_cast.y_cord       = y_cord_width_pad_lp'(my_y_i);
+  assign mc_req_lo_cast.x_cord       = x_cord_width_pad_lp'(my_x_i);
 
 
   // host response to manycore
@@ -207,7 +204,7 @@ module bsg_manycore_endpoint_to_fifos
   bsg_manycore_endpoint_standard #(
     .x_cord_width_p   (x_cord_width_p      ),
     .y_cord_width_p   (y_cord_width_p      ),
-    .fifo_els_p       (mcl_edpt_fifo_els_gp),
+    .fifo_els_p       (ep_fifo_els_p       ),
     .addr_width_p     (addr_width_p        ),
     .data_width_p     (data_width_p        ),
     .max_out_credits_p(max_out_credits_p   )
@@ -250,9 +247,5 @@ module bsg_manycore_endpoint_to_fifos
     .my_x_i               (my_x_i                ),
     .my_y_i               (my_y_i                )
   );
-
-  assign print_stat_v_o = endpoint_in_v_lo & endpoint_in_we_lo
-    & ({endpoint_in_addr_lo[13:0], 2'b00} == bsg_print_stat_epa_gp);
-  assign print_stat_tag_o = endpoint_in_data_lo;
 
 endmodule

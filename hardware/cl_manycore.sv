@@ -1187,10 +1187,7 @@ module cl_manycore
     .link_sif_i      (axil_link_sif_li  ),
     .link_sif_o      (axil_link_sif_lo  ),
     .my_x_i          (mcl_x_cord_li     ),
-    .my_y_i          (mcl_y_cord_li     ),
-    // trace
-    .print_stat_v_o  (print_stat_v_lo   ),
-    .print_stat_tag_o(print_stat_tag_lo )
+    .my_y_i          (mcl_y_cord_li     )
   );
 
 `ifdef COSIM
