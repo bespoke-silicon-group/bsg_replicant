@@ -78,6 +78,7 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_rom.h
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
 
+$(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)
 $(LIB_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace/
 $(LIB_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(LIB_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/

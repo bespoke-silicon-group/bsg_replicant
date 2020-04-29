@@ -81,16 +81,12 @@ ifndef BSG_MACHINE_NAME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_NAME is not defined$(NC)"))
 endif
 
+# The manycore architecture uses unsynthesizable sources for simulation
+
 # Include makefile for dramsim3 sources
 include $(TESTBENCH_PATH)/dramsim3.mk
 include $(TESTBENCH_PATH)/infmem.mk
 include $(TESTBENCH_PATH)/libdmamem.mk
-
-# The manycore architecture uses unsynthesizable sources for simulation
-
-# machine_wrapper.sv is the top-level work library for each individual
-# machine.
-# VSOURCES += $(TESTBENCH_PATH)/machine_wrapper.sv
 
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
 
@@ -108,7 +104,6 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_tx.v
-
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
@@ -117,7 +112,6 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 # VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 # VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
 # VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
-
 # VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
 # VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
 # VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.v
@@ -223,4 +217,4 @@ simlibs.clean: libraries.clean hardware.clean
 bleach:
 	rm -rf $(TESTBENCH_PATH)/vcs_simlibs $(TESTBENCH_PATH)/synopsys_sim.setup
 
-.PRECIOUS: %.mk %__ALL.a $(MACHINES_PATH)/%.o %/bsg_nonsynth_manycore_rom_dpi.vh %/libmachine.so
+.PRECIOUS: %.mk %__ALL.a $(MACHINES_PATH)/%.o %/libmachine.so
