@@ -38,6 +38,7 @@
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #else
+#include <svdpi.h>
 #include <fpga_pci_sv.h>
 #include <utils/sh_dpi_tasks.h>
 #include <bsg_mem_dma.hpp>
@@ -108,6 +109,9 @@ static int  hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t i
 static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc);
 static int  hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc);
 static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc);
+
+static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc);
+static void hb_mc_manycore_cleanup_dpi(hb_mc_manycore_t *mc);
 
 static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
                                              hb_mc_packet_t *packet,
@@ -253,6 +257,21 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 ///////////////////
 // Init/Exit API //
 ///////////////////
+
+#ifdef COSIM
+static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc)
+{
+        svScope scope;
+        scope = svGetScopeFromName("tb");
+        svSetScope(scope);
+        return HB_MC_SUCCESS;
+}
+
+static void hb_mc_manycore_cleanup_dpi(hb_mc_manycore_t *mc)
+{
+        return;
+}
+#endif
 
 /* initialize manycore MMIO */
 static int hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
@@ -509,6 +528,12 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_init_private_data(mc)) != HB_MC_SUCCESS)
                 goto cleanup;
 
+#ifdef COSIM
+        // initialize simulation
+        if ((err = hb_mc_manycore_init_dpi(mc)) != HB_MC_SUCCESS)
+                goto cleanup;
+#endif
+
         // initialize manycore for MMIO
         if ((err = hb_mc_manycore_init_mmio(mc, id)) != HB_MC_SUCCESS)
                 goto cleanup;
@@ -536,6 +561,9 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         r = err;
         hb_mc_manycore_cleanup_fifos(mc);
         hb_mc_manycore_cleanup_mmio(mc);
+#ifdef COSIM
+        hb_mc_manycore_cleanup_dpi(mc);
+#endif
         hb_mc_manycore_cleanup_private_data(mc);
         free((void*)mc->name);
 

@@ -51,9 +51,6 @@ using std::isnormal;
 #include <unistd.h>
 #include <argp.h>
 
-#ifdef VCS
-#include "svdpi.h"
-#endif
 #define BSG_RED(x) "\033[31m" x "\033[0m"
 #define BSG_GREEN(x) "\033[32m" x "\033[0m"
 #define BSG_YELLOW(x) "\033[33m" x "\033[0m"
@@ -385,5 +382,23 @@ static struct argp argp_name = {opts_name, parse_name, desc_name, doc};
 static struct argp argp_path = {opts_path, parse_path, desc_path, doc};
 static struct argp argp_path_py = {opts_path_py, parse_path_py, desc_path_py, doc};
 static struct argp argp_none = {opts_none, parse_none, desc_none, doc};
+
+#ifdef VCS
+int vcs_main(int argc, char **argv);
+void cosim_main(uint32_t *exit_code, char * args) {
+        // We aren't passed command line arguments directly so we parse them
+        // from *args. args is a string from VCS - to pass a string of arguments
+        // to args, pass c_args to VCS as follows: +c_args="<space separated
+        // list of args>"
+        int argc = get_argc(args);
+        char *argv[argc];
+        get_argv(args, argc, argv);
+
+        int rc = vcs_main(argc, argv);
+        *exit_code = rc;
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+        return;
+}
+#endif
 
 #endif
