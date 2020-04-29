@@ -75,11 +75,6 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_fifo.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_memsys.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_rom.h
 
-LIB_HEADERS += $(BASEJUMP_STL)/bsg_test/bsg_nonsynth_dpi.hpp
-LIB_HEADERS += $(BASEJUMP_STL)/bsg_test/bsg_nonsynth_dpi_fifo.hpp
-LIB_HEADERS += $(BASEJUMP_STL)/bsg_test/bsg_nonsynth_clock_gen.hpp
-LIB_HEADERS += $(BSG_MANYCORE_DIR)/testbenches/dpi/bsg_nonsynth_dpi_manycore.h
-
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
 
@@ -92,8 +87,8 @@ $(LIB_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(LIB_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 $(LIB_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_mem
-$(LIB_OBJECTS): CFLAGS    = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES) -g
-$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES) -g
+$(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
+$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
 $(LIB_OBJECTS): LDFLAGS   = -fPIC
 
 # Objects that should be compiled with debug flags

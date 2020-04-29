@@ -50,14 +50,10 @@ endif
 
 # The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
 INCLUDES   += -I$(LIBRARIES_PATH) 
-INCLUDES   += -I$(VCS_HOME)/linux64/lib/
-INCLUDES   += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/ # TODO: Remove this?
-INCLUDES   += -I$(BASEJUMP_STL_DIR)/bsg_test/
-INCLUDES   += -I$(VERILATOR_ROOT)/include/
 
 # CSOURCES/HEADERS should probably go in some regression file list.
-CDEFINES   += -DVCS -DVERILATOR
-CXXDEFINES += -DVCS -DVERILATOR
+CDEFINES   += -DCOSIM
+CXXDEFINES += -DCOSIM
 CXXFLAGS   += -lstdc++
 
 include $(REGRESSION_PATH)/compilation.mk

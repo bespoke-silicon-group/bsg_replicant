@@ -57,11 +57,11 @@ extern "C" {
         typedef struct hb_mc_manycore {
                 hb_mc_manycore_id_t id; //!< which manycore instance is this
                 const char    *name;     //!< the name of this manycore
+                uintptr_t      mmio;     //!< pointer to memory mapped io
                 hb_mc_config_t config;   //!< configuration of the manycore
                 void    *private_data;   //!< implementation private data
                 unsigned htod_requests;  //!< outstanding host requests
                 int dram_enabled;        //!< operating in no-dram mode?
-                uintptr_t      mmio;     //!< pointer to memory mapped io
         } hb_mc_manycore_t;
 
 #define HB_MC_MANYCORE_INIT {0}

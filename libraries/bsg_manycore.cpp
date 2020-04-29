@@ -241,13 +241,33 @@ static int hb_mc_dpi_receive(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
 static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc)
 {
         svScope scope;
-        scope = svGetScopeFromName("tb");
-        svSetScope(scope);
+        int credits = 0, err;
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+        Vmanycore_tb_top *top = priv->top;
+        std::string hier;
+
+        top->eval();
+        //trace_object->dump(sc_time_stamp());
+
+        hier = std::string("TOP.manycore_tb_top.mc_dpi");
+        printf("new\n");
+        priv->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hier);
+
+        manycore_pr_dbg(mc, "%s: priv->dpi = 0x%" PRIxPTR "\n", __func__, priv->dpi);
+
         return HB_MC_SUCCESS;
 }
 
 static void hb_mc_manycore_cleanup_dpi(hb_mc_manycore_t *mc)
 {
+        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
+
+        bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
+
+        dpi = priv->dpi;
+
+        delete dpi;
+
         return;
 }
 #endif
@@ -263,24 +283,6 @@ static int hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id
         return HB_MC_SUCCESS;
 }
 
-static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc)
-{
-        svScope scope;
-        int credits = 0, err;
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-        std::string hier;
-
-        top->eval();
-        //trace_object->dump(sc_time_stamp());
-
-        hier = std::string("TOP.manycore_tb_top.mc_dpi");
-        priv->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hier);
-
-        manycore_pr_dbg(mc, "%s: priv->dpi = 0x%" PRIxPTR "\n", __func__, priv->dpi);
-
-        return HB_MC_SUCCESS;
-}
 
 /* cleanup manycore MMIO */
 static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc)
@@ -362,7 +364,6 @@ static int hb_mc_manycore_get_remote_load_cap(hb_mc_manycore_t *mc, unsigned *ca
 
 static int hb_mc_manycore_incr_host_requests(hb_mc_manycore_t*mc)
 {
-
         mc->htod_requests++;
         return HB_MC_SUCCESS;
 }
@@ -462,11 +463,6 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         // initialize manycore for MMIO
         if ((err = hb_mc_manycore_init_mmio(mc, id)) != HB_MC_SUCCESS)
                 goto cleanup;
-
-        // initialize manycore for DPI
-        if((err = hb_mc_manycore_init_dpi(mc)) != HB_MC_SUCCESS){
-                goto cleanup;
-        }
 
         // read configuration
         if ((err = hb_mc_manycore_init_config(mc)) != HB_MC_SUCCESS)

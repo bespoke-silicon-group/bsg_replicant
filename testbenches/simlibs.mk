@@ -135,7 +135,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/dpi/bsg_nonsynth_dpi_manycore.v
 VSOURCES += $(TESTBENCH_PATH)/verilator_top.sv
 
 SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-# SIMLIBS += $(BSG_MACHINE_PATH)/libmachine.so 
+
 # Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
 # tool-specific versions of the same variables. 
 # So that we can limit tool-specific to a few specific spots we use VDEFINES,
