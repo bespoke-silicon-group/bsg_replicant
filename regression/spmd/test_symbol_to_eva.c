@@ -87,7 +87,6 @@ struct test_should_succeed {
 /* add tests that should succeed here */
 static struct test_should_succeed success_tests [] = {
         { "lookup-data", "_bsg_data_start_addr",    0x00001000 }, // start of DMEM I guess
-        { "lookup-dram" , "_bsg_dram_d_start_addr", 0x81000000 }, // start of DRAM
         { "find-start",   "_start",                 0x00000000 }, // _start is now at 0
 };
 
