@@ -391,7 +391,7 @@ extern "C" {
         int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count);
 
         /**
-         * Conveniance macro for calling a CUDA function and handling an error return code.
+         * Convenience macro for calling a CUDA function and handling an error return code.
          * @param[in] stmt  A C/C++ statement that evaluates to an integer return code.
          *
          * Example:
