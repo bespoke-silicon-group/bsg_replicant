@@ -64,7 +64,7 @@ extern "C" {
         #define HB_MC_REMOTE_LOAD_MAX 32
 
         #define HB_MC_EP_OUT_CREDITS_MIN 1
-        #define HB_MC_EP_OUT_CREDITS_MAX 64
+        #define HB_MC_EP_OUT_CREDITS_MAX 256
 
         #define HB_MC_HOST_CREDITS_MIN 1
         #define HB_MC_HOST_CREDITS_MAX 512

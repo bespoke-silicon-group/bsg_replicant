@@ -294,7 +294,12 @@ static uint32_t default_get_dram_max_x_coord(const hb_mc_config_t *cfg)
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
 {
         hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
-        return ceil(log2(hb_mc_dimension_get_x(dim)));
+        // special case for x==9
+        if (hb_mc_dimension_get_x(dim) == 9) {
+            return 3;
+        } else {
+            return ceil(log2(hb_mc_dimension_get_x(dim)));
+        }
 }
 
 static uint32_t default_get_dram_x_bitidx(const hb_mc_config_t *cfg)
@@ -341,8 +346,22 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
         uint32_t xmask = default_get_dram_x_bitidx(cfg);
         uint32_t dram_max_x_coord = default_get_dram_max_x_coord(cfg);
-
-        *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
+        
+        // special case for x==9
+        if (dram_max_x_coord == 9) {
+            uint32_t bit_2_0 = (hb_mc_eva_addr(eva) >> (stripe_log+0 )) & 0b111;
+            uint32_t bit_5_4 = (hb_mc_eva_addr(eva) >> (stripe_log+3 )) & 0b110;
+            uint32_t bit_3   = (hb_mc_eva_addr(eva) >> (stripe_log+3 )) & 0b001;
+            uint32_t bit_12  = (hb_mc_eva_addr(eva) >> (stripe_log+12)) & 0b1;
+            if (bit_2_0 == (bit_5_4 | (bit_3 ^ bit_12))) {
+                *x = 8;
+            } else {
+                *x = bit_2_0;
+            }
+        } else {
+            *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
+        }
+        
         if ( *x > dram_max_x_coord) { 
                 bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
                            "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
@@ -746,10 +765,23 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
 
         stripe_log = default_get_dram_stripe_size_log(mc); 
         xdimlog    = default_get_x_dimlog(cfg);
+        
+        // special case for x==9
+        uint32_t x_coord = hb_mc_npa_get_x(npa);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
 
+        if (hb_mc_dimension_get_x(dim) == 9) {
+            uint32_t bit_2_1 = (hb_mc_npa_get_epa(npa) >> (stripe_log+0)) & 0b110;
+            uint32_t bit_0   = (hb_mc_npa_get_epa(npa) >> (stripe_log+0)) & 0b1; 
+            uint32_t bit_9   = (hb_mc_npa_get_epa(npa) >> (stripe_log+9)) & 0b1; 
+            if (x_coord == 8) {
+                x_coord = bit_2_1 | (bit_0 ^ bit_9);
+            }
+        }
+        
         // See comments on default_eva_to_npa_dram for clarification
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
-        addr |= (hb_mc_npa_get_x(npa) << stripe_log); // Set the x coordinate
+        addr |= (x_coord << stripe_log); // Set the x coordinate
         addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
         *eva  = addr;

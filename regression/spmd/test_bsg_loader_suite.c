@@ -366,6 +366,7 @@ static int run_npa_to_eva_test(test_t *test)
         if (test->addr_is_dram) {
                 hb_mc_idx_t y = test_get_dram_y(test, mc);
                 hb_mc_npa_set_y(&npa, y);
+                hb_mc_npa_set_x(&npa, 8);
         } else if (test->addr_is_host) {
                 const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
                 hb_mc_coordinate_t hostif = hb_mc_config_get_host_interface(config);
