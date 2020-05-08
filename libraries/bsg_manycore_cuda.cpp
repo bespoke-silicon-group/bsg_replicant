@@ -1478,6 +1478,7 @@ static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
 /**
  * Iterates over all tile groups inside device, allocates those that fit in mesh and launches them. 
  * API remains in this function until all tile groups have successfully finished execution.
+ * Number of tile groups is reset to zero after all tile groups are executed.
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
@@ -1509,6 +1510,9 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
                 }
 
         }
+
+        // Reset the number of tile groups to zero in device
+        device->num_tile_groups = 0;
 
         return HB_MC_SUCCESS;
 }
