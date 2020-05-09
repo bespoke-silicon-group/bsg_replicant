@@ -92,6 +92,8 @@ extern "C" {
                 hb_mc_dimension_t dim;
                 hb_mc_eva_map_t *map;
                 hb_mc_kernel_t *kernel;
+                uint32_t argc;
+                hb_mc_eva_t argv_eva;
         } hb_mc_tile_group_t;
 
 
