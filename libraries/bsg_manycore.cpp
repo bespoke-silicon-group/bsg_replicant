@@ -26,6 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <bsg_manycore.h>
+#include <bsg_manycore_machine.h>
 #include <bsg_manycore_fifo.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_tile.h>
@@ -34,15 +35,7 @@
 #include <bsg_manycore_vcache.h>
 
 #include <cstdint>
-#include <xmmintrin.h>
 #include <bsg_mem_dma.hpp>
-#include <verilated.h>
-#include <verilated_vcd_c.h>
-#include <svdpi.h>
-#include <bsg_nonsynth_dpi_errno.hpp>
-#include <bsg_nonsynth_dpi_manycore.hpp>
-#include <bsg_nonsynth_dpi_clock_gen.hpp>
-#include <Vmanycore_tb_top.h>
 
 #ifdef __cplusplus
 #include <cinttypes>
@@ -92,32 +85,6 @@
 // #undef manycore_pr_err
 // #define manycore_pr_err(...)
 
-typedef struct verilator_t {
-        Vmanycore_tb_top * top;
-        bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
-        VerilatedVcdC *trace_object;
-} verilator_t;
-
-static int  hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id);
-static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc);
-
-static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc);
-static int  hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc);
-static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc);
-
-static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc);
-static void hb_mc_manycore_cleanup_dpi(hb_mc_manycore_t *mc);
-
-static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
-                                             hb_mc_packet_t *packet,
-                                             hb_mc_fifo_tx_t type,
-                                             long timeout);
-
-static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
-                                             hb_mc_packet_t *packet,
-                                             hb_mc_fifo_rx_t type,
-                                             long timeout);
-
 /* read all unread packets from a fifo (rx only) */
 static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 {
@@ -129,213 +96,28 @@ static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t ty
 }
 // VerilatedVcdC *trace_object;
 
-static int hb_mc_dpi_get_credits(hb_mc_manycore_t *mc, int &credits, long timeout){
-        int res;
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-        if (timeout != -1) {
-                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
-                                __func__);
-                return HB_MC_INVALID;
-        }
-
-        do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
-                top->eval();
-                //trace_object->dump(sc_time_stamp());
-                res = priv->dpi->get_credits(credits);
-        } while(res == BSG_NONSYNTH_DPI_NOT_WINDOW);
-
-        if(res != BSG_NONSYNTH_DPI_SUCCESS){
-                manycore_pr_err(mc, "%s: Unexpected return value.\n",
-                                __func__);
-                return HB_MC_INVALID;
-        }
-
-        if(credits < 0){
-                manycore_pr_err(mc, "%s: Invalid credit value. Must be non-negative\n",
-                                __func__, credits);
-                return HB_MC_INVALID;
-        }
-        
-
-        return HB_MC_SUCCESS;
-}
-
-static int hb_mc_dpi_transmit(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-        int err;
-        if (timeout != -1) {
-                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
-                                __func__);
-                return HB_MC_INVALID;
-        }
-
-        do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
-                top->eval();
-                err = priv->dpi->tx_req(*pkt);
-                //trace_object->dump(sc_time_stamp());
-        } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
-                 (err == BSG_NONSYNTH_DPI_NO_CREDITS || 
-                  err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-                  err == BSG_NONSYNTH_DPI_NOT_READY    ));
-
-        if(err != BSG_NONSYNTH_DPI_SUCCESS){
-                manycore_pr_err(mc, "%s: Failed to transmit packet: %s\n",
-                                __func__, bsg_nonsynth_dpi_strerror(err));
-                return HB_MC_INVALID;
-        }
-
-        return HB_MC_SUCCESS;
-}
-static int hb_mc_dpi_receive(hb_mc_manycore_t *mc, __m128i *pkt, long timeout){
-        static bool order = false;
-        int err;
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-
-        if (timeout != -1) {
-                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
-                                __func__);
-                return HB_MC_INVALID;
-        }
-
-        do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
-                top->eval();
-
-                if(order){
-                        err = priv->dpi->rx_rsp(*pkt);
-                } else {
-                        err = priv->dpi->rx_req(*pkt);
-                }
-
-                if(err == BSG_NONSYNTH_DPI_NOT_VALID)
-                        order ^= 1;
-
-                //trace_object->dump(sc_time_stamp());
-        } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
-                 (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-                  err == BSG_NONSYNTH_DPI_NOT_VALID));
-
-        order ^= 1;
-
-        if(err != BSG_NONSYNTH_DPI_SUCCESS){
-                manycore_pr_err(mc, "%s: Failed to receive packet: %s\n",
-                                __func__, bsg_nonsynth_dpi_strerror(err));
-                return HB_MC_INVALID;
-        }
-
-        return HB_MC_SUCCESS;
-}
-
-
 
 ///////////////////
 // Init/Exit API //
 ///////////////////
 
-#ifdef COSIM
-static int hb_mc_manycore_init_dpi(hb_mc_manycore_t *mc)
-{
-        svScope scope;
-        int credits = 0, err;
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-        std::string hier;
-
-        top->eval();
-        //trace_object->dump(sc_time_stamp());
-
-        hier = std::string("TOP.manycore_tb_top.mc_dpi");
-        printf("new\n");
-        priv->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hier);
-
-        manycore_pr_dbg(mc, "%s: priv->dpi = 0x%" PRIxPTR "\n", __func__, priv->dpi);
-
-        return HB_MC_SUCCESS;
-}
-
-static void hb_mc_manycore_cleanup_dpi(hb_mc_manycore_t *mc)
-{
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-
-        bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
-
-        dpi = priv->dpi;
-
-        delete dpi;
-
-        return;
-}
-#endif
-
-/* initialize manycore MMIO */
-static int hb_mc_manycore_init_mmio(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
-{
-        mc->mmio = (uintptr_t)nullptr;
-
-        mc->id = id;
-        manycore_pr_dbg(mc, "%s: mc->mmio = 0x%" PRIxPTR "\n", __func__, mc->mmio);
-
-        return HB_MC_SUCCESS;
-}
-
-
-/* cleanup manycore MMIO */
-static void hb_mc_manycore_cleanup_mmio(hb_mc_manycore_t *mc)
-{
-        mc->mmio = (uintptr_t)nullptr;
-        mc->id = 0;
-        return;
-}
-
-/* initialize manycore private data */
-static int hb_mc_manycore_init_private_data(hb_mc_manycore_t *mc)
-{
-        int r = HB_MC_FAIL, err;
-        
-        verilator_t * priv = new verilator_t;
-        std::string hierarchy = "TOP.manycore_tb_top.mc_dpi";
-        Vmanycore_tb_top *top = new Vmanycore_tb_top();
-        priv->top = top;
-
-        mc->private_data = reinterpret_cast<void *>(priv);
-
-
-        //Verilated::traceEverOn(true);
-
-        //trace_object = new VerilatedVcdC;
-        //top->trace(trace_object, 99);
-        //trace_object->open ("sim.vcd");
-
-        return HB_MC_SUCCESS;
-}
-
-/* cleanup manycore private data */
-static void hb_mc_manycore_cleanup_private_data(hb_mc_manycore_t *mc)
-{
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-
-        delete top;
-}
-
 /* initialize configuration */
 static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
 {
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-
         int err;
         uintptr_t addr;
-        int idx;
+        unsigned int idx;
         hb_mc_config_raw_t config[HB_MC_CONFIG_MAX];
 
         for (idx = HB_MC_CONFIG_MIN; idx < HB_MC_CONFIG_MAX; idx++) {
-                config[idx] = priv->dpi->config[idx];
+                err = hb_mc_machine_get_config_at(mc, idx, &config[idx]);
+                if (err != HB_MC_SUCCESS){
+                        manycore_pr_err(mc, "%s: Failed to read configuration"
+                                " index %d\n", __func__, idx);
+                                        
+                        return err;
+                }
+
         }
 
         err = hb_mc_config_init(config, &(mc->config));
@@ -381,13 +163,11 @@ static int hb_mc_manycore_decr_host_requests(hb_mc_manycore_t *mc)
 
 int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc)
 {
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         int res;
         int credits = 0;
         while(credits != hb_mc_config_get_io_endpoint_max_out_credits(cfg)){
-                res = hb_mc_dpi_get_credits(mc, credits, -1);
+                res = hb_mc_machine_get_credits(mc, &credits, -1);
                 if(res != HB_MC_SUCCESS)
                         return res;
         }
@@ -440,7 +220,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 return HB_MC_INVALID;
 
         // check if mc is already initialized
-        if (mc->name || mc->private_data)
+        if (mc->name)
                 return HB_MC_INITIALIZED_TWICE;
 
         // copy name
@@ -450,18 +230,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 return r;
         }
 
-        // initialize private data
-        if ((err = hb_mc_manycore_init_private_data(mc)) != HB_MC_SUCCESS)
-                goto cleanup;
-
-#ifdef COSIM
-        // initialize simulation
-        if ((err = hb_mc_manycore_init_dpi(mc)) != HB_MC_SUCCESS)
-                goto cleanup;
-#endif
-
-        // initialize manycore for MMIO
-        if ((err = hb_mc_manycore_init_mmio(mc, id)) != HB_MC_SUCCESS)
+        if ((err = hb_mc_machine_init(mc, id)) != HB_MC_SUCCESS)
                 goto cleanup;
 
         // read configuration
@@ -483,14 +252,10 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         r = HB_MC_SUCCESS;
         goto done;
 
- cleanup:
+ cleanup: // TODO: Fix
         r = err;
         hb_mc_manycore_cleanup_fifos(mc);
-        hb_mc_manycore_cleanup_mmio(mc);
-#ifdef COSIM
-        hb_mc_manycore_cleanup_dpi(mc);
-#endif
-        hb_mc_manycore_cleanup_private_data(mc);
+        hb_mc_machine_cleanup(mc);
         free((void*)mc->name);
 
  done:
@@ -511,32 +276,12 @@ int hb_mc_manycore_exit(hb_mc_manycore_t *mc)
                 return err;
         }
         hb_mc_manycore_cleanup_fifos(mc);
-        hb_mc_manycore_cleanup_mmio(mc);
-        hb_mc_manycore_cleanup_private_data(mc);
+        hb_mc_machine_cleanup(mc);
         free((void*)mc->name);
         return HB_MC_SUCCESS;
 }
 
 
-/**
- * Read the number of remaining available endpoint out credits
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @return HB_MC_FAIL if an error occured. Number of remaining endpoint out credits otherwise
- */
-int hb_mc_manycore_get_endpoint_out_credits(hb_mc_manycore_t *mc)
-{
-        verilator_t *priv = reinterpret_cast<verilator_t *>(mc->private_data); 
-        Vmanycore_tb_top *top = priv->top;
-
-        int value;
-        int err = priv->dpi->get_credits(value);
-        if (err != BSG_NONSYNTH_DPI_SUCCESS) {
-                manycore_pr_err(mc, "%s: Failed to read endpoint out credits: %s\n",
-                                __func__, bsg_nonsynth_dpi_strerror(err));
-                return err;
-        }
-        return value;
-}
 
 /**
  * Read the number of remaining credits of host
@@ -573,7 +318,6 @@ static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
         int err;
         bool rsp;
         int credits = 0;
-        __m128i *pkt;
 
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -581,8 +325,7 @@ static int hb_mc_manycore_packet_tx_internal(hb_mc_manycore_t *mc,
                 return HB_MC_INVALID;
         }
 
-        pkt = reinterpret_cast<__m128i*>(packet);
-        return hb_mc_dpi_transmit(mc, pkt, timeout);
+        return hb_mc_machine_transmit(mc, packet, timeout);
 }
 
 /**
@@ -603,7 +346,6 @@ static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
         uint32_t occupancy;
         int err;
         bool rcvd = false;
-        __m128i *pkt;
 
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -611,9 +353,7 @@ static int hb_mc_manycore_packet_rx_internal(hb_mc_manycore_t *mc,
                 return HB_MC_INVALID;
         }
 
-        pkt = reinterpret_cast<__m128i*>(packet);
-
-        return hb_mc_dpi_receive(mc, pkt, timeout);
+        return hb_mc_machine_receive(mc, packet, timeout);
 }
 
 /**

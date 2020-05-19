@@ -51,15 +51,14 @@ extern "C" {
         extern void sv_set_virtual_dip_switch(int, int);
 #endif
 
-        typedef int hb_mc_manycore_id_t;
+typedef int hb_mc_manycore_id_t;
+
 #define HB_MC_MANYCORE_ID_ANY -1
 
         typedef struct hb_mc_manycore {
-                hb_mc_manycore_id_t id; //!< which manycore instance is this
                 const char    *name;     //!< the name of this manycore
-                uintptr_t      mmio;     //!< pointer to memory mapped io
                 hb_mc_config_t config;   //!< configuration of the manycore
-                void    *private_data;   //!< implementation private data
+                void    *machine;        //!< implementation private data
                 unsigned htod_requests;  //!< outstanding host requests
                 int dram_enabled;        //!< operating in no-dram mode?
         } hb_mc_manycore_t;
@@ -580,13 +579,6 @@ extern "C" {
         {
                 return hb_mc_config_get_dram_size(hb_mc_manycore_get_config(mc));
         }
-
-        /**
-         * Read the number of remaining available endpoint out credits
-         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-         * @return HB_MC_FAIL if an error occured. Number of remaining endpoint out credits otherwise
-         */
-        int hb_mc_manycore_get_endpoint_out_credits(hb_mc_manycore_t *mc);
 
         /**
          * Read the number of remaining credits of host

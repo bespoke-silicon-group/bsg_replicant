@@ -27,6 +27,7 @@
 
 LIB_CSOURCES   += 
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
+LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_machine.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_config.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_cuda.cpp
@@ -48,6 +49,7 @@ LIB_CXXSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 LIB_CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore.h
+LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_machine.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_bits.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_config.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_cuda.h
