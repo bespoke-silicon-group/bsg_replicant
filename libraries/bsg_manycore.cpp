@@ -82,21 +82,6 @@
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
 
-// #undef manycore_pr_err
-// #define manycore_pr_err(...)
-
-/* read all unread packets from a fifo (rx only) */
-static int hb_mc_manycore_rx_fifo_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
-{
-        const char *typestr = hb_mc_fifo_rx_to_string(type);
-
-        // Not implemented... not clear if needed in verilator
-
-        return HB_MC_SUCCESS;
-}
-// VerilatedVcdC *trace_object;
-
-
 ///////////////////
 // Init/Exit API //
 ///////////////////
@@ -186,7 +171,7 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
         int rc;
 
         /* Drain the Manycore-To-Host (RX) Request FIFO */
-        rc = hb_mc_manycore_rx_fifo_drain(mc, HB_MC_FIFO_RX_REQ);
+        rc = hb_mc_machine_drain(mc, HB_MC_FIFO_RX_REQ);
         if (rc != HB_MC_SUCCESS)
                 return rc;
 
@@ -201,7 +186,7 @@ static int hb_mc_manycore_init_fifos(hb_mc_manycore_t *mc)
 static void hb_mc_manycore_cleanup_fifos(hb_mc_manycore_t *mc)
 {
         /* Drain the Manycore-To-Host (RX) Request FIFO */
-        hb_mc_manycore_rx_fifo_drain(mc, HB_MC_FIFO_RX_REQ);
+        hb_mc_machine_drain(mc, HB_MC_FIFO_RX_REQ);
 }
 
 /**
@@ -213,7 +198,7 @@ static void hb_mc_manycore_cleanup_fifos(hb_mc_manycore_t *mc)
  */
 int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_id_t id)
 {
-        int r = HB_MC_FAIL, err;
+        int err = HB_MC_FAIL;
 
         // check if null
         if (!mc || !name)
@@ -227,39 +212,45 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         mc->name = strdup(name);
         if (!mc->name) {
                 bsg_pr_err("Failed to initialize %s: %m\n", name);
-                return r;
+                return HB_MC_FAIL;
         }
 
-        if ((err = hb_mc_machine_init(mc, id)) != HB_MC_SUCCESS)
-                goto cleanup;
+        if ((err = hb_mc_machine_init(mc, id)) != HB_MC_SUCCESS){
+                free((void*)mc->name);
+                return err;
+        }
 
         // read configuration
-        if ((err = hb_mc_manycore_init_config(mc)) != HB_MC_SUCCESS)
-                goto cleanup;
+        if ((err = hb_mc_manycore_init_config(mc)) != HB_MC_SUCCESS){
+                free((void*)mc->name);
+                hb_mc_machine_cleanup(mc);
+                return err;
+        }
 
         // initialize FIFOs
-        if ((err = hb_mc_manycore_init_fifos(mc)) != HB_MC_SUCCESS)
-                goto cleanup;
+        if ((err = hb_mc_manycore_init_fifos(mc)) != HB_MC_SUCCESS){
+                hb_mc_machine_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
 
         // initialize responders
-        if ((err = hb_mc_responders_init(mc)))
-                goto cleanup;
+        if ((err = hb_mc_responders_init(mc))){
+                hb_mc_manycore_cleanup_fifos(mc);
+                hb_mc_machine_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
 
         // enable dram
-        if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS)
-                goto cleanup;
+        if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS){
+                hb_mc_manycore_cleanup_fifos(mc);
+                hb_mc_machine_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
 
-        r = HB_MC_SUCCESS;
-        goto done;
-
- cleanup: // TODO: Fix
-        r = err;
-        hb_mc_manycore_cleanup_fifos(mc);
-        hb_mc_machine_cleanup(mc);
-        free((void*)mc->name);
-
- done:
-        return r;
+        return HB_MC_SUCCESS;
 }
 
 /**

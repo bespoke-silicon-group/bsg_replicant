@@ -61,4 +61,7 @@ int hb_mc_machine_get_credits(hb_mc_manycore_t *mc,
                               int *credits, 
                               long timeout);
 
+/* read all unread packets from a fifo (rx only) */
+int hb_mc_machine_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type);
+
 #endif

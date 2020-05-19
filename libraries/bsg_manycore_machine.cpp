@@ -267,3 +267,12 @@ void hb_mc_machine_cleanup(hb_mc_manycore_t *mc)
 
         return;
 }
+
+
+/* read all unread packets from a fifo (rx only) */
+int hb_mc_machine_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
+{
+        // Not implemented... not clear if needed in verilator
+
+        return HB_MC_SUCCESS;
+}
