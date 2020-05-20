@@ -642,6 +642,7 @@ static int hb_mc_tile_group_enqueue (hb_mc_device_t* device,
         tg->id = tg_id;
         tg->grid_id = grid_id;
         tg->grid_dim = grid_dim;
+        tg->argc = argc;
         tg->status = HB_MC_TILE_GROUP_STATUS_INITIALIZED;
 
         tg->map = (hb_mc_eva_map_t *) malloc (sizeof(hb_mc_eva_map_t)); 
@@ -748,6 +749,10 @@ static int hb_mc_tile_group_launch (hb_mc_device_t *device,
                 return HB_MC_NOMEM;
         }
 
+        // store the address of argv in the host, to free the 
+        // memory location in the device DRAM after tile group is executed
+        tg->argv_eva = args_eva;
+
         // transfer the arguments to dram
         error = hb_mc_device_memcpy(    device, reinterpret_cast<void *>(args_eva),
                                         (void *) &(tg->kernel->argv[0]),
@@ -827,6 +832,7 @@ static int hb_mc_tile_group_launch (hb_mc_device_t *device,
 
 /**
  * De-allocates all tiles in tile group, and resets their tile-group id and origin in the device book keeping.
+ * Also free's the memory location in device's DRAM that holds the list of argument for tile group's kernel.
  * @param[in]  device        Pointer to device
  * @parma[in]  tg            Pointer to tile group
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
@@ -854,6 +860,17 @@ static int hb_mc_tile_group_deallocate_tiles(hb_mc_device_t *device,
                    hb_mc_coordinate_get_x(tg->origin), hb_mc_coordinate_get_y(tg->origin));
         
         tg->status = HB_MC_TILE_GROUP_STATUS_FINISHED;
+
+        // Free the memory location in the device that holds the list of arguments of tile group's kernel
+        error = hb_mc_device_free(device, tg->argv_eva);
+        if (error != HB_MC_SUCCESS) { 
+                bsg_pr_err("%s: failed to free the argument list for grid %d tile group (%d,%d).\n", 
+                           __func__,
+                           tg->grid_id,
+                           hb_mc_coordinate_get_x (tg->id),
+                           hb_mc_coordinate_get_y (tg->id));
+                return error;
+        }
 
         return HB_MC_SUCCESS;
 }
@@ -1478,6 +1495,7 @@ static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
 /**
  * Iterates over all tile groups inside device, allocates those that fit in mesh and launches them. 
  * API remains in this function until all tile groups have successfully finished execution.
+ * Number of tile groups is reset to zero after all tile groups are executed.
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
@@ -1508,6 +1526,17 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
                         return error;
                 }
 
+        }
+
+        // Reset number of tile groups to zero
+        // Reset the device's tile group capacity to 1
+        // Readjust the space needed for device's tile groups 
+        device->num_tile_groups = 0;
+        device->tile_group_capacity = 1;
+        device->tile_groups = (hb_mc_tile_group_t *) realloc (device->tile_groups, device->tile_group_capacity * sizeof(hb_mc_tile_group_t));
+        if (device->tile_groups == NULL) {
+                bsg_pr_err("%s: failed to reset the space for hb_mc_tile_group_t structs.\n", __func__);
+                return HB_MC_NOMEM;
         }
 
         return HB_MC_SUCCESS;
