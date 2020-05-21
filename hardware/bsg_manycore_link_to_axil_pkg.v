@@ -48,10 +48,6 @@ package bsg_manycore_link_to_axil_pkg;
   import cl_manycore_pkg::x_cord_width_p;
   import cl_manycore_pkg::y_cord_width_p;
 
-  parameter  mcl_fifo_width_gp    = 128;
-  parameter  mcl_host_credits_gp  = 256;
-  parameter  mcl_mc_write_cap_gp  = 256;
-  parameter  mcl_edpt_fifo_els_gp = 4  ;
   localparam axil_data_width_gp   = 32 ;
   localparam axil_addr_width_gp   = 32 ;
 

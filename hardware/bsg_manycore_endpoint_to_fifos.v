@@ -84,7 +84,7 @@ module bsg_manycore_endpoint_to_fifos
 
   // host as master
   bsg_mcl_request_s  host_req_li_cast;
-  bsg_mcl_response_s mc_rsp_lo_cast  ;
+  bsg_mcl_response_s mc_rsp_lo_cast;
   assign host_req_li_cast = host_req_i;
   assign mc_rsp_o         = mc_rsp_lo_cast;
 

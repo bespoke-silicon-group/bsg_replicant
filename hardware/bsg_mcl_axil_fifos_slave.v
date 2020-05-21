@@ -35,10 +35,10 @@
 module bsg_mcl_axil_fifos_slave
   import bsg_manycore_link_to_axil_pkg::*;
 #(
-  parameter fifo_width_p = "inv"
+  parameter host_io_pkt_width_p = "inv"
   , parameter mc_write_capacity_p = "inv"
   , parameter axil_data_width_p = 32
-  , localparam integer piso_els_lp = fifo_width_p/axil_data_width_p
+  , localparam integer piso_els_lp = host_io_pkt_width_p/axil_data_width_p
   , localparam pkt_cnt_width_lp = `BSG_WIDTH(mc_write_capacity_p*piso_els_lp)
 ) (
   input                          clk_i
@@ -48,7 +48,7 @@ module bsg_mcl_axil_fifos_slave
   ,output                         r_v_o
   ,input                          r_ready_i
   // mc side
-  ,input  [     fifo_width_p-1:0] mc_req_i
+  ,input  [     host_io_pkt_width_p-1:0] mc_req_i
   ,input                          mc_req_v_i
   ,output                         mc_req_ready_o
   ,output [ pkt_cnt_width_lp-1:0] mc_req_words_o
@@ -56,14 +56,14 @@ module bsg_mcl_axil_fifos_slave
 
   // synopsys translate_off
   initial begin
-    assert (piso_els_lp * axil_data_width_p == fifo_width_p)
+    assert (piso_els_lp * axil_data_width_p == host_io_pkt_width_p)
       else $fatal("BSG_ERROR][%m]: manycore link fifo width %d is not multiple of axil data width %d.",
-        fifo_width_p, axil_data_width_p);
+        host_io_pkt_width_p, axil_data_width_p);
   end
   // synopsys translate_on
 
   logic                    buf_v_lo   ;
-  logic [fifo_width_p-1:0] buf_data_lo;
+  logic [host_io_pkt_width_p-1:0] buf_data_lo;
   logic                    buf_yumi_li;
 
   logic piso_ready_lo;
@@ -72,7 +72,7 @@ module bsg_mcl_axil_fifos_slave
   wire piso_yumi_li = r_ready_i & r_v_o;
 
   bsg_fifo_1r1w_small #(
-    .width_p           (fifo_width_p       ),
+    .width_p           (host_io_pkt_width_p),
     .els_p             (mc_write_capacity_p),
     .ready_THEN_valid_p(0                  )  // input handshake
   ) fifo (
