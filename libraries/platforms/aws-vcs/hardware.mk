@@ -209,7 +209,13 @@ $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/
 platform.hardware.clean: 
 	rm -rf $(BSG_PLATFORM_PATH)/vcs_simlibs/BSG_*
 	rm -rf $(BSG_PLATFORM_PATH)/.cxl*
-	rm -rf $(BSG_PLATFORM_PATH)/vivado.jou
+	rm -rf $(BSG_PLATFORM_PATH)/*.jou
+	rm -rf $(BSG_PLATFORM_PATH)/*.log 
+	rm -rf $(BSG_PLATFORM_PATH)/*.log.bak
+
+platform.hardware.bleach:
+	rm -rf $(BSG_PLATFORM_PATH)/synopsys_sim.setup
+	rm -rf $(BSG_PLATFORM_PATH)/vcs_simlibs
 
 hardware.clean: platform.hardware.clean
 hardware.bleach: platform.hardware.bleach

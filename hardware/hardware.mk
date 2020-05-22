@@ -252,7 +252,9 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "\`endif" >> $@
 
 
-.PHONY: hardware.clean
+.PHONY: hardware.clean hardware.bleach
+
+hardware.bleach:
 
 # The rm commands on the hardware path are legacy, but we keep them
 # because NOT cleaning those files can really F*** with running

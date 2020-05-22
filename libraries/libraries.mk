@@ -95,12 +95,12 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES :=
 include $(BSG_PLATFORM_PATH)/library.mk
 
 
-$(LIB_OBJECTS): INCLUDES  := -I$(LIBRARIES_PATH)
-$(LIB_OBJECTS): INCLUDES  += -I$(BASEJUMP_STL_DIR)/bsg_mem
+$(LIB_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
+$(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 # We should move this from AWS (and keep the license)
-$(LIB_OBJECTS): INCLUDES  += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
-$(LIB_OBJECTS) $(PLATFORM_OBJECTS): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS) $(PLATFORM_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
+$(LIB_OBJECTS): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(LIB_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 # Need to move this, eventually
 #$(LIB_OBJECTS) $(PLATFORM_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
@@ -112,7 +112,7 @@ $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-function
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS) $(PLATFORM_OBJECTS)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS)
 	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
 
 .PHONY: libraries.clean
