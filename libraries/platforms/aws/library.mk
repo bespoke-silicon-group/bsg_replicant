@@ -25,32 +25,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment sets up the CAD environment for cosimulation
-# and bitstream generation.
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws/bsg_manycore_mmio.cpp
+PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws/bsg_manycore_platform.cpp
 
-# Don't include more than once
-ifndef (_BSG_REPLICANT_CADENV_MK)
-_BSG_REPLICANT_CADENV_MK := 1
+PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
+PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
-# CL_DIR: The path to the root of the BSG F1 Repository
-ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
-endif
+# -DCOSIM is still necessary, for now
+$(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
+$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws
+# not sure if these are still necessary for AWS, if fpga_mgmt is installed
+#$(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
+#$(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 
-# Cosimulation requires VCS-MX and Vivado. Bespoke Silicon Group uses
-# bsg_cadenv to reduce environment mis-configuration errors. We simply
-# check to see if bsg_cadenv exists, and use cadenv.mk to configure
-# EDA Environment if it is present. If it is not present, we check for
-# Vivado and VCS and warn if they do not exist.
-ifneq ("$(wildcard $(CL_DIR)/../bsg_cadenv/cadenv.mk)","")
-$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Found bsg_cadenv. Including cadenv.mk to configure cad environment.$(NC)"))
-include $(CL_DIR)/../bsg_cadenv/cadenv.mk
-# We use vcs-mx, so we re-define VCS_HOME in the environment
-export VCS_HOME=$(VCSMX_HOME)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
 
-endif
-endif
+install: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
+	mv $(notdir $<) /usr/lib64/
+	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so.1
+	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so
+	cp -t /usr/include $(LIB_HEADERS)
 
+uninstall: clean
+	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h
+
+.PHONY: platform.clean
+platform.clean:
+	rm -f $(PLATFORM_OBJECTS)
+
+libraries.clean: platform.clean

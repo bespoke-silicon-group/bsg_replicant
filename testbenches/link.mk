@@ -55,11 +55,7 @@ ifndef TESTBENCH_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
 endif
 
-# The following makefile fragment verifies that the tools and CAD environment is
-# configured correctly.
-include $(CL_DIR)/cadenv.mk
-
-# simlibs.mk defines build rules for hardware and software simulation libraries
+# simlibs.mk defines build rules for hardware simulation libraries
 # that are necessary for running cosimulation. These are dependencies for
 # regression since running $(MAKE) recursively does not prevent parallel builds
 # of identical rules -- which causes errors.
@@ -69,9 +65,9 @@ include $(TESTBENCH_PATH)/simlibs.mk
 # We parallelize VCS compilation, but we leave a few cores on the table.
 NPROCS   = $(shell echo "(`nproc`/4 + 1)" | bc)
 
-LDFLAGS += -lbsg_manycore_runtime -lm
-# libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
-LDFLAGS += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
+LDFLAGS    += -lbsg_manycore_runtime -lm
+# libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
+LDFLAGS    += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
 
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS     += -M -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005

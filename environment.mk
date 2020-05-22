@@ -106,6 +106,12 @@ ifndef BSG_MANYCORE_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MANYCORE_DIR environment variable undefined. Defining is not recommended. Are you running from within Bladerunner?$(NC)"))
 endif
 
+include $(CL_DIR)/cadenv.mk
+
 # machine.mk defines BSG_MACHINE_PATH, which is the path to the current target
 # machine.
 include $(CL_DIR)/machine.mk
+
+# platform.mk defines BSG_PLATFORM_PATH, which is the host platform to
+# simulate (VCS or Verilator) or run on (AWS)
+include $(CL_DIR)/platform.mk

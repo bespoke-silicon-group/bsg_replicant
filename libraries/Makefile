@@ -51,18 +51,9 @@ include $(CL_DIR)/hdk.mk
 # flags, and a list of sources.
 include $(LIBRARIES_PATH)/libraries.mk
 
-build: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
-
-install: $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
-	mv $(notdir $<) /usr/lib64/
-	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so.1
-	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so
-	cp -t /usr/include $(LIB_HEADERS)
+build: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 
 clean: libraries.clean
-
-uninstall: clean
-	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h
 
 .PHONY: build install clean uninstall help
 
