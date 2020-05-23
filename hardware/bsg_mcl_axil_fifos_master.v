@@ -32,8 +32,9 @@
 * It sends requests and receives response through AXIL write and read channels
 */
 
+`include "bsg_manycore_packet.vh"
+
 module bsg_mcl_axil_fifos_master
-  import bsg_manycore_pkg::*;
   import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter fifo_width_p = "inv"
@@ -217,7 +218,7 @@ module bsg_mcl_axil_fifos_master
   // 1) endpoint is out of credits (this is implemented outside)
   // 2) this module is out of read credits
 
-  wire is_host_read_req = host_req_lo_cast.op == 8'(e_remote_load);
+  wire is_host_read_req = host_req_lo_cast.op == 8'(`ePacketOp_remote_load);
   assign pause_host_req = is_host_read_req && (read_credits_lo == 0);
 
   wire launching_read = host_req_v_o & host_req_ready_i & is_host_read_req;

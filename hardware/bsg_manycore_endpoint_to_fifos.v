@@ -33,21 +33,20 @@
 * Or cast the manycore packet to the rx_fifo data stream
 */
 
+`include "bsg_manycore_packet.vh"
 
 module bsg_manycore_endpoint_to_fifos
-  import cl_manycore_pkg::*;
-  import bsg_manycore_pkg::*;
   import bsg_manycore_link_to_axil_pkg::*;
-  import bsg_manycore_addr_pkg::bsg_print_stat_epa_gp;
 #(
   parameter fifo_width_p = "inv"
   // these are endpoint parameters
   , parameter x_cord_width_p = "inv"
   , parameter y_cord_width_p = "inv"
+  , parameter load_id_width_p = "inv"
   , parameter addr_width_p = "inv"
   , parameter data_width_p = "inv"
   , parameter max_out_credits_p = "inv"
-  , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
+  , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p)
 ) (
   input                                      clk_i
   ,input                                      reset_i
@@ -98,7 +97,7 @@ module bsg_manycore_endpoint_to_fifos
 
 
   // manycore endpoint signals
-  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p);
+  `declare_bsg_manycore_packet_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p,load_id_width_p);
 
   logic                         endpoint_in_v_lo   ;
   logic                         endpoint_in_yumi_li;
@@ -112,9 +111,9 @@ module bsg_manycore_endpoint_to_fifos
   logic                                    returned_v_r_lo       ;
   logic                                    returned_yumi_li      ;
   logic                                    returned_fifo_full_lo ;
-  bsg_manycore_return_packet_type_e        returned_pkt_type_r_lo;
+  logic [   `return_packet_type_width-1:0] returned_pkt_type_r_lo;
   logic [                data_width_p-1:0] returned_data_r_lo    ;
-  wire  [bsg_manycore_reg_id_width_gp-1:0] returned_reg_id_r_lo  ;
+  wire  [             load_id_width_p-1:0] returned_reg_id_r_lo  ;
 
   logic                 endpoint_out_v_li     ;
   bsg_manycore_packet_s endpoint_out_packet_li;
@@ -130,32 +129,28 @@ module bsg_manycore_endpoint_to_fifos
   assign host_req_ready_o  = ~(out_credits_o == 0) & endpoint_out_ready_lo;
 
   assign endpoint_out_packet_li.addr       = addr_width_p'(host_req_li_cast.addr);
-  assign endpoint_out_packet_li.op         = bsg_manycore_packet_op_e'(host_req_li_cast.op);
-  assign endpoint_out_packet_li.op_ex      = bsg_manycore_packet_op_ex_u'(host_req_li_cast.op_ex);
-  assign endpoint_out_packet_li.reg_id     = bsg_manycore_reg_id_width_gp'(host_req_li_cast.reg_id);
+  assign endpoint_out_packet_li.op         = 2'(host_req_li_cast.op);
+  assign endpoint_out_packet_li.op_ex      = (data_width_p>>3)'(host_req_li_cast.op_ex);
   assign endpoint_out_packet_li.src_y_cord = y_cord_width_p'(host_req_li_cast.src_y_cord);
   assign endpoint_out_packet_li.src_x_cord = x_cord_width_p'(host_req_li_cast.src_x_cord);
   assign endpoint_out_packet_li.y_cord     = y_cord_width_p'(host_req_li_cast.y_cord);
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
 
   always_comb begin
-    if (endpoint_out_packet_li.op == e_remote_store) begin
-      endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
-    end
-    else begin
-      endpoint_out_packet_li.payload.load_info_s.load_info.float_wb       = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.icache_fetch   = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.part_sel       = 4'b1111;
-      endpoint_out_packet_li.payload.load_info_s.load_info.is_unsigned_op = 1'b1;
-      endpoint_out_packet_li.payload.load_info_s.load_info.is_byte_op     = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.is_hex_op      = 1'b0;
-    end
+    if (host_req_li_cast.op == 8'(`ePacketOp_remote_load))
+      begin
+        endpoint_out_packet_li.payload = load_id_width_p'(host_req_li_cast.reg_id);
+      end
+    else
+      begin
+        endpoint_out_packet_li.payload = host_req_li_cast.payload.data;
+      end
   end
 
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
-      assert(endpoint_out_packet_li.op != e_remote_amo) else
-        $error("[BSG_ERROR][%m] remote atomic memory operations from the host are not supported.");
+      assert(endpoint_out_packet_li.op[1] != 1'b0) else
+        $error("[BSG_ERROR][%m] operations from the host are not supported.");
   end
 
 
@@ -205,29 +200,33 @@ module bsg_manycore_endpoint_to_fifos
 
 
   bsg_manycore_endpoint_standard #(
-    .x_cord_width_p   (x_cord_width_p      ),
-    .y_cord_width_p   (y_cord_width_p      ),
-    .fifo_els_p       (mcl_edpt_fifo_els_gp),
-    .addr_width_p     (addr_width_p        ),
-    .data_width_p     (data_width_p        ),
-    .max_out_credits_p(max_out_credits_p   )
-  ) epsd (
-    .clk_i                (clk_i                 ),
-    .reset_i              (reset_i               ),
+    .x_cord_width_p(x_cord_width_p)
+    ,.y_cord_width_p(y_cord_width_p)
+    ,.data_width_p(data_width_p)
+    ,.addr_width_p(addr_width_p)
+    ,.load_id_width_p(load_id_width_p)
+    ,.max_out_credits_p(max_out_credits_p)
+    ,.fifo_els_p(mcl_edpt_fifo_els_gp)
+  ) endp (
+    .clk_i(clk_i),
+    .reset_i(reset_i),
 
-    .link_sif_i           (link_sif_i            ),
-    .link_sif_o           (link_sif_o            ),
+    .link_sif_i(link_sif_i),
+    .link_sif_o(link_sif_o),
 
     // manycore packet -> fifo
     .in_v_o               (endpoint_in_v_lo      ),
-    .in_yumi_i            (endpoint_in_yumi_li   ),
     .in_data_o            (endpoint_in_data_lo   ),
     .in_mask_o            (endpoint_in_mask_lo   ),
     .in_addr_o            (endpoint_in_addr_lo   ),
     .in_we_o              (endpoint_in_we_lo     ),
-    .in_load_info_o       (                      ), // not used because the manycore will not issue read requests to the host
     .in_src_x_cord_o      (in_src_x_cord_lo      ),
     .in_src_y_cord_o      (in_src_y_cord_lo      ),
+    .in_yumi_i            (endpoint_in_yumi_li   ),
+
+    // fifo -> manycore credit
+    .returning_data_i     (returning_data_li     ),
+    .returning_v_i        (returning_v_li        ),
 
     // fifo -> manycore packet
     .out_v_i              (endpoint_out_v_li     ),
@@ -236,23 +235,19 @@ module bsg_manycore_endpoint_to_fifos
 
     // manycore credit -> fifo
     .returned_data_r_o    (returned_data_r_lo    ),
-    .returned_reg_id_r_o  (returned_reg_id_r_lo  ),
+    .returned_load_id_r_o (returned_reg_id_r_lo  ),
     .returned_v_r_o       (returned_v_r_lo       ),
-    .returned_pkt_type_r_o(returned_pkt_type_r_lo),
-    .returned_yumi_i      (returned_yumi_li      ),
     .returned_fifo_full_o (returned_fifo_full_lo ),
-
-    // fifo -> manycore credit
-    .returning_data_i     (returning_data_li     ),
-    .returning_v_i        (returning_v_li        ),
+    .returned_yumi_i      (returned_yumi_li      ),
 
     .out_credits_o        (out_credits_o         ),
     .my_x_i               (my_x_i                ),
     .my_y_i               (my_y_i                )
   );
+  
+  assign returned_pkt_type_r_lo = `ePacketType_data;
 
-  assign print_stat_v_o = endpoint_in_v_lo & endpoint_in_we_lo
-    & ({endpoint_in_addr_lo[13:0], 2'b00} == bsg_print_stat_epa_gp);
+  assign print_stat_v_o = 1'b0;
   assign print_stat_tag_o = endpoint_in_data_lo;
 
 endmodule

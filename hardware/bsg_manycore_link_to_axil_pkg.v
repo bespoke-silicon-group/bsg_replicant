@@ -43,11 +43,6 @@
 
 package bsg_manycore_link_to_axil_pkg;
 
-  import cl_manycore_pkg::addr_width_p;
-  import cl_manycore_pkg::data_width_p;
-  import cl_manycore_pkg::x_cord_width_p;
-  import cl_manycore_pkg::y_cord_width_p;
-
   parameter  mcl_fifo_width_gp    = 128;
   parameter  mcl_host_credits_gp  = 256;
   parameter  mcl_mc_write_cap_gp  = 256;
@@ -73,11 +68,12 @@ package bsg_manycore_link_to_axil_pkg;
   parameter mcl_ofs_rdfo_req_gp = 8'h18;
 
   parameter mcl_ofs_credits_gp  = 32'h2000;
-
-  localparam integer mcl_addr_width_gp   = `BSG_CDIV(addr_width_p,8)*8  ;
-  localparam integer mcl_data_width_gp   = `BSG_CDIV(data_width_p,8)*8  ;
-  localparam integer mcl_x_cord_width_gp = `BSG_CDIV(x_cord_width_p,8)*8;
-  localparam integer mcl_y_cord_width_gp = `BSG_CDIV(y_cord_width_p,8)*8;
+  
+  // hardcoded to match host driver
+  localparam integer mcl_addr_width_gp   = 32;
+  localparam integer mcl_data_width_gp   = 32;
+  localparam integer mcl_x_cord_width_gp = 8 ;
+  localparam integer mcl_y_cord_width_gp = 8 ;
 
 endpackage : bsg_manycore_link_to_axil_pkg
 
