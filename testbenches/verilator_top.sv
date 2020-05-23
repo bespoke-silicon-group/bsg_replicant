@@ -114,6 +114,7 @@ module manycore_tb_top
        ,.data_width_p(data_width_p)
        ,.ep_fifo_els_p(ep_fifo_els_lp)
        ,.dpi_fifo_els_p(dpi_fifo_els_lp)
+       ,.fifo_width_p(128) // TODO: after PR 57X? is merged
        ,.rom_els_p(rom_els_gp)
        ,.rom_width_p(rom_width_gp)
        ,.rom_arr_p(rom_arr_gp)
