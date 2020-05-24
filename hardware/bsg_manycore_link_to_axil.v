@@ -198,8 +198,8 @@ module bsg_manycore_link_to_axil
   logic [                  1:0] rresp_lo;
 
   assign axil_arready_o = arready_lo;
-  assign axil_rdata_o   = rdata_n;
-  assign axil_rvalid_o  = rvalid_n;
+  assign axil_rdata_o   = rdata_r;
+  assign axil_rvalid_o  = rvalid_r;
   assign axil_rresp_o   = rresp_lo;
 
   wire is_read_credit        = (axil_araddr_i == mcl_ofs_credits_gp)                         ;
