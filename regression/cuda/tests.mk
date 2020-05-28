@@ -49,6 +49,7 @@ INDEPENDENT_TESTS += test_empty_parallel
 INDEPENDENT_TESTS += test_multiple_binary_load
 INDEPENDENT_TESTS += test_host_memset
 INDEPENDENT_TESTS += test_stack_load
+INDEPENDENT_TESTS += test_memory_leak
 INDEPENDENT_TESTS += test_dram_load_store
 INDEPENDENT_TESTS += test_dram_host_allocated
 INDEPENDENT_TESTS += test_dram_device_allocated
