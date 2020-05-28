@@ -31,6 +31,7 @@
 
 #define NUM_ITER 32
 #define WIDTH (1 << 24)
+
 /*!
  * Makes sure CUDA-Lite API does not have any memory leaks.
  * Runs an empty test multiple times while allocating large
@@ -71,18 +72,20 @@ int kernel_memory_leak (int argc, char **argv) {
 
         for (int i = 0; i < NUM_ITER; i ++) {
 
-            // If the address of current allocation doesn't match the address of 
-            // previous allocation, we have a memory leak
-            if ((A_device != A_prev) || (B_device != B_prev) || (C_device != C_prev)) {
-                bsg_pr_err("Address Mismatch -- you have a memory leak!\n");
-                mismatch = true;
-                break;
-            }
-
             BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &A_device)); 
             BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &B_device)); 
             BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &C_device)); 
-    
+
+            if (i) {
+                // If the address of current allocation doesn't match the address of 
+                // previous allocation, we have a memory leak
+                if ((A_device != A_prev) || (B_device != B_prev) || (C_device != C_prev)) {
+                    bsg_pr_err("Address Mismatch -- you have a memory leak!\n");
+                    mismatch = true;
+                    break;
+                }
+            }
+
             bsg_pr_test_info("iter %d\tA: 0x%x\tB: 0x%x\tC: 0x%x\n", i, A_device, B_device, C_device);
     
             /* Define tg_dim_x/y: number of tiles in each tile group */
@@ -98,14 +101,14 @@ int kernel_memory_leak (int argc, char **argv) {
     
             /* Launch and execute all tile groups on device and wait for all to finish.  */
             BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
-    
-            BSG_CUDA_CALL(hb_mc_device_free(&device, A_device));
-            BSG_CUDA_CALL(hb_mc_device_free(&device, B_device));
-            BSG_CUDA_CALL(hb_mc_device_free(&device, C_device));
 
             A_prev = A_device;
             B_prev = B_device;
             C_prev = C_device;
+   
+            BSG_CUDA_CALL(hb_mc_device_free(&device, A_device));
+            BSG_CUDA_CALL(hb_mc_device_free(&device, B_device));
+            BSG_CUDA_CALL(hb_mc_device_free(&device, C_device));
         }
 
 
