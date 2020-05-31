@@ -83,6 +83,7 @@ $(LIB_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_mem
 $(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 $(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 $(LIB_OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC
+$(LIB_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
 # Objects that should be compiled with debug flags
 LIB_DEBUG_OBJECTS  +=
