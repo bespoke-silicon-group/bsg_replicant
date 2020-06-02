@@ -176,8 +176,8 @@ module bsg_manycore_link_to_axil
    // 2. credit registers
 
    // host credit
-   localparam host_credits_width_lp = `BSG_WIDTH((host_io_pkt_width_p/axil_data_width_lp)*host_io_pkts_tx_p);
-   logic [host_credits_width_lp-1:0]         host_credits_lo;
+   localparam host_io_capacity_width_lp = `BSG_WIDTH((host_io_pkt_width_p/axil_data_width_lp)*host_io_pkts_tx_p);
+   logic [host_io_capacity_width_lp-1:0]         host_credits_lo;
 
    // rx fifo occupancy for manycore request
    localparam integer                        piso_els_lp = host_io_pkt_width_p/axil_data_width_lp;
