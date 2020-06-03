@@ -49,7 +49,8 @@ $(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
 endif
 
 # The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
-INCLUDES   += -I$(LIBRARIES_PATH) 
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_MACHINE_PATH)
 
 # CSOURCES/HEADERS should probably go in some regression file list.
 CDEFINES   += -DCOSIM -DVCS

@@ -32,7 +32,8 @@ int test_rom (int argc, char **argv) {
         int rc = 0, fail = 0;
         uint32_t unexpected, expected, minexpected, maxexpected, result;
         uint32_t vcache_assoc, vcache_sets, vcache_block_words;
-        uint32_t vcache_assoc_expect_max = 32, vcache_sets_expect = 64;
+        uint32_t vcache_assoc_expect_max = 32;
+        uint32_t vcache_sets_expect = BSG_MANYCORE_MACHINE_VCACHE_BANK_SETS;
         uint32_t major_version_max = 4; uint32_t minor_version_max = 10, minor_version_min = 0;
         uint32_t dram_size = 0, dram_bank_size = 0, n_dram_co = 0;
         hb_mc_dimension_t dim;
