@@ -55,13 +55,10 @@ extern "C" {
 #define HB_MC_MANYCORE_ID_ANY -1
 
         typedef struct hb_mc_manycore {
-                hb_mc_manycore_id_t id; //!< which manycore instance is this
-                const char    *name;     //!< the name of this manycore
-                uintptr_t      mmio;     //!< pointer to memory mapped io
-                hb_mc_config_t config;   //!< configuration of the manycore
-                void    *private_data;   //!< implementation private data
-                unsigned htod_requests;  //!< outstanding host requests
-                int dram_enabled;        //!< operating in no-dram mode?
+                const char *name;      //!< the name of this manycore
+                hb_mc_config_t config; //!< configuration of the manycore
+                void *platform;        //!< machine-specific data pointer
+                int dram_enabled;      //!< operating in no-dram mode?
         } hb_mc_manycore_t;
 
 #define HB_MC_MANYCORE_INIT {0}
@@ -582,20 +579,12 @@ extern "C" {
         }
 
         /**
-         * Read the number of remaining available endpoint out credits
+         * Stall until the all requests (and responses to the host) have reached their destination.
          * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-         * @return HB_MC_FAIL if an error occured. Number of remaining endpoint out credits otherwise
+         * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
-        int hb_mc_manycore_get_endpoint_out_credits(hb_mc_manycore_t *mc);
-
-        /**
-         * Read the number of remaining credits of host
-         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-         * @return HB_MC_FAIL if an error occured. Number of remaining credits of host otherwise
-         */
-        int hb_mc_manycore_get_host_request_credits(hb_mc_manycore_t *mc);
-
-
+        int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc, long timeout);
 #ifdef __cplusplus
 }
 #endif

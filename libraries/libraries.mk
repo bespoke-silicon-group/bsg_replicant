@@ -27,6 +27,7 @@
 
 LIB_CSOURCES   += 
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
+LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_platform.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_config.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_cuda.cpp

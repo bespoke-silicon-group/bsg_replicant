@@ -455,21 +455,9 @@ extern "C" {
          * @param[in] cfg A configuration initialized from the manycore ROM.
          * @return the host capacity for batching requests.
          */
-        static inline uint32_t hb_mc_config_get_io_host_credits_cap(const hb_mc_config_t *cfg)
+        static inline uint32_t hb_mc_config_get_transmit_vacancy_max(const hb_mc_config_t *cfg)
         {
                 return cfg->io_host_credits_cap;
-        }
-
-        /**
-         * Return the threshold for host to update its cached credits.
-         * @param[in] cfg A configuration initialized from the manycore ROM.
-         * @return the threshold for host to update its cached credits.
-         */
-        static inline uint32_t hb_mc_config_get_io_credit_update_threshold(const hb_mc_config_t *cfg)
-        {
-                return cfg->io_host_credits_cap;
-                // we can also set half of the max host credits.
-                // return cfg->io_host_credits_cap/2;
         }
 
         /**
