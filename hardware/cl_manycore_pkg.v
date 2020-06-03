@@ -38,8 +38,14 @@ package cl_manycore_pkg;
   parameter axi_strb_width_p = (axi_data_width_p>>3);
   parameter axi_burst_len_p = 1;
 
-  // the max number of outstanding requests from the host endpoint to the manycore
+  // Manycore Network Credits available to the host's endpoint
   parameter max_out_credits_p = `CL_MANYCORE_IO_EP_MAX_OUT_CREDITS;
+
+  // Packet capacity of the host IO fifos
+  parameter host_io_pkts_cap_p = `CL_MANYCORE_IO_PKTS_CAP;
+
+  // Width of the host packets
+  parameter host_io_pkt_width_p = 128;
 
   // used dram channels
   parameter dram_channels_used_p = `CL_MANYCORE_DRAM_CHANNELS;  

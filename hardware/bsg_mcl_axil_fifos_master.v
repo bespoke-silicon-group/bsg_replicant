@@ -36,10 +36,10 @@ module bsg_mcl_axil_fifos_master
   import bsg_manycore_pkg::*;
   import bsg_manycore_link_to_axil_pkg::*;
 #(
-  parameter fifo_width_p = "inv"
+  parameter host_io_pkt_width_p = "inv"
   , parameter host_credits_p = "inv"
   , parameter axil_data_width_p = 32
-  , localparam integer sipo_els_lp = fifo_width_p/axil_data_width_p
+  , localparam integer sipo_els_lp = host_io_pkt_width_p/axil_data_width_p
   , localparam credit_width_lp = `BSG_WIDTH(sipo_els_lp*host_credits_p)
 ) (
   input                          clk_i
@@ -52,11 +52,11 @@ module bsg_mcl_axil_fifos_master
   ,output                         r_v_o
   ,input                          r_ready_i
   // mc side
-  ,output [     fifo_width_p-1:0] host_req_o
+  ,output [     host_io_pkt_width_p-1:0] host_req_o
   ,output                         host_req_v_o
   ,input                          host_req_ready_i
   ,output [  credit_width_lp-1:0] host_credits_o
-  ,input  [     fifo_width_p-1:0] mc_rsp_i
+  ,input  [     host_io_pkt_width_p-1:0] mc_rsp_i
   ,input                          mc_rsp_v_i
   ,output                         mc_rsp_ready_o
 );
@@ -64,9 +64,9 @@ module bsg_mcl_axil_fifos_master
   localparam integer piso_els_lp = sipo_els_lp;
   // synopsys translate_off
   initial begin
-    assert (sipo_els_lp * axil_data_width_p == fifo_width_p)
+    assert (sipo_els_lp * axil_data_width_p == host_io_pkt_width_p)
       else $fatal("BSG_ERROR][%m]: manycore link fifo width %d is not multiple of axil data width %d.",
-        fifo_width_p, axil_data_width_p);
+        host_io_pkt_width_p, axil_data_width_p);
   end
   // synopsys translate_on
 
@@ -92,7 +92,7 @@ module bsg_mcl_axil_fifos_master
   assign req_buf_yumi_li = req_buf_v_lo & req_sipo_ready_lo;
 
   // sipo tx
-  logic [fifo_width_p-1:0] req_sipof_data_lo;
+  logic [host_io_pkt_width_p-1:0] req_sipof_data_lo;
   logic                    req_sipof_v_lo   ;
   logic                    req_sipo_ready_li;
 
@@ -140,7 +140,7 @@ module bsg_mcl_axil_fifos_master
   //                  mc response to host
   // --------------------------------------------------------
 
-  logic [fifo_width_p-1:0] rsp_buf_data_lo;
+  logic [host_io_pkt_width_p-1:0] rsp_buf_data_lo;
   logic                    rsp_buf_v_lo   ;
   logic                    rsp_buf_yumi_li;
 
@@ -150,7 +150,7 @@ module bsg_mcl_axil_fifos_master
   wire rsp_piso_yumi_li = r_ready_i & r_v_o;
 
   bsg_fifo_1r1w_small #(
-    .width_p           (fifo_width_p       ),
+    .width_p           (host_io_pkt_width_p       ),
     .els_p             (host_read_credits_lp),
     .ready_THEN_valid_p(0                  )
   ) fifo_rsp (
@@ -205,7 +205,7 @@ module bsg_mcl_axil_fifos_master
 
 
   // cast the request packet and detect the host read
-  `declare_bsg_manycore_link_fifo_s(fifo_width_p, mcl_addr_width_gp, mcl_data_width_gp, mcl_x_cord_width_gp, mcl_y_cord_width_gp);
+  `declare_bsg_manycore_link_fifo_s(host_io_pkt_width_p, mcl_addr_width_gp, mcl_data_width_gp, mcl_x_cord_width_gp, mcl_y_cord_width_gp);
 
   // host as master
   bsg_mcl_request_s  host_req_lo_cast;

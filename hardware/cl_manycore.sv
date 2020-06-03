@@ -1154,11 +1154,14 @@ module cl_manycore
    bsg_manycore_link_sif_s axil_link_sif_lo;
 
   bsg_manycore_link_to_axil #(
-    .x_cord_width_p   (x_cord_width_p   ),
-    .y_cord_width_p   (y_cord_width_p   ),
-    .addr_width_p     (addr_width_p     ),
-    .data_width_p     (data_width_p     ),
-    .max_out_credits_p(max_out_credits_p)
+    .x_cord_width_p     (x_cord_width_p   ),
+    .y_cord_width_p     (y_cord_width_p   ),
+    .addr_width_p       (addr_width_p     ),
+    .data_width_p       (data_width_p     ),
+    .host_io_pkt_width_p(host_io_pkt_width_p ), // Defined in cl_manycore_pkg.v
+    .host_io_pkts_tx_p  (host_io_pkts_cap_p), // Defined in cl_manycore_pkg.v
+    .host_io_pkts_rx_p  (host_io_pkts_cap_p), // Defined in cl_manycore_pkg.v
+    .max_out_credits_p  (max_out_credits_p)
   ) mcl_to_axil (
     .clk_i           (clk_main_a0       ),
     .reset_i         (~rst_main_n_sync  ),
