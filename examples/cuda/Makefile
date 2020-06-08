@@ -59,6 +59,7 @@ UNIFIED_TESTS += test_barrier_deprecated
 UNIFIED_TESTS += test_barrier
 UNIFIED_TESTS += test_striped
 
+# "Independent Tests" use a per-test <test_name>.c file
 INDEPENDENT_TESTS += test_binary_load_buffer
 INDEPENDENT_TESTS += test_empty_parallel
 INDEPENDENT_TESTS += test_multiple_binary_load
@@ -79,6 +80,7 @@ INDEPENDENT_TESTS += test_vec_add_shared_mem
 INDEPENDENT_TESTS += test_max_pool2d
 INDEPENDENT_TESTS += test_shared_mem
 INDEPENDENT_TESTS += test_shared_mem_load_store
+INDEPENDENT_TESTS += test_hard_shared
 INDEPENDENT_TESTS += test_matrix_mul
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem
 
