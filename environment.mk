@@ -106,10 +106,10 @@ ifndef BSG_MANYCORE_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MANYCORE_DIR environment variable undefined. Defining is not recommended. Are you running from within Bladerunner?$(NC)"))
 endif
 
+# cadenv.mk defines the CAD environment (for BSG people)
 include $(CL_DIR)/cadenv.mk
 
-# machine.mk defines BSG_MACHINE_PATH, which is the path to the current target
-# machine.
+# machine.mk defines BSG_MACHINE_PATH, which is the path to the target machine
 include $(CL_DIR)/machine.mk
 
 # platform.mk defines BSG_PLATFORM_PATH, which is the host platform to

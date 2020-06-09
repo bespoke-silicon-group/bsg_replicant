@@ -40,17 +40,34 @@ $(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
 
+_DOCSTRING := "Rules from aws/library.mk\n"
+_TARGETS :=
+
+_TARGETS +="install"
+_DOCSTRING += "    install:\n"
+_DOCSTRING += "        - Install libbsg_manycore_runtime.so in\n"
+_DOCSTRING += "          /usr/lib64 and the headers in /usr/include\n"
 install: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 	mv $(notdir $<) /usr/lib64/
 	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so.1
 	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so
 	cp -t /usr/include $(LIB_HEADERS)
 
+_TARGETS +="uninstall"
+_DOCSTRING += "    uninstall:\n"
+_DOCSTRING += "        - Remove the installed libraries\n"
 uninstall: clean
 	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h
 
-.PHONY: platform.clean
+.PHONY: platform.clean install uninstall
 platform.clean:
 	rm -f $(PLATFORM_OBJECTS)
 
 libraries.clean: platform.clean
+
+_TARGETS += $(TARGETS)
+TARGETS := $(_TARGETS)
+
+_DOCSTRING += $(DOCSTRING)
+DOCSTRING := $(_DOCSTRING)
+
