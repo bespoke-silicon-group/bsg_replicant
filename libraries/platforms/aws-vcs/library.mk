@@ -31,7 +31,7 @@ endif
 
 # aws-fpga and aws-vcs are identical, EXCEPT for the MMIO
 # layer. Therefore, we reuse the bsg_manycore_platform.cpp file in
-# aws-fpga, but procide our own bsg_manycore_mmio.cpp file that
+# aws-fpga, but provide our own bsg_manycore_mmio.cpp file that
 # handles DPI-based MMIO.
 PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-vcs/bsg_manycore_mmio.cpp
 PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_platform.cpp
