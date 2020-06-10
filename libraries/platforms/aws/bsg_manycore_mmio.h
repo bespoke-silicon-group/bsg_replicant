@@ -29,6 +29,7 @@
 #define BSG_MANYCORE_MMIO
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_platform.h>
+#include <bsg_manycore_printing.h>
 #include <cstdint>
 
 /* PCIe FIFOs */

@@ -1,7 +1,6 @@
 #ifndef __BSG_MANYCORE_PLATFORM_HPP
 #define __BSG_MANYCORE_PLATFORM_HPP
 #include <bsg_manycore.h>
-#include <bsg_manycore_printing.h>
 
 /**
  * This file defines the interface that runtime platforms provide to
