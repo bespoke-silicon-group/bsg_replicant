@@ -34,7 +34,7 @@
  * @param[in]  id     ID which selects the physical hardware from which this manycore is configured
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
+int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                            pci_bar_handle_t* handle,
                            hb_mc_manycore_id_t id)
 {
@@ -43,20 +43,20 @@ static int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
 
         // all IDs except 0 are unused at the moment
         if (id != 0) {
-                mmio_pr_err(mmio, "Failed to init MMIO: invalid ID\n");
+                mmio_pr_err((*mmio), "Failed to init MMIO: invalid ID\n");
                 return HB_MC_INVALID;
         }
 
         if ((err = fpga_pci_attach(id, pf_id, bar_id, write_combine, handle)) != 0) {
-                mmio_pr_err(mmio, "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
-                mmio_pr_err(mmio, "Are you running with sudo?\n");
+                mmio_pr_err((*mmio), "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
+                mmio_pr_err((*mmio), "Are you running with sudo?\n");
                 return r;
         }
 
         // it is not clear to me where 0x4000 comes from...
         // map in the base address register to our address space
         if ((err = fpga_pci_get_address(*handle, 0, 0x4000, (void**)&mmio->p)) != 0) {
-                mmio_pr_err(mmio, "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
+                mmio_pr_err((*mmio), "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
                 goto cleanup;
         }
         r = HB_MC_SUCCESS;
@@ -64,7 +64,7 @@ static int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         goto done;
 
  cleanup:
-        fpga_pci_detach(handle);
+        fpga_pci_detach(*handle);
         *handle = PCI_BAR_HANDLE_INIT;
  done:
         return r;
@@ -76,20 +76,20 @@ static int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
  * @param[in]  handle PCI BAR handle to unmap
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
+int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
                               pci_bar_handle_t *handle)
 {
         int err;
 
         if (*handle == PCI_BAR_HANDLE_INIT)
-                return;
+                return HB_MC_SUCCESS;
 
         if ((err = fpga_pci_detach(*handle)) != 0)
-                mmio_pr_err(mmio, "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
+                mmio_pr_err((*mmio), "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
 
         *handle = PCI_BAR_HANDLE_INIT;
-        *mmio->p = static_cast<uintptr_t>(nullptr);
-        return;
+        (*mmio).p = reinterpret_cast<uintptr_t>(nullptr);
+        return HB_MC_SUCCESS;
 }
 
 /**
@@ -100,20 +100,20 @@ static int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
  * @param[in]  sz     Number of bytes in the pointer to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int hb_mc_mmio_read(hb_mc_mmio_t mmio, uintptr_t offset,
+int hb_mc_mmio_read(hb_mc_mmio_t *mmio, uintptr_t offset,
                            void *vp, size_t sz)
 {
         unsigned char *addr = reinterpret_cast<unsigned char *>(mmio->p);
         uint32_t tmp;
 
         if (addr == nullptr) {
-                mmio_pr_err(mmio->p, "%s: Failed: MMIO not initialized", __func__);
+                mmio_pr_err((*mmio), "%s: Failed: MMIO not initialized", __func__);
                 return HB_MC_UNINITIALIZED;
         }
 
         // check that the address is aligned to a four byte boundar
         if (offset % 4) {
-                mmio_pr_err(mmio, "%s: Failed: 0x%" PRIxPTR " "
+                mmio_pr_err((*mmio), "%s: Failed: 0x%" PRIxPTR " "
                             "is not aligned to 4 byte boundary\n",
                             __func__, offset);
                 return HB_MC_UNALIGNED;
@@ -134,7 +134,7 @@ static int hb_mc_mmio_read(hb_mc_mmio_t mmio, uintptr_t offset,
                 *(uint8_t*)vp  = tmp;
                 break;
         default:
-                mmio_pr_err(mmio, "%s: Failed: invalid load size (%zu)\n", __func__, sz);
+                mmio_pr_err((*mmio), "%s: Failed: invalid load size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
 
@@ -149,20 +149,20 @@ static int hb_mc_mmio_read(hb_mc_mmio_t mmio, uintptr_t offset,
  * @param[in]  sz     Number of bytes in the pointer to be written out
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int hb_mc_mmio_write(hb_mc_mmio_t mmio, uintptr_t offset,
+int hb_mc_mmio_write(hb_mc_mmio_t *mmio, uintptr_t offset,
                             void *vp, size_t sz)
 {
         unsigned char *addr = reinterpret_cast<unsigned char *>(mmio->p);
         uint32_t tmp;
 
         if (addr == nullptr) {
-                mmio_pr_err(mmio, "%s: Failed: MMIO not initialized", __func__);
+                mmio_pr_err((*mmio), "%s: Failed: MMIO not initialized", __func__);
                 return HB_MC_UNINITIALIZED;
         }
 
         // check that the address is aligned to a four byte boundary
         if (offset % 4) {
-                mmio_pr_err(mmio->p, "%s: Failed: 0x%" PRIxPTR " "
+                mmio_pr_err((*mmio), "%s: Failed: 0x%" PRIxPTR " "
                             "is not aligned to 4 byte boundary\n",
                             __func__, offset);
                 return HB_MC_UNALIGNED;
@@ -181,7 +181,7 @@ static int hb_mc_mmio_write(hb_mc_mmio_t mmio, uintptr_t offset,
                 tmp = *(uint8_t*)vp;
                 break;
         default:
-                mmio_pr_err(mmio, "%s: Failed: invalid load size (%zu)\n", __func__, sz);
+                mmio_pr_err((*mmio), "%s: Failed: invalid load size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
 

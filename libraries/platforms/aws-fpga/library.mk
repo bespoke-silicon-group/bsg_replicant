@@ -35,7 +35,7 @@ PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws-fpga
 # not sure if these are still necessary for AWS, if fpga_mgmt is installed
-#$(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
+$(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 #$(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
@@ -48,7 +48,7 @@ _DOCSTRING += "    install:\n"
 _DOCSTRING += "        - Install libbsg_manycore_runtime.so in\n"
 _DOCSTRING += "          /usr/lib64 and the headers in /usr/include\n"
 install: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
-	mv $(notdir $<) /usr/lib64/
+	mv $< /usr/lib64/
 	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so.1
 	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so
 	cp -t /usr/include $(LIB_HEADERS)
