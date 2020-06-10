@@ -26,8 +26,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 LIB_CSOURCES   += 
+LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
-LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_platform.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_config.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_cuda.cpp
@@ -43,7 +43,6 @@ LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_responder.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_trace_responder.cpp
-LIB_CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_bits.h
@@ -60,7 +59,6 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_responder.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_tile.h
 
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_vcache.h
-LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_mmio.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_errno.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_features.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_coordinate.h
@@ -73,25 +71,6 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_fifo.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_memsys.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_rom.h
 
-LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
-LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
-
-$(LIB_OBJECTS): INCLUDES  = -I$(LIBRARIES_PATH)
-$(LIB_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
-$(LIB_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
-$(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
-$(LIB_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_mem
-$(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC
-$(LIB_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
-
-# Objects that should be compiled with debug flags
-LIB_DEBUG_OBJECTS  +=
-#LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_responder.o
-#LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.o
-$(LIB_DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
-
 # Objects that should be compiled with strict compilation flags
 LIB_STRICT_OBJECTS +=
 LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_responder.o
@@ -102,17 +81,41 @@ LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_origin_eva_map.o
 LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_print_int_responder.o
 LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_memsys.o
 
+# Objects that should be compiled with debug flags
+LIB_DEBUG_OBJECTS  +=
+
+LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
+LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
+
+# I don't like these, but they'll have to do for now.
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS := 
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES := 
+
+# This depends on LIB_OBJECTS until -DCOSIM is removed
+include $(BSG_PLATFORM_PATH)/library.mk
+
+
+$(LIB_OBJECTS): INCLUDES  := -I$(LIBRARIES_PATH)
+$(LIB_OBJECTS): INCLUDES  += -I$(BASEJUMP_STL_DIR)/bsg_mem
+# We should move this from AWS (and keep the license)
+$(LIB_OBJECTS): INCLUDES  += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
+$(LIB_OBJECTS) $(PLATFORM_OBJECTS): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(LIB_OBJECTS) $(PLATFORM_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+# Need to move this, eventually
+#$(LIB_OBJECTS) $(PLATFORM_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+
+$(LIB_DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
+
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-function
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
 
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS = -lfpga_mgmt -fPIC
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS) $(HEADERS)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS) $(PLATFORM_OBJECTS)
 	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
 
 .PHONY: libraries.clean
 libraries.clean:
-	rm -f $(LIBRARIES_PATH)/*.o
-	rm -f $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0
+	rm -f $(LIB_OBJECTS)
+	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0

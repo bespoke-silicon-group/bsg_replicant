@@ -31,6 +31,10 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
+# Don't include more than once
+ifndef (_BSG_REPLICANT_CADENV_MK)
+_BSG_REPLICANT_CADENV_MK := 1
+
 # CL_DIR: The path to the root of the BSG F1 Repository
 ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
@@ -47,12 +51,6 @@ include $(CL_DIR)/../bsg_cadenv/cadenv.mk
 # We use vcs-mx, so we re-define VCS_HOME in the environment
 export VCS_HOME=$(VCSMX_HOME)
 
-else ifndef VCS_HOME # Matches: ifneq ("$(wildcard $(CL_DIR)/../bsg_cadenv/cadenv.mk)","")
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: VCS_HOME environment variable undefined. Are you sure vcs-mx is installed?$(NC)"))
-endif # Matches: else ifndef VCS_HOME 
-
-# XILINX_VIVADO is set by Vivado's configuration script. We use this
-# as a quick check instead of running Vivado.
-ifndef XILINX_VIVADO
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: XILINX_VIVADO environment variable undefined. Are you sure Vivado is installed?$(NC)"))
 endif
+endif
+

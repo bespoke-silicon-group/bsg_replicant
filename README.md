@@ -1,4 +1,4 @@
-# BSG Replicant: Cosimulation and Emulation Infrastructure for running HammerBlade
+# BSG Replicant: Cosimulation and Emulation Infrastructure for HammerBlade
 
 ## Contents
 
@@ -13,8 +13,9 @@ This repository contains the following folders:
 
 This repository contains the following files:
 
-- `Makefile`: Contains targets for Co-Simulation, Bitstream Generation, F1 Regression
+- `Makefile`: Contains targets for Bitstream Generation, and Regression
 - `machine.mk`: Defines the path to the current Machine Configuration for co-simulation
+- `platform.mk`: Defines the path to the current exeuction Platform
 - `README.md`: This file
 - `cadenv.mk`: A makefile fragment for deducing the CAD tool environment
 - `environment.mk`: A makefile fragment for deducing the build environment. 
@@ -34,9 +35,23 @@ to point to any subdirectory of the `machines` directory.
 
 See [machines/README.md](machines/README.md) for more documentation.
 
+## Execution Platforms
+
+HammerBlade runs on a variety of platforms: AWS F1 (natively),
+Synopsys VCS (simulation), and others. Each platform requires a
+different runtime library, hardware files, and build commands.
+We abstract these differences in the makefiles. 
+
+To switch platforms, set the variable `BSG_PLATFORM` in
+[platform.mk](platform.mk). Available platforms are subdirectories in
+[libraries/platforms](libraries/platforms). For the most part, users
+do not need to worry about what platform they are running on;
+`platform.mk` will automatically deduce the correct platform from
+the environment
+
 # Quick-Start
 
-The simplest way to use this project is to clone it's meta-project: [BSG Bladerunner](https://github.com/bespoke-silicon-group/bsg_bladerunner/). 
+The simplest way to use this project is to clone its meta-project: [BSG Bladerunner](https://github.com/bespoke-silicon-group/bsg_bladerunner/). 
 
 BSG Bladerunner tracks this repository, BSG Manycore, and BaseJump STL
 repositories as submodules and maintains a monotonic versionining

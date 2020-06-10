@@ -55,6 +55,12 @@ ifndef BASEJUMP_STL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BASEJUMP_STL_DIR is not defined$(NC)"))
 endif
 
+# XILINX_VIVADO is set by Vivado's configuration script. We use this
+# as a quick check instead of running Vivado.
+ifndef XILINX_VIVADO
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: XILINX_VIVADO environment variable undefined. Are you sure Vivado is installed?$(NC)"))
+endif
+
 # Makefile.machine.include defines the Manycore hardware
 # configuration.
 include $(BSG_MACHINE_PATH)/Makefile.machine.include

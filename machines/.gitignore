@@ -4,3 +4,4 @@ bsg_bladerunner_configuration.rom
 bsg_bladerunner_memsys.rom
 bsg_bladerunner_configuration.v
 bsg_bladerunner_pkg.vh
+bsg_manycore_machine.h

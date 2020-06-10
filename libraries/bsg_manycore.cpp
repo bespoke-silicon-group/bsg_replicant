@@ -38,7 +38,6 @@
 #include <bsg_mem_dma.hpp>
 #endif
 
-#ifdef __cplusplus
 #include <cinttypes>
 #include <cstdint>
 #include <cstdlib>
@@ -47,16 +46,6 @@
 #include <climits>
 #include <cstdbool>
 #include <cassert>
-#else
-#include <inttypes>
-#include <stdint.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <limits.h>
-#include <stdbool.h>
-#include <assert.h>
-#endif
 
 #include <type_traits>
 #include <stack>
@@ -1214,11 +1203,7 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        // This pair of matching function calls changes the clock period of the
-        // manycore during data transfer to accelerate simulation
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 1);
-#endif
+        hb_mc_platform_start_bulk_transfer(mc);
 
         const uint32_t *words = (const uint32_t*)data;
         size_t n_words = sz >> 2;
@@ -1242,10 +1227,7 @@ int hb_mc_manycore_write_mem(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (err != HB_MC_SUCCESS)
                 return err;
 
-
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 0);
-#endif
+        hb_mc_platform_finish_bulk_transfer(mc);
         return HB_MC_SUCCESS;
 }
 
@@ -1270,9 +1252,7 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         size_t n_words = sz >> 2;
         hb_mc_npa_t addr = *npa;
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 1);
-#endif
+        hb_mc_platform_start_bulk_transfer(mc);
 
         /* send store requests one word at a time */
         for (size_t i = 0; i < n_words; i++) {
@@ -1292,9 +1272,7 @@ int hb_mc_manycore_memset(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (err != HB_MC_SUCCESS)
                 return err;
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 0);
-#endif
+        hb_mc_platform_finish_bulk_transfer(mc);
 
         return HB_MC_SUCCESS;
 }
@@ -1329,9 +1307,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         /* cap the number of load ids to the maximum number of pending requests */
         n_ids = hb_mc_config_get_io_remote_load_cap(cfg);
 
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 1);
-#endif
+        hb_mc_platform_start_bulk_transfer(mc);
 
         /* track requests and responses with ids and id_to_rsp_i */
         std::stack <uint32_t, std::vector<uint32_t> > ids;
@@ -1409,9 +1385,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                         ids.push(load_id);
                 }
         }
-#ifdef COSIM
-        sv_set_virtual_dip_switch(0, 0);
-#endif
+        hb_mc_platform_finish_bulk_transfer(mc);
 
         return HB_MC_SUCCESS;
 }

@@ -127,8 +127,7 @@ include $(TESTBENCH_PATH)/dramsim3.mk
 include $(TESTBENCH_PATH)/infmem.mk
 include $(TESTBENCH_PATH)/libdmamem.mk
 
-SIMLIBS += $(TESTBENCH_PATH)/libfpga_mgmt.so
-SIMLIBS += $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
+SIMLIBS += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 SIMLIBS += $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB
 
 # Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
@@ -185,35 +184,6 @@ $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/syn
 	vlogan -work $(BSG_MACHINE_NAME) $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
 		$(VLOGAN_SOURCES) -f $(TESTBENCH_PATH)/aws.vcs.f \
 		$(VLOGAN_INCLUDES) -l $(BSG_MACHINE_NAME).vlogan.log
-
-# The applications link against the BSG Manycore Libraries, and the FPGA
-# Management libaries, so we build them as necessary. They do NOT need to be
-# re-built every time a regression test is compiled
-
-# libbsg_manycore_runtime will be compiled in $(LIBRARIES_PATH)
-LDFLAGS    += -L$(LIBRARIES_PATH) -Wl,-rpath=$(LIBRARIES_PATH)
-
-# Define the COSIM macro so that the DPI Versions of functions are called
-$(LIB_OBJECTS): CXXFLAGS += -DCOSIM
-$(LIB_OBJECTS): CFLAGS   += -DCOSIM
-
-# libfpga_mgmt will be compiled in $(TESTBENCH_PATH), so direct the linker there
-$(LIB_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(TESTBENCH_PATH) 
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-Wl,-rpath=$(TESTBENCH_PATH)
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1.0: $(TESTBENCH_PATH)/libfpga_mgmt.so
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1: %: %.0
-	ln -sf $@.0 $@
-$(LIBRARIES_PATH)/libbsg_manycore_runtime.so: %: %.1
-	ln -sf $@.1 $@
-
-# libfpga_mgmt will be compiled in $(TESTBENCH_PATH)
-$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(SDK_DIR)/userspace/include
-$(TESTBENCH_PATH)/libfpga_mgmt.so: INCLUDES += -I$(HDK_DIR)/common/software/include
-$(TESTBENCH_PATH)/libfpga_mgmt.so: CFLAGS = -std=c11 -D_GNU_SOURCE -fPIC -shared
-$(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(SDK_DIR)/userspace/utils/sh_dpi_tasks.c
-$(TESTBENCH_PATH)/libfpga_mgmt.so: % : $(HDK_DIR)/common/software/src/fpga_pci_sv.c
-	$(CC) $(CFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
 .PHONY: simlibs.clean
 simlibs.clean: libraries.clean hardware.clean

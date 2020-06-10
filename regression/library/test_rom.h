@@ -25,10 +25,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef TEST_MANYCORE_COMPILE_H
-#define TEST_MANYCORE_COMPILE_H
+#ifndef TEST_ROM_H
+#define TEST_ROM_H
 #include <bsg_manycore.h>
-#include <bsg_manycore_mmio.h>
 #include <bsg_manycore_machine.h>
 #include <inttypes.h>
 #include "../cl_manycore_regression.h"
