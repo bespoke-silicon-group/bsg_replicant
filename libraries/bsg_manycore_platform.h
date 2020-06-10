@@ -82,9 +82,11 @@ extern "C" {
         /**
          * Signal the hardware to start a bulk transfer over the network
          *
-         * This exists to hide the DPI clock-switching hack we use to
-         * reduce the runtime in VCS/F1 Simulation. Most
-         * implementations can return HB_MC_SUCCESS.
+         * Hooks that the platform may implement to perform special
+         * initialization and cleanup tasks for assisting in doing
+         * packet-based bulk transfers from the host and device.
+         *
+         * Unless otherwise needed, most platforms can simply return HB_MC_SUCCESS
          *
          * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
@@ -94,9 +96,11 @@ extern "C" {
         /**
          * Signal the hardware to end a bulk transfer over the network
          *
-         * This exists to hide the DPI clock-switching hack we use to
-         * reduce the runtime in VCS/F1 Simulation. Most
-         * implementations can return HB_MC_SUCCESS.
+         * Hooks that the platform may implement to perform special
+         * initialization and cleanup tasks for assisting in doing
+         * packet-based bulk transfers from the host and device.
+         *
+         * Unless otherwise needed, most platforms can simply return HB_MC_SUCCESS
          *
          * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.

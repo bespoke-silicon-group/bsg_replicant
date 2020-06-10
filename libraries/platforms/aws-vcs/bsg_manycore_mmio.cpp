@@ -177,6 +177,11 @@ extern void sv_set_virtual_dip_switch(int, int);
  * Signal the hardware to start a bulk transfer over the network
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ *
+ * This exists to hide the DPI clock-switching hack we use to
+ * reduce the runtime in VCS/F1 Simulation. Most
+ * implementations can return HB_MC_SUCCESS.
+ *
  */
 int hb_mc_platform_start_bulk_transfer(hb_mc_manycore_t *mc){
         sv_set_virtual_dip_switch(0, 1);
@@ -188,6 +193,11 @@ int hb_mc_platform_start_bulk_transfer(hb_mc_manycore_t *mc){
  * Signal the hardware to end a bulk transfer over the network
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ *
+ * This exists to hide the DPI clock-switching hack we use to
+ * reduce the runtime in VCS/F1 Simulation. Most
+ * implementations can return HB_MC_SUCCESS.
+ *
  */
 int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc){
         sv_set_virtual_dip_switch(0, 0);
