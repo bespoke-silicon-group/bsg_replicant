@@ -376,7 +376,7 @@ module bsg_manycore_link_to_axil
 
    bsg_manycore_endpoint_to_fifos 
      #(
-       .host_fifo_width_p(host_io_pkt_width_p),
+       .fifo_width_p     (host_io_pkt_width_p),
        .x_cord_width_p   (x_cord_width_p),
        .y_cord_width_p   (y_cord_width_p),
        .addr_width_p     (addr_width_p),

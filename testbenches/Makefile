@@ -44,12 +44,11 @@ include ../environment.mk
 # *environment.mk must be included before cadenv.mk*
 include $(CL_DIR)/cadenv.mk
 
-# simlibs.mk defines build rules for hardware and software simulation libraries
-# that are necessary for running cosimulation. These are dependencies for
-# regression since running $(MAKE) recursively does not prevent parallel builds
-# of identical rules -- which causes errors.
-#
-include simlibs.mk
+include $(CL_DIR)/hdk.mk
+
+include $(LIBRARIES_PATH)/libraries.mk
+
+include $(HARDWARE_PATH)/hardware.mk
 
 
 # targets.mk defines the targets (sub-directories) for regression in
@@ -62,7 +61,7 @@ regression: $(BSG_MACHINE_PATH)/regression.log $(BSG_MACHINE_PATH)/runtime.log
 $(BSG_MACHINE_PATH)/regression.log: regression.log
 	cp $< $@
 
-regression.log: $(TARGETS)
+regression.log: $(TARGETS) $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB
 	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee $@
 
 runtime.log: $(BSG_MACHINE_PATH)/regression.log
@@ -75,14 +74,10 @@ runtime.log: $(BSG_MACHINE_PATH)/regression.log
 $(BSG_MACHINE_PATH)/runtime.log: runtime.log
 	cp $< $@
 
-$(TARGETS): $(SIMLIBS)
+$(TARGETS): $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 	$(MAKE) -C $@ regression
 
-clean: $(addsuffix .clean,$(TARGETS)) simlibs.clean
-	rm -rf *.log *.jou 
-	rm -rf *.vanilla_operation_trace.csv *.vanilla_stats.csv
-	rm -rf .cxl*
-	rm -rf *.bak
+clean: $(addsuffix .clean,$(TARGETS)) libraries.clean hardware.clean
 
 %.clean:
 	$(MAKE) -C $(basename $@) clean

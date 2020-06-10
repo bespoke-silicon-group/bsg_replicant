@@ -25,15 +25,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files of
-# regression tests.
+# hardware.mk: Platform-specific HDL listing. 
+#
+# For simulation platforms, it also describes how to build the
+# simulation "libraries" that are required by CAD tools.
+#
+# This file should be included from bsg_replicant/hardware/hardware.mk. It checks
+# BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
 
-# BSG_PLATFORM_PATH: The path to the execution platform
-ifndef BSG_PLATFORM_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
-endif
+# Replace any xilinx-unsynthesizable sources with xilinx-synthesizable sources
+VHEADERS := $(filter-out $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v,$(VHEADERS))
+VSOURCES := $(filter-out $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v,$(VSOURCES))
+VSOURCES += $(BASEJUMP_STL_DIR)/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
 
-include $(BSG_PLATFORM_PATH)/link.mk
-
-.PHONY: link.clean
-link.clean: ;

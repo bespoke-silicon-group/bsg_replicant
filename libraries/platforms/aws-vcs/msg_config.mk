@@ -29,9 +29,9 @@
 # warnings and lint messages from non-BSG code. We generate it
 # dynamically so that it works on multiple machine setups.
 
-# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
-ifndef TESTBENCH_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+# BSG_PLATFORM_PATH: The path to the testbenches folder in BSG F1
+ifndef BSG_PLATFORM_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
 endif
 
 # The following variables are set by $(BSG_F1_DIR)/hdk.mk, which will fail if
@@ -43,7 +43,7 @@ endif
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 include $(BSG_F1_DIR)/hdk.mk
 
-$(TESTBENCH_PATH)/msg_config:
+$(BSG_PLATFORM_PATH)/msg_config:
 	$(eval XILINX_VIVADO=$(realpath $(XILINX_VIVADO)))
 
 	@echo "{+warn=none;  +file=$(HDK_SHELL_DIR)/hlx/verif/cl_ports_sh_bfm.vh;}" >> $@

@@ -25,15 +25,32 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files of
-# regression tests.
+# This Makefile Fragment defines rules for linking object files for native
+# regression tests
 
-# BSG_PLATFORM_PATH: The path to the execution platform
-ifndef BSG_PLATFORM_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
+
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this fragment...
+# 
+# EXEC_PATH: The path to the directory where tests will be executed
+ifndef EXEC_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXEC_PATH is not defined$(NC)"))
 endif
 
-include $(BSG_PLATFORM_PATH)/link.mk
+LDFLAGS += -lbsg_manycore_runtime -lm
 
-.PHONY: link.clean
-link.clean: ;
+$(UNIFIED_TESTS): %: $(EXEC_PATH)/test_loader
+$(EXEC_PATH)/test_loader: LD=$(CC)
+$(EXEC_PATH)/test_loader: %: %.o
+	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+
+# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
+$(addprefix $(EXEC_PATH)/,$(INDEPENDENT_TESTS)): LD=$(CXX)
+$(addprefix $(EXEC_PATH)/,$(INDEPENDENT_TESTS)): %: %.o
+	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+
+platform.link.clean:
+	rm -rf $(addprefix $(EXEC_PATH)/,$(INDEPENDENT_TESTS)) test_loader
