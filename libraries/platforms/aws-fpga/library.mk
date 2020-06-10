@@ -25,22 +25,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws/bsg_manycore_mmio.cpp
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws/bsg_manycore_platform.cpp
+PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_mmio.cpp
+PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_platform.cpp
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
 # -DCOSIM is still necessary, for now
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws
+$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws-fpga
 # not sure if these are still necessary for AWS, if fpga_mgmt is installed
 #$(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 #$(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
 
-_DOCSTRING := "Rules from aws/library.mk\n"
+_DOCSTRING := "Rules from aws-fpga/library.mk\n"
 _TARGETS :=
 
 _TARGETS +="install"

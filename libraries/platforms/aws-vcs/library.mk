@@ -29,8 +29,12 @@ ifndef VCS_HOME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: VCS_HOME environment variable undefined. Are you sure vcs-mx is installed?$(NC)"))
 endif
 
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/vcs/bsg_manycore_mmio.cpp
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws/bsg_manycore_platform.cpp
+# aws-fpga and aws-vcs are identical, EXCEPT for the MMIO
+# layer. Therefore, we reuse the bsg_manycore_platform.cpp file in
+# aws-fpga, but procide our own bsg_manycore_mmio.cpp file that
+# handles DPI-based MMIO.
+PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-vcs/bsg_manycore_mmio.cpp
+PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_platform.cpp
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
@@ -39,7 +43,7 @@ PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 $(LIB_OBJECTS): CXXFLAGS += -DCOSIM
 $(LIB_OBJECTS): CFLAGS += -DCOSIM
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws
+$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include

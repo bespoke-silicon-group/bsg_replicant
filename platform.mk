@@ -34,10 +34,10 @@ endif
 # running examples/regression. Current options are the directories in
 # platforms of this repository
 
-# We default to synopsys VCS-MX, HOWEVER, if VCS_HOME is not defined
-# then we will assume that VCS/VCS-MX is not installed and try
-# fall-back options
-BSG_PLATFORM ?= vcs
+# We default to simulating the AWS machine uinsg Synopsys VCS-MX,
+# HOWEVER, if VCS_HOME is not defined then we will assume that
+# VCS/VCS-MX is not installed and try fall-back options
+BSG_PLATFORM ?= aws-vcs
 
 # FIRST check if BSG_PLATFORM is valid. It should match of the
 # directories in libraries/platforms
@@ -54,7 +54,7 @@ ifdef VCS_HOME
 else ifdef AGFI
 # If VCS is not installed, check for AWS. We define AGFI in the
 # environment of every AGFI we build.
-BSG_PLATFORM := aws
+BSG_PLATFORM := aws-fpga
 else
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: No working platforms available$(NC)"))
 endif
