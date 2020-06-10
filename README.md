@@ -51,7 +51,7 @@ the environment
 
 # Quick-Start
 
-The simplest way to use this project is to clone it's meta-project: [BSG Bladerunner](https://github.com/bespoke-silicon-group/bsg_bladerunner/). 
+The simplest way to use this project is to clone its meta-project: [BSG Bladerunner](https://github.com/bespoke-silicon-group/bsg_bladerunner/). 
 
 BSG Bladerunner tracks this repository, BSG Manycore, and BaseJump STL
 repositories as submodules and maintains a monotonic versionining
