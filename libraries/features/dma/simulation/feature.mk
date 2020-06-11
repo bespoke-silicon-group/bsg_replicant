@@ -27,13 +27,13 @@
 
 # C/C++ memory system libraries. These will add dependencies to
 # $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0.
-include $(TESTBENCH_PATH)/dramsim3.mk
-include $(TESTBENCH_PATH)/infmem.mk
-include $(TESTBENCH_PATH)/libdmamem.mk
+include $(LIBRARIES_PATH)/features/dma/simulation/dramsim3.mk
+include $(LIBRARIES_PATH)/features/dma/simulation/infmem.mk
+include $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.mk
 
 # Simulation uses "Magic" DMA to reduce runtime so we compile
 # features/dma/simulation/bsg_manycore_dma.cpp.
-DMA_FEATURE_CXXSOURCES := $(BSG_F1_DIR)/libraries/features/dma/simulation/bsg_manycore_dma.cpp
+DMA_FEATURE_CXXSOURCES := $(LIBRARIES_PATH)/features/dma/simulation/bsg_manycore_dma.cpp
 
 DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
 DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))

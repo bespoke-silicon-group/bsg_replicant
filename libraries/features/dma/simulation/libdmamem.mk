@@ -25,8 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building the infinite memory
-# simulation library for cosimulation
+# This Makefile fragment is for building the simulation "DMA Engine"
+# library for cosimulation
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
@@ -35,21 +35,36 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 #
 
-# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
-ifndef TESTBENCH_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+# LIBRARIES_PATH: The path to the libraries folder in F1
+ifndef LIBRARIES_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
+endif
+
+ifndef BASEJUMP_STL_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BASEJUMP_STL_DIR is not defined$(NC)"))
 endif
 
 # Don't include more than once
-ifndef (_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
-_BSG_F1_TESTBENCHES_INFINITE_MEM_MK := 1
-_INFINITE_MEM_CFGS := e_infinite_mem
+ifndef (_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
+_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK := 1
 
-# Check if Infinite Memory is the memory model for this design
-ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
 
-# Library for DMA-able memory
-include $(TESTBENCH_PATH)/libdmamem.mk
+# Add a clean rule
+.PHONY: dmamem.clean
+dmamem.clean:
+	rm -f $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
 
-endif # ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
-endif # ifndef(_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)
+# Add as a subrule to simlibs.clean
+libraries.clean: dmamem.clean
+
+# Rules for building Simulation "DMA library"
+$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
+$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
+$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXX=g++
+$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
+
+endif # ifndef(_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
