@@ -61,7 +61,7 @@ regression: $(BSG_MACHINE_PATH)/regression.log $(BSG_MACHINE_PATH)/runtime.log
 $(BSG_MACHINE_PATH)/regression.log: regression.log
 	cp $< $@
 
-regression.log: $(TARGETS) $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB
+regression.log: $(TARGETS)
 	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee $@
 
 runtime.log: $(BSG_MACHINE_PATH)/regression.log
@@ -74,7 +74,7 @@ runtime.log: $(BSG_MACHINE_PATH)/regression.log
 $(BSG_MACHINE_PATH)/runtime.log: runtime.log
 	cp $< $@
 
-$(TARGETS): $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
+$(TARGETS): $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 	$(MAKE) -C $@ regression
 
 clean: $(addsuffix .clean,$(TARGETS)) libraries.clean hardware.clean

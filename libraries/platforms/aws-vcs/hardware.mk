@@ -55,43 +55,98 @@ endif
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 include $(BSG_F1_DIR)/hdk.mk
 
-# The aws-vcs platform uses unsynthesizable sources fosimulation
-# machine_wrapper.sv is the top-level file for each machine.
-# BSG_MACHINE_NAME must be defined as a macro when compiling it.
-VSOURCES += $(BSG_PLATFORM_PATH)/machine_wrapper.sv
+################################################################################
+# Simulation Sources
+################################################################################
+# The aws-vcs platform uses unsynthesizable sources for simulation
 
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
+# VCS NS Modules
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
 
-# Test DRAM
+# DMA Interface
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_dma.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
 
+# ???
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_tx.v
+
+# DRAMSim3
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3_pkg.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 
+# Infinite Memory
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
+
 # Profiling
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
+
+# Core Profiler/Trace
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
-
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
+VSOURCES += $(BSG_PLATFORM_PATH)/hardware/bsg_print_stat_snoop.v
+
+# Memory Profilers
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_non_blocking_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
 
-VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
-
+# WAW Detector
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
+
+################################################################################
+# F1-Specific Sources (reused from aws-fpga platform directory)
+################################################################################
+# F1 Header file. Defines the DUT design macro (CL_NAME) for top.sv in aws-fpga
+VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_defines.vh
+# PCIe Macro Definitions
+VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_id_defines.vh
+
+# AXI Bus Definitions
+VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_axi_bus_pkg.vh
+
+# Manycore architecture definitions
+# cl_manycore_pkg.v depends on f1_parameters.vh
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
+
+# Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper.v
+
+# Cache to AXI Sources (For F1 Memory)
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_tx.v
+VSOURCES += $(BSG_MANYCORE_DIR)/v/vanilla_bean/hash_function_reverse.v
+VSOURCES += $(BSG_MANYCORE_DIR)/v/vanilla_bean/bsg_cache_to_axi_hashed.v
+
+# AXI-Lite to Manycore link sources
+VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil_pkg.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_mcl_axil_fifos_master.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_mcl_axil_fifos_slave.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos_pkg.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
+
+################################################################################
+# Top-level files
+################################################################################
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore.sv
+
+# machine_wrapper.sv is the VCS machine library file for each machine.
+# BSG_MACHINE_NAME must be defined as a macro when compiling it.
+VSOURCES += $(BSG_PLATFORM_PATH)/machine_wrapper.sv
 
 # Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
 # tool-specific versions of the same variables. 
@@ -99,6 +154,8 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
 # verilog headers, and sources (respectively). These are used during simulation
 # compilation, but transformed into a tool-specific syntax where necesssary.
+VINCLUDES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware
+VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
 
 VDEFINES   += BSG_MACHINE_NAME=$(BSG_MACHINE_NAME)
