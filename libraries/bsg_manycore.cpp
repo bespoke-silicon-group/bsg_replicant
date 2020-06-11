@@ -1261,6 +1261,18 @@ int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc)
         return HB_MC_SUCCESS;
 }
 
+/**
+ * Check if NPA is in DRAM.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t
+ * @return One if the NPA maps to DRAM - Zero otherwise.
+ */
+static inline int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc,
+                                             const hb_mc_npa_t *npa)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
+}
 
 /**
  * Check if DMA writing is supported.
@@ -1307,6 +1319,9 @@ int hb_mc_manycore_dma_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         if (!hb_mc_manycore_supports_dma_write(mc))
                 return HB_MC_INVALID;
 
+        if (!hb_mc_manycore_dram_is_enabled(mc))
+                return HB_MC_FAIL;
+
         err = hb_mc_manycore_dma_write_no_cache_ainv(mc, npa, data, sz);
         if (err != HB_MC_SUCCESS)
                 return err;
@@ -1333,6 +1348,9 @@ int hb_mc_manycore_dma_write_no_cache_ainv(hb_mc_manycore_t *mc, const hb_mc_npa
         int err;
         if (!hb_mc_manycore_supports_dma_write(mc))
                 return HB_MC_NOIMPL;
+
+        if (!hb_mc_manycore_dram_is_enabled(mc))
+                return HB_MC_FAIL;
 
         // is dram?
         if (!hb_mc_manycore_npa_is_dram(mc, npa))
