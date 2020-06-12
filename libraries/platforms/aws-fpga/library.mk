@@ -42,7 +42,6 @@ include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
-# -DCOSIM is still necessary, for now
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
