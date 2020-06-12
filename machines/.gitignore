@@ -5,3 +5,8 @@ bsg_bladerunner_memsys.rom
 bsg_bladerunner_configuration.v
 bsg_bladerunner_pkg.v
 bsg_manycore_machine.h
+libmachine.so
+Vmanycore_tb_top*
+verilated.o
+verilated_dpi.o
+verilated_vcd_c.o

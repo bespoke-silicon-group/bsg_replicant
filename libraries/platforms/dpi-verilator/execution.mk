@@ -25,31 +25,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment sets up the CAD environment for cosimulation
-# and bitstream generation.
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# This Makefile fragment defines the rules that are used for executing
+# applications on HammerBlade Platforms
 
-# Don't include more than once
-ifndef (_BSG_REPLICANT_CADENV_MK)
-_BSG_REPLICANT_CADENV_MK := 1
+# The rule below defines how to run test_loader for tests.
+TEST_NAME=$(@:%.log=%)
+$(UNIFIED_TESTS:%=%.log): %.log: test_loader %.rule
+	./$< $(C_ARGS) | tee $@
 
-# CL_DIR: The path to the root of the BSG F1 Repository
-ifndef CL_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
-endif
+# The rule below defines how to run all tests that don't use test_loader
+$(INDEPENDENT_TESTS:%=%.log): %.log: % %.rule
+	./$< $(C_ARGS) | tee $@
 
-# Cosimulation requires VCS-MX and Vivado. Bespoke Silicon Group uses
-# bsg_cadenv to reduce environment mis-configuration errors. We simply
-# check to see if bsg_cadenv exists, and use cadenv.mk to configure
-# EDA Environment if it is present. If it is not present, we check for
-# Vivado and VCS and warn if they do not exist.
-ifneq ("$(wildcard $(CL_DIR)/../bsg_cadenv/cadenv.mk)","")
-include $(CL_DIR)/../bsg_cadenv/cadenv.mk
-# We use vcs-mx, so we re-define VCS_HOME in the environment
-export VCS_HOME=$(VCSMX_HOME)
-else
-$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Couldn't find bsg_cadenv. User must configure CAD Environment.$(NC)"))
-endif
-endif
