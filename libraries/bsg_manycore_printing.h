@@ -48,10 +48,11 @@ extern "C" {
         /* #define BSG_PRINT_PREFIX_DEBUG "DEBUG @(%llu):   " */
         /* #endif */
 
-#define BSG_PRINT_PREFIX_DEBUG "DEBUG"
-#define BSG_PRINT_PREFIX_ERROR "ERROR:   "
-#define BSG_PRINT_PREFIX_WARN  "WARNING: "
-#define BSG_PRINT_PREFIX_INFO  "INFO:    "
+#define BSG_PRINT_PREFIX_DEBUG     "DEBUG"
+#define BSG_PRINT_PREFIX_ERROR     "ERROR:     "
+#define BSG_PRINT_PREFIX_WARN      "WARNING:   "
+#define BSG_PRINT_PREFIX_INFO      "INFO:      "
+#define BSG_PRINT_PREFIX_BENCHMARK "BENCHMARK: "
 
 #define BSG_PRINT_STREAM_DEBUG stderr
 #define BSG_PRINT_STREAM_ERROR stderr
@@ -60,8 +61,9 @@ extern "C" {
 
 #ifdef COSIM
         extern void sv_bsg_time(uint64_t*);
-        uint64_t bsg_time();
 #endif
+
+        uint64_t bsg_time();
 
         static inline uint64_t bsg_utc(){
                 struct timeval tv;
@@ -88,21 +90,29 @@ extern "C" {
         /* #endif */
 
 #if defined(DEBUG)
-#define bsg_pr_dbg(fmt, ...)                                            \
+#define bsg_pr_dbg(fmt, ...)                                           \
         bsg_pr_prefix(BSG_PRINT_PREFIX_DEBUG, fmt, ##__VA_ARGS__)
 #else
 #define bsg_pr_dbg(...)
 #endif
 
-#define bsg_pr_err(fmt, ...)                                            \
+#define bsg_pr_err(fmt, ...)                                           \
         bsg_pr_prefix(BSG_PRINT_PREFIX_ERROR, fmt, ##__VA_ARGS__)
 
-#define bsg_pr_warn(fmt, ...)                                           \
+#define bsg_pr_warn(fmt, ...)                                          \
         bsg_pr_prefix(BSG_PRINT_PREFIX_WARN, fmt, ##__VA_ARGS__)
 
-#define bsg_pr_info(fmt, ...)                                           \
+#define bsg_pr_info(fmt, ...)                                          \
         bsg_pr_prefix(BSG_PRINT_PREFIX_INFO, fmt, ##__VA_ARGS__)
 
+#if defined(BENCHMARK)
+#define bsg_pr_benchmark(fmt, ...)                                     \
+        bsg_pr_prefix(BSG_PRINT_PREFIX_BENCHMARK, fmt, ##__VA_VARGS__)
+#else
+#define bsg_pr_benchmark(fmt, ...)
+#endif
+
+#define BSG_CYCLE_TIME 400000
 
 #if defined(__cplusplus)
 }

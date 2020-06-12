@@ -140,4 +140,9 @@ uint64_t bsg_time(){
         sv_bsg_time(&val);
         return val;
 }
+#else
+// FIXME: Add platform specific implementation.
+uint64_t bsg_time(){
+        return 0;
+}
 #endif
