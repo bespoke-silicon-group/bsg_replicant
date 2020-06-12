@@ -96,6 +96,15 @@ endif # Matches: ifneq ($(_BSG_MANYCORE_DIR), $(BSG_MANYCORE_DIR))
 endif # Matches: ifdef _BSG_MANYCORE_DIR
 # Undefine the temporary variable to prevent its use
 undefine _BSG_MANYCORE_DIR
+
+# If we're inside bladerunner, check for verilator and define variables
+ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
+VERILATOR_ROOT = $(BLADERUNNER_ROOT)/verilator
+VERILATOR = $(BLADERUNNER_ROOT)/verilator/bin/verilator
+else
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Bladerunner is cloned, but verilator not found.$(NC)"))
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Compile verilator in bsg_bladerunner to remove this warning$(NC)"))
+endif
 endif # Matches: ifneq ("$(wildcard $(CL_DIR)/../project.mk)","")
 
 # If BASEJUMP_STL_DIR is not defined at this point, raise an error.

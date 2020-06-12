@@ -10,6 +10,21 @@ the following directories in
 [machine.mk](../machine.mk). BSG_MACHINE_PATH must contain a vaild
 Makefile.machine.include file.
 
+## Machines and Platforms
+
+All machines are supported by the `aws-vcs` platform.
+
+These machines are supported by the `verilator-dpi` platform:
+
+- timing_v0_8_4
+- timing_v0_16_8
+- timing_v0_32_16
+- timing_v0_64_32
+- 4x4_fast_n_fake
+- 16x8_fast_n_fake
+
+The `aws-fpga` platform only supports the 4x4_blocking_vcache_f1_model. 
+
 ## Performance Metric Machines
 
 - timing_v0_16_8: This is a 16x8 array of RISC-V Vanilla Cores with
