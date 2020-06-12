@@ -27,16 +27,7 @@
 
 # This Makefile fragment defines rules/flags for compiling C/C++ files
 
-# The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
-INCLUDES   += -I$(LIBRARIES_PATH)
-INCLUDES   += -I$(BSG_MACHINE_PATH)
+include $(LIBRARIES_PATH)/platforms/dpi-verilator/compilation.mk
 
-CDEFINES   += -DCOSIM -DVCS
-CXXDEFINES += -DCOSIM -DVCS
-CXXFLAGS   += -lstdc++ $(INCLUDES) $(DEFINES)
-CFLAGS     += $(INCLUDES) $(DEFINES)
-
-# Compliation rules are identical between aws-fpga and aws-vcs flows
-include $(LIBRARIES_PATH)/platforms/aws-fpga/compilation.mk
-
+DEFINES += -DVCS
 
