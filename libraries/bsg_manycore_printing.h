@@ -107,7 +107,7 @@ extern "C" {
 
 #if defined(BENCHMARK)
 #define bsg_pr_benchmark(fmt, ...)                                     \
-        bsg_pr_prefix(BSG_PRINT_PREFIX_BENCHMARK, fmt, ##__VA_VARGS__)
+        bsg_pr_prefix(BSG_PRINT_PREFIX_BENCHMARK, fmt, ##__VA_ARGS__)
 #else
 #define bsg_pr_benchmark(fmt, ...)
 #endif
