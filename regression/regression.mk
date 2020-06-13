@@ -74,7 +74,10 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 	for target in $(notdir $(basename $^)); do \
 		if grep "BSG REGRESSION TEST .*PASSED.*" $(EXEC_PATH)/$$target.log > /dev/null; then \
 			if grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log > /dev/null ; then \
-				cycles=`grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log | awk '{print $$(NF-1)}'`; \
+				let cycles=0; \
+				for c in `grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log | awk '{print $$(NF-1)}'`; do \
+					let cycles+=c; \
+				done; \
 				echo "PASS: Regression Test $$target passed in $$cycles cycles!"| tee -a $@; \
 			else \
 				echo "PASS: Regression Test $$target passed!"| tee -a $@; \
