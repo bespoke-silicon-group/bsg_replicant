@@ -54,10 +54,11 @@ extern "C" {
 #define BSG_PRINT_PREFIX_INFO      "INFO:      "
 #define BSG_PRINT_PREFIX_BENCHMARK "BENCHMARK: "
 
-#define BSG_PRINT_STREAM_DEBUG stderr
-#define BSG_PRINT_STREAM_ERROR stderr
-#define BSG_PRINT_STREAM_WARN  stderr
-#define BSG_PRINT_STREAM_INFO  stderr
+#define BSG_PRINT_STREAM_DEBUG     stderr
+#define BSG_PRINT_STREAM_ERROR     stderr
+#define BSG_PRINT_STREAM_WARN      stderr
+#define BSG_PRINT_STREAM_INFO      stderr
+#define BSG_PRINT_STREAM_BENCHMARK stderr
 
 #ifdef COSIM
         extern void sv_bsg_time(uint64_t*);

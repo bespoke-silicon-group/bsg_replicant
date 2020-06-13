@@ -59,10 +59,11 @@ static void insert_time(prefix_info_t *info, const char *prefix)
 typedef map<string, prefix_info_t> prefix_map;
 
 static prefix_map fmap = {
-        {BSG_PRINT_PREFIX_DEBUG, {BSG_PRINT_STREAM_DEBUG, true, insert_time}},
-        {BSG_PRINT_PREFIX_ERROR, {BSG_PRINT_STREAM_ERROR, true, 0}},
-        {BSG_PRINT_PREFIX_WARN,  {BSG_PRINT_STREAM_WARN,  true, 0}},
-        {BSG_PRINT_PREFIX_INFO,  {BSG_PRINT_STREAM_INFO,  true, 0}},
+        {BSG_PRINT_PREFIX_DEBUG,     {BSG_PRINT_STREAM_DEBUG,     true, insert_time}},
+        {BSG_PRINT_PREFIX_ERROR,     {BSG_PRINT_STREAM_ERROR,     true, 0}},
+        {BSG_PRINT_PREFIX_WARN,      {BSG_PRINT_STREAM_WARN,      true, 0}},
+        {BSG_PRINT_PREFIX_INFO,      {BSG_PRINT_STREAM_INFO,      true, 0}},
+        {BSG_PRINT_PREFIX_BENCHMARK, {BSG_PRINT_STREAM_BENCHMARK, true, 0}},
 };
 
 int bsg_pr_prefix(const char *prefix, const char *fmt, ...)
