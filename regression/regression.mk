@@ -73,7 +73,12 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 	echo ""| tee -a $@; \
 	for target in $(notdir $(basename $^)); do \
 		if grep "BSG REGRESSION TEST .*PASSED.*" $(EXEC_PATH)/$$target.log > /dev/null; then \
-			echo "PASS: Regression Test $$target passed!"| tee -a $@; \
+			if grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log > /dev/null ; then \
+				cycles=`grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log | awk '{print $$(NF-1)}'`; \
+				echo "PASS: Regression Test $$target passed in $$cycles cycles!"| tee -a $@; \
+			else \
+				echo "PASS: Regression Test $$target passed!"| tee -a $@; \
+			fi; \
 			let "pass+=1"; \
 		else \
 			echo "FAIL: Regression Test $$target failed!"| tee -a $@; \
