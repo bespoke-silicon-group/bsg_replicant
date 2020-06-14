@@ -63,7 +63,7 @@ $(USER_CLEAN_RULES):
 # for a directory.
 regression: $(EXEC_PATH)/regression.log 
 $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
-	@pass=0; total=0; \
+	@pass=0; total=0; total_cycles=0; \
 	echo ""| tee $@; \
 	echo "==========================================================="| tee -a $@; \
 	echo ""| tee -a $@; \
@@ -78,6 +78,7 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 				for c in `grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log | awk '{print $$(NF-1)}'`; do \
 					let cycles+=c; \
 				done; \
+				let total_cycles+=$$cycles; \
 				echo "PASS: Regression Test $$target passed in $$cycles cycles!"| tee -a $@; \
 			else \
 				echo "PASS: Regression Test $$target passed!"| tee -a $@; \
@@ -91,14 +92,14 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 	if [ ! $$pass == $$total ]; then \
 		echo "==================================================="| tee -a $@; \
 		echo "" | tee -a $@; \
-		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"| tee -a $@; \
+		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed in $$total_cycles cycles"| tee -a $@; \
 		echo "" | tee -a $@; \
 		echo "==================================================="| tee -a $@; \
 		exit 1 | tee -a $@; \
 	else \
 		echo "==========================================================="| tee -a $@; \
 		echo ""| tee -a $@; \
-		echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"| tee -a $@; \
+		echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE) in $$total_cycles cycles"| tee -a $@; \
 		echo ""| tee -a $@; \
 		echo "==========================================================="| tee -a $@; \
 	fi;
