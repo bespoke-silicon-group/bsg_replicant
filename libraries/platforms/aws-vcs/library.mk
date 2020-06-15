@@ -33,8 +33,13 @@ endif
 # layer. Therefore, we reuse the bsg_manycore_platform.cpp file in
 # aws-fpga, but provide our own bsg_manycore_mmio.cpp file that
 # handles DPI-based MMIO.
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-vcs/bsg_manycore_mmio.cpp
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_platform.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/bsg_manycore_mmio.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platform.cpp
+
+# The aws-vcs platform supports simulation DMA on certain
+# machines. Support is determined by the memory system configuration
+# at runtime.
+include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
@@ -43,22 +48,21 @@ PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 $(LIB_OBJECTS): CXXFLAGS += -DCOSIM
 $(LIB_OBJECTS): CFLAGS += -DCOSIM
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws-fpga
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
+$(PLATFORM_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(PLATFORM_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 
-# C/C++ memory system libraries. These will add dependencies to
-# $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0.
-include $(TESTBENCH_PATH)/dramsim3.mk
-include $(TESTBENCH_PATH)/infmem.mk
-include $(TESTBENCH_PATH)/libdmamem.mk
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
 
 # libfpga_mgmt is the platform library provided by AWS. It mirrors the
 # same library on AWS F1 hardware.
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH) -lfpga_mgmt
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(BSG_PLATFORM_PATH)/libfpga_mgmt.so
 
+# We have to comple libfpga_mgmt.so ourselves, since it is not installed.
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: INCLUDES := -I$(SDK_DIR)/userspace/include
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: INCLUDES += -I$(HDK_DIR)/common/software/include
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: CFLAGS = -std=c11 -D_GNU_SOURCE -fPIC -shared
@@ -66,6 +70,8 @@ $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: % : $(SDK_DIR)/userspace/utils/sh_dpi_task
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: % : $(HDK_DIR)/common/software/src/fpga_pci_sv.c
 	$(CC) $(CFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
+# Mirror the extensions linux installation in /usr/lib provides so
+# that we can use -lbsg_manycore_runtime
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
 	ln -sf $@.0 $@
 

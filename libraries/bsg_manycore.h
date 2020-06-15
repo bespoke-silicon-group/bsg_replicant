@@ -475,15 +475,6 @@ extern "C" {
          */
         int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc);
 
-
-        /**
-         * Check if NPA is in DRAM.
-         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
-         * @param[in]  npa    A valid hb_mc_npa_t
-         * @return One if the NPA maps to DRAM - Zero otherwise.
-         */
-        int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa);
-
         /**
          * Get the max size of program text.
          */

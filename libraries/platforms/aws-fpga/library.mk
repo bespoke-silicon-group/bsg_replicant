@@ -25,19 +25,33 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_mmio.cpp
-PLATFORM_CXXSOURCES += $(BSG_F1_DIR)/libraries/platforms/aws-fpga/bsg_manycore_platform.cpp
+# aws-fpga and aws-vcs are identical, EXCEPT for the MMIO layer. The
+# reuse the bsg_manycore_platform.cpp file between the two platforms
+# aws-fpga, but provide our own bsg_manycore_mmio.cpp file that
+# handles PCIE-based MMIO.
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_mmio.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platform.cpp
+
+# aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
+# features/dma/noimpl/feature.mk that simply returns
+# HB_MC_NO_IMPL for each function call.
+include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
 # -DCOSIM is still necessary, for now
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_F1_DIR)/libraries/platforms/aws-fpga
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 # not sure if these are still necessary for AWS, if fpga_mgmt is installed
 $(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
-#$(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
+$(PLATFORM_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(PLATFORM_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
+
+# libfpga_mgmt is the platform library provided by AWS.
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
 
 _DOCSTRING := "Rules from aws-fpga/library.mk\n"
