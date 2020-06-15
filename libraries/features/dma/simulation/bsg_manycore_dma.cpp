@@ -1,4 +1,4 @@
-#include <bsg_manycore_dma.h>
+#include <bsg_manycore.h>
 #include <bsg_mem_dma.hpp>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>

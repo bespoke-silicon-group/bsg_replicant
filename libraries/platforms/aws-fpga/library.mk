@@ -35,7 +35,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platfor
 # aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
 # features/dma/noimpl/feature.mk that simply returns
 # HB_MC_NO_IMPL for each function call.
-include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
+include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))

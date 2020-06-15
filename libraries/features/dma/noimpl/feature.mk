@@ -28,7 +28,7 @@
 # aws-fpga does not provide a DMA feature. Therefore, we compile
 # features/dma/noimpl/bsg_manycore_dma.cpp that simply returns
 # HB_MC_NO_IMPL for each function call.
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/features/dma/noimpl/bsg_manycore_dma.cpp
+DMA_FEATURE_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
 
 DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
 DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))
