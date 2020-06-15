@@ -65,15 +65,14 @@ ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 # Library for DMA-able memory
 include $(TESTBENCH_PATH)/libdmamem.mk
 
-# Add DRAMSim3 to the simlibs
-SIMLIBS += $(TESTBENCH_PATH)/libdramsim3.so
-LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldramsim3
-
 # Define USING_DRAMSIM3 for host library
 $(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1
 
 # Add a clean rule
 .PHONY: dramsim3.clean
+
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldramsim3
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(TESTBENCH_PATH)/libdramsim3.so
 
 # Rules for building dramsim3 library
 $(TESTBENCH_PATH)/libdramsim3.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
@@ -104,6 +103,6 @@ dramsim3.clean:
 	rm -f $(TESTBENCH_PATH)/libdramsim3.so
 
 # Add as a subrule to simlibs.clean
-simlibs.clean: dramsim3.clean
+libraries.clean: dramsim3.clean
 endif # ifndef(_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 

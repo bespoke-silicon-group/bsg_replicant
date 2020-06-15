@@ -48,9 +48,8 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
 _BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK := 1
 
-# Add DMA to the simlibs
-SIMLIBS += $(TESTBENCH_PATH)/libdmamem.so
-LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldmamem
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(TESTBENCH_PATH) -Wl,-rpath=$(TESTBENCH_PATH) -ldmamem
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(TESTBENCH_PATH)/libdmamem.so
 
 # Add a clean rule
 .PHONY: dmamem.clean
@@ -58,7 +57,7 @@ dmamem.clean:
 	rm -f $(TESTBENCH_PATH)/libdmamem.so
 
 # Add as a subrule to simlibs.clean
-simlibs.clean: dmamem.clean
+libraries.clean: dmamem.clean
 
 # Rules for building Simulation "DMA library"
 $(TESTBENCH_PATH)/libdmamem.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared

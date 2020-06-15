@@ -25,35 +25,25 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building hardware and software libraries for
-# cosimulation
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# hardware.mk: Platform-specific HDL listing. 
+#
+# For simulation platforms, it also describes how to build the
+# simulation "libraries" that are required by CAD tools.
+#
+# This file should be included from bsg_replicant/hardware/hardware.mk. It checks
+# BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
 
-# This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this makefile..
-# 
-
-# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
-ifndef TESTBENCH_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
+# XILINX_VIVADO is set by Vivado's configuration script. We use this
+# as a quick check instead of running Vivado.
+ifndef XILINX_VIVADO
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: XILINX_VIVADO environment variable undefined. Are you sure Vivado is installed?$(NC)"))
 endif
 
-# LIBRARIES_PATH: The path to the regression folder in BSG F1
-ifndef LIBRARIES_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
-endif
-
-# HARDWARE_PATH: The path to the hardware folder in BSG F1
-ifndef HARDWARE_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
-endif
-
-# PROJECT: The project name, used to as the work directory of the hardware
-# library during analysis
-ifndef PROJECT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
+# BSG_MACHINE_NAME: The name of the target machine. Should be defined
+# in $(BSG_MACHINE_PATH)/Makefile.machine.include, which is included
+# by hardware.mk
+ifndef BSG_MACHINE_NAME
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_NAME is not defined$(NC)"))
 endif
 
 # The following variables are set by $(BSG_F1_DIR)/hdk.mk, which will fail if
@@ -65,70 +55,98 @@ endif
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 include $(BSG_F1_DIR)/hdk.mk
 
-# libraries.mk defines targets for the BSG Manycore Runtime library.
-include $(LIBRARIES_PATH)/libraries.mk
+################################################################################
+# Simulation Sources
+################################################################################
+# The aws-vcs platform uses unsynthesizable sources for simulation
 
-# $(HARDWARE_PATH)/hardware.mk adds to VSOURCES which is a list of verilog
-# source files for cosimulation and compilation, and VHEADERS, which is similar,
-# but for header files. It also adds to CLEANS, a list of clean rules for
-# cleaning hardware targets.
-include $(HARDWARE_PATH)/hardware.mk
-
-# BSG_MACHINE_NAME: The name of the target machine. Should be defined
-# in $(BSG_MACHINE_PATH)/Makefile.machine.include, which is included
-# by hardware.mk
-ifndef BSG_MACHINE_NAME
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_NAME is not defined$(NC)"))
-endif
-
-# The manycore architecture uses unsynthesizable sources for simulation
-
-# machine_wrapper.sv is the top-level work library for each individual
-# machine.
-VSOURCES += $(TESTBENCH_PATH)/machine_wrapper.sv
-
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
-
+# VCS NS Modules
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
 
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
-
-# Test DRAM
+# DMA Interface
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_dma.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
 
+# Cache / Simulation DRAM Interface
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_tx.v
+
+# DRAMSim3
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3_pkg.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 
+# Infinite Memory
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
 
 # Profiling
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
+
+# Core Profiler/Trace
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
-
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
+VSOURCES += $(BSG_PLATFORM_PATH)/hardware/bsg_print_stat_snoop.v
+
+# Memory Profilers
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_non_blocking_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
 
-VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
-
+# WAW Detector
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
-# Include makefile for dramsim3 sources
-include $(TESTBENCH_PATH)/dramsim3.mk
-include $(TESTBENCH_PATH)/infmem.mk
-include $(TESTBENCH_PATH)/libdmamem.mk
 
-SIMLIBS += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
-SIMLIBS += $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB
+################################################################################
+# F1-Specific Sources (reused from aws-fpga platform directory)
+################################################################################
+# F1 Header file. Defines the DUT design macro (CL_NAME) for top.sv in aws-fpga
+VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_defines.vh
+# PCIe Macro Definitions
+VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_id_defines.vh
+
+# AXI Bus Definitions
+VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_axi_bus_pkg.vh
+
+# Manycore architecture definitions
+# cl_manycore_pkg.v depends on f1_parameters.vh
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
+
+# Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper.v
+
+# Cache to AXI Sources (For F1 Memory)
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_tx.v
+VSOURCES += $(BSG_MANYCORE_DIR)/v/vanilla_bean/hash_function_reverse.v
+VSOURCES += $(BSG_MANYCORE_DIR)/v/vanilla_bean/bsg_cache_to_axi_hashed.v
+
+# AXI-Lite to Manycore link sources
+VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil_pkg.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_mcl_axil_fifos_master.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_mcl_axil_fifos_slave.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos_pkg.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
+
+################################################################################
+# Top-level files
+################################################################################
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore.sv
+
+# machine_wrapper.sv is the VCS machine library file for each machine.
+# BSG_MACHINE_NAME must be defined as a macro when compiling it.
+VSOURCES += $(BSG_PLATFORM_PATH)/machine_wrapper.sv
 
 # Using the generic variables VSOURCES, VINCLUDES, and VDEFINES, we create
 # tool-specific versions of the same variables. 
@@ -136,7 +154,9 @@ SIMLIBS += $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
 # verilog headers, and sources (respectively). These are used during simulation
 # compilation, but transformed into a tool-specific syntax where necesssary.
-VINCLUDES += $(TESTBENCH_PATH)
+VINCLUDES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware
+VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
+VINCLUDES += $(BSG_PLATFORM_PATH)
 
 VDEFINES   += BSG_MACHINE_NAME=$(BSG_MACHINE_NAME)
 VDEFINES   += VCS_SIM
@@ -158,23 +178,23 @@ VLOGAN_VFLAGS   += -undef_vcs_macro
 # vcs_simlibs is generated by running Vivado. It contains all of the hardware
 # Xilinx hardware library files necessary for simulation. This rule also
 # generates synopsys_sim.setup, but it generates it in the run directory, so we
-# cd to $(TESTBENCH_PATH) so that vcs_simlibs can be reused across invocations
+# cd to $(BSG_PLATFORM_PATH) so that vcs_simlibs can be reused across invocations
 # of cosimulation.
 #
 # This output is reused between regression test suites, so it should be removed
 # with `make squeakyclean` or an equivalent
-$(TESTBENCH_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/gen_simlibs.tcl
-	cd $(TESTBENCH_PATH) && vivado -mode batch -source $<
+$(BSG_PLATFORM_PATH)/synopsys_sim.setup: $(BSG_PLATFORM_PATH)/gen_simlibs.tcl
+	cd $(BSG_PLATFORM_PATH) && vivado -mode batch -source $<
 
-$(BSG_MACHINE_PATH)/synopsys_sim.setup: $(TESTBENCH_PATH)/synopsys_sim.setup
+$(BSG_MACHINE_PATH)/synopsys_sim.setup: $(BSG_PLATFORM_PATH)/synopsys_sim.setup
 	cp $< $@
-	echo "$(BSG_MACHINE_NAME) : $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/64" >> $@;
+	echo "$(BSG_MACHINE_NAME) : $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/64" >> $@;
 
 # We check synopsys_sim.setup for the library location before
 # modifying it. This avoids repeating the line at the end of the file
 # every single time.
-$(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/synopsys_sim.setup $(VHEADERS) $(VSOURCES)
-	cd $(TESTBENCH_PATH) && \
+$(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/synopsys_sim.setup $(VHEADERS) $(VSOURCES)
+	cd $(BSG_PLATFORM_PATH) && \
 	XILINX_IP=$(XILINX_IP) \
 	XILINX_VIVADO=$(XILINX_VIVADO) \
 	HDK_COMMON_DIR=$(HDK_COMMON_DIR) \
@@ -182,16 +202,14 @@ $(TESTBENCH_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/syn
 	HDK_SHELL_DIR=$(HDK_SHELL_DIR) \
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
 	vlogan -work $(BSG_MACHINE_NAME) $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
-		$(VLOGAN_SOURCES) -f $(TESTBENCH_PATH)/aws.vcs.f \
+		$(VLOGAN_SOURCES) -f $(BSG_PLATFORM_PATH)/aws.vcs.f \
 		$(VLOGAN_INCLUDES) -l $(BSG_MACHINE_NAME).vlogan.log
 
-.PHONY: simlibs.clean
-simlibs.clean: libraries.clean hardware.clean
-	rm -rf $(TESTBENCH_PATH)/vcs_simlibs/BSG_*
-	rm -rf $(TESTBENCH_PATH)/vcs_simlibs/cosim_wrapper
-	rm -rf $(TESTBENCH_PATH)/libfpga_mgmt.so
-	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so
-	rm -rf $(LIBRARIES_PATH)/libbsg_manycore_runtime.so.1
+.PHONY: platform.hardware.clean platform.hardware.bleach
+platform.hardware.clean: 
+	rm -rf $(BSG_PLATFORM_PATH)/vcs_simlibs/BSG_*
+	rm -rf $(BSG_PLATFORM_PATH)/.cxl*
+	rm -rf $(BSG_PLATFORM_PATH)/vivado.jou
 
-bleach:
-	rm -rf $(TESTBENCH_PATH)/vcs_simlibs $(TESTBENCH_PATH)/synopsys_sim.setup
+hardware.clean: platform.hardware.clean
+hardware.bleach: platform.hardware.bleach

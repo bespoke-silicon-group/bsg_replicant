@@ -58,7 +58,7 @@ help:
 	@echo "      clean: Remove all build files"
 
 build:
-	$(MAKE) -C $@ $@ BSG_MACHINE_PATH=$(MACHINES_PATH)/4x4_blocking_vcache_f1_model 
+	$(MAKE) -C $@ $@ BSG_MACHINE_PATH=$(MACHINES_PATH)/4x4_blocking_vcache_f1_model BSG_PLATFORM=aws-fpga
 
 regression:
 	$(MAKE) -C regression $@ 

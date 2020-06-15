@@ -35,6 +35,7 @@
 
 module bsg_manycore_endpoint_to_fifos
   import bsg_manycore_pkg::*;
+  import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter fifo_width_p = "inv"
   // these are endpoint parameters

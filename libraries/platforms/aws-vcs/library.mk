@@ -48,12 +48,17 @@ $(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(PLATFORM_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(BSG_PLATFORM_PATH) 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-Wl,-rpath=$(BSG_PLATFORM_PATH)
+# C/C++ memory system libraries. These will add dependencies to
+# $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0.
+include $(TESTBENCH_PATH)/dramsim3.mk
+include $(TESTBENCH_PATH)/infmem.mk
+include $(TESTBENCH_PATH)/libdmamem.mk
+
+# libfpga_mgmt is the platform library provided by AWS. It mirrors the
+# same library on AWS F1 hardware.
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS +=-L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH) -lfpga_mgmt
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(BSG_PLATFORM_PATH)/libfpga_mgmt.so
 
-# libfpga_mgmt will be compiled in $(BSG_PLATFORM_PATH)
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: INCLUDES := -I$(SDK_DIR)/userspace/include
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: INCLUDES += -I$(HDK_DIR)/common/software/include
 $(BSG_PLATFORM_PATH)/libfpga_mgmt.so: CFLAGS = -std=c11 -D_GNU_SOURCE -fPIC -shared
