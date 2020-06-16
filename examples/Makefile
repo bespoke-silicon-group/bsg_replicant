@@ -25,9 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This file contains the top-level rules for interacting with this
-# project. The rules are documented in the makefile-default "help"
-# command
+# This Makefile is for running the examples in bsg_replicant
+#
 
 # environment.mk verifies the build environment and sets the following
 # makefile variables:
@@ -38,46 +37,41 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include environment.mk
+include ../environment.mk
 
-.PHONY: help build clean
+include $(EXAMPLES_PATH)/link.mk
+
+# Supported example suites
+TARGETS = library spmd cuda python
+
+regression: $(BSG_MACHINE_PATH)/regression.log
+$(BSG_MACHINE_PATH)/regression.log: regression.log
+	cp $< $@
+
+regression.log: $(TARGETS)
+	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee $@
+
+# This is kinda weird, but it guarantees that the platform libraries
+# are built before recursing. We call it PHONY so that it always gets
+# re-built
+.PHONY: library/test_rom
+library/test_rom:
+	$(MAKE) -C library test_rom
+
+$(TARGETS): library/test_rom
+	$(MAKE) -C $@ regression
 
 .DEFAULT_GOAL := help
 help:
 	@echo "Usage:"
-	@echo "make {build|regression|cosim|clean}"
-	@echo "      build: Runs Vivado and Generates the Design Checkpoint to"
-	@echo "             upload to AWS."
-	@echo "      regression: Runs all software regression tests on F1"
-	@echo "      cosim: Runs all regression tests in C/C++ Co-simulation"
-	@echo "             on the machine specified by machine.mk"
-	@echo "      multiverse: Runs all regression tests on all machines"
-	@echo "             and copies the resulting regression.log to the"
-	@echo "             corresponding directory in machines"
-	@echo "             (multiverse takes a good long while)"
+	@echo "make {regression|clean|<subdirectory_name>}"
+	@echo "      regression: Run all tests in all subdirectories"
+	@echo "      <subdirectory_name>: Run all the regression tests for"
+	@echo "             a specific sub-directory (Options are: $(TARGETS))"
 	@echo "      clean: Remove all build files"
 
-build:
-	$(MAKE) -C $@ $@ BSG_MACHINE_PATH=$(MACHINES_PATH)/4x4_blocking_vcache_f1_model BSG_PLATFORM=aws-fpga
+clean: hardware.clean
+	$(foreach t,$(TARGETS), $(MAKE) -C $t clean;)
+	rm -rf regression.log runtime.log
 
-regression:
-	$(MAKE) -C examples $@ 
-
-__BSG_MACHINES += machines/16x8_fast_n_fake
-__BSG_MACHINES += machines/4x4_fast_n_fake
-__BSG_MACHINES += machines/4x4_blocking_dramsim3_hbm2_512mb
-__BSG_MACHINES += machines/8x4_blocking_dramsim3_hbm2_4gb
-__BSG_MACHINES += machines/4x4_blocking_vcache_f1_model
-__BSG_MACHINES += machines/timing_v0_8_4
-__BSG_MACHINES += machines/timing_v0_16_8
-#__BSG_MACHINES += machines/timing_v0_32_16
-#__BSG_MACHINES += machines/timing_v0_64_32  
-multiverse:
-	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C examples regression BSG_MACHINE_PATH=`pwd`/$m &&) echo ;
-
-clean:
-	$(MAKE) -C examples clean 
-	$(MAKE) -C build clean 
-	$(MAKE) -C hardware clean 
-	$(MAKE) -C libraries clean
-
+.PHONY: help clean regression $(TARGETS)

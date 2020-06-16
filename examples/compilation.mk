@@ -25,27 +25,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+# Include platform-specific compilation rules
+include $(BSG_PLATFORM_PATH)/compilation.mk
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+.PHONY: compilation.clean
 
-link.clean: platform.link.clean
+compilation.clean:
+clean: compilation.clean

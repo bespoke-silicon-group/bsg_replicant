@@ -25,27 +25,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines all of the rules for linking
+# cosimulation binaries
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# BSG_PLATFORM_PATH: The path to the execution platform
+ifndef BSG_PLATFORM_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
+endif
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+include $(BSG_PLATFORM_PATH)/execution.mk
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+.PHONY: execution.clean
+execution.clean: 
+	rm -rf *.log
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
-
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
-
-link.clean: platform.link.clean
+clean: execution.clean

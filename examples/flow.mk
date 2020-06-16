@@ -25,27 +25,35 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines the compilation rules that are re-used between execution
+# regression sub-suites.
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-LDFLAGS += -lbsg_manycore_runtime -lm
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+# link.mk defines rules for linking of .o files for regression tests.
+# It defines the target <test_name> for each regression test.
+include $(EXAMPLES_PATH)/link.mk
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+# compillation.mk defines rules for compilation of the C/C++ examples
+include $(EXAMPLES_PATH)/compilation.mk
 
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+# Include platform-specific execution rules
+include $(EXAMPLES_PATH)/execution.mk
 
-link.clean: platform.link.clean
+# regression.mk defines the targets regression and <test_name.log>
+include $(EXAMPLES_PATH)/regression.mk
+
+.DEFAULT_GOAL := help
+help:
+	@echo "Usage:"
+	@echo "make {regression|clean|<test_name>|<test_name>.log}"
+	@echo "      regression: Run all regression tests for this subdirectory"
+	@echo "      <test_name>: Build regression binary for a specific test"
+	@echo "      <test_name.log>: Run a specific regression test and "
+	@echo "             generate the log file"
+	@echo "      clean: Remove all subdirectory-specific outputs"
+
+.PHONY: help

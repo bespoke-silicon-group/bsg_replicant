@@ -43,10 +43,9 @@ PROJECT = cl_manycore
 
 CL_DIR           := $(shell git rev-parse --show-toplevel)
 HARDWARE_PATH    := $(CL_DIR)/hardware
-REGRESSION_PATH  := $(CL_DIR)/regression
-TESTBENCH_PATH   := $(CL_DIR)/testbenches
 LIBRARIES_PATH   := $(CL_DIR)/libraries
 MACHINES_PATH    := $(CL_DIR)/machines
+EXAMPLES_PATH    := $(CL_DIR)/examples
 
 # Check if we are running inside of the BSG Bladerunner repository by searching
 # for project.mk. If project.mk is found, then we are and we should use

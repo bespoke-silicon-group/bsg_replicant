@@ -25,27 +25,30 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+.PRECIOUS: %.o
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+# each regression target needs to build its .o from a .c and .h of the
+# same name
+%.o: %.c %.h
+	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
 
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+# ... or a .cpp and .hpp of the same name
+%.o: %.cpp %.hpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
 
-link.clean: platform.link.clean
+.PHONY: platform.compilation.clean
+platform.compilation.clean:
+	rm -rf *.o
+
+compilation.clean: platform.compilation.clean

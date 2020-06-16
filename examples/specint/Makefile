@@ -25,9 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This file contains the top-level rules for interacting with this
-# project. The rules are documented in the makefile-default "help"
-# command
+# This (rather sparse) Makefile is responsible for building and
+# running regression tests on F1.  Run `make help` to see the
+# available targets. (The target `help` is defined in compilation.mk
 
 # environment.mk verifies the build environment and sets the following
 # makefile variables:
@@ -38,46 +38,29 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include environment.mk
+include ../../environment.mk
 
-.PHONY: help build clean
+# tests.mk defines all of the regression tests (and the source path)
+# for this sub-directory.
+include tests.mk
 
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {build|regression|cosim|clean}"
-	@echo "      build: Runs Vivado and Generates the Design Checkpoint to"
-	@echo "             upload to AWS."
-	@echo "      regression: Runs all software regression tests on F1"
-	@echo "      cosim: Runs all regression tests in C/C++ Co-simulation"
-	@echo "             on the machine specified by machine.mk"
-	@echo "      multiverse: Runs all regression tests on all machines"
-	@echo "             and copies the resulting regression.log to the"
-	@echo "             corresponding directory in machines"
-	@echo "             (multiverse takes a good long while)"
-	@echo "      clean: Remove all build files"
+# compillation.mk defines rules for compilation of the C/C++
+# regression tests.
+include $(REGRESSION_PATH)/compilation.mk
 
-build:
-	$(MAKE) -C $@ $@ BSG_MACHINE_PATH=$(MACHINES_PATH)/4x4_blocking_vcache_f1_model BSG_PLATFORM=aws-fpga
+# rules.mk defines rules for building RISC-V binaries associated with
+# the tests in this sub-directory. rules.mk must come after
+# cosimulation.mk so that <test_name>.rule and <test_name>.clean are
+# not overwritten.
+include rules.mk
 
-regression:
-	$(MAKE) -C examples $@ 
+# The rule below defines how to run test_loader for SPECINT tests. The loader
+# requires two arguments: The path to the RISC-V Binary loaded onto the manycore
+# (TEST_PATH), and the test name (TEST_NAME). SPECINT_PATH is defined for convenience
+SPECINT_PATH=$(BSG_MANYCORE_DIR)/software/spmd/specint2000
+$(EXEC_PATH)/%.log: TEST_NAME=$(subst .log,,$(notdir $@))
+$(EXEC_PATH)/%.log: TEST_PATH=$(SPECINT_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
+$(EXEC_PATH)/%.log: #$(EXEC_PATH)/test_loader #%.rule
+	sudo $< $(TEST_PATH) $(TEST_NAME) | tee $@
 
-__BSG_MACHINES += machines/16x8_fast_n_fake
-__BSG_MACHINES += machines/4x4_fast_n_fake
-__BSG_MACHINES += machines/4x4_blocking_dramsim3_hbm2_512mb
-__BSG_MACHINES += machines/8x4_blocking_dramsim3_hbm2_4gb
-__BSG_MACHINES += machines/4x4_blocking_vcache_f1_model
-__BSG_MACHINES += machines/timing_v0_8_4
-__BSG_MACHINES += machines/timing_v0_16_8
-#__BSG_MACHINES += machines/timing_v0_32_16
-#__BSG_MACHINES += machines/timing_v0_64_32  
-multiverse:
-	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C examples regression BSG_MACHINE_PATH=`pwd`/$m &&) echo ;
-
-clean:
-	$(MAKE) -C examples clean 
-	$(MAKE) -C build clean 
-	$(MAKE) -C hardware clean 
-	$(MAKE) -C libraries clean
 
