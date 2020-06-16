@@ -1568,7 +1568,14 @@ int hb_mc_device_finish (hb_mc_device_t *device) {
                 bsg_pr_err("%s: failed to freeze device tiles.\n", __func__); 
                 return error;
         }
-        
+
+
+        error = hb_mc_manycore_host_request_fence(device->mc, -1);
+        if (error != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to fence on host requests.\n", __func__);
+                return error;
+        }
+       
 
         error = hb_mc_device_manycore_exit (device->mc); 
         if (error != HB_MC_SUCCESS) { 
