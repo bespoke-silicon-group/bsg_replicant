@@ -111,7 +111,7 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 	else \
 		echo "==========================================================="| tee -a $@; \
 		echo ""| tee -a $@; \
-		echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE) with $$cycles_geomean geomean cycles"| tee -a $@; \
+		echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE) in $$cycles_geomean geomean cycles"| tee -a $@; \
 		echo ""| tee -a $@; \
 		echo "==========================================================="| tee -a $@; \
 	fi;
