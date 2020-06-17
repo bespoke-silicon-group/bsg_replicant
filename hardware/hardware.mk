@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_HARDWARE_MK
+__BSG_HARDWARE_MK := 1
+
 # This makefile fragmeent adds to the list of hardware sources
 # $(VSOURCES) and $(VHEADERS) that are necessary to use this project.
 
@@ -271,3 +274,4 @@ hardware.clean:
 
 .PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
 
+endif

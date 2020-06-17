@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_EXECUTION_MK
+__BSG_EXECUTION_MK := 1
+
 # This Makefile fragment defines all of the rules for linking
 # cosimulation binaries
 
@@ -40,3 +43,5 @@ execution.clean:
 	rm -rf *.log
 
 clean: execution.clean
+
+endif
