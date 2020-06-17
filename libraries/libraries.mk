@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_LIBRARIES_MK
+__BSG_LIBRARIES_MK := 1
+
 LIB_CSOURCES   += 
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
@@ -119,3 +122,5 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS)
 libraries.clean:
 	rm -f $(LIB_OBJECTS)
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
+
+endif

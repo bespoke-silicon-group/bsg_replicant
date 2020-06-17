@@ -25,13 +25,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_FLOW_MK
+__BSG_FLOW_MK := 1
+
 # This Makefile fragment defines the compilation rules that are re-used between execution
 # regression sub-suites.
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
-
 
 # link.mk defines rules for linking of .o files for regression tests.
 # It defines the target <test_name> for each regression test.
@@ -57,3 +59,5 @@ help:
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
 .PHONY: help
+
+endif

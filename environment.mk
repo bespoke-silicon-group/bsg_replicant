@@ -38,6 +38,9 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
+ifndef __BSG_ENVIRONMENT_MK
+__BSG_ENVIRONMENT_MK := 1
+
 # Name of this project
 PROJECT = cl_manycore
 
@@ -114,3 +117,5 @@ include $(CL_DIR)/machine.mk
 # platform.mk defines BSG_PLATFORM_PATH, which is the host platform to
 # simulate (VCS or Verilator) or run on (AWS)
 include $(CL_DIR)/platform.mk
+
+endif

@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_COMPILATION_MK
+__BSG_COMPILATION_MK := 1
+
 # This Makefile fragment defines rules for compilation of the C/C++
 # files for running regression tests.
 
@@ -35,9 +38,9 @@ NC=\033[0m
 # Include platform-specific compilation rules
 include $(BSG_PLATFORM_PATH)/compilation.mk
 
-
-
 .PHONY: compilation.clean
 
 compilation.clean:
 clean: compilation.clean
+
+endif

@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_REGRESSION_MK
+__BSG_REGRESSION_MK := 1
+
 # This Makefile fragment defines the regression rules that are reused between ALL
 # regression directories (Cosimulation and F1 Execution).
 
@@ -92,3 +95,4 @@ regression.clean:
 
 .PHONY: regression regression.clean
 
+endif

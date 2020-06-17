@@ -25,6 +25,9 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+ifndef __BSG_LINK_MK
+__BSG_LINK_MK := 1
+
 # This Makefile Fragment defines rules for linking object files of
 # regression tests.
 
@@ -45,3 +48,5 @@ include $(BSG_PLATFORM_PATH)/link.mk
 link.clean:
 
 clean: link.clean
+
+endif
