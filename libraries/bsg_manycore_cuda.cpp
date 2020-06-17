@@ -1502,6 +1502,7 @@ static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
 int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
 
         int error ;
+        uint64_t start_cycles = bsg_time() / BSG_CYCLE_TIME;
         /* loop untill all tile groups have been allocated, launched and finished. */
         while(hb_mc_device_all_tile_groups_finished(device) != HB_MC_SUCCESS) {
                 /* loop over all tile groups and try to launch as many as possible */
@@ -1527,6 +1528,7 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
                 }
 
         }
+        uint64_t end_cycles = bsg_time() / BSG_CYCLE_TIME;
 
         // Reset number of tile groups to zero
         // Reset the device's tile group capacity to 1
@@ -1538,6 +1540,8 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device) {
                 bsg_pr_err("%s: failed to reset the space for hb_mc_tile_group_t structs.\n", __func__);
                 return HB_MC_NOMEM;
         }
+
+        bsg_pr_benchmark("Execution finished in %" PRIu64 " cycles\n", end_cycles - start_cycles);
 
         return HB_MC_SUCCESS;
 }

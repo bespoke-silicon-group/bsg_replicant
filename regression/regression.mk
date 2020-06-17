@@ -63,7 +63,7 @@ $(USER_CLEAN_RULES):
 # for a directory.
 regression: $(EXEC_PATH)/regression.log 
 $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
-	@pass=0; total=0; \
+	@pass=0; total=0; cycles_arr=(); \
 	echo ""| tee $@; \
 	echo "==========================================================="| tee -a $@; \
 	echo ""| tee -a $@; \
@@ -73,24 +73,45 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 	echo ""| tee -a $@; \
 	for target in $(notdir $(basename $^)); do \
 		if grep "BSG REGRESSION TEST .*PASSED.*" $(EXEC_PATH)/$$target.log > /dev/null; then \
-			echo "PASS: Regression Test $$target passed!"| tee -a $@; \
+			if grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log > /dev/null ; then \
+				let cycles=0; \
+				for c in `grep "^BENCHMARK: Execution finished " $(EXEC_PATH)/$$target.log | awk '{print $$(NF-1)}'`; do \
+					let cycles+=c; \
+				done; \
+				cycles_arr+=("$$cycles"); \
+				echo "PASS: Regression Test $$target passed in $$cycles cycles!"| tee -a $@; \
+			else \
+				echo "PASS: Regression Test $$target passed!"| tee -a $@; \
+			fi; \
 			let "pass+=1"; \
 		else \
 			echo "FAIL: Regression Test $$target failed!"| tee -a $@; \
 		fi; \
 		let "total+=1"; \
 	done; \
+	\
+	num_benchmarks="$${#cycles_arr[@]}"; \
+	if [ $$num_benchmarks -ge 1 ]; then \
+		cycles_geomean=1; \
+		for cycles in "$${cycles_arr[@]}"; do \
+			cycles_geomean=`perl -E "say $$cycles_geomean * ($$cycles**(1/$$num_benchmarks))"`; \
+		done; \
+		cycles_geomean=`perl -E "use POSIX; say ceil($$cycles_geomean)"`; \
+	else \
+		cycles_geomean="NA"; \
+	fi; \
+	\
 	if [ ! $$pass == $$total ]; then \
 		echo "==================================================="| tee -a $@; \
 		echo "" | tee -a $@; \
-		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed"| tee -a $@; \
+		echo "FAIL! $$pass out of $$total $(REGRESSION_TESTS_TYPE) regression tests passed in $$cycles_geomean geomean cycles"| tee -a $@; \
 		echo "" | tee -a $@; \
 		echo "==================================================="| tee -a $@; \
 		exit 1 | tee -a $@; \
 	else \
 		echo "==========================================================="| tee -a $@; \
 		echo ""| tee -a $@; \
-		echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE)"| tee -a $@; \
+		echo "PASS! All $$total tests passed for $(REGRESSION_TESTS_TYPE) in $$cycles_geomean geomean cycles"| tee -a $@; \
 		echo ""| tee -a $@; \
 		echo "==========================================================="| tee -a $@; \
 	fi;
