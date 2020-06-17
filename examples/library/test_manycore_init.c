@@ -89,14 +89,14 @@ static struct test tests [] = {
         .manycore_init_output = { HB_MC_INVALID },
     },
     {
-        .name = "init-twice",
-        .manycore_init_input = { MANYCORE_PTR_INITIALIZED, "twice", 0},
+        .name = "init-ptr-twice",
+        .manycore_init_input = { MANYCORE_PTR_INITIALIZED, "ptr-twice", 0},
         .manycore_init_output = { HB_MC_INITIALIZED_TWICE },
     },
     {
-        .name = "good-input",
-        .manycore_init_input = { MANYCORE_PTR_DEFAULT, "good", 0},
-        .manycore_init_output = { HB_MC_SUCCESS },
+        .name = "init-id-twice", // Good input, but reused ID
+        .manycore_init_input = { MANYCORE_PTR_DEFAULT, "id-twice", 0},
+        .manycore_init_output = { HB_MC_INVALID },
     },
 };
 

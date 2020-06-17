@@ -4,6 +4,7 @@
 #include <bsg_manycore_printing.h>
 
 #include <cstring>
+#include <set>
 
 /* these are convenience macros that are only good for one line prints */
 #define platform_pr_dbg(m, fmt, ...)                    \
@@ -361,6 +362,9 @@ static int hb_mc_platform_get_credits(hb_mc_manycore_t *mc,
 
 
 
+// This track active manycore machine IDs
+static std::set<hb_mc_manycore_id_t> active_ids;
+
 /**
  * Clean up the runtime platform
  * @param[in] mc    A manycore to clean up
@@ -374,6 +378,12 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
         hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
 
         pl->name = nullptr;
+
+        // Remove the key
+        auto key = active_ids.find(pl->id);
+        active_ids.erase(key);
+
+        pl->id = 0;
 
         delete pl;
 
@@ -404,11 +414,21 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         }
 
         pl->name = mc->name;
+
+        // Check if the ID has already been initialized
+        if(active_ids.find(id) != active_ids.end()){
+                platform_pr_err(pl, "Already initialized ID\n");
+                return HB_MC_INVALID;
+        }
+
+        active_ids.insert(id);
+
         pl->id = id;
 
         // initialize manycore for MMIO
         if ((err = hb_mc_mmio_init(&pl->mmio, (int*)&pl->handle, id)) != HB_MC_SUCCESS){
                 delete pl;
+                active_ids.erase(active_ids.find(pl->id));
                 return err;
         }
 
@@ -418,6 +438,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         if ((err = hb_mc_platform_fifos_init(mc, pl)) != HB_MC_SUCCESS){
                 mc->platform = nullptr;
                 hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+                active_ids.erase(active_ids.find(pl->id));
                 delete pl;
                 return err;
         }
