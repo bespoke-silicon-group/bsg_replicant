@@ -25,27 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines rules for building RISC-V binaries
+# associated with the tests in this sub-directory
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
-
-LDFLAGS += -lbsg_manycore_runtime -lm
-
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
-
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
-
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
-
-link.clean: platform.link.clean
+# SPMD_SRC_PATH is the path to the software/spmd directory in BSG
+# Manycore. It contains directories with RISC-V programs.

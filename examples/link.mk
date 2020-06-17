@@ -25,27 +25,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile Fragment defines rules for linking object files of
+# regression tests.
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# BSG_PLATFORM_PATH: The path to the execution platform
+ifndef BSG_PLATFORM_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
+endif
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+# Override automatic rules. If these are not overridden, then Make
+# will gladly build AND link the source file in one step and cause all
+# sorts of wonderful linker errors.
+%: %.c
+%: %.cpp
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+include $(BSG_PLATFORM_PATH)/link.mk
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+.PHONY: link.clean
+link.clean:
 
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
-
-link.clean: platform.link.clean
+clean: link.clean

@@ -1,0 +1,8 @@
+*.o
+test_*
+!*.c
+!*.cpp
+!*.h
+!*.hpp
+.test_*
+vc_hdrs.h

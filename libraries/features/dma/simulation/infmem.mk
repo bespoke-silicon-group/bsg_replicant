@@ -48,8 +48,5 @@ _INFINITE_MEM_CFGS := e_infinite_mem
 # Check if Infinite Memory is the memory model for this design
 ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 
-# Library for DMA-able memory
-include $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.mk
-
 endif # ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
 endif # ifndef(_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)

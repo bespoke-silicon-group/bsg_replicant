@@ -25,27 +25,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines rules/flags for compiling C/C++ files
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_MACHINE_PATH)
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+CDEFINES   += -DCOSIM -DVCS
+CXXDEFINES += -DCOSIM -DVCS
+CXXFLAGS   += -lstdc++ $(INCLUDES) $(DEFINES)
+CFLAGS     += $(INCLUDES) $(DEFINES)
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+# Compliation rules are identical between aws-fpga and aws-vcs flows
+include $(LIBRARIES_PATH)/platforms/aws-fpga/compilation.mk
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
 
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
-
-link.clean: platform.link.clean

@@ -40,11 +40,6 @@ ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
 endif
 
-# TESTBENCH_PATH: The path to the testbenches folder in BSG F1
-ifndef TESTBENCH_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TESTBENCH_PATH is not defined$(NC)"))
-endif
-
 # LIBRARIES_PATH: The path to the regression folder in BSG F1
 ifndef LIBRARIES_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
@@ -61,9 +56,6 @@ ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
 # Check if dramsim3 is the memory model for this design
 ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
-
-# Library for DMA-able memory
-include $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.mk
 
 # Define USING_DRAMSIM3 for host library
 $(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1

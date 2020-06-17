@@ -35,7 +35,7 @@
 # This file REQUIRES several variables to be set. They are typically
 # set by the Makefile that includes this makefile..
 #
-# : The path to the Makefile.machine.include that defines Machine parameters
+# The path to the Makefile.machine.include that defines Machine parameters
 ifndef BSG_MACHINE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PATH is not defined$(NC)"))
 endif
@@ -270,3 +270,4 @@ hardware.clean:
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_pkg.vh
 
 .PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
+

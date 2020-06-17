@@ -25,9 +25,8 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This file contains the top-level rules for interacting with this
-# project. The rules are documented in the makefile-default "help"
-# command
+# This Makefile compiles, links, and executes examples Run `make help`
+# to see the available targets for the selected platform.
 
 # environment.mk verifies the build environment and sets the following
 # makefile variables:
@@ -38,46 +37,54 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include environment.mk
+include ../../environment.mk
 
-.PHONY: help build clean
+REGRESSION_TESTS_TYPE = python
 
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {build|regression|cosim|clean}"
-	@echo "      build: Runs Vivado and Generates the Design Checkpoint to"
-	@echo "             upload to AWS."
-	@echo "      regression: Runs all software regression tests on F1"
-	@echo "      cosim: Runs all regression tests in C/C++ Co-simulation"
-	@echo "             on the machine specified by machine.mk"
-	@echo "      multiverse: Runs all regression tests on all machines"
-	@echo "             and copies the resulting regression.log to the"
-	@echo "             corresponding directory in machines"
-	@echo "             (multiverse takes a good long while)"
-	@echo "      clean: Remove all build files"
+###############################################################################
+# Examples List
+#
+# UNIFIED_TESTS use a generic top-level, test_unified_main.c. They depend on a
+# self-checking Manycore kernel to send a PASS/FAIL packet to the host
+#
+# INDEPENDENT_TESTS use a per-test top level, <test_name>.c/cpp. They check
+# correctness on the host.
+# 
+# REGRESSION_TESTS merges the two lists
+###############################################################################
+UNIFIED_TESTS = test_python
 
-build:
-	$(MAKE) -C $@ $@ BSG_MACHINE_PATH=$(MACHINES_PATH)/4x4_blocking_vcache_f1_model BSG_PLATFORM=aws-fpga
+INDEPENDENT_TESTS := 
 
-regression:
-	$(MAKE) -C examples $@ 
+REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
-__BSG_MACHINES += machines/16x8_fast_n_fake
-__BSG_MACHINES += machines/4x4_fast_n_fake
-__BSG_MACHINES += machines/4x4_blocking_dramsim3_hbm2_512mb
-__BSG_MACHINES += machines/8x4_blocking_dramsim3_hbm2_4gb
-__BSG_MACHINES += machines/4x4_blocking_vcache_f1_model
-__BSG_MACHINES += machines/timing_v0_8_4
-__BSG_MACHINES += machines/timing_v0_16_8
-#__BSG_MACHINES += machines/timing_v0_32_16
-#__BSG_MACHINES += machines/timing_v0_64_32  
-multiverse:
-	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C examples regression BSG_MACHINE_PATH=`pwd`/$m &&) echo ;
+###############################################################################
+# Host code compilation flags and flow
+###############################################################################
+DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+
+CDEFINES   += $(DEFINES)
+CXXDEFINES += $(DEFINES)
+
+FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 
+CFLAGS   += -std=c99 $(FLAGS)
+CXXFLAGS += -std=c++11 $(FLAGS) 
+LDFLAGS  += $(shell python3-config --ldflags)
+
+###############################################################################
+# Execution Arguments (C_ARGS)
+#
+# Python tests require one argument: the path to the python file
+#
+###############################################################################
+
+PYTHON_TEST_PATH = $(EXAMPLES_PATH)/python
+TEST_NAME=$(subst .log,,$(notdir $@))
+C_ARGS = $(PYTHON_TEST_PATH)/$(TEST_NAME).py
+
+include $(EXAMPLES_PATH)/flow.mk
+
+.PHONY: clean
 
 clean:
-	$(MAKE) -C examples clean 
-	$(MAKE) -C build clean 
-	$(MAKE) -C hardware clean 
-	$(MAKE) -C libraries clean
-
+	rm -rf $(INDEPENDENT_TESTS) test_loader

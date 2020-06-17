@@ -25,27 +25,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines the rules that are used for executing
+# applications on HammerBlade Platforms
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# The rule below defines how to run test_loader for tests.
+TEST_NAME=$(@:%.log=%)
+$(UNIFIED_TESTS:%=%.log): %.log: test_loader %.rule
+	sudo ./$< $(C_ARGS) | tee $@
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+# The rule below defines how to run all tests that don't use test_loader
+$(INDEPENDENT_TESTS:%=%.log): %.log: % %.rule
+	sudo ./$< $(C_ARGS) | tee $@
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
-
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
-
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
-
-link.clean: platform.link.clean
