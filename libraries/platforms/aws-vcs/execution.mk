@@ -148,6 +148,9 @@ endif
 %.dve: %.vpd
 	$(DVE) -full64 -vpd $< &
 
+# Not remove intermediate targets 
+.PRECIOUS: %.operation_trace.csv %.vanilla_operation_trace.csv %.vcache_operation_trace.csv %.vanilla_stats.csv %.vcache_stats.csv
+
 .PHONY: platform.execution.clean
 platform.execution.clean:
 	rm -rf infinite_mem_stats.csv vcache_stats.csv
