@@ -81,7 +81,7 @@ int test_get_cycle (int argc, char **argv) {
                         goto cleanup;
                 }
 
-                if(last >= cycle){
+                if(last > cycle){
                         bsg_pr_test_err("Cycle counter not increasing!\n");
                         fail = HB_MC_FAIL;
                         goto cleanup;
