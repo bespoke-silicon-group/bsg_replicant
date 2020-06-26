@@ -56,8 +56,10 @@ module manycore_tb_top
 
    // Trace Enable wire for runtime argument to enable tracing (+trace)
    logic                                       trace_en;
+
    initial
-      assign trace_en = $test$plusargs("trace");
+     assign trace_en = '1;
+   
 
    // Global Counter for Profilers, Tracing, Debugging
    logic [global_counter_width_lp-1:0] global_ctr;
@@ -288,7 +290,6 @@ module manycore_tb_top
 
    // Manycore Profiling, Trace, and Debug Infrastructure
 
-   /* 
    bind vanilla_core vanilla_core_trace
      #(
        .x_cord_width_p(x_cord_width_p)
@@ -301,10 +302,8 @@ module manycore_tb_top
    vtrace
      (
       .*
-      ,.trace_en_i($unit.tb.card.fpga.CL.trace_en));
-    */
+      ,.trace_en_i($root.manycore_tb_top.trace_en));
 
-   /*
    bind vanilla_core vanilla_core_profiler
      #(
        .x_cord_width_p(x_cord_width_p)
@@ -314,17 +313,16 @@ module manycore_tb_top
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
-       ,.dmem_size_p(data_width_p)
        )
    vcore_prof
      (
       .*
-      ,.global_ctr_i($unit.tb.card.fpga.CL.global_ctr)
-      ,.print_stat_v_i($unit.tb.card.fpga.CL.print_stat_v_lo)
-      ,.print_stat_tag_i($unit.tb.card.fpga.CL.print_stat_tag_lo)
-      ,.trace_en_i($unit.tb.card.fpga.CL.trace_en)
+      ,.global_ctr_i($root.manycore_tb_top.global_ctr)
+      ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
+      ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
+      ,.trace_en_i($root.manycore_tb_top.trace_en)
       );
-    */
+
 
 
    // --------------------------------------------------------------------------
@@ -399,7 +397,7 @@ module manycore_tb_top
              ,.my_y_i(cache_y_lo[i])
              );
       end
-/*
+
       bind bsg_nonsynth_mem_infinite infinite_mem_profiler 
           #(
             .data_width_p(data_width_p)
@@ -411,11 +409,11 @@ module manycore_tb_top
       infinite_mem_prof 
         (
          .*
-         ,.global_ctr_i($unit.tb.card.fpga.CL.global_ctr)
-         ,.print_stat_v_i($unit.tb.card.fpga.CL.print_stat_v_lo)
-         ,.print_stat_tag_i($unit.tb.card.fpga.CL.print_stat_tag_lo)
+         ,.global_ctr_i($root.manycore_tb_top.global_ctr)
+         ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
+         ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
          );
-*/
+
    end else if (mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache
 
       for (genvar i = 0; i < num_cache_p; i++) begin: vcache
@@ -453,7 +451,6 @@ module manycore_tb_top
              );
       end
 
-      /*
       bind bsg_cache vcache_profiler 
         #(
           .data_width_p(data_width_p)
@@ -463,12 +460,11 @@ module manycore_tb_top
       vcache_prof 
         (
          .*
-         ,.global_ctr_i($unit.tb.card.fpga.CL.global_ctr)
-         ,.print_stat_v_i($unit.tb.card.fpga.CL.print_stat_v_lo)
-         ,.print_stat_tag_i($unit.tb.card.fpga.CL.print_stat_tag_lo)
-         ,.trace_en_i($unit.tb.card.fpga.CL.trace_en)
+         ,.global_ctr_i($root.manycore_tb_top.global_ctr)
+         ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
+         ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
+         ,.trace_en_i($root.manycore_tb_top.trace_en)
          );
-       */
 
    end // block: lv1_vcache
    else if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
@@ -508,7 +504,6 @@ module manycore_tb_top
              );
       end
 
-      /*
       bind bsg_cache_non_blocking vcache_non_blocking_profiler 
         #(
           .data_width_p(data_width_p)
@@ -541,11 +536,10 @@ module manycore_tb_top
          ,.dma_pkt_v_i(dma_pkt_v_o)
          ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
 
-         ,.global_ctr_i($unit.tb.card.fpga.CL.global_ctr)
-         ,.print_stat_v_i($unit.tb.card.fpga.CL.print_stat_v_lo)
-         ,.print_stat_tag_i($unit.tb.card.fpga.CL.print_stat_tag_lo)
+         ,.global_ctr_i($root.manycore_tb_top.global_ctr)
+         ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
+         ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
          );
-       */
    end 
 
    if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128 ||

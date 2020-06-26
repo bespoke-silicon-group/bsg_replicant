@@ -31,6 +31,7 @@
 # handles DPI-based MMIO.
 PLATFORM_CXXSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/bsg_manycore_platform.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
 
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration
@@ -42,6 +43,7 @@ PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
 
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 $(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
@@ -62,3 +64,10 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
 	ln -sf $@.1 $@
+
+platform.clean:
+	rm -f $(PLATFORM_OBJECTS)
+	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
+	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1
+
+libraries.clean: platform.clean

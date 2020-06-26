@@ -28,6 +28,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore_profiler.hpp>
 
 #include <bsg_manycore_verilator.hpp>
 #include <verilated.h>
@@ -42,7 +43,7 @@
 #include <map>
 #include <xmmintrin.h>
 
-/* these are conveniance macros that are only good for one line prints */
+/* these are convenience macros that are only good for one line prints */
 #define manycore_pr_dbg(mc, fmt, ...)                   \
         bsg_pr_dbg("%s: " fmt, mc->name, ##__VA_ARGS__)
 
@@ -60,6 +61,7 @@ typedef struct machine_t {
         bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
         hb_mc_manycore_id_t id;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
+        hb_mc_profiler_t prof;
 } machine_t;
 
 /* read all unread packets from a fifo (rx only) */
@@ -148,6 +150,8 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
         machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
 
+        hb_mc_profiler_cleanup(&(machine->prof));
+
         hb_mc_platform_dpi_cleanup(machine);
 
         // Remove the key
@@ -178,6 +182,8 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         
         machine_t *machine = new machine_t;
         std::string hierarchy = "TOP.manycore_tb_top";
+        hb_mc_idx_t x, y;
+        hb_mc_config_raw_t rd;
 
         // check if mc is already initialized
         if (mc->platform)
@@ -210,6 +216,16 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
 
         // initialize simulation
         if ((err = hb_mc_platform_dpi_init(machine, hierarchy)) != HB_MC_SUCCESS)
+                goto cleanup;
+
+        hierarchy += ".manycore";
+        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_X, &rd);
+        x = rd;
+        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
+        y = rd;
+        err = hb_mc_profiler_init(&(machine->prof), x, y, hierarchy);
+
+        if (err != HB_MC_SUCCESS)
                 goto cleanup;
 
         err = hb_mc_platform_drain(mc, HB_MC_FIFO_RX_REQ);
@@ -446,12 +462,25 @@ int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc)
  * @param[out] time   The current counter value.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, 
-                             uint64_t *time)
+int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
         machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
 
         machine->ctr->read(*time);
 
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Get the number of instructions executed for a certain class of instructions
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] itype An enum defining the class of instructions to query.
+ * @param[out] count The number of instructions executed in the queried class.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count){
+         machine_t *machine = reinterpret_cast<machine_t *>(mc->platform);
+
+         return hb_mc_profiler_get_icount(machine->prof, itype, count);
+
 }
