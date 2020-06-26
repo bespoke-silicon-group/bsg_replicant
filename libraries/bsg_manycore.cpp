@@ -200,6 +200,18 @@ int hb_mc_manycore_exit(hb_mc_manycore_t *mc)
         return HB_MC_SUCCESS;
 }
 
+/**
+ * Get the current cycle counter value of the Manycore Platform
+ *
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[out] time   The current counter value.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
+{
+        return hb_mc_platform_get_cycle(mc, time);
+}
+
 ////////////////
 // Packet API //
 ////////////////
@@ -1260,6 +1272,10 @@ int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc)
         mc->dram_enabled = 0;
         return HB_MC_SUCCESS;
 }
+
+//------------------------------------------------------------
+// DMA API (in features/dma)
+//------------------------------------------------------------
 
 /**
  * Check if NPA is in DRAM.

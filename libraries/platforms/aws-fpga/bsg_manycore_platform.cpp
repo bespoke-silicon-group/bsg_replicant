@@ -372,9 +372,7 @@ static std::set<hb_mc_manycore_id_t> active_ids;
 void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-        uint64_t time;
-        hb_mc_platform_get_cycle(mc, &time);
-        printf("current time is: %d\n", time);
+
         hb_mc_platform_fifos_cleanup(mc, pl);
 
         hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
@@ -498,31 +496,29 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc,
  * @param[out] time   The current counter value.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, 
-                             uint64_t *time)
+int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
         const hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
         int err;
         uint64_t retval;
-        uint32_t rdval;
+        uint32_t lo, hi;
 
-        err = hb_mc_mmio_read32(pl->mmio, HB_MC_MMIO_CYCLE_CTR_HI_OFFSET, &rdval);
-        if (err != HB_MC_SUCCESS) {
-                platform_pr_err(pl, "%s: Failed to read high bits of cycle counter: %s\n",
-                                __func__, hb_mc_strerror(err));
-                return err;
-        }
-        retval = rdval;
-        retval = 32;
-
-        err = hb_mc_mmio_read32(pl->mmio, HB_MC_MMIO_CYCLE_CTR_LO_OFFSET, &rdval);
+        err = hb_mc_mmio_read32(pl->mmio, HB_MC_MMIO_CYCLE_CTR_LO_OFFSET, &lo);
         if (err != HB_MC_SUCCESS) {
                 platform_pr_err(pl, "%s: Failed to read LOW bits of cycle counter: %s\n",
                                 __func__, hb_mc_strerror(err));
                 return err;
         }
-        retval |= rdval;
+
+        err = hb_mc_mmio_read32(pl->mmio, HB_MC_MMIO_CYCLE_CTR_HI_OFFSET, &hi);
+        if (err != HB_MC_SUCCESS) {
+                platform_pr_err(pl, "%s: Failed to read high bits of cycle counter: %s\n",
+                                __func__, hb_mc_strerror(err));
+                return err;
+        }
+
+        retval = (static_cast<uint64_t>(lo) |  (static_cast<uint64_t>(hi) << 32));
         
         *time = retval;
         return HB_MC_SUCCESS;
