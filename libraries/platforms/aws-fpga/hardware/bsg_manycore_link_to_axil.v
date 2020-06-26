@@ -66,6 +66,7 @@ module bsg_manycore_link_to_axil
      , parameter addr_width_p = "inv"
      , parameter data_width_p = "inv"
      , parameter max_out_credits_p = "inv"
+     , parameter cycle_width_p = "inv"
      , localparam ep_fifo_els_lp = 4
      , localparam link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
      ) 
@@ -95,7 +96,8 @@ module bsg_manycore_link_to_axil
     ,output [ link_sif_width_lp-1:0] link_sif_o
     ,input [ x_cord_width_p-1:0] my_x_i
     ,input [ y_cord_width_p-1:0] my_y_i
-    // print stat
+    // cycle counter
+    ,input [ cycle_width_p-1:0] cycle_ctr_i
     );
 
 
@@ -128,7 +130,7 @@ module bsg_manycore_link_to_axil
    assign axil_bvalid_o  = bvalid_r;
    assign axil_bresp_o   = bresp_lo;
 
-   wire                           is_write_to_tdr = (axil_awaddr_i == mcl_fifo_base_addr_gp + mcl_ofs_tdr_gp);
+   wire is_write_to_tdr = (axil_awaddr_i == mcl_fifo_base_addr_gp + mcl_ofs_tdr_gp);
 
    always_comb begin
       awready_lo = 1'b0;
@@ -177,7 +179,7 @@ module bsg_manycore_link_to_axil
 
    // host credit
    localparam host_io_capacity_width_lp = `BSG_WIDTH((host_io_pkt_width_p/axil_data_width_lp)*host_io_pkts_tx_p);
-   logic [host_io_capacity_width_lp-1:0]         host_credits_lo;
+   logic [host_io_capacity_width_lp-1:0]     host_credits_lo;
 
    // rx fifo occupancy for manycore request
    localparam integer                        piso_els_lp = host_io_pkt_width_p/axil_data_width_lp;
@@ -204,13 +206,15 @@ module bsg_manycore_link_to_axil
    assign axil_rvalid_o  = rvalid_n;
    assign axil_rresp_o   = rresp_lo;
 
-   wire                                      is_read_credit        = (axil_araddr_i == mcl_ofs_credits_gp);
-   wire                                      is_read_rdr_rsp       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_rsp_gp);
-   wire                                      is_read_tdfv_host_req = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_tdfv_req_gp);
-   wire                                      is_read_rdfo_mc_req   = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdfo_req_gp);
-   wire                                      is_read_rdr_req       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_req_gp);
-   wire                                      is_read_rom           = (axil_araddr_i >= mcl_rom_base_addr_gp) &&
-                                             (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_gp*rom_width_gp/8)));
+   wire is_read_counter_low = (axil_araddr_i == mcl_ofs_counter_low_gp);
+   wire is_read_counter_high = (axil_araddr_i == mcl_ofs_counter_high_gp);
+   wire is_read_credit        = (axil_araddr_i == mcl_ofs_credits_gp);
+   wire is_read_rdr_rsp       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_rsp_gp);
+   wire is_read_tdfv_host_req = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_tdfv_req_gp);
+   wire is_read_rdfo_mc_req   = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdfo_req_gp);
+   wire is_read_rdr_req       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_req_gp);
+   wire is_read_rom           = (axil_araddr_i >= mcl_rom_base_addr_gp) &&
+        (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_gp*rom_width_gp/8)));
 
    always_comb begin
 
@@ -252,6 +256,14 @@ module bsg_manycore_link_to_axil
             arready_lo = 1'b1;
             rx_rom_addr_li = (axil_araddr_i - mcl_rom_base_addr_gp);
             rdata_n = axil_data_width_lp'(rx_rom_data_lo);
+         end
+         else if (is_read_counter_low) begin
+            arready_lo = 1'b1;
+            rdata_n = cycle_ctr_i[axil_data_width_lp-1:0];
+         end
+         else if (is_read_counter_high) begin
+            arready_lo = 1'b1;
+            rdata_n = cycle_ctr_i[axil_data_width_lp +: axil_data_width_lp];
          end
          else begin
             arready_lo = 1'b1;

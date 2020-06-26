@@ -1142,6 +1142,17 @@ module cl_manycore
    assign m_axi4_manycore_arready = sh_cl_ddr_arready;
 `endif
 
+   localparam core_cycle_ctr_width_lp = 64;
+   logic [core_cycle_ctr_width_lp-1:0] core_cycle_ctr_l;
+   
+   bsg_cycle_counter
+     #(.width_p(core_cycle_ctr_width_lp))
+   core_cc
+     (.clk_i(core_clk)
+      ,.reset_i(core_reset)
+      ,.ctr_r_o(core_cycle_ctr_l)
+      );
+
    // manycore link
 
    logic [x_cord_width_p-1:0] mcl_x_cord_li = (x_cord_width_p)'(0);
@@ -1154,40 +1165,42 @@ module cl_manycore
    bsg_manycore_link_sif_s axil_link_sif_lo;
 
   bsg_manycore_link_to_axil #(
-    .x_cord_width_p     (x_cord_width_p   ),
-    .y_cord_width_p     (y_cord_width_p   ),
-    .addr_width_p       (addr_width_p     ),
-    .data_width_p       (data_width_p     ),
-    .host_io_pkt_width_p(host_io_pkt_width_p ), // Defined in cl_manycore_pkg.v
-    .host_io_pkts_tx_p  (host_io_pkts_cap_p), // Defined in cl_manycore_pkg.v
-    .host_io_pkts_rx_p  (host_io_pkts_cap_p), // Defined in cl_manycore_pkg.v
-    .max_out_credits_p  (max_out_credits_p)
+    .x_cord_width_p     (x_cord_width_p   )
+    ,.y_cord_width_p     (y_cord_width_p   )
+    ,.addr_width_p       (addr_width_p     )
+    ,.data_width_p       (data_width_p     )
+    ,.host_io_pkt_width_p(host_io_pkt_width_p) // Defined in cl_manycore_pkg.v
+    ,.host_io_pkts_tx_p  (host_io_pkts_cap_p) // Defined in cl_manycore_pkg.v
+    ,.host_io_pkts_rx_p  (host_io_pkts_cap_p) // Defined in cl_manycore_pkg.v
+    ,.max_out_credits_p  (max_out_credits_p)
+    ,.cycle_width_p(core_cycle_ctr_width_lp)
   ) mcl_to_axil (
-    .clk_i           (clk_main_a0       ),
-    .reset_i         (~rst_main_n_sync  ),
+    .clk_i           (clk_main_a0       )
+    ,.reset_i         (~rst_main_n_sync  )
     // axil slave interface
-    .axil_awvalid_i  (m_axil_ocl_awvalid),
-    .axil_awaddr_i   (m_axil_ocl_awaddr ),
-    .axil_awready_o  (m_axil_ocl_awready),
-    .axil_wvalid_i   (m_axil_ocl_wvalid ),
-    .axil_wdata_i    (m_axil_ocl_wdata  ),
-    .axil_wstrb_i    (m_axil_ocl_wstrb  ),
-    .axil_wready_o   (m_axil_ocl_wready ),
-    .axil_bresp_o    (m_axil_ocl_bresp  ),
-    .axil_bvalid_o   (m_axil_ocl_bvalid ),
-    .axil_bready_i   (m_axil_ocl_bready ),
-    .axil_araddr_i   (m_axil_ocl_araddr ),
-    .axil_arvalid_i  (m_axil_ocl_arvalid),
-    .axil_arready_o  (m_axil_ocl_arready),
-    .axil_rdata_o    (m_axil_ocl_rdata  ),
-    .axil_rresp_o    (m_axil_ocl_rresp  ),
-    .axil_rvalid_o   (m_axil_ocl_rvalid ),
-    .axil_rready_i   (m_axil_ocl_rready ),
+    ,.axil_awvalid_i  (m_axil_ocl_awvalid)
+    ,.axil_awaddr_i   (m_axil_ocl_awaddr )
+    ,.axil_awready_o  (m_axil_ocl_awready)
+    ,.axil_wvalid_i   (m_axil_ocl_wvalid )
+    ,.axil_wdata_i    (m_axil_ocl_wdata  )
+    ,.axil_wstrb_i    (m_axil_ocl_wstrb  )
+    ,.axil_wready_o   (m_axil_ocl_wready )
+    ,.axil_bresp_o    (m_axil_ocl_bresp  )
+    ,.axil_bvalid_o   (m_axil_ocl_bvalid )
+    ,.axil_bready_i   (m_axil_ocl_bready )
+    ,.axil_araddr_i   (m_axil_ocl_araddr )
+    ,.axil_arvalid_i  (m_axil_ocl_arvalid)
+    ,.axil_arready_o  (m_axil_ocl_arready)
+    ,.axil_rdata_o    (m_axil_ocl_rdata  )
+    ,.axil_rresp_o    (m_axil_ocl_rresp  )
+    ,.axil_rvalid_o   (m_axil_ocl_rvalid )
+    ,.axil_rready_i   (m_axil_ocl_rready )
     // manycore link
-    .link_sif_i      (axil_link_sif_li  ),
-    .link_sif_o      (axil_link_sif_lo  ),
-    .my_x_i          (mcl_x_cord_li     ),
-    .my_y_i          (mcl_y_cord_li     )
+    ,.link_sif_i      (axil_link_sif_li  )
+    ,.link_sif_o      (axil_link_sif_lo  )
+    ,.my_x_i          (mcl_x_cord_li     )
+    ,.my_y_i          (mcl_y_cord_li     )
+    ,.cycle_ctr_i       (core_cycle_ctr_l)
   );
 
 `ifdef COSIM

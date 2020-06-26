@@ -50,6 +50,11 @@
 // For host receiving request from manycore 0x1C
 #define HB_MC_MMIO_FIFO_RX_DATA_OFFSET 0x0C
 
+// Low 32 bits of the manycore cycle counter
+#define HB_MC_MMIO_CYCLE_CTR_LO_OFFSET 0x1FF0
+// High 32 bits of the manycore cycle counter
+#define HB_MC_MMIO_CYCLE_CTR_HI_OFFSET 0x1FF4
+
 // Out credits of the endpoint standard in mcl
 #define HB_MC_MMIO_OUT_CREDITS_HOST_OFFSET 0x2000
 

@@ -106,6 +106,15 @@ extern "C" {
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
         int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc);
+
+        /**
+         * Get the current cycle counter of the Manycore Platform
+         *
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[out] time   The current counter value.
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time);
 #ifdef __cplusplus
 }
 #endif
