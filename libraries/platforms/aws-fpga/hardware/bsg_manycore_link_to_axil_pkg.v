@@ -68,6 +68,8 @@ package bsg_manycore_link_to_axil_pkg;
   parameter mcl_ofs_rdr_req_gp  = 8'h1C;
   parameter mcl_ofs_rdfo_req_gp = 8'h18;
 
+  parameter mcl_ofs_counter_low_gp   = 32'h1FF0;
+  parameter mcl_ofs_counter_high_gp  = 32'h1FF4;
   parameter mcl_ofs_credits_gp  = 32'h2000;
 
   localparam integer mcl_addr_width_gp   = `BSG_CDIV(addr_width_p,8)*8  ;
