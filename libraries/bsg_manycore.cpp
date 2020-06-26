@@ -209,6 +209,12 @@ int hb_mc_manycore_exit(hb_mc_manycore_t *mc)
  */
 int hb_mc_manycore_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
+        if(time == nullptr){
+                bsg_pr_err("%s: Nullptr provided as argument time\n",
+                           __func__);
+                return HB_MC_INVALID;
+        }
+                
         return hb_mc_platform_get_cycle(mc, time);
 }
 

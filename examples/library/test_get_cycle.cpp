@@ -62,6 +62,15 @@ int test_get_cycle (int argc, char **argv) {
         uint32_t dram_coord_y = hb_mc_config_get_dram_y(config);
         hb_mc_npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = 0};
 
+        bsg_pr_test_info("Testing invalid input (This will print an ERROR message)\n");
+        rc = hb_mc_manycore_get_cycle(&mc, nullptr);
+        if(rc != HB_MC_INVALID){
+                bsg_pr_test_err("hb_mc_manycore_get_cycle() failed to fail on invalid input");
+                fail = HB_MC_FAIL;
+                goto cleanup;
+        }
+                
+
         last = 0;
         for(int i = 0 ; i < 10; ++i){
                 rc = hb_mc_manycore_get_cycle(&mc, &cycle);
