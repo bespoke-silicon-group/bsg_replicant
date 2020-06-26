@@ -504,6 +504,12 @@ int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
         uint64_t retval;
         uint32_t lo, hi;
 
+        if(time == nullptr){
+                platform_pr_err("%s: Nullptr provided as argument time\n",
+                                __func__);
+                return HB_MC_INVALID;
+        }
+
         err = hb_mc_mmio_read32(pl->mmio, HB_MC_MMIO_CYCLE_CTR_LO_OFFSET, &lo);
         if (err != HB_MC_SUCCESS) {
                 platform_pr_err(pl, "%s: Failed to read LOW bits of cycle counter: %s\n",
