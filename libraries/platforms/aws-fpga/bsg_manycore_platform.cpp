@@ -505,7 +505,7 @@ int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
         uint32_t lo, hi;
 
         if(time == nullptr){
-                platform_pr_err("%s: Nullptr provided as argument time\n",
+                platform_pr_err(pl, "%s: Nullptr provided as argument time\n",
                                 __func__);
                 return HB_MC_INVALID;
         }
