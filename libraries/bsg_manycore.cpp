@@ -1454,3 +1454,14 @@ int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 
         return hb_mc_manycore_dma_read_no_cache_afl(mc, npa, data, sz);
 }
+
+/**
+ * Get the number of instructions executed for a certain class of instructions
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] itype An enum defining the class of instructions to query.
+ * @param[out] count The number of instructions executed in the queried class.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count){
+        return hb_mc_platform_get_icount(mc, itype, count);
+}

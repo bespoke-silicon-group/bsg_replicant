@@ -100,6 +100,7 @@ include $(BSG_PLATFORM_PATH)/library.mk
 
 $(LIB_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
+$(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 # We should move this from AWS (and keep the license)
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 $(LIB_OBJECTS): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)

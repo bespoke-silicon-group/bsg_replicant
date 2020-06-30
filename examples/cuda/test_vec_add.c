@@ -165,11 +165,21 @@ int kernel_vec_add (int argc, char **argv) {
         /*****************************************************************************************************************
         * Launch and execute all tile groups on device and wait for all to finish. 
         ******************************************************************************************************************/
+        int instr_start, fops_start, iops_start;
+        int instr_end, fops_end, iops_end;
+
+        hb_mc_manycore_get_icount((&device)->mc, 0, &fops_start);
+        hb_mc_manycore_get_icount((&device)->mc, 1, &iops_start);
+        hb_mc_manycore_get_icount((&device)->mc, 2, &instr_start);
         rc = hb_mc_device_tile_groups_execute(&device);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to execute tile groups.\n");
                 return rc;
         }
+        hb_mc_manycore_get_icount((&device)->mc, 0, &fops_end);
+        hb_mc_manycore_get_icount((&device)->mc, 1, &iops_end);
+        hb_mc_manycore_get_icount((&device)->mc, 2, &instr_end);
+        bsg_pr_info("Instrs: %d, Iops: %d, Fops: %d\n", instr_end-instr_start, iops_end-iops_start, fops_end-fops_start);
 
 
         /*****************************************************************************************************************
