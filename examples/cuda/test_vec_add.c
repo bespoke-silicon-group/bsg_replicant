@@ -165,9 +165,6 @@ int kernel_vec_add (int argc, char **argv) {
         /*****************************************************************************************************************
         * Launch and execute all tile groups on device and wait for all to finish. 
         ******************************************************************************************************************/
-        int instr_start, fops_start, iops_start;
-        int instr_end, fops_end, iops_end;
-
         rc = hb_mc_device_tile_groups_execute(&device);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to execute tile groups.\n");
