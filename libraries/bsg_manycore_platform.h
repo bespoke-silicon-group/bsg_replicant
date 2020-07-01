@@ -76,8 +76,7 @@ extern "C" {
          * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
-        int hb_mc_platform_fence(hb_mc_manycore_t *mc,
-                                 long timeout);
+        int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout);
 
         /**
          * Signal the hardware to start a bulk transfer over the network
@@ -115,6 +114,17 @@ extern "C" {
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
         int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time);
+
+        /**
+         * Get the number of instructions executed for a certain class of instructions
+         * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in] itype An enum defining the class of instructions to query.
+         * @param[out] count The number of instructions executed in the queried class.
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        int hb_mc_platform_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count);
+
+
 #ifdef __cplusplus
 }
 #endif

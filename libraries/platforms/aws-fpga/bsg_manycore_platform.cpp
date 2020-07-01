@@ -1,7 +1,9 @@
 #include <bsg_manycore_platform.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_config.h>
+#include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore_profiler.hpp>
 
 #include <cstring>
 #include <set>
@@ -27,7 +29,8 @@ typedef struct hb_mc_platform_t {
         int transmit_vacancy;    //!< Software copy of the transmit vacancy register
         int handle; //!< pci bar handle
         hb_mc_manycore_id_t id;  //!< which manycore instance is this
-        hb_mc_mmio_t      mmio;     //!< pointer to memory mapped io (F1-specific)
+        hb_mc_mmio_t      mmio;  //!< pointer to memory mapped io (F1-specific)
+        hb_mc_profiler_t  prof;  //!< Profiler Implementation
 } hb_mc_platform_t;
 
 
@@ -373,6 +376,8 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
+        hb_mc_profiler_cleanup(&(pl->prof));
+
         hb_mc_platform_fifos_cleanup(mc, pl);
 
         hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
@@ -405,6 +410,9 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
                 return HB_MC_INITIALIZED_TWICE;
 
         int r = HB_MC_FAIL, err;
+        std::string hierarchy = "tb.card.fpga.CL.manycore_wrapper.manycore";
+        hb_mc_idx_t x, y;
+        hb_mc_config_raw_t rd;
 
         hb_mc_platform_t *pl = new hb_mc_platform_t();
 
@@ -436,6 +444,22 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
 
         // initialize FIFOs
         if ((err = hb_mc_platform_fifos_init(mc, pl)) != HB_MC_SUCCESS){
+                mc->platform = nullptr;
+                hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+                active_ids.erase(active_ids.find(pl->id));
+                delete pl;
+                return err;
+        }
+
+        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_X, &rd);
+        x = rd;
+        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
+        y = rd;
+        err = hb_mc_profiler_init(&(pl->prof), x, y, hierarchy);
+        // This feature MIGHT not be implemented, so if it doesn't
+        // work, just ignore.
+        if (err != HB_MC_SUCCESS && err != HB_MC_NOIMPL){
+                hb_mc_platform_fifos_cleanup(mc, pl);
                 mc->platform = nullptr;
                 hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
                 active_ids.erase(active_ids.find(pl->id));
@@ -528,4 +552,17 @@ int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
         
         *time = retval;
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Get the number of instructions executed for a certain class of instructions
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] itype An enum defining the class of instructions to query.
+ * @param[out] count The number of instructions executed in the queried class.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+
+        return hb_mc_profiler_get_icount(pl->prof, itype, count);
 }
