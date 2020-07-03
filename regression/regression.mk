@@ -95,8 +95,8 @@ $(EXEC_PATH)/regression.log: $(LOG_TARGETS)
 		echo "==========================================================="| tee -a $@; \
 	fi;
 
-regression.clean:
-	rm -rf $(LOG_RULES) regression.log
+regression.clean: $(USER_CLEAN_RULES)
+	rm -rf $(LOG_RULES) regression.log $(REGRESSION_TESTS) test_loader
 
 .PHONY: regression regression.clean
 
