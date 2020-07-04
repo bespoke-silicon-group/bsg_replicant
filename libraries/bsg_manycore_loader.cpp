@@ -732,7 +732,8 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                 bsg_pr_dbg("%s: failed to %s DRAM-enabled for %s: %s\n",
                            __func__,
                            hb_mc_manycore_dram_is_enabled(mc) ? "set" : "clear",
-                           hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)));
+                           hb_mc_coordinate_to_string(tile, tile_str, sizeof(tile_str)),
+                           hb_mc_strerror(rc));
                 return rc;
         }
 
