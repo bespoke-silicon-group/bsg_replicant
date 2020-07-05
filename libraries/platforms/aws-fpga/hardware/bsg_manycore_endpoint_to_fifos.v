@@ -230,7 +230,7 @@ module bsg_manycore_endpoint_to_fifos
     // fifo -> manycore packet
     .out_v_i              (endpoint_out_v_li     ),
     .out_packet_i         (endpoint_out_packet_li),
-    .out_ready_o          (endpoint_out_ready_lo ),
+    .out_credit_or_ready_o(endpoint_out_ready_lo ),
 
     // manycore credit -> fifo
     .returned_data_r_o    (returned_data_r_lo    ),
