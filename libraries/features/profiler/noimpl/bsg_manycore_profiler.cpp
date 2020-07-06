@@ -50,3 +50,23 @@ int hb_mc_profiler_get_icount(hb_mc_profiler_t p, bsg_instr_type_e itype, int *c
         bsg_pr_warn("%s: Not supported.\n", __func__);
         return HB_MC_NOIMPL;
 }
+
+/**
+ * Enable trace file generation
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_profiler_trace_enable(hb_mc_profiler_t p){
+        bsg_pr_warn("%s: Not supported.\n", __func__);
+        return HB_MC_NOIMPL;
+}
+
+/**
+ * Disable trace file generation
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_profiler_trace_disable(hb_mc_profiler_t p){
+        bsg_pr_warn("%s: Not supported.\n", __func__);
+        return HB_MC_NOIMPL;
+}

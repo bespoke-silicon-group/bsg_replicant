@@ -140,3 +140,4 @@ int hb_mc_profiler_get_icount(hb_mc_profiler_t p, bsg_instr_type_e itype, int *c
         *count = sum;
         return HB_MC_SUCCESS;
 }
+
