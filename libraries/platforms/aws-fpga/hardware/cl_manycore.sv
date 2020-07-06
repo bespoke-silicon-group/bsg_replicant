@@ -1313,7 +1313,6 @@ module cl_manycore
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
-       ,.dmem_size_p(dmem_size_p)
        )
    vcore_prof
      (
