@@ -331,7 +331,8 @@ module cl_manycore
    bsg_manycore_link_sif_s loader_link_sif_li;
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
-  if (bsg_machine_crossbar_network_gp) begin: network
+
+   if (bsg_machine_crossbar_network_gp == '1) begin: network
      
    bsg_manycore_wrapper_crossbar
      #(
