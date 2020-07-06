@@ -410,7 +410,8 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
                 return HB_MC_INITIALIZED_TWICE;
 
         int r = HB_MC_FAIL, err;
-        std::string hierarchy = "tb.card.fpga.CL.manycore_wrapper.manycore";
+
+        std::string hierarchy = "tb.card.fpga.CL.network.manycore_wrapper.manycore";
         hb_mc_idx_t x, y;
         hb_mc_config_raw_t rd;
 

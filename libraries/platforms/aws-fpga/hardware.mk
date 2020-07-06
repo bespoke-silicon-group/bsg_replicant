@@ -49,7 +49,7 @@ VHEADERS += $(BSG_PLATFORM_PATH)/hardware/bsg_axi_bus_pkg.vh
 VSOURCES += $(BSG_PLATFORM_PATH)/hardware/cl_manycore_pkg.v
 
 # Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
-VSOURCES += $(BSG_PLATFORM_PATH)/hardware/bsg_manycore_wrapper.v
+VSOURCES += $(BSG_PLATFORM_PATH)/hardware/bsg_manycore_wrapper_mesh.v
 
 # Cache to AXI Sources (For F1 Memory)
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_rx.v

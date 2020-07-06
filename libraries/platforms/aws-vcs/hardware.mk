@@ -116,7 +116,16 @@ VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_axi_bus_pkg.vh
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 
 # Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_crossbar.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_mesh.v
+
+# Crossbar sources
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_arb_round_robin.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_crossbar_control_basic_o_by_i.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_noc/bsg_router_crossbar_o_by_i.v
+
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_crossbar.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_crossbar.v
 
 # Cache to AXI Sources (For F1 Memory)
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_rx.v
@@ -203,7 +212,8 @@ $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB: $(BSG_MACHINE_PATH)/
 		$(VLOGAN_INCLUDES) -l $(BSG_MACHINE_NAME).vlogan.log
 
 .PHONY: platform.hardware.clean platform.hardware.bleach
-platform.hardware.clean: 
+platform.hardware.clean:
+	rm -rf $(BSG_MACHINE_PATH)/synopsys_sim.setup
 	rm -rf $(BSG_PLATFORM_PATH)/vcs_simlibs/BSG_*
 	rm -rf $(BSG_PLATFORM_PATH)/.cxl*
 	rm -rf $(BSG_PLATFORM_PATH)/*.jou
