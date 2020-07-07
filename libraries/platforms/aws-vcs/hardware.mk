@@ -115,17 +115,18 @@ VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_axi_bus_pkg.vh
 # cl_manycore_pkg.v depends on f1_parameters.vh
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 
-# Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_crossbar.v
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_mesh.v
-
 # Crossbar sources
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_arb_round_robin.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_crossbar_control_basic_o_by_i.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_noc/bsg_router_crossbar_o_by_i.v
 
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_top_crossbar.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_crossbar.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_crossbar.v
+
+# Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_crossbar.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_mesh.v
 
 # Cache to AXI Sources (For F1 Memory)
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_axi_rx.v

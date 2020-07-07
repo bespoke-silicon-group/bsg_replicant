@@ -331,11 +331,7 @@ module cl_manycore
    bsg_manycore_link_sif_s loader_link_sif_li;
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
-
-   // OK, strange issue here. If bsg_machine_crossbar_network_gp is
-   // checked (not equals, just 0/1 in the if statement). VCS won't
-   // instantiate the module and fail. In bizarre ways.
-   if (bsg_machine_crossbar_network_gp == '1) begin: network
+   if (bsg_machine_crossbar_network_gp == 1) begin: network
      
    bsg_manycore_wrapper_crossbar
      #(

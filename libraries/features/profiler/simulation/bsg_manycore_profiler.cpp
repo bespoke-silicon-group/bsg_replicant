@@ -46,12 +46,23 @@ using namespace std;
  * to the top level module in simulation.
  */
 int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, string &hier){
-        // OK, put your C++ game face on.
+
+        // The crossbar and the Mesh hierarchy differ, so we need to
+        // figure out which one exists. We check for the crossbar
+        // hierarchy first, and then assume mesh if that scope does
+        // not exist.
+        string xbar = hier + ".y[1].x[0].proc.vcore.vcore_prof";
+        string tail;
+        svScope scope;
+        scope = svGetScopeFromName(xbar.c_str());
+        if(scope)
+                tail = ".proc.vcore.vcore_prof";
+        else
+                tail = ".tile.proc.h.z.vcore.vcore_prof";
 
         // Each profiler is located in the RTL hierarchy at: hier +
         // y[y-index].x[x-index] + tail. We need to construct that
         // string in the for-loop below.
-        string tail = ".tile.proc.h.z.vcore.vcore_prof";
 
         // We construct a dpi_vanilla_core_profiler instance for each
         // profiler in the HDL, and track it using a vector.
