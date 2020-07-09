@@ -340,8 +340,10 @@ module cl_manycore
    bsg_manycore_link_sif_s loader_link_sif_li;
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
-   // Instantiate a crossbar, or a mesh network depending on 
-   if (bsg_machine_crossbar_network_gp == 1) begin: crossbar
+   // Instantiate a crossbar, or a mesh network depending on the
+   // machine parameterization. The two sides of the if-statment have
+   // idenitical labels to make DPI hierarchy processing easier
+   if (bsg_machine_crossbar_network_gp == 1) begin: network
      
    bsg_manycore_wrapper_crossbar
      #(
@@ -374,7 +376,7 @@ module cl_manycore
       );
 
   end
-  else begin: mesh
+  else begin: network
 
    bsg_manycore_wrapper_mesh
      #(
