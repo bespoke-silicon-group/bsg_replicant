@@ -26,7 +26,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- *  cl_manycore.v
+ * This is the top-level module for the user logic in AWS (a.k.a. Custom Logic, or CL). 
+ * 
+ * The BSG Nonsynth DPI interfaces that bind to this module depend on
+ * the hierarchy path that defines this module instance
+ * (tb.card.fpga.CL) and sub-hierarchy that is defined below this
+ * module (e.g. CL.network.manycore_wrapper.manycore). If any
+ * modifications to the Hierarchy Path to the Vanilla Core Instances
+ * change, the hierarchy paths in bsg_manycore_platform.cpp will need
+ * to change.
+ * 
  */
 
 module cl_manycore
@@ -331,7 +340,8 @@ module cl_manycore
    bsg_manycore_link_sif_s loader_link_sif_li;
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
-   if (bsg_machine_crossbar_network_gp == 1) begin: network
+   // Instantiate a crossbar, or a mesh network depending on 
+   if (bsg_machine_crossbar_network_gp == 1) begin: crossbar
      
    bsg_manycore_wrapper_crossbar
      #(
@@ -364,7 +374,7 @@ module cl_manycore
       );
 
   end
-  else begin: network
+  else begin: mesh
 
    bsg_manycore_wrapper_mesh
      #(

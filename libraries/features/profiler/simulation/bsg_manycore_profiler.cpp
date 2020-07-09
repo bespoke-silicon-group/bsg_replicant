@@ -48,10 +48,21 @@ using namespace std;
 int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, string &hier){
 
         // The crossbar and the Mesh hierarchy differ, so we need to
-        // figure out which one exists. We check for the crossbar
-        // hierarchy first, and then assume mesh if that scope does
-        // not exist.
-        string xbar = hier + ".y[1].x[0].proc.vcore.vcore_prof";
+        // figure out which one exists. There is no way to query the
+        // DPI interface to see what scopes are available, so instead
+        // we attempt to get the scope for the (1,0) tile profiler
+        // using getScopeFromName and if that returns 0/NULL then the
+        // scope does not exist.
+
+        // We check for the crossbar hierarchy first, and then assume
+        // mesh if that scope does not exist.
+
+        // If instance names in the RTL hierarchy change for either
+        // network topology, then the definition of the strings tail
+        // and tile01 (below) will need to change to reflect the new
+        // naming.
+        string tile01 = ".y[1].x[0].proc.vcore.vcore_prof";
+        string xbar = hier + tile01;
         string tail;
         svScope scope;
         scope = svGetScopeFromName(xbar.c_str());
@@ -68,7 +79,6 @@ int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, strin
         // profiler in the HDL, and track it using a vector.
         vector<dpi_vanilla_core_profiler* > *profilers = new vector<dpi_vanilla_core_profiler* >();
         
-        // TODO: Y offset
         // Construct the objects, and strings.
         for(int iy = HB_MC_CONFIG_VCORE_BASE_Y-1; iy <= y; ++iy){
                 for(int ix = 0; ix < x; ++ix){
