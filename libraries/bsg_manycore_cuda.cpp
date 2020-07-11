@@ -2005,12 +2005,17 @@ static int hb_mc_device_tiles_set_config_symbols (hb_mc_device_t *device,
 
 
 
-                // Set tile's tile group dimensions CSR_TG_DIM_X/Y registers.
-                error = hb_mc_tile_set_tile_group_dim(device->mc,
-                                                      &(tiles[tile_id]),
-                                                      &tg_dim);
+                // Set tile's tile group dimensions width CSR_TG_DIM_X/Y_WIDTH registers.
+                // Tile group dimensions width is the number of bits required to 
+                // represent the tile group dimensions.
+                // tg_dim_x/y_width = ceil(log2(tg_dim_x/y))
+                hb_mc_dimension_t tg_dim_width = {.x = (unsigned int) ceil(log2(hb_mc_dimension_get_x(tg_dim))),
+                                                  .y = (unsigned int) ceil(log2(hb_mc_dimension_get_y(tg_dim)))};
+                error = hb_mc_tile_set_tile_group_dim_width(device->mc,
+                                                            &(tiles[tile_id]),
+                                                            &tg_dim_width);
                 if (error != HB_MC_SUCCESS) { 
-                        bsg_pr_err("%s: failed to set tile (%d,%d) tile group dimension registers CSR_TG_DIM_X/Y.\n",
+                        bsg_pr_err("%s: failed to set tile (%d,%d) tile group dimension width registers CSR_TG_DIM_X/Y_WIDTH.\n",
                                    __func__,
                                    hb_mc_coordinate_get_x(tiles[tile_id]),
                                    hb_mc_coordinate_get_y(tiles[tile_id]));
