@@ -144,53 +144,53 @@ int hb_mc_tile_set_origin(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile,
 /**
  * Set a tile's tile group x dimension
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile     A tile to set the origin of.
- * @param[in] tg_dim_x Tile group X dimension
+ * @param[in] mc              A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile            A tile to set the origin of.
+ * @param[in] tg_dim_x_width  Width of (number of bits for) the tile group X dimension
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_tile_set_tile_group_dim_x(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
-                            const hb_mc_idx_t tg_dim_x)
+int hb_mc_tile_set_tile_group_dim_x_width(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
+                            const hb_mc_idx_t tg_dim_x_width)
 {
         hb_mc_npa_t npa = hb_mc_npa(*tile, 
-                                    HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_X);
-        return hb_mc_manycore_write32(mc, &npa, tg_dim_x);
+                                    HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_X_WIDTH);
+        return hb_mc_manycore_write32(mc, &npa, tg_dim_x_width);
 }
 
 /**
  * Set a tile's tile group y dimension
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile     A tile to set the origin of.
- * @param[in] tg_dim_y Tile group X dimension
+ * @param[in] mc              A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile            A tile to set the origin of.
+ * @param[in] tg_dim_y_width  Width of (number of bits for) the tile group Y dimension
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_tile_set_tile_group_dim_y(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
-                            const hb_mc_idx_t tg_dim_y)
+int hb_mc_tile_set_tile_group_dim_y_width(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
+                            const hb_mc_idx_t tg_dim_y_width)
 {
         hb_mc_npa_t npa = hb_mc_npa(*tile, 
-                                    HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_Y);
-        return hb_mc_manycore_write32(mc, &npa, tg_dim_y);
+                                    HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_Y_WIDTH);
+        return hb_mc_manycore_write32(mc, &npa, tg_dim_y_width);
 }
 
 /**
  * Set a tile's tile group dimensions
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile     A tile to set the origin of.
- * @param[in] tg_dim   Tile group dimensions
+ * @param[in] mc             A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile           A tile to set the origin of.
+ * @param[in] tg_dim_width   Width of (number of bits for) tile group dimensions
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_tile_set_tile_group_dim(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
-                          const hb_mc_dimension_t *tg_dim)
+int hb_mc_tile_set_tile_group_dim_width(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
+                          const hb_mc_dimension_t *tg_dim_width)
 {
         int rc;
-        rc = hb_mc_tile_set_tile_group_dim_x(mc, tile, hb_mc_dimension_get_x(*tg_dim));
+        rc = hb_mc_tile_set_tile_group_dim_x_width(mc, tile, hb_mc_dimension_get_x(*tg_dim_width));
         if(rc != HB_MC_SUCCESS){
                 return rc;
         }
 
-        rc = hb_mc_tile_set_tile_group_dim_y(mc, tile, hb_mc_dimension_get_y(*tg_dim));
+        rc = hb_mc_tile_set_tile_group_dim_y_width(mc, tile, hb_mc_dimension_get_y(*tg_dim_width));
         return rc;
 }
 
