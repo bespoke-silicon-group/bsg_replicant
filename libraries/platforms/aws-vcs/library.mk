@@ -39,6 +39,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/bsg_manycore_mmio.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
 
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration
@@ -54,6 +55,7 @@ $(LIB_OBJECTS): CFLAGS += -DCOSIM
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
 $(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/

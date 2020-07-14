@@ -1465,3 +1465,39 @@ int hb_mc_manycore_dma_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
 int hb_mc_manycore_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count){
         return hb_mc_platform_get_icount(mc, itype, count);
 }
+
+/**
+ * Enable trace file generation (vanilla_operation_trace.csv)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_trace_enable(hb_mc_manycore_t *mc){
+        return hb_mc_platform_trace_enable(mc);
+}
+
+/**
+ * Disable trace file generation (vanilla_operation_trace.csv)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_trace_disable(hb_mc_manycore_t *mc){
+        return hb_mc_platform_trace_disable(mc);
+}
+
+/**
+ * Enable log file generation (vanilla.log)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_log_enable(hb_mc_manycore_t *mc){
+        return hb_mc_platform_log_enable(mc);
+}
+
+/**
+ * Disable log file generation (vanilla.log)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_log_disable(hb_mc_manycore_t *mc){
+        return hb_mc_platform_log_disable(mc);
+}

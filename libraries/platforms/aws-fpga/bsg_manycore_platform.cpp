@@ -4,6 +4,7 @@
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_profiler.hpp>
+#include <bsg_manycore_tracer.hpp>
 
 #include <cstring>
 #include <set>
@@ -31,6 +32,7 @@ typedef struct hb_mc_platform_t {
         hb_mc_manycore_id_t id;  //!< which manycore instance is this
         hb_mc_mmio_t      mmio;  //!< pointer to memory mapped io (F1-specific)
         hb_mc_profiler_t  prof;  //!< Profiler Implementation
+        hb_mc_tracer_t    tracer; //!< Tracer Implementation
 } hb_mc_platform_t;
 
 
@@ -376,6 +378,8 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
+        hb_mc_tracer_cleanup(&(pl->tracer));
+
         hb_mc_profiler_cleanup(&(pl->prof));
 
         hb_mc_platform_fifos_cleanup(mc, pl);
@@ -410,8 +414,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
                 return HB_MC_INITIALIZED_TWICE;
 
         int r = HB_MC_FAIL, err;
-
-        std::string hierarchy = "tb.card.fpga.CL.network.manycore_wrapper.manycore";
+        std::string hierarchy = "tb.card.fpga.CL";
         hb_mc_idx_t x, y;
         hb_mc_config_raw_t rd;
 
@@ -452,14 +455,28 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
                 return err;
         }
 
+        std::string profiler = hierarchy + ".network.manycore_wrapper.manycore";
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_X, &rd);
         x = rd;
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
         y = rd;
-        err = hb_mc_profiler_init(&(pl->prof), x, y, hierarchy);
+        err = hb_mc_profiler_init(&(pl->prof), x, y, profiler);
         // This feature MIGHT not be implemented, so if it doesn't
         // work, just ignore.
         if (err != HB_MC_SUCCESS && err != HB_MC_NOIMPL){
+                hb_mc_platform_fifos_cleanup(mc, pl);
+                mc->platform = nullptr;
+                hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+                active_ids.erase(active_ids.find(pl->id));
+                delete pl;
+                return err;
+        }
+
+        err = hb_mc_tracer_init(&(pl->tracer), hierarchy);
+        // This feature MIGHT not be implemented, so if it doesn't
+        // work, just ignore.
+        if (err != HB_MC_SUCCESS && err != HB_MC_NOIMPL){
+                hb_mc_profiler_cleanup(&(pl->prof));
                 hb_mc_platform_fifos_cleanup(mc, pl);
                 mc->platform = nullptr;
                 hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
@@ -566,4 +583,44 @@ int hb_mc_platform_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int 
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
         return hb_mc_profiler_get_icount(pl->prof, itype, count);
+}
+
+/**
+ * Enable trace file generation (vanilla_operation_trace.csv)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_trace_enable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_trace_enable(pl->tracer);
+}
+
+/**
+ * Disable trace file generation (vanilla_operation_trace.csv)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_trace_disable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_trace_disable(pl->tracer);
+}
+
+/**
+ * Enable log file generation (vanilla.log)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_log_enable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_log_enable(pl->tracer);
+}
+
+/**
+ * Disable log file generation (vanilla.log)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_log_disable(pl->tracer);
 }

@@ -1317,11 +1317,30 @@ module cl_manycore
 `endif //  `ifndef DISABLE_VJTAG_DEBUG
 
    // synopsys translate off
-   int                        status;
-   logic                      trace_en;
+   logic arg_trace_en;
+   logic trace_en;
+   logic log_en;
+   logic dpi_trace_en;
+   logic dpi_log_en;
    initial begin
-      assign trace_en = $test$plusargs("trace");
+      assign arg_trace_en = $test$plusargs("trace");
    end
+
+   assign trace_en = arg_trace_en | dpi_trace_en;
+   assign log_en = arg_trace_en | dpi_log_en;
+
+   bsg_nonsynth_dpi_gpio
+     #(
+       .width_p(2)
+       ,.init_o_p('0)
+       ,.use_output_p('1)
+       ,.debpug_p('0)
+       )
+   trace_control
+     (
+       .gpio_o({dpi_log_en, dpi_trace_en})
+       ,.gpio_i('0)
+       );
 
    bind vanilla_core vanilla_core_trace
      #(
@@ -1335,7 +1354,7 @@ module cl_manycore
    vtrace
      (
       .*
-      ,.trace_en_i($root.tb.card.fpga.CL.trace_en)
+      ,.trace_en_i($root.tb.card.fpga.CL.log_en)
       );
 
 

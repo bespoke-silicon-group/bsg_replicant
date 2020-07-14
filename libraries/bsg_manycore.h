@@ -528,6 +528,34 @@ extern "C" {
          */
         int hb_mc_manycore_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count);
 
+        /**
+         * Enable trace file generation (vanilla_operation_trace.csv)
+         * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        int hb_mc_manycore_trace_enable(hb_mc_manycore_t *mc);
+
+        /**
+         * Disable trace file generation (vanilla_operation_trace.csv)
+         * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        int hb_mc_manycore_trace_disable(hb_mc_manycore_t *mc);
+
+        /**
+         * Enable log file generation (vanilla.log)
+         * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        int hb_mc_manycore_log_enable(hb_mc_manycore_t *mc);
+
+        /**
+         * Disable log file generation (vanilla.log)
+         * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        int hb_mc_manycore_log_disable(hb_mc_manycore_t *mc);
+
 #ifdef __cplusplus
 }
 #endif
