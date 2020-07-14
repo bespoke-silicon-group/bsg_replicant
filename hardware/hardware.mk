@@ -74,6 +74,7 @@ CL_MANYCORE_IO_EP_MAX_OUT_CREDITS    := $(BSG_MACHINE_IO_EP_MAX_OUT_CREDITS)
 CL_MANYCORE_BRANCH_TRACE_EN          := $(BSG_MACHINE_BRANCH_TRACE_EN)
 CL_MANYCORE_DRAM_BANK_SIZE_WORDS     := $(BSG_MACHINE_DRAM_BANK_SIZE_WORDS)
 CL_MANYCORE_VCACHE_DMA_DATA_WIDTH    := $(BSG_MACHINE_VCACHE_DMA_DATA_WIDTH)
+CL_MANYCORE_CROSSBAR_NETWORK         := $(BSG_MACHINE_CROSSBAR_NETWORK)
 CL_MANYCORE_RELEASE_VERSION          ?= $(shell echo $(FPGA_IMAGE_VERSION) | sed 's/\([0-9]*\)\.\([0-9]*\).\([0-9]*\)/000\10\20\3/')
 CL_MANYCORE_COMPILATION_DATE         ?= $(shell date +%m%d%Y)
 CL_TOP_MODULE                        := cl_manycore
@@ -238,6 +239,7 @@ $(BSG_MACHINE_PATH)/f1_parameters.vh: $(BSG_MACHINE_PATH)/Makefile.machine.inclu
 	@echo "\`define CL_MANYCORE_DRAM_CHANNELS $(CL_MANYCORE_DRAM_CHANNELS)" >> $@
 	@echo "\`define CL_MANYCORE_DRAM_BANK_SIZE_WORDS $(CL_MANYCORE_DRAM_BANK_SIZE_WORDS)" >> $@
 	@echo "\`define CL_MANYCORE_VCACHE_DMA_DATA_WIDTH $(CL_MANYCORE_VCACHE_DMA_DATA_WIDTH)" >> $@
+	@echo "\`define CL_MANYCORE_CROSSBAR_NETWORK $(CL_MANYCORE_CROSSBAR_NETWORK)" >> $@
 	@echo "\`endif" >> $@
 
 # This package defines the number of lines in the ROM
@@ -249,6 +251,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter rom_width_gp = 32;" >> $@
 	@echo "parameter rom_els_gp = `wc -l < $<`;" >> $@
+	@echo "parameter bsg_machine_crossbar_network_gp = $(CL_MANYCORE_CROSSBAR_NETWORK);" >> $@
 	@echo >> $@
 	@echo "endpackage" >> $@
 	@echo >> $@

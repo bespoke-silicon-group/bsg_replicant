@@ -26,7 +26,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- *  cl_manycore.v
+ * This is the top-level module for the user logic in AWS (a.k.a. Custom Logic, or CL). 
+ * 
+ * The BSG Nonsynth DPI interfaces that bind to this module depend on
+ * the hierarchy path that defines this module instance
+ * (tb.card.fpga.CL) and sub-hierarchy that is defined below this
+ * module (e.g. CL.network.manycore_wrapper.manycore). If any
+ * modifications to the Hierarchy Path to the Vanilla Core Instances
+ * change, the hierarchy paths in bsg_manycore_platform.cpp will need
+ * to change.
+ * 
  */
 
 module cl_manycore
@@ -246,13 +255,10 @@ module cl_manycore
         .m_axi_rready  (m_axil_ocl_rready)
         );
 
-   // manycore wrapper
-
-
 
 `ifdef COSIM
 
-   logic         ns_core_clk;
+   logic ns_core_clk;
    parameter lc_core_clk_period_p =400000;
 
    bsg_nonsynth_clock_gen
@@ -334,8 +340,46 @@ module cl_manycore
    bsg_manycore_link_sif_s loader_link_sif_li;
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
+   // Instantiate a crossbar, or a mesh network depending on the
+   // machine parameterization. The two sides of the if-statment have
+   // idenitical labels to make DPI hierarchy processing easier
+   if (bsg_machine_crossbar_network_gp == 1) begin: network
+     
+   bsg_manycore_wrapper_crossbar
+     #(
+       .addr_width_p(addr_width_p)
+       ,.data_width_p(data_width_p)
+       ,.num_tiles_x_p(num_tiles_x_p)
+       ,.num_tiles_y_p(num_tiles_y_p)
+       ,.dmem_size_p(dmem_size_p)
+       ,.icache_entries_p(icache_entries_p)
+       ,.icache_tag_width_p(icache_tag_width_p)
+       ,.vcache_size_p(vcache_size_p)
+       ,.vcache_block_size_in_words_p(block_size_in_words_p)
+       ,.vcache_sets_p(sets_p)
 
-   bsg_manycore_wrapper
+       ,.num_cache_p(num_cache_p)
+
+       )
+   manycore_wrapper
+     (
+      .clk_i(core_clk)
+      ,.reset_i(core_reset)
+
+      ,.cache_link_sif_i(cache_link_sif_li)
+      ,.cache_link_sif_o(cache_link_sif_lo)
+
+      ,.cache_x_o(cache_x_lo)
+      ,.cache_y_o(cache_y_lo)
+
+      ,.loader_link_sif_i(loader_link_sif_li)
+      ,.loader_link_sif_o(loader_link_sif_lo)
+      );
+
+  end
+  else begin: network
+
+   bsg_manycore_wrapper_mesh
      #(
        .addr_width_p(addr_width_p)
        ,.data_width_p(data_width_p)
@@ -364,6 +408,9 @@ module cl_manycore
       ,.loader_link_sif_i(loader_link_sif_li)
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
+
+  end
+
 
 `ifdef COSIM
 

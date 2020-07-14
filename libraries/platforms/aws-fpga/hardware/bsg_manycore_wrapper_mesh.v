@@ -1,8 +1,8 @@
 /**
- *  bsg_manycore_wrapper.v
+ *  bsg_manycore_wrapper_mesh.v
  */
 
-module bsg_manycore_wrapper
+module bsg_manycore_wrapper_mesh
   import bsg_manycore_pkg::*;
   import bsg_noc_pkg::*;
   #(parameter addr_width_p="inv" // in words
