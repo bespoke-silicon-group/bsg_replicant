@@ -69,9 +69,16 @@ VCS_VFLAGS     += -msg_config=$(BSG_PLATFORM_PATH)/msg_config
 # VCS Generates an executable file by linking the %.o file with the
 # the VCS work libraries for the design, and the runtime shared libraries
 
+# The % and %.debug rules are identical. They must be separate
+# otherwise make doesn't match the latter target(s)
+%: %.o $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config
+	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
+	vcs $(BSG_MACHINE_NAME) tb glbl $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
+		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
+
 %.debug: VCS_VFLAGS += -debug_pp 
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-% %.debug: %.o $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config
+%.debug: %.o $(BSG_PLATFORM_PATH)/vcs_simlibs/$(BSG_MACHINE_NAME)/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/synopsys_sim.setup \
 	vcs $(BSG_MACHINE_NAME) tb glbl $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
