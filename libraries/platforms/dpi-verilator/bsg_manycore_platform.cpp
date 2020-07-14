@@ -29,6 +29,7 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_profiler.hpp>
+#include <bsg_manycore_tracer.hpp>
 
 #include <bsg_manycore_verilator.hpp>
 #include <verilated.h>
@@ -56,21 +57,22 @@
 #define manycore_pr_info(mc, fmt, ...)                          \
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-typedef struct machine_t {
+typedef struct hb_mc_platform_t {
         VerilatorWrapper *top;
         bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
         hb_mc_manycore_id_t id;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
         hb_mc_profiler_t prof;
-} machine_t;
+        hb_mc_tracer_t tracer;
+} hb_mc_platform_t;
 
 /* read all unread packets from a fifo (rx only) */
 int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 {
 
         int err, drains = 0;
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
-        VerilatorWrapper *top = machine->top;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        VerilatorWrapper *top = platform->top;
         __m128i *pkt;
 
         hb_mc_config_raw_t cap;
@@ -83,10 +85,10 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 
                 switch(type){
                 case HB_MC_FIFO_RX_REQ:
-                        err = machine->dpi->rx_req(*pkt);
+                        err = platform->dpi->rx_req(*pkt);
                         break;
                 case HB_MC_FIFO_RX_RSP:
-                        err = machine->dpi->rx_rsp(*pkt);
+                        err = platform->dpi->rx_rsp(*pkt);
                         break;
                 default:
                         manycore_pr_err(mc, "%s: Unknown packet type\n", __func__);
@@ -109,27 +111,27 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
         return HB_MC_SUCCESS;
 }
 
-static int hb_mc_platform_dpi_init(machine_t *machine, std::string hierarchy)
+static int hb_mc_platform_dpi_init(hb_mc_platform_t *platform, std::string hierarchy)
 {
         svScope scope;
         int credits = 0, err;
-        VerilatorWrapper *top = machine->top;
+        VerilatorWrapper *top = platform->top;
 
         top->eval();
 
-        machine->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hierarchy + ".mc_dpi");
-        machine->ctr = new bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t>(hierarchy + ".ctr");
+        platform->dpi = new bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX>(hierarchy + ".mc_dpi");
+        platform->ctr = new bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t>(hierarchy + ".ctr");
 
         return HB_MC_SUCCESS;
 }
 
-static void hb_mc_platform_dpi_cleanup(machine_t *machine)
+static void hb_mc_platform_dpi_cleanup(hb_mc_platform_t *platform)
 {
         bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
 
-        dpi = machine->dpi;
-        ctr = machine->ctr;
+        dpi = platform->dpi;
+        ctr = platform->ctr;
 
         delete dpi;
         delete ctr;
@@ -148,20 +150,22 @@ static std::map<hb_mc_manycore_id_t,VerilatorWrapper*> machines;
  */
 void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
-        hb_mc_profiler_cleanup(&(machine->prof));
+        hb_mc_tracer_cleanup(&(platform->tracer));
 
-        hb_mc_platform_dpi_cleanup(machine);
+        hb_mc_profiler_cleanup(&(platform->prof));
+
+        hb_mc_platform_dpi_cleanup(platform);
 
         // Remove the key
-        auto key = active_ids.find(machine->id);
+        auto key = active_ids.find(platform->id);
         active_ids.erase(key);
 
-        machine->id = 0;
+        platform->id = 0;
 
-        // Ideally, we would clean up each machine in
-        // machines. However, we can't guarantee that someone won't
+        // Ideally, we would clean up each platform in
+        // platforms. However, we can't guarantee that someone won't
         // call init again, so we'll live with the memory leak for
         // now. It's a rare case, since few people call init/cleanup
         // and then continue their program indefinitley.
@@ -180,7 +184,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
 
         int r = HB_MC_FAIL, err;
         
-        machine_t *machine = new machine_t;
+        hb_mc_platform_t *platform = new hb_mc_platform_t;
         std::string hierarchy = "TOP.manycore_tb_top";
         hb_mc_idx_t x, y;
         hb_mc_config_raw_t rd;
@@ -201,46 +205,66 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         }
 
         active_ids.insert(id);
-        machine->id = id;
+        platform->id = id;
 
-        // Instantiate the top-level machine simulation and put it in
+        // Instantiate the top-level platform simulation and put it in
         // the map. If it has already been instantiated, don't
         // instantiate it again.
         auto m = machines.find(id);
         if(m == machines.end()){
                 machines[id] = new VerilatorWrapper();
         }
-        machine->top = machines[id];
+        platform->top = machines[id];
 
-        mc->platform = reinterpret_cast<void *>(machine);
+        mc->platform = reinterpret_cast<void *>(platform);
 
         // initialize simulation
-        if ((err = hb_mc_platform_dpi_init(machine, hierarchy)) != HB_MC_SUCCESS)
-                goto cleanup;
+        err = hb_mc_platform_dpi_init(platform, hierarchy);
+        if (err != HB_MC_SUCCESS){
+                delete platform;
+                return err;
+        }
 
-        hierarchy += ".manycore";
+        std::string profiler = hierarchy;
+        profiler += ".manycore";
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_X, &rd);
         x = rd;
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
         y = rd;
-        err = hb_mc_profiler_init(&(machine->prof), x, y, hierarchy);
+        err = hb_mc_profiler_init(&(platform->prof), x, y, profiler);
+        if (err != HB_MC_SUCCESS){
+                hb_mc_platform_dpi_cleanup(platform);
+                delete platform;
+                return err;
+        }
 
-        if (err != HB_MC_SUCCESS)
-                goto cleanup;
+        err = hb_mc_tracer_init(&(platform->tracer), hierarchy);
+        if (err != HB_MC_SUCCESS){
+                hb_mc_profiler_cleanup(&(platform->prof));
+                hb_mc_platform_dpi_cleanup(platform);
+                delete platform;
+                return err;
+        }
 
         err = hb_mc_platform_drain(mc, HB_MC_FIFO_RX_REQ);
-        if (err != HB_MC_SUCCESS)
-                goto cleanup;
+        if (err != HB_MC_SUCCESS){
+                hb_mc_tracer_cleanup(&(platform->tracer));
+                hb_mc_profiler_cleanup(&(platform->prof));
+                hb_mc_platform_dpi_cleanup(platform);
+                delete platform;
+                return err;
+        }
 
         hb_mc_platform_drain(mc, HB_MC_FIFO_RX_RSP);
-        if (err != HB_MC_SUCCESS)
-                goto cleanup;
+        if (err != HB_MC_SUCCESS){
+                hb_mc_tracer_cleanup(&(platform->tracer));
+                hb_mc_profiler_cleanup(&(platform->prof));
+                hb_mc_platform_dpi_cleanup(platform);
+                delete platform;
+                return err;
+        }
 
         return HB_MC_SUCCESS;
-
- cleanup:
-        delete machine;
-        return err;
 
 }
 
@@ -256,8 +280,8 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                             hb_mc_fifo_tx_t type,
                             long timeout)
 {
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
-        VerilatorWrapper *top = machine->top;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        VerilatorWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
         const char *typestr = hb_mc_fifo_tx_to_string(type);
 
@@ -277,7 +301,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
         do {
                 bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
-                err = machine->dpi->tx_req(*pkt);
+                err = platform->dpi->tx_req(*pkt);
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NO_CREDITS || 
                   err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
@@ -306,8 +330,8 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 {
 
         int err;
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
-        VerilatorWrapper *top = machine->top;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        VerilatorWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
 
         if (timeout != -1) {
@@ -322,10 +346,10 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 
                 switch(type){
                 case HB_MC_FIFO_RX_REQ:
-                        err = machine->dpi->rx_req(*pkt);
+                        err = platform->dpi->rx_req(*pkt);
                         break;
                 case HB_MC_FIFO_RX_RSP:
-                        err = machine->dpi->rx_rsp(*pkt);
+                        err = platform->dpi->rx_rsp(*pkt);
                         break;
                 default:
                         manycore_pr_err(mc, "%s: Unknown packet type\n", __func__);
@@ -356,10 +380,10 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
                                  unsigned int idx,
                                  hb_mc_config_raw_t *config)
 {
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
         if(idx < HB_MC_CONFIG_MAX){
-                *config = machine->dpi->config[idx];
+                *config = platform->dpi->config[idx];
                 return HB_MC_SUCCESS;
         }
 
@@ -375,8 +399,8 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
  */
 int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout){
         int res;
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
-        VerilatorWrapper *top = machine->top;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        VerilatorWrapper *top = platform->top;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
@@ -386,7 +410,7 @@ int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout)
         do {
                 bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
-                res = machine->dpi->get_credits(*credits);
+                res = platform->dpi->get_credits(*credits);
         } while(res == BSG_NONSYNTH_DPI_NOT_WINDOW);
 
         if(res != BSG_NONSYNTH_DPI_SUCCESS){
@@ -416,7 +440,7 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
         bool isvacant;
         uint32_t max_credits;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
         max_credits = hb_mc_config_get_io_endpoint_max_out_credits(cfg);
 
@@ -428,7 +452,7 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
 
         do {
                 err = hb_mc_platform_get_credits(mc, &credits, timeout);
-                machine->dpi->tx_is_vacant(isvacant);
+                platform->dpi->tx_is_vacant(isvacant);
         } while(err == HB_MC_SUCCESS && !(credits == max_credits && isvacant));
 
         return err;
@@ -464,9 +488,9 @@ int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc)
  */
 int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
-        machine_t *machine = reinterpret_cast<machine_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
 
-        machine->ctr->read(*time);
+        platform->ctr->read(*time);
 
         return HB_MC_SUCCESS;
 }
@@ -479,8 +503,48 @@ int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_platform_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count){
-         machine_t *machine = reinterpret_cast<machine_t *>(mc->platform);
+         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
-         return hb_mc_profiler_get_icount(machine->prof, itype, count);
+         return hb_mc_profiler_get_icount(platform->prof, itype, count);
 
+}
+
+/**
+ * Enable trace file generation (vanilla_operation_trace.csv)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_trace_enable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_trace_enable(pl->tracer);
+}
+
+/**
+ * Disable trace file generation (vanilla_operation_trace.csv)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_trace_disable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_trace_disable(pl->tracer);
+}
+
+/**
+ * Enable log file generation (vanilla.log)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_log_enable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_log_enable(pl->tracer);
+}
+
+/**
+ * Disable log file generation (vanilla.log)
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_tracer_log_disable(pl->tracer);
 }

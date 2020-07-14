@@ -55,11 +55,26 @@ module manycore_tb_top
    logic [data_width_p-1:0]                    print_stat_tag_lo;
 
    // Trace Enable wire for runtime argument to enable tracing (+trace)
-   logic                                       trace_en;
+   logic trace_en;
+   logic log_en;
+   logic dpi_trace_en;
+   logic dpi_log_en;
 
-   initial
-     assign trace_en = '1;
-   
+   assign trace_en = dpi_trace_en;
+   assign log_en = dpi_log_en;
+
+   bsg_nonsynth_dpi_gpio
+     #(
+       .width_p(2)
+       ,.init_o_p('0)
+       ,.use_output_p('1)
+       ,.debug_p('1)
+       )
+   trace_control
+     (
+       .gpio_o({dpi_log_en, dpi_trace_en})
+       ,.gpio_i('0)
+       );
 
    // Global Counter for Profilers, Tracing, Debugging
    logic [global_counter_width_lp-1:0] global_ctr;
@@ -302,7 +317,7 @@ module manycore_tb_top
    vtrace
      (
       .*
-      ,.trace_en_i($root.manycore_tb_top.trace_en));
+      ,.trace_en_i($root.manycore_tb_top.log_en));
 
    bind vanilla_core vanilla_core_profiler
      #(
