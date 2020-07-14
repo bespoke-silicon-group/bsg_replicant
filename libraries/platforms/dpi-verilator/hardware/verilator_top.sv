@@ -7,7 +7,7 @@ module manycore_tb_top
   import bsg_bladerunner_mem_cfg_pkg::*;
   import bsg_manycore_endpoint_to_fifos_pkg::*;
      ();
-/*verilator tracing_on*/
+
    localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)));
    localparam dpi_fifo_els_lp = dpi_fifo_els_gp;
    localparam ep_fifo_els_lp = 4;
@@ -190,41 +190,105 @@ module manycore_tb_top
    // Manycore Instantiation
    // --------------------------------------------------------------------------
 
-   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
-   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
    bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_li;
    bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_lo;
    bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_li;
    bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
   
-  bsg_manycore 
-    #(
-    .dmem_size_p(dmem_size_p)
-    ,.icache_entries_p(icache_entries_p)
-    ,.icache_tag_width_p(icache_tag_width_p)
-    ,.num_tiles_x_p(num_tiles_x_p)
-    ,.num_tiles_y_p(num_tiles_y_p+1)
-    ,.reset_depth_p(reset_depth_lp)
-    ,.debug_p(debug_lp)
-    ,.addr_width_p(addr_width_p)
-    ,.data_width_p(data_width_p)
-    ,.vcache_size_p(vcache_size_p)
-    ,.vcache_block_size_in_words_p(block_size_in_words_p)
-    ,.vcache_sets_p(sets_p)
-    ,.branch_trace_en_p(branch_trace_en_p)
-  ) manycore (
-    .clk_i(core_clk)
-    ,.reset_i(core_reset)
 
-    ,.hor_link_sif_i(hor_link_sif_li)
-    ,.hor_link_sif_o(hor_link_sif_lo)
+   // Instantiate a crossbar, or a mesh network depending on the
+   // machine parameterization. The two sides of the if-statment have
+   // idenitical labels to make DPI hierarchy processing easier
+   if (bsg_machine_crossbar_network_gp == 1) begin: network
 
-    ,.ver_link_sif_i(ver_link_sif_li)
-    ,.ver_link_sif_o(ver_link_sif_lo)
+     bsg_manycore_top_crossbar #(
+       .dmem_size_p(dmem_size_p)
+       ,.icache_entries_p(icache_entries_p)
+       ,.icache_tag_width_p(icache_tag_width_p)
+       ,.num_tiles_x_p(num_tiles_x_p)
+       ,.num_tiles_y_p(num_tiles_y_p+1)
+       ,.reset_depth_p(reset_depth_lp)
+       ,.data_width_p(data_width_p)
+       ,.addr_width_p(addr_width_p)
+       ,.vcache_size_p(vcache_size_p)
+       ,.vcache_block_size_in_words_p(block_size_in_words_p)
+       ,.vcache_sets_p(sets_p)
+     ) manycore (
+       .clk_i(core_clk)
+       ,.reset_i(core_reset)
+
+       ,.ver_link_sif_i(ver_link_sif_li)
+       ,.ver_link_sif_o(ver_link_sif_lo)
+
+       ,.io_link_sif_i(io_link_sif_li)
+       ,.io_link_sif_o(io_link_sif_lo)
+     );
+
+  end else begin: network
+
+   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
+   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
+
+   bsg_manycore 
+     #(
+     .dmem_size_p(dmem_size_p)
+     ,.icache_entries_p(icache_entries_p)
+     ,.icache_tag_width_p(icache_tag_width_p)
+     ,.num_tiles_x_p(num_tiles_x_p)
+     ,.num_tiles_y_p(num_tiles_y_p+1)
+     ,.reset_depth_p(reset_depth_lp)
+     ,.debug_p(debug_lp)
+     ,.addr_width_p(addr_width_p)
+     ,.data_width_p(data_width_p)
+     ,.vcache_size_p(vcache_size_p)
+     ,.vcache_block_size_in_words_p(block_size_in_words_p)
+     ,.vcache_sets_p(sets_p)
+     ,.branch_trace_en_p(branch_trace_en_p)
+   ) manycore (
+     .clk_i(core_clk)
+     ,.reset_i(core_reset)
+
+     ,.hor_link_sif_i(hor_link_sif_li)
+     ,.hor_link_sif_o(hor_link_sif_lo)
+
+     ,.ver_link_sif_i(ver_link_sif_li)
+     ,.ver_link_sif_o(ver_link_sif_lo)
     
-    ,.io_link_sif_i(io_link_sif_li)
-    ,.io_link_sif_o(io_link_sif_lo)
-  );
+     ,.io_link_sif_i(io_link_sif_li)
+     ,.io_link_sif_o(io_link_sif_lo)
+   );
+
+    // Horizontal Tie-Offs
+    //
+    for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
+      bsg_manycore_link_sif_tieoff #(
+        .addr_width_p(addr_width_p)
+        ,.data_width_p(data_width_p)
+        ,.x_cord_width_p(x_cord_width_p)
+        ,.y_cord_width_p(y_cord_width_p)
+      ) tieoff_w (
+        .clk_i(core_clk)
+        ,.reset_i(core_reset)
+        ,.link_sif_i(hor_link_sif_lo[W][i])
+        ,.link_sif_o(hor_link_sif_li[W][i])
+      );
+    end
+
+     for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
+       bsg_manycore_link_sif_tieoff #(
+         .addr_width_p(addr_width_p)
+         ,.data_width_p(data_width_p)
+         ,.x_cord_width_p(x_cord_width_p)
+         ,.y_cord_width_p(y_cord_width_p)
+       ) tieoff_e (
+         .clk_i(core_clk)
+         ,.reset_i(core_reset)
+         ,.link_sif_i(hor_link_sif_lo[E][i])
+         ,.link_sif_o(hor_link_sif_li[E][i])
+       );
+     end
+
+  end
 
   // connecting link_sif to outside
   //
@@ -253,42 +317,12 @@ module manycore_tb_top
     assign cache_y_lo[num_tiles_x_p+i] = (y_cord_width_p)'(num_tiles_y_p+2);
   end
 
-  // 0,1 for host io
-  //
+  // Tie the host to index 0 of the IO links. This ends up being (y=1,
+  // x=0) because IO links are on row 1.
   assign mc_link_sif_lo = io_link_sif_lo[0];
   assign io_link_sif_li[0] = mc_link_sif_li;
 
-
-  // tie-off
-  //
-  for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
-    bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_p)
-      ,.y_cord_width_p(y_cord_width_p)
-    ) tieoff_w (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.link_sif_i(hor_link_sif_lo[W][i])
-      ,.link_sif_o(hor_link_sif_li[W][i])
-    );
-  end
-
-  for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
-    bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_p)
-      ,.y_cord_width_p(y_cord_width_p)
-    ) tieoff_e (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
-      ,.link_sif_i(hor_link_sif_lo[E][i])
-      ,.link_sif_o(hor_link_sif_li[E][i])
-    );
-  end
-
+  // Tie off remaining IO links
   for (genvar i = 1; i < num_tiles_x_p; i++) begin
     bsg_manycore_link_sif_tieoff #(
       .addr_width_p(addr_width_p)
@@ -296,8 +330,8 @@ module manycore_tb_top
       ,.x_cord_width_p(x_cord_width_p)
       ,.y_cord_width_p(y_cord_width_p)
     ) tieoff_io (
-      .clk_i(clk_i)
-      ,.reset_i(reset_i)
+      .clk_i(core_clk)
+      ,.reset_i(core_reset)
       ,.link_sif_i(io_link_sif_lo[i])
       ,.link_sif_o(io_link_sif_li[i])
     );
@@ -726,5 +760,4 @@ module manycore_tb_top
      (.clk_i(core_clk)
       ,.reset_i(core_reset));  
 
-/*verilator tracing_off*/
 endmodule

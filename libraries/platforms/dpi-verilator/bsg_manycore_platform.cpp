@@ -226,7 +226,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         }
 
         std::string profiler = hierarchy;
-        profiler += ".manycore";
+        profiler += ".network.manycore";
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_X, &rd);
         x = rd;
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
