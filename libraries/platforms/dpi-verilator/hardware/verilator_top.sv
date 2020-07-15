@@ -38,6 +38,9 @@ module manycore_tb_top
    logic mem_clk;
    logic mem_reset;
 
+   logic cache_clk;
+   logic cache_reset;
+
    // TODO: (Future) Host coordinate should be a parameter
    logic [x_cord_width_p-1:0] host_x_cord_li = (x_cord_width_p)'(0);
    logic [y_cord_width_p-1:0] host_y_cord_li = (y_cord_width_p)'(1);
@@ -117,6 +120,10 @@ module manycore_tb_top
 
    assign mem_clk = core_clk;
    assign mem_reset = core_reset_l[reset_depth_lp-1];
+
+   // The caches have an additional reset flop, internally
+   assign cache_clk = core_clk;
+   assign cache_reset = core_reset_l[reset_depth_lp-2];
 
    bsg_cycle_counter
      #(.width_p(global_counter_width_lp))
@@ -489,8 +496,8 @@ module manycore_tb_top
              ) 
          vcache 
             (
-             .clk_i(mem_clk)
-             ,.reset_i(mem_reset)
+             .clk_i(cache_clk)
+             ,.reset_i(cache_reset)
              // memory systems link from bsg_manycore_wrapper
              ,.link_sif_i(cache_link_sif_lo[i])
              ,.link_sif_o(cache_link_sif_li[i])
@@ -542,8 +549,8 @@ module manycore_tb_top
              ) 
          vcache_nb 
             (
-             .clk_i(mem_clk)
-             ,.reset_i(mem_reset)
+             .clk_i(cache_clk)
+             ,.reset_i(cache_reset)
 
              ,.link_sif_i(cache_link_sif_lo[i])
              ,.link_sif_o(cache_link_sif_li[i])
