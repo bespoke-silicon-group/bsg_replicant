@@ -82,6 +82,7 @@ INDEPENDENT_TESTS += test_shared_mem
 INDEPENDENT_TESTS += test_shared_mem_load_store
 INDEPENDENT_TESTS += test_matrix_mul
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem
+INDEPENDENT_TESTS += test_matrix_mul_shared_mem_hard
 
 INDEPENDENT_TESTS += test_float_all_ops
 INDEPENDENT_TESTS += test_float_vec_add
@@ -136,7 +137,7 @@ include $(EXAMPLES_PATH)/flow.mk
 
 # The default Tile Group size is 2x2
 TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
+TILE_GROUP_DIM_Y = 2 
 
 # Force rebuild targets that depend on .FORCE, like the
 # Manycore/SPMD/CUDA Binaries
@@ -162,6 +163,8 @@ $(CUDALITE_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include 
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
+	bsg_global_X=$(BSG_MACHINE_GLOBAL_X) \
+	bsg_global_Y=$(BSG_MACHINE_GLOBAL_Y) \
 	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	$(MAKE) -j1 -C $(dir $@) clean $(notdir $@)
