@@ -8,13 +8,22 @@ module manycore_tb_top
   import bsg_manycore_endpoint_to_fifos_pkg::*;
      ();
 
+   // Uncomment this to enable VCD Dumping
+   /*
+   initial begin
+      $display("[%0t] Tracing to vlt_dump.vcd...\n", $time);
+      $dumpfile("dump.vcd");
+      $dumpvars();
+   end
+    */
+
    localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)));
    localparam dpi_fifo_els_lp = dpi_fifo_els_gp;
    localparam ep_fifo_els_lp = 4;
    localparam async_fifo_els_lp = 16;
    localparam global_counter_width_lp = 64;
    localparam debug_lp = 0;
-   localparam reset_depth_lp = 2;
+   localparam reset_depth_lp = 3;
    
    // TODO: (Future) It would be awesome if the clock frequency (or
    // frequencies) were specified at the machine level.
@@ -29,9 +38,6 @@ module manycore_tb_top
    logic mem_clk;
    logic mem_reset;
 
-   assign mem_clk = core_clk;
-   assign mem_reset = core_reset;   
-   
    // TODO: (Future) Host coordinate should be a parameter
    logic [x_cord_width_p-1:0] host_x_cord_li = (x_cord_width_p)'(0);
    logic [y_cord_width_p-1:0] host_y_cord_li = (y_cord_width_p)'(1);
@@ -108,6 +114,9 @@ module manycore_tb_top
          core_reset_l[i] <= core_reset_l[i-1];
       end
    end
+
+   assign mem_clk = core_clk;
+   assign mem_reset = core_reset_l[reset_depth_lp-1];
 
    bsg_cycle_counter
      #(.width_p(global_counter_width_lp))
@@ -436,8 +445,8 @@ module manycore_tb_top
              ) 
          mem_infty 
             (
-             .clk_i(core_clk)
-             ,.reset_i(core_reset)
+             .clk_i(mem_clk)
+             ,.reset_i(mem_reset)
              // memory systems link from bsg_manycore_wrapper
              ,.link_sif_i(cache_link_sif_lo[i])
              ,.link_sif_o(cache_link_sif_li[i])
@@ -480,8 +489,8 @@ module manycore_tb_top
              ) 
          vcache 
             (
-             .clk_i(core_clk)
-             ,.reset_i(core_reset)
+             .clk_i(mem_clk)
+             ,.reset_i(mem_reset)
              // memory systems link from bsg_manycore_wrapper
              ,.link_sif_i(cache_link_sif_lo[i])
              ,.link_sif_o(cache_link_sif_li[i])
@@ -533,8 +542,8 @@ module manycore_tb_top
              ) 
          vcache_nb 
             (
-             .clk_i(core_clk)
-             ,.reset_i(core_reset)
+             .clk_i(mem_clk)
+             ,.reset_i(mem_reset)
 
              ,.link_sif_i(cache_link_sif_lo[i])
              ,.link_sif_o(cache_link_sif_li[i])
@@ -639,8 +648,8 @@ module manycore_tb_top
              ,.dram_channel_addr_width_p(hbm_channel_addr_width_p)
              ,.dram_data_width_p(hbm_data_width_p))
          cache_to_test_dram
-           (.core_clk_i(core_clk)
-            ,.core_reset_i(core_reset)
+           (.core_clk_i(core_reset)
+            ,.core_reset_i(core_reset_l[reset_depth_lp-1])
 
             ,.dma_pkt_i(lv1_dma.dma_pkt[cache_range_hi_p:cache_range_lo_p])
             ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo[cache_range_hi_p:cache_range_lo_p])
@@ -732,8 +741,8 @@ module manycore_tb_top
           //,.debug_p(1)
           ,.init_mem_p(1))
       dram
-        (.clk_i(core_clk)
-         ,.reset_i(core_reset)
+        (.clk_i(mem_clk)
+         ,.reset_i(mem_reset)
 
          ,.v_i(lv2_simulated_hbm.hbm_req_v_lo)
          ,.write_not_read_i(lv2_simulated_hbm.hbm_write_not_read_lo)
