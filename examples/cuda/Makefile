@@ -80,7 +80,6 @@ INDEPENDENT_TESTS += test_vec_add_shared_mem
 INDEPENDENT_TESTS += test_max_pool2d
 INDEPENDENT_TESTS += test_shared_mem
 INDEPENDENT_TESTS += test_shared_mem_load_store
-INDEPENDENT_TESTS += test_hard_shared
 INDEPENDENT_TESTS += test_matrix_mul
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem
 
