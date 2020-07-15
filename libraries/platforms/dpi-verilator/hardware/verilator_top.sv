@@ -9,13 +9,11 @@ module manycore_tb_top
      ();
 
    // Uncomment this to enable VCD Dumping
-   /*
    initial begin
-      $display("[%0t] Tracing to vlt_dump.vcd...\n", $time);
+      $display("[%0t] Tracing to dump.vcd...\n", $time);
       $dumpfile("dump.vcd");
       $dumpvars();
    end
-    */
 
    localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)));
    localparam dpi_fifo_els_lp = dpi_fifo_els_gp;
@@ -69,8 +67,8 @@ module manycore_tb_top
    logic dpi_trace_en;
    logic dpi_log_en;
 
-   assign trace_en = dpi_trace_en;
-   assign log_en = dpi_log_en;
+   assign trace_en = dpi_trace_en | 1;
+   assign log_en = dpi_log_en | 1;
 
    bsg_nonsynth_dpi_gpio
      #(

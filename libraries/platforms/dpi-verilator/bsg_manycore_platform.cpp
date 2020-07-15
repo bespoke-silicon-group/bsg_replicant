@@ -190,7 +190,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         hb_mc_config_raw_t rd;
 
         // Uncomment THIS and the statement in verilator_top.sv to enable tracing
-        // Verilated::traceEverOn(true);
+        Verilated::traceEverOn(true);
 
         // check if mc is already initialized
         if (mc->platform)
