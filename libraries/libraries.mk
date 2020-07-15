@@ -72,13 +72,17 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_fifo.h
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
 
+ifdef DEBUG
+LIB_DEBUG_FLAGS := -g
+endif
+
 $(LIB_OBJECTS): INCLUDES  = -I$(LIBRARIES_PATH)
 $(LIB_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(LIB_OBJECTS): INCLUDES += -I$(HDK_DIR)/common/software/include
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
-$(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC
+$(LIB_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES) $(LIB_DEBUG_FLAGS)
+$(LIB_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES) $(LIB_DEBUG_FLAGS)
+$(LIB_OBJECTS): LDFLAGS   = -lfpga_mgmt -fPIC $(LIB_DEBUG_FLAGS)
 
 # Objects that should be compiled with debug flags
 LIB_DEBUG_OBJECTS  +=
