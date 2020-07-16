@@ -33,7 +33,7 @@ module manycore_tb_top
    logic io_reset;
    
    logic core_clk;
-   logic core_reset;
+   logic core_reset = 1;
    
    logic mem_clk;
    logic mem_reset;
@@ -106,7 +106,7 @@ module manycore_tb_top
 
    // bsg_manycore has reset_depth_lp flops that reset signal needs to
    // go through.  So we are trying to match that here.
-   logic [reset_depth_lp:0]                         core_reset_l;
+   logic [reset_depth_lp:0]                         core_reset_l = '1;
 
    always_ff @ (posedge core_clk) begin
       core_reset_l[0] <= core_reset;
