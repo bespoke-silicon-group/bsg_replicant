@@ -95,6 +95,7 @@ VERILATOR_VINCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VERILATOR_VDEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VERILATOR_VFLAGS = $(VERILATOR_VINCLUDES) $(VERILATOR_VDEFINES)
 VERILATOR_VFLAGS += -Wno-widthconcat -Wno-unoptflat -Wno-lint
+VERILATOR_VFLAGS += --assert
 # These enable verilator tracing
 # VERILATOR_VFLAGS += --trace --trace-structs
 $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP).mk: $(VHEADERS) $(VSOURCES) 
