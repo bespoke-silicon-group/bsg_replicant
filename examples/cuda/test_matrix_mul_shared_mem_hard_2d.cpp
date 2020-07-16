@@ -34,7 +34,7 @@
 // "bsg_bladerunner/bsg_manycore/software/spmd/bsg_cuda_lite_runtime/
 // matrix_mul_shared_mem_hard/kernel_matrix_mul_shared_mem_hard.cpp"
 
-#include "test_matrix_mul_shared_mem_hard.hpp"
+#include "test_matrix_mul_shared_mem_hard_2d.hpp"
 
 #define DMA
 
@@ -111,7 +111,7 @@ void matrix_print_diff(T *A, T *B, uint64_t M, uint64_t N, T max_diff) {
 }
 
 
-int kernel_matrix_mul_shared_mem_hard (int argc, char **argv) {
+int kernel_matrix_mul_shared_mem_hard_2d (int argc, char **argv) {
 
         int rc;
         char *bin_path, *test_name;
@@ -252,7 +252,7 @@ int kernel_matrix_mul_shared_mem_hard (int argc, char **argv) {
         // Enquque grid of tile groups, pass in grid and tile group dimensions,
         // kernel name, number and list of input arguments
         BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim,
-                                            "kernel_matrix_mul_shared_mem_hard", 8, cuda_argv))
+                                            "kernel_matrix_mul_shared_mem_hard_2d", 8, cuda_argv))
 
         // Start the tracer (vanilla_operation_trace.csv)
         // hb_mc_manycore_trace_enable((&device)->mc);
@@ -317,7 +317,7 @@ int vcs_main(int argc, char ** argv) {
 int main(int argc, char ** argv) {
 #endif
         bsg_pr_test_info("test_vec_add Regression Test\n");
-        int rc = kernel_matrix_mul_shared_mem_hard(argc, argv);
+        int rc = kernel_matrix_mul_shared_mem_hard_2d(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }
