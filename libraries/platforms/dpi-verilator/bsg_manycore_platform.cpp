@@ -191,7 +191,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
 
         // Uncomment THIS and the statement in verilator_top.sv to enable tracing
         // Verilated::traceEverOn(true);
-
+        Verilated::assertOn(false);
         // check if mc is already initialized
         if (mc->platform)
                 return HB_MC_INITIALIZED_TWICE;
@@ -266,7 +266,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
                 delete platform;
                 return err;
         }
-
+        Verilated::assertOn(true);
         return HB_MC_SUCCESS;
 
 }

@@ -23,7 +23,7 @@ module manycore_tb_top
    localparam async_fifo_els_lp = 16;
    localparam global_counter_width_lp = 64;
    localparam debug_lp = 0;
-   localparam reset_depth_lp = 3;
+   localparam reset_depth_lp = 3; // This fixes assertions in mesh
    
    // TODO: (Future) It would be awesome if the clock frequency (or
    // frequencies) were specified at the machine level.
@@ -33,7 +33,7 @@ module manycore_tb_top
    logic io_reset;
    
    logic core_clk;
-   logic core_reset = 1;
+   logic core_reset;
    
    logic mem_clk;
    logic mem_reset;
@@ -106,7 +106,11 @@ module manycore_tb_top
 
    // bsg_manycore has reset_depth_lp flops that reset signal needs to
    // go through.  So we are trying to match that here.
-   logic [reset_depth_lp:0]                         core_reset_l = '1;
+   logic [reset_depth_lp:0]                         core_reset_l;
+   initial begin
+      core_reset_l = '1;
+      core_reset = 1;
+   end
 
    always_ff @ (posedge core_clk) begin
       core_reset_l[0] <= core_reset;
@@ -191,7 +195,7 @@ module manycore_tb_top
    async_buf
      (
       .L_clk_i(core_clk)
-      ,.L_reset_i(core_reset_l[reset_depth_lp-1])
+      ,.L_reset_i(core_reset)
       ,.L_link_sif_i(mc_link_sif_lo)
       ,.L_link_sif_o(mc_link_sif_li)
 
@@ -333,8 +337,8 @@ module manycore_tb_top
     assign cache_y_lo[num_tiles_x_p+i] = (y_cord_width_p)'(num_tiles_y_p+2);
   end
 
-  // Tie the host to index 0 of the IO links. This ends up being (y=1,
-  // x=0) because IO links are on row 1.
+  // 0,1 for host io
+  //
   assign mc_link_sif_lo = io_link_sif_lo[0];
   assign io_link_sif_li[0] = mc_link_sif_li;
 
@@ -655,8 +659,8 @@ module manycore_tb_top
              ,.dram_channel_addr_width_p(hbm_channel_addr_width_p)
              ,.dram_data_width_p(hbm_data_width_p))
          cache_to_test_dram
-           (.core_clk_i(core_reset)
-            ,.core_reset_i(core_reset_l[reset_depth_lp-1])
+           (.core_clk_i(core_clk)
+            ,.core_reset_i(core_reset)
 
             ,.dma_pkt_i(lv1_dma.dma_pkt[cache_range_hi_p:cache_range_lo_p])
             ,.dma_pkt_v_i(lv1_dma.dma_pkt_v_lo[cache_range_hi_p:cache_range_lo_p])
