@@ -42,7 +42,7 @@ puts "AWS FPGA: ([clock format [clock seconds] -format %T]) Reading developer's 
 # Reading the .sv and .v files, as proper designs would not require
 # reading .v, .vh, nor .inc files
 
-read_verilog -sv [glob $ENC_SRC_DIR/*.{v,sv,vh}]
+read_verilog -sv [glob $ENC_SRC_DIR/*.{v,sv,vh,vi}]
 
 # OK - here, and in create_dcp.tcl is how we handle Xilinx IP in the
 # HDL flow. Things get... a little weird. The following lines read in

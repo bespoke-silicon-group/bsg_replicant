@@ -66,6 +66,9 @@ include $(HARDWARE_PATH)/hardware.mk
 # configured correctly. environment.mk must be included before this line
 include $(CL_DIR)/cadenv.mk
 
+VHEADERS += $(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_consts.vi
+VHEADERS += $(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_localFuncs.vi
+VHEADERS += $(BSG_MANYCORE_DIR)/imports/HardFloat/source/RISCV/HardFloat_specialize.vi
 SOURCES = $(addprefix src_post_encryption/, $(notdir $(VHEADERS) $(VSOURCES)))
 
 $(SOURCES): src_post_encryption $(VHEADERS) $(VSOURCES)

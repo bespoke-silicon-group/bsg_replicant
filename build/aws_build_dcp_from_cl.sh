@@ -240,12 +240,12 @@ hdk_version=$(grep 'HDK_VERSION' $HDK_DIR/hdk_version.txt | sed 's/=/ /g' | awk 
 shell_version=$(grep 'SHELL_VERSION' $HDK_SHELL_DIR/shell_version.txt | sed 's/=/ /g' | awk '{print $2}')
 
 # Get the PCIe Device & Vendor ID from ID0
-id0_version=$(grep 'CL_SH_ID0' $CL_DIR/hardware/cl_id_defines.vh | grep 'define' | sed 's/_//g' | awk -F "h" '{print $2}')
+id0_version=$(grep 'CL_SH_ID0' $CL_DIR/libraries/platforms/aws-fpga/hardware/cl_id_defines.vh | grep 'define' | sed 's/_//g' | awk -F "h" '{print $2}')
 device_id="0x${id0_version:0:4}";
 vendor_id="0x${id0_version:4:4}";
 
 # Get the PCIe Subsystem & Subsystem Vendor ID from ID1
-id1_version=$(grep 'CL_SH_ID1' $CL_DIR/hardware/cl_id_defines.vh | grep 'define' | sed 's/_//g' | awk -F "h" '{print $2}')
+id1_version=$(grep 'CL_SH_ID1' $CL_DIR/libraries/platforms/aws-fpga/hardware/cl_id_defines.vh | grep 'define' | sed 's/_//g' | awk -F "h" '{print $2}')
 subsystem_id="0x${id1_version:0:4}";
 subsystem_vendor_id="0x${id1_version:4:4}";
 
