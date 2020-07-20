@@ -137,14 +137,17 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
 
   always_comb begin
-    endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
-    if (endpoint_out_packet_li.op != e_remote_store) begin
+    if (endpoint_out_packet_li.op == e_remote_store) begin
+      endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
+    end
+    else begin
       endpoint_out_packet_li.payload.load_info_s.load_info.float_wb       = 1'b0;
       endpoint_out_packet_li.payload.load_info_s.load_info.icache_fetch   = 1'b0;
       endpoint_out_packet_li.payload.load_info_s.load_info.part_sel       = 4'b1111;
       endpoint_out_packet_li.payload.load_info_s.load_info.is_unsigned_op = 1'b1;
       endpoint_out_packet_li.payload.load_info_s.load_info.is_byte_op     = 1'b0;
       endpoint_out_packet_li.payload.load_info_s.load_info.is_hex_op      = 1'b0;
+      endpoint_out_packet_li.payload.load_info_s.reserved                 = '0;
     end
   end
 
