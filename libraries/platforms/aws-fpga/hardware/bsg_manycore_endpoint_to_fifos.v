@@ -137,10 +137,8 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
 
   always_comb begin
-    if (endpoint_out_packet_li.op == e_remote_store) begin
-      endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
-    end
-    else begin
+    endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
+    if (endpoint_out_packet_li.op != e_remote_store) begin
       endpoint_out_packet_li.payload.load_info_s.load_info.float_wb       = 1'b0;
       endpoint_out_packet_li.payload.load_info_s.load_info.icache_fetch   = 1'b0;
       endpoint_out_packet_li.payload.load_info_s.load_info.part_sel       = 4'b1111;
@@ -150,12 +148,13 @@ module bsg_manycore_endpoint_to_fifos
     end
   end
 
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
       assert(endpoint_out_packet_li.op != e_remote_amo) else
         $error("[BSG_ERROR][%m] remote atomic memory operations from the host are not supported.");
   end
-
+  // synopsys translate_on
 
   // manycore response to host
   // -------------------------
