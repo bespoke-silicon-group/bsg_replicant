@@ -103,8 +103,8 @@ $(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 # We should move this from AWS (and keep the license)
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
-$(LIB_OBJECTS): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
-$(LIB_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(LIB_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)
+$(LIB_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES)
 # Need to move this, eventually
 #$(LIB_OBJECTS) $(PLATFORM_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
