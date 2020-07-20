@@ -27,7 +27,7 @@
 #include <bsg_manycore_profiler.hpp>
 #include <bsg_manycore_printing.h>
 
-int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, string &hier){
+int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, std::string &hier){
         return HB_MC_NOIMPL;
 }
 

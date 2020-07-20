@@ -31,7 +31,8 @@
 # handles PCIE-based MMIO.
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_mmio.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platform.cpp
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
 
 # aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
 # features/dma/noimpl/feature.mk that simply returns
@@ -46,6 +47,7 @@ $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
 # not sure if these are still necessary for AWS, if fpga_mgmt is installed
 $(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
 $(PLATFORM_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES)

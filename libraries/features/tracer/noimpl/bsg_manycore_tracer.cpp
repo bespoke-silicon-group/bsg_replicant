@@ -26,6 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <bsg_manycore_tracer.hpp>
 #include <bsg_manycore_printing.h>
+#include <string>
 
 /**
  * Initialize an hb_mc_tracer_t instance
@@ -36,7 +37,7 @@
  * NOTE: In this implementation, the argument hier indicates the path
  * to the top level module in simulation.
  */
-int hb_mc_tracer_init(hb_mc_tracer_t *p, string &hier){
+int hb_mc_tracer_init(hb_mc_tracer_t *p, std::string &hier){
         return HB_MC_NOIMPL;
 }
 
@@ -84,29 +85,6 @@ int hb_mc_tracer_log_enable(hb_mc_tracer_t p){
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_tracer_log_disable(hb_mc_tracer_t p){
-        bsg_pr_warn("%s: Not supported.\n", __func__);
-        return HB_MC_NOIMPL;
-}
-int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, string &hier){
-        return HB_MC_NOIMPL;
-}
-
-/**
- * Clean up an hb_mc_profiler_t instance
- * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
- */
-int hb_mc_profiler_cleanup(hb_mc_profiler_t *p){
-        return HB_MC_NOIMPL;
-}
-
-/**
- * Get the number of instructions executed for a certain class of instructions
- * @param[in] p     A hb_mc_profiler_t instance initialized with hb_mc_profiler_init()
- * @param[in] itype An enum defining the class of instructions to query.
- * @param[out] count The number of instructions executed in the queried class.
- * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
- */
-int hb_mc_profiler_get_icount(hb_mc_profiler_t p, bsg_instr_type_e itype, int *count){
         bsg_pr_warn("%s: Not supported.\n", __func__);
         return HB_MC_NOIMPL;
 }
