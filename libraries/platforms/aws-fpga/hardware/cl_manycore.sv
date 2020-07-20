@@ -800,6 +800,8 @@ module cl_manycore
     // checks that this configuration is supported
     // we do not support having fewer caches than channels
     localparam int num_cache_per_hbm_channel_p = $floor(num_cache_p/dram_channels_used_p);
+    // synopsys translate_off
+
     if (num_cache_per_hbm_channel_p <= 0) begin
       $fatal("dram channels (%d) must be less than or equal to l2 caches (%d)",
              dram_channels_used_p, num_cache_p);
@@ -810,6 +812,7 @@ module cl_manycore
       $fatal("l2 caches (%d) must be a multiple of dram channels (%d)",
              num_cache_p, dram_channels_used_p);
     end
+    // synopsys translate_on
 
     localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
     localparam hbm_cache_bank_addr_width_p = hbm_channel_addr_width_p - lg_num_cache_per_hbm_channel_p;
