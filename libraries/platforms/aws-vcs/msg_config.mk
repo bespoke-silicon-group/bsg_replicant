@@ -46,6 +46,18 @@ include $(BSG_F1_DIR)/hdk.mk
 $(BSG_PLATFORM_PATH)/msg_config:
 	$(eval XILINX_VIVADO=$(realpath $(XILINX_VIVADO)))
 
+	@echo "{+warn=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_primitives.v;}" >> $@
+	@echo "{+lint=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_primitives.v;}" >> $@
+
+	@echo "{+warn=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_primitives.v;}" >> $@
+	@echo "{+lint=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_primitives.v;}" >> $@
+
+	@echo "{+warn=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_rawFN.v;}" >> $@
+	@echo "{+lint=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/HardFloat_rawFN.v;}" >> $@
+
+	@echo "{+warn=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/mulAddRecFN.v;}" >> $@
+	@echo "{+lint=none;  +file=$(BSG_MANYCORE_DIR)/imports/HardFloat/source/mulAddRecFN.v;}" >> $@
+
 	@echo "{+warn=none;  +file=$(HDK_SHELL_DIR)/hlx/verif/cl_ports_sh_bfm.vh;}" >> $@
 	@echo "{+lint=none;  +file=$(HDK_SHELL_DIR)/hlx/verif/cl_ports_sh_bfm.vh;}" >> $@
 
