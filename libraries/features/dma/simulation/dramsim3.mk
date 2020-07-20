@@ -57,9 +57,6 @@ _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
 # Check if dramsim3 is the memory model for this design
 ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
 
-# Define USING_DRAMSIM3 for host library
-$(LIB_OBJECTS): CXXFLAGS += -DUSING_DRAMSIM3=1
-
 # Add a clean rule
 .PHONY: dramsim3.clean
 
@@ -67,7 +64,7 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PA
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so
 
 # Rules for building dramsim3 library
-$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS := -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/src
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/headers
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/fmt/include
