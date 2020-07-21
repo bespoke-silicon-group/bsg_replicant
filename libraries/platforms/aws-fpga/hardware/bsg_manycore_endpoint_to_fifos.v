@@ -147,15 +147,17 @@ module bsg_manycore_endpoint_to_fifos
       endpoint_out_packet_li.payload.load_info_s.load_info.is_unsigned_op = 1'b1;
       endpoint_out_packet_li.payload.load_info_s.load_info.is_byte_op     = 1'b0;
       endpoint_out_packet_li.payload.load_info_s.load_info.is_hex_op      = 1'b0;
+      endpoint_out_packet_li.payload.load_info_s.reserved                 = '0;
     end
   end
 
+  // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
       assert(endpoint_out_packet_li.op != e_remote_amo) else
         $error("[BSG_ERROR][%m] remote atomic memory operations from the host are not supported.");
   end
-
+  // synopsys translate_on
 
   // manycore response to host
   // -------------------------
