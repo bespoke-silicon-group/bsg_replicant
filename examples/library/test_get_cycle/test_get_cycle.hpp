@@ -29,6 +29,6 @@
 #define TEST_GET_CYCLE_H
 #include <bsg_manycore.h>
 #include <inttypes.h>
-#include "../cl_manycore_regression.h"
+#include <cl_manycore_regression.h>
 
 #endif

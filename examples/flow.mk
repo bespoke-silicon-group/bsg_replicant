@@ -45,9 +45,6 @@ include $(EXAMPLES_PATH)/compilation.mk
 # Include platform-specific execution rules
 include $(EXAMPLES_PATH)/execution.mk
 
-# regression.mk defines the targets regression and <test_name.log>
-include $(EXAMPLES_PATH)/regression.mk
-
 .DEFAULT_GOAL := help
 help:
 	@echo "Usage:"
