@@ -148,20 +148,22 @@ endif
 %.dve: %.vpd
 	$(DVE) -full64 -vpd $< &
 
-# Not remove intermediate targets 
-.PRECIOUS: %.operation_trace.csv %.vanilla_operation_trace.csv %.vcache_operation_trace.csv %.vanilla_stats.csv %.vcache_stats.csv
+# Do Not remove intermediate targets 
+.PRECIOUS: %.vanilla_stats.csv
+.PRECIOUS: %.operation_trace.csv %.vanilla_operation_trace.csv
+.PRECIOUS: %.vcache_operation_trace.csv %.vcache_stats.csv
+.PRECIOUS: %.infinite_mem_stats.csv %.vanilla.log
 
 .PHONY: platform.execution.clean
 platform.execution.clean:
-	rm -rf infinite_mem_stats.csv vcache_stats.csv
-	rm -rf *.infinite_mem_stats.csv *.vcache_stats.csv
-	rm -rf vanilla_operation_trace.csv operation_trace.csv
-	rm -rf *.vanilla_operation_trace.csv *.operation_trace.csv
-	rm -rf vcache_operation_trace.csv
-	rm -rf *.vcache_operation_trace.csv
-	rm -rf vanilla.log
-	rm -rf *.vanilla.log
-	rm -rf .test*
+	rm -rf vanilla_stats.csv *.vanilla_stats.csv
+	rm -rf infinite_mem_stats.csv *.infinite_mem_stats.csv
+	rm -rf vcache_stats.csv *.vcache_stats.csv
+	rm -rf vanilla_operation_trace.csv *.vanilla_operation_trace.csv
+	rm -rf operation_trace.csv *.operation_trace.csv
+	rm -rf vcache_operation_trace.csv *.vcache_operation_trace.csv
+	rm -rf vanilla.log *.vanilla.log
 	rm -rf *.vpd
+	rm -rf .test*
 
 execution.clean: platform.execution.clean
