@@ -214,7 +214,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         // instantiate it again.
         auto m = machines.find(id);
         if(m == machines.end()){
-                machines[id] = new SimulatorWrapper(hierarchy);
+                machines[id] = new SimulationWrapper(hierarchy);
         }
         platform->top = machines[id];
 
@@ -265,7 +265,8 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
                 delete platform;
                 return err;
         }
-        Verilated::assertOn(true);
+        // Enable assertions for two-state simulators
+        platform->top->assertOn(true);
         return HB_MC_SUCCESS;
 
 }

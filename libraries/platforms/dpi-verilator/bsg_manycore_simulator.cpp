@@ -32,35 +32,42 @@
 // libbsg_manycore_runtime.so to be compiled independently of from Verilator,
 // since Vmanycore_tb_top is not included in those source files. 
 
-// SimulatorWrapper simply hides Vmanycore_tb_top behind a void *. The only
-// method that VerilatorWrapper needs to implement is eval(), which advances
-// simulator time.
+// SimulatorWrapper hides Vmanycore_tb_top behind a void *. 
 
 #include <bsg_manycore_simulator.hpp>
 #include <bsg_nonsynth_dpi_clock_gen.hpp>
 #include <verilated.h>
 #include <Vmanycore_tb_top.h>
 
-
-SimulatorWrapper::SimulatorWrapper(){
+SimulationWrapper::SimulationWrapper(std::string &hierarchy){
         Vmanycore_tb_top *top;
         this->top = reinterpret_cast<void *>(new Vmanycore_tb_top());
         
+        // When Verilator simulation starts, we want to disable
+        // assertion because it is a two-state simulator and the lack
+        // of z/x may cause erroneous assertions.
+        Verilated::assertOn(false);
+
+        // Uncomment THIS and the statement in verilator_top.sv to enable tracing
+        // Verilated::traceEverOn(true);
+
+        this->top->eval();
 }
 
-SimulatorWrapper::assertOn(bool val){
+// Change the assertion state. This does not need to be implemented in
+// 4-state simulators like VCS
+SimulationWrapper::assertOn(bool val){
         Verilated::assertOn(val);
 }
 
-void SimulatorWrapper::eval(){
+// Cause time to proceed. 
+void SimulationWrapper::eval(){
         Vmanycore_tb_top *top;
         top = reinterpret_cast<Vmanycore_tb_top *>(this->top);
         top->eval();
-        // If Waveform Generation is needed in verilator, you must add this call
-        // trace_object->dump(sc_time_stamp());
 }
 
-SimulatorWrapper::~SimulatorWrapper(){
+SimulationWrapper::~SimulationWrapper(){
         Vmanycore_tb_top *top;
         top = reinterpret_cast<Vmanycore_tb_top *>(this->top);
         delete top;
