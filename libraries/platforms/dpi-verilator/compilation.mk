@@ -32,23 +32,4 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-# This file REQUIRES several variables to be set. They are typically
-# set by the Makefile that includes this makefile..
-# 
-
-.PRECIOUS: %.o
-
-# each regression target needs to build its .o from a .c and .h of the
-# same name
-%.o: %.c %.h
-	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
-
-# ... or a .cpp and .hpp of the same name
-%.o: %.cpp %.hpp
-	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
-
-.PHONY: platform.compilation.clean
-platform.compilation.clean:
-	rm -rf *.o
-
-compilation.clean: platform.compilation.clean
+include $(LIBRARIES_PATH)/platforms/aws-fpga/compilation.mk
