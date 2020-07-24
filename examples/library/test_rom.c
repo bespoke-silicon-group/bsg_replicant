@@ -61,16 +61,7 @@ int test_rom (int argc, char **argv) {
 
 
         /* Read configuration and test values */
-#ifdef COSIM
-        bsg_pr_test_info("Checking that the COSIM Major Version Number is %d\n", expected);
-        result = hb_mc_config_get_version_major(config);
-        if(result > major_version_max){
-                bsg_pr_test_err("(COSIM) Incorrect Major Version Number. "
-                                "Got: %d, expected <= %d\n", result, major_version_max);
-                fail = 1;
-        }
-#else
-        minexpected = 0; maxexpected = 3;
+        minexpected = 0; maxexpected = 4;
         bsg_pr_test_info("Checking that the F1 Major Version Number is "
                         "between %d and %d\n", minexpected, maxexpected);
         result = hb_mc_config_get_version_major(config);
@@ -80,7 +71,7 @@ int test_rom (int argc, char **argv) {
                                 result, minor_version_min, minor_version_max);
                 fail = 1;
         }
-#endif
+
         bsg_pr_test_info("Read Major Version = %" PRIu32 ", "
                          "Minor Version = %" PRIu32 "\n",
                          hb_mc_config_get_version_major(config),

@@ -94,7 +94,6 @@ LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS := 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES := 
 
-# This depends on LIB_OBJECTS until -DCOSIM is removed
 include $(BSG_PLATFORM_PATH)/library.mk
 
 

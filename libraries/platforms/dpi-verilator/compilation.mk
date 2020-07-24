@@ -25,11 +25,13 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment defines rules for compilation of the C/C++
-# files for running regression tests.
+# This Makefile fragment defines rules/flags for compiling C/C++ files
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# The bsg_manycore_runtime headers are in $(LIBRARIES_PATH) (for cosimulation)
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_MACHINE_PATH)
+
+CXXFLAGS   += -lstdc++ $(INCLUDES) $(DEFINES)
+CFLAGS     += $(INCLUDES) $(DEFINES)
 
 include $(LIBRARIES_PATH)/platforms/aws-fpga/compilation.mk

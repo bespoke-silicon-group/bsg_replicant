@@ -49,9 +49,6 @@ include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
-# -DCOSIM is still necessary, for now
-$(LIB_OBJECTS): CXXFLAGS += -DCOSIM
-$(LIB_OBJECTS): CFLAGS += -DCOSIM
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
