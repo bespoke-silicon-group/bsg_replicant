@@ -88,7 +88,14 @@ module manycore_tb_top
    // Global Counter for Profilers, Tracing, Debugging
    logic [global_counter_width_lp-1:0] global_ctr;
 
+// Verilator uses a clock generator that is controlled by C/C++
+// (bsg_nonsynth_dpi_clock_gen), whereas VCS uses the normal
+// nonsynthesizable clock generator (bsg_nonsynth_clock_gen)
+`ifdef VERILATOR
    bsg_nonsynth_dpi_clock_gen
+`else
+   bsg_nonsynth_clock_gen
+`endif
      #(.cycle_time_p(lc_cycle_time_p)
        )
    core_clk_gen
@@ -779,5 +786,28 @@ module manycore_tb_top
    ctr
      (.clk_i(core_clk)
       ,.reset_i(core_reset));  
+
+   // In VCS, the C/C++ testbench is controlled by the
+   // simulator. Therefore, we need to "call into" the C/C++ program
+   // using the cosim_main function, during the initial block.
+   //
+   // DPI Calls in cosim_main will cause simulator time to progress.
+   //
+   // This mirrors the DPI functions in aws simulation
+`ifndef VERILATOR
+   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args);
+   initial begin
+      int exit_code;
+      string args;
+      longint t;
+      $value$plusargs("c_args=%s", args);
+      manycore_tb_top.cosim_main(exit_code, args);
+      if(exit_code < 0) 
+          $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
+      else 
+          $display("BSG COSIM PASS: Test passed!");
+      $finish;
+   end
+`endif
 
 endmodule

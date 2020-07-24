@@ -54,9 +54,7 @@ VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 ################################################################################
 # Simulation Sources
 ################################################################################
-# The aws-vcs platform uses unsynthesizable sources for simulation
 
-# Verilator NS Modules
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
 
@@ -117,7 +115,8 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_
 # WAW Detector
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
 
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil_pkg.v # TODO: Remove dependence
+# TODO: Remove dependence on AXI pkg
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil_pkg.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos_pkg.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos.v
 
@@ -139,4 +138,4 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 # Top-level module name
 BSG_DESIGN_TOP := manycore_tb_top
 
-VSOURCES += $(BSG_PLATFORM_PATH)/hardware/verilator_top.sv
+VSOURCES += $(BSG_PLATFORM_PATH)/hardware/dpi_top.sv
