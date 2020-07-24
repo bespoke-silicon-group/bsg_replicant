@@ -27,11 +27,12 @@ platforms could simulate the manycore and run the host code natively
 (VCS, Verilator), emuate the manycore (AWS F1) and run the host code
 natively, or simulate the manycore and host (coming soon!).
 
-We currently support three platforms:
+We currently support four platforms:
 
 - `aws-fpga`: Native (x86) host execution, Emulated Manycore (with an FPGA), 
 - `aws-vcs`: Native (x86) host execution, Simulated Manycore (with VCS, on a simulated FPGA)
-- `dpi-verilator`: Native (x86) host execution, Simulated Manycore (with Verilator)
+- `dpi-verilator`: Native (x86) host execution, Simulated Manycore (with Verilator, using DPI for IO)
+- `dpi-vcs`: Native (x86) host execution, Simulated Manycore (with VCS, using DPI for IO)
 
 Each platform has different advantages and drawbacks. Simulated
 platforms support an in-depth profiling infrastructure and emulated
@@ -42,9 +43,9 @@ encrypted HDL. The `aws-fpga` systems is much faster, but has a
 limited size, and no introspection or profiling tools.
 
 To select the execution platform, set the `BSG_PLATFORM` variable in
-[platform.mk](platform.mk). Most users will use `aws-vcs` or
-`dpi-verilator`. Users with access to AWS F1 images should use
-`aws-fpga`.
+[platform.mk](platform.mk). Most users will use `dpi-vcs` or
+`dpi-verilator`. Users with Vivado installed can use `aws-vcs`. Users
+with access to AWS F1 images should use `aws-fpga`.
 
 ## Machines
 
