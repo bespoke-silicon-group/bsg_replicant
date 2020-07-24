@@ -138,4 +138,7 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 # Top-level module name
 BSG_DESIGN_TOP := manycore_tb_top
 
-VSOURCES += $(BSG_PLATFORM_PATH)/hardware/dpi_top.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/hardware/dpi_top.sv
+
+VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
+VINCLUDES += $(BSG_PLATFORM_PATH)
