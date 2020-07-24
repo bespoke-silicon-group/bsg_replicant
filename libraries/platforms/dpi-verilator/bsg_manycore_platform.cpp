@@ -183,7 +183,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         int r = HB_MC_FAIL, err;
         
         hb_mc_platform_t *platform = new hb_mc_platform_t;
-        std::string hierarchy = "TOP.manycore_tb_top";
+        std::string hierarchy(svGetNameFromScope(svGetScope()));
         hb_mc_idx_t x, y;
         hb_mc_config_raw_t rd;
 
