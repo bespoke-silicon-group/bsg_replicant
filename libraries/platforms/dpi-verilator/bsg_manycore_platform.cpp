@@ -79,7 +79,6 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, &cap);
 
         do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
 
                 switch(type){
@@ -188,9 +187,6 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         hb_mc_idx_t x, y;
         hb_mc_config_raw_t rd;
 
-        // Uncomment THIS and the statement in verilator_top.sv to enable tracing
-        // Verilated::traceEverOn(true);
-        Verilated::assertOn(false);
         // check if mc is already initialized
         if (mc->platform)
                 return HB_MC_INITIALIZED_TWICE;
@@ -302,7 +298,6 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
 
 
         do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
                 err = platform->dpi->tx_req(*pkt);
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
@@ -344,7 +339,6 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
         }
 
         do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
 
                 switch(type){
@@ -411,7 +405,6 @@ int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout)
         }
 
         do {
-                bsg_nonsynth_dpi::bsg_timekeeper::next();
                 top->eval();
                 res = platform->dpi->get_credits(*credits);
         } while(res == BSG_NONSYNTH_DPI_NOT_WINDOW);
