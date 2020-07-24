@@ -31,8 +31,7 @@
 #include <bsg_manycore_profiler.hpp>
 #include <bsg_manycore_tracer.hpp>
 
-#include <bsg_manycore_verilator.hpp>
-#include <verilated.h>
+#include <bsg_manycore_simulator.hpp>
 
 #include <bsg_nonsynth_dpi_errno.hpp>
 #include <bsg_nonsynth_dpi_manycore.hpp>
@@ -58,7 +57,7 @@
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
 typedef struct hb_mc_platform_t {
-        VerilatorWrapper *top;
+        SimulationWrapper *top;
         bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
         hb_mc_manycore_id_t id;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
@@ -72,7 +71,7 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 
         int err, drains = 0;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-        VerilatorWrapper *top = platform->top;
+        SimulationWrapper *top = platform->top;
         __m128i *pkt;
 
         hb_mc_config_raw_t cap;
@@ -115,7 +114,7 @@ static int hb_mc_platform_dpi_init(hb_mc_platform_t *platform, std::string hiera
 {
         svScope scope;
         int credits = 0, err;
-        VerilatorWrapper *top = platform->top;
+        SimulationWrapper *top = platform->top;
 
         top->eval();
 
@@ -142,7 +141,7 @@ static void hb_mc_platform_dpi_cleanup(hb_mc_platform_t *platform)
 // These track active manycore machine IDs, and top-level
 // instantiations.
 static std::set<hb_mc_manycore_id_t> active_ids;
-static std::map<hb_mc_manycore_id_t,VerilatorWrapper*> machines;
+static std::map<hb_mc_manycore_id_t,SimulationWrapper*> machines;
 
 /**
  * Clean up the runtime platform
@@ -215,7 +214,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         // instantiate it again.
         auto m = machines.find(id);
         if(m == machines.end()){
-                machines[id] = new VerilatorWrapper();
+                machines[id] = new SimulatorWrapper(hierarchy);
         }
         platform->top = machines[id];
 
@@ -284,7 +283,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                             long timeout)
 {
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-        VerilatorWrapper *top = platform->top;
+        SimulationWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
         const char *typestr = hb_mc_fifo_tx_to_string(type);
 
@@ -334,7 +333,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 
         int err;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-        VerilatorWrapper *top = platform->top;
+        SimulationWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
 
         if (timeout != -1) {
@@ -403,7 +402,7 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
 int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout){
         int res;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-        VerilatorWrapper *top = platform->top;
+        SimulationWrapper *top = platform->top;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
