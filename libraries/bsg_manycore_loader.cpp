@@ -194,15 +194,12 @@ static int hb_mc_loader_eva_write(const Elf32_Phdr *phdr,
         }
 
         if (hb_mc_manycore_npa_is_dram(mc, &start_npa)) {
-              rc = hb_mc_manycore_eva_write_dma(mc, map, &tile,
-                                                &start_eva, data, sz);
-              if (rc == HB_MC_SUCCESS) {
-                      bsg_pr_err("Wrote %s using DMA\n", segname);
-                      return rc;
-              } else {
-                      bsg_pr_err("Falling back to normal write for %s\n", segname);
-              }
-              // else fallback to normal eva write
+                rc = hb_mc_manycore_eva_write_dma(mc, map, &tile,
+                                                  &start_eva, data, sz);
+                if (rc == HB_MC_SUCCESS) {
+                        return rc;
+                }
+                // else fallback to normal eva write
         }
 
         rc = hb_mc_manycore_eva_write(mc, map, &tile, &start_eva, data, sz);
