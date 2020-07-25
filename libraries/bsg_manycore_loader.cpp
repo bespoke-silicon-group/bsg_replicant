@@ -179,12 +179,31 @@ static int hb_mc_loader_eva_write(const Elf32_Phdr *phdr,
                                   const hb_mc_eva_map_t *map,
                                   hb_mc_coordinate_t tile)
 {
-        hb_mc_eva_t eva = start_eva;
-        size_t off = 0, rem = sz;
+        hb_mc_npa_t start_npa;
+        size_t npa_sz = 0;
         int rc;
         char segname[64];
 
         hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
+
+        rc = hb_mc_eva_to_npa(mc, map, &tile, &start_eva, &start_npa, &npa_sz);
+        if(rc != HB_MC_SUCCESS){
+                bsg_pr_err("%s: Failed to translate EVA into a NPA\n",
+                           __func__);
+                return rc;
+        }
+
+        if (hb_mc_manycore_npa_is_dram(mc, &start_npa)) {
+              rc = hb_mc_manycore_eva_write_dma(mc, map, &tile,
+                                                &start_eva, data, sz);
+              if (rc == HB_MC_SUCCESS) {
+                      bsg_pr_err("Wrote %s using DMA\n", segname);
+                      return rc;
+              } else {
+                      bsg_pr_err("Falling back to normal write for %s\n", segname);
+              }
+              // else fallback to normal eva write
+        }
 
         rc = hb_mc_manycore_eva_write(mc, map, &tile, &start_eva, data, sz);
         if (rc != HB_MC_SUCCESS) {

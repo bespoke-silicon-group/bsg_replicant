@@ -294,6 +294,19 @@ extern "C" {
         /***********/
 
         /**
+         * Check if NPA is in DRAM.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t
+         * @return One if the NPA maps to DRAM - Zero otherwise.
+         */
+        inline int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc,
+                                              const hb_mc_npa_t *npa)
+        {
+                const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+                return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
+        }
+
+        /**
          * Check if DMA writing is supported.
          * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
          * @return One if DMA writing is supported - Zero otherwise.
