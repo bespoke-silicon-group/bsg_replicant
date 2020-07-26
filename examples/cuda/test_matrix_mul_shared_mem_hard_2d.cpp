@@ -39,10 +39,10 @@
 #define DMA
 
 // Matrix sizes:
-#define A_HEIGHT 32        // M
-#define A_WIDTH  32        // N
+#define A_HEIGHT 64        // M
+#define A_WIDTH  64        // N
 #define B_HEIGHT A_WIDTH
-#define B_WIDTH  32        // P
+#define B_WIDTH  64        // P
 #define C_HEIGHT A_HEIGHT
 #define C_WIDTH  B_WIDTH
 #define NUM_ITER 1
@@ -200,6 +200,7 @@ int kernel_matrix_mul_shared_mem_hard_2d (int argc, char **argv) {
         constexpr size_t C_size = C_HEIGHT * C_WIDTH * sizeof(float);
 
 
+
         // Allocate A on the device
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, A_size, &A_device));
 
@@ -209,40 +210,39 @@ int kernel_matrix_mul_shared_mem_hard_2d (int argc, char **argv) {
         // Allocate C on the device
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, C_size, &C_device));
 
-        // Copy A & B from host onto device DRAM.
-        hb_mc_dma_htod_t htod_jobs [] = {
-                {
-                        .d_addr = A_device,
-                        .h_addr = A,
-                        .size   = A_size
-                },
-                {
-                        .d_addr = B_device,
-                        .h_addr = B,
-                        .size   = B_size
-                },
-                {
-                        .d_addr = C_device,
-                        .h_addr = C,
-                        .size   = C_size
-                }
-        };
-
-        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 2));
-
+        // Temporarily disabled DMA accesses
         // // Copy A & B from host onto device DRAM.
-        // void *dst = (void *) ((intptr_t) A_device);
-        // void *src = (void *) &A[0];
-        // BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src,
-        //                                    (A_HEIGHT * A_WIDTH) * sizeof(A[0]),
-        //                                    HB_MC_MEMCPY_TO_DEVICE));
+        // hb_mc_dma_htod_t htod_jobs [] = {
+        //         {
+        //                 .d_addr = A_device,
+        //                 .h_addr = A,
+        //                 .size   = A_size
+        //         },
+        //         {
+        //                 .d_addr = B_device,
+        //                 .h_addr = B,
+        //                 .size   = B_size
+        //         },
+        //         {
+        //                 .d_addr = C_device,
+        //                 .h_addr = C,
+        //                 .size   = C_size
+        //         }
+        // };
+
+        // BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 2));
+
+        // Copy A & B from host onto device DRAM.
+        void *dst = (void *) ((intptr_t) A_device);
+        void *src = (void *) &A[0];
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, A_size,
+                                           HB_MC_MEMCPY_TO_DEVICE));
 
 
-        // dst = (void *) ((intptr_t) B_device);
-        // src = (void *) &B[0];
-        // BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src,
-        //                                    (B_HEIGHT * B_WIDTH) * sizeof(B[0]),
-        //                                    HB_MC_MEMCPY_TO_DEVICE));
+        dst = (void *) ((intptr_t) B_device);
+        src = (void *) &B[0];
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, B_size,
+                                           HB_MC_MEMCPY_TO_DEVICE));
 
         // Prepare list of input arguments for kernel.
         uint32_t cuda_argv[8] = {A_device, B_device, C_device,
@@ -272,21 +272,21 @@ int kernel_matrix_mul_shared_mem_hard_2d (int argc, char **argv) {
         // hb_mc_manycore_trace_disable((&device)->mc);
 
 
-        // Copy result matrix back from device DRAM into host memory.
-        hb_mc_dma_dtoh_t dtoh_job = {
-                .d_addr = C_device,
-                .h_addr = C,
-                .size   = C_size 
-        };
-
-        BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
-
+        // Temporarily disabled DMA accesses
         // // Copy result matrix back from device DRAM into host memory.
-        // src = (void *) ((intptr_t) C_device);
-        // dst = (void *) &C[0];
-        // BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src,
-        //                                    (C_HEIGHT * C_WIDTH) * sizeof(float),
-        //                                    HB_MC_MEMCPY_TO_HOST));
+        // hb_mc_dma_dtoh_t dtoh_job = {
+        //         .d_addr = C_device,
+        //         .h_addr = C,
+        //         .size   = C_size 
+        // };
+
+        // BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
+
+        // Copy result matrix back from device DRAM into host memory.
+        src = (void *) ((intptr_t) C_device);
+        dst = (void *) &C[0];
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, C_size,
+                                           HB_MC_MEMCPY_TO_HOST));
 
 
         // Freeze the tiles and memory manager cleanup.
@@ -296,9 +296,8 @@ int kernel_matrix_mul_shared_mem_hard_2d (int argc, char **argv) {
         float max = 1.0;
         double sse = matrix_sse(R, C, C_HEIGHT, C_WIDTH);
 
-        matrix_print_diff(R, C, C_HEIGHT, C_WIDTH, max);
-        printf("\n\n");
-        matrix_print_diff(C, R, C_HEIGHT, C_WIDTH, max);
+        // Print Result matrix, color coded by correct(green) or wrong(red) 
+        // matrix_print_diff(C, R, C_HEIGHT, C_WIDTH, max);
 
         if (std::isnan(sse) || sse > max) {
                 bsg_pr_test_info(BSG_RED("Matrix Mismatch. SSE: %f\n"), sse);
