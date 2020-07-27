@@ -193,10 +193,11 @@ static int hb_mc_loader_eva_write(const Elf32_Phdr *phdr,
                 return rc;
         }
 
-        if (hb_mc_manycore_npa_is_dram(mc, &start_npa)) {
+        if (hb_mc_manycore_npa_is_dram(mc, &start_npa) &&
+            hb_mc_manycore_dram_is_enabled(mc)) {
                 rc = hb_mc_manycore_eva_write_dma(mc, map, &tile,
                                                   &start_eva, data, sz);
-                if (rc == HB_MC_SUCCESS) {
+                if (rc != HB_MC_NOIMPL) {
                         return rc;
                 }
                 // else fallback to normal eva write
