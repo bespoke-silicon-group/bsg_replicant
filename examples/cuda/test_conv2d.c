@@ -89,7 +89,7 @@ void conv2d(const float *A,
                                         if((0 <= ay && ay < M) &&
                                            (0 <= ax && ax < N))
                                                 a = A[ay * N + ax];
-                                        res += filter[fy * W + fx] * a;
+                                        res = fmaf(filter[fy * W + fx], a, res);
                                  }
                         B[by * result_w + bx] = res;
                 }
@@ -104,7 +104,7 @@ int kernel_conv2d(int argc, char **argv)
         elf = args.path;
         test_name = args.name;
 
-        srand(time(0));
+        srand(42);
         int rc;
         hb_mc_device_t manycore, *mc = &manycore;
         rc = hb_mc_device_init(mc, test_name, 0);

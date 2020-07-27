@@ -74,8 +74,7 @@ void conv1d(const float *A,
                         float a = 0;
                         if(0 <= a_idx && a_idx < N)
                                 a = A[a_idx];
-
-                        res += filter[j] * a;
+                        res = fmaf(filter[j], a, res);
                 }
                 B[i] = res;
         }
@@ -90,7 +89,7 @@ int kernel_conv1d(int argc, char **argv)
         elf = args.path;
         test_name = args.name;
 
-        srand(time(0));
+        srand(42);
         int rc;
         hb_mc_device_t manycore, *mc = &manycore;
         rc = hb_mc_device_init(mc, test_name, 0);
