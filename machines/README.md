@@ -14,12 +14,16 @@ Makefile.machine.include file.
 
 All machines are supported by the `aws-vcs` platform.
 
-These machines are supported by the `verilator-dpi` platform:
+These machines are supported by the `dpi-verilator` and `dpi-vcs` platform:
 
 - timing_v0_8_4
 - timing_v0_16_8
 - timing_v0_32_16
 - timing_v0_64_32
+- baseline_v0_8_4
+- baseline_v0_16_8
+- baseline_v0_32_16
+- baseline_v0_64_32
 - 4x4_fast_n_fake
 - 16x8_fast_n_fake
 
@@ -27,24 +31,29 @@ The `aws-fpga` platform only supports the 4x4_blocking_vcache_f1_model.
 
 ## Performance Metric Machines
 
-- timing_v0_16_8: This is a 16x8 array of RISC-V Vanilla Cores with
-  caches on top and bottom. The top caches all share an HBM channel,
-  and the bottom caches are mapped to a separate, independent, HBM
-  channel. Each cache is mapped to a separate channel bank within its
-  respective channel. *This configuration should be the default for
-  taking performance measurements and making decisions based on them.*
+- timing_v0_16_8 and baseline_v0_16_8: This is a 16x8 array of RISC-V
+  Vanilla Cores with caches on top and bottom. The top caches all
+  share an HBM channel, and the bottom caches are mapped to a
+  separate, independent, HBM channel. Each cache is mapped to a
+  separate channel bank within its respective channel. *This
+  configuration should be the default for taking performance
+  measurements and making decisions based on them.*
 
-- timing_v0_32_16: Same as timing_v0_16_8, but a 32x16 array of
-  tiles. There are four HBM channels.
+- timing_v0_32_16 and baseline_v0_32_16: Same as
+  timing/baseline_v0_16_8, but a 32x16 array of tiles. There are four
+  HBM channels.
 
-- timing_v0_64_32: Same as timing_v0_16_8, but a 64x32 pod. There are
-  eight HBM channels.
+- timing_v0_64_32 and baseline_v0_64_32: Same as
+  timing/baseline_v0_16_8, but a 64x32 pod. There are eight HBM
+  channels.
 
-- timing_v0_8_4: Same as timing_v0_16_8, but a 8x4 pod. There is one
-  HBM channel. This is probably not a sensible configuration, as the
-  tile to channel ratio is very low. But for memory bound benchmarks,
-  it may be reasonable to use for iteration.
+- timing_v0_8_4 and baseline_v0_8_4: Same as timing/baseline_v0_16_8,
+  but a 8x4 pod. There is one HBM channel. This is probably not a
+  sensible configuration, as the tile to channel ratio is very
+  low. But for memory bound benchmarks, it may be reasonable to use
+  for iteration.
 
+The baseline designs use a crossbar network to access memory.
 
 ## Correctness Machines
 
