@@ -122,9 +122,6 @@ LDFLAGS    += -lmachine -L$(BSG_MACHINE_PATH) -Wl,-rpath=$(BSG_MACHINE_PATH)
 LDFLAGS    += -lbsg_manycore_runtime -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
 LDFLAGS    += -lm
 
-INCLUDES   += -I$(LIBRARIES_PATH)
-INCLUDES   += -I$(BSG_MACHINE_PATH)
-
 %: %.o $(BSG_MACHINE_PATH)/libmachine.so $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 	g++ -std=c++11 $< -o $@ $(LDFLAGS)
 

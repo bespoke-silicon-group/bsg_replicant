@@ -37,7 +37,7 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../environment.mk
+include $(shell git rev-parse --show-toplevel)/environment.mk
 include $(HARDWARE_PATH)/hardware.mk
 REGRESSION_TESTS_TYPE = library
 
@@ -78,9 +78,6 @@ INDEPENDENT_TESTS += test_read_mem_scatter_gather
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
-
-CDEFINES   += $(DEFINES)
-CXXDEFINES += $(DEFINES)
 
 FLAGS     = -g -Wall
 CFLAGS   += -std=c99 $(FLAGS) 

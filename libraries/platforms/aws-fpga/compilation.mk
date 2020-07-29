@@ -36,19 +36,27 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 # 
 
-.PRECIOUS: %.o
+.PRECIOUS: %.o $(BUILD_DIR)/%.o
+
+CXXFLAGS   += $(INCLUDES) $(DEFINES) $(CXXDEFINES) $(CXXFLAGS)
 
 # each regression target needs to build its .o from a .c and .h of the
 # same name
 %.o: %.c %.h
-	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
+	$(CC) -c -o $@ $< $(INCLUDES) $(DEFINES) $(CDEFINES) $(CFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(SRC_DIR)/%.h
+	$(CC) -c -o $@ $< $(INCLUDES) $(DEFINES) $(CDEFINES) $(CFLAGS)
 
 # ... or a .cpp and .hpp of the same name
 %.o: %.cpp %.hpp
-	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp $(SRC_DIR)/%.hpp
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
 
 .PHONY: platform.compilation.clean
 platform.compilation.clean:
-	rm -rf *.o
+	rm -rf *.o $(BUILD_DIR)/%.o
 
 compilation.clean: platform.compilation.clean
