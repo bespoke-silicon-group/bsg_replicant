@@ -26,19 +26,16 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-// * This test performs sum reduction on hardware tile group shared 
-//   memory. It uses the built-in method in the hardware tile group
-//   shared mem library.
-// * An array is copied from DRAM into tile group shared memory, and 
-//   the reduction sum is stored back into a single element in DRAM, 
-//   which is then compared against the result to verify correctness.
+// * This test loads a block of memory from DRAM into hardware 
+//   tile group shared memory, and stores it back to DRAM in 
+//   another location to compare against. 
 // * *** WARNING ***: Tile group dimensions are fixed at 4x4
 //   If you change tile group dimensions, you have to use matching 
 //   tile group dimensions in the kernel code residing at 
 //   "bsg_bladerunner/bsg_manycore/software/spmd/bsg_cuda_lite_runtime/
-//   hardware_shared_mem_reduce/kernel_hardware_shared_mem_reduce.cpp"
+//   hardware_shared_mem_load_store/kernel_hardware_shared_mem_load_store.cpp"
 
-#include "test_hardware_shared_mem_reduce.hpp"
+#include "test_hardware_shared_mem_load_store.hpp"
 
 #define DMA
 
@@ -56,7 +53,21 @@ void reduce_sum (TA *A, TA *sum, uint64_t N) {
         return;
 }
 
-int kernel_hardware_shared_mem_reduce (int argc, char **argv) {
+// Compute the sum of squared error between vectors A and B (N)
+template <typename T>
+double vector_sse (const T *A, const T *B, uint64_t N) {
+        double sum = 0;
+        for (uint64_t x = 0; x < N; x ++) {
+                T diff = A[x] - B[x];
+                if(std::isnan(diff)){
+                        return diff;
+                }
+                sum += diff * diff;
+        }
+        return sum;
+}
+
+int kernel_hardware_shared_mem_load_store (int argc, char **argv) {
 
         int rc;
         char *bin_path, *test_name;
@@ -84,8 +95,7 @@ int kernel_hardware_shared_mem_reduce (int argc, char **argv) {
 
         // Allocate A, H (host result) , and R (device result) on the host
         float A[WIDTH];
-        float H = 0.0;
-        float R = 0.0;
+        float B[WIDTH];
 
         // Generate random numbers. Since the Manycore can't handle infinities,
         // subnormal numbers, or NANs, filter those out.
@@ -100,10 +110,6 @@ int kernel_hardware_shared_mem_reduce (int argc, char **argv) {
 
                 A[i] = static_cast<float>(res);
         }
-
-
-        // Generate the known-correct results on the host
-        reduce_sum (A, &H, WIDTH);
 
         // Initialize device, load binary and unfreeze tiles.
         hb_mc_device_t device;
@@ -121,17 +127,17 @@ int kernel_hardware_shared_mem_reduce (int argc, char **argv) {
         // Allocate memory on the device for A, B and C. Since sizeof(float) ==
         // sizeof(int32_t) > sizeof(int16_t) > sizeof(int8_t) we'll reuse the
         // same buffers for each test (if multiple tests are conducted)
-        hb_mc_eva_t A_device, R_device;
+        hb_mc_eva_t A_device, B_device;
 
         constexpr size_t A_size = WIDTH * sizeof(float);
-        constexpr size_t R_size = 1 * sizeof(float);
+        constexpr size_t B_size = WIDTH * sizeof(float);
 
 
         // Allocate A on the device
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, A_size, &A_device));
 
         // Allocate R on the device
-        BSG_CUDA_CALL(hb_mc_device_malloc(&device, R_size, &R_device));
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, B_size, &B_device));
 
         // Temporarily disabled DMA accesses
         // // Copy A from host onto device DRAM.
@@ -151,13 +157,14 @@ int kernel_hardware_shared_mem_reduce (int argc, char **argv) {
         BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, A_size,
                                            HB_MC_MEMCPY_TO_DEVICE));
 
+
         // Prepare list of input arguments for kernel.
-        uint32_t cuda_argv[4] = {A_device, R_device, WIDTH, block_size};
+        uint32_t cuda_argv[4] = {A_device, B_device, WIDTH, block_size};
 
         // Enquque grid of tile groups, pass in grid and tile group dimensions,
         // kernel name, number and list of input arguments
         BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim,
-                                            "kernel_hardware_shared_mem_reduce", 4, cuda_argv))
+                                            "kernel_hardware_shared_mem_load_store", 4, cuda_argv))
 
         // Start the tracer (vanilla_operation_trace.csv)
         // hb_mc_manycore_trace_enable((&device)->mc);
@@ -188,21 +195,20 @@ int kernel_hardware_shared_mem_reduce (int argc, char **argv) {
         // BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
 
         // Copy result matrix back from device DRAM into host memory.
-        src = (void *) ((intptr_t) R_device);
-        dst = (void *) &R;
-        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, R_size,
+        src = (void *) ((intptr_t) B_device);
+        dst = (void *) &(B[0]);
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, B_size,
                                            HB_MC_MEMCPY_TO_HOST));
-
 
         // Freeze the tiles and memory manager cleanup.
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
 
-        // Compare the known-correct matrix (R) and the result matrix (C)
+        // Compare the known-correct result (A) and the result vector (B)
         float max = 1.0;
-        double sse = (R - H) * (R - H);
+        double sse = vector_sse(A, B, WIDTH);
 
         if (std::isnan(sse) || sse > max) {
-                bsg_pr_test_info(BSG_RED("Result Mismatch. Host: %f\tDevice: %f\tSSE: %f\n"), H, R, sse);
+                bsg_pr_test_info(BSG_RED("Vector Mismatch. SSE: %f\n"), sse);
                 return HB_MC_FAIL;
         }
 
@@ -218,7 +224,7 @@ int vcs_main(int argc, char ** argv) {
 int main(int argc, char ** argv) {
 #endif
         bsg_pr_test_info("test_vec_add Regression Test\n");
-        int rc = kernel_hardware_shared_mem_reduce(argc, argv);
+        int rc = kernel_hardware_shared_mem_load_store(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }

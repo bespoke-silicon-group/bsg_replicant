@@ -82,6 +82,7 @@ INDEPENDENT_TESTS += test_shared_mem
 INDEPENDENT_TESTS += test_shared_mem_load_store
 INDEPENDENT_TESTS += test_matrix_mul
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem
+INDEPENDENT_TESTS += test_hardware_shared_mem_load_store
 INDEPENDENT_TESTS += test_hardware_shared_mem_reduce
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem_hard
 INDEPENDENT_TESTS += test_matrix_mul_shared_mem_hard_2d
