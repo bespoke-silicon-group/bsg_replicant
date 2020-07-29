@@ -46,7 +46,7 @@ int kernel_multiple_binary_load (int argc, char **argv) {
 
         bsg_pr_test_info("Running the CUDA Init Finish Kernel on a 2x2 tile group.\n\n");
 
-        bsg_pr_test_info("PART 1 -- Kernel: empty -- Tile gourp: 2x2.\n");
+        bsg_pr_test_info("PART 1 -- Kernel: empty -- Tile group: 2x2.\n");
         /*****************************************************************************************************************
         * Define path to binary.
         * Initialize device, load binary and unfreeze tiles.
@@ -113,7 +113,7 @@ int kernel_multiple_binary_load (int argc, char **argv) {
 
 
 
-        bsg_pr_test_info("PART 2 -- Kernel: empty -- Tile gourp: 2x2.\n");
+        bsg_pr_test_info("PART 2 -- Kernel: empty -- Tile group: 2x2.\n");
         /*****************************************************************************************************************
         * Define path to binary.
         * Initialize device, load binary and unfreeze tiles.

@@ -28,14 +28,18 @@
 ifndef __BSG_PLATFORM_MK
 __BSG_PLATFORM_MK := 1
 
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
+
 # BSG_F1_DIR: The path to the BSG F1 repository
 ifndef BSG_F1_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_F1_DIR is not defined$(NC)"))
 endif
 
 # BSG_PLATFORM defines the platform to run or simulate on while
-# running examples/regression. Current options are the directories in
-# platforms of this repository
+# running examples/regression. Current options are aws-vcs and
+# dpi-verilator for simulation, and aws-fpga for emulation.
 
 # We default to simulating the AWS machine uinsg Synopsys VCS-MX,
 # HOWEVER, if VCS_HOME is not defined then we will assume that
@@ -50,19 +54,31 @@ ifeq ($(filter $(BSG_PLATFORM),$(AVAILABLE_PLATFORMS)),)
     $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM value $(BSG_PLATFORM) is not a valid platform$(NC)"))
 endif
 
-
-# TODO: What happens if VCS_HOME is not defined, and BSG_PLATFORM is overriden
+# If aws-vcs is specified and VCS is installed, continue as normal
+ifeq ($(BSG_PLATFORM),aws-vcs)
 ifdef VCS_HOME
-# If VCS installed, continue as normal
+# Continue as normal with aws-vcs
+
 else ifdef AGFI
-# If VCS is not installed, check for AWS. We define AGFI in the
-# environment of every AGFI we build.
+# If VCS is not detected, check for AWS.
+# We define AGFI in the environment of every AMI we bulid, so this should be defined.
 BSG_PLATFORM := aws-fpga
 else
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: No working platforms available$(NC)"))
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: Platform aws-vcs specified, but VCS_HOME not defined by environment"))
+endif
 endif
 
 
+# If verilator is specified, check for VERILATOR_ROOT and VERILATOR
+ifeq ($(BSG_PLATFORM),dpi-verilator)
+ifndef VERILATOR_ROOT
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: VERILATOR_ROOT not defined$(NC)"))
+endif
+
+ifndef VERILATOR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: VERILATOR not defined$(NC)"))
+endif
+endif
 
 # BSG Platform Path is the path to the target platform, i.e. the
 # substrate that actually runs the machine. 

@@ -6,3 +6,4 @@ test_*
 !*.hpp
 .test_*
 vc_hdrs.h
+ucli.key

@@ -201,16 +201,15 @@ static inline bool hb_mc_floats_match(float a, float b) {
 
         return (diff / fminf(abs_a + abs_b, FLT_MAX)) < MAX_FLOAT_ERROR_TOLERANCE;
 }
+
 #ifdef __cplusplus
 extern "C" {
 void cosim_main(uint32_t *exit_code, char * args);
 }
 #endif
 
-#ifdef COSIM
 // Given a string, determine the number of space-separated arguments
-static
-int get_argc(char * args){
+static int get_argc(char * args){
         char *cur = args, prev=' ';
         int count = 1;
         while(*cur != '\0'){
@@ -256,7 +255,7 @@ void get_argv(char * args, int argc, char **argv){
                 cur++;
         }
 }
-#endif // COSIM
+
 static char doc[] = "A regression test for BSG Manycore on F1";
 
 struct arguments_none{

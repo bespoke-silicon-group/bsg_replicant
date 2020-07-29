@@ -25,11 +25,37 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef TEST_MANYCORE_COMPILE_H
-#define TEST_MANYCORE_COMPILE_H
-#include <bsg_manycore.h>
-#include <bsg_manycore_mmio.h>
-#include <inttypes.h>
-#include "../cl_manycore_regression.h"
+// This file implements the SimulationWrapper object. 
 
-#endif
+#ifndef __BSG_MANYCORE_SIMULATOR_HPP
+#define __BSG_MANYCORE_SIMULATOR_HPP
+#include <string>
+
+class SimulationWrapper{
+        // This is the generic pointer for implementation-specific
+        // simulator details. In Verilator, this is
+        // Vmanycore_tb_top. In VCS this is the scope
+        // for DPI.
+        void *top = nullptr;
+        std::string *root;
+public:
+        SimulationWrapper();
+        ~SimulationWrapper();
+
+        // Change the assertion state. 
+
+        // When Verilator simulation starts, we want to disable
+        // assertion because it is a two-state simulator and the lack
+        // of z/x may cause erroneous assertions.
+        //
+        // This does not need to be implemented in 4-state simulators
+        // like VCS
+        void assertOn(bool val);
+        
+        std::string getRoot();
+
+        // Cause time to proceed. 
+        // eval() wraps the Vmanycore_tb_top->eval() function.
+        void eval();
+};
+#endif // __BSG_MANYCORE_SIMULATOR_HPP
