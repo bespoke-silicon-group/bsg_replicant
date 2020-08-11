@@ -88,7 +88,13 @@ $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 .%/vcdplus.vpd: LOG_NAME=$(subst ..,.,$(TEST_NAME).debug.log)
 .%/vanilla_stats.csv: LOG_NAME=$(subst ..,.,$(TEST_NAME).log)
 
-.%/vcdplus.vpd .%/vanilla_stats.csv: 
+.%/vcdplus.vpd:
+	mkdir -p .$(TEST_NAME)
+	cd .$(TEST_NAME) && \
+	../$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $(LOG_NAME)
+	@mv .$(TEST_NAME)/$(LOG_NAME) $(LOG_NAME)
+
+.%/vanilla_stats.csv: 
 	mkdir -p .$(TEST_NAME)
 	cd .$(TEST_NAME) && \
 	../$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $(LOG_NAME)
