@@ -75,9 +75,21 @@ _BSG_MANYCORE_DIR := $(BSG_MANYCORE_DIR)
 undefine BSG_MANYCORE_DIR
 endif
 
-# Include project.mk from Bladerunner. This will override
-# BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR
+BSG_F1_DIR := $(CL_DIR)
+
+# platform.mk defines BSG_PLATFORM_PATH, which is the host platform to
+# simulate (VCS or Verilator) or run on (AWS)
+include $(CL_DIR)/platform.mk
+
+# Include project.mk specific to the platform if necessary, else default to
+# the one in Bladerunner. Platform specific project.mk is necessary for
+# platforms running older version of RTL. This will override BASEJUMP_STL_DIR,
+# and BSG_MANYCORE_DIR.
+ifeq ($(BSG_PLATFORM), dpi-vcs-tapeout-v0)
+include $(BSG_PLATFORM_PATH)/project.mk
+else
 include $(CL_DIR)/../project.mk
+endif
 
 ifdef _BASEJUMP_STL_DIR
 ifneq ($(_BASEJUMP_STL_DIR), $(BASEJUMP_STL_DIR))
@@ -122,9 +134,5 @@ include $(CL_DIR)/cadenv.mk
 
 # machine.mk defines BSG_MACHINE_PATH, which is the path to the target machine
 include $(CL_DIR)/machine.mk
-
-# platform.mk defines BSG_PLATFORM_PATH, which is the host platform to
-# simulate (VCS or Verilator) or run on (AWS)
-include $(CL_DIR)/platform.mk
 
 endif
