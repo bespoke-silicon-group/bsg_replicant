@@ -1,19 +1,19 @@
 # Copyright (c) 2019, University of Washington All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
-# 
+#
 # Redistributions in binary form must reproduce the above copyright notice, this
 # list of conditions and the following disclaimer in the documentation and/or
 # other materials provided with the distribution.
-# 
+#
 # Neither the name of the copyright holder nor the names of its contributors may
 # be used to endorse or promote products derived from this software without
 # specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -87,11 +87,15 @@ BSG_MANYCORE_COMMIT_ID ?= feedcafe
 BSG_F1_COMMIT_ID       ?= 42c0ffee
 FPGA_IMAGE_VERSION     ?= 0.0.0
 
-# The manycore architecture sources are defined in arch_filelist.mk. The
-# unsynthesizable simulation sources (for tracing, etc) are defined in
-# sim_filelist.mk. Each file adds to VSOURCES and VINCLUDES and depends on
-# BSG_MANYCORE_DIR
+# Includes RTL source filelist. On platforms with latest RTL, the manycore
+# architecture sources are defined in arch_filelist.mk. The unsynthesizable
+# simulation sources (for tracing, etc) are defined in sim_filelist.mk. Each
+# file adds to VSOURCES and VINCLUDES and depends on BSG_MANYCORE_DIR
+ifeq ($(BSG_PLATFORM), dpi-vcs-tapeout-v0)
+include $(BSG_MANYCORE_DIR)/machines/sv.include
+else
 include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
+endif
 
 # So that we can limit tool-specific to a few specific spots we use VDEFINES,
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
