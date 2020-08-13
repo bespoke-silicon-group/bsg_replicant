@@ -32,9 +32,9 @@ BUILD_PATH             := $(BLADERUNNER_ROOT)
 
 BSG_F1_DIR             := $(BLADERUNNER_ROOT)/bsg_replicant
 BSG_F1_COMMIT_ID       := $(shell cd $(BSG_F1_DIR); git rev-parse --short HEAD)
-BSG_MANYCORE_DIR       := $(BLADERUNNER_ROOT)/hardware/bsg_manycore_tapeout_0
+BSG_MANYCORE_DIR       := $(BSG_F1_DIR)/hardware/bsg_manycore_tapeout_0
 BSG_MANYCORE_COMMIT_ID := $(shell cd $(BSG_MANYCORE_DIR); git rev-parse --short HEAD)
-BASEJUMP_STL_DIR       := $(BLADERUNNER_ROOT)/hardware/basejump_stl_tapeout_0
+BASEJUMP_STL_DIR       := $(BSG_F1_DIR)/hardware/basejump_stl_tapeout_0
 BASEJUMP_STL_COMMIT_ID := $(shell cd $(BASEJUMP_STL_DIR); git rev-parse --short HEAD)
 
 FPGA_IMAGE_VERSION     :=
