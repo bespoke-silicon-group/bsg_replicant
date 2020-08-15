@@ -92,7 +92,7 @@ FPGA_IMAGE_VERSION     ?= 0.0.0
 # simulation sources (for tracing, etc) are defined in sim_filelist.mk. Each
 # file adds to VSOURCES and VINCLUDES and depends on BSG_MANYCORE_DIR
 ifeq ($(BSG_PLATFORM), dpi-vcs-tapeout-v0)
-include $(BSG_MANYCORE_DIR)/machines/sv.include
+include $(BSG_PLATFORM_PATH)/arch_filelist.mk
 else
 include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 endif
