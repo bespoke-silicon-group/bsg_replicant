@@ -37,6 +37,9 @@ BSG_MANYCORE_COMMIT_ID := $(shell cd $(BSG_MANYCORE_DIR); git rev-parse --short 
 BASEJUMP_STL_DIR       := $(BSG_F1_DIR)/hardware/basejump_stl_tapeout_0
 BASEJUMP_STL_COMMIT_ID := $(shell cd $(BASEJUMP_STL_DIR); git rev-parse --short HEAD)
 
+BSG_MANYCORE_DIR_LATEST := $(BLADERUNNER_ROOT)/bsg_manycore
+BASEJUMP_STL_DIR_LATEST := $(BLADERUNNER_ROOT)/basejump_stl
+
 FPGA_IMAGE_VERSION     :=
 F12XLARGE_TEMPLATE_ID  :=
 AFI_ID                 :=
