@@ -31,7 +31,7 @@
 # simulation "libraries" that are required by CAD tools.
 #
 # This file should be included from bsg_replicant/hardware/hardware.mk. It checks
-# BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
+# BSG_PLATFORM_PATH, BASEJUMP_STL_DIR_LATEST, BSG_MANYCORE_DIR_LATEST, etc.
 
 # BSG_MACHINE_NAME: The name of the target machine. Should be defined
 # in $(BSG_MACHINE_PATH)/Makefile.machine.include, which is included
@@ -55,65 +55,65 @@ VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 # Simulation Sources
 ################################################################################
 
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_reset_gen.v
 
 # DMA Interface
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_dma.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_dma.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_mem/bsg_nonsynth_mem_1r1w_sync_mask_write_byte_dma.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_mem/bsg_nonsynth_mem_1rw_sync_mask_write_byte_dma.v
 
 # ???
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_cache_to_test_dram_tx.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_cache/bsg_cache_to_test_dram.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_cache/bsg_cache_to_test_dram_rx.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_cache/bsg_cache_to_test_dram_rx_reorder.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_cache/bsg_cache_to_test_dram_tx.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_dataflow/bsg_round_robin_1_to_n.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_dataflow/bsg_one_fifo.v
 
 # DRAMSim3
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3_pkg.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_dramsim3_pkg.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dramsim3.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dramsim3_map.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 
 # Crossbar sources
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_arb_round_robin.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_crossbar_control_basic_o_by_i.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_noc/bsg_router_crossbar_o_by_i.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_misc/bsg_arb_round_robin.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_misc/bsg_crossbar_control_basic_o_by_i.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_noc/bsg_router_crossbar_o_by_i.v
 
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_top_crossbar.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_crossbar.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_crossbar.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/bsg_manycore_top_crossbar.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/bsg_manycore_crossbar.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/bsg_manycore_link_to_crossbar.v
 
 # Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_crossbar.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_wrapper_mesh.v
 
 # Infinite Memory
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/bsg_nonsynth_mem_infinite.v
 
 # Profiling
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/bsg_manycore_profile_pkg.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_misc/bsg_cycle_counter.v
 
 # Core Profiler/Trace
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_gpio.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dpi_gpio.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/instr_trace.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/vanilla_core_trace.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/vanilla_core_profiler.v
 # We reuse the print_stat_snoop module from aws-vcs
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/hardware/bsg_print_stat_snoop.v
 
 # Memory Profilers
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_non_blocking_profiler.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/infinite_mem_profiler.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/vcache_profiler.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/vcache_non_blocking_profiler.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/infinite_mem_profiler.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/bsg_manycore_link_to_cache_tracer.v
 
 # WAW Detector
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/common/v/nb_waw_detector.v
 
 # TODO: Remove dependence on AXI pkg
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil_pkg.v
@@ -124,13 +124,13 @@ VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_
 # DPI-Specific Sources
 ################################################################################
 
-VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_from_fifo.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_to_fifo.v
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_rom.v
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/dpi/bsg_nonsynth_dpi_manycore.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/v/bsg_manycore_link_sif_async_buffer.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dpi_from_fifo.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dpi_to_fifo.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dpi_rom.v
+VSOURCES += $(BSG_MANYCORE_DIR_LATEST)/testbenches/dpi/bsg_nonsynth_dpi_manycore.v
 
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
+VSOURCES += $(BASEJUMP_STL_DIR_LATEST)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 
 ################################################################################
 # Top-level files
