@@ -36,7 +36,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration
 # at runtime.
-include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
+include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
