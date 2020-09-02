@@ -256,77 +256,10 @@ module cl_manycore
         );
 
 
-`ifdef COSIM
-
-   logic ns_core_clk;
-   parameter lc_core_clk_period_p =400000;
-
-   bsg_nonsynth_clock_gen
-     #(
-       .cycle_time_p(lc_core_clk_period_p)
-       )
-   core_clk_gen
-     (
-      .o(ns_core_clk)
-      );
-
-`endif
-
-
    logic         core_clk;
    logic         core_reset;
-   logic         mem_clk;
-
-
-   
-`ifdef COSIM
-   // This clock mux switches between the "fast" IO Clock and the Slow
-   // Unsynthesizable "Core Clk". The assign logic below introduces
-   // order-of-evaluation issues that can cause spurrious negedges
-   // because the simulator doesn't know what order to evaluate clocks
-   // in during a clock switch. See the following datasheet for more
-   // information:
-   // www.xilinx.com/support/documentation/sw_manuals/xilinx2019_1/ug974-vivado-ultrascale-libraries.pdf
-   BUFGMUX
-     #(
-       .CLK_SEL_TYPE("ASYNC") // SYNC, ASYNC
-       )
-   BUFGMUX_inst
-     (
-      .O(core_clk), // 1-bit output: Clock output
-      .I0(mem_clk), // 1-bit input: Clock input (S=0)
-      .I1(ns_core_clk), // 1-bit input: Clock input (S=1)
-      .S(sh_cl_status_vdip_q2[0]) // 1-bit input: Clock select
-      );
-
-   // THIS IS AN UNSAFE CLOCK CROSSING. It is only guaranteed to work
-   // because 1. We're in cosimulation, and 2. we don't have ongoing
-   // transfers at the start or end of simulation. This means that
-   // core_clk, and clk_main_a0 *are the same signal* (See BUFGMUX
-   // above).
-   assign core_reset = ~rst_main_n_sync;
-
-   // If we're using DRAMSIM3 we want the manycore clock to run at the
-   // same frequency as the memory interface clock. Otherwise, assume
-   // we want to run at the default F1 frequency.
- `ifdef USING_DRAMSIM3
-   logic         hbm_clk;
-   logic         hbm_reset;
-   localparam lc_clk_main_a0_p = `DRAMSIM3_MEM_PKG::tck_ps;
-    bsg_nonsynth_clock_gen
-      #(.cycle_time_p(`DRAMSIM3_MEM_PKG::tck_ps))
-    clk_gen
-      (.o(hbm_clk));
-   assign mem_clk = hbm_clk;
- `else
-   localparam lc_clk_main_a0_p = 8000; // 8000 is 125 MHz
-   assign mem_clk = clk_main_a0;
- `endif
-
-`else
    assign core_clk = clk_main_a0;
    assign core_reset = ~rst_main_n_sync;
-`endif
 
 
    `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p);
@@ -412,8 +345,7 @@ module cl_manycore
   end
 
 
-`ifdef COSIM
-
+  // synopsys translate_on
   // print stat signals for vanilla_core_profiler module
   logic print_stat_v;
   logic [data_width_p-1:0] print_stat_tag;
@@ -430,34 +362,7 @@ module cl_manycore
     ,.print_stat_v_o(print_stat_v)
     ,.print_stat_tag_o(print_stat_tag)
   );
-
-   bsg_manycore_link_sif_s async_link_sif_li;
-   bsg_manycore_link_sif_s async_link_sif_lo;
-
-   bsg_manycore_link_sif_async_buffer
-     #(
-       .addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ,.fifo_els_p(16)
-       )
-  async_buf
-    (
-     // core side
-     .L_clk_i(core_clk)
-     ,.L_reset_i(core_reset)
-     ,.L_link_sif_i(loader_link_sif_lo)
-     ,.L_link_sif_o(loader_link_sif_li)
-
-     // AXI-L side
-     ,.R_clk_i(clk_main_a0)
-     ,.R_reset_i(~rst_main_n_sync)
-     ,.R_link_sif_i(async_link_sif_li)
-     ,.R_link_sif_o(async_link_sif_lo)
-     );
-
-`endif
+  // synopsys translate_off
 
   ////////////////////////////////
   // Configurable Memory System //
@@ -1025,132 +930,6 @@ module cl_manycore
   end
 
 
-`ifdef COSIM
-   axi_clock_converter_v2_1_18_axi_clock_converter
-     #(.C_FAMILY("virtexuplus"),
-       .C_AXI_ID_WIDTH(6),
-       .C_AXI_ADDR_WIDTH(64),  // Width of s_axi_awaddr, s_axi_araddr, m_axi_awaddr and
-       .C_AXI_DATA_WIDTH(512), // Width of WDATA and RDATA (either side).
-       .C_S_AXI_ACLK_RATIO(1), // Clock frequency ratio of SI w.r.t. MI. (Slowest of all clock inputs should have ratio=1.)
-       .C_M_AXI_ACLK_RATIO(lc_core_clk_period_p/lc_clk_main_a0_p),
-       // S:M or M:S must be integer ratio.
-       // Format: Bit32; Range: >='h00000001.
-       .C_AXI_IS_ACLK_ASYNC(1), // Indicates whether S and M clocks are asynchronous.
-       // FUTURE FEATURE
-       // Format: Bit1. Range = 1'b0.
-       .C_AXI_PROTOCOL(0), // Protocol of this SI/MI slot.
-       .C_AXI_SUPPORTS_USER_SIGNALS (0),
-       .C_AXI_SUPPORTS_WRITE(1),
-       .C_AXI_SUPPORTS_READ(1),
-       .C_SYNCHRONIZER_STAGE(3)
-       )
-   axi4_dram_cdc
-     (.s_axi_aclk(core_clk),
-      .s_axi_aresetn(~core_reset),
-
-      // Slave Interface Write Address Ports
-      .s_axi_awid(m_axi4_manycore_awid),
-      .s_axi_awaddr(m_axi4_manycore_awaddr),
-      .s_axi_awlen(m_axi4_manycore_awlen),
-      .s_axi_awsize(m_axi4_manycore_awsize),
-      .s_axi_awburst(m_axi4_manycore_awburst),
-      .s_axi_awlock(m_axi4_manycore_awlock),
-      .s_axi_awcache(m_axi4_manycore_awcache),
-      .s_axi_awprot(m_axi4_manycore_awprot),
-      .s_axi_awregion(m_axi4_manycore_awregion),
-      .s_axi_awqos(m_axi4_manycore_awqos),
-      .s_axi_awvalid(m_axi4_manycore_awvalid),
-      .s_axi_awready(m_axi4_manycore_awready),
-
-      // Slave Interface Write Data Ports
-      .s_axi_wid('0),
-      .s_axi_wdata(m_axi4_manycore_wdata),
-      .s_axi_wstrb(m_axi4_manycore_wstrb),
-      .s_axi_wlast(m_axi4_manycore_wlast),
-      .s_axi_wvalid(m_axi4_manycore_wvalid),
-      .s_axi_wready(m_axi4_manycore_wready),
-
-      // Slave Interface Write Response Ports
-      .s_axi_bid(m_axi4_manycore_bid),
-      .s_axi_bresp(m_axi4_manycore_bresp),
-      .s_axi_bvalid(m_axi4_manycore_bvalid),
-      .s_axi_bready(m_axi4_manycore_bready),
-
-      // Slave Interface Read Address Ports
-      .s_axi_arid(m_axi4_manycore_arid),
-      .s_axi_araddr(m_axi4_manycore_araddr),
-      .s_axi_arlen(m_axi4_manycore_arlen),
-      .s_axi_arsize(m_axi4_manycore_arsize),
-      .s_axi_arburst(m_axi4_manycore_arburst),
-      .s_axi_arlock(m_axi4_manycore_arlock),
-      .s_axi_arcache(m_axi4_manycore_arcache),
-      .s_axi_arprot(m_axi4_manycore_arprot),
-      .s_axi_arregion(m_axi4_manycore_arregion),
-      .s_axi_arqos(m_axi4_manycore_arqos),
-      .s_axi_arvalid(m_axi4_manycore_arvalid),
-      .s_axi_arready(m_axi4_manycore_arready),
-
-      // Slave Interface Read Data Ports
-      .s_axi_rid(m_axi4_manycore_rid),
-      .s_axi_rdata(m_axi4_manycore_rdata),
-      .s_axi_rresp(m_axi4_manycore_rresp),
-      .s_axi_rlast(m_axi4_manycore_rlast),
-      .s_axi_rvalid(m_axi4_manycore_rvalid),
-      .s_axi_rready(m_axi4_manycore_rready),
-
-      // Master Interface System Signals
-      .m_axi_aclk(clk_main_a0),
-      .m_axi_aresetn(rst_main_n),
-
-      // Master Interface Write Address Port
-      .m_axi_awid(cl_sh_ddr_awid[5:0]),
-      .m_axi_awaddr(cl_sh_ddr_awaddr),
-      .m_axi_awlen(cl_sh_ddr_awlen),
-      .m_axi_awsize(cl_sh_ddr_awsize),
-      .m_axi_awburst(cl_sh_ddr_awburst),
-      .m_axi_awlock(),
-      .m_axi_awcache(),
-      .m_axi_awprot(),
-      .m_axi_awregion(),
-      .m_axi_awqos(),
-      .m_axi_awvalid(cl_sh_ddr_awvalid),
-      .m_axi_awready(sh_cl_ddr_awready),
-
-      // Master Interface Write Data Ports
-      .m_axi_wdata(cl_sh_ddr_wdata),
-      .m_axi_wstrb(cl_sh_ddr_wstrb),
-      .m_axi_wlast(cl_sh_ddr_wlast),
-      .m_axi_wvalid(cl_sh_ddr_wvalid),
-      .m_axi_wready(sh_cl_ddr_wready),
-
-      // Master Interface Write Response Ports
-      .m_axi_bid(sh_cl_ddr_bid[5:0]),
-      .m_axi_bresp(sh_cl_ddr_bresp),
-      .m_axi_bvalid(sh_cl_ddr_bvalid),
-      .m_axi_bready(cl_sh_ddr_bready),
-
-      // Master Interface Read Address Port
-      .m_axi_arid(cl_sh_ddr_arid[5:0]),
-      .m_axi_araddr(cl_sh_ddr_araddr),
-      .m_axi_arlen(cl_sh_ddr_arlen),
-      .m_axi_arsize(cl_sh_ddr_arsize),
-      .m_axi_arburst(cl_sh_ddr_arburst),
-      .m_axi_arlock(),
-      .m_axi_arcache(),
-      .m_axi_arprot(),
-      .m_axi_arregion(),
-      .m_axi_arqos(),
-      .m_axi_arvalid(cl_sh_ddr_arvalid),
-      .m_axi_arready(sh_cl_ddr_arready),
-
-      // Master Interface Read Data Ports
-      .m_axi_rid(sh_cl_ddr_rid[5:0]),
-      .m_axi_rdata(sh_cl_ddr_rdata),
-      .m_axi_rresp(sh_cl_ddr_rresp),
-      .m_axi_rlast(sh_cl_ddr_rlast),
-      .m_axi_rvalid(sh_cl_ddr_rvalid),
-      .m_axi_rready(cl_sh_ddr_rready));
-`else
 
    //--------------------------------------------
    // AXI4 Manycore System
@@ -1198,7 +977,7 @@ module cl_manycore
    assign cl_sh_ddr_arqos = m_axi4_manycore_arqos;
    assign cl_sh_ddr_arvalid = m_axi4_manycore_arvalid;
    assign m_axi4_manycore_arready = sh_cl_ddr_arready;
-`endif
+
 
    localparam core_cycle_ctr_width_lp = 64;
    logic [core_cycle_ctr_width_lp-1:0] core_cycle_ctr_l;
@@ -1261,13 +1040,8 @@ module cl_manycore
     ,.cycle_ctr_i       (core_cycle_ctr_l)
   );
 
-`ifdef COSIM
-   assign axil_link_sif_li = async_link_sif_lo;
-   assign async_link_sif_li = axil_link_sif_lo;
-`else
    assign axil_link_sif_li = loader_link_sif_lo;
    assign loader_link_sif_li = axil_link_sif_lo;
-`endif
 
    //-----------------------------------------------
    // Debug bridge, used if need Virtual JTAG
