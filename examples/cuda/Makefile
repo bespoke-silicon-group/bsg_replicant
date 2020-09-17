@@ -99,6 +99,7 @@ INDEPENDENT_TESTS += test_profiler
 INDEPENDENT_TESTS += test_tracer
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
+INDEPENDENT_TESTS += test_addmm
 
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
@@ -142,6 +143,9 @@ TILE_GROUP_DIM_Y = 2
 .FORCE:
 
 .PHONY: test_%.clean test_%.rule
+
+test_addmm.rule: TILE_GROUP_DIM_X=1
+test_addmm.rule: TILE_GROUP_DIM_Y=1
 
 $(USER_RULES): test_%.rule: $(CUDALITE_SRC_PATH)/%/main.riscv
 
