@@ -1,6 +1,6 @@
 REGRESSION_TESTS_TYPE = spmd
 
-UNIFIED_MAIN_TESTS = 
+UNIFIED_MAIN_TESTS = test_fib
 
 INDEPENDENT_MAIN_TESTS := test_bsg_dram_loopback_cache
 INDEPENDENT_MAIN_TESTS += test_symbol_to_eva
