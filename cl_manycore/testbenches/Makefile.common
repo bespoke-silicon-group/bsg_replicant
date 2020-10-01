@@ -37,22 +37,12 @@ WRAPPER_NAME = cosim_wrapper
 # Manycore Library sources (TODO: Refactor list into a single source)
 CSOURCES  = $(C_SDK_USR_UTILS_DIR)/sh_dpi_tasks.c
 CSOURCES += $(C_COMMON_DIR)/src/fpga_pci_sv.c
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_loader.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_eva.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_elf.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_memory_manager.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_cuda.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_printing.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_config.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_responder.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_request_packet_id.cpp
-CSOURCES += $(LIBRARIES_PATH)/bsg_manycore_origin_eva_map.cpp
 
-LDFLAGS  +=
+LDFLAGS  += -lbsg_manycore_runtime \
+            -lm \
+            -L/mnt/users/ssd1/no_backup/bandhav/bsg_bladerunner_3.6.0/bsg_replicant/libraries \
+            -L/mnt/users/ssd1/no_backup/bandhav/bsg_bladerunner_3.6.0/bsg_replicant/testbenches \
+            -Wl,-rpath=/mnt/users/ssd1/no_backup/bandhav/bsg_bladerunner_3.6.0/bsg_replicant/libraries
 CFLAGS   += -std=c99 -std=c++11
 CDEFINES += -DCOSIM $(REGRESSION_DEFINES) -D_XOPEN_SOURCE=500 
 CDEFINES += -D_BSD_SOURCE
