@@ -952,9 +952,13 @@ module cl_manycore
            mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv3_dramsim3
 `ifdef USING_DRAMSIM3
 
-    `declare_dramsim3_ch_addr_s_with_pkg(dram_ch_addr_dramsim3_s, `DRAMSIM3_MEM_PKG);
-    dram_ch_addr_dramsim3_s [hbm_num_channels_p-1:0] dramsim3_ch_addr_lo;
-    dram_ch_addr_dramsim3_s [hbm_num_channels_p-1:0] dramsim3_ch_addr_li;
+     // Import the technology-specific address struct from the
+     // appropriate DRAMSIM3 memory package.
+     //
+     // DRAMSIM3_MEM_PKG is defined as a command-line argument to VCS
+     // during the compliation flow for each machine.
+     `DRAMSIM3_MEM_PKG::dram_ch_addr_s [hbm_num_channels_p-1:0] dramsim3_ch_addr_lo;
+     `DRAMSIM3_MEM_PKG::dram_ch_addr_s [hbm_num_channels_p-1:0] dramsim3_ch_addr_li;
 
     typedef struct packed {
       // the cache id is in the MSBs from cach_to_test_dram
@@ -987,16 +991,20 @@ module cl_manycore
       assign hbm_ch_addr_li_cast[i].byte_offset = dramsim3_ch_addr_lo[i].byte_offset;
     end
 
-    bsg_nonsynth_dramsim3
-      #(.channel_addr_width_p(`DRAMSIM3_MEM_PKG::channel_addr_width_p)
-        ,.data_width_p(`DRAMSIM3_MEM_PKG::data_width_p)
-        ,.num_channels_p(`DRAMSIM3_MEM_PKG::num_channels_p)
-        ,.num_columns_p(`DRAMSIM3_MEM_PKG::num_columns_p)
-        ,.address_mapping_p(`DRAMSIM3_MEM_PKG::address_mapping_p)
-        ,.size_in_bits_p(`DRAMSIM3_MEM_PKG::size_in_bits_p)
-        ,.config_p(`DRAMSIM3_MEM_PKG::config_p)
-        //,.debug_p(1)
-        ,.init_mem_p(1))
+     bsg_nonsynth_dramsim3
+       #(.channel_addr_width_p(`DRAMSIM3_MEM_PKG::channel_addr_width_p)
+         ,.data_width_p(`DRAMSIM3_MEM_PKG::data_width_p)
+         ,.num_channels_p(`DRAMSIM3_MEM_PKG::num_channels_p)
+         ,.num_columns_p(`DRAMSIM3_MEM_PKG::num_columns_p)
+         ,.num_rows_p(`DRAMSIM3_MEM_PKG::num_rows_p)
+         ,.num_ba_p(`DRAMSIM3_MEM_PKG::num_ba_p)
+         ,.num_bg_p(`DRAMSIM3_MEM_PKG::num_bg_p)
+         ,.num_ranks_p(`DRAMSIM3_MEM_PKG::num_ranks_p)
+         ,.address_mapping_p(`DRAMSIM3_MEM_PKG::address_mapping_p)
+         ,.size_in_bits_p(`DRAMSIM3_MEM_PKG::size_in_bits_p)
+         ,.config_p(`DRAMSIM3_MEM_PKG::config_p)
+         //,.debug_p(1)
+         ,.init_mem_p(1))
     dram
       (.clk_i(hbm_clk)
        ,.reset_i(hbm_reset)
