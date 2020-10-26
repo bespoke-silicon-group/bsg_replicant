@@ -31,7 +31,7 @@
 #include <features.h>
 // check _BSG_SOURCE
 #ifndef _BSD_SOURCE
-#error "_BSG_SOURCE not defined: required for bsg_manycore_runtime"
+#error "_BSD_SOURCE not defined: required for bsg_manycore_runtime"
 #endif
 
 // check _XOPEN_SOURCE

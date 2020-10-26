@@ -36,7 +36,7 @@
 #include <cfloat>
 
 using std::isnormal;
-
+using std::isnan;
 #else
 
 #include <stdlib.h>
