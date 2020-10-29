@@ -25,18 +25,18 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef TEST_MATRIX_MUL_H
-#define TEST_MATRIX_MUL_H
+#ifndef __HARDWARE_SHARED_MEM_REDUCE_HPP
+#define __HARDWARE_SHARED_MEM_REDUCE_HPP
 
-
-#include <stdio.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <string.h>
-#include <time.h>
-#include <stdlib.h>
+#include <cstring>
+#include <cstdlib>
+#include <random>
+#include <limits>
+#include <iostream>
+#include <typeinfo>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_cuda.h>
 
 #include "cuda_tests.h"
-
 
 #endif

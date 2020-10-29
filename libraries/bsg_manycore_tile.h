@@ -57,12 +57,14 @@ extern "C" {
 #define HB_MC_TILE_EPA_DMEM_BASE   0x00001000
 #define HB_MC_TILE_EVA_DMEM_BASE   0x00001000
 #define HB_MC_TILE_EPA_ICACHE_BASE 0x01000000
-#define HB_MC_TILE_EPA_CSR_BASE                       0x20000
-#define HB_MC_TILE_EPA_CSR_FREEZE_OFFSET              0x00
-#define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET 0x04
-#define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET 0x08
-#define HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET       0x0C
-#define HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET         0x10
+#define HB_MC_TILE_EPA_CSR_BASE                           0x20000
+#define HB_MC_TILE_EPA_CSR_FREEZE_OFFSET                  0x00
+#define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET     0x04
+#define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET     0x08
+#define HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET           0x0C
+#define HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET             0x10
+#define HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_X_WIDTH_OFFSET  0x14
+#define HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_Y_WIDTH_OFFSET  0x18
 
 #define EPA_TILE_CSR_FROM_BYTE_OFFSET(offset)                           \
         EPA_FROM_BASE_AND_OFFSET(HB_MC_TILE_EPA_CSR_BASE, offset)
@@ -78,13 +80,19 @@ extern "C" {
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET)
 
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y                          \
-                EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET)
+        EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET)
 
 #define HB_MC_TILE_EPA_CSR_PC_INIT_VALUE                                \
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET)
 
 #define HB_MC_TILE_EPA_CSR_DRAM_ENABLE                                  \
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET)
+
+#define HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_X_WIDTH                        \
+        EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_X_WIDTH_OFFSET)
+
+#define HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_Y_WIDTH                        \
+        EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_DIM_Y_WIDTH_OFFSET)
 
         /**
          * Set a tile's x origin
@@ -119,6 +127,42 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_tile_set_origin(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
                                   const hb_mc_coordinate_t *o);
+
+        /**
+         * Set a tile's tile group x dimension
+         * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+         * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init().
+         * @param[in] tile     A tile to set the origin of.
+         * @param[in] tg_dim_x_width  Width of (number of bits for) the tile group X dimension
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_tile_set_tile_group_dim_x_width(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
+                                    const hb_mc_idx_t tg_dim_x_width);
+                
+        /**
+         * Set a tile's tile group y dimension
+         * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+         * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init().
+         * @param[in] tile     A tile to set the origin of.
+         * @param[in] tg_dim_y_width  Width of (number of bits for) the tile group Y dimension
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_tile_set_tile_group_dim_y_width(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
+                                    const hb_mc_idx_t tg_dim_y_width);
+        
+        /**
+         * Set a tile's tile group dimensions
+         * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+         * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init().
+         * @param[in] tile     A tile to set the origin of.
+         * @param[in] tg_dim_width   Width of (number of bits for) tile group dimensions
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_tile_set_tile_group_dim_width(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, 
+                                  const hb_mc_dimension_t *tg_dim_width);
 
         /**
          * Freeze a tile.
