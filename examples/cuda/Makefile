@@ -104,6 +104,7 @@ INDEPENDENT_TESTS += test_profiler
 INDEPENDENT_TESTS += test_tracer
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
+INDEPENDENT_TESTS += test_hardware_shared_mem_load_store
 
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
