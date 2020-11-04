@@ -98,8 +98,12 @@ endif # Matches: ifdef _BSG_MANYCORE_DIR
 # Undefine the temporary variable to prevent its use
 undefine _BSG_MANYCORE_DIR
 
+# If we're in the docker container, verilator is installed in /usr/bin/verilator
+ifdef BSG_DOCKER
+VERILATOR_ROOT = /verilator
+VERILATOR = /usr/bin/verilator
 # If we're inside bladerunner, check for verilator and define variables
-ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
+else ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
 VERILATOR_ROOT = $(BLADERUNNER_ROOT)/verilator
 VERILATOR = $(BLADERUNNER_ROOT)/verilator/bin/verilator
 else
