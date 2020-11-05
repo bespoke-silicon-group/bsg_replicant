@@ -109,7 +109,7 @@ $(LIB_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_S
 
 $(LIB_DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
 
-$(LIB_STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
+$(LIB_STRICT_OBJECTS): CXXFLAGS += -Wall
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-function
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
