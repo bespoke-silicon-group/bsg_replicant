@@ -38,7 +38,8 @@ endif
 
 # To switch machines, simply switch the path of BSG_MACHINE_PATH to
 # another directory with a Makefile.machine.include file.
-BSG_MACHINE_PATH ?=  $(BSG_F1_DIR)/machines/4x4_fast_n_fake
+#BSG_MACHINE_PATH ?=  $(BSG_F1_DIR)/machines/16x8_fast_n_fake
+BSG_MACHINE_PATH ?=  $(BSG_F1_DIR)/machines/timing_v0_16_8
 
 # Convert the machine path to an abspath
 override BSG_MACHINE_PATH := $(abspath $(BSG_MACHINE_PATH))
