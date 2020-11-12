@@ -53,8 +53,8 @@ $(PLATFORM_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/
 $(PLATFORM_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test/
 
-$(PLATFORM_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
-$(PLATFORM_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
+$(PLATFORM_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES) -D_BSD_SOURCE
+$(PLATFORM_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES) -D_BSD_SOURCE
 $(PLATFORM_OBJECTS): LDFLAGS   = -fPIC
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
@@ -69,6 +69,11 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
 
 platform.clean:
 	rm -f $(PLATFORM_OBJECTS)
+
+.PHONY: platform.clean
+platform.clean:
+	rm -f $(PLATFORM_OBJECTS)
+	rm -f $(BSG_PLATFORM_PATH)/libfpga_mgmt.so
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1
 
