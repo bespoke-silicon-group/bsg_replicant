@@ -40,7 +40,7 @@
 # CL_DIR: Path to the directory of this AWS F1 Project
 include environment.mk
 
-.PHONY: help build clean
+.PHONY: help build clean docker-regression
 
 .DEFAULT_GOAL := help
 help:
@@ -49,6 +49,8 @@ help:
 	@echo "      build: Runs Vivado and Generates the Design Checkpoint to"
 	@echo "             upload to AWS."
 	@echo "      regression: Runs all software regression tests on F1"
+	@echo "      docker-regression: Runs all software regression tests in verilator"
+	@echo "                         in the Docker image"
 	@echo "      cosim: Runs all regression tests in C/C++ Co-simulation"
 	@echo "             on the machine specified by machine.mk"
 	@echo "      multiverse: Runs all regression tests on all machines"
@@ -62,6 +64,16 @@ build:
 
 regression:
 	$(MAKE) -C examples $@ 
+
+docker-regression:
+	docker run \
+	       -v $(realpath $(shell pwd))/../:/bsg_bladerunner \
+	       --env BSG_PLATFORM=dpi-verilator \
+	       --env BSG_DOCKER=1 \
+	       --env RISCV_BIN_DIR=/usr/bin \
+	       --env SHELL=/bin/bash \
+	       bsg/riscv_env:latest \
+	       /bin/bash -c "make -C /bsg_bladerunner/bsg_replicant regression"
 
 __BSG_MACHINES += machines/16x8_fast_n_fake
 __BSG_MACHINES += machines/4x4_fast_n_fake
