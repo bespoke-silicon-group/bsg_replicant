@@ -34,9 +34,6 @@
 #include <cstdio>
 #include <cstdbool>
 #include <cfloat>
-
-using std::isnormal;
-using std::isnan;
 #else
 
 #include <stdlib.h>
@@ -159,7 +156,11 @@ static inline float hb_mc_generate_float_rand(){
         do
         {
                 data.hb_mc_int = rand() * (((float)rand() / RAND_MAX) > 0.5 ? 1 : -1);
+#ifdef __cplusplus
+        } while(!std::isnormal(data.hb_mc_float));
+#else
         } while(!isnormal(data.hb_mc_float));
+#endif
         return data.hb_mc_float;
 }
 
@@ -171,7 +172,11 @@ static inline float hb_mc_generate_float_rand_positive(){
         do
         {
                 data.hb_mc_int = rand();
+#ifdef __cplusplus
+        } while(!std::isnormal(data.hb_mc_float) || data.hb_mc_float < 0);
+#else
         } while(!isnormal(data.hb_mc_float) || data.hb_mc_float < 0);
+#endif
         return data.hb_mc_float;
 }
 
@@ -194,7 +199,11 @@ static inline bool hb_mc_floats_match(float a, float b) {
         pun.hb_mc_int = 0x00800000;
         float min_normal = pun.hb_mc_float;
 
+#ifdef __cplusplus
+        if(a == b || (std::isnan(abs_a) && std::isnan(abs_b)))
+#else
         if(a == b || (isnan(abs_a) && isnan(abs_b)))
+#endif
                 return true;
         else if(a == 0 || b == 0 || (abs_a + abs_b < min_normal))
                 return diff < (MAX_FLOAT_ERROR_TOLERANCE * min_normal);
