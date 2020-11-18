@@ -84,7 +84,11 @@ int hb_mc_profiler_init(hb_mc_profiler_t *p, hb_mc_idx_t x, hb_mc_idx_t y, strin
                 for(int ix = 0; ix < x; ++ix){
                         ostringstream stream;
                         stream << hier << ".y[" << iy << "]" << ".x[" << ix << "]" << tail;
-                        profilers->push_back(new dpi_vanilla_core_profiler(stream.str()));
+                        // If the scope does not exist, then there is
+                        // not a profiler module bound to a tile at
+                        // that location. Do not instantiate an object
+                        if(svGetScopeFromName(stream.str().c_str()))
+                                profilers->push_back(new dpi_vanilla_core_profiler(stream.str()));
                 }
         }
         

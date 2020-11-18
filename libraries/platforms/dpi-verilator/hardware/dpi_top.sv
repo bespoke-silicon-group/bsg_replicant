@@ -277,6 +277,7 @@ module manycore_tb_top
      ,.vcache_block_size_in_words_p(block_size_in_words_p)
      ,.vcache_sets_p(sets_p)
      ,.branch_trace_en_p(branch_trace_en_p)
+     ,.hetero_type_vec_p(hetero_type_vec_gp)
    ) manycore (
      .clk_i(core_clk)
      ,.reset_i(core_reset)
