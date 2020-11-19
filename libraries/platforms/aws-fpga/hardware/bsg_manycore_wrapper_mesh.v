@@ -11,6 +11,12 @@ module bsg_manycore_wrapper_mesh
     , parameter num_tiles_x_p="inv"
     , parameter num_tiles_y_p="inv"
 
+    // This is used to define heterogeneous arrays. Each index defines
+    // the type of an X/Y coordinate in the array. This is a vector of
+    // num_tiles_x_p*num_tiles_y_p ints; type "0" is the
+    // default. See bsg_manycore_hetero_socket.v for more types.
+    , parameter int hetero_type_vec_p [0:((num_tiles_y_p-1)*num_tiles_x_p) - 1]  = '{default:0}
+
     , parameter dmem_size_p="inv"
     , parameter icache_entries_p="inv"
     , parameter icache_tag_width_p="inv"
@@ -66,6 +72,7 @@ module bsg_manycore_wrapper_mesh
     ,.vcache_block_size_in_words_p(vcache_block_size_in_words_p)
     ,.vcache_sets_p(vcache_sets_p)
     ,.branch_trace_en_p(branch_trace_en_p)
+    ,.hetero_type_vec_p(hetero_type_vec_p)
   ) manycore (
     .clk_i(clk_i)
     ,.reset_i(reset_i)

@@ -77,3 +77,8 @@ BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_$(CL_MANYCORE_MEM_CFG
 
 # Define network topology
 BSG_MACHINE_CROSSBAR_NETWORK =  0
+
+# Define heterogeneous tile composition.
+# 0 is for Vanilla Core (RV32).
+# Anything else should be described here :)
+BSG_MACHINE_HETERO_TYPE_VEC           = default:0

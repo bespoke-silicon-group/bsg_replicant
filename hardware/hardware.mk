@@ -266,6 +266,9 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter rom_els_gp = `wc -l < $<`;" >> $@
 	@echo "parameter bsg_machine_crossbar_network_gp = $(CL_MANYCORE_CROSSBAR_NETWORK);" >> $@
 	@echo "parameter bit [rom_width_gp-1:0] rom_arr_gp [rom_els_gp-1:0] = '{$(ROM_STR)};" >> $@
+	@echo "parameter num_tiles_y_gp = $(CL_MANYCORE_DIM_Y);" >> $@
+	@echo "parameter num_tiles_x_gp = $(CL_MANYCORE_DIM_X);" >> $@
+	@echo "parameter int hetero_type_vec_gp [0:(num_tiles_y_gp*num_tiles_x_gp)-1] = $(BSG_MACHINE_HETERO_TYPE_VEC);" >> $@
 	@echo >> $@
 	@echo "endpackage" >> $@
 	@echo >> $@
