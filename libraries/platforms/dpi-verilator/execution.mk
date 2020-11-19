@@ -37,3 +37,9 @@ $(UNIFIED_TESTS:%=%.log): %.log: test_loader %.rule
 $(INDEPENDENT_TESTS:%=%.log): %.log: % %.rule
 	./$< $(C_ARGS) | tee $@
 
+
+%.out: % %.rule
+	sudo operf ./$<
+	opgprof $<
+	gprof $< > $@
+	../../../verilator/bin/verilator_profcfunc $@

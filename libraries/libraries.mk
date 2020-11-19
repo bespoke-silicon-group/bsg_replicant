@@ -104,6 +104,10 @@ $(LIB_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 $(LIB_OBJECTS): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 $(LIB_OBJECTS): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_SOURCE
 $(LIB_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_SOURCE
+# Uncomment to enable Verilator profiling with operf
+# $(LIB_OBJECTS): CFLAGS    += -g -pg
+# $(LIB_OBJECTS): CXXFLAGS  += -g -pg
+
 # Need to move this, eventually
 #$(LIB_OBJECTS) $(PLATFORM_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 

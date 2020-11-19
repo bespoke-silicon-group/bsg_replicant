@@ -136,3 +136,4 @@ VSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/hardware/dpi_top.sv
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
+

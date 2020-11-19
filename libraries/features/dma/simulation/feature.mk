@@ -44,6 +44,10 @@ $(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(DMA_FEATURE_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_SOURCE
 $(DMA_FEATURE_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_SOURCE
 
+# Uncomment to enable Verilator profiling with operf
+# $(DMA_FEATURE_OBJECTS): CXXFLAGS := -g -pg
+# $(DMA_FEATURE_OBJECTS): CFLAGS   := -g -pg
+
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(DMA_FEATURE_OBJECTS)
 
 
