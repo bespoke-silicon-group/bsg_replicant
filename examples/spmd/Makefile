@@ -55,6 +55,7 @@ REGRESSION_TESTS_TYPE = spmd
 UNIFIED_TESTS = test_fib 
 UNIFIED_TESTS += test_bsg_print_stat
 UNIFIED_TESTS += test_putchar_stream
+UNIFIED_TESTS += test_fence_after_stat
 
 INDEPENDENT_TESTS := test_bsg_dram_loopback_cache
 INDEPENDENT_TESTS += test_symbol_to_eva
