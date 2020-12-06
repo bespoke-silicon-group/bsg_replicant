@@ -786,6 +786,9 @@ module manycore_tb_top
          ,.data_i(lv2_simulated_hbm.hbm_data_lo)
          ,.data_yumi_o(lv2_simulated_hbm.hbm_data_yumi_li)
 
+         ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
+         ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
+
          ,.data_o(lv2_simulated_hbm.hbm_data_li)
          ,.data_v_o(lv2_simulated_hbm.hbm_data_v_li)
          ,.read_done_ch_addr_o(dramsim3_ch_addr_lo));
