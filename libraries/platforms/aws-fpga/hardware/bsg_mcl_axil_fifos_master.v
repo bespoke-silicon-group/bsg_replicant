@@ -172,7 +172,7 @@ module bsg_mcl_axil_fifos_master
     .reset_i(reset_i          ),
     .valid_i(rsp_buf_v_lo     ),
     .data_i (rsp_buf_data_lo  ),
-    .ready_o(rsp_piso_ready_lo),
+    .ready_and_o(rsp_piso_ready_lo),
     .valid_o(r_v_o            ),
     .data_o (r_data_o         ),
     .yumi_i (rsp_piso_yumi_li )

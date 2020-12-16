@@ -94,7 +94,7 @@ module bsg_mcl_axil_fifos_slave
     .reset_i(reset_i      ),
     .valid_i(buf_v_lo     ),
     .data_i (buf_data_lo  ),
-    .ready_o(piso_ready_lo),
+    .ready_and_o(piso_ready_lo),
     .valid_o(r_v_o        ),
     .data_o (r_data_o     ),
     .yumi_i (piso_yumi_li )

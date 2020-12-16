@@ -346,7 +346,8 @@ module cl_manycore
   end
 
 
-  // synopsys translate_on
+
+  // synopsys translate_off
   // print stat signals for vanilla_core_profiler module
   logic print_stat_v;
   logic [data_width_p-1:0] print_stat_tag;
@@ -363,7 +364,7 @@ module cl_manycore
     ,.print_stat_v_o(print_stat_v)
     ,.print_stat_tag_o(print_stat_tag)
   );
-  // synopsys translate_off
+  // synopsys translate_on
 
   ////////////////////////////////
   // Configurable Memory System //
