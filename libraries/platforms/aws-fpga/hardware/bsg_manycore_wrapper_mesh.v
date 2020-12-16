@@ -15,7 +15,7 @@ module bsg_manycore_wrapper_mesh
     // the type of an X/Y coordinate in the array. This is a vector of
     // num_tiles_x_p*num_tiles_y_p ints; type "0" is the
     // default. See bsg_manycore_hetero_socket.v for more types.
-    , parameter int hetero_type_vec_p [0:((num_tiles_y_p-1)*num_tiles_x_p) - 1]  = '{default:0}
+    , parameter int hetero_type_vec_p [0:((num_tiles_y_p)*num_tiles_x_p) - 1]  = '{default:0}
 
     , parameter dmem_size_p="inv"
     , parameter icache_entries_p="inv"
