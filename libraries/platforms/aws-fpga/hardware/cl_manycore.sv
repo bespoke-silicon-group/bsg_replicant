@@ -277,37 +277,9 @@ module cl_manycore
    // machine parameterization. The two sides of the if-statment have
    // idenitical labels to make DPI hierarchy processing easier
    if (bsg_machine_crossbar_network_gp == 1) begin: network
-     
-   bsg_manycore_wrapper_crossbar
-     #(
-       .addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
-       ,.num_tiles_x_p(num_tiles_x_p)
-       ,.num_tiles_y_p(num_tiles_y_p)
-       ,.dmem_size_p(dmem_size_p)
-       ,.icache_entries_p(icache_entries_p)
-       ,.icache_tag_width_p(icache_tag_width_p)
-       ,.vcache_size_p(vcache_size_p)
-       ,.vcache_block_size_in_words_p(block_size_in_words_p)
-       ,.vcache_sets_p(sets_p)
 
-       ,.num_cache_p(num_cache_p)
-
-       )
-   manycore_wrapper
-     (
-      .clk_i(core_clk)
-      ,.reset_i(core_reset)
-
-      ,.cache_link_sif_i(cache_link_sif_li)
-      ,.cache_link_sif_o(cache_link_sif_lo)
-
-      ,.cache_x_o(cache_x_lo)
-      ,.cache_y_o(cache_y_lo)
-
-      ,.loader_link_sif_i(loader_link_sif_li)
-      ,.loader_link_sif_o(loader_link_sif_lo)
-      );
+      begin
+         $error(1, "aws-fgpa and aws-vcs do not support the ideal crossbar network");
 
   end
   else begin: network
