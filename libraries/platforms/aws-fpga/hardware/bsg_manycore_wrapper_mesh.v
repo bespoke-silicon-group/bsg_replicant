@@ -58,7 +58,7 @@ module bsg_manycore_wrapper_mesh
   bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_li;
   bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
   
-  bsg_manycore #(
+  bsg_manycore_top_mesh #(
     .dmem_size_p(dmem_size_p)
     ,.icache_entries_p(icache_entries_p)
     ,.icache_tag_width_p(icache_tag_width_p)
