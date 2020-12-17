@@ -94,6 +94,8 @@ module manycore_tb_top
    logic dpi_trace_en;
    logic dpi_log_en;
 
+   wor saif_en = 0;
+
    assign trace_en = dpi_trace_en;
    assign log_en = dpi_log_en;
 
@@ -503,6 +505,22 @@ module manycore_tb_top
       ,.trace_en_i($root.manycore_tb_top.trace_en)
       );
 
+   bind vanilla_core vanilla_core_saif_generator
+     #(
+       .x_cord_width_p(x_cord_width_p)
+       ,.y_cord_width_p(y_cord_width_p)
+       ,.origin_x_cord_p(0)
+       ,.origin_y_cord_p(2)
+       ,.icache_tag_width_p(icache_tag_width_p)
+       ,.icache_entries_p(icache_entries_p)
+       ,.data_width_p(data_width_p)
+       )
+   saif_generator
+   (
+    .*
+    ,.saif_en_i($root.manycore_tb_top.saif_en)
+    ,.saif_en_o($root.manycore_tb_top.saif_en)
+   );
 
 
    // --------------------------------------------------------------------------
