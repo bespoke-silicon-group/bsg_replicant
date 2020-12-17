@@ -5,6 +5,7 @@ module manycore_tb_top
   import bsg_manycore_addr_pkg::*;
   import bsg_bladerunner_pkg::*;
   import bsg_bladerunner_mem_cfg_pkg::*;
+  import bsg_manycore_network_cfg_pkg::*;
   import bsg_manycore_endpoint_to_fifos_pkg::*;
      ();
 
@@ -25,6 +26,8 @@ module manycore_tb_top
       $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS  = %d", block_size_in_words_p);
       $display("[INFO][TESTBENCH] BSG_MACHINE_MAX_EPA_WIDTH            = %d", addr_width_p);
       $display("[INFO][TESTBENCH] BSG_MACHINE_MEM_CFG                  = %s", mem_cfg_p.name());
+      $display("[INFO][TESTBENCH] BSG_MACHINE_NETWORK_CFG              = %s", bsg_manycore_network_cfg_p.name());
+      $display("[INFO][TESTBENCH] BSG_MACHINE_RUCHE_FACTOR_X           = %d", bsg_ruche_factor_X_p);
    end
 
    localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)));
@@ -229,10 +232,10 @@ module manycore_tb_top
    bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
   
 
-   // Instantiate a crossbar, or a mesh network depending on the
-   // machine parameterization. The two sides of the if-statment have
-   // idenitical labels to make DPI hierarchy processing easier
-   if (bsg_machine_crossbar_network_gp == 1) begin: network
+   // Configurable Network
+   localparam logic [e_network_max_val-1:0] network_cfg_lp = (1 << bsg_manycore_network_cfg_p);
+
+   if (network_cfg_lp[e_network_crossbar]) begin: network
 
      bsg_manycore #(
        .dmem_size_p(dmem_size_p)
@@ -257,13 +260,10 @@ module manycore_tb_top
        ,.io_link_sif_o(io_link_sif_lo)
      );
 
-  end else begin: network
+   end
+   else if (network_cfg_lp[e_network_mesh]) begin: network
 
-   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
-   bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
-     
-     
-   bsg_manycore
+     bsg_manycore_top_mesh
      #(
      .dmem_size_p(dmem_size_p)
      ,.icache_entries_p(icache_entries_p)
@@ -293,6 +293,90 @@ module manycore_tb_top
      ,.io_link_sif_o(io_link_sif_lo)
    );
 
+   end
+   else if (network_cfg_lp[e_network_half_ruche_x]) begin: network
+
+     `declare_bsg_manycore_ruche_x_link_sif_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p);
+     bsg_manycore_ruche_x_link_sif_s [E:W][num_tiles_y_p-1:0][bsg_ruche_factor_X_p-1:0] ruche_link_li, ruche_link_lo;
+
+     bsg_manycore_top_ruche #(
+       .dmem_size_p(dmem_size_p)
+       ,.icache_entries_p(icache_entries_p)
+       ,.icache_tag_width_p(icache_tag_width_p)
+       ,.num_tiles_x_p(num_tiles_x_p)
+       ,.num_tiles_y_p(num_tiles_y_p+1)
+       ,.reset_depth_p(reset_depth_lp)
+       ,.addr_width_p(addr_width_p)
+       ,.data_width_p(data_width_p)
+       ,.vcache_size_p(vcache_size_p)
+       ,.vcache_block_size_in_words_p(block_size_in_words_p)
+       ,.vcache_sets_p(sets_p)
+       ,.branch_trace_en_p(branch_trace_en_p)
+       ,.ruche_factor_X_p(bsg_ruche_factor_X_p)
+       ,.hetero_type_vec_p(hetero_type_vec_gp)
+     ) manycore (
+       .clk_i(core_clk)
+       ,.reset_i(core_reset)
+
+       ,.hor_link_sif_i(hor_link_sif_li)
+       ,.hor_link_sif_o(hor_link_sif_lo)
+
+       ,.ver_link_sif_i(ver_link_sif_li)
+       ,.ver_link_sif_o(ver_link_sif_lo)
+    
+       ,.io_link_sif_i(io_link_sif_li)
+       ,.io_link_sif_o(io_link_sif_lo)
+
+       ,.ruche_link_i(ruche_link_li)
+       ,.ruche_link_o(ruche_link_lo)
+     );
+
+
+     // tieoff ruche links
+     for (genvar i = 0; i < num_tiles_y_p; i++) begin: y
+       for (genvar j = 0; j < bsg_ruche_factor_X_p; j++) begin: r
+
+          bsg_manycore_ruche_x_link_sif_tieoff #(
+           .addr_width_p(addr_width_p)
+           ,.data_width_p(data_width_p)
+           ,.x_cord_width_p(x_cord_width_p)
+           ,.y_cord_width_p(y_cord_width_p)
+           ,.ruche_factor_X_p(bsg_ruche_factor_X_p)
+           ,.ruche_stage_p(j)
+         ) tieoff_re (
+           .clk_i(core_clk)
+           ,.reset_i(core_reset)
+           ,.ruche_link_i(ruche_link_lo[E][i][j])
+           ,.ruche_link_o(ruche_link_li[E][i][j])
+         );
+
+         bsg_manycore_ruche_x_link_sif_tieoff #(
+           .addr_width_p(addr_width_p)
+           ,.data_width_p(data_width_p)
+           ,.x_cord_width_p(x_cord_width_p)
+           ,.y_cord_width_p(y_cord_width_p)
+           ,.ruche_factor_X_p(bsg_ruche_factor_X_p)
+           ,.ruche_stage_p(j)
+         ) tieoff_rw (
+           .clk_i(core_clk)
+           ,.reset_i(core_reset)
+           ,.ruche_link_i(ruche_link_lo[W][i][j])
+           ,.ruche_link_o(ruche_link_li[W][i][j])
+         );
+        end
+      end
+   end 
+    else begin
+
+   end
+
+
+   if (network_cfg_lp[e_network_half_ruche_x] || 
+        network_cfg_lp[e_network_mesh]) begin
+
+    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
+    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
+
     // Horizontal Tie-Offs
     //
     for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
@@ -309,20 +393,19 @@ module manycore_tb_top
       );
     end
 
-     for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
-       bsg_manycore_link_sif_tieoff #(
-         .addr_width_p(addr_width_p)
-         ,.data_width_p(data_width_p)
-         ,.x_cord_width_p(x_cord_width_p)
-         ,.y_cord_width_p(y_cord_width_p)
-       ) tieoff_e (
-         .clk_i(core_clk)
-         ,.reset_i(core_reset)
-         ,.link_sif_i(hor_link_sif_lo[E][i])
-         ,.link_sif_o(hor_link_sif_li[E][i])
-       );
-     end
-
+    for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
+      bsg_manycore_link_sif_tieoff #(
+        .addr_width_p(addr_width_p)
+        ,.data_width_p(data_width_p)
+        ,.x_cord_width_p(x_cord_width_p)
+        ,.y_cord_width_p(y_cord_width_p)
+      ) tieoff_e (
+        .clk_i(core_clk)
+        ,.reset_i(core_reset)
+        ,.link_sif_i(hor_link_sif_lo[E][i])
+        ,.link_sif_o(hor_link_sif_li[E][i])
+      );
+    end
   end
 
   // connecting link_sif to outside
