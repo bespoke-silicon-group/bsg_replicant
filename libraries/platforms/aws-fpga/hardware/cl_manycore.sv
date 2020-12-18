@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -26,8 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /**
- * This is the top-level module for the user logic in AWS (a.k.a. Custom Logic, or CL). 
- * 
+ * This is the top-level module for the user logic in AWS (a.k.a. Custom Logic, or CL).
+ *
  * The BSG Nonsynth DPI interfaces that bind to this module depend on
  * the hierarchy path that defines this module instance
  * (tb.card.fpga.CL) and sub-hierarchy that is defined below this
@@ -35,15 +35,15 @@
  * modifications to the Hierarchy Path to the Vanilla Core Instances
  * change, the hierarchy paths in bsg_manycore_platform.cpp will need
  * to change.
- * 
+ *
  */
 
 module cl_manycore
-  import cl_manycore_pkg::*;
   import bsg_manycore_pkg::*;
   import bsg_manycore_addr_pkg::*;
   import bsg_bladerunner_pkg::*;
   import bsg_bladerunner_mem_cfg_pkg::*;
+  import bsg_manycore_network_cfg_pkg::*;
    (
   `include "cl_ports.vh"
     );
@@ -54,6 +54,15 @@ module cl_manycore
 `include "bsg_defines.v"
 `include "cl_id_defines.vh"
 `include "cl_manycore_defines.vh"
+
+   localparam axi_id_width_lp = 6;
+   localparam axi_addr_width_lp = 64;
+   localparam axi_data_width_lp = 512;
+   localparam axi_strb_width_lp = (axi_data_width_lp>>3);
+   localparam axi_burst_len_lp = 1;
+
+   // Width of the host packets
+   localparam host_io_pkt_width_lp = 128;
 
    //--------------------------------------------
    // Start with Tie-Off of Unused Interfaces
@@ -262,43 +271,36 @@ module cl_manycore
    assign core_reset = ~rst_main_n_sync;
 
 
-   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p);
+   `declare_bsg_manycore_link_sif_s(bsg_machine_noc_epa_width_gp, bsg_machine_noc_data_width_gp, bsg_machine_noc_x_coord_width_gp, bsg_machine_noc_y_coord_width_gp);
 
-   bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
-   bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
+   bsg_manycore_link_sif_s [bsg_machine_llcache_num_cache_gp-1:0] cache_link_sif_li;
+   bsg_manycore_link_sif_s [bsg_machine_llcache_num_cache_gp-1:0] cache_link_sif_lo;
 
-   logic [num_cache_p-1:0][x_cord_width_p-1:0] cache_x_lo;
-   logic [num_cache_p-1:0][y_cord_width_p-1:0] cache_y_lo;
+   logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_noc_x_coord_width_gp-1:0] cache_x_lo;
+   logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_noc_y_coord_width_gp-1:0] cache_y_lo;
 
    bsg_manycore_link_sif_s loader_link_sif_li;
    bsg_manycore_link_sif_s loader_link_sif_lo;
 
-   // Instantiate a crossbar, or a mesh network depending on the
-   // machine parameterization. The two sides of the if-statment have
-   // idenitical labels to make DPI hierarchy processing easier
-   if (bsg_machine_crossbar_network_gp == 1) begin: network
+   localparam logic [e_network_max_val-1:0] network_cfg_lp = (1 << bsg_machine_noc_cfg_gp);
 
-      begin
-         $error(1, "aws-fgpa and aws-vcs do not support the ideal crossbar network");
-
-  end
-  else begin: network
+   if(network_cfg_lp[e_network_mesh]) begin
 
    bsg_manycore_wrapper_mesh
      #(
-       .addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
-       ,.num_tiles_x_p(num_tiles_x_p)
-       ,.num_tiles_y_p(num_tiles_y_p)
-       ,.dmem_size_p(dmem_size_p)
-       ,.icache_entries_p(icache_entries_p)
-       ,.icache_tag_width_p(icache_tag_width_p)
-       ,.num_cache_p(num_cache_p)
-       ,.vcache_size_p(vcache_size_p)
-       ,.vcache_block_size_in_words_p(block_size_in_words_p)
-       ,.vcache_sets_p(sets_p)
-       ,.branch_trace_en_p(branch_trace_en_p)
-       ,.hetero_type_vec_p(hetero_type_vec_gp)
+       .addr_width_p(bsg_machine_noc_epa_width_gp)
+       ,.data_width_p(bsg_machine_noc_data_width_gp)
+       ,.num_tiles_x_p(bsg_machine_num_cores_x_gp)
+       ,.num_tiles_y_p(bsg_machine_num_cores_y_gp)
+       ,.dmem_words_p(bsg_machine_core_dmem_words_gp)
+       ,.icache_entries_p(bsg_machine_core_icache_entries_gp)
+       ,.icache_tag_width_p(bsg_machine_core_icache_tag_width_gp)
+       ,.num_cache_p(bsg_machine_llcache_num_cache_gp)
+       ,.vcache_size_p(bsg_machine_llcache_words_gp)
+       ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+       ,.vcache_sets_p(bsg_machine_llcache_sets_gp)
+       ,.branch_trace_en_p(bsg_machine_branch_trace_en_gp)
+       ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
        )
    manycore_wrapper
      (
@@ -315,20 +317,20 @@ module cl_manycore
       ,.loader_link_sif_o(loader_link_sif_lo)
       );
 
-  end
-
+   end else
+      $error(1, "aws-fgpa and aws-vcs only suppor network_cfg_lp == e_network_mesh");
 
 
   // synopsys translate_off
   // print stat signals for vanilla_core_profiler module
   logic print_stat_v;
-  logic [data_width_p-1:0] print_stat_tag;
+  logic [bsg_machine_noc_data_width_gp-1:0] print_stat_tag;
 
   bsg_print_stat_snoop #(
-    .data_width_p(data_width_p)
-    ,.addr_width_p(addr_width_p)
-    ,.x_cord_width_p(x_cord_width_p)
-    ,.y_cord_width_p(y_cord_width_p)
+    .data_width_p(bsg_machine_noc_data_width_gp)
+    ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+    ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+    ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
   ) print_stat_snoop0 (
     .loader_link_sif_in_i(loader_link_sif_lo)
     ,.loader_link_sif_out_i(loader_link_sif_li)
@@ -341,13 +343,13 @@ module cl_manycore
   ////////////////////////////////
   // Configurable Memory System //
   ////////////////////////////////
-  localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3);
-  localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
+  localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bsg_machine_noc_data_width_gp>>3);
+  localparam cache_addr_width_lp=(bsg_machine_noc_epa_width_gp-1+byte_offset_width_lp);
 
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram
-    || mem_cfg_p == e_vcache_blocking_axi4_f1_model
-    || mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram
-    || mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv1_dma
+  if (bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_dram
+    || bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_model
+    || bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_dram
+    || bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_model) begin: lv1_dma
 
     // for now blocking and non-blocking shares the same wire, since interface is
     // the same. But it might change in the future.
@@ -355,34 +357,34 @@ module cl_manycore
     import bsg_cache_pkg::*;
     localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(cache_addr_width_lp);
 
-    logic [num_cache_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
-    logic [num_cache_p-1:0] dma_pkt_v_lo;
-    logic [num_cache_p-1:0] dma_pkt_yumi_li;
+    logic [bsg_machine_llcache_num_cache_gp-1:0][dma_pkt_width_lp-1:0] dma_pkt;
+    logic [bsg_machine_llcache_num_cache_gp-1:0] dma_pkt_v_lo;
+    logic [bsg_machine_llcache_num_cache_gp-1:0] dma_pkt_yumi_li;
 
-    logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_li;
-    logic [num_cache_p-1:0] dma_data_v_li;
-    logic [num_cache_p-1:0] dma_data_ready_lo;
+    logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_llcache_channel_width_gp-1:0] dma_data_li;
+    logic [bsg_machine_llcache_num_cache_gp-1:0] dma_data_v_li;
+    logic [bsg_machine_llcache_num_cache_gp-1:0] dma_data_ready_lo;
 
-    logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_lo;
-    logic [num_cache_p-1:0] dma_data_v_lo;
-    logic [num_cache_p-1:0] dma_data_yumi_li;
+    logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_llcache_channel_width_gp-1:0] dma_data_lo;
+    logic [bsg_machine_llcache_num_cache_gp-1:0] dma_data_v_lo;
+    logic [bsg_machine_llcache_num_cache_gp-1:0] dma_data_yumi_li;
 
   end
    // LEVEL 1
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
-           mem_cfg_p == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
+  if (bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_dram ||
+           bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_model) begin: lv1_vcache
 
-    for (genvar i = 0; i < num_cache_p; i++) begin: vcache
+    for (genvar i = 0; i < bsg_machine_llcache_num_cache_gp; i++) begin: vcache
 
       bsg_manycore_vcache_blocking #(
-        .data_width_p(data_width_p)
-        ,.addr_width_p(addr_width_p)
-        ,.block_size_in_words_p(block_size_in_words_p)
-        ,.sets_p(sets_p)
-        ,.ways_p(ways_p)
-        ,.dma_data_width_p(dma_data_width_p)
-        ,.x_cord_width_p(x_cord_width_p)
-        ,.y_cord_width_p(y_cord_width_p)
+        .data_width_p(bsg_machine_noc_data_width_gp)
+        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+        ,.block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+        ,.sets_p(bsg_machine_llcache_sets_gp)
+        ,.ways_p(bsg_machine_llcache_ways_gp)
+        ,.dma_data_width_p(bsg_machine_llcache_channel_width_gp)
+        ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+        ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
       ) vcache (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
@@ -426,20 +428,20 @@ module cl_manycore
     // synopsys translate_on
 
   end // block: lv1_vcache
-  else if (mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
-           mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv1_vcache_nb
+  else if (bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_dram ||
+           bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_model) begin: lv1_vcache_nb
 
-    for (genvar i = 0; i < num_cache_p; i++) begin: vcache
+    for (genvar i = 0; i < bsg_machine_llcache_num_cache_gp; i++) begin: vcache
       bsg_manycore_vcache_non_blocking #(
-        .data_width_p(data_width_p)
-        ,.addr_width_p(addr_width_p)
-        ,.block_size_in_words_p(block_size_in_words_p)
-        ,.sets_p(sets_p)
-        ,.ways_p(ways_p)
+        .data_width_p(bsg_machine_noc_data_width_gp)
+        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+        ,.block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+        ,.sets_p(bsg_machine_llcache_sets_gp)
+        ,.ways_p(bsg_machine_llcache_ways_gp)
 
-        ,.miss_fifo_els_p(miss_fifo_els_p)
-        ,.x_cord_width_p(x_cord_width_p)
-        ,.y_cord_width_p(y_cord_width_p)
+        ,.miss_fifo_els_p(bsg_machine_llcache_miss_fifo_els_gp)
+        ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+        ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
       ) vcache_nb (
         .clk_i(core_clk)
         ,.reset_i(core_reset)
@@ -471,7 +473,6 @@ module cl_manycore
       ,.ways_p(ways_p)
       ,.id_width_p(id_width_p)
       ,.block_size_in_words_p(block_size_in_words_p)
-      ,.ways_p(ways_p)
     ) vcache_prof (
       .*
       ,.replacement_dirty(mhu0.replacement_dirty)
@@ -487,13 +488,13 @@ module cl_manycore
 
   // LEVEL 2
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
-      mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
-      mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
-      mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin: lv2_axi4
+  if (bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_dram ||
+      bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_model ||
+      bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_dram ||
+      bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_model) begin: lv2_axi4
 
-    logic [axi_id_width_p-1:0] axi_awid;
-    logic [axi_addr_width_p-1:0] axi_awaddr;
+    logic [axi_id_width_lp-1:0] axi_awid;
+    logic [axi_addr_width_lp-1:0] axi_awaddr;
     logic [7:0] axi_awlen;
     logic [2:0] axi_awsize;
     logic [1:0] axi_awburst;
@@ -503,19 +504,19 @@ module cl_manycore
     logic axi_awvalid;
     logic axi_awready;
 
-    logic [axi_data_width_p-1:0] axi_wdata;
-    logic [axi_strb_width_p-1:0] axi_wstrb;
+    logic [axi_data_width_lp-1:0] axi_wdata;
+    logic [axi_strb_width_lp-1:0] axi_wstrb;
     logic axi_wlast;
     logic axi_wvalid;
     logic axi_wready;
 
-    logic [axi_id_width_p-1:0] axi_bid;
+    logic [axi_id_width_lp-1:0] axi_bid;
     logic [1:0] axi_bresp;
     logic axi_bvalid;
     logic axi_bready;
 
-    logic [axi_id_width_p-1:0] axi_arid;
-    logic [axi_addr_width_p-1:0] axi_araddr;
+    logic [axi_id_width_lp-1:0] axi_arid;
+    logic [axi_addr_width_lp-1:0] axi_araddr;
     logic [7:0] axi_arlen;
     logic [2:0] axi_arsize;
     logic [1:0] axi_arburst;
@@ -525,8 +526,8 @@ module cl_manycore
     logic axi_arvalid;
     logic axi_arready;
 
-    logic [axi_id_width_p-1:0] axi_rid;
-    logic [axi_data_width_p-1:0] axi_rdata;
+    logic [axi_id_width_lp-1:0] axi_rid;
+    logic [axi_data_width_lp-1:0] axi_rdata;
     logic [1:0] axi_rresp;
     logic axi_rlast;
     logic axi_rvalid;
@@ -534,14 +535,14 @@ module cl_manycore
 
     bsg_cache_to_axi_hashed #(
       .addr_width_p(cache_addr_width_lp)
-      ,.block_size_in_words_p(block_size_in_words_p)
-      ,.data_width_p(data_width_p)
-      ,.num_cache_p(num_cache_p)
+      ,.block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+      ,.data_width_p(bsg_machine_noc_data_width_gp)
+      ,.num_cache_p(bsg_machine_llcache_num_cache_gp)
 
-      ,.axi_id_width_p(axi_id_width_p)
-      ,.axi_addr_width_p(axi_addr_width_p)
-      ,.axi_data_width_p(axi_data_width_p)
-      ,.axi_burst_len_p(axi_burst_len_p)
+      ,.axi_id_width_p(axi_id_width_lp)
+      ,.axi_addr_width_p(axi_addr_width_lp)
+      ,.axi_data_width_p(axi_data_width_lp)
+      ,.axi_burst_len_p(axi_burst_len_lp)
     ) cache_to_axi (
       .clk_i(core_clk)
       ,.reset_i(core_reset)
@@ -603,10 +604,10 @@ module cl_manycore
 
   // LEVEL 3
   //
-  if (mem_cfg_p == e_vcache_blocking_axi4_f1_dram ||
-      mem_cfg_p == e_vcache_blocking_axi4_f1_model ||
-      mem_cfg_p == e_vcache_non_blocking_axi4_f1_dram ||
-      mem_cfg_p == e_vcache_non_blocking_axi4_f1_model) begin
+  if (bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_dram ||
+      bsg_machine_dram_cfg_gp == e_vcache_blocking_axi4_f1_model ||
+      bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_dram ||
+      bsg_machine_dram_cfg_gp == e_vcache_non_blocking_axi4_f1_model) begin
    // Attach cache to output DRAM
 
    // AXI Address Write signals
@@ -614,7 +615,7 @@ module cl_manycore
    assign m_axi4_manycore_awaddr        = lv2_axi4.axi_awaddr;
    assign m_axi4_manycore_awvalid       = lv2_axi4.axi_awvalid;
    assign lv2_axi4.axi_awready          = m_axi4_manycore_awready;
-   assign m_axi4_manycore_awlen         =  lv2_axi4.axi_awlen;
+   assign m_axi4_manycore_awlen         = lv2_axi4.axi_awlen;
    assign m_axi4_manycore_awsize        = lv2_axi4.axi_awsize;
    assign m_axi4_manycore_awburst       = lv2_axi4.axi_awburst;
    assign m_axi4_manycore_awcache       = lv2_axi4.axi_awcache;
@@ -709,7 +710,7 @@ module cl_manycore
 
    localparam core_cycle_ctr_width_lp = 64;
    logic [core_cycle_ctr_width_lp-1:0] core_cycle_ctr_l;
-   
+
    bsg_cycle_counter
      #(.width_p(core_cycle_ctr_width_lp))
    core_cc
@@ -720,24 +721,24 @@ module cl_manycore
 
    // manycore link
 
-   logic [x_cord_width_p-1:0] mcl_x_cord_li = (x_cord_width_p)'(0);
-   logic [y_cord_width_p-1:0] mcl_y_cord_li = (y_cord_width_p)'(1);
+   logic [bsg_machine_noc_x_coord_width_gp-1:0] mcl_x_cord_li = (bsg_machine_noc_x_coord_width_gp)'(bsg_machine_io_coord_x_gp);
+   logic [bsg_machine_noc_y_coord_width_gp-1:0] mcl_y_cord_li = (bsg_machine_noc_y_coord_width_gp)'(bsg_machine_io_coord_y_gp);
 
-   logic                    print_stat_v_lo  ;
-   logic [data_width_p-1:0] print_stat_tag_lo;
+   logic                                        print_stat_v_lo;
+   logic [bsg_machine_noc_data_width_gp-1:0]    print_stat_tag_lo;
 
    bsg_manycore_link_sif_s axil_link_sif_li;
    bsg_manycore_link_sif_s axil_link_sif_lo;
 
   bsg_manycore_link_to_axil #(
-    .x_cord_width_p     (x_cord_width_p   )
-    ,.y_cord_width_p     (y_cord_width_p   )
-    ,.addr_width_p       (addr_width_p     )
-    ,.data_width_p       (data_width_p     )
-    ,.host_io_pkt_width_p(host_io_pkt_width_p) // Defined in cl_manycore_pkg.v
-    ,.host_io_pkts_tx_p  (host_io_pkts_cap_p) // Defined in cl_manycore_pkg.v
-    ,.host_io_pkts_rx_p  (host_io_pkts_cap_p) // Defined in cl_manycore_pkg.v
-    ,.max_out_credits_p  (max_out_credits_p)
+    .x_cord_width_p     (bsg_machine_noc_x_coord_width_gp)
+    ,.y_cord_width_p     (bsg_machine_noc_y_coord_width_gp)
+    ,.addr_width_p       (bsg_machine_noc_epa_width_gp)
+    ,.data_width_p       (bsg_machine_noc_data_width_gp)
+    ,.host_io_pkt_width_p(host_io_pkt_width_lp)
+    ,.host_io_pkts_tx_p  (bsg_machine_io_credits_max_gp)
+    ,.host_io_pkts_rx_p  (bsg_machine_io_pkts_max_gp)
+    ,.max_out_credits_p  (bsg_machine_io_credits_max_gp)
     ,.cycle_width_p(core_cycle_ctr_width_lp)
   ) mcl_to_axil (
     .clk_i           (clk_main_a0       )
@@ -887,8 +888,8 @@ module cl_manycore
      #(
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
-       ,.origin_x_cord_p(0)
-       ,.origin_y_cord_p(2)
+       ,.origin_x_cord_p(`BSG_MACHINE_ORIGIN_COORD_X)
+       ,.origin_y_cord_p(`BSG_MACHINE_ORIGIN_COORD_Y)
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)

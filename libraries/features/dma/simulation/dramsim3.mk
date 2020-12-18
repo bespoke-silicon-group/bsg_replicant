@@ -55,7 +55,7 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
 # Check if dramsim3 is the memory model for this design
-ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+ifneq ($(filter dramsim3, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 
 # Add a clean rule
 .PHONY: dramsim3.clean
@@ -87,7 +87,7 @@ $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/im
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
-endif # ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+endif # ifneq ($(filter dramsim3, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 dramsim3.clean:
 	rm -f $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so
 

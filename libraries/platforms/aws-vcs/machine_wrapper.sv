@@ -29,7 +29,7 @@
 // the top level so that each machine resides in its own VCS worklib.
 
 module `BSG_MACHINE_NAME();
-   import cl_manycore_pkg::*;
+   import bsg_bladerunner_pkg::*;
    initial begin
       int exit_code;
       string args;
@@ -37,13 +37,24 @@ module `BSG_MACHINE_NAME();
       $value$plusargs("c_args=%s", args);
 
       $display("==================== BSG MACHINE SETTINGS: ====================");
-      $display("[INFO][TESTBENCH] BSG_MACHINE_GLOBAL_X                 = %d", num_tiles_x_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_GLOBAL_Y                 = %d", num_tiles_y_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_SET               = %d", sets_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_WAY               = %d", ways_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS  = %d", block_size_in_words_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_MAX_EPA_WIDTH            = %d", addr_width_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_MEM_CFG                  = %s", mem_cfg_p.name());
+
+      $display("[INFO][TESTBENCH] bsg_machine_noc_ruche_factor_X_gp     = %d", bsg_machine_noc_ruche_factor_X_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_epa_width_gp          = %d", bsg_machine_noc_epa_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_data_width_gp         = %d", bsg_machine_noc_data_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
+
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_sets_gp           = %d", bsg_machine_llcache_sets_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_ways_gp           = %d", bsg_machine_llcache_ways_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_line_words_gp     = %d", bsg_machine_llcache_line_words_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_miss_fifo_els_gp  = %d", bsg_machine_llcache_miss_fifo_els_gp);
+
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_num_channels_gp      = %d", bsg_machine_dram_num_channels_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_cfg_gp               = %s", bsg_machine_dram_cfg_gp.name());
+      
+      $display("[INFO][TESTBENCH] bsg_machine_num_cores_x_gp            = %d", bsg_machine_num_cores_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_num_cores_y_gp            = %d", bsg_machine_num_cores_y_gp);
 
       tb.power_up();
 

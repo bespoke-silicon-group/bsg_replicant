@@ -34,12 +34,12 @@ ifndef __HARDWARE_MEMSYS_DRAMSIM3_MK
 __HARDWARE_MEMSYS_DRAMSIM3_MK := 1
 
 # is this a dramsim3 memory configuration?
-ifneq ($(filter dramsim3, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+ifneq ($(filter dramsim3, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 
 CL_MANYCORE_MEMSYS_ID := "DRS3"
 
 # hbm2_4gb_x128?
-ifneq ($(filter %_hbm2_4gb_x128, $(CL_MANYCORE_MEM_CFG)),)
+ifneq ($(filter %_hbm2_4gb_x128, $(BSG_MACHINE_MEM_CFG)),)
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 14
 CL_MANYCORE_MEMSYS_DRAM_BG_BITS := 2
@@ -59,7 +59,7 @@ DRAMSIM3_MEMORY := hbm2_4gb_x128
 endif
 
 # hbm2_8gb_x128?
-ifneq ($(filter %_hbm2_8gb_x128, $(CL_MANYCORE_MEM_CFG)),)
+ifneq ($(filter %_hbm2_8gb_x128, $(BSG_MACHINE_MEM_CFG)),)
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 15
 CL_MANYCORE_MEMSYS_DRAM_BG_BITS := 2

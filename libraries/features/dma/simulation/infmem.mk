@@ -46,7 +46,7 @@ _BSG_F1_TESTBENCHES_INFINITE_MEM_MK := 1
 _INFINITE_MEM_CFGS := e_infinite_mem
 
 # Check if Infinite Memory is the memory model for this design
-ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
+ifneq ($(filter $(_INFINITE_MEM_CFGS), $(BSG_MACHINE_MEM_CFG)),)
 
-endif # ifneq ($(filter $(_INFINITE_MEM_CFGS), $(CL_MANYCORE_MEM_CFG)),)
+endif # ifneq ($(filter $(_INFINITE_MEM_CFGS), $(BSG_MACHINE_MEM_CFG)),)
 endif # ifndef(_BSG_F1_TESTBENCHES_INFINITE_MEM_MK)

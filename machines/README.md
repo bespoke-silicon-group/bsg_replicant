@@ -12,62 +12,47 @@ Makefile.machine.include file.
 
 ## Machines and Platforms
 
-All machines are supported by the `aws-vcs` platform.
-
 These machines are supported by the `dpi-verilator` and `dpi-vcs` platform:
 
-- timing_v0_8_4
-- timing_v0_16_8
-- timing_v0_32_16
-- timing_v0_64_32
-- baseline_v0_8_4
-- baseline_v0_16_8
-- baseline_v0_32_16
-- baseline_v0_64_32
-- 4x4_fast_n_fake
-- 16x8_fast_n_fake
+- timing_*
+- baseline_*
+- infinite_*
 
-The `aws-fpga` platform only supports the 4x4_blocking_vcache_f1_model. 
+The `aws-fpga` and `aws-vcs` platform only supports the
+4x4_blocking_vcache_f1_model  4x4_blocking_vcache_f1_dram
 
 ## Performance Metric Machines
 
-- timing_v0_16_8 and baseline_v0_16_8: This is a 16x8 array of RISC-V
-  Vanilla Cores with caches on top and bottom. The top caches all
-  share an HBM channel, and the bottom caches are mapped to a
-  separate, independent, HBM channel. Each cache is mapped to a
-  separate channel bank within its respective channel. *This
-  configuration should be the default for taking performance
+- timing_* machines: Manycore pod with caches on top and bottom. There
+  are 16 caches per HBM channel. Each cache is mapped to a separate
+  channel bank within its respective channel. 
+
+  ruche indicates a _ruched_ mesh network. Mesh indicates a
+  traditional 2-D mesh network.
+
+  *This configuration should be the default for taking performance
   measurements and making decisions based on them.*
 
-- timing_v0_32_16 and baseline_v0_32_16: Same as
-  timing/baseline_v0_16_8, but a 32x16 array of tiles. There are four
-  HBM channels.
+- infinite_* machines: Manycore pod with infinite, single-cycle
+  memories on top and bottom of each row. 
 
-- timing_v0_64_32 and baseline_v0_64_32: Same as
-  timing/baseline_v0_16_8, but a 64x32 pod. There are eight HBM
-  channels.
+  ruche indicates a _ruched_ mesh network. Mesh indicates a
+  traditional 2-D mesh network.
 
-- timing_v0_8_4 and baseline_v0_8_4: Same as timing/baseline_v0_16_8,
-  but a 8x4 pod. There is one HBM channel. This is probably not a
-  sensible configuration, as the tile to channel ratio is very
-  low. But for memory bound benchmarks, it may be reasonable to use
-  for iteration.
+  *This configuration should be used to estimate the impact of memory
+  latency.*
 
-The baseline designs use a crossbar network to access memory.
+- baseline_* machines: Manycore pod with infinite, single-cycle
+  memories on top and bottom of each row. 
+
+  The baseline designs use a crossbar network.
+
+  *This configuration should be used to estimate the impact of an
+  ideal network*
 
 ## Correctness Machines
 
 **DO NOT USE THESE MACHINES FOR PERFORMANCE METRICS**
-
-- 4x4_fast_n_fake: this is a 4x4 array of RISC-V Vanilla Cores with
-  1-cycle infinite memories attached directly to network links on
-  top-and-bottom. This is used for getting code running and debugged,
-  but no performance analysis should be done, and no optimization
-  decisions made based on this model.
-
-- 16x8_fast_n_fake: this is like 4x4_fast_n_fake except the RISC-V
-  Vanilla Core array is 16x8. This can be used for getting code running
-  and debugged or observing performance with and ideal memory system.
 
 - 4x4_blocking_vcache_f1_model: This is a 4x4 array of RISC-V Vanilla
   Cores with 1 FAKE DRAM DIM with bounded/low latency attached through
@@ -87,8 +72,33 @@ The baseline designs use a crossbar network to access memory.
 
 **DO NOT USE THESE MACHINES**
 
-- 4x4_blocking_dramsim3_hbm2_512mb: An early version of a DRAMSim3 HBM
-  Architecture. Still used for regression testing but nothing else.
 
-- 8x4_blocking_dramsim3_hbm2_4gb: An early version of a DRAMSim3 HBM
-  Architecture. Still used for regression testing but nothing else.
+## Parameters:
+
+The following parameters in each Makefile.machine.include file can be changed:
+
+
+### Core Configurations
+- `BSG_MACHINE_NUM_CORES_X`: Number of RV32 Cores in the X dimension (width)
+- `BSG_MACHINE_NUM_CORES_Y`: Number of RV32 Cores in the Y dimension (height)
+
+- `BSG_MACHINE_HETERO_TYPE_VEC`: Heterogeneous tile composition. Must
+be a 1-d array equal to the number of tiles, or shorthand
+(default:0). Each value corresponds to a tile type in
+[bsg_manycore_hetero_socket.v](https://github.com/bespoke-silicon-group/bsg_manycore/blob/master/v/bsg_manycore_hetero_socket.v). 0
+is for Vanilla Core (RV32), and anything else should be described in
+the relevant Makefile.machine.include file.
+
+### Network Parameters
+- `BSG_MACHINE_NETWORK_CFG`: Network configuration. Valid values are : e_network_mesh, e_network_crossbar, and e_network_half_ruche_x
+valid values are defined in [bsg_machine_network_cfg_pkg.v](https://github.com/bespoke-silicon-group/bsg_manycore/blob/master/testbenches/common/v/bsg_manycore_network_cfg_pkg.v)
+- `BSG_MACHINE_RUCHE_FACTOR_X`: X-dimension ruche factor. Only applies when `BSG_MACHINE_NETWORK_CFG` is `e_network_half_ruche_x`
+
+### Memory System Parameters
+- `BSG_MACHINE_DRAM_INCLUDED`: Defines whether the DRAM interface is used. Default is 1. 
+- `BSG_MACHINE_MEM_CFG`: Defines memory system configuration as a triple (Cache, Interface, Type). Values are defined and explained in (bsg_bladerunner_mem_cfg_pkg.v)[https://github.com/bespoke-silicon-group/bsg_replicant/blob/master/hardware/bsg_bladerunner_mem_cfg_pkg.v].
+
+- `BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL`: Defines number of Last-Level Caches per DRAM channel.
+- `BSG_MACHINE_VCACHE_SET`: Number of sets in each Last-Level Cache
+- `BSG_MACHINE_VCACHE_WAY`: Number of ways (associativity) in each Last-Level Cache
+- `BSG_MACHINE_VCACHE_LINE_WORDS`: Number of words in each cache line

@@ -106,11 +106,11 @@ $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 # <test_name>.vpd
 
 # set the the name for MEMSYS_STATS
-ifneq ($(filter e_vcache_%, $(CL_MANYCORE_MEM_CFG)),)
+ifneq ($(filter e_vcache_%, $(BSG_MACHINE_MEM_CFG)),)
 MEMSYS_STATS := vcache_stats
 endif
 
-ifneq ($(filter e_infinite_mem, $(CL_MANYCORE_MEM_CFG)),)
+ifneq ($(filter e_infinite_mem, $(BSG_MACHINE_MEM_CFG)),)
 MEMSYS_STATS := infinite_mem_stats
 endif
 

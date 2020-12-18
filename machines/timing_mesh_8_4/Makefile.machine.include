@@ -25,10 +25,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+############################################################################################
+# TIMING_MESH_8_4: this is a 8x4 array with v-caches on top and bottom (a “8x4 pod”).      #
+# Each v-cache is mapped to a separate HBM bank.                                           #
+# There is one HBM channel.                                                                #
+# There is a vanilla, 2D mesh network (no ruche links)                                     #
+# This is probably not a sensible configuration, as the tile to channel ratio is very low. #
+# But for memory bound benchmarks, it may be reasonable to use for iteration.              #
+############################################################################################
+
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Manycore X/Y dimensions
-BSG_MACHINE_NUM_CORES_X               = 4
+BSG_MACHINE_NUM_CORES_X               = 8
 BSG_MACHINE_NUM_CORES_Y               = 4
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
@@ -38,16 +47,15 @@ BSG_MACHINE_NUM_CORES_Y               = 4
 BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 
 # Network Parameters
-BSG_MACHINE_NETWORK_CFG               = e_network_mesh
-BSG_MACHINE_RUCHE_FACTOR_X            = 0
+BSG_MACHINE_NETWORK_CFG              := e_network_mesh
+BSG_MACHINE_RUCHE_FACTOR_X           := 0
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
-BSG_MACHINE_MEM_CFG                   = e_vcache_blocking_axi4_f1_dram
+BSG_MACHINE_MEM_CFG                   = e_vcache_blocking_test_dramsim3_hbm2_4gb_x128
 
 # Victim Cache Parameters
-# AWS Specific:
-BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = $(shell echo $(BSG_MACHINE_NUM_CORES_X)*2 | bc)
+BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
 BSG_MACHINE_VCACHE_SET                = 64
 BSG_MACHINE_VCACHE_WAY                = 8
 BSG_MACHINE_VCACHE_LINE_WORDS         = 16
@@ -73,15 +81,17 @@ BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 
 ##################### Constants and Computations #####################
 
+# Aliases required for memsys.mk, and others.
+# Specific to the HBM2E chip we're modeling (4GB, 4-stack/8-channel)
+__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^30 | bc) # 4GB
+__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/8 | bc)
+
 BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_NUM_CORES_X)*2 | bc)
-# Only one channel in AWS
-BSG_MACHINE_DRAM_NUM_CHANNELS        := 1
+BSG_MACHINE_DRAM_NUM_CHANNELS        := $(shell echo $(BSG_MACHINE_NUM_VCACHE)/$(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL) | bc)
 
-# AWS F1: 2GB (all we expose)
-BSG_MACHINE_DRAM_WORDS               := $(shell echo 2^29 | bc) # 2 GB
-BSG_MACHINE_DRAM_BANK_WORDS          := $(shell echo $(BSG_MACHINE_DRAM_WORDS)/$(BSG_MACHINE_NUM_CORES_X)/2 | bc)
+BSG_MACHINE_DRAM_WORDS               := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS)*$(BSG_MACHINE_DRAM_NUM_CHANNELS) | bc)
+BSG_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_WORDS) / $(BSG_MACHINE_NUM_VCACHE)" | bc)
 
-# Required for BSG Manycore
 # Aliases Required for BSG Manycore
 BSG_MACHINE_GLOBAL_X                  = $(BSG_MACHINE_NUM_CORES_X)
 BSG_MACHINE_GLOBAL_Y                  = $(shell echo $(BSG_MACHINE_NUM_CORES_Y)+$(BSG_MACHINE_ORIGIN_COORD_Y)-1 | bc)

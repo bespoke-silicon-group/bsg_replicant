@@ -34,7 +34,7 @@ ifndef __HARDWARE_MEMSYS_INFMEM_MK
 __HARDWARE_MEMSYS_INFMEM_MK := 1
 
 # is this an inifinite memory configuration?
-ifneq ($(filter infinite, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+ifneq ($(filter infinite, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 
 CL_MANYCORE_MEMSYS_ID := "INFM"
 

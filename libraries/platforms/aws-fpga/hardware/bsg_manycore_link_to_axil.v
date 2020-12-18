@@ -214,7 +214,7 @@ module bsg_manycore_link_to_axil
    wire is_read_rdfo_mc_req   = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdfo_req_gp);
    wire is_read_rdr_req       = (axil_araddr_i == mcl_fifo_base_addr_gp + mcl_ofs_rdr_req_gp);
    wire is_read_rom           = (axil_araddr_i >= mcl_rom_base_addr_gp) &&
-        (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(rom_els_gp*rom_width_gp/8)));
+        (axil_araddr_i < mcl_rom_base_addr_gp + (1<<$clog2(bsg_machine_rom_els_gp*bsg_machine_rom_width_gp/8)));
 
    always_comb begin
 
@@ -291,17 +291,17 @@ module bsg_manycore_link_to_axil
    // bladerunner rom
    // ----------------------------
    // The rom not necessarily in the mcl, so we put its parameters in other package.
-   localparam rom_addr_width_lp = `BSG_SAFE_CLOG2(rom_els_gp);
+   localparam rom_addr_width_lp = `BSG_SAFE_CLOG2(bsg_machine_rom_els_gp);
 
-   wire [rom_addr_width_lp-1:0] br_rom_addr_li = rx_rom_addr_li[$clog2(rom_width_gp/8)+:rom_addr_width_lp];
+   wire [rom_addr_width_lp-1:0] br_rom_addr_li = rx_rom_addr_li[$clog2(bsg_machine_rom_width_gp/8)+:rom_addr_width_lp];
 
-   logic [rom_width_gp-1:0]     br_rom_data_lo;
+   logic [bsg_machine_rom_width_gp-1:0]     br_rom_data_lo;
 
    assign rx_rom_data_lo = axil_data_width_lp'(br_rom_data_lo);
 
    bsg_bladerunner_configuration 
      #(
-       .width_p     (rom_width_gp),
+       .width_p     (bsg_machine_rom_width_gp),
        .addr_width_p(rom_addr_width_lp)
        ) 
    configuration_rom 

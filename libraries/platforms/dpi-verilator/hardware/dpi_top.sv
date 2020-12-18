@@ -1,6 +1,6 @@
 module manycore_tb_top
   import bsg_noc_pkg::*; // {P=0, W, E, N, S}
-  import cl_manycore_pkg::*;
+
   import bsg_manycore_pkg::*;
   import bsg_manycore_addr_pkg::*;
   import bsg_bladerunner_pkg::*;
@@ -8,7 +8,7 @@ module manycore_tb_top
   import bsg_manycore_network_cfg_pkg::*;
   import bsg_manycore_endpoint_to_fifos_pkg::*;
      ();
-
+   
    // Uncomment this to enable VCD Dumping
    /*
    initial begin
@@ -19,19 +19,31 @@ module manycore_tb_top
     */
    initial begin
       $display("==================== BSG MACHINE SETTINGS: ====================");
-      $display("[INFO][TESTBENCH] BSG_MACHINE_GLOBAL_X                 = %d", num_tiles_x_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_GLOBAL_Y                 = %d", num_tiles_y_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_SET               = %d", sets_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_WAY               = %d", ways_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS  = %d", block_size_in_words_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_MAX_EPA_WIDTH            = %d", addr_width_p);
-      $display("[INFO][TESTBENCH] BSG_MACHINE_MEM_CFG                  = %s", mem_cfg_p.name());
-      $display("[INFO][TESTBENCH] BSG_MACHINE_NETWORK_CFG              = %s", bsg_manycore_network_cfg_p.name());
-      $display("[INFO][TESTBENCH] BSG_MACHINE_RUCHE_FACTOR_X           = %d", bsg_ruche_factor_X_p);
+
+      $display("[INFO][TESTBENCH] bsg_machine_noc_ruche_factor_X_gp     = %d", bsg_machine_noc_ruche_factor_X_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_epa_width_gp          = %d", bsg_machine_noc_epa_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_data_width_gp         = %d", bsg_machine_noc_data_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
+
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_num_cache_gp      = %d", bsg_machine_llcache_num_cache_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_sets_gp           = %d", bsg_machine_llcache_sets_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_ways_gp           = %d", bsg_machine_llcache_ways_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_line_words_gp     = %d", bsg_machine_llcache_line_words_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_words_gp          = %d", bsg_machine_llcache_words_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_miss_fifo_els_gp  = %d", bsg_machine_llcache_miss_fifo_els_gp);
+
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_num_channels_gp      = %d", bsg_machine_dram_num_channels_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_cfg_gp               = %s", bsg_machine_dram_cfg_gp.name());
+      
+      $display("[INFO][TESTBENCH] bsg_machine_num_cores_x_gp            = %d", bsg_machine_num_cores_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_num_cores_y_gp            = %d", bsg_machine_num_cores_y_gp);
    end
 
-   localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)));
-   localparam dpi_fifo_els_lp = dpi_fifo_els_gp;
+
+   // TODO: Rename
+   localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(bsg_machine_noc_epa_width_gp,bsg_machine_noc_data_width_gp,bsg_machine_noc_x_coord_width_gp,bsg_machine_noc_y_coord_width_gp)));
    localparam ep_fifo_els_lp = 4;
    localparam async_fifo_els_lp = 16;
    localparam global_counter_width_lp = 64;
@@ -40,7 +52,7 @@ module manycore_tb_top
    
    // TODO: (Future) It would be awesome if the clock frequency (or
    // frequencies) were specified at the machine level.
-   parameter lc_cycle_time_p = 1000000;
+   parameter lc_cycle_time_ps_p = 1000;
 
    logic io_clk;
    logic io_reset;
@@ -55,13 +67,13 @@ module manycore_tb_top
    logic cache_reset;
 
    // TODO: (Future) Host coordinate should be a parameter
-   logic [x_cord_width_p-1:0] host_x_cord_li = (x_cord_width_p)'(0);
-   logic [y_cord_width_p-1:0] host_y_cord_li = (y_cord_width_p)'(1);
+   logic [bsg_machine_noc_x_coord_width_gp-1:0] host_x_cord_li = (bsg_machine_noc_x_coord_width_gp)'(bsg_machine_io_coord_x_gp);
+   logic [bsg_machine_noc_y_coord_width_gp-1:0] host_y_cord_li = (bsg_machine_noc_y_coord_width_gp)'(bsg_machine_io_coord_y_gp);
 
-   logic [num_cache_p-1:0][x_cord_width_p-1:0] cache_x_lo;
-   logic [num_cache_p-1:0][y_cord_width_p-1:0] cache_y_lo;
+   logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_noc_x_coord_width_gp-1:0] cache_x_lo;
+   logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_noc_y_coord_width_gp-1:0] cache_y_lo;
 
-   `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p);
+   `declare_bsg_manycore_link_sif_s(bsg_machine_noc_epa_width_gp, bsg_machine_noc_data_width_gp, bsg_machine_noc_x_coord_width_gp, bsg_machine_noc_y_coord_width_gp);
 
    bsg_manycore_link_sif_s mc_link_sif_li;
    bsg_manycore_link_sif_s mc_link_sif_lo;
@@ -69,12 +81,12 @@ module manycore_tb_top
    bsg_manycore_link_sif_s host_link_sif_li;
    bsg_manycore_link_sif_s host_link_sif_lo;
 
-   bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
-   bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
+   bsg_manycore_link_sif_s [bsg_machine_llcache_num_cache_gp-1:0] cache_link_sif_li;
+   bsg_manycore_link_sif_s [bsg_machine_llcache_num_cache_gp-1:0] cache_link_sif_lo;
 
    // Snoop wires for Print Stat
    logic                                       print_stat_v_lo;
-   logic [data_width_p-1:0]                    print_stat_tag_lo;
+   logic [bsg_machine_noc_data_width_gp-1:0]   print_stat_tag_lo;
 
    // Trace Enable wire for runtime argument to enable tracing (+trace)
    logic trace_en;
@@ -109,7 +121,7 @@ module manycore_tb_top
 `else
    bsg_nonsynth_clock_gen
 `endif
-     #(.cycle_time_p(lc_cycle_time_p)
+     #(.cycle_time_p(lc_cycle_time_ps_p)
        )
    core_clk_gen
      (.o(core_clk));
@@ -161,17 +173,17 @@ module manycore_tb_top
    assign io_reset = core_reset;
    
    bsg_nonsynth_dpi_manycore
-     #(.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ,.addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
+     #(.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+       ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+       ,.data_width_p(bsg_machine_noc_data_width_gp)
        ,.ep_fifo_els_p(ep_fifo_els_lp)
-       ,.dpi_fifo_els_p(dpi_fifo_els_lp)
+       ,.dpi_fifo_els_p(bsg_machine_dpi_fifo_els_gp)
        ,.fifo_width_p(128) // It would be better to read this from somewhere
-       ,.rom_els_p(rom_els_gp)
-       ,.rom_width_p(rom_width_gp)
-       ,.rom_arr_p(rom_arr_gp)
-       ,.max_out_credits_p(max_out_credits_p) // from cl_manycore_pkg.sv
+       ,.rom_els_p(bsg_machine_rom_els_gp)
+       ,.rom_width_p(bsg_machine_rom_width_gp)
+       ,.rom_arr_p(bsg_machine_rom_arr_gp)
+       ,.max_out_credits_p(bsg_machine_io_credits_max_gp)
        )
    mc_dpi
      (.clk_i(io_clk)
@@ -186,10 +198,10 @@ module manycore_tb_top
 
    bsg_print_stat_snoop
      #(
-       .data_width_p(data_width_p)
-       ,.addr_width_p(addr_width_p)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
+       .data_width_p(bsg_machine_noc_data_width_gp)
+       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+       ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+       ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
        ) 
    print_stat_snoop
      (
@@ -202,10 +214,10 @@ module manycore_tb_top
    
    bsg_manycore_link_sif_async_buffer
      #(
-       .addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
+       .addr_width_p(bsg_machine_noc_epa_width_gp)
+       ,.data_width_p(bsg_machine_noc_data_width_gp)
+       ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+       ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
        ,.fifo_els_p(async_fifo_els_lp)
        )
    async_buf
@@ -226,29 +238,65 @@ module manycore_tb_top
    // Manycore Instantiation
    // --------------------------------------------------------------------------
 
-   bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_li;
-   bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_lo;
-   bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_li;
-   bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
+   // Configurable Network
+   localparam logic [e_network_max_val-1:0] network_cfg_lp = (1 << bsg_machine_noc_cfg_gp);
+
+   bsg_manycore_link_sif_s [E:W][bsg_machine_core_y_global_max_gp-1:0] hor_link_sif_li;
+   bsg_manycore_link_sif_s [E:W][bsg_machine_core_y_global_max_gp-1:0] hor_link_sif_lo;
+   bsg_manycore_link_sif_s [S:N][bsg_machine_num_cores_x_gp-1:0] ver_link_sif_li;
+   bsg_manycore_link_sif_s [S:N][bsg_machine_num_cores_x_gp-1:0] ver_link_sif_lo;
+   bsg_manycore_link_sif_s [bsg_machine_num_cores_x_gp-1:0] io_link_sif_li;
+   bsg_manycore_link_sif_s [bsg_machine_num_cores_x_gp-1:0] io_link_sif_lo;
   
 
-   // Configurable Network
-   localparam logic [e_network_max_val-1:0] network_cfg_lp = (1 << bsg_manycore_network_cfg_p);
+   if (network_cfg_lp[e_network_half_ruche_x] |
+        network_cfg_lp[e_network_mesh]) begin
+
+    // Horizontal Tie-Offs
+    //
+    for (genvar i = 0; i < bsg_machine_core_y_global_max_gp; i++) begin
+      bsg_manycore_link_sif_tieoff #(
+        .addr_width_p(bsg_machine_noc_epa_width_gp)
+        ,.data_width_p(bsg_machine_noc_data_width_gp)
+        ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+        ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+      ) tieoff_w (
+        .clk_i(core_clk)
+        ,.reset_i(core_reset)
+        ,.link_sif_i(hor_link_sif_lo[W][i])
+        ,.link_sif_o(hor_link_sif_li[W][i])
+      );
+    end
+
+    for (genvar i = 0; i < bsg_machine_core_y_global_max_gp; i++) begin
+      bsg_manycore_link_sif_tieoff #(
+        .addr_width_p(bsg_machine_noc_epa_width_gp)
+        ,.data_width_p(bsg_machine_noc_data_width_gp)
+        ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+        ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+      ) tieoff_e (
+        .clk_i(core_clk)
+        ,.reset_i(core_reset)
+        ,.link_sif_i(hor_link_sif_lo[E][i])
+        ,.link_sif_o(hor_link_sif_li[E][i])
+      );
+    end
+  end
 
    if (network_cfg_lp[e_network_crossbar]) begin: network
 
-     bsg_manycore #(
-       .dmem_size_p(dmem_size_p)
-       ,.icache_entries_p(icache_entries_p)
-       ,.icache_tag_width_p(icache_tag_width_p)
-       ,.num_tiles_x_p(num_tiles_x_p)
-       ,.num_tiles_y_p(num_tiles_y_p+1)
+     bsg_manycore_top_crossbar #(
+       .dmem_size_p(bsg_machine_core_dmem_words_gp)
+       ,.icache_entries_p(bsg_machine_core_icache_entries_gp)
+       ,.icache_tag_width_p(bsg_machine_core_icache_tag_width_gp)
+       ,.num_tiles_x_p(bsg_machine_num_cores_x_gp)
+       ,.num_tiles_y_p(bsg_machine_core_y_global_max_gp)
        ,.reset_depth_p(reset_depth_lp)
-       ,.data_width_p(data_width_p)
-       ,.addr_width_p(addr_width_p)
-       ,.vcache_size_p(vcache_size_p)
-       ,.vcache_block_size_in_words_p(block_size_in_words_p)
-       ,.vcache_sets_p(sets_p)
+       ,.data_width_p(bsg_machine_noc_data_width_gp)
+       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+       ,.vcache_size_p(bsg_machine_llcache_words_gp)
+       ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+       ,.vcache_sets_p(bsg_machine_llcache_sets_gp)
      ) manycore (
        .clk_i(core_clk)
        ,.reset_i(core_reset)
@@ -265,20 +313,20 @@ module manycore_tb_top
 
      bsg_manycore_top_mesh
      #(
-     .dmem_size_p(dmem_size_p)
-     ,.icache_entries_p(icache_entries_p)
-     ,.icache_tag_width_p(icache_tag_width_p)
-     ,.num_tiles_x_p(num_tiles_x_p)
-     ,.num_tiles_y_p(num_tiles_y_p+1)
+     .dmem_size_p(bsg_machine_core_dmem_words_gp)
+     ,.icache_entries_p(bsg_machine_core_icache_entries_gp)
+     ,.icache_tag_width_p(bsg_machine_core_icache_tag_width_gp)
+     ,.num_tiles_x_p(bsg_machine_num_cores_x_gp)
+     ,.num_tiles_y_p(bsg_machine_core_y_global_max_gp)
      ,.reset_depth_p(reset_depth_lp)
      ,.debug_p(debug_lp)
-     ,.addr_width_p(addr_width_p)
-     ,.data_width_p(data_width_p)
-     ,.vcache_size_p(vcache_size_p)
-     ,.vcache_block_size_in_words_p(block_size_in_words_p)
-     ,.vcache_sets_p(sets_p)
-     ,.branch_trace_en_p(branch_trace_en_p)
-     ,.hetero_type_vec_p(hetero_type_vec_gp)
+     ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+     ,.data_width_p(bsg_machine_noc_data_width_gp)
+     ,.vcache_size_p(bsg_machine_llcache_words_gp)
+     ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+     ,.vcache_sets_p(bsg_machine_llcache_sets_gp)
+     ,.branch_trace_en_p(bsg_machine_branch_trace_en_gp)
+     ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
    ) manycore (
      .clk_i(core_clk)
      ,.reset_i(core_reset)
@@ -296,24 +344,24 @@ module manycore_tb_top
    end
    else if (network_cfg_lp[e_network_half_ruche_x]) begin: network
 
-     `declare_bsg_manycore_ruche_x_link_sif_s(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p);
-     bsg_manycore_ruche_x_link_sif_s [E:W][num_tiles_y_p-1:0][bsg_ruche_factor_X_p-1:0] ruche_link_li, ruche_link_lo;
+     `declare_bsg_manycore_ruche_x_link_sif_s(bsg_machine_noc_epa_width_gp,bsg_machine_noc_data_width_gp,bsg_machine_noc_x_coord_width_gp,bsg_machine_noc_y_coord_width_gp);
+     bsg_manycore_ruche_x_link_sif_s [E:W][bsg_machine_num_cores_y_gp-1:0][bsg_machine_noc_ruche_factor_X_gp-1:0] ruche_link_li, ruche_link_lo;
 
      bsg_manycore_top_ruche #(
-       .dmem_size_p(dmem_size_p)
-       ,.icache_entries_p(icache_entries_p)
-       ,.icache_tag_width_p(icache_tag_width_p)
-       ,.num_tiles_x_p(num_tiles_x_p)
-       ,.num_tiles_y_p(num_tiles_y_p+1)
+       .dmem_size_p(bsg_machine_core_dmem_words_gp)
+       ,.icache_entries_p(bsg_machine_core_icache_entries_gp)
+       ,.icache_tag_width_p(bsg_machine_core_icache_tag_width_gp)
+       ,.num_tiles_x_p(bsg_machine_num_cores_x_gp)
+       ,.num_tiles_y_p(bsg_machine_core_y_global_max_gp)
        ,.reset_depth_p(reset_depth_lp)
-       ,.addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
-       ,.vcache_size_p(vcache_size_p)
-       ,.vcache_block_size_in_words_p(block_size_in_words_p)
-       ,.vcache_sets_p(sets_p)
-       ,.branch_trace_en_p(branch_trace_en_p)
-       ,.ruche_factor_X_p(bsg_ruche_factor_X_p)
-       ,.hetero_type_vec_p(hetero_type_vec_gp)
+       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+       ,.data_width_p(bsg_machine_noc_data_width_gp)
+       ,.vcache_size_p(bsg_machine_llcache_words_gp)
+       ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+       ,.vcache_sets_p(bsg_machine_llcache_sets_gp)
+       ,.branch_trace_en_p(bsg_machine_branch_trace_en_gp)
+       ,.ruche_factor_X_p(bsg_machine_noc_ruche_factor_X_gp)
+       ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
      ) manycore (
        .clk_i(core_clk)
        ,.reset_i(core_reset)
@@ -333,15 +381,15 @@ module manycore_tb_top
 
 
      // tieoff ruche links
-     for (genvar i = 0; i < num_tiles_y_p; i++) begin: y
-       for (genvar j = 0; j < bsg_ruche_factor_X_p; j++) begin: r
+     for (genvar i = 0; i < bsg_machine_num_cores_y_gp; i++) begin: y
+       for (genvar j = 0; j < bsg_machine_noc_ruche_factor_X_gp; j++) begin: r
 
           bsg_manycore_ruche_x_link_sif_tieoff #(
-           .addr_width_p(addr_width_p)
-           ,.data_width_p(data_width_p)
-           ,.x_cord_width_p(x_cord_width_p)
-           ,.y_cord_width_p(y_cord_width_p)
-           ,.ruche_factor_X_p(bsg_ruche_factor_X_p)
+           .addr_width_p(bsg_machine_noc_epa_width_gp)
+           ,.data_width_p(bsg_machine_noc_data_width_gp)
+           ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+           ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+           ,.ruche_factor_X_p(bsg_machine_noc_ruche_factor_X_gp)
            ,.ruche_stage_p(j)
          ) tieoff_re (
            .clk_i(core_clk)
@@ -351,11 +399,11 @@ module manycore_tb_top
          );
 
          bsg_manycore_ruche_x_link_sif_tieoff #(
-           .addr_width_p(addr_width_p)
-           ,.data_width_p(data_width_p)
-           ,.x_cord_width_p(x_cord_width_p)
-           ,.y_cord_width_p(y_cord_width_p)
-           ,.ruche_factor_X_p(bsg_ruche_factor_X_p)
+           .addr_width_p(bsg_machine_noc_epa_width_gp)
+           ,.data_width_p(bsg_machine_noc_data_width_gp)
+           ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+           ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+           ,.ruche_factor_X_p(bsg_machine_noc_ruche_factor_X_gp)
            ,.ruche_stage_p(j)
          ) tieoff_rw (
            .clk_i(core_clk)
@@ -371,42 +419,6 @@ module manycore_tb_top
    end
 
 
-   if (network_cfg_lp[e_network_half_ruche_x] || 
-        network_cfg_lp[e_network_mesh]) begin
-
-    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
-    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
-
-    // Horizontal Tie-Offs
-    //
-    for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
-      bsg_manycore_link_sif_tieoff #(
-        .addr_width_p(addr_width_p)
-        ,.data_width_p(data_width_p)
-        ,.x_cord_width_p(x_cord_width_p)
-        ,.y_cord_width_p(y_cord_width_p)
-      ) tieoff_w (
-        .clk_i(core_clk)
-        ,.reset_i(core_reset)
-        ,.link_sif_i(hor_link_sif_lo[W][i])
-        ,.link_sif_o(hor_link_sif_li[W][i])
-      );
-    end
-
-    for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
-      bsg_manycore_link_sif_tieoff #(
-        .addr_width_p(addr_width_p)
-        ,.data_width_p(data_width_p)
-        ,.x_cord_width_p(x_cord_width_p)
-        ,.y_cord_width_p(y_cord_width_p)
-      ) tieoff_e (
-        .clk_i(core_clk)
-        ,.reset_i(core_reset)
-        ,.link_sif_i(hor_link_sif_lo[E][i])
-        ,.link_sif_o(hor_link_sif_li[E][i])
-      );
-    end
-  end
 
   // connecting link_sif to outside
   //
@@ -421,18 +433,19 @@ module manycore_tb_top
   //  south[1] : victim cache X+1
   //  ...
   //
-  for (genvar i = 0; i < num_tiles_x_p; i++) begin
+  for (genvar i = 0; i < bsg_machine_num_cores_x_gp; i++) begin
     assign cache_link_sif_lo[i] = ver_link_sif_lo[N][i];
     assign ver_link_sif_li[N][i] = cache_link_sif_li[i];
-    assign cache_x_lo[i] = (x_cord_width_p)'(i);
-    assign cache_y_lo[i] = (y_cord_width_p)'(0);
+    assign cache_x_lo[i] = (bsg_machine_noc_x_coord_width_gp)'(i);
+    assign cache_y_lo[i] = (bsg_machine_noc_y_coord_width_gp)'(0);
   end
 
-  for (genvar i = 0; i < num_tiles_x_p; i++) begin
-    assign cache_link_sif_lo[num_tiles_x_p+i] = ver_link_sif_lo[S][i];
-    assign ver_link_sif_li[S][i] = cache_link_sif_li[num_tiles_x_p+i];
-    assign cache_x_lo[num_tiles_x_p+i] = (x_cord_width_p)'(i);
-    assign cache_y_lo[num_tiles_x_p+i] = (y_cord_width_p)'(num_tiles_y_p+2);
+  for (genvar i = 0; i < bsg_machine_num_cores_x_gp; i++) begin
+    assign cache_link_sif_lo[bsg_machine_num_cores_x_gp+i] = ver_link_sif_lo[S][i];
+    assign ver_link_sif_li[S][i] = cache_link_sif_li[bsg_machine_num_cores_x_gp+i];
+    assign cache_x_lo[bsg_machine_num_cores_x_gp+i] = (bsg_machine_noc_x_coord_width_gp)'(i);
+    assign cache_y_lo[bsg_machine_num_cores_x_gp+i] = (bsg_machine_noc_y_coord_width_gp)'(bsg_machine_num_cores_y_gp +
+                                                                                          bsg_machine_origin_coord_y_gp);
   end
 
   // 0,1 for host io
@@ -441,12 +454,12 @@ module manycore_tb_top
   assign io_link_sif_li[0] = mc_link_sif_li;
 
   // Tie off remaining IO links
-  for (genvar i = 1; i < num_tiles_x_p; i++) begin
+  for (genvar i = 1; i < bsg_machine_num_cores_x_gp; i++) begin
     bsg_manycore_link_sif_tieoff #(
-      .addr_width_p(addr_width_p)
-      ,.data_width_p(data_width_p)
-      ,.x_cord_width_p(x_cord_width_p)
-      ,.y_cord_width_p(y_cord_width_p)
+      .addr_width_p(bsg_machine_noc_epa_width_gp)
+      ,.data_width_p(bsg_machine_noc_data_width_gp)
+      ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+      ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
     ) tieoff_io (
       .clk_i(core_clk)
       ,.reset_i(core_reset)
@@ -458,7 +471,7 @@ module manycore_tb_top
    // Manycore Profiling, Trace, and Debug Infrastructure
 
    bind vanilla_core vanilla_core_trace
-     #(
+     #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
        ,.icache_tag_width_p(icache_tag_width_p)
@@ -472,11 +485,11 @@ module manycore_tb_top
       ,.trace_en_i($root.manycore_tb_top.log_en));
 
    bind vanilla_core vanilla_core_profiler
-     #(
+     #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
        .x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
-       ,.origin_x_cord_p(0)
-       ,.origin_y_cord_p(2)
+       ,.origin_x_cord_p(`BSG_MACHINE_ORIGIN_COORD_X)
+       ,.origin_y_cord_p(`BSG_MACHINE_ORIGIN_COORD_Y)
        ,.icache_tag_width_p(icache_tag_width_p)
        ,.icache_entries_p(icache_entries_p)
        ,.data_width_p(data_width_p)
@@ -495,8 +508,8 @@ module manycore_tb_top
    // --------------------------------------------------------------------------
    // Configurable Memory System
    // --------------------------------------------------------------------------
-   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(data_width_p>>3);
-   localparam cache_addr_width_lp=(addr_width_p-1+byte_offset_width_lp);
+   localparam byte_offset_width_lp=`BSG_SAFE_CLOG2(bsg_machine_noc_data_width_gp>>3);
+   localparam cache_addr_width_lp=(bsg_machine_noc_epa_width_gp-1+byte_offset_width_lp);
 
 `ifdef USING_DRAMSIM3
 
@@ -513,8 +526,8 @@ module manycore_tb_top
   localparam hbm_num_channels_p = 8;
 `endif
 
-   if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128
-       || mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_dma
+   if (bsg_machine_dram_cfg_gp == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128
+       || bsg_machine_dram_cfg_gp == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_dma
 
       // for now blocking and non-blocking shares the same wire, since interface is
       // the same. But it might change in the future.
@@ -522,34 +535,34 @@ module manycore_tb_top
       import bsg_cache_pkg::*;
       localparam dma_pkt_width_lp = `bsg_cache_dma_pkt_width(cache_addr_width_lp);
 
-      logic [num_cache_p-1:0][dma_pkt_width_lp-1:0] dma_pkt;
-      logic [num_cache_p-1:0]                       dma_pkt_v_lo;
-      logic [num_cache_p-1:0]                       dma_pkt_yumi_li;
+      logic [bsg_machine_llcache_num_cache_gp-1:0][dma_pkt_width_lp-1:0] dma_pkt;
+      logic [bsg_machine_llcache_num_cache_gp-1:0]                       dma_pkt_v_lo;
+      logic [bsg_machine_llcache_num_cache_gp-1:0]                       dma_pkt_yumi_li;
 
-      logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_li;
-      logic [num_cache_p-1:0]                       dma_data_v_li;
-      logic [num_cache_p-1:0]                       dma_data_ready_lo;
+      logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_llcache_channel_width_gp-1:0] dma_data_li;
+      logic [bsg_machine_llcache_num_cache_gp-1:0]                       dma_data_v_li;
+      logic [bsg_machine_llcache_num_cache_gp-1:0]                       dma_data_ready_lo;
 
-      logic [num_cache_p-1:0][dma_data_width_p-1:0] dma_data_lo;
-      logic [num_cache_p-1:0]                       dma_data_v_lo;
-      logic [num_cache_p-1:0]                       dma_data_yumi_li;
+      logic [bsg_machine_llcache_num_cache_gp-1:0][bsg_machine_llcache_channel_width_gp-1:0] dma_data_lo;
+      logic [bsg_machine_llcache_num_cache_gp-1:0]                       dma_data_v_lo;
+      logic [bsg_machine_llcache_num_cache_gp-1:0]                       dma_data_yumi_li;
 
    end
 
 
    // LEVEL 1
-   if (mem_cfg_p == e_infinite_mem) begin
+   if (bsg_machine_dram_cfg_gp == e_infinite_mem) begin
       // each column has a nonsynth infinite memory
-      localparam infmem_els_lp = 1<<(addr_width_p-$clog2(num_cache_p));
+      localparam infmem_els_lp = 1<<(bsg_machine_noc_epa_width_gp-$clog2(bsg_machine_llcache_num_cache_gp));
 
-      for (genvar i = 0; i < num_cache_p; i++) begin
+      for (genvar i = 0; i < bsg_machine_llcache_num_cache_gp; i++) begin
          bsg_nonsynth_mem_infinite 
            #(
-             .data_width_p(data_width_p)
-             ,.addr_width_p(addr_width_p)
+             .data_width_p(bsg_machine_noc_data_width_gp)
+             ,.addr_width_p(bsg_machine_noc_epa_width_gp)
              ,.mem_els_p(infmem_els_lp)
-             ,.x_cord_width_p(x_cord_width_p)
-             ,.y_cord_width_p(y_cord_width_p)
+             ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+             ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
              ,.id_p(i)
              ) 
          mem_infty 
@@ -566,7 +579,7 @@ module manycore_tb_top
       end
 
       bind bsg_nonsynth_mem_infinite infinite_mem_profiler 
-          #(
+          #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
             .data_width_p(data_width_p)
             ,.addr_width_p(addr_width_p)
             ,.x_cord_width_p(x_cord_width_p)
@@ -581,20 +594,20 @@ module manycore_tb_top
          ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
          );
 
-   end else if (mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache
+   end else if (bsg_machine_dram_cfg_gp == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache
 
-      for (genvar i = 0; i < num_cache_p; i++) begin: vcache
+      for (genvar i = 0; i < bsg_machine_llcache_num_cache_gp; i++) begin: vcache
 
          bsg_manycore_vcache_blocking 
            #(
-             .data_width_p(data_width_p)
-             ,.addr_width_p(addr_width_p)
-             ,.block_size_in_words_p(block_size_in_words_p)
-             ,.sets_p(sets_p)
-             ,.ways_p(ways_p)
-             ,.dma_data_width_p(dma_data_width_p)
-             ,.x_cord_width_p(x_cord_width_p)
-             ,.y_cord_width_p(y_cord_width_p)
+             .data_width_p(bsg_machine_noc_data_width_gp)
+             ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+             ,.block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+             ,.sets_p(bsg_machine_llcache_sets_gp)
+             ,.ways_p(bsg_machine_llcache_ways_gp)
+             ,.dma_data_width_p(bsg_machine_llcache_channel_width_gp)
+             ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+             ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
              ) 
          vcache 
             (
@@ -619,7 +632,7 @@ module manycore_tb_top
       end
 
       bind bsg_cache vcache_profiler 
-        #(
+        #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
           .data_width_p(data_width_p)
           ,.addr_width_p(addr_width_p)
           ,.header_print_p("vcache[0]")
@@ -639,20 +652,20 @@ module manycore_tb_top
          );
 
    end // block: lv1_vcache
-   else if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
+   else if (bsg_machine_dram_cfg_gp == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
 
-      for (genvar i = 0; i < num_cache_p; i++) begin: vcache
+      for (genvar i = 0; i < bsg_machine_llcache_num_cache_gp; i++) begin: vcache
          bsg_manycore_vcache_non_blocking 
            #(
-             .data_width_p(data_width_p)
-             ,.addr_width_p(addr_width_p)
-             ,.block_size_in_words_p(block_size_in_words_p)
-             ,.sets_p(sets_p)
-             ,.ways_p(ways_p)
+             .data_width_p(bsg_machine_noc_data_width_gp)
+             ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+             ,.block_size_in_words_p(bsg_machine_llcache_line_words_gp)
+             ,.sets_p(bsg_machine_llcache_sets_gp)
+             ,.ways_p(bsg_machine_llcache_ways_gp)
 
-             ,.miss_fifo_els_p(miss_fifo_els_p)
-             ,.x_cord_width_p(x_cord_width_p)
-             ,.y_cord_width_p(y_cord_width_p)
+             ,.miss_fifo_els_p(bsg_machine_llcache_miss_fifo_els_gp)
+             ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
+             ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
              ) 
          vcache_nb 
             (
@@ -677,7 +690,7 @@ module manycore_tb_top
       end
 
       bind bsg_cache_non_blocking vcache_non_blocking_profiler 
-        #(
+        #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
           .data_width_p(data_width_p)
           ,.addr_width_p(addr_width_p)
           ,.sets_p(sets_p)
@@ -696,21 +709,21 @@ module manycore_tb_top
          );
    end 
 
-   if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128 ||
-            mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv2_simulated_hbm
+   if (bsg_machine_dram_cfg_gp == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128 ||
+            bsg_machine_dram_cfg_gp == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv2_simulated_hbm
 
       // checks that this configuration is supported
       // we do not support having fewer caches than channels
-      localparam int num_cache_per_hbm_channel_p = $floor(num_cache_p/dram_channels_used_p);
+      localparam int num_cache_per_hbm_channel_p = $floor(bsg_machine_llcache_num_cache_gp/bsg_machine_dram_num_channels_gp);
       if (num_cache_per_hbm_channel_p <= 0) begin
          $fatal(1, "dram channels (%d) must be less than or equal to l2 caches (%d)",
-                dram_channels_used_p, num_cache_p);
+                bsg_machine_dram_num_channels_gp, bsg_machine_llcache_num_cache_gp);
       end
       // caches:channels must be an integral ratio
-      localparam real _num_tiles_x_real_p = num_cache_p;
-      if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/dram_channels_used_p)) begin
+      localparam real _num_tiles_x_real_p = bsg_machine_llcache_num_cache_gp;
+      if (num_cache_per_hbm_channel_p != $ceil(_num_tiles_x_real_p/bsg_machine_dram_num_channels_gp)) begin
          $fatal(1, "l2 caches (%d) must be a multiple of dram channels (%d)",
-                num_cache_p, dram_channels_used_p);
+                bsg_machine_llcache_num_cache_gp, bsg_machine_dram_num_channels_gp);
       end
 
       localparam lg_num_cache_per_hbm_channel_p = `BSG_SAFE_CLOG2(num_cache_per_hbm_channel_p);
@@ -730,16 +743,16 @@ module manycore_tb_top
       logic [hbm_num_channels_p-1:0][hbm_channel_addr_width_p-1:0] hbm_ch_addr_li;
       logic [hbm_num_channels_p-1:0]                               hbm_data_v_li;
 
-      for (genvar ch_i = 0; ch_i < dram_channels_used_p; ch_i++) begin
+      for (genvar ch_i = 0; ch_i < bsg_machine_dram_num_channels_gp; ch_i++) begin
          localparam cache_range_lo_p = ch_i * num_cache_per_hbm_channel_p;
          localparam cache_range_hi_p = (ch_i+1) * num_cache_per_hbm_channel_p - 1;
 
          bsg_cache_to_test_dram
            #(.num_cache_p(num_cache_per_hbm_channel_p)
-             ,.data_width_p(data_width_p)
-             ,.dma_data_width_p(dma_data_width_p)
+             ,.data_width_p(bsg_machine_noc_data_width_gp)
+             ,.dma_data_width_p(bsg_machine_llcache_channel_width_gp)
              ,.addr_width_p(cache_addr_width_lp)
-             ,.block_size_in_words_p(block_size_in_words_p)
+             ,.block_size_in_words_p(bsg_machine_llcache_line_words_gp)
              ,.cache_bank_addr_width_p(hbm_cache_bank_addr_width_p)
              ,.dram_channel_addr_width_p(hbm_channel_addr_width_p)
              ,.dram_data_width_p(hbm_data_width_p))
@@ -778,7 +791,7 @@ module manycore_tb_top
       end
 
       // tie-off handshake for the the unused hbm channels
-      for (genvar ch_i = dram_channels_used_p; ch_i < hbm_num_channels_p; ch_i++) begin
+      for (genvar ch_i = bsg_machine_dram_num_channels_gp; ch_i < hbm_num_channels_p; ch_i++) begin
          assign hbm_req_v_lo[ch_i]  = 1'b0;
          assign hbm_data_v_lo[ch_i] = 1'b0;
       end
@@ -786,8 +799,8 @@ module manycore_tb_top
       // assign hbm clk and reset to core for now...
    end // block: lv2_simulated_hbm
 
-   if (mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128 ||
-            mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv3_dramsim3
+   if (bsg_machine_dram_cfg_gp == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128 ||
+            bsg_machine_dram_cfg_gp == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv3_dramsim3
 
 `ifdef USING_DRAMSIM3
 
@@ -867,7 +880,7 @@ module manycore_tb_top
    // Instantiate a counter to track execution time on the
    // manycore. 
    bsg_nonsynth_dpi_cycle_counter
-     #(.width_p(64), // 64-bit counter
+     #(.width_p(global_counter_width_lp), // 64-bit counter
        .debug_p(0))
    ctr
      (.clk_i(core_clk)
@@ -894,6 +907,7 @@ module manycore_tb_top
           $display("BSG COSIM PASS: Test passed!");
       $finish;
    end
+
 `endif
 
 endmodule
