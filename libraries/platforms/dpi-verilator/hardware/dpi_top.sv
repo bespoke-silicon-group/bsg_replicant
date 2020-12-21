@@ -234,7 +234,7 @@ module manycore_tb_top
    // idenitical labels to make DPI hierarchy processing easier
    if (bsg_machine_crossbar_network_gp == 1) begin: network
 
-     bsg_manycore_top_crossbar #(
+     bsg_manycore #(
        .dmem_size_p(dmem_size_p)
        ,.icache_entries_p(icache_entries_p)
        ,.icache_tag_width_p(icache_tag_width_p)
@@ -261,8 +261,9 @@ module manycore_tb_top
 
    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
-
-   bsg_manycore 
+     
+     
+   bsg_manycore
      #(
      .dmem_size_p(dmem_size_p)
      ,.icache_entries_p(icache_entries_p)
@@ -539,10 +540,15 @@ module manycore_tb_top
           .data_width_p(data_width_p)
           ,.addr_width_p(addr_width_p)
           ,.header_print_p("vcache[0]")
+          ,.ways_p(ways_p)
           ) 
       vcache_prof 
         (
          .*
+         // bsg_cache_miss
+         ,.chosen_way_n(miss.chosen_way_n)
+
+         // From top-level
          ,.global_ctr_i($root.manycore_tb_top.global_ctr)
          ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
          ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
@@ -598,27 +604,9 @@ module manycore_tb_top
           ) 
       vcache_prof
         (
-         .clk_i(clk_i)
-         ,.reset_i(reset_i)
-
-         ,.tl_data_mem_pkt_i(tl_data_mem_pkt_lo)
-         ,.tl_data_mem_pkt_v_i(tl_data_mem_pkt_v_lo)
-         ,.tl_data_mem_pkt_ready_i(tl_data_mem_pkt_ready_li)
-
-         ,.mhu_idle_i(mhu_idle)
-
-         ,.mhu_data_mem_pkt_i(mhu_data_mem_pkt_lo)
-         ,.mhu_data_mem_pkt_v_i(mhu_data_mem_pkt_v_lo)
-         ,.mhu_data_mem_pkt_yumi_i(mhu_data_mem_pkt_yumi_li)
-
-         ,.miss_fifo_data_i(miss_fifo_data_li)
-         ,.miss_fifo_v_i(miss_fifo_v_li)
-         ,.miss_fifo_ready_i(miss_fifo_ready_lo)
-
-         ,.dma_pkt_i(dma_pkt_o)
-         ,.dma_pkt_v_i(dma_pkt_v_o)
-         ,.dma_pkt_yumi_i(dma_pkt_yumi_i)
-
+         .*
+         ,.replacement_dirty(mhu0.replacement_dirty)
+         ,.replacement_valid(mhu0.replacement_valid)
          ,.global_ctr_i($root.manycore_tb_top.global_ctr)
          ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
          ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
