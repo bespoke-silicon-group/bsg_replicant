@@ -1,19 +1,19 @@
 # Copyright (c) 2019, University of Washington All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-# 
+#
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
-# 
+#
 # Redistributions in binary form must reproduce the above copyright notice, this
 # list of conditions and the following disclaimer in the documentation and/or
 # other materials provided with the distribution.
-# 
+#
 # Neither the name of the copyright holder nor the names of its contributors may
 # be used to endorse or promote products derived from this software without
 # specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 # ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 # WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -25,22 +25,21 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifndef __BSG_MACHINE_MK
-__BSG_MACHINE_MK := 1
+# This Makefile fragment defines rules/flags for compiling C/C++ files
 
-# BSG_F1_DIR: The path to the BSG F1 repository
-ifndef BSG_F1_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_F1_DIR is not defined$(NC)"))
-endif
+# BlackParrot GCC
+BP_CC = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-gcc
+# Usage objdump -d -t <prog.mem> > <prog.dump>
+BP_OBJDUMP = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-objdump
+# Usage objcopy -O verilog <prog.riscv> <prog.mem>
+BP_OBJCOPY = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-objcopy
+# Usage python nbf.py --config --skip-zeros --ncpus=1 --prog=<prog.mem>
+BP_NBF = $(BLACKPARROT_DIR)/bp_common/software/py/nbf.py
 
-# BSG Machine Path is the path to the target Makefile.machine.include
-# file. We allow it to be overriden.
+# TODO: Need to grab a host program, convert to .mem, convert to .nbf, and
+#   place .mem and .nbf in the same directory as the executable
+#PROG :=$(BLACKPARROT_DIR)/bp_common/test/mem/bp_tests/hello_world.riscv
 
-# To switch machines, simply switch the path of BSG_MACHINE_PATH to
-# another directory with a Makefile.machine.include file.
-BSG_MACHINE_PATH ?= $(BSG_F1_DIR)/machines/4x4_fast_n_fake
-
-# Convert the machine path to an abspath
-override BSG_MACHINE_PATH := $(abspath $(BSG_MACHINE_PATH))
-
-endif
+# TODO: Need to replace with both x86 and RISC-V compilation, for now.
+#   Eventually only RISC-V
+include $(LIBRARIES_PATH)/platforms/dpi-vcs/compilation.mk
