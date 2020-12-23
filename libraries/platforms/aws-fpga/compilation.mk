@@ -54,7 +54,9 @@ PYTHON = python
 # same name
 %.o: %.c %.h
 	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
-	$(BP_CC) -c -o $*.rv64o $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<)
+	$(BP_CC) -o $*.rv64o $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) \
+		-march=rv64ima -mabi=lp64 -mcmodel=medany \
+		-static -nostartfiles -L$(BLACKPARROT_DIR)/bp_common/test/lib/ -lperch -Triscv.ld -UVCS -fPIC
 	$(BP_OBJDUMP) -d -t $*.rv64o > prog.dump
 	$(BP_OBJCOPY) -O verilog $*.rv64o prog.mem
 	$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf

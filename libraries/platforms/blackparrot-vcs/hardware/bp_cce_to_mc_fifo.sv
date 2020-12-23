@@ -387,12 +387,10 @@ module bp_cce_to_mc_fifo
 
   always_ff @(negedge clk_i)
     begin
-      if (io_cmd_v_li)
-        $display("[BP] Incoming command: %p", io_cmd_li);
-      if (out_v_li)
-        $display("[LINK] Outgoing mc_pkt: %p", out_packet_li);
-      if (io_resp_yumi_i)
-        $display("[BP] Outgoing response: %p", io_resp_cast_o);
+      if (bp_to_mc_yumi_li)
+        $display("[BP-LINK] Outgoing command: %p", bp_to_mc_lo);
+      if (mc_to_bp_response_v_li)
+        $display("[BP-LINK] Incoming response: %p", mc_to_bp_response_li);
     end
 
 endmodule

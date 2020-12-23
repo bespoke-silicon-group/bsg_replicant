@@ -35,6 +35,14 @@ int vcs_main(int argc, char ** argv) {
 #else
 int main(int argc, char ** argv) {
 #endif
+
+    uint64_t bp_cfg_offset = 0x200000;
+    volatile uint64_t *did_mask_addr = (uint64_t *) (0x0009 + bp_cfg_offset);
+    volatile uint64_t *sac_mask_addr = (uint64_t *) (0x000a + bp_cfg_offset);
+
+    // Unlock manycore domain
+    *did_mask_addr = 3;
+
     uint64_t  bp_coproc_offset             = 2UL << 36UL;
 
     volatile uint64_t *mc_link_bp_req_fifo_addr     = (uint64_t *) (0x01000 + bp_coproc_offset);

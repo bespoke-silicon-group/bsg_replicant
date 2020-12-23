@@ -27,19 +27,5 @@
 
 # This Makefile fragment defines rules/flags for compiling C/C++ files
 
-# BlackParrot GCC
-BP_CC = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-gcc
-# Usage objdump -d -t <prog.mem> > <prog.dump>
-BP_OBJDUMP = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-objdump
-# Usage objcopy -O verilog <prog.riscv> <prog.mem>
-BP_OBJCOPY = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-objcopy
-# Usage python nbf.py --config --skip-zeros --ncpus=1 --prog=<prog.mem>
-BP_NBF = $(BLACKPARROT_DIR)/bp_common/software/py/nbf.py
-
-# TODO: Need to grab a host program, convert to .mem, convert to .nbf, and
-#   place .mem and .nbf in the same directory as the executable
-#PROG :=$(BLACKPARROT_DIR)/bp_common/test/mem/bp_tests/hello_world.riscv
-
 # TODO: Need to replace with both x86 and RISC-V compilation, for now.
-#   Eventually only RISC-V
 include $(LIBRARIES_PATH)/platforms/dpi-vcs/compilation.mk
