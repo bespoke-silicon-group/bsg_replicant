@@ -38,14 +38,34 @@ NC=\033[0m
 
 .PRECIOUS: %.o
 
+## TODO: Specialize to BP Platform
+# BlackParrot GCC
+BP_CC = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-gcc
+BP_CXX = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-g++
+# Usage objdump -d -t <prog.riscv> > <prog.dump>
+BP_OBJDUMP = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-objdump
+# Usage objcopy -O verilog <prog.riscv> <prog.mem>
+BP_OBJCOPY = $(BLACKPARROT_DIR)/external/bin/riscv64-unknown-linux-gnu-objcopy
+# Usage python nbf.py --config --ncpus=1 --mem=<prog.mem> > <prog.nbf>
+BP_NBF = $(BLACKPARROT_DIR)/bp_common/software/py/nbf.py
+PYTHON = python
+
 # each regression target needs to build its .o from a .c and .h of the
 # same name
 %.o: %.c %.h
 	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
+	$(BP_CC) -c -o $*.rv64o $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<)
+	$(BP_OBJDUMP) -d -t $*.rv64o > prog.dump
+	$(BP_OBJCOPY) -O verilog $*.rv64o prog.mem
+	$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf
 
 # ... or a .cpp and .hpp of the same name
 %.o: %.cpp %.hpp
 	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
+	$(BP_CXX) -c -o $*.rv64o $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
+	$(BP_OBJDUMP) -d -t $*.rv64o > prog.dump
+	$(BP_OBJCOPY) -O verilog $*.rv64o prog.mem
+	$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf
 
 .PHONY: platform.compilation.clean
 platform.compilation.clean:

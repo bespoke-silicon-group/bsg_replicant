@@ -254,7 +254,8 @@ module manycore_tb_top
       ,.mem_resp_data_yumi_o(mem_resp_data_yumi_lo)
       );
 
-  assign io_cmd_ready_li = '0;
+  // Should go to "host"
+  assign io_cmd_ready_li = 1'b1;
   assign io_resp_li      = '0;
   assign io_resp_v_li    = '0;
 
@@ -267,8 +268,8 @@ module manycore_tb_top
      ,.payload_mask_p(mem_cmd_payload_mask_gp)
      )
    burst2lite
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    (.clk_i(core_clk)
+     ,.reset_i(core_reset)
 
      ,.mem_header_i(mem_cmd_header_lo)
      ,.mem_header_v_i(mem_cmd_header_v_lo)
@@ -292,8 +293,8 @@ module manycore_tb_top
      ,.payload_mask_p(mem_resp_payload_mask_gp)
      )
    lite2burst
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    (.clk_i(core_clk)
+     ,.reset_i(core_reset)
 
      ,.mem_i(dram_resp_li)
      ,.mem_v_i(dram_resp_v_li)
@@ -308,14 +309,17 @@ module manycore_tb_top
      ,.mem_data_ready_and_i(mem_resp_data_yumi_lo)
      );
 
+
+
   // TODO: Should come in over the manycore network
   `define dram_pkg bp_dramsim3_lpddr_2Gb_x16_pkg
   bp_mem
    #(.bp_params_p(e_bp_default_cfg)
      ,.mem_offset_p(32'h8000_0000)
      ,.mem_load_p(1)
+     // TODO: Should pass in prog name via plusargs, not parameter
      ,.mem_file_p("prog.mem")
-     ,.mem_cap_in_bytes_p(2**22)
+     ,.mem_cap_in_bytes_p(2**20)
      ,.use_ddr_p(0)
      ,.use_dramsim3_p(0)
      ,.dram_fixed_latency_p(10)
@@ -341,14 +345,14 @@ module manycore_tb_top
   bp_nonsynth_nbf_loader
    #(.bp_params_p(e_bp_default_cfg))
    nbf_loader
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
+    (.clk_i(core_clk)
+     ,.reset_i(core_reset)
 
      ,.lce_id_i(4'('b10))
 
      ,.io_cmd_o(io_cmd_li)
      ,.io_cmd_v_o(io_cmd_v_li)
-     ,.io_cmd_yumi_i(io_cmd_yumi_li)
+     ,.io_cmd_yumi_i(io_cmd_yumi_lo)
 
      ,.io_resp_i(io_resp_lo)
      ,.io_resp_v_i(io_resp_v_lo)

@@ -90,12 +90,14 @@ $(REGRESSION_TESTS:%=.%/vanilla_stats.csv): .%/vanilla_stats.csv : %.rule
 
 .%/vcdplus.vpd:
 	mkdir -p .$(TEST_NAME)
+	cp prog.* .$(TEST_NAME)
 	cd .$(TEST_NAME) && \
 	../$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $(LOG_NAME)
 	@mv .$(TEST_NAME)/$(LOG_NAME) $(LOG_NAME)
 
 .%/vanilla_stats.csv: 
 	mkdir -p .$(TEST_NAME)
+	cp prog.* .$(TEST_NAME)
 	cd .$(TEST_NAME) && \
 	../$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $(LOG_NAME)
 	@mv .$(TEST_NAME)/$(LOG_NAME) $(LOG_NAME)
