@@ -157,6 +157,7 @@ module manycore_tb_top
    assign io_clk = core_clk;
    assign io_reset = core_reset;
    
+   // TODO: REMOVE, STUBBED
    bsg_nonsynth_dpi_manycore
      #(.x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
@@ -173,12 +174,12 @@ module manycore_tb_top
    mc_dpi
      (.clk_i(io_clk)
       ,.reset_i(io_reset)
-
+   
       // manycore link
-      ,.link_sif_i(host_link_sif_li)
-      ,.link_sif_o(host_link_sif_lo)
-      ,.my_x_i(host_x_cord_li)
-      ,.my_y_i(host_y_cord_li)
+      ,.link_sif_i('0)
+      ,.link_sif_o()
+      ,.my_x_i('0)
+      ,.my_y_i('0)
       );
 
    // --------------------------------------------------------------------------
@@ -254,10 +255,45 @@ module manycore_tb_top
       ,.mem_resp_data_yumi_o(mem_resp_data_yumi_lo)
       );
 
-  // Should go to "host"
-  assign io_cmd_ready_li = 1'b1;
-  assign io_resp_li      = '0;
-  assign io_resp_v_li    = '0;
+  bp_bedrock_uce_mem_msg_s mc_io_cmd_li;
+  logic mc_io_cmd_v_li, mc_io_cmd_yumi_lo;
+
+  bp_bedrock_uce_mem_msg_s mc_io_resp_lo;
+  logic mc_io_resp_v_lo, mc_io_resp_ready_li;
+  // TODO: Should come in over the manycore network
+  bp_cce_to_mc_fifo
+   #(.bp_params_p(e_bp_default_cfg)
+     ,.mc_x_cord_width_p(x_cord_width_p)
+     ,.mc_y_cord_width_p(y_cord_width_p)
+     ,.mc_data_width_p(data_width_p)
+     ,.mc_addr_width_p(addr_width_p)
+     )
+    host_link
+    (.clk_i(core_clk)
+     ,.reset_i(core_reset)
+  
+     ,.io_cmd_i(io_cmd_lo)
+     ,.io_cmd_v_i(io_cmd_v_lo)
+     ,.io_cmd_ready_o(io_cmd_ready_li)
+  
+     ,.io_resp_o(io_resp_li)
+     ,.io_resp_v_o(io_resp_v_li)
+     ,.io_resp_yumi_i(io_resp_yumi_lo)
+  
+     ,.io_cmd_o(mc_io_cmd_li)
+     ,.io_cmd_v_o(mc_io_cmd_v_li)
+     ,.io_cmd_yumi_i(mc_io_cmd_yumi_lo)
+  
+     ,.io_resp_i(mc_io_resp_lo)
+     ,.io_resp_v_i(mc_io_resp_v_lo)
+     ,.io_resp_ready_o(mc_io_resp_ready_li)
+  
+     ,.link_sif_i(host_link_sif_li)
+     ,.link_sif_o(host_link_sif_lo)
+  
+     ,.my_x_i(host_x_cord_li)
+     ,.my_y_i(host_y_cord_li)
+     );
 
   bp_bedrock_uce_mem_msg_s dram_cmd_lo;
   logic dram_cmd_v_lo, dram_cmd_ready_and_li;
@@ -309,8 +345,6 @@ module manycore_tb_top
      ,.mem_data_ready_and_i(mem_resp_data_yumi_lo)
      );
 
-
-
   // TODO: Should come in over the manycore network
   `define dram_pkg bp_dramsim3_lpddr_2Gb_x16_pkg
   bp_mem
@@ -341,7 +375,15 @@ module manycore_tb_top
      ,.dram_reset_i(core_reset)
      );
 
+
+  bp_bedrock_uce_mem_msg_s nbf_io_cmd_li;
+  logic nbf_io_cmd_v_li, nbf_io_cmd_yumi_lo;
+
+  bp_bedrock_uce_mem_msg_s nbf_io_resp_lo;
+  logic nbf_io_resp_v_lo, nbf_io_resp_ready_li;
+
   // TODO: Should come in over the manycore network
+  logic nbf_done_lo;
   bp_nonsynth_nbf_loader
    #(.bp_params_p(e_bp_default_cfg))
    nbf_loader
@@ -350,16 +392,28 @@ module manycore_tb_top
 
      ,.lce_id_i(4'('b10))
 
-     ,.io_cmd_o(io_cmd_li)
-     ,.io_cmd_v_o(io_cmd_v_li)
-     ,.io_cmd_yumi_i(io_cmd_yumi_lo)
+     ,.io_cmd_o(nbf_io_cmd_li)
+     ,.io_cmd_v_o(nbf_io_cmd_v_li)
+     ,.io_cmd_yumi_i(nbf_io_cmd_yumi_lo)
 
-     ,.io_resp_i(io_resp_lo)
-     ,.io_resp_v_i(io_resp_v_lo)
-     ,.io_resp_ready_o(io_resp_ready_li)
+     ,.io_resp_i(nbf_io_resp_lo)
+     ,.io_resp_v_i(nbf_io_resp_v_lo)
+     ,.io_resp_ready_o(nbf_io_resp_ready_li)
 
-     ,.done_o()
+     ,.done_o(nbf_done_lo)
      );
+
+  // Static arbitration
+  assign io_cmd_li = nbf_done_lo ? mc_io_cmd_li : nbf_io_cmd_li;
+  assign io_cmd_v_li = nbf_done_lo ? mc_io_cmd_v_li : nbf_io_cmd_v_li;
+  assign nbf_io_cmd_yumi_lo = ~nbf_done_lo & io_cmd_yumi_lo;
+  assign mc_io_cmd_yumi_lo = nbf_done_lo & io_cmd_yumi_lo;
+
+  assign nbf_io_resp_lo = io_resp_lo;
+  assign mc_io_resp_lo = io_resp_lo;
+  assign nbf_io_resp_v_lo = ~nbf_done_lo & io_resp_v_lo;
+  assign mc_io_resp_v_lo = nbf_done_lo & io_resp_v_lo;
+  assign io_resp_ready_li = nbf_done_lo ? mc_io_resp_ready_li : nbf_io_resp_ready_li;
 
    bsg_print_stat_snoop
      #(
@@ -973,6 +1027,8 @@ module manycore_tb_top
 
    end
 
+  initial begin #50000000000 $finish(); end
+
    // Instantiate a counter to track execution time on the
    // manycore. 
    bsg_nonsynth_dpi_cycle_counter
@@ -989,20 +1045,20 @@ module manycore_tb_top
    // DPI Calls in cosim_main will cause simulator time to progress.
    //
    // This mirrors the DPI functions in aws simulation
-`ifndef VERILATOR
-   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args);
-   initial begin
-      int exit_code;
-      string args;
-      longint t;
-      $value$plusargs("c_args=%s", args);
-      manycore_tb_top.cosim_main(exit_code, args);
-      if(exit_code < 0) 
-          $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
-      else 
-          $display("BSG COSIM PASS: Test passed!");
-      $finish;
-   end
-`endif
+//`ifndef VERILATOR
+//   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args);
+//   initial begin
+//      int exit_code;
+//      string args;
+//      longint t;
+//      $value$plusargs("c_args=%s", args);
+//      manycore_tb_top.cosim_main(exit_code, args);
+//      if(exit_code < 0) 
+//          $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
+//      else 
+//          $display("BSG COSIM PASS: Test passed!");
+//      $finish;
+//   end
+//`endif
 
 endmodule

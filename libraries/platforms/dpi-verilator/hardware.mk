@@ -136,6 +136,7 @@ BSG_DESIGN_TOP := manycore_tb_top
 
 # TODO: Actually should have hw list in blackparrot-vcs
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/hammerblade_top.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_fifo.sv
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
