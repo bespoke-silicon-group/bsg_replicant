@@ -261,7 +261,7 @@ module manycore_tb_top
   bp_bedrock_uce_mem_msg_s mc_io_resp_lo;
   logic mc_io_resp_v_lo, mc_io_resp_ready_li;
   // TODO: Should come in over the manycore network
-  bp_cce_to_mc_fifo
+  bp_cce_to_mc_mmio
    #(.bp_params_p(e_bp_default_cfg)
      ,.mc_x_cord_width_p(x_cord_width_p)
      ,.mc_y_cord_width_p(y_cord_width_p)
@@ -280,20 +280,14 @@ module manycore_tb_top
      ,.io_resp_v_o(io_resp_v_li)
      ,.io_resp_yumi_i(io_resp_yumi_lo)
   
-     ,.io_cmd_o(mc_io_cmd_li)
-     ,.io_cmd_v_o(mc_io_cmd_v_li)
-     ,.io_cmd_yumi_i(mc_io_cmd_yumi_lo)
-  
-     ,.io_resp_i(mc_io_resp_lo)
-     ,.io_resp_v_i(mc_io_resp_v_lo)
-     ,.io_resp_ready_o(mc_io_resp_ready_li)
-  
      ,.link_sif_i(host_link_sif_li)
      ,.link_sif_o(host_link_sif_lo)
   
      ,.my_x_i(host_x_cord_li)
      ,.my_y_i(host_y_cord_li)
      );
+  assign {mc_io_cmd_li, mc_io_cmd_v_li} = '0;
+  assign mc_io_resp_ready_li = 1'b1;
 
   bp_bedrock_uce_mem_msg_s dram_cmd_lo;
   logic dram_cmd_v_lo, dram_cmd_ready_and_li;

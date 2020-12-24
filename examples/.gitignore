@@ -8,3 +8,5 @@ test_*
 vc_hdrs.h
 ucli.key
 prog.*
+DVEfiles/
+stack*

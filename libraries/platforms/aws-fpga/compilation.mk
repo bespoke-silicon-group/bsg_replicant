@@ -53,7 +53,8 @@ PYTHON = python
 # each regression target needs to build its .o from a .c and .h of the
 # same name
 %.o: %.c %.h
-	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
+	$(CC) -c -o $@ test_bsg_scalar_print.c $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) 
+	touch $@
 	$(BP_CC) -o $*.rv64o $< $(INCLUDES) $(CFLAGS) $(CDEFINES) -DBSG_TEST_NAME=$(patsubst %.c,%,$<) \
 		-march=rv64ima -mabi=lp64 -mcmodel=medany \
 		-static -nostartfiles -L$(BLACKPARROT_DIR)/bp_common/test/lib/ -lperch -Triscv.ld -UVCS -fPIC
@@ -63,7 +64,8 @@ PYTHON = python
 
 # ... or a .cpp and .hpp of the same name
 %.o: %.cpp %.hpp
-	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
+	#$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
+	touch $@
 	$(BP_CXX) -c -o $*.rv64o $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
 	$(BP_OBJDUMP) -d -t $*.rv64o > prog.dump
 	$(BP_OBJCOPY) -O verilog $*.rv64o prog.mem

@@ -7,13 +7,14 @@ module bp_cce_to_mc_fifo
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
+   // We overload reg_id 31 for FIFO operations
+   , parameter mc_max_outstanding_p     = 31
    , parameter mc_x_cord_width_p        = "inv"
    , parameter mc_y_cord_width_p        = "inv"
    , parameter mc_data_width_p          = "inv"
    , parameter mc_addr_width_p          = "inv"
    , localparam mc_packet_width_lp      = `bsg_manycore_packet_width(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p)
    , localparam mc_link_sif_width_lp    = `bsg_manycore_link_sif_width(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p)
-   , localparam mc_max_outstanding_lp   = 32
    )
   (input                                      clk_i
    , input                                    reset_i
@@ -26,14 +27,6 @@ module bp_cce_to_mc_fifo
    , output logic                             io_resp_v_o
    , input                                    io_resp_yumi_i
 
-   , output logic [cce_mem_msg_width_lp-1:0]  io_cmd_o
-   , output logic                             io_cmd_v_o
-   , input                                    io_cmd_yumi_i
-
-   , input [cce_mem_msg_width_lp-1:0]         io_resp_i
-   , input                                    io_resp_v_i
-   , output logic                             io_resp_ready_o
-
    , input [mc_link_sif_width_lp-1:0]         link_sif_i
    , output logic [mc_link_sif_width_lp-1:0]  link_sif_o
 
@@ -43,15 +36,14 @@ module bp_cce_to_mc_fifo
 
   `declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce);
   `declare_bsg_manycore_packet_s(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p);
-  `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_cmd);
-  `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_resp);
   `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_cmd);
   `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_resp);
 
   bp_bedrock_cce_mem_msg_s io_cmd_li;
   logic io_cmd_v_li, io_cmd_yumi_lo;
-  bsg_two_fifo
-   #(.width_p(cce_mem_msg_width_lp))
+  bsg_fifo_1r1w_small
+   // TODO: magic 8?
+   #(.width_p(cce_mem_msg_width_lp), .els_p(8))
    small_fifo
     (.clk_i(clk_i)
      ,.reset_i(reset_i)
@@ -144,12 +136,11 @@ module bp_cce_to_mc_fifo
     ,.returned_v_r_o(returned_v_r_lo)
     ,.returned_pkt_type_r_o(returned_pkt_type_r_lo)
     // We allocate data in the return fifo, so we can immediately accept, always
-    ,.returned_yumi_i(returned_v_r_lo)
+    ,.returned_yumi_i(returned_yumi_li)
     ,.returned_fifo_full_o()
 
-    // TODO: When ci_bigblade is merged, this will become relevant
-    //,.returned_credit_v_r_o(returned_credit_v_r_lo)
-    //,.returned_credit_reg_id_r_o(returned_credit_reg_id_r_lo)
+    ,.returned_credit_v_r_o(returned_credit_v_r_lo)
+    ,.returned_credit_reg_id_r_o(returned_credit_reg_id_r_lo)
 
     ,.out_credits_o(out_credits_lo)
 
@@ -188,6 +179,26 @@ module bp_cce_to_mc_fifo
     logic [7:0]  x_dst;
   }  host_response_packet_s;
 
+  typedef struct packed
+  {
+    logic dram_not_tile;
+    logic tile_not_dram;
+    union packed
+    {
+      struct packed
+      {
+        logic [29:0] dram_addr;
+      } dram_eva;
+      struct packed
+      {
+        logic [max_y_cord_width_gp-1:0]    y_cord;
+        logic [max_x_cord_width_gp-1:0]    x_cord;
+        logic [epa_word_addr_width_gp-1:0] epa;
+        logic [1:0]                        low_bits;
+      } tile_eva;
+    } a;
+  } bp_eva_s;
+
   logic [dword_width_p-1:0] bp_to_mc_data_li;
   logic bp_to_mc_v_li, bp_to_mc_ready_lo;
   host_request_packet_s bp_to_mc_lo;
@@ -211,7 +222,8 @@ module bp_cce_to_mc_fifo
   assign out_packet_li = '{addr       : bp_to_mc_lo.addr[2+:mc_addr_width_p]
                            ,op        : bp_to_mc_lo.op
                            ,op_ex     : bp_to_mc_lo.op_ex
-                           ,reg_id    : bp_to_mc_lo.reg_id
+                           // TODO: Overloaded, does host software depend on this?
+                           ,reg_id    : 5'd31
                            ,payload   : (bp_to_mc_lo.op == e_remote_store)
                                         ? bp_to_mc_lo.data
                                         : bp_to_mc_load_info
@@ -251,6 +263,7 @@ module bp_cce_to_mc_fifo
                                   ,default: '0
                                   };
   assign mc_to_bp_response_v_li = mc_to_bp_response_ready_lo & returned_v_r_lo;
+  // TODO: Add MMIO response
   assign returned_yumi_li = mc_to_bp_response_v_li;
 
   host_request_packet_s mc_to_bp_request_li;
@@ -323,7 +336,7 @@ module bp_cce_to_mc_fifo
       mc_req_fifo_cmd_v = 1'b0;
       mc_req_entries_cmd_v = 1'b0;
 
-      // TODO: We don't actually check that
+      // TODO: We don't actually check this
       wr_not_rd = io_cmd_li.header.msg_type inside {e_bedrock_mem_wr, e_bedrock_mem_uc_wr};
   
       case ({local_addr.dev, local_addr.addr})
@@ -333,7 +346,7 @@ module bp_cce_to_mc_fifo
         mc_link_bp_resp_entries_addr_gp : bp_resp_entries_cmd_v = io_cmd_v_li;
         mc_link_mc_req_fifo_addr_gp     : mc_req_fifo_cmd_v     = io_cmd_v_li;
         mc_link_mc_req_entries_addr_gp  : mc_req_entries_cmd_v  = io_cmd_v_li;
-        default: begin end
+        default : begin end
       endcase
     end
 
@@ -349,10 +362,6 @@ module bp_cce_to_mc_fifo
       io_resp_cast_o = '0;
       io_resp_v_o    = '0;
       io_cmd_yumi_lo = '0;
-
-      // Need to connect for MC->BP connection
-      io_cmd_v_o = 1'b0;
-      io_resp_ready_o = 1'b1;
 
       if (bp_req_fifo_cmd_v)
         begin

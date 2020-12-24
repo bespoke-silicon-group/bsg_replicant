@@ -26,6 +26,13 @@ int vcs_main(int argc, char ** argv) {
 #else
 int main(int argc, char ** argv) {
 #endif
+    uint64_t bp_cfg_offset = 0x200000;
+    volatile uint64_t *did_mask_addr = (uint64_t *) (0x0009 + bp_cfg_offset);
+    volatile uint64_t *sac_mask_addr = (uint64_t *) (0x000a + bp_cfg_offset);
+
+    // Unlock manycore domain
+    *did_mask_addr = 3;
+
     // BP has a coprocessor address space starting at 0x02_0000_0000
     uint64_t bp_coproc_offset  = (2UL << 36UL);
 
@@ -51,5 +58,7 @@ int main(int argc, char ** argv) {
 
     // Read it back
     uint32_t mc_pc = *mc_csr_pc_eva;
+
+    while(1);
 }
 
