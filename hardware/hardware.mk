@@ -302,6 +302,7 @@ hardware.clean:
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_memsys.rom
 	rm -f $(HARDWARE_PATH)/f1_parameters.vh
 	rm -f $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v
 	rm -f $(HARDWARE_PATH)/bsg_bladerunner_pkg.v
 
 .PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
