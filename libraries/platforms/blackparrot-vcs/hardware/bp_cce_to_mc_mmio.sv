@@ -26,6 +26,14 @@ module bp_cce_to_mc_mmio
    , output logic                             io_resp_v_o
    , input                                    io_resp_yumi_i
 
+   , output logic [cce_mem_msg_width_lp-1:0]  io_cmd_o
+   , output logic                             io_cmd_v_o
+   , input                                    io_cmd_yumi_i
+
+   , input [cce_mem_msg_width_lp-1:0]         io_resp_i
+   , input                                    io_resp_v_i
+   , output logic                             io_resp_ready_o
+
    , input [mc_link_sif_width_lp-1:0]         link_sif_i
    , output logic [mc_link_sif_width_lp-1:0]  link_sif_o
 
@@ -37,6 +45,8 @@ module bp_cce_to_mc_mmio
   `declare_bsg_manycore_packet_s(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p);
   `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_cmd);
   `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_resp);
+  `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_cmd);
+  `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_resp);
 
   //
   // TX
@@ -91,6 +101,19 @@ module bp_cce_to_mc_mmio
      );
   assign io_resp_header_yumi_li = io_resp_yumi_i;
 
+  logic                              in_v_lo;
+  logic [mc_data_width_p-1:0]        in_data_lo;
+  logic [(mc_data_width_p>>3)-1:0]   in_mask_lo;
+  logic [mc_addr_width_p-1:0]        in_addr_lo;
+  logic                              in_we_lo;
+  bsg_manycore_load_info_s           in_load_info_lo;
+  logic [mc_x_cord_width_p-1:0]      in_src_x_cord_lo;
+  logic [mc_y_cord_width_p-1:0]      in_src_y_cord_lo;
+  logic                              in_yumi_li;
+
+  logic [mc_data_width_p-1:0]        returning_data_li;
+  logic                              returning_v_li;
+
   logic                              out_v_li;
   bsg_manycore_packet_s              out_packet_li;
   logic                              out_ready_lo;
@@ -125,15 +148,15 @@ module bp_cce_to_mc_mmio
 
     //--------------------------------------------------------
     // 1. in_request signal group
-    ,.in_v_o()
-    ,.in_data_o()
-    ,.in_mask_o()
-    ,.in_addr_o()
-    ,.in_we_o()
-    ,.in_load_info_o()
-    ,.in_src_x_cord_o()
-    ,.in_src_y_cord_o()
-    ,.in_yumi_i(1'b0)
+    ,.in_v_o(in_v_lo)
+    ,.in_data_o(in_data_lo)
+    ,.in_mask_o(in_mask_lo)
+    ,.in_addr_o(in_addr_lo)
+    ,.in_we_o(in_we_lo)
+    ,.in_load_info_o(in_load_info_lo)
+    ,.in_src_x_cord_o(in_src_x_cord_lo)
+    ,.in_src_y_cord_o(in_src_y_cord_lo)
+    ,.in_yumi_i(in_yumi_li)
 
     //--------------------------------------------------------
     // 2. out_response signal group
@@ -280,6 +303,47 @@ module bp_cce_to_mc_mmio
       io_resp_cast_o.data   = mmio_resp_data_lo;
 
       mmio_resp_yumi_li = io_resp_yumi_i;
+    end
+
+  // Incoming packet
+  always_comb
+    begin
+      io_cmd_cast_o.header.msg_type = in_we_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
+      // NOTE: We assume only aligned stores
+      io_cmd_cast_o.header.addr     = in_we_lo ? {in_addr_lo, 2'b00} : {in_addr_lo, in_load_info_lo.part_sel};
+
+      if (in_we_lo)
+        // NOTE: We assume only aligned stores of contiguous masks
+        io_cmd_cast_o.header.size = in_mask_lo[7]
+                                    ? e_bedrock_msg_size_4
+                                    : in_mask_lo[3]
+                                      ? e_bedrock_msg_size_2
+                                      : e_bedrock_msg_size_1;
+      else
+        // NOTE: We do not support remote sign extension
+        io_cmd_cast_o.header.size = in_load_info_lo.is_byte_op
+                                    ? e_bedrock_msg_size_1
+                                    : in_load_info_lo.is_hex_op
+                                      ? e_bedrock_msg_size_2
+                                      : e_bedrock_msg_size_4;
+      io_cmd_cast_o.header.payload = '0;
+
+      io_cmd_v_o = in_v_lo;
+      in_yumi_li = io_cmd_yumi_i;
+    end
+
+  // Returning data
+  always_comb
+    begin
+      returning_data_li = (io_resp_cast_i.header.size == e_bedrock_msg_size_4)
+                          ? io_resp_cast_i.data[0+:32]
+                          : (io_resp_cast_i.header.size == e_bedrock_msg_size_2)
+                            ? io_resp_cast_i.data[0+:16]
+                            : io_resp_cast_i.data[0+:8];
+      returning_v_li = io_resp_v_i;
+
+      // Returning data is always ready
+      io_resp_ready_o = 1'b1;
     end
 
   always_ff @(negedge clk_i)

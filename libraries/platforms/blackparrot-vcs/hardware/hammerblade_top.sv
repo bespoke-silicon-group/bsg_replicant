@@ -34,17 +34,17 @@ module manycore_tb_top
    localparam global_counter_width_lp = 64;
    localparam debug_lp = 0;
    localparam reset_depth_lp = 3; // This fixes assertions in mesh
-   
+
    // TODO: (Future) It would be awesome if the clock frequency (or
    // frequencies) were specified at the machine level.
    parameter lc_cycle_time_p = 1000000;
 
    logic io_clk;
    logic io_reset;
-   
+
    logic core_clk;
    logic core_reset;
-   
+
    logic mem_clk;
    logic mem_reset;
 
@@ -60,11 +60,11 @@ module manycore_tb_top
 
    `declare_bsg_manycore_link_sif_s(addr_width_p, data_width_p, x_cord_width_p, y_cord_width_p);
 
-   bsg_manycore_link_sif_s mc_link_sif_li;
-   bsg_manycore_link_sif_s mc_link_sif_lo;
+   bsg_manycore_link_sif_s [E:W] mc_link_sif_li;
+   bsg_manycore_link_sif_s [E:W] mc_link_sif_lo;
 
-   bsg_manycore_link_sif_s host_link_sif_li;
-   bsg_manycore_link_sif_s host_link_sif_lo;
+   bsg_manycore_link_sif_s [E:W] host_link_sif_li;
+   bsg_manycore_link_sif_s [E:W] host_link_sif_lo;
 
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
@@ -156,7 +156,7 @@ module manycore_tb_top
    // --------------------------------------------------------------------------
    assign io_clk = core_clk;
    assign io_reset = core_reset;
-   
+
    // TODO: REMOVE, STUBBED
    bsg_nonsynth_dpi_manycore
      #(.x_cord_width_p(x_cord_width_p)
@@ -174,7 +174,7 @@ module manycore_tb_top
    mc_dpi
      (.clk_i(io_clk)
       ,.reset_i(io_reset)
-   
+
       // manycore link
       ,.link_sif_i('0)
       ,.link_sif_o()
@@ -271,23 +271,34 @@ module manycore_tb_top
     host_link
     (.clk_i(core_clk)
      ,.reset_i(core_reset)
-  
+
      ,.io_cmd_i(io_cmd_lo)
      ,.io_cmd_v_i(io_cmd_v_lo)
      ,.io_cmd_ready_o(io_cmd_ready_li)
-  
+
      ,.io_resp_o(io_resp_li)
      ,.io_resp_v_o(io_resp_v_li)
      ,.io_resp_yumi_i(io_resp_yumi_lo)
-  
-     ,.link_sif_i(host_link_sif_li)
-     ,.link_sif_o(host_link_sif_lo)
-  
+
+     ,.io_cmd_o()
+     ,.io_cmd_v_o()
+     ,.io_cmd_yumi_i('0)
+
+     ,.io_resp_i('0)
+     ,.io_resp_v_i('0)
+     ,.io_resp_ready_o()
+
+     ,.link_sif_i(host_link_sif_li[W])
+     ,.link_sif_o(host_link_sif_lo[W])
+
      ,.my_x_i(host_x_cord_li)
      ,.my_y_i(host_y_cord_li)
      );
   assign {mc_io_cmd_li, mc_io_cmd_v_li} = '0;
   assign mc_io_resp_ready_li = 1'b1;
+
+  // TODO: Add NBF loader, stubbing for now
+  assign host_link_sif_lo[E] = '0;
 
   bp_bedrock_uce_mem_msg_s dram_cmd_lo;
   logic dram_cmd_v_lo, dram_cmd_ready_and_li;
@@ -415,7 +426,7 @@ module manycore_tb_top
        ,.addr_width_p(addr_width_p)
        ,.x_cord_width_p(x_cord_width_p)
        ,.y_cord_width_p(y_cord_width_p)
-       ) 
+       )
    print_stat_snoop
      (
       .loader_link_sif_in_i(mc_link_sif_lo)
@@ -424,28 +435,30 @@ module manycore_tb_top
       ,.print_stat_v_o(print_stat_v_lo)
       ,.print_stat_tag_o(print_stat_tag_lo)
       );
-   
-   bsg_manycore_link_sif_async_buffer
-     #(
-       .addr_width_p(addr_width_p)
-       ,.data_width_p(data_width_p)
-       ,.x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ,.fifo_els_p(async_fifo_els_lp)
-       )
-   async_buf
-     (
-      .L_clk_i(core_clk)
-      ,.L_reset_i(core_reset)
-      ,.L_link_sif_i(mc_link_sif_lo)
-      ,.L_link_sif_o(mc_link_sif_li)
 
-      ,.R_clk_i(io_clk)
-      ,.R_reset_i(io_reset)
-      ,.R_link_sif_i(host_link_sif_lo)
-      ,.R_link_sif_o(host_link_sif_li)
-      );
+  for (genvar i = W; i <= E; i++)
+    begin : host_async
+       bsg_manycore_link_sif_async_buffer
+         #(
+           .addr_width_p(addr_width_p)
+           ,.data_width_p(data_width_p)
+           ,.x_cord_width_p(x_cord_width_p)
+           ,.y_cord_width_p(y_cord_width_p)
+           ,.fifo_els_p(async_fifo_els_lp)
+           )
+       async_buf
+         (
+          .L_clk_i(core_clk)
+          ,.L_reset_i(core_reset)
+          ,.L_link_sif_i(mc_link_sif_lo[i])
+          ,.L_link_sif_o(mc_link_sif_li[i])
 
+          ,.R_clk_i(io_clk)
+          ,.R_reset_i(io_reset)
+          ,.R_link_sif_i(host_link_sif_lo[i])
+          ,.R_link_sif_o(host_link_sif_li[i])
+          );
+    end
 
    // --------------------------------------------------------------------------
    // Manycore Instantiation
@@ -455,7 +468,7 @@ module manycore_tb_top
    bsg_manycore_link_sif_s [S:N][num_tiles_x_p-1:0] ver_link_sif_lo;
    bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_li;
    bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
-  
+
 
    // Instantiate a crossbar, or a mesh network depending on the
    // machine parameterization. The two sides of the if-statment have
@@ -490,7 +503,7 @@ module manycore_tb_top
    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_li;
    bsg_manycore_link_sif_s [E:W][num_tiles_y_p:0] hor_link_sif_lo;
 
-   bsg_manycore 
+   bsg_manycore
      #(
      .dmem_size_p(dmem_size_p)
      ,.icache_entries_p(icache_entries_p)
@@ -515,7 +528,7 @@ module manycore_tb_top
 
      ,.ver_link_sif_i(ver_link_sif_li)
      ,.ver_link_sif_o(ver_link_sif_lo)
-    
+
      ,.io_link_sif_i(io_link_sif_li)
      ,.io_link_sif_o(io_link_sif_lo)
    );
@@ -579,13 +592,16 @@ module manycore_tb_top
     assign cache_y_lo[num_tiles_x_p+i] = (y_cord_width_p)'(num_tiles_y_p+2);
   end
 
-  // 0,1 for host io
+  // 0,1 for host io and (num_tiles_x_p-1),1
   //
-  assign mc_link_sif_lo = io_link_sif_lo[0];
-  assign io_link_sif_li[0] = mc_link_sif_li;
+  assign mc_link_sif_lo[W] = io_link_sif_lo[0];
+  assign io_link_sif_li[0] = mc_link_sif_li[W];
+
+  assign mc_link_sif_lo[E] = io_link_sif_lo[num_tiles_x_p-1];
+  assign io_link_sif_li[num_tiles_x_p-1] = mc_link_sif_li[E];
 
   // Tie off remaining IO links
-  for (genvar i = 1; i < num_tiles_x_p; i++) begin
+  for (genvar i = 1; i < num_tiles_x_p-1; i++) begin
     bsg_manycore_link_sif_tieoff #(
       .addr_width_p(addr_width_p)
       ,.data_width_p(data_width_p)
@@ -687,7 +703,7 @@ module manycore_tb_top
       localparam infmem_els_lp = 1<<(addr_width_p-$clog2(num_cache_p));
 
       for (genvar i = 0; i < num_cache_p; i++) begin
-         bsg_nonsynth_mem_infinite 
+         bsg_nonsynth_mem_infinite
            #(
              .data_width_p(data_width_p)
              ,.addr_width_p(addr_width_p)
@@ -695,8 +711,8 @@ module manycore_tb_top
              ,.x_cord_width_p(x_cord_width_p)
              ,.y_cord_width_p(y_cord_width_p)
              ,.id_p(i)
-             ) 
-         mem_infty 
+             )
+         mem_infty
             (
              .clk_i(mem_clk)
              ,.reset_i(mem_reset)
@@ -709,15 +725,15 @@ module manycore_tb_top
              );
       end
 
-      bind bsg_nonsynth_mem_infinite infinite_mem_profiler 
+      bind bsg_nonsynth_mem_infinite infinite_mem_profiler
           #(
             .data_width_p(data_width_p)
             ,.addr_width_p(addr_width_p)
             ,.x_cord_width_p(x_cord_width_p)
             ,.y_cord_width_p(y_cord_width_p)
             ,.logfile_p("infinite_mem_stats.csv")
-            ) 
-      infinite_mem_prof 
+            )
+      infinite_mem_prof
         (
          .*
          ,.global_ctr_i($root.manycore_tb_top.global_ctr)
@@ -729,7 +745,7 @@ module manycore_tb_top
 
       for (genvar i = 0; i < num_cache_p; i++) begin: vcache
 
-         bsg_manycore_vcache_blocking 
+         bsg_manycore_vcache_blocking
            #(
              .data_width_p(data_width_p)
              ,.addr_width_p(addr_width_p)
@@ -739,8 +755,8 @@ module manycore_tb_top
              ,.dma_data_width_p(dma_data_width_p)
              ,.x_cord_width_p(x_cord_width_p)
              ,.y_cord_width_p(y_cord_width_p)
-             ) 
-         vcache 
+             )
+         vcache
             (
              .clk_i(cache_clk)
              ,.reset_i(cache_reset)
@@ -762,13 +778,13 @@ module manycore_tb_top
              );
       end
 
-      bind bsg_cache vcache_profiler 
+      bind bsg_cache vcache_profiler
         #(
           .data_width_p(data_width_p)
           ,.addr_width_p(addr_width_p)
           ,.header_print_p("vcache[0]")
-          ) 
-      vcache_prof 
+          )
+      vcache_prof
         (
          .*
          ,.global_ctr_i($root.manycore_tb_top.global_ctr)
@@ -781,7 +797,7 @@ module manycore_tb_top
    else if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv1_vcache_nb
 
       for (genvar i = 0; i < num_cache_p; i++) begin: vcache
-         bsg_manycore_vcache_non_blocking 
+         bsg_manycore_vcache_non_blocking
            #(
              .data_width_p(data_width_p)
              ,.addr_width_p(addr_width_p)
@@ -792,8 +808,8 @@ module manycore_tb_top
              ,.miss_fifo_els_p(miss_fifo_els_p)
              ,.x_cord_width_p(x_cord_width_p)
              ,.y_cord_width_p(y_cord_width_p)
-             ) 
-         vcache_nb 
+             )
+         vcache_nb
             (
              .clk_i(cache_clk)
              ,.reset_i(cache_reset)
@@ -815,7 +831,7 @@ module manycore_tb_top
              );
       end
 
-      bind bsg_cache_non_blocking vcache_non_blocking_profiler 
+      bind bsg_cache_non_blocking vcache_non_blocking_profiler
         #(
           .data_width_p(data_width_p)
           ,.addr_width_p(addr_width_p)
@@ -823,7 +839,7 @@ module manycore_tb_top
           ,.ways_p(ways_p)
           ,.id_width_p(id_width_p)
           ,.block_size_in_words_p(block_size_in_words_p)
-          ) 
+          )
       vcache_prof
         (
          .clk_i(clk_i)
@@ -851,7 +867,7 @@ module manycore_tb_top
          ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
          ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
          );
-   end 
+   end
 
    if (mem_cfg_p == e_vcache_non_blocking_test_dramsim3_hbm2_4gb_x128 ||
             mem_cfg_p == e_vcache_blocking_test_dramsim3_hbm2_4gb_x128) begin: lv2_simulated_hbm
@@ -939,7 +955,7 @@ module manycore_tb_top
          assign hbm_req_v_lo[ch_i]  = 1'b0;
          assign hbm_data_v_lo[ch_i] = 1'b0;
       end
-      
+
       // assign hbm clk and reset to core for now...
    end // block: lv2_simulated_hbm
 
@@ -1024,13 +1040,13 @@ module manycore_tb_top
   initial begin #50000000000 $finish(); end
 
    // Instantiate a counter to track execution time on the
-   // manycore. 
+   // manycore.
    bsg_nonsynth_dpi_cycle_counter
      #(.width_p(64), // 64-bit counter
        .debug_p(0))
    ctr
      (.clk_i(core_clk)
-      ,.reset_i(core_reset));  
+      ,.reset_i(core_reset));
 
    // In VCS, the C/C++ testbench is controlled by the
    // simulator. Therefore, we need to "call into" the C/C++ program
@@ -1047,9 +1063,9 @@ module manycore_tb_top
 //      longint t;
 //      $value$plusargs("c_args=%s", args);
 //      manycore_tb_top.cosim_main(exit_code, args);
-//      if(exit_code < 0) 
+//      if(exit_code < 0)
 //          $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
-//      else 
+//      else
 //          $display("BSG COSIM PASS: Test passed!");
 //      $finish;
 //   end
