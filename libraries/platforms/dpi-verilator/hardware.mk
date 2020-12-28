@@ -138,6 +138,7 @@ BSG_DESIGN_TOP := manycore_tb_top
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/hammerblade_top.sv
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_fifo.sv
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_mmio.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_lite_gearbox.sv
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
