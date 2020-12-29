@@ -64,7 +64,8 @@ BSG_MACHINE_NAME                      =BSG_Y$(BSG_MACHINE_GLOBAL_Y)X$(BSG_MACHIN
 BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_$(CL_MANYCORE_MEM_CFG:e_%=%)_crossbar
 
 # Define network topology
-BSG_MACHINE_CROSSBAR_NETWORK =  1
+BSG_MACHINE_NETWORK_CFG              := e_network_crossbar
+BSG_MACHINE_RUCHE_FACTOR_X           := 0
 
 # Define heterogeneous tile composition.
 # 0 is for Vanilla Core (RV32).

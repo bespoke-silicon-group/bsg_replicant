@@ -92,6 +92,7 @@ FPGA_IMAGE_VERSION     ?= 0.0.0
 # sim_filelist.mk. Each file adds to VSOURCES and VINCLUDES and depends on
 # BSG_MANYCORE_DIR
 include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_network_cfg_pkg.v
 
 # So that we can limit tool-specific to a few specific spots we use VDEFINES,
 # VINCLUDES, and VSOURCES to hold lists of macros, include directores, and
@@ -260,15 +261,18 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "package bsg_bladerunner_pkg;" >> $@
 	@echo >> $@
+	@echo "import bsg_manycore_network_cfg_pkg::*;" >> $@
+	@echo >> $@
 	@echo "parameter dpi_fifo_els_gp = $(CL_MANYCORE_IO_REMOTE_LOAD_CAP);" >> $@
 	@echo >> $@
 	@echo "parameter rom_width_gp = 32;" >> $@
 	@echo "parameter rom_els_gp = `wc -l < $<`;" >> $@
-	@echo "parameter bsg_machine_crossbar_network_gp = $(CL_MANYCORE_CROSSBAR_NETWORK);" >> $@
 	@echo "parameter bit [rom_width_gp-1:0] rom_arr_gp [rom_els_gp-1:0] = '{$(ROM_STR)};" >> $@
 	@echo "parameter num_tiles_y_gp = $(CL_MANYCORE_DIM_Y);" >> $@
 	@echo "parameter num_tiles_x_gp = $(CL_MANYCORE_DIM_X);" >> $@
 	@echo "parameter int hetero_type_vec_gp [0:(num_tiles_y_gp*num_tiles_x_gp)-1] = '{$(strip $(BSG_MACHINE_HETERO_TYPE_VEC))};" >> $@
+	@echo "parameter bsg_manycore_network_cfg_e bsg_manycore_network_cfg_p = $(BSG_MACHINE_NETWORK_CFG);" >> $@
+	@echo "parameter int bsg_ruche_factor_X_p = $(BSG_MACHINE_RUCHE_FACTOR_X);" >> $@
 	@echo >> $@
 	@echo "endpackage" >> $@
 	@echo >> $@
