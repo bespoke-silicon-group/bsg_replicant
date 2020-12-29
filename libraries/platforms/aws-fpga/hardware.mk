@@ -33,6 +33,8 @@
 # This file should be included from bsg_replicant/hardware/hardware.mk. It checks
 # BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
 
+# Needed for FPGA compilation
+CL_TOP_MODULE                        := cl_manycore
 ################################################################################
 # F1-Specific Sources
 ################################################################################

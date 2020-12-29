@@ -17,7 +17,7 @@ module bsg_manycore_wrapper_mesh
     // default. See bsg_manycore_hetero_socket.v for more types.
     , parameter int hetero_type_vec_p [0:((num_tiles_y_p)*num_tiles_x_p) - 1]  = '{default:0}
 
-    , parameter dmem_size_p="inv"
+    , parameter dmem_words_p="inv"
     , parameter icache_entries_p="inv"
     , parameter icache_tag_width_p="inv"
     , parameter vcache_size_p="inv"
@@ -59,7 +59,7 @@ module bsg_manycore_wrapper_mesh
   bsg_manycore_link_sif_s [num_tiles_x_p-1:0] io_link_sif_lo;
   
   bsg_manycore_top_mesh #(
-    .dmem_size_p(dmem_size_p)
+    .dmem_size_p(dmem_words_p)
     ,.icache_entries_p(icache_entries_p)
     ,.icache_tag_width_p(icache_tag_width_p)
     ,.num_tiles_x_p(num_tiles_x_p)

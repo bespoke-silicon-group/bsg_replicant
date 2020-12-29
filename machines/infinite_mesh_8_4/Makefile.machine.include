@@ -28,7 +28,7 @@
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Manycore X/Y dimensions
-BSG_MACHINE_NUM_CORES_X               = 4
+BSG_MACHINE_NUM_CORES_X               = 8
 BSG_MACHINE_NUM_CORES_Y               = 4
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
@@ -43,17 +43,7 @@ BSG_MACHINE_RUCHE_FACTOR_X            = 0
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
-BSG_MACHINE_MEM_CFG                   = e_vcache_blocking_axi4_f1_dram
-
-# Victim Cache Parameters
-# AWS Specific:
-BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = $(shell echo $(BSG_MACHINE_NUM_CORES_X)*2 | bc)
-BSG_MACHINE_VCACHE_SET                = 64
-BSG_MACHINE_VCACHE_WAY                = 8
-BSG_MACHINE_VCACHE_LINE_WORDS         = 16
-BSG_MACHINE_VCACHE_STRIPE_WORDS       = $(BSG_MACHINE_VCACHE_LINE_WORDS)
-# Only applies to Non-blocking Cache
-BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
+BSG_MACHINE_MEM_CFG                   = e_infinite_mem
 
 # Host Coordinate (Rarely Changed)
 BSG_MACHINE_HOST_COORD_X              = 0
@@ -72,16 +62,22 @@ BSG_MACHINE_IO_HOST_CREDITS           = $(BSG_MACHINE_IO_EP_CREDITS)
 BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 
 ##################### Constants and Computations #####################
-
+# Every cache is replaced with an infinite memory channel
 BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_NUM_CORES_X)*2 | bc)
-# Only one channel in AWS
-BSG_MACHINE_DRAM_NUM_CHANNELS        := 1
+BSG_MACHINE_DRAM_NUM_CHANNELS        := $(BSG_MACHINE_NUM_VCACHE)
 
-# AWS F1: 2GB (all we expose)
-BSG_MACHINE_DRAM_WORDS               := $(shell echo 2^29 | bc) # 2 GB
+BSG_MACHINE_DRAM_WORDS                = $(shell echo 2^30 | bc) # 4GB
 BSG_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_WORDS) / $(BSG_MACHINE_NUM_VCACHE)" | bc)
 
-# Required for BSG Manycore
+# Victim Cache Parameters (Not used for Infinite Memory)
+BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
+BSG_MACHINE_VCACHE_SET                = 64
+BSG_MACHINE_VCACHE_WAY                = 8
+BSG_MACHINE_VCACHE_LINE_WORDS         = 16
+BSG_MACHINE_VCACHE_STRIPE_WORDS       = $(BSG_MACHINE_VCACHE_LINE_WORDS)
+# Only applies to Non-blocking Cache
+BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
+
 # Aliases Required for BSG Manycore
 BSG_MACHINE_GLOBAL_X                  = $(BSG_MACHINE_NUM_CORES_X)
 BSG_MACHINE_GLOBAL_Y                  = $(shell echo $(BSG_MACHINE_NUM_CORES_Y)+$(BSG_MACHINE_ORIGIN_COORD_Y)-1 | bc)

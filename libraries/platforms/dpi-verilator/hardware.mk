@@ -49,8 +49,6 @@ endif
 # SDK_DIR: Path to the SDK directory in the aws-fpga repo
 include $(BSG_F1_DIR)/hdk.mk
 
-# cl_manycore_pkg.v depends on f1_parameters.vh
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 ################################################################################
 # Simulation Sources
 ################################################################################
@@ -79,7 +77,6 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_map.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dramsim3_unmap.v
 
 # Crossbar sources
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_arb_round_robin.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_crossbar_control_basic_o_by_i.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_noc/bsg_router_crossbar_o_by_i.v
 
@@ -112,6 +109,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_link_to_cache_
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/nb_waw_detector.v
 
 # TODO: Remove dependence on AXI pkg
+VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_link_to_axil_pkg.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos_pkg.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos.v

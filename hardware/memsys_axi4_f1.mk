@@ -34,13 +34,13 @@ ifndef __HARDWARE_MEMSYS_AXI4_F1_MK
 __HARDWARE_MEMSYS_AXI4_F1_MK := 1
 
 # is this axi4 f1?
-ifneq ($(filter axi4, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
-ifneq ($(filter f1,   $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+ifneq ($(filter axi4, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
+ifneq ($(filter f1,   $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 
 CL_MANYCORE_MEMSYS_ID := "AXI4" # AXI4
 
 # are we using the AXI or the micron memory model?
-ifneq ($(filter dram, $(subst _, ,$(CL_MANYCORE_MEM_CFG))),)
+ifneq ($(filter dram, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 DISABLE_MICRON_MEMORY_MODEL := no
 endif
 

@@ -113,7 +113,6 @@ VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_id_defines.vh
 VHEADERS += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_axi_bus_pkg.vh
 
 # Manycore architecture definitions
-# cl_manycore_pkg.v depends on f1_parameters.vh
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/cl_manycore_pkg.v
 
 # Wrapper for bsg_manycore. Depends on sources in arch_filelist.mk
