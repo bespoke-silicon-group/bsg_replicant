@@ -42,6 +42,21 @@ extern "C" {
                 uint32_t words[4];
         } hb_mc_packet_t;
 
+        /**
+         * Fill a response packet fields using a request packet.
+         * @param[out] rsp a response packet
+         * @param[in] req a request packet
+         */
+        static void hb_mc_response_packet_fill(hb_mc_response_packet_t *rsp,
+                                               const hb_mc_request_packet_t *req)
+        {
+                hb_mc_response_packet_set_y_dst(rsp, hb_mc_request_packet_get_y_dst(req));
+                hb_mc_response_packet_set_x_dst(rsp, hb_mc_request_packet_get_x_dst(req));
+                hb_mc_response_packet_set_op(rsp, hb_mc_request_packet_get_op(req));
+                hb_mc_response_packet_set_load_id(rsp, hb_mc_request_packet_get_load_id(req));
+                return;
+        }
+
 #ifdef __cplusplus
 }
 #endif

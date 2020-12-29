@@ -125,6 +125,16 @@ extern "C" {
         }
 
         /**
+         * Set the load_id destination of the response packet
+         * @param packet a response packet
+         * @param load_id load ID of response packet (corresponds to req_id of request packet)
+         */
+        static inline void hb_mc_response_packet_set_load_id(hb_mc_response_packet_t *packet, uint8_t load_id)
+        {
+                packet->load_id = load_id;
+        }
+
+        /**
          * Set the data of the response packet
          * @param packet a response packet
          * @param data the data to send

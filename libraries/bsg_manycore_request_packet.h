@@ -135,6 +135,16 @@ extern "C" {
         }
 
         /**
+         * Get the id in a request packet
+         * @param[in] packet a request packet
+         * @param[in] id for int/float load
+         */
+        static inline uint8_t hb_mc_request_packet_get_load_id(const hb_mc_request_packet_t *packet)
+        {
+                return packet->reg_id;
+        }
+
+        /**
          * Get the extend opcode of a request packet
          * @param[in] packet a request packet
          * @return the extended opcode of packet
