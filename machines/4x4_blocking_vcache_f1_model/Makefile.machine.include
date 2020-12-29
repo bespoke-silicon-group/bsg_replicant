@@ -79,7 +79,7 @@ BSG_MACHINE_DRAM_NUM_CHANNELS        := 1
 
 # AWS F1: 2GB (all we expose)
 BSG_MACHINE_DRAM_WORDS               := $(shell echo 2^29 | bc) # 2 GB
-BSG_MACHINE_DRAM_BANK_WORDS          := $(shell echo $(BSG_MACHINE_DRAM_WORDS)/$(BSG_MACHINE_NUM_CORES_X)/2 | bc)
+BSG_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_WORDS) / $(BSG_MACHINE_NUM_VCACHE)" | bc)
 
 # Required for BSG Manycore
 # Aliases Required for BSG Manycore
