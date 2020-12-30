@@ -161,8 +161,8 @@ module bp_cce_to_mc_mmio
     //--------------------------------------------------------
     // 2. out_response signal group
     //    responses that will send back to the network
-    ,.returning_data_i()
-    ,.returning_v_i(1'b0)
+    ,.returning_data_i(returning_data_li)
+    ,.returning_v_i(returning_v_li)
 
     //--------------------------------------------------------
     // 3. out_request signal group
@@ -194,8 +194,10 @@ module bp_cce_to_mc_mmio
 
   typedef struct packed
   {
-    logic dram_not_tile;
-    logic tile_not_dram;
+    // 1x indicates DRAM address
+    // 01x indicates global manycore address
+    // 00x indicates BlackParrot address
+    logic [1:0] _type;
     union packed
     {
       struct packed
@@ -241,6 +243,7 @@ module bp_cce_to_mc_mmio
             out_packet_li.payload.load_info_s.load_info.is_byte_op     = (io_cmd_cast_i.header.size == e_bedrock_msg_size_1);
             out_packet_li.payload.load_info_s.load_info.is_hex_op      = (io_cmd_cast_i.header.size == e_bedrock_msg_size_2);
             // Assume aligned for now
+
             out_packet_li.payload.load_info_s.load_info.part_sel       = io_cmd_eva_li.a.tile_eva.low_bits;
             out_packet_li.src_y_cord                       = my_y_i;
             out_packet_li.src_x_cord                       = my_x_i;
@@ -296,7 +299,7 @@ module bp_cce_to_mc_mmio
       mmio_returned_id_li   = returned_v_r_lo ? returned_reg_id_r_lo : returned_credit_reg_id_r_lo;
       mmio_returned_data_li = returned_data_r_lo;
       mmio_returned_v_li    = returned_v_r_lo | returned_credit_v_r_lo;
-      returned_yumi_li      = returned_v_r_lo & mmio_returned_v_li;
+      returned_yumi_li      = returned_v_r_lo;
 
       io_resp_v_o           = io_resp_header_v_lo & mmio_resp_v_lo;
       io_resp_cast_o.header = io_resp_header_lo;
@@ -305,28 +308,37 @@ module bp_cce_to_mc_mmio
       mmio_resp_yumi_li = io_resp_yumi_i;
     end
 
+
+  // BP EPA Map
+  // dev: 0 -- CFG
+  //      1 -- CCE ucode
+  //      2 -- CLINT
+  typedef struct packed
+  {
+    logic [3:0]  dev;
+    logic [11:0] addr;
+  } bp_epa_s;
+  bp_epa_s in_epa_li;
+  assign in_epa_li = in_addr_lo;
+
+  bp_bedrock_cce_mem_payload_s io_payload_lo;
+  assign io_payload_lo = '{lce_id: 2'b10, default: '0};
   // Incoming packet
   always_comb
     begin
       io_cmd_cast_o.header.msg_type = in_we_lo ? e_bedrock_mem_uc_wr : e_bedrock_mem_uc_rd;
-      // NOTE: We assume only aligned stores
-      io_cmd_cast_o.header.addr     = in_we_lo ? {in_addr_lo, 2'b00} : {in_addr_lo, in_load_info_lo.part_sel};
 
-      if (in_we_lo)
-        // NOTE: We assume only aligned stores of contiguous masks
-        io_cmd_cast_o.header.size = in_mask_lo[7]
-                                    ? e_bedrock_msg_size_4
-                                    : in_mask_lo[3]
-                                      ? e_bedrock_msg_size_2
-                                      : e_bedrock_msg_size_1;
-      else
-        // NOTE: We do not support remote sign extension
-        io_cmd_cast_o.header.size = in_load_info_lo.is_byte_op
-                                    ? e_bedrock_msg_size_1
-                                    : in_load_info_lo.is_hex_op
-                                      ? e_bedrock_msg_size_2
-                                      : e_bedrock_msg_size_4;
-      io_cmd_cast_o.header.payload = '0;
+      if (in_epa_li.dev == 2)
+        io_cmd_cast_o.header.addr = clint_dev_base_addr_gp + in_epa_li.addr;
+      else if (in_epa_li.dev == 1)
+        io_cmd_cast_o.header.addr = cfg_dev_base_addr_gp + bp_cfg_mem_base_cce_ucode_gp + in_epa_li.addr;
+      else // if (in_epa_li.dev == cfg_dev_gp)
+        io_cmd_cast_o.header.addr = cfg_dev_base_addr_gp + in_epa_li.addr;
+
+      // TODO: we only support 64-bit loads and stores to BP configuration addresses
+      io_cmd_cast_o.header.size = e_bedrock_msg_size_8;
+      io_cmd_cast_o.header.payload = io_payload_lo;
+      io_cmd_cast_o.data = in_data_lo;
 
       io_cmd_v_o = in_v_lo;
       in_yumi_li = io_cmd_yumi_i;
@@ -349,7 +361,11 @@ module bp_cce_to_mc_mmio
   always_ff @(negedge clk_i)
     begin
       if (io_cmd_v_i)
-        $display("[BP-LINK] Outgoing command: %p", io_cmd_cast_i);
+        begin
+          $display("[BP-LINK] Outgoing command: %p", io_cmd_cast_i);
+          $display("[      EVA] Outgoing EVA: %p", io_cmd_eva_li);
+          $display("[   PACKET] Outgoing packet: %p", out_packet_li);
+        end
       if (io_resp_yumi_i)
         $display("[BP-LINK] Incoming response: %p", io_resp_cast_o);
     end

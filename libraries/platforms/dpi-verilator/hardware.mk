@@ -135,6 +135,9 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 BSG_DESIGN_TOP := manycore_tb_top
 
 # TODO: Actually should have hw list in blackparrot-vcs
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_spmd_loader.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_monitor.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_io_complex.v
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/hammerblade_top.sv
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_fifo.sv
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_mmio.sv

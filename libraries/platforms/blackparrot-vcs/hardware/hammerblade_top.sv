@@ -55,6 +55,9 @@ module manycore_tb_top
    logic [x_cord_width_p-1:0] host_x_cord_li = (x_cord_width_p)'(0);
    logic [y_cord_width_p-1:0] host_y_cord_li = (y_cord_width_p)'(1);
 
+   logic [x_cord_width_p-1:0] nbf_x_cord_li = (x_cord_width_p)'(num_tiles_x_p-1);
+   logic [y_cord_width_p-1:0] nbf_y_cord_li = (y_cord_width_p)'(1);
+
    logic [num_cache_p-1:0][x_cord_width_p-1:0] cache_x_lo;
    logic [num_cache_p-1:0][y_cord_width_p-1:0] cache_y_lo;
 
@@ -217,8 +220,8 @@ module manycore_tb_top
    logic [dword_width_p-1:0] mem_resp_data_li;
    logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
    bp_unicore
-   #(.bp_params_p(e_bp_default_cfg))
-   blackparrot
+    #(.bp_params_p(e_bp_unicore_no_l2_cfg))
+    blackparrot
      (.clk_i(core_clk)
       ,.reset_i(core_reset)
 
@@ -255,20 +258,14 @@ module manycore_tb_top
       ,.mem_resp_data_yumi_o(mem_resp_data_yumi_lo)
       );
 
-  bp_bedrock_uce_mem_msg_s mc_io_cmd_li;
-  logic mc_io_cmd_v_li, mc_io_cmd_yumi_lo;
-
-  bp_bedrock_uce_mem_msg_s mc_io_resp_lo;
-  logic mc_io_resp_v_lo, mc_io_resp_ready_li;
-  // TODO: Should come in over the manycore network
   bp_cce_to_mc_mmio
-   #(.bp_params_p(e_bp_default_cfg)
+   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
      ,.mc_x_cord_width_p(x_cord_width_p)
      ,.mc_y_cord_width_p(y_cord_width_p)
      ,.mc_data_width_p(data_width_p)
      ,.mc_addr_width_p(addr_width_p)
      )
-    host_link
+   host_link
     (.clk_i(core_clk)
      ,.reset_i(core_reset)
 
@@ -280,13 +277,13 @@ module manycore_tb_top
      ,.io_resp_v_o(io_resp_v_li)
      ,.io_resp_yumi_i(io_resp_yumi_lo)
 
-     ,.io_cmd_o()
-     ,.io_cmd_v_o()
-     ,.io_cmd_yumi_i('0)
+     ,.io_cmd_o(io_cmd_li)
+     ,.io_cmd_v_o(io_cmd_v_li)
+     ,.io_cmd_yumi_i(io_cmd_yumi_lo)
 
-     ,.io_resp_i('0)
-     ,.io_resp_v_i('0)
-     ,.io_resp_ready_o()
+     ,.io_resp_i(io_resp_lo)
+     ,.io_resp_v_i(io_resp_v_lo)
+     ,.io_resp_ready_o(io_resp_ready_li)
 
      ,.link_sif_i(host_link_sif_li[W])
      ,.link_sif_o(host_link_sif_lo[W])
@@ -294,16 +291,32 @@ module manycore_tb_top
      ,.my_x_i(host_x_cord_li)
      ,.my_y_i(host_y_cord_li)
      );
-  assign {mc_io_cmd_li, mc_io_cmd_v_li} = '0;
-  assign mc_io_resp_ready_li = 1'b1;
 
-  // TODO: Add NBF loader, stubbing for now
-  assign host_link_sif_lo[E] = '0;
+  bsg_nonsynth_manycore_io_complex
+   #(.addr_width_p(addr_width_p)
+     ,.data_width_p(data_width_p)
+     ,.x_cord_width_p(x_cord_width_p)
+     ,.y_cord_width_p(y_cord_width_p)
+     ,.io_x_cord_p(num_tiles_x_p-1)
+     ,.io_y_cord_p(1)
+
+     ,.num_tiles_x_p(num_tiles_x_p)
+     ,.num_tiles_y_p(num_tiles_y_p)
+     )
+   io_complex
+    (.clk_i(core_clk)
+     ,.reset_i(core_reset)
+     ,.io_link_sif_i(host_link_sif_li[E])
+     ,.io_link_sif_o(host_link_sif_lo[E])
+     ,.print_stat_v_o()
+     ,.print_stat_tag_o()
+     ,.loader_done_o()
+     );
 
   bp_bedrock_uce_mem_msg_s dram_cmd_lo;
   logic dram_cmd_v_lo, dram_cmd_ready_and_li;
   bp_burst_to_lite
-   #(.bp_params_p(e_bp_default_cfg)
+   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
      ,.in_data_width_p(64)
      ,.out_data_width_p(512)
      ,.payload_mask_p(mem_cmd_payload_mask_gp)
@@ -328,7 +341,7 @@ module manycore_tb_top
   bp_bedrock_uce_mem_msg_s dram_resp_li;
   logic dram_resp_v_li, dram_resp_ready_and_lo;
   bp_lite_to_burst
-   #(.bp_params_p(e_bp_default_cfg)
+   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
      ,.in_data_width_p(512)
      ,.out_data_width_p(64)
      ,.payload_mask_p(mem_resp_payload_mask_gp)
@@ -353,7 +366,7 @@ module manycore_tb_top
   // TODO: Should come in over the manycore network
   `define dram_pkg bp_dramsim3_lpddr_2Gb_x16_pkg
   bp_mem
-   #(.bp_params_p(e_bp_default_cfg)
+   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
      ,.mem_offset_p(32'h8000_0000)
      ,.mem_load_p(1)
      // TODO: Should pass in prog name via plusargs, not parameter
@@ -379,46 +392,6 @@ module manycore_tb_top
      ,.dram_clk_i(core_clk)
      ,.dram_reset_i(core_reset)
      );
-
-
-  bp_bedrock_uce_mem_msg_s nbf_io_cmd_li;
-  logic nbf_io_cmd_v_li, nbf_io_cmd_yumi_lo;
-
-  bp_bedrock_uce_mem_msg_s nbf_io_resp_lo;
-  logic nbf_io_resp_v_lo, nbf_io_resp_ready_li;
-
-  // TODO: Should come in over the manycore network
-  logic nbf_done_lo;
-  bp_nonsynth_nbf_loader
-   #(.bp_params_p(e_bp_default_cfg))
-   nbf_loader
-    (.clk_i(core_clk)
-     ,.reset_i(core_reset)
-
-     ,.lce_id_i(4'('b10))
-
-     ,.io_cmd_o(nbf_io_cmd_li)
-     ,.io_cmd_v_o(nbf_io_cmd_v_li)
-     ,.io_cmd_yumi_i(nbf_io_cmd_yumi_lo)
-
-     ,.io_resp_i(nbf_io_resp_lo)
-     ,.io_resp_v_i(nbf_io_resp_v_lo)
-     ,.io_resp_ready_o(nbf_io_resp_ready_li)
-
-     ,.done_o(nbf_done_lo)
-     );
-
-  // Static arbitration
-  assign io_cmd_li = nbf_done_lo ? mc_io_cmd_li : nbf_io_cmd_li;
-  assign io_cmd_v_li = nbf_done_lo ? mc_io_cmd_v_li : nbf_io_cmd_v_li;
-  assign nbf_io_cmd_yumi_lo = ~nbf_done_lo & io_cmd_yumi_lo;
-  assign mc_io_cmd_yumi_lo = nbf_done_lo & io_cmd_yumi_lo;
-
-  assign nbf_io_resp_lo = io_resp_lo;
-  assign mc_io_resp_lo = io_resp_lo;
-  assign nbf_io_resp_v_lo = ~nbf_done_lo & io_resp_v_lo;
-  assign mc_io_resp_v_lo = nbf_done_lo & io_resp_v_lo;
-  assign io_resp_ready_li = nbf_done_lo ? mc_io_resp_ready_li : nbf_io_resp_ready_li;
 
    bsg_print_stat_snoop
      #(

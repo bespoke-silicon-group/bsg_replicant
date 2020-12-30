@@ -26,5 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+SIM_ARGS += +nbf_file=prog.nbf
+
 # Reuse the execution rules from aws-vcs
 include $(LIBRARIES_PATH)/platforms/aws-vcs/execution.mk

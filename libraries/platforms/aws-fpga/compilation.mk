@@ -60,7 +60,7 @@ PYTHON = python
 		-static -nostartfiles -L$(BLACKPARROT_DIR)/bp_common/test/lib/ -lperch -Triscv.ld -UVCS -fPIC
 	$(BP_OBJDUMP) -d -t $*.rv64o > prog.dump
 	$(BP_OBJCOPY) -O verilog $*.rv64o prog.mem
-	$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf
+	#$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf
 
 # ... or a .cpp and .hpp of the same name
 %.o: %.cpp %.hpp
@@ -69,7 +69,7 @@ PYTHON = python
 	$(BP_CXX) -c -o $*.rv64o $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES) -DBSG_TEST_NAME=$(patsubst %.cpp,%,$<) 
 	$(BP_OBJDUMP) -d -t $*.rv64o > prog.dump
 	$(BP_OBJCOPY) -O verilog $*.rv64o prog.mem
-	$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf
+	#$(PYTHON) $(BP_NBF) --config --ncpus=1 --mem=prog.mem > prog.nbf
 
 .PHONY: platform.compilation.clean
 platform.compilation.clean:
