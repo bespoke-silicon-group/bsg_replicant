@@ -141,7 +141,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_io_co
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/hammerblade_top.sv
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_fifo.sv
 VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_to_mc_mmio.sv
-VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_lite_gearbox.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/blackparrot-vcs/hardware/bp_cce_splitter.sv
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)

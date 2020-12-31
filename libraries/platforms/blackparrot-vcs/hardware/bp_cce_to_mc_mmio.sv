@@ -48,6 +48,25 @@ module bp_cce_to_mc_mmio
   `bp_cast_o(bp_bedrock_cce_mem_msg_s, io_cmd);
   `bp_cast_i(bp_bedrock_cce_mem_msg_s, io_resp);
 
+  bp_bedrock_cce_mem_msg_header_s io_resp_header_lo;
+  logic io_resp_header_v_lo, io_resp_header_yumi_li;
+  logic header_ready_lo;
+  bsg_fifo_1r1w_small
+   #(.width_p($bits(io_cmd_cast_i.header)), .els_p(mc_max_outstanding_p))
+   return_header_fifo
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+
+     ,.data_i(io_cmd_cast_i.header)
+     ,.v_i(io_cmd_v_i)
+     ,.ready_o(header_ready_lo)
+
+     ,.data_o(io_resp_header_lo)
+     ,.v_o(io_resp_header_v_lo)
+     ,.yumi_i(io_resp_header_yumi_li)
+     );
+  assign io_resp_header_yumi_li = io_resp_yumi_i;
+
   //
   // TX
   //
@@ -81,25 +100,6 @@ module bp_cce_to_mc_mmio
 
      ,.empty_o()
      );
-
-  bp_bedrock_cce_mem_msg_header_s io_resp_header_lo;
-  logic io_resp_header_v_lo, io_resp_header_yumi_li;
-  logic header_ready_lo;
-  bsg_fifo_1r1w_small
-   #(.width_p($bits(io_cmd_cast_i.header)), .els_p(mc_max_outstanding_p))
-   return_header_fifo
-    (.clk_i(clk_i)
-     ,.reset_i(reset_i)
-
-     ,.data_i(io_cmd_cast_i.header)
-     ,.v_i(io_cmd_v_i)
-     ,.ready_o(header_ready_lo)
-
-     ,.data_o(io_resp_header_lo)
-     ,.v_o(io_resp_header_v_lo)
-     ,.yumi_i(io_resp_header_yumi_li)
-     );
-  assign io_resp_header_yumi_li = io_resp_yumi_i;
 
   logic                              in_v_lo;
   logic [mc_data_width_p-1:0]        in_data_lo;
