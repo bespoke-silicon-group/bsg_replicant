@@ -33,7 +33,7 @@ module bp_cce_splitter
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_split_mem_msg_s [1:0] io_cmd_cast_o;
-  bp_bedrock_split_mem_msg_s [1:0] io_cmd_resp_i;
+  bp_bedrock_split_mem_msg_s [1:0] io_resp_cast_i;
 
   assign io_cmd_cast_i = io_cmd_i;
   assign io_resp_o = io_resp_cast_o;
@@ -48,13 +48,13 @@ module bp_cce_splitter
   always_comb
     begin
       io_cmd_cast_o[0] = io_cmd_cast_i;
-      io_cmd_cast_o[0].size = e_bedrock_msg_size_4;
-      io_cmd_cast_o[0].addr = io_cmd_cast_i.addr + 4'd0;
+      io_cmd_cast_o[0].header.size = e_bedrock_msg_size_4;
+      io_cmd_cast_o[0].header.addr = io_cmd_cast_i.header.addr + 4'd0;
       io_cmd_cast_o[0].data = io_cmd_cast_i.data[0+:32];
 
       io_cmd_cast_o[1] = io_cmd_cast_i;
-      io_cmd_cast_o[1].size = e_bedrock_msg_size_4;
-      io_cmd_cast_o[1].addr = io_cmd_cast_i.addr + 4'd4;
+      io_cmd_cast_o[1].header.size = e_bedrock_msg_size_4;
+      io_cmd_cast_o[1].header.addr = io_cmd_cast_i.header.addr + 4'd4;
       io_cmd_cast_o[1].data = io_cmd_cast_i.data[32+:32];
     end
 
@@ -71,7 +71,7 @@ module bp_cce_splitter
   //synopsys translate_off
   always_ff @(negedge clk_i)
     begin
-      assert (~io_cmd_v_i | (io_cmd_cast_i.size == e_bedrock_msg_size_8))
+      assert (~io_cmd_v_i | (io_cmd_cast_i.header.size == e_bedrock_msg_size_8))
         else $error("Only 64-bit split is supported");
     end
   //synopsys translate_on

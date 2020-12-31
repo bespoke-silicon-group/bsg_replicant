@@ -69,6 +69,9 @@ module manycore_tb_top
    bsg_manycore_link_sif_s [E:W] host_link_sif_li;
    bsg_manycore_link_sif_s [E:W] host_link_sif_lo;
 
+   bsg_manycore_link_sif_s [1:0] dram_link_sif_li;
+   bsg_manycore_link_sif_s [1:0] dram_link_sif_lo;
+
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_li;
    bsg_manycore_link_sif_s [num_cache_p-1:0] cache_link_sif_lo;
 
@@ -197,7 +200,9 @@ module manycore_tb_top
    parameter dword_width_p = 64;
    //`declare_bp_bedrock_mem_if(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, uce);
    localparam uce_mem_payload_width_lp = `bp_bedrock_mem_payload_width(4, 8);
-   `declare_bp_bedrock_mem_if(56, 512, 4, 8, uce);
+   localparam dram_mem_payload_width_lp = `bp_bedrock_mem_payload_width(4, 8);
+   `declare_bp_bedrock_mem_if(40, 64, 4, 8, uce);
+   `declare_bp_bedrock_mem_if(40, 32, 4, 8, dram);
    bp_bedrock_uce_mem_msg_s io_cmd_lo;
    logic io_cmd_v_lo, io_cmd_ready_li;
 
@@ -210,16 +215,12 @@ module manycore_tb_top
    bp_bedrock_uce_mem_msg_s io_resp_lo;
    logic io_resp_v_lo, io_resp_ready_li;
 
-   bp_bedrock_uce_mem_msg_header_s mem_cmd_header_lo;
-   logic mem_cmd_header_v_lo, mem_cmd_header_ready_li;
-   logic [dword_width_p-1:0] mem_cmd_data_lo;
-   logic mem_cmd_data_v_lo, mem_cmd_data_ready_li;
+   bp_bedrock_uce_mem_msg_s mem_cmd_lo;
+   logic mem_cmd_v_lo, mem_cmd_ready_li;
 
-   bp_bedrock_uce_mem_msg_header_s mem_resp_header_li;
-   logic mem_resp_header_v_li, mem_resp_header_yumi_lo;
-   logic [dword_width_p-1:0] mem_resp_data_li;
-   logic mem_resp_data_v_li, mem_resp_data_yumi_lo;
-   bp_unicore
+   bp_bedrock_uce_mem_msg_s mem_resp_li;
+   logic mem_resp_v_li, mem_resp_yumi_lo;
+   bp_unicore_lite
     #(.bp_params_p(e_bp_unicore_no_l2_cfg))
     blackparrot
      (.clk_i(core_clk)
@@ -241,21 +242,13 @@ module manycore_tb_top
       ,.io_resp_v_o(io_resp_v_lo)
       ,.io_resp_ready_i(io_resp_ready_li)
 
-      ,.mem_cmd_header_o(mem_cmd_header_lo)
-      ,.mem_cmd_header_v_o(mem_cmd_header_v_lo)
-      ,.mem_cmd_header_ready_i(mem_cmd_header_ready_li)
+      ,.mem_cmd_o(mem_cmd_lo)
+      ,.mem_cmd_v_o(mem_cmd_v_lo)
+      ,.mem_cmd_ready_i(mem_cmd_ready_li)
 
-      ,.mem_cmd_data_o(mem_cmd_data_lo)
-      ,.mem_cmd_data_v_o(mem_cmd_data_v_lo)
-      ,.mem_cmd_data_ready_i(mem_cmd_data_ready_li)
-
-      ,.mem_resp_header_i(mem_resp_header_li)
-      ,.mem_resp_header_v_i(mem_resp_header_v_li)
-      ,.mem_resp_header_yumi_o(mem_resp_header_yumi_lo)
-
-      ,.mem_resp_data_i(mem_resp_data_li)
-      ,.mem_resp_data_v_i(mem_resp_data_v_li)
-      ,.mem_resp_data_yumi_o(mem_resp_data_yumi_lo)
+      ,.mem_resp_i(mem_resp_li)
+      ,.mem_resp_v_i(mem_resp_v_li)
+      ,.mem_resp_yumi_o(mem_resp_yumi_lo)
       );
 
   bp_cce_to_mc_mmio
@@ -264,6 +257,9 @@ module manycore_tb_top
      ,.mc_y_cord_width_p(y_cord_width_p)
      ,.mc_data_width_p(data_width_p)
      ,.mc_addr_width_p(addr_width_p)
+     ,.mc_vcache_block_size_in_words_p(block_size_in_words_p)
+     ,.mc_vcache_size_p(vcache_size_p)
+     ,.mc_vcache_sets_p(sets_p)
      )
    host_link
     (.clk_i(core_clk)
@@ -292,6 +288,74 @@ module manycore_tb_top
      ,.my_y_i(host_y_cord_li)
      );
 
+  bp_bedrock_dram_mem_msg_s [1:0] dram_cmd_lo;
+  logic [1:0] dram_cmd_v_lo, dram_cmd_ready_li;
+
+  bp_bedrock_dram_mem_msg_s [1:0] dram_resp_li;
+  logic [1:0] dram_resp_v_li, dram_resp_yumi_lo;
+  bp_cce_splitter
+   #(.bp_params_p(e_bp_unicore_no_l2_cfg))
+   dram_splitter
+    (.clk_i(core_clk)
+     ,.reset_i(core_reset)
+
+     ,.io_cmd_i(mem_cmd_lo)
+     ,.io_cmd_v_i(mem_cmd_v_lo)
+     ,.io_cmd_ready_o(mem_cmd_ready_li)
+
+     ,.io_resp_o(mem_resp_li)
+     ,.io_resp_v_o(mem_resp_v_li)
+     ,.io_resp_yumi_i(mem_resp_yumi_lo)
+
+     ,.io_cmd_o(dram_cmd_lo)
+     ,.io_cmd_v_o(dram_cmd_v_lo)
+     ,.io_cmd_ready_i(dram_cmd_ready_li)
+
+     ,.io_resp_i(dram_resp_li)
+     ,.io_resp_v_i(dram_resp_v_li)
+     ,.io_resp_yumi_o(dram_resp_yumi_lo)
+     );
+
+  for (genvar i = 0; i < 2; i++)
+    begin : d
+      bp_cce_to_mc_mmio
+       #(.bp_params_p(e_bp_unicore_no_l2_cfg)
+         ,.mc_x_cord_width_p(x_cord_width_p)
+         ,.mc_y_cord_width_p(y_cord_width_p)
+         ,.mc_data_width_p(data_width_p)
+         ,.mc_addr_width_p(addr_width_p)
+         ,.mc_vcache_block_size_in_words_p(block_size_in_words_p)
+         ,.mc_vcache_size_p(vcache_size_p)
+         ,.mc_vcache_sets_p(sets_p)
+         )
+       dram_link
+        (.clk_i(core_clk)
+         ,.reset_i(core_reset)
+
+         ,.io_cmd_i(dram_cmd_lo[i])
+         ,.io_cmd_v_i(dram_cmd_v_lo[i])
+         ,.io_cmd_ready_o(dram_cmd_ready_li[i])
+
+         ,.io_resp_o(dram_resp_li[i])
+         ,.io_resp_v_o(dram_resp_v_li[i])
+         ,.io_resp_yumi_i(dram_resp_yumi_lo[i])
+
+         ,.io_cmd_o()
+         ,.io_cmd_v_o()
+         ,.io_cmd_yumi_i('0)
+
+         ,.io_resp_i('0)
+         ,.io_resp_v_i('0)
+         ,.io_resp_ready_o()
+
+         ,.link_sif_i(dram_link_sif_li[i])
+         ,.link_sif_o(dram_link_sif_lo[i])
+
+         ,.my_x_i('0)
+         ,.my_y_i(2+i)
+         );
+    end
+
   bsg_nonsynth_manycore_io_complex
    #(.addr_width_p(addr_width_p)
      ,.data_width_p(data_width_p)
@@ -311,86 +375,6 @@ module manycore_tb_top
      ,.print_stat_v_o()
      ,.print_stat_tag_o()
      ,.loader_done_o()
-     );
-
-  bp_bedrock_uce_mem_msg_s dram_cmd_lo;
-  logic dram_cmd_v_lo, dram_cmd_ready_and_li;
-  bp_burst_to_lite
-   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
-     ,.in_data_width_p(64)
-     ,.out_data_width_p(512)
-     ,.payload_mask_p(mem_cmd_payload_mask_gp)
-     )
-   burst2lite
-    (.clk_i(core_clk)
-     ,.reset_i(core_reset)
-
-     ,.mem_header_i(mem_cmd_header_lo)
-     ,.mem_header_v_i(mem_cmd_header_v_lo)
-     ,.mem_header_ready_and_o(mem_cmd_header_ready_li)
-
-     ,.mem_data_i(mem_cmd_data_lo)
-     ,.mem_data_v_i(mem_cmd_data_v_lo)
-     ,.mem_data_ready_and_o(mem_cmd_data_ready_li)
-
-     ,.mem_o(dram_cmd_lo)
-     ,.mem_v_o(dram_cmd_v_lo)
-     ,.mem_ready_and_i(dram_cmd_ready_and_li)
-     );
-
-  bp_bedrock_uce_mem_msg_s dram_resp_li;
-  logic dram_resp_v_li, dram_resp_ready_and_lo;
-  bp_lite_to_burst
-   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
-     ,.in_data_width_p(512)
-     ,.out_data_width_p(64)
-     ,.payload_mask_p(mem_resp_payload_mask_gp)
-     )
-   lite2burst
-    (.clk_i(core_clk)
-     ,.reset_i(core_reset)
-
-     ,.mem_i(dram_resp_li)
-     ,.mem_v_i(dram_resp_v_li)
-     ,.mem_ready_and_o(dram_resp_ready_and_lo)
-
-     ,.mem_header_o(mem_resp_header_li)
-     ,.mem_header_v_o(mem_resp_header_v_li)
-     ,.mem_header_ready_and_i(mem_resp_header_yumi_lo)
-
-     ,.mem_data_o(mem_resp_data_li)
-     ,.mem_data_v_o(mem_resp_data_v_li)
-     ,.mem_data_ready_and_i(mem_resp_data_yumi_lo)
-     );
-
-  // TODO: Should come in over the manycore network
-  `define dram_pkg bp_dramsim3_lpddr_2Gb_x16_pkg
-  bp_mem
-   #(.bp_params_p(e_bp_unicore_no_l2_cfg)
-     ,.mem_offset_p(32'h8000_0000)
-     ,.mem_load_p(1)
-     // TODO: Should pass in prog name via plusargs, not parameter
-     ,.mem_file_p("prog.mem")
-     ,.mem_cap_in_bytes_p(2**20)
-     ,.use_ddr_p(0)
-     ,.use_dramsim3_p(0)
-     ,.dram_fixed_latency_p(10)
-     )
-   mem
-    (.clk_i(core_clk)
-     ,.reset_i(core_reset)
-
-     ,.mem_cmd_i(dram_cmd_lo)
-     ,.mem_cmd_v_i(dram_cmd_v_lo)
-     ,.mem_cmd_ready_o(dram_cmd_ready_and_li)
-
-     ,.mem_resp_o(dram_resp_li)
-     ,.mem_resp_v_o(dram_resp_v_li)
-     ,.mem_resp_yumi_i(dram_resp_ready_and_lo & dram_resp_v_li)
-
-     // TODO: DRAM clk
-     ,.dram_clk_i(core_clk)
-     ,.dram_reset_i(core_reset)
      );
 
    bsg_print_stat_snoop
@@ -508,7 +492,7 @@ module manycore_tb_top
 
     // Horizontal Tie-Offs
     //
-    for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
+    for (genvar i = 2; i < num_tiles_y_p+1; i++) begin
       bsg_manycore_link_sif_tieoff #(
         .addr_width_p(addr_width_p)
         ,.data_width_p(data_width_p)
@@ -521,6 +505,10 @@ module manycore_tb_top
         ,.link_sif_o(hor_link_sif_li[W][i])
       );
     end
+    assign hor_link_sif_li[W][0] = dram_link_sif_lo[0];
+    assign dram_link_sif_li[0] = hor_link_sif_lo[W][0];
+    assign hor_link_sif_li[W][1] = dram_link_sif_lo[1];
+    assign dram_link_sif_li[1] = hor_link_sif_lo[W][1];
 
      for (genvar i = 0; i < num_tiles_y_p+1; i++) begin
        bsg_manycore_link_sif_tieoff #(

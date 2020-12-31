@@ -305,13 +305,9 @@ VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_io_tile.sv
 VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_io_tile_node.sv
 VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_mem_complex.sv
 VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_multicore.sv
-VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_unicore.sv
+#VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_unicore.sv
+VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_unicore_lite.sv
 VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_tile.sv
 VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bp_tile_node.sv
 VSOURCES +=$(BLACKPARROT_DIR)/bp_top/src/v/bsg_async_noc_link.sv
-
-VSOURCES +=$(BLACKPARROT_DIR)/bp_me/test/common/bp_dramsim3_pkg.sv
-VSOURCES +=$(BLACKPARROT_DIR)/bp_me/test/common/bp_mem.sv
-VSOURCES +=$(BLACKPARROT_DIR)/bp_me/test/common/bp_mem_to_dram.sv
-VSOURCES +=$(BLACKPARROT_DIR)/bp_top/test/common/bp_nonsynth_nbf_loader.sv
 

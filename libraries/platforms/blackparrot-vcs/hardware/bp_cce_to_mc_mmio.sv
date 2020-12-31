@@ -7,11 +7,15 @@ module bp_cce_to_mc_mmio
    `declare_bp_proc_params(bp_params_p)
    `declare_bp_bedrock_mem_if_widths(paddr_width_p, cce_block_width_p, lce_id_width_p, lce_assoc_p, cce)
 
-   , parameter mc_max_outstanding_p     = 32
-   , parameter mc_x_cord_width_p        = "inv"
-   , parameter mc_y_cord_width_p        = "inv"
-   , parameter mc_data_width_p          = "inv"
-   , parameter mc_addr_width_p          = "inv"
+   , parameter mc_max_outstanding_p            = 32
+   , parameter mc_x_cord_width_p               = "inv"
+   , parameter mc_y_cord_width_p               = "inv"
+   , parameter mc_data_width_p                 = "inv"
+   , parameter mc_addr_width_p                 = "inv"
+   , parameter mc_vcache_block_size_in_words_p = "inv"
+   , parameter mc_vcache_size_p                = "inv"
+   , parameter mc_vcache_sets_p                = "inv"
+
    , localparam mc_packet_width_lp      = `bsg_manycore_packet_width(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p)
    , localparam mc_link_sif_width_lp    = `bsg_manycore_link_sif_width(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p)
    )
@@ -224,36 +228,32 @@ module bp_cce_to_mc_mmio
       trans_id_yumi_li = io_cmd_v_i;
       out_v_li = trans_id_yumi_li;
       out_packet_li = '0;
+      out_packet_li.src_y_cord                       = my_y_i;
+      out_packet_li.src_x_cord                       = my_x_i;
+      // Overload reg_id with the trans id of the request
+      out_packet_li.reg_id                           = bsg_manycore_reg_id_width_gp'(trans_id_lo);
+
+      if (io_cmd_eva_li._type == '0)
+        begin
+          out_packet_li.addr                             = io_cmd_eva_li.a.tile_eva.epa;
+          out_packet_li.y_cord                           = io_cmd_eva_li.a.tile_eva.y_cord;
+          out_packet_li.x_cord                           = io_cmd_eva_li.a.tile_eva.x_cord;
+        end
+      else
+        begin
+          // TODO: Add manycore DRAM mapping
+        end
 
       case (io_cmd_cast_i.header.msg_type)
-        e_bedrock_mem_uc_rd:
+        e_bedrock_mem_uc_rd, e_bedrock_mem_rd:
           begin
-            // Word-aligned address
-            out_packet_li.addr                             = io_cmd_eva_li.a.tile_eva.epa;
-            out_packet_li.op                               = e_remote_load;
-            // Ignored for remote loads
-            out_packet_li.op_ex                            = '0;
-            // Overload reg_id with the trans id of the request
-            out_packet_li.reg_id                           = bsg_manycore_reg_id_width_gp'(trans_id_lo);
-            // Irrelevant for bp loads
-            out_packet_li.payload.load_info_s.load_info.float_wb       = '0;
-            out_packet_li.payload.load_info_s.load_info.icache_fetch   = '0;
-            out_packet_li.payload.load_info_s.load_info.is_unsigned_op = '0;
-            // 64-bit+ packets are not supported
-            out_packet_li.payload.load_info_s.load_info.is_byte_op     = (io_cmd_cast_i.header.size == e_bedrock_msg_size_1);
-            out_packet_li.payload.load_info_s.load_info.is_hex_op      = (io_cmd_cast_i.header.size == e_bedrock_msg_size_2);
-            // Assume aligned for now
-
-            out_packet_li.payload.load_info_s.load_info.part_sel       = io_cmd_eva_li.a.tile_eva.low_bits;
-            out_packet_li.src_y_cord                       = my_y_i;
-            out_packet_li.src_x_cord                       = my_x_i;
-            out_packet_li.y_cord                           = io_cmd_eva_li.a.tile_eva.y_cord;
-            out_packet_li.x_cord                           = io_cmd_eva_li.a.tile_eva.x_cord;
+            out_packet_li.op                                       = e_remote_load;
+            out_packet_li.payload.load_info_s.load_info.is_byte_op = (io_cmd_cast_i.header.size == e_bedrock_msg_size_1);
+            out_packet_li.payload.load_info_s.load_info.is_hex_op  = (io_cmd_cast_i.header.size == e_bedrock_msg_size_2);
+            out_packet_li.payload.load_info_s.load_info.part_sel   = io_cmd_eva_li.a.tile_eva.low_bits;
           end
-        e_bedrock_mem_uc_wr:
+        default: // e_bedrock_mem_uc_wr, e_bedrock_mem_wr:
           begin
-            // Word-aligned address
-            out_packet_li.addr                             = io_cmd_eva_li.a.tile_eva.epa;
             out_packet_li.op                               = e_remote_store;
             // Set store data and mask (assume aligned)
             case (io_cmd_cast_i.header.size)
@@ -267,29 +267,13 @@ module bp_cce_to_mc_mmio
                   out_packet_li.payload.data               = {2{io_cmd_cast_i.data[0+:16]}};
                   out_packet_li.op_ex.store_mask           = 4'h3 << io_cmd_eva_li.a.tile_eva.low_bits;
                 end
-              e_bedrock_msg_size_4:
+              default: //e_bedrock_msg_size_4:
                 begin
                   out_packet_li.payload.data               = {1{io_cmd_cast_i.data[0+:32]}};
                   out_packet_li.op_ex.store_mask           = 4'hf << io_cmd_eva_li.a.tile_eva.low_bits;
                 end
-              default:
-                begin
-                  // Should not happen
-                  out_packet_li.payload.data               = '0;
-                  out_packet_li.op_ex.store_mask           = '0;
-                end
             endcase
-            out_packet_li.reg_id                           = bsg_manycore_reg_id_width_gp'(trans_id_lo);
-            out_packet_li.src_y_cord                       = my_y_i;
-            out_packet_li.src_x_cord                       = my_x_i;
-            out_packet_li.y_cord                           = io_cmd_eva_li.a.tile_eva.y_cord;
-            out_packet_li.x_cord                           = io_cmd_eva_li.a.tile_eva.x_cord;
           end
-        // Unsupported
-        e_bedrock_mem_pre
-        ,e_bedrock_mem_rd
-        ,e_bedrock_mem_wr: out_packet_li = '0;
-        default      : out_packet_li = '0;
       endcase
     end
 
