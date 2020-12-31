@@ -15,6 +15,8 @@ module bp_cce_to_mc_mmio
    , parameter mc_vcache_block_size_in_words_p = "inv"
    , parameter mc_vcache_size_p                = "inv"
    , parameter mc_vcache_sets_p                = "inv"
+   , parameter mc_num_tiles_x_p                = "inv"
+   , parameter mc_num_tiles_y_p                = "inv"
 
    , localparam mc_packet_width_lp      = `bsg_manycore_packet_width(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p)
    , localparam mc_link_sif_width_lp    = `bsg_manycore_link_sif_width(mc_addr_width_p, mc_data_width_p, mc_x_cord_width_p, mc_y_cord_width_p)
@@ -221,6 +223,29 @@ module bp_cce_to_mc_mmio
   bp_eva_s io_cmd_eva_li;
   assign io_cmd_eva_li = io_cmd_cast_i.header.addr;
 
+  // DRAM hash function
+  localparam vcache_word_offset_width_lp = `BSG_SAFE_CLOG2(mc_vcache_block_size_in_words_p);
+  localparam lg_vcache_size_lp = `BSG_SAFE_CLOG2(mc_vcache_size_p);
+  localparam hash_bank_input_width_lp = mc_data_width_p-1-2-vcache_word_offset_width_lp;
+  localparam hash_bank_index_width_lp =
+$clog2(((2**hash_bank_input_width_lp)+(2*mc_num_tiles_x_p)-1)/(mc_num_tiles_x_p*2));
+
+  logic [hash_bank_input_width_lp-1:0] hash_bank_input;
+  logic [mc_x_cord_width_p:0] hash_bank_lo;  // {bot_not_top, x_cord}
+  logic [hash_bank_index_width_lp-1:0] hash_bank_index_lo;
+
+  hash_function #(
+    .banks_p(mc_num_tiles_x_p*2)
+    ,.width_p(hash_bank_input_width_lp)
+    ,.vcache_sets_p(mc_vcache_sets_p)
+  ) hashb (
+    .i(hash_bank_input)
+    ,.bank_o(hash_bank_lo)
+    ,.index_o(hash_bank_index_lo)
+  );
+
+  assign hash_bank_input = io_cmd_eva_li[2+vcache_word_offset_width_lp+:hash_bank_input_width_lp];
+
   // Command packet formation
   always_comb
     begin
@@ -241,7 +266,16 @@ module bp_cce_to_mc_mmio
         end
       else
         begin
-          // TODO: Add manycore DRAM mapping
+          out_packet_li.addr = {
+            1'b0,
+            {(mc_addr_width_p-1-vcache_word_offset_width_lp-hash_bank_index_width_lp){1'b0}},
+            hash_bank_index_lo,
+            io_cmd_eva_li[2+:vcache_word_offset_width_lp]
+          };
+          out_packet_li.y_cord = hash_bank_lo[mc_x_cord_width_p]
+            ? (mc_y_cord_width_p)'(mc_num_tiles_y_p+1) // DRAM ports are directly below the manycore tiles.
+            : {mc_y_cord_width_p{1'b0}};
+          out_packet_li.x_cord = hash_bank_lo[0+:mc_x_cord_width_p];
         end
 
       case (io_cmd_cast_i.header.msg_type)

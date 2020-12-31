@@ -260,6 +260,8 @@ module manycore_tb_top
      ,.mc_vcache_block_size_in_words_p(block_size_in_words_p)
      ,.mc_vcache_size_p(vcache_size_p)
      ,.mc_vcache_sets_p(sets_p)
+     ,.mc_num_tiles_x_p(num_tiles_x_p)
+     ,.mc_num_tiles_y_p(num_tiles_y_p)
      )
    host_link
     (.clk_i(core_clk)
@@ -327,6 +329,8 @@ module manycore_tb_top
          ,.mc_vcache_block_size_in_words_p(block_size_in_words_p)
          ,.mc_vcache_size_p(vcache_size_p)
          ,.mc_vcache_sets_p(sets_p)
+         ,.mc_num_tiles_x_p(num_tiles_x_p)
+         ,.mc_num_tiles_y_p(num_tiles_y_p)
          )
        dram_link
         (.clk_i(core_clk)
