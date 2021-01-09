@@ -167,7 +167,7 @@ extern "C" {
         {
                 snprintf(buffer, sz,
                          "response_pkt{"
-                         "dst=(%" PRIu8 ",%" PRIu8 "), "
+                         "dst=(X:%" PRIu8 ",Y:%" PRIu8 "), "
                          "data=0x%08" PRIx32 ","
                          "id=0x%08" PRIx32 ","
                          "op=0x%02" PRIx8 ""
