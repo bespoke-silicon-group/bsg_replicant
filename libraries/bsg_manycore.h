@@ -171,7 +171,7 @@ extern "C" {
          * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
-        __attribute__((warn_unused_result, deprecated))
+        __attribute__((warn_unused_result))
         int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
                                      hb_mc_packet_t *packet,
                                      hb_mc_fifo_rx_t type,
@@ -555,6 +555,26 @@ extern "C" {
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
         int hb_mc_manycore_log_disable(hb_mc_manycore_t *mc);
+
+        /**
+         * Convenience macro for calling a manycore function and handling an error return code.
+         * @param[in] stmt  A C/C++ statement that evaluates to an integer return code.
+         *
+         * Example:
+         * BSG_MANYCORE_CALL(hb_mc_manycore_init(&mc, ...));
+         *
+         * The return code must be an integer defined in bsg_manycore_errno.h - otherwise behavior is undefined.
+         * This macro will cause the invoking to return if an error code is returned.
+         * An error message will be printing with the code statement that failed.
+         */
+#define BSG_MANYCORE_CALL(stmt)                                             \
+        {                                                               \
+                int __r = stmt;                                         \
+                if (__r != HB_MC_SUCCESS) {                             \
+                        bsg_pr_err("'%s' failed: %s\n", #stmt, hb_mc_strerror(__r)); \
+                        return __r;                                     \
+                }                                                       \
+        }
 
 #ifdef __cplusplus
 }
