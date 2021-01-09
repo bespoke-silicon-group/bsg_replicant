@@ -28,7 +28,8 @@
 #ifndef BSG_MANYCORE_EPA_H
 #define BSG_MANYCORE_EPA_H
 #include <bsg_manycore_features.h>
-
+#include <bsg_manycore_errno.h>
+#include <cstddef>
 #ifdef __cplusplus
 #include <cstdint>
 #else
@@ -45,6 +46,32 @@ extern "C" {
          */
         typedef uint32_t hb_mc_epa_t;
         typedef hb_mc_epa_t epa_t;
+
+/**
+ * Checks alignment of an epa based on data size in bytes.
+ * @param[in] epa  epa address
+ * @param[in] sz   data size in bytes.
+ * @return         HB_MC_SUCCESS if npa is aligned and HB_MC_UNALIGNED if not,
+ *                 and HB_MC_INVALID otherwise.
+ */
+static inline int hb_mc_manycore_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz)
+{
+        switch (sz) {
+        case 4:
+                if (*epa & 0x3)
+                        return HB_MC_UNALIGNED;
+                break;
+        case 2:
+                if (*epa & 0x1)
+                        return HB_MC_UNALIGNED;
+                break;
+        case 1:
+                break;
+        default:
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}
 
 #define HB_MC_EPA_LOGSZ 18
 
