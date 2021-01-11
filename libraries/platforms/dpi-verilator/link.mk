@@ -120,7 +120,7 @@ VERILATOR_LDFLAGS   += $(foreach vlf,$(LDFLAGS),-LDFLAGS "$(vlf)")
 VERILATOR_VINCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VERILATOR_VDEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VERILATOR_VFLAGS = $(VERILATOR_VINCLUDES) $(VERILATOR_VDEFINES)
-VERILATOR_VFLAGS += -Wno-widthconcat -Wno-unoptflat -Wno-lint
+VERILATOR_VFLAGS += -Wno-widthconcat -Wno-lint
 VERILATOR_VFLAGS += --assert -O3
 # Uncomment to enable Verilator profiling with operf
 #VERILATOR_VFLAGS += --prof-cfuncs
@@ -149,8 +149,8 @@ $(BSG_MACHINE_PATH)/libmachine.so: $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
 
 # Executable compilation rules
 LDFLAGS    += -lbsg_manycore_runtime -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
-LDFLAGS    += -lm
-
+LDFLAGS    += -ldmamem -L$() -Wl,-rpath=$(BSG_PLATFORM_PATH)
+LDFLAGS    += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
 # Uncomment for Verilator threads
 # LDFLAGS    += -lpthread
 
