@@ -61,6 +61,9 @@ BSG_MACHINE_IO_EP_CREDITS             = 16
 BSG_MACHINE_IO_HOST_CREDITS           = $(BSG_MACHINE_IO_EP_CREDITS)
 BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 
+# (Don't) Instantiate Profilers (needed for SAIF generation, DPI Tile)
+BSG_MACHINE_NOINST_PROFILERS          = 0
+
 ##################### Constants and Computations #####################
 # Every cache is replaced with an infinite memory channel
 BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_NUM_CORES_X)*2 | bc)

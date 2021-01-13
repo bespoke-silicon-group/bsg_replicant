@@ -30,8 +30,16 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/bsg_manycore_pl
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-vcs/bsg_manycore_simulator.cpp
 
+# If the machine does not instantiate profilers, then include the "noimpl" source files
+# This is necessary for SAIF file generation, and DPI Tile/Network simulations
+# This parameter is set in Makefile.machine.include
+ifneq ($(BSG_MACHINE_NOINST_PROFILERS),0)
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
+else
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
+endif
 
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration

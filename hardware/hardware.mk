@@ -280,6 +280,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter bsg_machine_noc_y_max_gp = bsg_machine_core_y_global_max_gp + 2; // Caches on both sides" >> $@
 	@echo "parameter bsg_machine_noc_x_coord_width_gp = \`BSG_SAFE_CLOG2(bsg_machine_noc_x_max_gp);" >> $@
 	@echo "parameter bsg_machine_noc_y_coord_width_gp = \`BSG_SAFE_CLOG2(bsg_machine_noc_y_max_gp);" >> $@
+	@echo "parameter bsg_machine_noinst_profilers_gp = $(BSG_MACHINE_NOINST_PROFILERS);" >> $@
 	@echo >> $@
 	@echo "endpackage" >> $@
 	@echo >> $@

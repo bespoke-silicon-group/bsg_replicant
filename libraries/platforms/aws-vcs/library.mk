@@ -38,8 +38,17 @@ include $(CL_DIR)/hdk.mk
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/bsg_manycore_mmio.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/bsg_manycore_platform.cpp
+
+# If the machine does not instantiate profilers, then include the "noimpl" source files
+# This is necessary for SAIF file generation, and DPI Tile/Network simulations
+# This parameter is set in Makefile.machine.include
+ifneq ($(BSG_MACHINE_NOINST_PROFILERS),0)
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
+else
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
+endif
 
 # aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
 # features/dma/noimpl/feature.mk that simply returns

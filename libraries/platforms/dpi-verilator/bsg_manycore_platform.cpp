@@ -231,14 +231,20 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
         y = rd;
         err = hb_mc_profiler_init(&(platform->prof), x, y, profiler);
-        if (err != HB_MC_SUCCESS){
+        if (err == HB_MC_NOIMPL){
+                manycore_pr_warn(mc, "Profiler init returned HB_MC_NOIMPL "
+                                 "(This can happen with SAIF generation, or DPI tile.)\n");
+        } else if (err != HB_MC_SUCCESS){
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
                 return err;
         }
 
         err = hb_mc_tracer_init(&(platform->tracer), hierarchy);
-        if (err != HB_MC_SUCCESS){
+        if (err == HB_MC_NOIMPL){
+                manycore_pr_warn(mc, "Tracer init returned HB_MC_NOIMPL "
+                                 "(This can happen with SAIF generation, or DPI tile.)\n");
+        } else if (err != HB_MC_SUCCESS){
                 hb_mc_profiler_cleanup(&(platform->prof));
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
