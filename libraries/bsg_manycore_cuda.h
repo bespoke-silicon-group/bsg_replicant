@@ -137,6 +137,12 @@ extern "C" {
 
 
 
+        typedef struct hb_mc_program_options {
+                hb_mc_allocator_id_t alloc_id;
+                const char          *alloc_name;
+        } hb_mc_program_options_t;
+
+        void hb_mc_program_options_default(hb_mc_program_options_t *popts);
 
         /**
          * Initializes the manycor struct, and a mesh structure with default (maximum)

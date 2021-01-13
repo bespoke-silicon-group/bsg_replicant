@@ -183,7 +183,11 @@ static int hb_mc_device_tiles_set_runtime_symbols (hb_mc_device_t *device,
 
 
 
-
+void hb_mc_program_options_default(hb_mc_program_options_t *popts)
+{
+        popts->alloc_name = nullptr;
+        popts->alloc_id   = 0;
+}
 
 
 
