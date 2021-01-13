@@ -256,7 +256,7 @@ extern "C" {
 
 
         /**
-         * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
+         * Copies a buffer from src on the host to dst on device DRAM.
          * @param[in]  device        Pointer to device
          * @parma[in]  daddr         EVA address of destination to be copied into
          * @parma[in]  haddr         Host address of source to be copied from
@@ -270,7 +270,7 @@ extern "C" {
                                           uint32_t bytes);
 
         /**
-         * Copies a buffer from src on the host/device DRAM to dst on device DRAM/host.
+         * Copies a buffer from src on device DRAM to dst on device the host.
          * @param[in]  device        Pointer to device
          * @parma[in]  haddr         Host address of source to be copied into
          * @parma[in]  daddr         EVA address of destination to be copied from
