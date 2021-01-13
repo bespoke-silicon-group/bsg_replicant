@@ -567,11 +567,12 @@ extern "C" {
          * This macro will cause the invoking to return if an error code is returned.
          * An error message will be printing with the code statement that failed.
          */
-#define BSG_MANYCORE_CALL(stmt)                                             \
+#define BSG_MANYCORE_CALL(mc, stmt)                                     \
         {                                                               \
                 int __r = stmt;                                         \
                 if (__r != HB_MC_SUCCESS) {                             \
-                        bsg_pr_err("'%s' failed: %s\n", #stmt, hb_mc_strerror(__r)); \
+                        bsg_pr_err("Instance %s: Call to '%s' failed -- %s\n", \
+                                   mc->name, #stmt, hb_mc_strerror(__r)); \
                         return __r;                                     \
                 }                                                       \
         }
