@@ -55,7 +55,7 @@
 #define sarray_size(x)                          \
         ((ssize_t)array_size(x))
 
-/* these are conveniance macros that are only good for one line prints */
+/* these are convenience macros that are only good for one line prints */
 #define manycore_pr_dbg(mc, fmt, ...)                   \
         bsg_pr_dbg("%s: " fmt, mc->name, ##__VA_ARGS__)
 
@@ -651,32 +651,6 @@ int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
 ////////////////
 // Memory API //
 ////////////////
-
-/**
- * Checks alignment of an epa based on data size in bytes.
- * @param[in] epa  epa address
- * @param[in] sz   data size in bytes.
- * @return         HB_MC_SUCCESS if npa is aligned and HB_MC_UNALIGNED if not,
- *                 and HB_MC_INVALID otherwise.
- */
-static inline int hb_mc_manycore_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz)
-{
-        switch (sz) {
-        case 4:
-                if (*epa & 0x3)
-                        return HB_MC_UNALIGNED;
-                break;
-        case 2:
-                if (*epa & 0x1)
-                        return HB_MC_UNALIGNED;
-                break;
-        case 1:
-                break;
-        default:
-                return HB_MC_INVALID;
-        }
-        return HB_MC_SUCCESS;
-}
 
 /* send a read request and don't wait for the return packet */
 static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,

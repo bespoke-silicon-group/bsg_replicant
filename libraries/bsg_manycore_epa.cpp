@@ -1,4 +1,4 @@
-// Copyright (c) 2019, University of Washington All rights reserved.
+// Copyright (c) 2021, University of Washington All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -25,45 +25,33 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef BSG_MANYCORE_EPA_H
-#define BSG_MANYCORE_EPA_H
 #include <bsg_manycore_features.h>
-
-#ifdef __cplusplus
-#include <cstdint>
+#include <bsg_manycore_epa.h>
 #include <cstddef>
-#else
-#include <stdint.h>
-#include <stddef.h>
-#endif
+#include <bsg_manycore_errno.h>
 
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-        /**
-         * An Endpoint Physical Address. This type uniquely identifies a physical
-         * memory address within a manycore endpoint. It is a byte address.
-         */
-        typedef uint32_t hb_mc_epa_t;
-        typedef hb_mc_epa_t epa_t;
-
-        /**
-         * Checks alignment of an epa based on data size in bytes.
-         * @param[in] epa  epa address
-         * @param[in] sz   data size in bytes.
-         * @return         HB_MC_SUCCESS if npa is aligned and HB_MC_UNALIGNED if not,
-         *                 and HB_MC_INVALID otherwise.
-         */
-        int hb_mc_manycore_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz);
-
-#define HB_MC_EPA_LOGSZ 18
-
-#define EPA_FROM_BASE_AND_OFFSET(base, offset)  \
-        (((base)+(offset)))
-
-#ifdef __cplusplus
-};
-#endif
-#endif
+/**
+ * Checks alignment of an epa based on data size in bytes.
+ * @param[in] epa  epa address
+ * @param[in] sz   data size in bytes.
+ * @return         HB_MC_SUCCESS if npa is aligned and HB_MC_UNALIGNED if not,
+ *                 and HB_MC_INVALID otherwise.
+ */
+int hb_mc_manycore_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz)
+{
+        switch (sz) {
+        case 4:
+                if (*epa & 0x3)
+                        return HB_MC_UNALIGNED;
+                break;
+        case 2:
+                if (*epa & 0x1)
+                        return HB_MC_UNALIGNED;
+                break;
+        case 1:
+                break;
+        default:
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}

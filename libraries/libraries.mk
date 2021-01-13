@@ -31,6 +31,7 @@ __BSG_LIBRARIES_MK := 1
 LIB_CSOURCES   += 
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
+LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_epa.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_config.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_cuda.cpp
