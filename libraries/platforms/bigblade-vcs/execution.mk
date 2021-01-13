@@ -39,6 +39,7 @@ SIM_ARGS += +ntb_random_seed_automatic
 # them as the VCS plusarg argument +c_args. Users can specify C-style
 # arguments using the C_ARGS make variable.
 
+
 %.log: % $(BSG_MANYCORE_KERNELS)
 	./$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
 

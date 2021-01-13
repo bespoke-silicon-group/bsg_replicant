@@ -28,6 +28,7 @@
 #ifndef BSG_MANYCORE_EPA_H
 #define BSG_MANYCORE_EPA_H
 #include <bsg_manycore_features.h>
+#include <bsg_manycore_errno.h>
 
 #ifdef __cplusplus
 #include <cstdint>
@@ -63,8 +64,13 @@ extern "C" {
 
 #define HB_MC_HOST_EPA_FINISH 0xEAD0
 #define HB_MC_HOST_EPA_FAIL 0xEAD8
+#define HB_MC_HOST_EPA_STATS 0xD0C
+        
 #define EPA_FROM_BASE_AND_OFFSET(base, offset)  \
         (((base)+(offset)))
+
+#define OFFSET_FROM_BASE_AND_EPA(base, epa)  \
+        (((epa)-(base)))
 
 #ifdef __cplusplus
 };

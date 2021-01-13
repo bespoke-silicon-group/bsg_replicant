@@ -37,6 +37,8 @@ module manycore_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_dram_num_channels_gp      = %d", bsg_machine_dram_num_channels_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_cfg_gp               = %s", bsg_machine_dram_cfg_gp.name());
       
+      $display("[INFO][TESTBENCH] bsg_machine_noinst_profilers_gp       = %s", bsg_machine_noinst_profilers_gp);
+
       $display("[INFO][TESTBENCH] bsg_machine_num_cores_x_gp            = %d", bsg_machine_num_cores_x_gp);
       $display("[INFO][TESTBENCH] bsg_machine_num_cores_y_gp            = %d", bsg_machine_num_cores_y_gp);
    end
@@ -483,40 +485,58 @@ module manycore_tb_top
   end
 
    // Manycore Profiling, Trace, and Debug Infrastructure
-
-   bind vanilla_core vanilla_core_trace
-     #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
-       .x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ,.icache_tag_width_p(icache_tag_width_p)
-       ,.icache_entries_p(icache_entries_p)
-       ,.data_width_p(data_width_p)
-       ,.dmem_size_p(dmem_size_p)
-       )
-   vtrace
-     (
-      .*
-      ,.trace_en_i($root.manycore_tb_top.log_en));
-
-   bind vanilla_core vanilla_core_profiler
-     #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
-       .x_cord_width_p(x_cord_width_p)
-       ,.y_cord_width_p(y_cord_width_p)
-       ,.origin_x_cord_p(`BSG_MACHINE_ORIGIN_COORD_X)
-       ,.origin_y_cord_p(`BSG_MACHINE_ORIGIN_COORD_Y)
-       ,.icache_tag_width_p(icache_tag_width_p)
-       ,.icache_entries_p(icache_entries_p)
-       ,.data_width_p(data_width_p)
-       )
-   vcore_prof
-     (
+  if (network_cfg_lp[e_network_mesh] | network_cfg_lp[e_network_half_ruche_x]) begin
+    bind bsg_mesh_router router_profiler #(
+      .x_cord_width_p(x_cord_width_p)
+      ,.y_cord_width_p(y_cord_width_p)
+      ,.dims_p(dims_p)
+      ,.XY_order_p(XY_order_p)
+      ,.origin_x_cord_p(`BSG_MACHINE_ORIGIN_COORD_X)
+      ,.origin_y_cord_p(`BSG_MACHINE_ORIGIN_COORD_Y)
+    ) rp0 (
       .*
       ,.global_ctr_i($root.manycore_tb_top.global_ctr)
+      ,.trace_en_i($root.manycore_tb_top.trace_en)
       ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
       ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
-      ,.trace_en_i($root.manycore_tb_top.trace_en)
-      );
+    );
 
+  end
+
+   if(!bsg_machine_noinst_profilers_gp) begin
+      bind vanilla_core vanilla_core_trace
+        #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
+          .x_cord_width_p(x_cord_width_p)
+          ,.y_cord_width_p(y_cord_width_p)
+          ,.icache_tag_width_p(icache_tag_width_p)
+          ,.icache_entries_p(icache_entries_p)
+          ,.data_width_p(data_width_p)
+          ,.dmem_size_p(dmem_size_p)
+          )
+      vtrace
+        (
+         .*
+         ,.trace_en_i($root.manycore_tb_top.log_en));
+
+      bind vanilla_core vanilla_core_profiler
+        #(// Reminder: parameters are scoped to the bind target, not in the scope of the declaration!
+          .x_cord_width_p(x_cord_width_p)
+          ,.y_cord_width_p(y_cord_width_p)
+          ,.origin_x_cord_p(`BSG_MACHINE_ORIGIN_COORD_X)
+          ,.origin_y_cord_p(`BSG_MACHINE_ORIGIN_COORD_Y)
+          ,.icache_tag_width_p(icache_tag_width_p)
+          ,.icache_entries_p(icache_entries_p)
+          ,.data_width_p(data_width_p)
+          )
+      vcore_prof
+        (
+         .*
+         ,.global_ctr_i($root.manycore_tb_top.global_ctr)
+         ,.print_stat_v_i($root.manycore_tb_top.print_stat_v_lo)
+         ,.print_stat_tag_i($root.manycore_tb_top.print_stat_tag_lo)
+         ,.trace_en_i($root.manycore_tb_top.trace_en)
+         );
+   end
 
 
    // --------------------------------------------------------------------------

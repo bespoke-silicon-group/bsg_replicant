@@ -415,7 +415,7 @@ int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long tim
  */
 int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long timeout){
         int res;
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
         SimulationWrapper *top = platform->top;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -439,10 +439,9 @@ int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long time
                                 __func__, *credits);
                 return HB_MC_INVALID;
         }
-
+        
         return HB_MC_SUCCESS;
 }
-
 
 /**
  * Stall until the all requests (and responses) have reached their destination.

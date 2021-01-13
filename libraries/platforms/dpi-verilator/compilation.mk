@@ -31,7 +31,7 @@
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_MACHINE_PATH)
 
-CXXFLAGS   += -lstdc++ $(INCLUDES) $(DEFINES)
-CFLAGS     += $(INCLUDES) $(DEFINES)
+CXXFLAGS   += -lstdc++ $(DEFINES)
+CFLAGS     += $(DEFINES)
 
 include $(LIBRARIES_PATH)/platforms/aws-fpga/compilation.mk

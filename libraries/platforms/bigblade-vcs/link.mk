@@ -74,20 +74,31 @@ $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup: | $(BSG_MACHINE_PATH)/$(
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen: | $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
 	echo "replicant_tb_top : $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/64" >> $@;
 
+# The SAIF-generation simulation and fast simulation (exec) turns off the profilers using macros
+# so it must be compiled into a separate library.
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.netsim: | $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
+	echo "replicant_tb_top : $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_netsim/64" >> $@;
+
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec: | $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
 	echo "replicant_tb_top : $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/64" >> $@;
 
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup $(VLOGAN_SOURCES)
 	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.log
 
-$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
-$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
-$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_netsim/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_netsim/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.netsim $(VLOGAN_SOURCES)
+	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top -debug_access+pp $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.netsim.log
 
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: VDEFINES += BSG_MACHINE_ENABLE_SAIF
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen $(VLOGAN_SOURCES)
 	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top -debug_access+pp $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.saifgen.log
 
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec $(VLOGAN_SOURCES)
 	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.exec.log
 
@@ -123,11 +134,15 @@ TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen \
 	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
+%.netsim: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_netsim/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.netsim \
+	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+
 %.exec: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec \
 	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
-.PRECIOUS:%.debug %.profile %.saifgen %.exec
+.PRECIOUS:%.debug %.profile %.saifgen %.exec %.netsim
 
 # When running recursive regression, make is launched in independent,
 # non-communicating parallel processes that try to build these objects
@@ -150,7 +165,7 @@ platform.link.clean:
 	rm -rf *.jou
 	rm -rf *.vcs.log
 	rm -rf vc_hdrs.h
-	rm -rf *.debug *.profile *.saifgen *.exec
+	rm -rf *.debug *.profile *.saifgen *.exec *.netsim
 
 link.clean: platform.link.clean ;
 

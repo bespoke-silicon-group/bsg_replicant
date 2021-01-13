@@ -3,7 +3,8 @@
 !*.cpp
 !*.h
 !*.hpp
-.test_*
+*.tmp
+*.daidir
 vc_hdrs.h
 ucli.key
 *.rpt
@@ -16,5 +17,6 @@ ucli.key
 *.exec
 *.saif
 *.saifgen
+*.netsim
 *.json
 dramsim3.txt

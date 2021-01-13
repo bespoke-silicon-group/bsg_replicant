@@ -153,7 +153,6 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
 
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
-        CHECK_FIELD(HB_MC_CONFIG_VCACHE_STRIPE_WORDS, idx >= config->vcache_block_words);
         config->vcache_stripe_words = idx;
 
 
