@@ -136,6 +136,7 @@ extern "C" {
         };
 
 
+        typedef int hb_mc_pod_id_t;
 
         typedef struct hb_mc_program_options {
                 hb_mc_allocator_id_t alloc_id;
@@ -151,13 +152,14 @@ extern "C" {
         /**
          * Initializes a CUDA-Lite program on the manycore on a pod specified.
          * @param[in] device Pointer to device
+         * @param[in] pod    Pod ID
          * @param[in] name   Device name
          * @param[in] id     Device id
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
         __attribute__((warn_unused_result))
         int hb_mc_device_pod_program_init(hb_mc_device_t *device,
-                                          hb_mc_pod_id_t  pod_id,
+                                          hb_mc_pod_id_t  pod,
                                           const char     *bin_name,
                                           const hb_mc_porogram_options_t *popts);
 
