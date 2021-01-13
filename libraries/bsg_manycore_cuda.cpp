@@ -214,7 +214,7 @@ void hb_mc_program_options_default(hb_mc_program_options_t *popts)
 int hb_mc_device_pod_program_init(hb_mc_device_t *device,
                                   hb_mc_pod_id_t  pod,
                                   const char     *bin_name,
-                                  const hb_mc_porogram_options_t *popts)
+                                  const hb_mc_program_options_t *popts)
 {
         CHECK_POD_ID(pod);
         return hb_mc_device_program_init(device, bin_name, popts->alloc_name, popts->alloc_id);
@@ -319,7 +319,7 @@ int hb_mc_device_pod_memcpy_to_host(hb_mc_device_t *device,
                                     uint32_t bytes)
 {
         CHECK_POD_ID(pod);
-        return hb_mc_device_memcpy_to_host(device, pod, haddr, addr, bytes);
+        return hb_mc_device_memcpy_to_host(device, haddr, daddr, bytes);
 }
 
 /**
@@ -373,7 +373,7 @@ int hb_mc_device_pod_kernel_enqueue(hb_mc_device_t *device,
                                     const uint32_t *argv)
 {
         CHECK_POD_ID(pod);
-        return hb_mc_kernel_enque(device, grid_dim, tg_dim, name, argc, argv);
+        return hb_mc_kernel_enqueue(device, grid_dim, tg_dim, name, argc, argv);
 }
 
 /**
@@ -410,8 +410,8 @@ int hb_mc_device_pod_kernels_execute(hb_mc_device_t *device,
  * @param[in]  pod           Pod ID
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
-int hb_mc_device_pod_program_finish(hb_mc_device *device,
-                                    hb_mc_pod_id_t pod)
+int hb_mc_device_pod_program_finish(hb_mc_device_t *device,
+                                    hb_mc_pod_id_t  pod)
 {
         CHECK_POD_ID(pod);
 
