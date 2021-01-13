@@ -31,7 +31,6 @@
 #define ALLOC_NAME "default_allocator"
 
 int test_loader (int argc, char **argv) {
-        int rc;
         char *bin_path, *test_name;
         struct arguments_path args = {NULL, NULL};
 
@@ -49,18 +48,8 @@ int test_loader (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
         hb_mc_device_t device;
-        rc = hb_mc_device_init(&device, test_name, 0);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize device.\n");
-                return rc;
-        }
-        
-        rc = hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize program.\n");
-                return rc;
-        }
-
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+        BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
         /**********************************************************************/
         /* Define block_size_x/y: amount of work for each tile group          */
@@ -75,64 +64,38 @@ int test_loader (int argc, char **argv) {
         /* Allocate a word for the return value */
         /****************************************/
         hb_mc_eva_t raddr;
-        rc = hb_mc_device_malloc(&device, sizeof(uint32_t), &raddr);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to allocate return code.\n");
-                return rc;
-        }
-
-        rc = hb_mc_device_memset(&device, &raddr, 0, sizeof(uint32_t));
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to initialize return code.\n");
-                return rc;
-        };
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t), &raddr));
+        BSG_CUDA_CALL(hb_mc_device_memset(&device, &raddr, 0, sizeof(uint32_t)));
 
         /**********************************************************************/
         /* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
         int kernel_argv[] = {raddr};
-
         char kernel_name[256];
         snprintf(kernel_name, sizeof(kernel_name), "kernel_%s", test_name + sizeof("test_") - 1);
+
         /**********************************************************************/
         /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, 1, kernel_argv);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize grid.\n");
-                return rc;
-        }
-
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue(&device, grid_dim, tg_dim, kernel_name, 1, kernel_argv));
 
         /**********************************************************************/
         /* Launch and execute all tile groups on device and wait for finish.  */ 
         /**********************************************************************/
-        rc = hb_mc_device_tile_groups_execute(&device);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to execute tile groups.\n");
-                return rc;
-        }       
+        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
         /*************************/
         /* Read the return value */
         /*************************/
         uint32_t rcode;
-        rc = hb_mc_device_memcpy(&device, &rcode, raddr, sizeof(rcode),
-                                 HB_MC_MEMCPY_TO_HOST);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to read return code.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy(&device, &rcode, (void*)raddr, sizeof(rcode),
+                                          HB_MC_MEMCPY_TO_HOST));
 
         /**********************************************************************/
         /* Freeze the tiles and memory manager cleanup.                       */
         /**********************************************************************/
-        rc = hb_mc_device_finish(&device); 
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to de-initialize device.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_finish(&device));
 
         /*************************/
         /* Check the return code */
