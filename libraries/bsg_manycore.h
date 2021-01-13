@@ -176,6 +176,18 @@ extern "C" {
                                      hb_mc_packet_t *packet,
                                      hb_mc_fifo_rx_t type,
                                      long timeout);
+        /**
+         * Wait for a finish packet from the Manycore instance. 
+         * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+         * @return HB_MC_SUCCESS on packet that writes to HB_MC_HOST_EPA_FINISH, 
+         *         HB_MC_FAIL on a packet that writes to HB_MC_HOST_EPA_FAIL or underlying failure, 
+         *         HB_MC_INVALID otherwise.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_wait_finish(hb_mc_manycore_t *mc,
+                                       long timeout);
+
         ////////////////
         // Memory API //
         ////////////////

@@ -336,6 +336,37 @@ int hb_mc_manycore_packet_rx(hb_mc_manycore_t *mc,
         return HB_MC_FAIL;
 }
 
+/**
+ * Wait for a finish packet from the Manycore instance. 
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on packet that writes to HB_MC_HOST_EPA_FINISH, 
+ *         HB_MC_FAIL on a packet that writes to HB_MC_HOST_EPA_FAIL or underlying failure, 
+ *         HB_MC_INVALID otherwise.
+ */
+int hb_mc_manycore_wait_finish(hb_mc_manycore_t *mc,
+                               long timeout)
+{
+        hb_mc_packet_t packet;
+        hb_mc_epa_t epa;
+        int err;
+        err = hb_mc_manycore_packet_rx(mc, &packet, HB_MC_FIFO_RX_REQ, -1);
+        if(err != HB_MC_SUCCESS){
+                manycore_pr_err(mc, "%s: Failed to receive request packet: %s\n",
+                                __func__, hb_mc_strerror(err));
+        }
+
+        epa = hb_mc_request_packet_get_epa(&packet.request);
+        switch (epa) {
+        case HB_MC_HOST_EPA_FINISH:
+                return HB_MC_SUCCESS;
+        default:
+                bsg_pr_err("Received Unknown packet\n");
+        case HB_MC_HOST_EPA_FAIL:
+                return HB_MC_FAIL;
+        }
+}
+
 /////////////////////////////
 // Packet Helper Functions //
 /////////////////////////////
