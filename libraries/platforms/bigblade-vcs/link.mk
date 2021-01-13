@@ -52,6 +52,7 @@ include $(LIBRARIES_PATH)/libraries.mk
 VDEFINES += BSG_MACHINE_ORIGIN_X_CORD=$(BSG_MACHINE_ORIGIN_COORD_X)
 VDEFINES += BSG_MACHINE_ORIGIN_Y_CORD=$(BSG_MACHINE_ORIGIN_COORD_Y)
 VDEFINES += HOST_MODULE_PATH=replicant_tb_top
+
 VDEFINES += BSG_MACHINE_DRAMSIM3_PKG=$(BSG_MACHINE_MEM_DRAMSIM3_PKG)
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
@@ -71,7 +72,8 @@ VCS_VSOURCES = $(VHEADERS) $(VSOURCES)
 
 $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk -debug_pp
 
-$(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/netsim/simv $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+
 $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 
@@ -111,7 +113,7 @@ platform.link.clean:
 	rm -rf *.jou
 	rm -rf *.vcs.log
 	rm -rf vc_hdrs.h
-	rm -rf *.debug *.profile *.saifgen *.exec
+	rm -rf *.debug *.profile *.saifgen *.exec *.netsim
 
 link.clean: platform.link.clean ;
 

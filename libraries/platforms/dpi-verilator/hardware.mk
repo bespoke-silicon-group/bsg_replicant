@@ -99,6 +99,8 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
 # We reuse the print_stat_snoop module from aws-vcs
 VSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/hardware/bsg_print_stat_snoop.v
 
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/router_profiler.v
+
 # Memory Profilers
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_non_blocking_profiler.v
@@ -123,6 +125,12 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_from_fifo.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_to_fifo.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_rom.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/dpi/bsg_nonsynth_dpi_manycore.v
+
+VSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/hardware/bsg_manycore_aligned_pkg.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/hardware/bsg_manycore_endpoint_to_fifos_aligned.v
+
+
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/dpi/bsg_nonsynth_dpi_manycore_tile.v
 
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 

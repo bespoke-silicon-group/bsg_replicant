@@ -34,16 +34,15 @@
   typedef struct packed { \
     logic [fifo_width_mp-addr_width_mp-3*8-data_width_mp-2*y_cord_width_mp-2*x_cord_width_mp-1:0] padding   ; \
     logic [  addr_width_mp-1:0] addr      ; \
-    logic [              8-1:0] op_v2     ; \
+    logic [              8-1:0] op        ; \
+    logic [              8-1:0] op_ex     ; \
     logic [              8-1:0] reg_id    ; \
-    bsg_manycore_packet_payload_aligned_u    payload   ; \
+    bsg_mcl_packet_payload_u    payload   ; \
     logic [y_cord_width_mp-1:0] src_y_cord; \
     logic [x_cord_width_mp-1:0] src_x_cord; \
     logic [y_cord_width_mp-1:0] y_cord    ; \
     logic [x_cord_width_mp-1:0] x_cord    ; \
-  } bsg_manycore_packet_aligned_s
+  } bsg_manycore_packet_alignedbsg_s
 
-  // This is the width of the byte-aligned host fifo interface
-  localparam bsg_manycore_packet_aligned_width_gp = 128;
 
 `endif // BSG_MANYCORE_LINK_TO_AXIL_PKG_V

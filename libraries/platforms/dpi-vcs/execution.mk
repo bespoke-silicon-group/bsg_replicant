@@ -25,6 +25,41 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# All simulations should run with +ntb_random_seed_automatic.
+# 
+# From the VCS MX User-Guide: +ntb_random_seed_automatic Picks a unique value to
+# supply as the first seed used by a testbench. The value is determined by
+# combining the time of day, host name and process id. This ensures that no two
+# simulations have the same starting seed.
+SIM_ARGS += +ntb_random_seed_automatic 
 
-# Reuse the execution rules from aws-vcs
-include $(LIBRARIES_PATH)/platforms/aws-vcs/execution.mk
+# These are the execution rules for the binaries. We can't pass
+# C-style arguments through the command line, so instead we specify
+# them as the VCS plusarg argument +c_args. Users can specify C-style
+# arguments using the C_ARGS make variable.
+
+%.log: %
+	./$< $(SIM_ARGS) +c_args=$(C_ARGS) 2>&1 | tee $@
+
+%.vpd: %.debug
+	./$< $(SIM_ARGS) +c_args=$(C_ARGS) -l $(@:.vpd=.debug.log) +vpdfile+$@
+
+%.dve: %.vpd
+	$(DVE) -full64 -vpd $< &
+
+.PRECIOUS: %.debug
+.PRECIOUS: %
+
+.PHONY: platform.execution.clean %.log %.vpd
+platform.execution.clean:
+	rm -rf vanilla_stats.csv
+	rm -rf infinite_mem_stats.csv
+	rm -rf vcache_stats.csv
+	rm -rf vanilla_operation_trace.csv
+	rm -rf operation_trace.csv
+	rm -rf vcache_operation_trace.csv
+	rm -rf router_stat.csv
+	rm -rf vanilla.log
+	rm -rf *.vpd
+
+execution.clean: platform.execution.clean

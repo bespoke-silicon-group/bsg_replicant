@@ -372,20 +372,26 @@ int hb_mc_manycore_wait_finish(hb_mc_manycore_t *mc,
         hb_mc_packet_t packet;
         hb_mc_epa_t epa;
         int err;
-        err = hb_mc_manycore_packet_rx(mc, &packet, HB_MC_FIFO_RX_REQ, -1);
-        if(err != HB_MC_SUCCESS){
-                manycore_pr_err(mc, "%s: Failed to receive request packet: %s\n",
-                                __func__, hb_mc_strerror(err));
-        }
+        while(true){
+                err = hb_mc_manycore_packet_rx(mc, &packet, HB_MC_FIFO_RX_REQ, -1);
+                if(err != HB_MC_SUCCESS){
+                        manycore_pr_err(mc, "%s: Failed to receive request packet: %s\n",
+                                        __func__, hb_mc_strerror(err));
+                       return HB_MC_FAIL;                        
+                }
 
-        epa = hb_mc_request_packet_get_epa(&packet.request);
-        switch (epa) {
-        case HB_MC_HOST_EPA_FINISH:
-                return HB_MC_SUCCESS;
-        default:
-                bsg_pr_err("Received Unknown packet\n");
-        case HB_MC_HOST_EPA_FAIL:
-                return HB_MC_FAIL;
+                epa = hb_mc_request_packet_get_epa(&packet.request);
+                switch (epa) {
+                case HB_MC_HOST_EPA_FINISH:
+                        return HB_MC_SUCCESS;
+                case HB_MC_HOST_EPA_STATS:
+                        bsg_pr_info("Got Stats Packet\n");
+                        break;
+                default:
+                        bsg_pr_err("Received Unknown packet\n");
+                case HB_MC_HOST_EPA_FAIL:
+                        return HB_MC_FAIL;
+                }
         }
 }
 

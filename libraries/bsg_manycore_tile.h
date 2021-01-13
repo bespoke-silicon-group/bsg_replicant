@@ -67,7 +67,7 @@ extern "C" {
         EPA_FROM_BASE_AND_OFFSET(HB_MC_TILE_EPA_CSR_BASE, offset)
 
         /* EPAs */
-#define HB_MC_TILE_EPA_ICACHE                                   \
+#define HB_MC_TILE_EPA_ICACHE                                           \
         EPA_FROM_BASE_AND_OFFSET(HB_MC_TILE_EPA_ICACHE_BASE, 0)
 
 #define HB_MC_TILE_EPA_CSR_FREEZE                                       \
@@ -77,7 +77,7 @@ extern "C" {
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET)
 
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y                          \
-                EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET)
+        EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET)
 
 #define HB_MC_TILE_EPA_CSR_PC_INIT_VALUE                                \
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET)

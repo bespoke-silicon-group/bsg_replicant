@@ -42,6 +42,7 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_llcache_miss_fifo_els_gp  = %d", bsg_machine_llcache_miss_fifo_els_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_dram_channel_ratio_gp = %d", bsg_machine_llcache_dram_channel_ratio_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_rsp_fifo_els_gp   = %d", bsg_machine_llcache_rsp_fifo_els_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_channels_gp          = %d", bsg_machine_dram_channels_gp);
@@ -202,6 +203,7 @@ module replicant_tb_top
        ,.vcache_ways_p(bsg_machine_llcache_ways_gp)
        ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
        ,.vcache_dma_data_width_p(bsg_machine_llcache_channel_width_gp)
+       ,.vcache_rsp_fifo_els_p(bsg_machine_llcache_rsp_fifo_els_gp)
 
        ,.wh_flit_width_p(bsg_machine_wh_flit_width_lp)
        ,.wh_ruche_factor_p(bsg_machine_wh_ruche_factor_lp)

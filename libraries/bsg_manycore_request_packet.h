@@ -460,6 +460,8 @@ extern "C" {
                          "request_pkt{"
                          "src=(X:%" PRIu8 ",Y:%" PRIu8 "), "
                          "dst=(X:%" PRIu8 ",Y:%" PRIu8 "), "
+                         "src=(X:%" PRIu8 ",Y:%" PRIu8 "), "
+                         "reg_id=0x%08" PRIx32 ", "
                          "addr=0x%08" PRIx32 ", "
                          "data=0x%08" PRIx32 ", "
                          "id=0x%02" PRIx8 ","
@@ -469,6 +471,9 @@ extern "C" {
                          hb_mc_request_packet_get_y_src(packet),
                          hb_mc_request_packet_get_x_dst(packet),
                          hb_mc_request_packet_get_y_dst(packet),
+                         hb_mc_request_packet_get_x_src(packet),
+                         hb_mc_request_packet_get_y_src(packet),
+                         hb_mc_request_packet_get_load_id(packet),
                          hb_mc_request_packet_get_addr(packet),
                          hb_mc_request_packet_get_data(packet),
                          hb_mc_request_packet_get_load_id(packet),

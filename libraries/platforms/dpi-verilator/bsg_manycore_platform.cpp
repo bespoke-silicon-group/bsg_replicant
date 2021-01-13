@@ -459,7 +459,7 @@ int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long time
                                 __func__, *credits);
                 return HB_MC_INVALID;
         }
-
+        
         return HB_MC_SUCCESS;
 }
 
