@@ -247,7 +247,7 @@ extern "C" {
         int hb_mc_device_pod_memcpy_to_host(hb_mc_device_t *device,
                                             hb_mc_pod_id_t pod,
                                             void *haddr,
-                                            hb_mc_eva_t addr,
+                                            hb_mc_eva_t daddr,
                                             uint32_t bytes);
 
         /**
