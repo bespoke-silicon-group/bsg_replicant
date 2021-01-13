@@ -56,7 +56,19 @@ module manycore_tb_top
 
    logic io_clk;
    logic io_reset;
-   
+
+   // bsg_nonsynth_clock_gen and bsg_nonsynth_reset_gen BOTH have bit
+   // inputs and outputs (they're non-synthesizable). Casting between
+   // logic and bit can produce unexpected edges as logic types switch
+   // from X to 0/1 at Time 0 in simulation. This means that the input
+   // and outputs of both modules must have type bit, AND the wires
+   // between them. Therefore, we use bit_clk and bit_reset for the
+   // inputs/outputs of these modules to avoid unexpected
+   // negative/positive edges and other modules can choose between bit
+   // version (for non-synthesizable modules) and the logic version
+   // (otherwise).
+   bit bit_clk;
+   bit bit_reset;
    logic core_clk;
    logic core_reset;
    
@@ -124,16 +136,18 @@ module manycore_tb_top
      #(.cycle_time_p(lc_cycle_time_ps_p)
        )
    core_clk_gen
-     (.o(core_clk));
-
+     (.o(bit_clk));
+  assign core_clk = bit_clk;
+  
   bsg_nonsynth_reset_gen #(
     .num_clocks_p(1)
     ,.reset_cycles_lo_p(0)
     ,.reset_cycles_hi_p(16)
   ) reset_gen (
-    .clk_i(core_clk)
-    ,.async_reset_o(core_reset)
+    .clk_i(bit_clk)
+    ,.async_reset_o(bit_reset)
   );
+  assign core_reset = bit_reset;
 
 
    // bsg_manycore has reset_depth_lp flops that reset signal needs to
