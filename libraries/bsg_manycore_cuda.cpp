@@ -185,7 +185,8 @@ static int hb_mc_device_tiles_set_runtime_symbols (hb_mc_device_t *device,
 
 void hb_mc_program_options_default(hb_mc_program_options_t *popts)
 {
-        popts->alloc_name = nullptr;
+        static char default_alloc_name [] = "<anonymous-allocator>";
+        popts->alloc_name = default_alloc_name;
         popts->alloc_id   = 0;
 }
 
@@ -213,8 +214,27 @@ void hb_mc_program_options_default(hb_mc_program_options_t *popts)
  */
 int hb_mc_device_pod_program_init(hb_mc_device_t *device,
                                   hb_mc_pod_id_t  pod,
-                                  const char     *bin_name,
-                                  const hb_mc_program_options_t *popts)
+                                  const char     *bin_name)
+{
+        hb_mc_program_options_t popts;
+        hb_mc_program_options_default(&popts);
+
+        return hb_mc_device_pod_program_init_opts(device, pod, bin_name, &popts);
+}
+
+/**
+ * Initializes a CUDA-Lite program on the manycore on a pod specified.
+ * @param[in] device Pointer to device
+ * @param[in] pod    Pod ID
+ * @param[in] name   Device name
+ * @param[in] id     Device id
+ * @param[in] popts  Program options defining program behavior
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_program_init_opts(hb_mc_device_t *device,
+                                       hb_mc_pod_id_t  pod,
+                                       const char     *bin_name,
+                                       const hb_mc_program_options_t *popts)
 {
         CHECK_POD_ID(pod);
         return hb_mc_device_program_init(device, bin_name, popts->alloc_name, popts->alloc_id);

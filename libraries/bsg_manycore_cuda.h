@@ -160,8 +160,22 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_device_pod_program_init(hb_mc_device_t *device,
                                           hb_mc_pod_id_t  pod,
-                                          const char     *bin_name,
-                                          const hb_mc_program_options_t *popts);
+                                          const char     *bin_name);
+
+        /**
+         * Initializes a CUDA-Lite program on the manycore on a pod specified.
+         * @param[in] device Pointer to device
+         * @param[in] pod    Pod ID
+         * @param[in] name   Device name
+         * @param[in] id     Device id
+         * @param[in] popts  Program options defining program behavior
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pod_program_init_opts(hb_mc_device_t *device,
+                                               hb_mc_pod_id_t  pod,
+                                               const char     *bin_name,
+                                               const hb_mc_program_options_t *popts);
 
         /****************************/
         /* Pod Interface Allocation */
