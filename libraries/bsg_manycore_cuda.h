@@ -161,7 +161,7 @@ extern "C" {
         int hb_mc_device_pod_program_init(hb_mc_device_t *device,
                                           hb_mc_pod_id_t  pod,
                                           const char     *bin_name,
-                                          const hb_mc_porogram_options_t *popts);
+                                          const hb_mc_program_options_t *popts);
 
         /****************************/
         /* Pod Interface Allocation */
@@ -330,7 +330,7 @@ extern "C" {
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
         __attribute__((warn_unused_result))
-        int hb_mc_device_pod_program_finish(hb_mc_device *device,
+        int hb_mc_device_pod_program_finish(hb_mc_device_t *device,
                                             hb_mc_pod_id_t pod);
 
         /********************/
@@ -597,8 +597,8 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod, const hb_mc_dma_htod_t *jobs, size_t count);
 
-        __attribute__(warn_unused_result))
-        int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod, const hb_mc_dma_dtoh *jobs, size_t count);
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod, const hb_mc_dma_dtoh_t *jobs, size_t count);
 
 
         /**
