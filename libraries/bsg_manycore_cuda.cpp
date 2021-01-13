@@ -189,7 +189,238 @@ void hb_mc_program_options_default(hb_mc_program_options_t *popts)
         popts->alloc_id   = 0;
 }
 
+/*****************/
+/* Pod Interface */
+/*****************/
+#define CHECK_POD_ID(id)                                                \
+        do {                                                            \
+                if (id != 0) {                                          \
+                        bsg_pr_err("%s: Only pod_id=0 currently supported (found %d)\n", \
+                                   __func__, id);                       \
+                        return HB_MC_NOIMPL;                            \
+                }                                                       \
+        } while (0)
 
+/********************************/
+/* Pod Interface Initialization */
+/********************************/
+/**
+ * Initializes a CUDA-Lite program on the manycore on a pod specified.
+ * @param[in] device Pointer to device
+ * @param[in] name   Device name
+ * @param[in] id     Device id
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_program_init(hb_mc_device_t *device,
+                                  hb_mc_pod_id_t  pod,
+                                  const char     *bin_name,
+                                  const hb_mc_porogram_options_t *popts)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_program_init(device, bin_name, popts->alloc_name, popts->alloc_id);
+}
+
+/****************************/
+/* Pod Interface Allocation */
+/****************************/
+/**
+ * Allocates memory on device's DRAM associated with the input pod
+ * hb_mc_device_pod_program_init() should have been called for device and pod
+ * before calling this function to set up a memory allocator.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID with a prorgam initialized
+ * @parma[in]  size          Size of requested memory
+ * @param[out] eva           Eva address of the allocated memory
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_malloc(hb_mc_device_t *device,
+                            hb_mc_pod_id_t  pod,
+                            uint32_t        size,
+                            hb_mc_eva_t    *eva)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_malloc(device, size, eva);
+}
+
+/**
+ * Frees memory on device's DRAM associated with the input pod
+ * hb_mc_device_pod_program_init() should have been called for device and pod
+ * before calling this function to set up a memory allocator.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID with a prorgam initialized
+ * @param[out] eva           Eva address of the memory to be freed
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_free(hb_mc_device_t *device,
+                          hb_mc_pod_id_t  pod,
+                          hb_mc_eva_t     eva)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_free(device, eva);
+}
+
+/*******************************/
+/* Pod Interface Data Movement */
+/*******************************/
+/**
+ * Copies a buffer from src on the host/pod DRAM to dst on pod DRAM/host.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @parma[in]  src           EVA address of source to be copied from
+ * @parma[in]  dst           EVA address of destination to be copied into
+ * @param[in]  name          EVA address of dst
+ * @param[in]  count         Size of buffer (number of bytes) to be copied
+ * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_memcpy(hb_mc_device_t *device,
+                            hb_mc_pod_id_t pod,
+                            void *dst,
+                            const void *src,
+                            uint32_t bytes,
+                            enum hb_mc_memcpy_kind kind)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_memcpy(device, dst, src, bytes, kind);
+}
+
+/**
+ * Copies a buffer from src on the host to dst on pod DRAM.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @parma[in]  daddr         EVA address of destination to be copied into
+ * @parma[in]  haddr         Host address of source to be copied from
+ * @param[in]  bytes         Size of buffer to be copied
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_memcpy_to_device(hb_mc_device_t *device,
+                                      hb_mc_pod_id_t pod,
+                                      hb_mc_eva_t daddr,
+                                      const void *haddr,
+                                      uint32_t bytes)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_memcpy_to_device(device, daddr, haddr, bytes);
+}
+
+/**
+ * Copies a buffer from src on pod DRAM to dst on host.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @parma[in]  daddr         EVA address of destination to be copied into
+ * @parma[in]  haddr         Host address of source to be copied from
+ * @param[in]  bytes         Size of buffer to be copied
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_memcpy_to_host(hb_mc_device_t *device,
+                                    hb_mc_pod_id_t pod,
+                                    void *haddr,
+                                    hb_mc_eva_t daddr,
+                                    uint32_t bytes)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_memcpy_to_host(device, pod, haddr, addr, bytes);
+}
+
+/**
+ * Sets memory to a given value starting from an address in pod's DRAM.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @parma[in]  eva           EVA address of destination
+ * @param[in]  val           Value to be written out
+ * @param[in]  sz            The number of bytes to write into device DRAM
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_memset (hb_mc_device_t *device,
+                             hb_mc_pod_id_t pod,
+                             hb_mc_eva_t  eva,
+                             uint8_t data,
+                             size_t sz)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_memset(device, &eva, data, sz);
+}
+
+/***********************************/
+/* Pod Interface Execution Control */
+/***********************************/
+/**
+ * Enqueues and schedules a kernel to be run on a pod
+ * Takes the grid size, tile group dimensions, kernel name, argc,
+ * argv* and adds a kernel invocation to a queue.
+ *
+ * When the kernel is invoked, it will execute with tile groups of size
+ * given by tg_dim. The number of tile groups is given by the dimension
+ * specified in grid_dim.
+ *
+ * The kernels are not launched with this call.
+ * See hb_mc_device_pod_kernels_execute() to launch enqueued kernels.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @param[in]  grid_dim      X/Y dimensions of the grid to be initialized
+ * @param[in]  tg_dim        X/Y dimensions of tile groups in grid
+ * @param[in]  name          Kernel name to be executed on tile groups in grid
+ * @param[in]  argc          Number of input arguments to kernel
+ * @param[in]  argv          List of input arguments to kernel
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_kernel_enqueue(hb_mc_device_t *device,
+                                    hb_mc_pod_id_t  pod,
+                                    hb_mc_dimension_t grid_dim,
+                                    hb_mc_dimension_t tg_dim,
+                                    const char *name,
+                                    const uint32_t argc,
+                                    const uint32_t *argv)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_kernel_enque(device, grid_dim, tg_dim, name, argc, argv);
+}
+
+/**
+ * Launches all kernel invocations enqueued on pod.
+ * These kernel invocations are enqueued by
+ * hb_mc_device_pod_kernel_enqueue().
+ *
+ * This function blocks until all kernels have been invoked
+ * and completed.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_kernels_execute(hb_mc_device_t *device,
+                                     hb_mc_pod_id_t pod)
+{
+        CHECK_POD_ID(pod);
+        return hb_mc_device_tile_groups_execute(device);
+}
+
+/*************************/
+/* Pod Interface Cleanup */
+/*************************/
+/**
+ * Performs cleanup for a program loaded onto pod with
+ * hb_mc_device_pod_program_init().
+ *
+ * All memory allocated with hb_mc_device_pod_malloc() is
+ * freed.
+ *
+ * After this function is called, a new program can be
+ * initialized on pod using hb_mc_device_pod_program_init().
+ * @param[in]  device        Pointer to device
+ * @param[in]  pod           Pod ID
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pod_program_finish(hb_mc_device *device,
+                                    hb_mc_pod_id_t pod)
+{
+        CHECK_POD_ID(pod);
+
+        // freeze all tiles
+        // perform a fence on outstanding host requests
+        // free resources allocated for program
+
+        return HB_MC_SUCCESS;
+}
 
 /**
  * Takes in a hb_mc_device_t struct and initializes a mesh of tile in the Manycore device.
