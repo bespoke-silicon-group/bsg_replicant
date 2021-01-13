@@ -363,7 +363,6 @@ extern "C" {
         /* Returns the size of DRAM accessible to each manycore tile */
         static inline size_t hb_mc_config_get_dram_size(const hb_mc_config_t *cfg)
         {
-                hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
                 return hb_mc_config_get_dram_bank_size(cfg)
                     *  hb_mc_config_get_num_dram_coordinates(cfg);
         }
