@@ -27,6 +27,10 @@
 
 # Change these parameters to define your machine. All other parameters should remain constant.
 
+#
+BSG_MACHINE_NUM_PODS_X                = 1
+BSG_MACHINE_NUM_PODS_Y                = 1
+
 # Manycore X/Y dimensions
 BSG_MACHINE_NUM_CORES_X               = 8
 BSG_MACHINE_NUM_CORES_Y               = 4
@@ -43,7 +47,7 @@ BSG_MACHINE_RUCHE_FACTOR_X            = 0
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
-BSG_MACHINE_MEM_CFG                   = e_infinite_mem
+BSG_MACHINE_MEM_CFG                   = e_vcache_test_mem
 
 # Host Coordinate (Rarely Changed)
 BSG_MACHINE_HOST_COORD_X              = 0
@@ -96,3 +100,7 @@ BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_$(BSG_MACHINE_MEM_CFG
 # assignment allows user to set this flag through
 # environment when required.
 BSG_MACHINE_BRANCH_TRACE_EN          ?= 0
+
+# Manycore X/Y dimensions
+BSG_MACHINE_NOC_X_COORD_WIDTH         = 7
+BSG_MACHINE_NOC_Y_COORD_WIDTH         = 7
