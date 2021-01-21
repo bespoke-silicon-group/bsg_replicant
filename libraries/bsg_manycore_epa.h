@@ -60,6 +60,8 @@ extern "C" {
 
 #define HB_MC_EPA_LOGSZ 18
 
+#define HB_MC_HOST_EPA_FINISH 0xEAD0
+#define HB_MC_HOST_EPA_FAIL 0xEAD8
 #define EPA_FROM_BASE_AND_OFFSET(base, offset)  \
         (((base)+(offset)))
 
