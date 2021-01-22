@@ -49,11 +49,34 @@ static int iterate(hb_mc_coordinate_t origin, hb_mc_dimension_t dimension, const
 }
 
 
-#define TEST(origin, dim, expect)               \
-    do {                                        \
-        bsg_pr_info("Starting test\n");         \
-        int r = iterate(origin, dim, expect);   \
-        if (!r) return HB_MC_FAIL;              \
+static int iterate_x_y(hb_mc_coordinate_t origin, hb_mc_dimension_t dimension, const std::vector<hb_mc_coordinate_t> &expect)
+{
+    int good = 1;
+    int i = 0;
+    char buffer[256];
+    hb_mc_idx_t x,y;
+
+    foreach_x_y(x, y, origin, dimension)
+    {
+        hb_mc_coordinate_t now = HB_MC_COORDINATE(x,y);
+        good = good && hb_mc_coordinate_eq(now, expect[i]);
+        bsg_pr_info("iteration %2d: %s\n", i, hb_mc_coordinate_to_string(now, buffer, sizeof(buffer)));
+        i++;
+    }
+
+    return good && (i == expect.size());
+}
+
+
+
+#define TEST(origin, dim, expect)                               \
+    do {                                                        \
+        bsg_pr_info("Starting test foreach_coordinate\n");      \
+        int r = iterate(origin, dim, expect);                   \
+        if (!r) return HB_MC_FAIL;                      \
+        bsg_pr_info("Starting test foreach_x_y\n");     \
+        r = iterate_x_y(origin, dim, expect);           \
+        if (!r) return HB_MC_FAIL;                      \
     } while (0)
 
 int test_rom (int argc, char **argv) {
@@ -91,12 +114,6 @@ int test_rom (int argc, char **argv) {
         HB_MC_COORDINATE(1,3),
     };
     TEST(origin, dim, expect);
-
-    origin = HB_MC_COORDINATE(0,2);
-    dim    = HB_MC_DIMENSION(0,0);
-    expect = {HB_MC_COORDINATE(1,1)};
-    TEST(origin, dim, expect);
-
 
     return HB_MC_SUCCESS;
 }

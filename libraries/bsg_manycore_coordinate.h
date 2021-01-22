@@ -250,6 +250,10 @@ extern "C" {
              !hb_mc_coordinate_stop(coordinate, origin, dim);           \
              coordinate = hb_mc_coordinate_next(coordinate, origin, dim))
 
+#define foreach_x_y(x_var, y_var, origin, dim)                          \
+        for ((x_var = origin.x, y_var = origin.y);                      \
+             x_var < (origin.x+dim.x);                                  \
+             ++y_var >= (origin.y+dim.y) ? (y_var = origin.y, x_var++) : y_var)
 
 #ifdef __cplusplus
 }
