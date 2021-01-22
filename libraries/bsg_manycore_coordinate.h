@@ -28,6 +28,7 @@
 #ifndef BSG_MANYCORE_COORDINATE_H
 #define BSG_MANYCORE_COORDINATE_H
 #include <bsg_manycore_features.h>
+#include <bsg_manycore_errno.h>
 
 #ifdef __cplusplus
 #include <cstdint>
