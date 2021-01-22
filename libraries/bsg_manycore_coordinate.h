@@ -250,6 +250,18 @@ extern "C" {
              !hb_mc_coordinate_stop(coordinate, origin, dim);           \
              coordinate = hb_mc_coordinate_next(coordinate, origin, dim))
 
+        /**
+         * Iterate over the coordinate space begining at origin and subject to the boundary condition of origin + dim
+         * @param[in] x_var       An unset x index declared in parent scope.
+         * @param[in] y_var       An unset y index declared in parent scope.
+         * @param[in] origin      The origin coordinate.
+         * @param[in] dim         The dimension of the coordinate space overwhich to iterate.
+         *
+         * This is a conveniance macro for iterating over a coordinate space defined by (origin, origin + dim).
+         * The input parameters x_var and y_var must be declared in the parent scope.
+         * At each iteration, x_var and y_var are updated.
+         * Behavior is undefined if coordinate is modified in the loop body.
+         */
 #define foreach_x_y(x_var, y_var, origin, dim)                          \
         for ((x_var = origin.x, y_var = origin.y);                      \
              x_var < (origin.x+dim.x);                                  \
