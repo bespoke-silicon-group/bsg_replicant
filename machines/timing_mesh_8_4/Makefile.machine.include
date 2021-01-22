@@ -36,6 +36,10 @@
 
 # Change these parameters to define your machine. All other parameters should remain constant.
 
+# Pod Dimensions
+BSG_MACHINE_NUM_PODS_X                = 1
+BSG_MACHINE_NUM_PODS_Y                = 1
+
 # Manycore X/Y dimensions
 BSG_MACHINE_NUM_CORES_X               = 8
 BSG_MACHINE_NUM_CORES_Y               = 4

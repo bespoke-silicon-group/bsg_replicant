@@ -86,7 +86,8 @@ LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_print_int_responder.o
 LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_memsys.o
 
 # Objects that should be compiled with debug flags
-LIB_DEBUG_OBJECTS  +=
+LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_config.o
+LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_memsys.o
 
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
@@ -109,6 +110,7 @@ $(LIB_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_S
 #$(LIB_OBJECTS) $(PLATFORM_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
 $(LIB_DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
+$(LIB_DEBUG_OBJECTS):  CFLAGS += -DDEBUG
 
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable
