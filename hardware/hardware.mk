@@ -126,6 +126,11 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v: $(BSG_MACHINE_PATH)/bsg_bla
 	env python2 $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py $< \
                bsg_bladerunner_configuration > $@
 
+
+# TODO: Better way to handle this?
+# Manycore X/Y dimensions
+BSG_MACHINE_NOC_X_COORD_WIDTH         = 7
+BSG_MACHINE_NOC_Y_COORD_WIDTH         = 7
 POD_TRACE_GEN_PY = $(BSG_MANYCORE_DIR)/testbenches/py/pod_trace_gen.py
 $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.tr: $(BSG_MACHINE_PATH)/Makefile.machine.include
 	env python2 $(POD_TRACE_GEN_PY) $(BSG_MACHINE_NUM_PODS_X) $(BSG_MACHINE_NUM_PODS_Y) $(BSG_MACHINE_NOC_X_COORD_WIDTH) > $@
@@ -288,8 +293,6 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter bsg_machine_noc_x_max_gp = bsg_machine_num_cores_x_gp;" >> $@
 	@echo "parameter bsg_machine_noc_y_max_gp = bsg_machine_core_y_global_max_gp + 2; // Caches on both sides" >> $@
-	@echo "parameter bsg_machine_noc_x_coord_width_gp = \`BSG_SAFE_CLOG2(bsg_machine_noc_x_max_gp);" >> $@
-	@echo "parameter bsg_machine_noc_y_coord_width_gp = \`BSG_SAFE_CLOG2(bsg_machine_noc_y_max_gp);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_num_pods_y_gp = $(BSG_MACHINE_NUM_PODS_Y);" >> $@
 	@echo "parameter int bsg_machine_num_pods_x_gp = $(BSG_MACHINE_NUM_PODS_X);" >> $@

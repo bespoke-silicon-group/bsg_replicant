@@ -100,7 +100,3 @@ BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_$(BSG_MACHINE_MEM_CFG
 # assignment allows user to set this flag through
 # environment when required.
 BSG_MACHINE_BRANCH_TRACE_EN          ?= 0
-
-# Manycore X/Y dimensions
-BSG_MACHINE_NOC_X_COORD_WIDTH         = 7
-BSG_MACHINE_NOC_Y_COORD_WIDTH         = 7

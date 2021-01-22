@@ -28,7 +28,7 @@
 # Reuse the platform layer from dpi-verilator
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/bsg_manycore_platform.cpp
 
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-vcs/bsg_manycore_simulator.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_simulator.cpp
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp

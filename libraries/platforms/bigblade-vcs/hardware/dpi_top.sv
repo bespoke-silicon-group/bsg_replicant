@@ -41,6 +41,14 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_num_cores_y_gp            = %d", bsg_machine_num_cores_y_gp);
    end
 
+/*
+ // TODO: 
+   localparam global_epa_word_addr_width_gp = 14;
+ // max EPA width on global EVA. (word addr)
+    localparam max_global_x_cord_width_gp = 7;
+    localparam max_global_y_cord_width_gp = 7;
+ */
+
    localparam reset_depth_lp = 3;
 
    localparam bsg_machine_llcache_data_width_lp = bsg_machine_noc_data_width_gp;
@@ -52,6 +60,10 @@ module replicant_tb_top
    localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2((1+bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp)/bsg_machine_llcache_channel_width_gp);
    localparam bsg_machine_wh_cord_width_lp = bsg_machine_num_cores_y_gp;
 
+
+   // Parameters defined in bsg_manycore_pkg.v
+   localparam bsg_machine_noc_x_coord_width_gp = max_global_x_cord_width_gp;
+   localparam bsg_machine_noc_y_coord_width_gp = max_global_y_cord_width_gp;
 
    // TODO: (Future) It would be awesome if the clock frequency (or
    // frequencies) were specified at the machine level.
@@ -203,7 +215,7 @@ module replicant_tb_top
    localparam ep_fifo_els_lp = 4;
    assign host_clk = core_clk;
    assign host_reset = core_reset;
-   /*
+
    bsg_nonsynth_dpi_manycore
      #(
        .x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
@@ -224,12 +236,12 @@ module replicant_tb_top
       ,.reset_i(host_reset)
 
       // manycore link
-      ,.link_sif_i(host_link_sif_li)
-      ,.link_sif_o(host_link_sif_lo)
+      ,.link_sif_i(host_link_sif_lo)
+      ,.link_sif_o(host_link_sif_li)
       ,.my_x_i(host_x_cord_li)
       ,.my_y_i(host_y_cord_li)
       );
-*/
+
    bsg_dff_chain
      #(
        .width_p(1)
@@ -242,9 +254,9 @@ module replicant_tb_top
       ,.data_o(core_reset_done_r)
       );
 
-   bsg_cycle_counter
+   bsg_nonsynth_dpi_cycle_counter
      #(.width_p(global_counter_width_lp))
-   global_cc
+   ctr
      (
       .clk_i(core_clk)
       ,.reset_i(core_reset_l[reset_depth_lp-1])

@@ -128,8 +128,7 @@ module bsg_manycore_endpoint_to_fifos
   assign host_req_ready_o  = ~(out_credits_o == 0) & endpoint_out_ready_lo;
 
   assign endpoint_out_packet_li.addr       = addr_width_p'(host_req_li_cast.addr);
-  assign endpoint_out_packet_li.op         = bsg_manycore_packet_op_e'(host_req_li_cast.op);
-  assign endpoint_out_packet_li.op_ex      = bsg_manycore_packet_op_ex_u'(host_req_li_cast.op_ex);
+  assign endpoint_out_packet_li.op_v2      = bsg_manycore_packet_op_e'(host_req_li_cast.op_v2);
   assign endpoint_out_packet_li.reg_id     = bsg_manycore_reg_id_width_gp'(host_req_li_cast.reg_id);
   assign endpoint_out_packet_li.src_y_cord = y_cord_width_p'(host_req_li_cast.src_y_cord);
   assign endpoint_out_packet_li.src_x_cord = x_cord_width_p'(host_req_li_cast.src_x_cord);
@@ -137,7 +136,8 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
 
   always_comb begin
-    if (endpoint_out_packet_li.op == e_remote_store) begin
+    if (endpoint_out_packet_li.op_v2 == e_remote_store ||
+        endpoint_out_packet_li.op_v2 == e_remote_sw) begin
       endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
     end
     else begin
@@ -154,7 +154,10 @@ module bsg_manycore_endpoint_to_fifos
   // synopsys translate_off
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
-      assert(endpoint_out_packet_li.op != e_remote_amo) else
+      assert final ( endpoint_out_packet_li.op_v2 == e_remote_store ||
+                     endpoint_out_packet_li.op_v2 == e_remote_load ||
+                     endpoint_out_packet_li.op_v2 == e_remote_sw ||
+                     endpoint_out_packet_li.op_v2 == e_cache_op ) else
         $error("[BSG_ERROR][%m] remote atomic memory operations from the host are not supported.");
   end
   // synopsys translate_on
@@ -179,8 +182,7 @@ module bsg_manycore_endpoint_to_fifos
 
   assign mc_req_lo_cast.padding      = '0;
   assign mc_req_lo_cast.addr         = addr_width_pad_lp'(endpoint_in_addr_lo);
-  assign mc_req_lo_cast.op           = 8'(endpoint_in_we_lo);
-  assign mc_req_lo_cast.op_ex        = 8'(endpoint_in_mask_lo);
+  assign mc_req_lo_cast.op_v2        = 8'(endpoint_in_we_lo);
   assign mc_req_lo_cast.payload.data = data_width_p'(endpoint_in_data_lo);
   assign mc_req_lo_cast.src_y_cord   = y_cord_width_pad_lp'(in_src_y_cord_lo);
   assign mc_req_lo_cast.src_x_cord   = x_cord_width_pad_lp'(in_src_x_cord_lo);
@@ -246,9 +248,7 @@ module bsg_manycore_endpoint_to_fifos
     .returning_data_i     (returning_data_li     ),
     .returning_v_i        (returning_v_li        ),
 
-    .out_credits_o        (out_credits_o         ),
-    .my_x_i               (my_x_i                ),
-    .my_y_i               (my_y_i                )
+    .out_credits_o        (out_credits_o         )
   );
 
 endmodule
