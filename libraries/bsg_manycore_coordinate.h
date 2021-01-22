@@ -178,11 +178,59 @@ extern "C" {
         } 
 
 
+        /**
+         * Adds two coordinates together
+         * @return A coordinate that is the element-wise sum of the inputs
+         */
+        static inline hb_mc_coordinate_t hb_mc_coordinate_add(hb_mc_coordinate_t first, hb_mc_coordinate_t second)
+        {
+                return HB_MC_COORDINATE(first.x+second.x, first.y+second.y);
+        }
 
+        /**
+         * Returns non-zero if the two coordinates are equal
+         */
+        static inline int hb_mc_coordinate_eq(hb_mc_coordinate_t first, hb_mc_coordinate_t second)
+        {
+                return (first.x == second.x) && (first.y == second.y);
+        }
 
+        /**
+         * Returns the next greatest coordinate from the origin subject a boundary condition of origin + dim
+         */
+        static inline hb_mc_coordinate_t hb_mc_coordinate_next(hb_mc_coordinate_t now, hb_mc_coordinate_t origin, hb_mc_coordinate_t dim)
+        {
+                now.y += 1;
+                if (now.y >= origin.y + dim.y) {
+                        now.y = origin.y;
+                        now.x += 1;
+                }
+                return now;
+        }
 
+        /**
+         * Returns non-zero if calling hb_mc_coordinate_next() with same inputs will fall outside boundary
+         */
+        static inline int hb_mc_coordinate_stop(hb_mc_coordinate_t now, hb_mc_coordinate_t origin, hb_mc_coordinate_t dim)
+        {
+                return (now.x >= origin.x+dim.x) || (now.y >= origin.y+dim.y);
+        }
 
-
+        /**
+         * Iterate over the coordinate space begining at origin and subject to the boundary condition of origin + dim
+         * @param[in] coordinate  An unset coordinate variable declared in parent scope.
+         * @param[in] origin      The origin coordinate.
+         * @param[in] dim         The dimension of the coordinate space overwhich to iterate.
+         *
+         * This is a conveniance macro for iterating over a coordinate space defined by (origin, origin + dim).
+         * The input parameter coordinate must be declared in the parent scope.
+         * At each iteration, coordinate is updated.
+         * Behavior is undefined if coordinate is modified in the loop body.
+         */
+#define foreach_coordinate(coordinate, origin, dim)                     \
+        for (coordinate = origin;                                       \
+             !hb_mc_coordinate_stop(coordinate, origin, dim);           \
+             coordinate = hb_mc_coordinate_next(coordinate, origin, dim))
 
 
 #ifdef __cplusplus
