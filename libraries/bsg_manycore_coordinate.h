@@ -188,6 +188,23 @@ extern "C" {
         }
 
         /**
+         * Calculate the element-wise difference between to coordinates
+         * @param[in]  first
+         * @param[in]  second
+         * @param[out] result
+         * @return HB_MC_IOVERFLOW if the subtraction will result in an integer underflow. HB_MC_SUCCESS otherwise.
+         */
+        static inline int hb_mc_coordinate_sub_safe(hb_mc_coodinate_t first, hb_mc_coordinate_t second, hb_mc_coordinate_t *result)
+        {
+                if (first.x < second.x || first.y < second.y)
+                        return HB_MC_IOVERFLOW;
+
+                result->x = first.x - second.x;
+                result->y = first.y - second.y;
+                return HB_MC_SUCCESS;
+        }
+
+        /**
          * Returns non-zero if the two coordinates are equal
          */
         static inline int hb_mc_coordinate_eq(hb_mc_coordinate_t first, hb_mc_coordinate_t second)
