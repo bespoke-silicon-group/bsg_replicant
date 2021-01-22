@@ -194,7 +194,7 @@ extern "C" {
          * @param[out] result
          * @return HB_MC_IOVERFLOW if the subtraction will result in an integer underflow. HB_MC_SUCCESS otherwise.
          */
-        static inline int hb_mc_coordinate_sub_safe(hb_mc_coodinate_t first, hb_mc_coordinate_t second, hb_mc_coordinate_t *result)
+        static inline int hb_mc_coordinate_sub_safe(hb_mc_coordinate_t first, hb_mc_coordinate_t second, hb_mc_coordinate_t *result)
         {
                 if (first.x < second.x || first.y < second.y)
                         return HB_MC_IOVERFLOW;
