@@ -40,13 +40,9 @@ module bsg_manycore_endpoint_to_fifos
   parameter fifo_width_p = "inv"
   // these are endpoint parameters
   , parameter x_cord_width_p = "inv"
-  , localparam x_cord_width_pad_lp = `BSG_CDIV(x_cord_width_p,8)*8
   , parameter y_cord_width_p = "inv"
-  , localparam y_cord_width_pad_lp = `BSG_CDIV(y_cord_width_p,8)*8
   , parameter addr_width_p = "inv"
-  , localparam addr_width_pad_lp = `BSG_CDIV(addr_width_p,8)*8
   , parameter data_width_p = "inv"
-  , localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8
   , parameter max_out_credits_p = "inv"
   , parameter ep_fifo_els_p = "inv"
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
@@ -80,6 +76,12 @@ module bsg_manycore_endpoint_to_fifos
   ,output [`BSG_WIDTH(max_out_credits_p)-1:0] out_credits_o
 
 );
+
+localparam x_cord_width_pad_lp = `BSG_CDIV(x_cord_width_p,8)*8;
+localparam y_cord_width_pad_lp = `BSG_CDIV(y_cord_width_p,8)*8;
+localparam addr_width_pad_lp = `BSG_CDIV(addr_width_p,8)*8;
+localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
+// TODO: Width of op_v2 field, using $bits   
 
   `declare_bsg_manycore_link_fifo_s(fifo_width_p, addr_width_pad_lp, data_width_pad_lp, x_cord_width_pad_lp, y_cord_width_pad_lp);
 
@@ -182,7 +184,7 @@ module bsg_manycore_endpoint_to_fifos
 
   assign mc_req_lo_cast.padding      = '0;
   assign mc_req_lo_cast.addr         = addr_width_pad_lp'(endpoint_in_addr_lo);
-  assign mc_req_lo_cast.op_v2        = 8'(endpoint_in_we_lo);
+  assign mc_req_lo_cast.op_v2        = endpoint_in_we_lo ? e_remote_store: e_remote_load;
   assign mc_req_lo_cast.payload.data = data_width_p'(endpoint_in_data_lo);
   assign mc_req_lo_cast.src_y_cord   = y_cord_width_pad_lp'(in_src_y_cord_lo);
   assign mc_req_lo_cast.src_x_cord   = x_cord_width_pad_lp'(in_src_x_cord_lo);
