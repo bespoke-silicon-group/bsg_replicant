@@ -519,6 +519,10 @@ extern "C" {
                 return cfg->memsys.id;
         }
 
+        static inline uint32_t hb_mc_config_get_pods(const hb_mc_config_t *cfg)
+        {
+                return 1;
+        }
 #ifdef __cplusplus
 }
 #endif
