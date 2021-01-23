@@ -77,23 +77,23 @@ extern "C" {
         } hb_mc_tile_t;
 
         typedef struct {
-                const char *name;
-                uint32_t argc;
+                const char     *name;
+                uint32_t        argc;
                 const uint32_t *argv;
-                hb_mc_epa_t finish_signal_addr;
+                int             refcount;
         } hb_mc_kernel_t;
 
         typedef struct {
-                hb_mc_coordinate_t id;
-                grid_id_t grid_id;
-                hb_mc_dimension_t grid_dim;
+                hb_mc_coordinate_t        id;
+                grid_id_t                 grid_id;
+                hb_mc_dimension_t         grid_dim;
                 hb_mc_tile_group_status_t status;
-                hb_mc_coordinate_t origin;
-                hb_mc_dimension_t dim;
-                hb_mc_eva_map_t *map;
-                hb_mc_kernel_t *kernel;
-                uint32_t argc;
-                hb_mc_eva_t argv_eva;
+                hb_mc_coordinate_t        origin;
+                hb_mc_dimension_t         dim;
+                hb_mc_eva_map_t          *map;
+                hb_mc_kernel_t           *kernel;
+                hb_mc_eva_t               argv_eva;
+                hb_mc_npa_t               finish_signal_npa;
         } hb_mc_tile_group_t;
 
 
@@ -111,6 +111,17 @@ extern "C" {
         } hb_mc_allocator_t;
 
 
+        typedef struct hb_mc_program_options {
+                hb_mc_allocator_id_t alloc_id;
+                const char          *alloc_name;
+                hb_mc_dimension_t    mesh_dim;
+                const char          *program_name;
+                // by default CUDA will 'copy' program data into an internal buffer
+                // set this option to 1 if CUDA should instead take ownership of the data passed
+                // this is only applicable to hb_mc_device_pod_program_init_binary_*()
+                int                  move_bin_data;
+        } hb_mc_program_options_t;
+
         typedef struct {
                 const char* bin_name;
                 const unsigned char* bin;
@@ -118,15 +129,24 @@ extern "C" {
                 hb_mc_allocator_t *allocator;
         } hb_mc_program_t;
 
+        typedef int hb_mc_pod_id_t;
+
+        typedef struct {
+                hb_mc_program_t    *program;
+                hb_mc_mesh_t       *mesh;
+                hb_mc_tile_group_t *tile_groups;
+                uint32_t            num_tile_groups;
+                uint32_t            tile_group_capacity;
+                uint8_t             num_grids;
+                int                 program_loaded;
+        } hb_mc_pod_t;
 
         typedef struct {
                 hb_mc_manycore_t *mc;
-                hb_mc_program_t *program;
-                hb_mc_mesh_t *mesh;
-                hb_mc_tile_group_t *tile_groups;
-                uint32_t num_tile_groups;
-                uint32_t tile_group_capacity;
-                uint8_t num_grids;
+                hb_mc_pod_t      *pods;
+                int               num_pods;
+                const char       *name;
+                hb_mc_pod_id_t    default_pod_id;
         } hb_mc_device_t; 
 
 
@@ -134,14 +154,6 @@ extern "C" {
                 HB_MC_MEMCPY_TO_DEVICE = 0,
                 HB_MC_MEMCPY_TO_HOST = 1,
         };
-
-
-        typedef int hb_mc_pod_id_t;
-
-        typedef struct hb_mc_program_options {
-                hb_mc_allocator_id_t alloc_id;
-                const char          *alloc_name;
-        } hb_mc_program_options_t;
 
         void hb_mc_program_options_default(hb_mc_program_options_t *popts);
 
@@ -151,10 +163,9 @@ extern "C" {
         /********************************/
         /**
          * Initializes a CUDA-Lite program on the manycore on a pod specified.
-         * @param[in] device Pointer to device
-         * @param[in] pod    Pod ID
-         * @param[in] name   Device name
-         * @param[in] id     Device id
+         * @param[in] device   Pointer to device
+         * @param[in] pod      Pod ID
+         * @param[in] bin_name Path to program file
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
         __attribute__((warn_unused_result))
@@ -164,11 +175,10 @@ extern "C" {
 
         /**
          * Initializes a CUDA-Lite program on the manycore on a pod specified.
-         * @param[in] device Pointer to device
-         * @param[in] pod    Pod ID
-         * @param[in] name   Device name
-         * @param[in] id     Device id
-         * @param[in] popts  Program options defining program behavior
+         * @param[in] device   Pointer to device
+         * @param[in] pod      Pod ID
+         * @param[in] bin_name Path to program file
+         * @param[in] popts    Program options defining program behavior
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
         __attribute__((warn_unused_result))
@@ -177,6 +187,37 @@ extern "C" {
                                                const char     *bin_name,
                                                const hb_mc_program_options_t *popts);
 
+
+        /**
+         * Initializes a CUDA-Lite program on the manycore on a pod specified.
+         * @param[in] device   Pointer to device
+         * @param[in] pod      Pod ID
+         * @param[in] bin_data Buffer with program data
+         * @param[in] bin_size Size of program data buffer
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pod_program_init_binary(hb_mc_device_t       *device,
+                                                 hb_mc_pod_id_t        pod_id,
+                                                 const unsigned char  *bin_data,
+                                                 size_t                bin_size);
+
+
+       /**
+        * Initializes a CUDA-Lite program on the manycore on a pod specified.
+         * @param[in] device   Pointer to device
+         * @param[in] pod      Pod ID
+         * @param[in] bin_data Buffer with program data
+         * @param[in] bin_size Size of program data buffer
+         * @param[in] popts    Program options defining program behavior
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pod_program_init_binary_opts(hb_mc_device_t       *device,
+                                                      hb_mc_pod_id_t        pod_id,
+                                                      const unsigned char  *bin_data,
+                                                      size_t                bin_size,
+                                                      const hb_mc_program_options_t *popts);
         /****************************/
         /* Pod Interface Allocation */
         /****************************/
