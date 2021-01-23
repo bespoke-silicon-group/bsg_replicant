@@ -55,6 +55,7 @@ REGRESSION_TESTS_TYPE = library
 UNIFIED_TESTS = 
 
 INDEPENDENT_TESTS += test_rom
+INDEPENDENT_TESTS += test_coordinate
 INDEPENDENT_TESTS += test_get_cycle
 INDEPENDENT_TESTS += test_struct_size
 INDEPENDENT_TESTS += test_vcache_flush
