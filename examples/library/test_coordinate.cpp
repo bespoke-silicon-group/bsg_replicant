@@ -79,7 +79,7 @@ static int iterate_x_y(hb_mc_coordinate_t origin, hb_mc_dimension_t dimension, c
         if (!r) return HB_MC_FAIL;                      \
     } while (0)
 
-int test_rom (int argc, char **argv) {
+int test_coordinate (int argc, char **argv) {
     hb_mc_coordinate_t origin;
     hb_mc_dimension_t dim;
     std::vector<hb_mc_coordinate_t> expect;
