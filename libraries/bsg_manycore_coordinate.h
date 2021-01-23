@@ -92,6 +92,19 @@ extern "C" {
                 return dim.y;
         }
 
+        static inline hb_mc_dimension_t hb_mc_dimension_add(hb_mc_dimension_t first, hb_mc_dimension_t second)
+        {
+                hb_mc_dimension_t dim;
+                dim.x = first.x + second.x;
+                dim.y = first.y + second.y;
+                return dim;
+        }
+
+        static inline int hb_mc_dimension_eq(hb_mc_dimension_t first, hb_mc_dimension_t second)
+        {
+                return first.x == second.x && first.y == second.y;
+        }
+
 #define HB_MC_COORDINATE(xv, yv)                \
         {.x = xv, .y = yv}
 
@@ -185,7 +198,7 @@ extern "C" {
          */
         static inline hb_mc_coordinate_t hb_mc_coordinate_add(hb_mc_coordinate_t first, hb_mc_coordinate_t second)
         {
-                return HB_MC_COORDINATE(first.x+second.x, first.y+second.y);
+                return hb_mc_coordinate(first.x+second.x, first.y+second.y);
         }
 
         /**
