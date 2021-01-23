@@ -90,6 +90,11 @@
                 }                                                       \
         } while(0)                                                      \
 
+///////////////
+// Constants //
+///////////////
+static const hb_mc_dimension_t HB_MC_MESH_FULL_CORE = HB_MC_DIMENSION(0,0);
+
 ////////////////////
 // Kernel helpers //
 ////////////////////
@@ -536,6 +541,7 @@ int hb_mc_device_init (hb_mc_device_t *device,
         device->pods = pods;
         device->num_pods = num_pods;
         device->default_pod_id = 0;
+        device->default_mesh_dim = HB_MC_MESH_FULL_CORE;
 
         // initialize pods
         hb_mc_pod_t *pod;
@@ -547,6 +553,26 @@ int hb_mc_device_init (hb_mc_device_t *device,
         // set name
         XSTRDUP(device->name, name);
 
+        return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Initializes the manycor struct, and a mesh structure with custom
+ * diemsnions inside device struct with list of all tiles and their coordinates
+ * @param[in]  device        Pointer to device
+ * @param[in]  name          Device name
+ * @param[in]  id            Device id
+ * @param[in]  dim           Tile pool (mesh) dimensions
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
+                                         const char *name,
+                                         hb_mc_manycore_id_t id,
+                                         hb_mc_dimension_t dim)
+{
+        BSG_CUDA_CALL(hb_mc_device_init(device, name, id));
+        device->default_mesh_dim = dim;
         return HB_MC_SUCCESS;
 }
 
@@ -616,9 +642,13 @@ int hb_mc_device_pod_mesh_init(hb_mc_device_t *device,
         hb_mc_dimension_t dim = popts->mesh_dim;
 
         // if dim is (0,0), set to size of vcore
-        static const hb_mc_dimension_t full_core = HB_MC_DIMENSION(0,0);
-        if (hb_mc_dimension_eq(full_core, dim)) {
+        if (hb_mc_dimension_eq(HB_MC_MESH_FULL_CORE, dim)) {
                 dim = hb_mc_config_get_dimension_vcore(cfg);
+        }
+
+        // if this device has a custom mesh dimension, use that
+        if (!hb_mc_dimension_eq(HB_MC_MESH_FULL_CORE, device->default_mesh_dim)) {
+                dim = device->default_mesh_dim;
         }
 
         // sanity check input dimensions
