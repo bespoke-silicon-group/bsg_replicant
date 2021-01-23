@@ -147,6 +147,7 @@ extern "C" {
                 int               num_pods;
                 const char       *name;
                 hb_mc_pod_id_t    default_pod_id;
+                hb_mc_dimension_t default_mesh_dim;
         } hb_mc_device_t; 
 
 
@@ -417,7 +418,7 @@ extern "C" {
          * @param[in]  dim           Tile pool (mesh) dimensions
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
-        __attribute__((warn_unused_result))
+        __attribute__((warn_unused_result, deprecated))
         int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
                                                  const char *name,
                                                  hb_mc_manycore_id_t id,
