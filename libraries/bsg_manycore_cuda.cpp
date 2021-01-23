@@ -312,7 +312,9 @@ static int tile_set_symbol_val(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_t
  */
 static int tile_freeze(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile)
 {
+#ifdef DEBUG
         char buf[256];
+#endif
         bsg_pr_dbg("%s: device<%s>: freezing tile %s\n",
                    __func__, device->name, hb_mc_coordinate_to_string(tile->coord, buf, sizeof(buf)));
         BSG_MANYCORE_CALL(device->mc, hb_mc_tile_freeze(device->mc, &tile->coord));
@@ -324,7 +326,9 @@ static int tile_freeze(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *t
  */
 static int tile_unfreeze(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile)
 {
+#ifdef DEBUG
         char buf[256];
+#endif
         bsg_pr_dbg("%s: device<%s>: unfreezing tile %s\n",
                    __func__, device->name, hb_mc_coordinate_to_string(tile->coord, buf, sizeof(buf)));
         // before unfreezing, clear kernel ptr
@@ -1423,13 +1427,15 @@ int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod
         hb_mc_coordinate_t origin;
         int tiles_are_free = 0;
 
-        char buffer[256];
-        char buffer2[256];
+#if defined (DEBUG)
+        char origin_str[256];
+        char boundary_str[256];
+#endif
 
         bsg_pr_dbg("%s: scanning orig:%s  dim:%s\n",
                    __func__,
-                   hb_mc_coordinate_to_string(pod->mesh->origin, buffer, sizeof(buffer)),
-                   hb_mc_coordinate_to_string(origin_boundary, buffer2, sizeof(buffer2)));
+                   hb_mc_coordinate_to_string(pod->mesh->origin, origin_str, sizeof(origin_str)),
+                   hb_mc_coordinate_to_string(origin_boundary, boundary_str, sizeof(boundary_str)));
 
         foreach_coordinate(origin, pod->mesh->origin, origin_boundary)
         {
