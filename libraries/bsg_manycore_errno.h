@@ -44,6 +44,7 @@ extern "C" {
 #define HB_MC_NOTFOUND      (-7)
 #define HB_MC_BUSY          (-8)
 #define HB_MC_UNALIGNED     (-9)
+#define HB_MC_IOVERFLOW    (-10)
 
         static inline const char * hb_mc_strerror(int err)
         {
@@ -58,6 +59,7 @@ extern "C" {
                         [-HB_MC_NOTFOUND]          = "Not found",
                         [-HB_MC_BUSY]              = "Busy",
                         [-HB_MC_UNALIGNED]         = "Unaligned memory request",
+                        [-HB_MC_IOVERFLOW]         = "Integer overflow",
                 };
                 return strtab[-err];
         }
