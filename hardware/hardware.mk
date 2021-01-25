@@ -129,11 +129,11 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v: $(BSG_MACHINE_PATH)/bsg_bla
 
 # TODO: Better way to handle this?
 # Manycore X/Y dimensions
-BSG_MACHINE_NOC_X_COORD_WIDTH         = 7
-BSG_MACHINE_NOC_Y_COORD_WIDTH         = 7
+BSG_MACHINE_NOC_COORD_X_WIDTH         = 7
+BSG_MACHINE_NOC_COORD_Y_WIDTH         = 7
 POD_TRACE_GEN_PY = $(BSG_MANYCORE_DIR)/testbenches/py/pod_trace_gen.py
 $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.tr: $(BSG_MACHINE_PATH)/Makefile.machine.include
-	env python2 $(POD_TRACE_GEN_PY) $(BSG_MACHINE_NUM_PODS_X) $(BSG_MACHINE_NUM_PODS_Y) $(BSG_MACHINE_NOC_X_COORD_WIDTH) > $@
+	env python2 $(POD_TRACE_GEN_PY) $(BSG_MACHINE_DIM_PODS_X) $(BSG_MACHINE_DIM_PODS_Y) $(BSG_MACHINE_NOC_COORD_X_WIDTH) > $@
 
 ASCII_TO_ROM_PY = $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py
 $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.v: $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.tr
@@ -167,10 +167,14 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call hex2bin,$(BSG_BLADERUNNER_COMPILATION_DATE))  >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_MAX_EPA_WIDTH))     >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_DATA_WIDTH))        >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_NUM_CORES_X))       >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_NUM_CORES_Y))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_DIM_PODS_X))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_DIM_PODS_Y))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_POD_DIM_X))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_POD_DIM_Y))       >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_HOST_COORD_X))      >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_HOST_COORD_Y))      >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_X_WIDTH)) >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_Y_WIDTH)) >> $@.temp
 	@echo $(call dec2bin,0)                                >> $@.temp
 	@echo $(call hex2bin,$(BASEJUMP_STL_COMMIT_ID))        >> $@.temp
 	@echo $(call hex2bin,$(BSG_MANYCORE_COMMIT_ID))        >> $@.temp
@@ -193,14 +197,20 @@ $(BSG_MACHINE_PATH)/bsg_manycore_machine.h: $(BSG_MACHINE_PATH)/Makefile.machine
 	@echo "/* Chip address and data width */" >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_MAX_EPA_WIDTH $(BSG_MACHINE_MAX_EPA_WIDTH)" >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_DATA_WIDTH    $(BSG_MACHINE_DATA_WIDTH)"    >> $@.temp
-	@echo "/* Chip network dimensions */"     >> $@.temp
-	@echo "#define BSG_MANYCORE_MACHINE_DIM_X         $(BSG_MACHINE_NUM_CORES_X)"   >> $@.temp
-	@echo "#define BSG_MANYCORE_MACHINE_DIM_Y         $(BSG_MACHINE_NUM_CORES_Y)"         >> $@.temp
+	@echo "/* Chip dimensions */"     >> $@.temp
+	@echo "#define BSG_MANYCORE_DIM_PODS_Y         $(BSG_MACHINE_DIM_PODS_Y)"       >> $@.temp
+	@echo "#define BSG_MANYCORE_DIM_PODS_X         $(BSG_MACHINE_DIM_PODS_X)"       >> $@.temp
+	@echo "/* Chip Pod dimensions */"     >> $@.temp
+	@echo "#define BSG_MANYCORE_POD_DIM_Y         $(BSG_MACHINE_POD_DIM_Y)"         >> $@.temp
+	@echo "#define BSG_MANYCORE_POD_DIM_X         $(BSG_MACHINE_POD_DIM_X)"         >> $@.temp
 	@echo "/* Host coordinates */"            >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_HOST_COORD_X  \\" >> $@.temp
 	@echo "    $(BSG_MACHINE_HOST_COORD_X)"  >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_HOST_COORD_Y  \\" >> $@.temp
 	@echo "    $(BSG_MACHINE_HOST_COORD_Y)"  >> $@.temp
+	@echo "/* NoC field widths */"     >> $@.temp
+	@echo "#define BSG_MANYCORE_NOC_COORD_X_WIDTH $(BSG_MACHINE_NOC_COORD_X_WIDTH)" >> $@.temp
+	@echo "#define BSG_MANYCORE_NOC_COORD_Y_WIDTH $(BSG_MACHINE_NOC_COORD_Y_WIDTH)" >> $@.temp
 	@echo "/* L2 cache parameters */"         >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_VCACHE_WAYS   \\" >> $@.temp
 	@echo "    $(BSG_MACHINE_VCACHE_WAY)"   >> $@.temp
@@ -213,8 +223,7 @@ $(BSG_MACHINE_PATH)/bsg_manycore_machine.h: $(BSG_MACHINE_PATH)/Makefile.machine
 	@echo "#define BSG_MANYCORE_MACHINE_VCACHE_BANKS \\" >> $@.temp
 	@echo "    (2 * (BSG_MANYCORE_MACHINE_DIM_X))" >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_VCACHE_SETS \\" >> $@.temp
-	@echo "    ((BSG_MANYCORE_MACHINE_VCACHE_BANK_SETS)*(BSG_MANYCORE_MACHINE_VCACHE_BANKS))" \
-		>> $@.temp
+	@echo "    ((BSG_MANYCORE_MACHINE_VCACHE_BANK_SETS)*(BSG_MANYCORE_MACHINE_VCACHE_BANKS))" >> $@.temp
 	@echo "#endif" >> $@.temp
 	mv $@.temp $@
 
@@ -230,6 +239,7 @@ $(BSG_MACHINE_PATH)/bsg_manycore_machine.h: $(BSG_MACHINE_PATH)/Makefile.machine
 #
 # dpi_fifo_els_gp defines the number of elements in the
 # manycore-to-host (request and response) FIFOs.
+# TODO: Fix num cores
 $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
 	$(eval ROM_STR=$(shell tac $< | sed "s/^\(.*\)$$/32'b\1,/" | sed '$$s/,$$//'))
 	@echo "\`ifndef BSG_BLADERUNNER_PKG" > $@
@@ -239,7 +249,6 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "import bsg_manycore_network_cfg_pkg::*;" >> $@
 	@echo "import bsg_manycore_mem_cfg_pkg::*;" >> $@
-	@echo "import bsg_bladerunner_mem_cfg_pkg::*;" >> $@
 	@echo >> $@
 	@echo "parameter bsg_machine_dpi_fifo_els_gp = $(BSG_MACHINE_IO_EP_CREDITS);" >> $@
 	@echo >> $@
@@ -272,13 +281,14 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter int bsg_machine_origin_coord_y_gp = $(BSG_MACHINE_ORIGIN_COORD_Y);" >> $@
 	@echo "parameter int bsg_machine_origin_coord_x_gp = $(BSG_MACHINE_ORIGIN_COORD_X);" >> $@
-	@echo "parameter int bsg_machine_num_cores_y_gp = $(BSG_MACHINE_NUM_CORES_Y);" >> $@
-	@echo "parameter int bsg_machine_num_cores_x_gp = $(BSG_MACHINE_NUM_CORES_X);" >> $@
-	@echo "parameter int bsg_machine_num_cores_gp = bsg_machine_num_cores_x_gp * bsg_machine_num_cores_y_gp;" >> $@
-	@echo "parameter int bsg_machine_hetero_type_vec_gp [0:(bsg_machine_num_cores_gp)-1] = '{$(strip $(BSG_MACHINE_HETERO_TYPE_VEC))};" >> $@
+	@echo >> $@
+	@echo "parameter int bsg_machine_pod_dim_y_gp = $(BSG_MACHINE_POD_DIM_Y);" >> $@
+	@echo "parameter int bsg_machine_pod_dim_x_gp = $(BSG_MACHINE_POD_DIM_X);" >> $@
+	@echo "parameter int bsg_machine_pod_num_cores_gp = bsg_machine_pod_dim_x_gp * bsg_machine_pod_dim_y_gp;" >> $@
+	@echo "parameter int bsg_machine_hetero_type_vec_gp [0:(bsg_machine_pod_num_cores_gp)-1] = '{$(strip $(BSG_MACHINE_HETERO_TYPE_VEC))};" >> $@
 	@echo >> $@
 	@echo "parameter bsg_machine_llcache_words_gp = bsg_machine_llcache_line_words_gp * bsg_machine_llcache_ways_gp * bsg_machine_llcache_sets_gp;" >> $@
-	@echo "parameter bsg_machine_llcache_num_cache_gp = (bsg_machine_num_cores_x_gp * 2);" >> $@
+	@echo "parameter bsg_machine_pod_num_cache_gp = (bsg_machine_pod_dim_x_gp * 2);" >> $@
 	@echo >> $@
 	@echo "parameter bsg_machine_core_dmem_words_gp = 1024;" >> $@
 	@echo "parameter bsg_machine_core_icache_entries_gp = 1024;" >> $@
@@ -288,14 +298,14 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "// in the tile\'s EVA space. Therefore, it is the maximum X and Y" >> $@
 	@echo "// coordinate that a user will send a packet to, which includes the" >> $@
 	@echo "// origin." >> $@
-	@echo "parameter bsg_machine_core_x_global_max_gp = bsg_machine_num_cores_x_gp;" >> $@
-	@echo "parameter bsg_machine_core_y_global_max_gp = bsg_machine_num_cores_y_gp + bsg_machine_origin_coord_y_gp - bsg_machine_io_coord_y_gp;" >> $@
+	@echo "parameter bsg_machine_core_x_global_max_gp = bsg_machine_pod_dim_x_gp;" >> $@
+	@echo "parameter bsg_machine_core_y_global_max_gp = bsg_machine_pod_dim_y_gp + bsg_machine_origin_coord_y_gp - bsg_machine_io_coord_y_gp;" >> $@
 	@echo >> $@
-	@echo "parameter bsg_machine_noc_x_max_gp = bsg_machine_num_cores_x_gp;" >> $@
+	@echo "parameter bsg_machine_noc_x_max_gp = bsg_machine_pod_dim_x_gp;" >> $@
 	@echo "parameter bsg_machine_noc_y_max_gp = bsg_machine_core_y_global_max_gp + 2; // Caches on both sides" >> $@
 	@echo >> $@
-	@echo "parameter int bsg_machine_num_pods_y_gp = $(BSG_MACHINE_NUM_PODS_Y);" >> $@
-	@echo "parameter int bsg_machine_num_pods_x_gp = $(BSG_MACHINE_NUM_PODS_X);" >> $@
+	@echo "parameter int bsg_machine_dim_pods_y_gp = $(BSG_MACHINE_DIM_PODS_Y);" >> $@
+	@echo "parameter int bsg_machine_dim_pods_x_gp = $(BSG_MACHINE_DIM_PODS_X);" >> $@
 	@echo "parameter int bsg_machine_noc_pod_x_coord_width_gp = 3;" >> $@
 	@echo "parameter int bsg_machine_noc_pod_y_coord_width_gp = 4;" >> $@
 	@echo >> $@

@@ -304,6 +304,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NO_CREDITS || 
                   err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+                  err == BSG_NONSYNTH_DPI_BUSY ||
                   err == BSG_NONSYNTH_DPI_NOT_READY    ));
 
         if(err != BSG_NONSYNTH_DPI_SUCCESS){
@@ -356,6 +357,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+                  err == BSG_NONSYNTH_DPI_BUSY ||
                   err == BSG_NONSYNTH_DPI_NOT_VALID));
 
         if(err != BSG_NONSYNTH_DPI_SUCCESS){

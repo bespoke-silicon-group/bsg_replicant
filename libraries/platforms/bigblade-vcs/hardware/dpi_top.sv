@@ -4,7 +4,6 @@ module replicant_tb_top
   import bsg_manycore_pkg::*;
   import bsg_manycore_addr_pkg::*;
   import bsg_bladerunner_pkg::*;
-  import bsg_bladerunner_mem_cfg_pkg::*;
   import bsg_manycore_network_cfg_pkg::*;
   import bsg_manycore_endpoint_to_fifos_pkg::*;
   ();
@@ -25,20 +24,23 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_noc_data_width_gp         = %d", bsg_machine_noc_data_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
 
-      $display("[INFO][TESTBENCH] bsg_machine_llcache_num_cache_gp      = %d", bsg_machine_llcache_num_cache_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_x_g              = %d", bsg_machine_dim_pods_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_y_g              = %d", bsg_machine_dim_pods_y_gp);
+
+      $display("[INFO][TESTBENCH] bsg_machine_pod_num_cache_gp          = %d", bsg_machine_pod_num_cache_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_pod_dim_x_gp              = %d", bsg_machine_pod_dim_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_pod_dim_y_gp              = %d", bsg_machine_pod_dim_y_gp);
+
       $display("[INFO][TESTBENCH] bsg_machine_llcache_sets_gp           = %d", bsg_machine_llcache_sets_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_ways_gp           = %d", bsg_machine_llcache_ways_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_line_words_gp     = %d", bsg_machine_llcache_line_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_words_gp          = %d", bsg_machine_llcache_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_miss_fifo_els_gp  = %d", bsg_machine_llcache_miss_fifo_els_gp);
-
       $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
+
       $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_num_channels_gp      = %d", bsg_machine_dram_num_channels_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_cfg_gp               = %s", bsg_machine_dram_cfg_gp.name());
-
-      $display("[INFO][TESTBENCH] bsg_machine_num_cores_x_gp            = %d", bsg_machine_num_cores_x_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_num_cores_y_gp            = %d", bsg_machine_num_cores_y_gp);
    end
 
 /*
@@ -58,7 +60,8 @@ module replicant_tb_top
    localparam bsg_machine_wh_ruche_factor_lp = 2;
    localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_lp);
    localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2((1+bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp)/bsg_machine_llcache_channel_width_gp);
-   localparam bsg_machine_wh_cord_width_lp = bsg_machine_num_cores_y_gp;
+   // TODO: Fix
+   localparam bsg_machine_wh_cord_width_lp = bsg_machine_pod_dim_y_gp;
 
 
    // Parameters defined in bsg_manycore_pkg.v
@@ -148,13 +151,13 @@ module replicant_tb_top
 
    bsg_nonsynth_manycore_testbench
      #(
-       .num_pods_x_p(bsg_machine_num_pods_x_gp)
-       ,.num_pods_y_p(bsg_machine_num_pods_y_gp)
+       .num_pods_x_p(bsg_machine_dim_pods_x_gp)
+       ,.num_pods_y_p(bsg_machine_dim_pods_y_gp)
        ,.pod_x_cord_width_p(bsg_machine_noc_pod_x_coord_width_gp)
        ,.pod_y_cord_width_p(bsg_machine_noc_pod_y_coord_width_gp)
 
-       ,.num_tiles_x_p(bsg_machine_num_cores_x_gp)
-       ,.num_tiles_y_p(bsg_machine_num_cores_y_gp)
+       ,.num_tiles_x_p(bsg_machine_pod_dim_x_gp)
+       ,.num_tiles_y_p(bsg_machine_pod_dim_y_gp)
        ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
        ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
 

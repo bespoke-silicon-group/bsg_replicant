@@ -37,12 +37,8 @@
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Pod Dimensions
-BSG_MACHINE_NUM_PODS_X                = 1
-BSG_MACHINE_NUM_PODS_Y                = 1
-
-# Manycore X/Y dimensions
-BSG_MACHINE_NUM_CORES_X               = 8
-BSG_MACHINE_NUM_CORES_Y               = 4
+BSG_MACHINE_DIM_PODS_X                = 1
+BSG_MACHINE_DIM_PODS_Y                = 1
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
@@ -56,7 +52,7 @@ BSG_MACHINE_RUCHE_FACTOR_X           := 0
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
-BSG_MACHINE_MEM_CFG                   = e_vcache_blocking_test_dramsim3_hbm2_4gb_x128
+BSG_MACHINE_MEM_CFG                   = e_vcache_test_mem
 
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
@@ -67,13 +63,17 @@ BSG_MACHINE_VCACHE_STRIPE_WORDS       = $(BSG_MACHINE_VCACHE_LINE_WORDS)
 # Only applies to Non-blocking Cache
 BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
 
+# Pod Dimensions (Rarely Changed)
+BSG_MACHINE_POD_DIM_X                 = 16
+BSG_MACHINE_POD_DIM_Y                 = 8
+
 # Host Coordinate (Rarely Changed)
-BSG_MACHINE_HOST_COORD_X              = 0
-BSG_MACHINE_HOST_COORD_Y              = 1
+BSG_MACHINE_HOST_COORD_X              = 16
+BSG_MACHINE_HOST_COORD_Y              = 0
 
 # Manycore Origin (Rarely Changed)
-BSG_MACHINE_ORIGIN_COORD_X            = 0
-BSG_MACHINE_ORIGIN_COORD_Y            = 2
+BSG_MACHINE_ORIGIN_COORD_X            = 16
+BSG_MACHINE_ORIGIN_COORD_Y            = 8
 
 # Cache-DRAM Interface Width (Rarely Changed)
 BSG_MACHINE_VCACHE_DMA_DATA_WIDTH     = 32
@@ -90,15 +90,16 @@ BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 __BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^30 | bc) # 4GB
 __BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/8 | bc)
 
-BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_NUM_CORES_X)*2 | bc)
+# TODO: Specific to pod (next 4)
+BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_POD_DIM_X)*2 | bc)
 BSG_MACHINE_DRAM_NUM_CHANNELS        := $(shell echo $(BSG_MACHINE_NUM_VCACHE)/$(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL) | bc)
 
 BSG_MACHINE_DRAM_WORDS               := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS)*$(BSG_MACHINE_DRAM_NUM_CHANNELS) | bc)
 BSG_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_WORDS) / $(BSG_MACHINE_NUM_VCACHE)" | bc)
 
 # Aliases Required for BSG Manycore
-BSG_MACHINE_GLOBAL_X                  = $(BSG_MACHINE_NUM_CORES_X)
-BSG_MACHINE_GLOBAL_Y                  = $(shell echo $(BSG_MACHINE_NUM_CORES_Y)+$(BSG_MACHINE_ORIGIN_COORD_Y)-1 | bc)
+BSG_MACHINE_GLOBAL_X                  = $(BSG_MACHINE_POD_DIMENSION_X)
+BSG_MACHINE_GLOBAL_Y                  = $(BSG_MACHINE_POD_DIMENSION_Y)
 BSG_MACHINE_DRAM_BANK_WORDS           = $(BSG_MACHINE_DRAM_PER_CACHE_WORDS)
 BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = $(BSG_MACHINE_DRAM_BANK_WORDS)
 BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS   = $(BSG_MACHINE_VCACHE_LINE_WORDS)

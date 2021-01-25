@@ -131,7 +131,7 @@ extern "C" {
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
                 HB_MC_CONFIG_MEMSYS = 20,
-                HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
+                HB_MC_CONFIG_MAX=37,//HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
         int hb_mc_config_init(const hb_mc_config_raw_t mc[HB_MC_CONFIG_MAX], hb_mc_config_t *config);
