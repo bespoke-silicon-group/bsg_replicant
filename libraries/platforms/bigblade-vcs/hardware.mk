@@ -55,6 +55,14 @@ include $(BSG_F1_DIR)/hdk.mk
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
 
+POD_TRACE_GEN_PY = $(BSG_MANYCORE_DIR)/testbenches/py/pod_trace_gen.py
+$(BSG_MACHINE_PATH)/bsg_tag_boot_rom.tr: $(BSG_MACHINE_PATH)/Makefile.machine.include
+	env python2 $(POD_TRACE_GEN_PY) $(BSG_MACHINE_DIM_PODS_X) $(BSG_MACHINE_DIM_PODS_Y) $(BSG_MACHINE_NOC_COORD_X_WIDTH) > $@
+
+ASCII_TO_ROM_PY = $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py
+$(BSG_MACHINE_PATH)/bsg_tag_boot_rom.v: $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.tr
+	env python2 $(ASCII_TO_ROM_PY) $< bsg_tag_boot_rom > $@
+
 VSOURCES += $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_fsb/bsg_fsb_node_trace_replay.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_tag/bsg_tag_trace_replay.v

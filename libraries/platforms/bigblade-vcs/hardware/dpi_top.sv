@@ -1,11 +1,8 @@
 module replicant_tb_top
-  import bsg_noc_pkg::*; // {P=0, W, E, N, S}
-
   import bsg_manycore_pkg::*;
-  import bsg_manycore_addr_pkg::*;
+//  import bsg_manycore_addr_pkg::*;
   import bsg_bladerunner_pkg::*;
   import bsg_manycore_network_cfg_pkg::*;
-  import bsg_manycore_endpoint_to_fifos_pkg::*;
   ();
 
    // Uncomment this to enable VCD Dumping
@@ -24,8 +21,8 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_noc_data_width_gp         = %d", bsg_machine_noc_data_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
 
-      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_x_g              = %d", bsg_machine_dim_pods_x_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_y_g              = %d", bsg_machine_dim_pods_y_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_x_gp             = %d", bsg_machine_dim_pods_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_y_gp             = %d", bsg_machine_dim_pods_y_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_pod_num_cache_gp          = %d", bsg_machine_pod_num_cache_gp);
       $display("[INFO][TESTBENCH] bsg_machine_pod_dim_x_gp              = %d", bsg_machine_pod_dim_x_gp);
@@ -41,17 +38,9 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_num_channels_gp      = %d", bsg_machine_dram_num_channels_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_cfg_gp               = %s", bsg_machine_dram_cfg_gp.name());
+
+      $display("[INFO][TESTBENCH] bsg_machine_name_gp                   = %s", bsg_machine_name_gp);
    end
-
-/*
- // TODO: 
-   localparam global_epa_word_addr_width_gp = 14;
- // max EPA width on global EVA. (word addr)
-    localparam max_global_x_cord_width_gp = 7;
-    localparam max_global_y_cord_width_gp = 7;
- */
-
-   localparam reset_depth_lp = 3;
 
    localparam bsg_machine_llcache_data_width_lp = bsg_machine_noc_data_width_gp;
    localparam bsg_machine_llcache_addr_width_lp=(bsg_machine_noc_epa_width_gp-1+`BSG_SAFE_CLOG2(bsg_machine_noc_data_width_gp>>3));
@@ -59,21 +48,17 @@ module replicant_tb_top
    localparam bsg_machine_wh_flit_width_lp = bsg_machine_llcache_channel_width_gp;
    localparam bsg_machine_wh_ruche_factor_lp = 2;
    localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_lp);
-   localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2((1+bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp)/bsg_machine_llcache_channel_width_gp);
-   // TODO: Fix
-   localparam bsg_machine_wh_cord_width_lp = bsg_machine_pod_dim_y_gp;
+   localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2(1 + ((bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp) / bsg_machine_llcache_channel_width_gp));
+   localparam bsg_machine_wh_cord_width_lp = bsg_machine_noc_pod_coord_x_width_gp;
 
+   // Clock generator period
+   localparam lc_cycle_time_ps_lp = 1000;
 
-   // Parameters defined in bsg_manycore_pkg.v
-   localparam bsg_machine_noc_x_coord_width_gp = max_global_x_cord_width_gp;
-   localparam bsg_machine_noc_y_coord_width_gp = max_global_y_cord_width_gp;
+   // Reset generator depth
+   localparam reset_depth_lp = 3;
 
-   // TODO: (Future) It would be awesome if the clock frequency (or
-   // frequencies) were specified at the machine level.
-   parameter lc_cycle_time_ps_p = 1000;
-
-   localparam global_counter_width_lp = 64;
    // Global Counter for Profilers, Tracing, Debugging
+   localparam global_counter_width_lp = 64;
    logic [global_counter_width_lp-1:0] global_ctr;
 
    logic host_clk;
@@ -93,7 +78,8 @@ module replicant_tb_top
    bit   bit_reset;
    logic core_clk;
    logic core_reset;
-   // reset is deasserted when tag programming is done.
+
+   // reset_done is deasserted when tag programming is done.
    logic core_reset_done_lo, core_reset_done_r;
 
    logic mem_clk;
@@ -106,10 +92,10 @@ module replicant_tb_top
    logic                                       print_stat_v;
    logic [bsg_machine_noc_data_width_gp-1:0]   print_stat_tag;
 
-   logic [bsg_machine_noc_x_coord_width_gp-1:0] host_x_cord_li = (bsg_machine_noc_x_coord_width_gp)'(bsg_machine_io_coord_x_gp);
-   logic [bsg_machine_noc_y_coord_width_gp-1:0] host_y_cord_li = (bsg_machine_noc_y_coord_width_gp)'(bsg_machine_io_coord_y_gp);
+   logic [bsg_machine_noc_coord_x_width_gp-1:0] host_x_cord_li = (bsg_machine_noc_coord_x_width_gp)'(bsg_machine_io_coord_x_gp);
+   logic [bsg_machine_noc_coord_y_width_gp-1:0] host_y_cord_li = (bsg_machine_noc_coord_y_width_gp)'(bsg_machine_io_coord_y_gp);
 
-   `declare_bsg_manycore_link_sif_s(bsg_machine_noc_epa_width_gp, bsg_machine_noc_data_width_gp, bsg_machine_noc_x_coord_width_gp, bsg_machine_noc_y_coord_width_gp);
+   `declare_bsg_manycore_link_sif_s(bsg_machine_noc_epa_width_gp, bsg_machine_noc_data_width_gp, bsg_machine_noc_coord_x_width_gp, bsg_machine_noc_coord_y_width_gp);
 
    bsg_manycore_link_sif_s host_link_sif_li;
    bsg_manycore_link_sif_s host_link_sif_lo;
@@ -131,7 +117,7 @@ module replicant_tb_top
 `else
    bsg_nonsynth_clock_gen
 `endif
-     #(.cycle_time_p(lc_cycle_time_ps_p))
+     #(.cycle_time_p(lc_cycle_time_ps_lp))
    core_clk_gen
      (.o(bit_clk));
    assign core_clk = bit_clk;
@@ -153,13 +139,13 @@ module replicant_tb_top
      #(
        .num_pods_x_p(bsg_machine_dim_pods_x_gp)
        ,.num_pods_y_p(bsg_machine_dim_pods_y_gp)
-       ,.pod_x_cord_width_p(bsg_machine_noc_pod_x_coord_width_gp)
-       ,.pod_y_cord_width_p(bsg_machine_noc_pod_y_coord_width_gp)
+       ,.pod_x_cord_width_p(bsg_machine_noc_pod_coord_x_width_gp)
+       ,.pod_y_cord_width_p(bsg_machine_noc_pod_coord_y_width_gp)
 
        ,.num_tiles_x_p(bsg_machine_pod_dim_x_gp)
        ,.num_tiles_y_p(bsg_machine_pod_dim_y_gp)
-       ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
-       ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+       ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
+       ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
 
        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
        ,.data_width_p(bsg_machine_noc_data_width_gp)
@@ -170,12 +156,12 @@ module replicant_tb_top
        ,.ruche_factor_X_p(bsg_machine_noc_ruche_factor_X_gp)
 
        ,.vcache_data_width_p(bsg_machine_llcache_data_width_lp)
+       ,.vcache_addr_width_p(bsg_machine_llcache_addr_width_lp)
        ,.vcache_size_p(bsg_machine_llcache_words_gp)
-       ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
        ,.vcache_sets_p(bsg_machine_llcache_sets_gp)
        ,.vcache_ways_p(bsg_machine_llcache_ways_gp)
+       ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
        ,.vcache_dma_data_width_p(bsg_machine_llcache_channel_width_gp)
-       ,.vcache_addr_width_p(bsg_machine_llcache_addr_width_lp)
 
        ,.wh_flit_width_p(bsg_machine_wh_flit_width_lp)
        ,.wh_ruche_factor_p(bsg_machine_wh_ruche_factor_lp)
@@ -214,15 +200,15 @@ module replicant_tb_top
    // --------------------------------------------------------------------------
    // IO Complex
    // --------------------------------------------------------------------------
-   localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(bsg_machine_noc_epa_width_gp,bsg_machine_noc_data_width_gp,bsg_machine_noc_x_coord_width_gp,bsg_machine_noc_y_coord_width_gp)));
+   localparam dpi_fifo_width_lp = (1 << $clog2(`bsg_manycore_packet_width(bsg_machine_noc_epa_width_gp,bsg_machine_noc_data_width_gp,bsg_machine_noc_coord_x_width_gp,bsg_machine_noc_coord_y_width_gp)));
    localparam ep_fifo_els_lp = 4;
    assign host_clk = core_clk;
    assign host_reset = core_reset;
 
    bsg_nonsynth_dpi_manycore
      #(
-       .x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
-       ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+       .x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
+       ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
        ,.data_width_p(bsg_machine_noc_data_width_gp)
        ,.ep_fifo_els_p(ep_fifo_els_lp)
@@ -237,6 +223,7 @@ module replicant_tb_top
      (
       .clk_i(host_clk)
       ,.reset_i(host_reset)
+      ,.reset_done_i(core_reset_done_lo)
 
       // manycore link
       ,.link_sif_i(host_link_sif_lo)
@@ -262,7 +249,7 @@ module replicant_tb_top
    ctr
      (
       .clk_i(core_clk)
-      ,.reset_i(core_reset_l[reset_depth_lp-1])
+      ,.reset_i(core_reset)
       ,.ctr_r_o(global_ctr)
       );
 
@@ -270,8 +257,8 @@ module replicant_tb_top
      #(
        .data_width_p(bsg_machine_noc_data_width_gp)
        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
-       ,.x_cord_width_p(bsg_machine_noc_x_coord_width_gp)
-       ,.y_cord_width_p(bsg_machine_noc_y_coord_width_gp)
+       ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
+       ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
        )
    print_stat_snoop
      (
