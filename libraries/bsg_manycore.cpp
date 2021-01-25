@@ -62,10 +62,10 @@
 #define manycore_pr_err(mc, fmt, ...)                   \
         bsg_pr_err("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-#define manycore_pr_warn(mc, fmt, ...)                          \
+#define manycore_pr_warn(mc, fmt, ...)                  \
         bsg_pr_warn("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-#define manycore_pr_info(mc, fmt, ...)                          \
+#define manycore_pr_info(mc, fmt, ...)                  \
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
 
@@ -171,13 +171,14 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 free((void*)mc->name);
                 return err;
         }
-
+        bsg_pr_warn("%s: hb_mc_manycore_enable_dram is commented out!\n", __func__);
+        /*
         // enable dram
         if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS){
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
                 return err;
-        }
+                }*/
 
         return HB_MC_SUCCESS;
 }
