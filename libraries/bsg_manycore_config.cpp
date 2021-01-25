@@ -111,7 +111,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         xlogsz_max = HB_MC_CONFIG_MAX_BITWIDTH_ADDR - config->network_bitwidth_addr;
         xdim_max = (1 << xlogsz_max);
 
-        idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
+        idx = raw[HB_MC_CONFIG_POD_DIM_X];
         //Temporarily removed this condition until it is cleared up. TODO: Fix.
         //if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
         if ((idx < HB_MC_COORDINATE_MIN)){
@@ -121,7 +121,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         }
         config->vcore_dimensions.x = idx;
 
-        idx = raw[HB_MC_CONFIG_DEVICE_DIM_Y];
+        idx = raw[HB_MC_CONFIG_POD_DIM_Y];
         if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
                 bsg_pr_err("%s: Invalid Device Dimension Y %d: %s\n",
                            __func__, idx, error_init_help);
