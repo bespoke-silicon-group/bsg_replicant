@@ -1,8 +1,6 @@
 module replicant_tb_top
   import bsg_manycore_pkg::*;
-//  import bsg_manycore_addr_pkg::*;
   import bsg_bladerunner_pkg::*;
-  import bsg_manycore_network_cfg_pkg::*;
   ();
 
    // Uncomment this to enable VCD Dumping
@@ -14,6 +12,8 @@ module replicant_tb_top
    end
     */
    initial begin
+      #0;
+      
       $display("==================== BSG MACHINE SETTINGS: ====================");
 
       $display("[INFO][TESTBENCH] bsg_machine_noc_ruche_factor_X_gp     = %d", bsg_machine_noc_ruche_factor_X_gp);

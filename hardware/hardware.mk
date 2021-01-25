@@ -222,6 +222,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "package bsg_bladerunner_pkg;" >> $@
 	@echo >> $@
+	@echo "import bsg_manycore_pkg::*;" >> $@
 	@echo "import bsg_manycore_network_cfg_pkg::*;" >> $@
 	@echo "import bsg_manycore_mem_cfg_pkg::*;" >> $@
 	@echo >> $@
