@@ -16,6 +16,7 @@ const char * hb_mc_memsys_id_to_string(hb_mc_memsys_id_t id)
                 [HB_MC_MEMSYS_ID_AXI4] = "AXI4 Memory Controller",
                 [HB_MC_MEMSYS_ID_INFMEM] = "Ideal Memory System",
                 [HB_MC_MEMSYS_ID_DRAMSIM3] = "DRAMSim3 HBM2",
+                [HB_MC_MEMSYS_ID_TESTMEM] = "Non-synthesizable Test Memory",
         };
 
         return strtab[id];
@@ -35,6 +36,8 @@ int hb_mc_memsys_get_id_from_rom_value(
                 *id = HB_MC_MEMSYS_ID_INFMEM;
         else if (memcmp(HB_MC_ROM_MEMSYS_ID_DRAMSIM3, &rom_id, sizeof(rom_id))==0)
                 *id = HB_MC_MEMSYS_ID_DRAMSIM3;
+        else if (memcmp(HB_MC_ROM_MEMSYS_ID_TESTMEM, &rom_id, sizeof(rom_id))==0)
+                *id = HB_MC_MEMSYS_ID_TESTMEM;
         else { // error - bad memory system ID
                 bsg_pr_err("%s: Invalid Memory System ID 0x%" PRIx32 "\n",
                            __func__, rom_id);
@@ -59,6 +62,10 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
         case HB_MC_MEMSYS_ID_DRAMSIM3:
                 memsys->feature_cache = 1;
                 memsys->feature_dma = 1;
+                break;
+        case HB_MC_MEMSYS_ID_TESTMEM:
+                memsys->feature_cache = 1;
+                memsys->feature_dma = 0;
                 break;
         case HB_MC_MEMSYS_ID_NONE: // TODO - throw this error somewhere else?
                 return HB_MC_INVALID;
@@ -207,6 +214,7 @@ int hb_mc_memsys_set_dram_channels(hb_mc_memsys_t *memsys,
                       memsys->dram_channels <= 8);
                 break;
         case HB_MC_MEMSYS_ID_INFMEM:
+        case HB_MC_MEMSYS_ID_TESTMEM:
                 break; // can be arbitrarily large
         default: // by default we should expect one channel
                 CHECK_ONE(memsys->dram_channels);
