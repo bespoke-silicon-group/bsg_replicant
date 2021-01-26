@@ -165,7 +165,7 @@ int test_rom (int argc, char **argv) {
 
         host = hb_mc_config_get_host_interface(config);
 
-        minexpected = 0; maxexpected = hb_mc_dimension_get_y(dim) - 1;
+        minexpected = 0; maxexpected = hb_mc_dimension_get_y(dim);
         bsg_pr_test_info("Checking that the Host Interface Y Coordinate is "
                         "between %d and %d\n", minexpected, maxexpected);
         result = hb_mc_coordinate_get_y(host);
@@ -176,7 +176,7 @@ int test_rom (int argc, char **argv) {
                 fail = 1;
         }
 
-        minexpected = 0; maxexpected = hb_mc_dimension_get_x(dim) - 1;
+        minexpected = 0; maxexpected = hb_mc_dimension_get_x(dim);
         bsg_pr_test_info("Checking that the Host Interface X Coordinate is "
                         "between %d and %d\n", minexpected, maxexpected);
         result = hb_mc_coordinate_get_x(host);
