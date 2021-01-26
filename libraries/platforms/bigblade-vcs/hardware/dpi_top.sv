@@ -49,7 +49,7 @@ module replicant_tb_top
    localparam bsg_machine_wh_ruche_factor_lp = 2;
    localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_lp);
    localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2(1 + ((bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp) / bsg_machine_llcache_channel_width_gp));
-   localparam bsg_machine_wh_cord_width_lp = bsg_machine_noc_pod_coord_x_width_gp;
+   localparam bsg_machine_wh_cord_width_lp = bsg_machine_noc_coord_x_width_gp;
 
    // Clock generator period
    localparam lc_cycle_time_ps_lp = 1000;
