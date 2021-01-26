@@ -145,3 +145,9 @@ VSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/hardware/dpi_top.sv
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
+
+
+hardware.clean: machine.hardware.clean
+
+machine.hardware.clean:
+	rm -rf $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.tr $(BSG_MACHINE_PATH)/bsg_tag_boot_rom.v

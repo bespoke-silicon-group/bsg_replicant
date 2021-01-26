@@ -97,7 +97,7 @@ VCS_VFLAGS     += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
 
 %.debug: VCS_VFLAGS += -debug_pp
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-%.debug: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config
+%.debug: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
 	vcs replicant_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log

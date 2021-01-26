@@ -49,7 +49,7 @@ module replicant_tb_top
    localparam bsg_machine_wh_ruche_factor_lp = 2;
    localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_lp);
    localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2(1 + ((bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp) / bsg_machine_llcache_channel_width_gp));
-   localparam bsg_machine_wh_cord_width_lp = bsg_machine_noc_coord_x_width_gp;
+   localparam bsg_machine_wh_coord_width_lp = bsg_machine_noc_coord_x_width_gp;
 
    // Clock generator period
    localparam lc_cycle_time_ps_lp = 1000;
@@ -92,8 +92,8 @@ module replicant_tb_top
    logic                                       print_stat_v;
    logic [bsg_machine_noc_data_width_gp-1:0]   print_stat_tag;
 
-   logic [bsg_machine_noc_coord_x_width_gp-1:0] host_x_cord_li = (bsg_machine_noc_coord_x_width_gp)'(bsg_machine_io_coord_x_gp);
-   logic [bsg_machine_noc_coord_y_width_gp-1:0] host_y_cord_li = (bsg_machine_noc_coord_y_width_gp)'(bsg_machine_io_coord_y_gp);
+   logic [bsg_machine_noc_coord_x_width_gp-1:0] host_x_coord_li = (bsg_machine_noc_coord_x_width_gp)'(bsg_machine_io_coord_x_gp);
+   logic [bsg_machine_noc_coord_y_width_gp-1:0] host_y_coord_li = (bsg_machine_noc_coord_y_width_gp)'(bsg_machine_io_coord_y_gp);
 
    `declare_bsg_manycore_link_sif_s(bsg_machine_noc_epa_width_gp, bsg_machine_noc_data_width_gp, bsg_machine_noc_coord_x_width_gp, bsg_machine_noc_coord_y_width_gp);
 
@@ -167,7 +167,7 @@ module replicant_tb_top
        ,.wh_ruche_factor_p(bsg_machine_wh_ruche_factor_lp)
        ,.wh_cid_width_p(bsg_machine_wh_cid_width_lp)
        ,.wh_len_width_p(bsg_machine_wh_len_width_lp)
-       ,.wh_cord_width_p(bsg_machine_wh_cord_width_lp)
+       ,.wh_cord_width_p(bsg_machine_wh_coord_width_lp)
 
        ,.bsg_manycore_mem_cfg_p(bsg_machine_dram_cfg_gp)
        ,.bsg_dram_size_p(bsg_machine_dram_words_gp)
@@ -228,8 +228,8 @@ module replicant_tb_top
       // manycore link
       ,.link_sif_i(host_link_sif_lo)
       ,.link_sif_o(host_link_sif_li)
-      ,.my_x_i(host_x_cord_li)
-      ,.my_y_i(host_y_cord_li)
+      ,.my_x_i(host_x_coord_li)
+      ,.my_y_i(host_y_coord_li)
       );
 
    bsg_dff_chain
