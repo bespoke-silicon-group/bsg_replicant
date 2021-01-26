@@ -231,21 +231,32 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter bsg_machine_rom_width_gp = 32;" >> $@
 	@echo "parameter bsg_machine_rom_els_gp = `wc -l < $<`;" >> $@
 	@echo "parameter bit [bsg_machine_rom_width_gp-1:0] bsg_machine_rom_arr_gp [bsg_machine_rom_els_gp-1:0] = '{$(ROM_STR)};" >> $@
+	@echo "parameter int bsg_machine_pods_x_gp = $(BSG_MACHINE_PODS_X);" >> $@
+	@echo "parameter int bsg_machine_pods_y_gp = $(BSG_MACHINE_PODS_Y);" >> $@
 	@echo >> $@
-	@echo "parameter int bsg_machine_noc_ruche_factor_X_gp = $(BSG_MACHINE_RUCHE_FACTOR_X);" >> $@
-	@echo "parameter bsg_machine_noc_epa_width_gp = $(BSG_MACHINE_MAX_EPA_WIDTH);" >> $@
-	@echo "parameter bsg_machine_noc_data_width_gp = $(BSG_MACHINE_DATA_WIDTH);" >> $@
+	@echo "parameter int bsg_machine_pod_tiles_y_gp = $(BSG_MACHINE_POD_TILES_Y);" >> $@
+	@echo "parameter int bsg_machine_pod_tiles_x_gp = $(BSG_MACHINE_POD_TILES_X);" >> $@
+	@echo "parameter int bsg_machine_pod_llcaches_gp = (bsg_machine_pod_tiles_x_gp * 2);" >> $@
+	@echo >> $@
 	@echo "parameter bsg_manycore_network_cfg_e bsg_machine_noc_cfg_gp = $(BSG_MACHINE_NETWORK_CFG);" >> $@
+	@echo "parameter int bsg_machine_noc_ruche_factor_X_gp = $(BSG_MACHINE_RUCHE_FACTOR_X);" >> $@
+	@echo "parameter int bsg_machine_noc_epa_width_gp = $(BSG_MACHINE_MAX_EPA_WIDTH);" >> $@
+	@echo "parameter int bsg_machine_noc_data_width_gp = $(BSG_MACHINE_DATA_WIDTH);" >> $@
+	@echo "parameter int bsg_machine_noc_coord_x_width_gp = $(BSG_MACHINE_NOC_COORD_X_WIDTH);" >> $@
+	@echo "parameter int bsg_machine_noc_coord_y_width_gp = $(BSG_MACHINE_NOC_COORD_Y_WIDTH);" >> $@
+	@echo "parameter int bsg_machine_noc_pod_coord_x_width_gp = 3;" >> $@
+	@echo "parameter int bsg_machine_noc_pod_coord_y_width_gp = 4;" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_llcache_sets_gp = $(BSG_MACHINE_VCACHE_SET);" >> $@
 	@echo "parameter int bsg_machine_llcache_ways_gp = $(BSG_MACHINE_VCACHE_WAY);" >> $@
 	@echo "parameter int bsg_machine_llcache_line_words_gp = $(BSG_MACHINE_VCACHE_LINE_WORDS);" >> $@
+	@echo "parameter int bsg_machine_llcache_words_gp = bsg_machine_llcache_line_words_gp * bsg_machine_llcache_ways_gp * bsg_machine_llcache_sets_gp;" >> $@
 	@echo "parameter int bsg_machine_llcache_miss_fifo_els_gp = $(BSG_MACHINE_VCACHE_MISS_FIFO_ELS);" >> $@
 	@echo "parameter int bsg_machine_llcache_channel_width_gp = $(BSG_MACHINE_VCACHE_DMA_DATA_WIDTH);" >> $@
 	@echo >> $@
-	@echo "parameter int bsg_machine_dram_words_gp = $(BSG_MACHINE_DRAM_WORDS);" >> $@
-	@echo "parameter int bsg_machine_dram_num_channels_gp = $(BSG_MACHINE_DRAM_NUM_CHANNELS);" >> $@
 	@echo "parameter int bsg_machine_dram_bank_words_gp = $(BSG_MACHINE_DRAM_BANK_WORDS);" >> $@
+	@echo "parameter int bsg_machine_dram_channels_gp = $(BSG_MACHINE_DRAM_CHANNELS);" >> $@
+	@echo "parameter int bsg_machine_dram_words_gp = $(BSG_MACHINE_DRAM_WORDS);" >> $@
 	@echo "parameter bsg_manycore_mem_cfg_e bsg_machine_dram_cfg_gp = $(BSG_MACHINE_MEM_CFG);" >> $@
 	@echo >> $@
 	@echo "parameter bit bsg_machine_branch_trace_en_gp = $(BSG_MACHINE_BRANCH_TRACE_EN);" >> $@
@@ -258,26 +269,12 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter int bsg_machine_origin_coord_y_gp = $(BSG_MACHINE_ORIGIN_COORD_Y);" >> $@
 	@echo "parameter int bsg_machine_origin_coord_x_gp = $(BSG_MACHINE_ORIGIN_COORD_X);" >> $@
 	@echo >> $@
-	@echo "parameter int bsg_machine_pod_dim_y_gp = $(BSG_MACHINE_POD_DIM_Y);" >> $@
-	@echo "parameter int bsg_machine_pod_dim_x_gp = $(BSG_MACHINE_POD_DIM_X);" >> $@
-	@echo "parameter int bsg_machine_pod_num_cores_gp = bsg_machine_pod_dim_x_gp * bsg_machine_pod_dim_y_gp;" >> $@
+	@echo "parameter int bsg_machine_pod_num_cores_gp = bsg_machine_pod_tiles_x_gp * bsg_machine_pod_tiles_y_gp;" >> $@
 	@echo "parameter int bsg_machine_hetero_type_vec_gp [0:(bsg_machine_pod_num_cores_gp)-1] = '{$(strip $(BSG_MACHINE_HETERO_TYPE_VEC))};" >> $@
-	@echo >> $@
-	@echo "parameter bsg_machine_llcache_words_gp = bsg_machine_llcache_line_words_gp * bsg_machine_llcache_ways_gp * bsg_machine_llcache_sets_gp;" >> $@
-	@echo "parameter bsg_machine_pod_num_cache_gp = (bsg_machine_pod_dim_x_gp * 2);" >> $@
 	@echo >> $@
 	@echo "parameter bsg_machine_core_dmem_words_gp = 1024;" >> $@
 	@echo "parameter bsg_machine_core_icache_entries_gp = 1024;" >> $@
 	@echo "parameter bsg_machine_core_icache_tag_width_gp = 12;" >> $@
-	@echo >> $@
-	@echo >> $@
-	@echo "parameter int bsg_machine_noc_coord_x_width_gp = $(BSG_MACHINE_NOC_COORD_X_WIDTH);" >> $@
-	@echo "parameter int bsg_machine_noc_coord_y_width_gp = $(BSG_MACHINE_NOC_COORD_Y_WIDTH);" >> $@
-	@echo >> $@
-	@echo "parameter int bsg_machine_dim_pods_x_gp = $(BSG_MACHINE_DIM_PODS_X);" >> $@
-	@echo "parameter int bsg_machine_dim_pods_y_gp = $(BSG_MACHINE_DIM_PODS_Y);" >> $@
-	@echo "parameter int bsg_machine_noc_pod_coord_x_width_gp = 3;" >> $@
-	@echo "parameter int bsg_machine_noc_pod_coord_y_width_gp = 4;" >> $@
 	@echo >> $@
 	@echo "parameter string bsg_machine_name_gp = \"$(BSG_MACHINE_NAME)\";" >> $@
 	@echo >> $@

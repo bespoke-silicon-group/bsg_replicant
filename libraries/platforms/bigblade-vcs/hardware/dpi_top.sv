@@ -16,17 +16,22 @@ module replicant_tb_top
       
       $display("==================== BSG MACHINE SETTINGS: ====================");
 
+      $display("[INFO][TESTBENCH] bsg_machine_pods_x_gp                 = %d", bsg_machine_pods_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_pods_y_gp                 = %d", bsg_machine_pods_y_gp);
+
+      $display("[INFO][TESTBENCH] bsg_machine_pod_tiles_x_gp            = %d", bsg_machine_pod_tiles_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_pod_tiles_y_gp            = %d", bsg_machine_pod_tiles_y_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_pod_llcaches_gp           = %d", bsg_machine_pod_llcaches_gp);
+
+      $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
       $display("[INFO][TESTBENCH] bsg_machine_noc_ruche_factor_X_gp     = %d", bsg_machine_noc_ruche_factor_X_gp);
+
       $display("[INFO][TESTBENCH] bsg_machine_noc_epa_width_gp          = %d", bsg_machine_noc_epa_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_noc_data_width_gp         = %d", bsg_machine_noc_data_width_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
-
-      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_x_gp             = %d", bsg_machine_dim_pods_x_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_dim_pods_y_gp             = %d", bsg_machine_dim_pods_y_gp);
-
-      $display("[INFO][TESTBENCH] bsg_machine_pod_num_cache_gp          = %d", bsg_machine_pod_num_cache_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_pod_dim_x_gp              = %d", bsg_machine_pod_dim_x_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_pod_dim_y_gp              = %d", bsg_machine_pod_dim_y_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_coord_x_width_gp      = %d", bsg_machine_noc_coord_x_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_coord_y_width_gp      = %d", bsg_machine_noc_coord_y_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_pod_coord_x_width_gp  = %d", bsg_machine_noc_pod_coord_x_width_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_noc_pod_coord_y_width_gp  = %d", bsg_machine_noc_pod_coord_y_width_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_llcache_sets_gp           = %d", bsg_machine_llcache_sets_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_ways_gp           = %d", bsg_machine_llcache_ways_gp);
@@ -36,8 +41,12 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_dram_num_channels_gp      = %d", bsg_machine_dram_num_channels_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_channels_gp          = %d", bsg_machine_dram_channels_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_dram_words_gp             = %d", bsg_machine_dram_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_cfg_gp               = %s", bsg_machine_dram_cfg_gp.name());
+
+      $display("[INFO][TESTBENCH] bsg_machine_io_coord_x_gp             = %d", bsg_machine_io_coord_x_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_io_coord_y_gp             = %d", bsg_machine_io_coord_y_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_name_gp                   = %s", bsg_machine_name_gp);
    end
@@ -137,13 +146,13 @@ module replicant_tb_top
 
    bsg_nonsynth_manycore_testbench
      #(
-       .num_pods_x_p(bsg_machine_dim_pods_x_gp)
-       ,.num_pods_y_p(bsg_machine_dim_pods_y_gp)
+       .num_pods_x_p(bsg_machine_pods_x_gp)
+       ,.num_pods_y_p(bsg_machine_pods_y_gp)
        ,.pod_x_cord_width_p(bsg_machine_noc_pod_coord_x_width_gp)
        ,.pod_y_cord_width_p(bsg_machine_noc_pod_coord_y_width_gp)
 
-       ,.num_tiles_x_p(bsg_machine_pod_dim_x_gp)
-       ,.num_tiles_y_p(bsg_machine_pod_dim_y_gp)
+       ,.num_tiles_x_p(bsg_machine_pod_tiles_x_gp)
+       ,.num_tiles_y_p(bsg_machine_pod_tiles_y_gp)
        ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
        ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
 

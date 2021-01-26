@@ -37,8 +37,8 @@
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Chip Pod Dimensions
-BSG_MACHINE_DIM_PODS_X                = 1
-BSG_MACHINE_DIM_PODS_Y                = 1
+BSG_MACHINE_PODS_X                    = 1
+BSG_MACHINE_PODS_Y                    = 1
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
@@ -68,8 +68,8 @@ BSG_MACHINE_NOC_COORD_X_WIDTH         = 7
 BSG_MACHINE_NOC_COORD_Y_WIDTH         = 7
 
 # Pod Tile Dimensions (Rarely Changed)
-BSG_MACHINE_POD_DIM_X                 = 16
-BSG_MACHINE_POD_DIM_Y                 = 8
+BSG_MACHINE_POD_TILES_X               = 16
+BSG_MACHINE_POD_TILES_Y               = 8
 
 # Host Coordinate (Rarely Changed)
 BSG_MACHINE_HOST_COORD_X              = 16
@@ -95,15 +95,15 @@ __BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^30 | bc) # 4GB
 __BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/8 | bc)
 
 # TODO: Specific to pod (next 4)
-BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_POD_DIM_X)*2 | bc)
-BSG_MACHINE_DRAM_NUM_CHANNELS        := $(shell echo $(BSG_MACHINE_NUM_VCACHE)/$(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL) | bc)
+BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_POD_TILES_X)*2 | bc)
+BSG_MACHINE_DRAM_CHANNELS            := $(shell echo $(BSG_MACHINE_NUM_VCACHE)/$(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL) | bc)
 
-BSG_MACHINE_DRAM_WORDS               := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS)*$(BSG_MACHINE_DRAM_NUM_CHANNELS) | bc)
+BSG_MACHINE_DRAM_WORDS               := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS)*$(BSG_MACHINE_DRAM_CHANNELS) | bc)
 BSG_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_WORDS) / $(BSG_MACHINE_NUM_VCACHE)" | bc)
 
 # Aliases Required for BSG Manycore
-BSG_MACHINE_GLOBAL_X                  = $(BSG_MACHINE_POD_DIM_X)
-BSG_MACHINE_GLOBAL_Y                  = $(BSG_MACHINE_POD_DIM_Y)
+BSG_MACHINE_GLOBAL_X                  = $(BSG_MACHINE_POD_TILES_X)
+BSG_MACHINE_GLOBAL_Y                  = $(BSG_MACHINE_POD_TILES_Y)
 BSG_MACHINE_DRAM_BANK_WORDS           = $(BSG_MACHINE_DRAM_PER_CACHE_WORDS)
 BSG_MACHINE_DRAM_BANK_SIZE_WORDS      = $(BSG_MACHINE_DRAM_BANK_WORDS)
 BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS   = $(BSG_MACHINE_VCACHE_LINE_WORDS)
@@ -112,8 +112,8 @@ BSG_MACHINE_MAX_EPA_WIDTH             = 28
 BSG_MACHINE_DATA_WIDTH                = 32
 
 # Define BSG_MACHINE_NAME
-BSG_MACHINE_NAME                      =BSG_PX$(BSG_MACHINE_DIM_PODS_X)PY$(BSG_MACHINE_DIM_PODS_Y)
-BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_DX$(BSG_MACHINE_POD_DIM_X)DY$(BSG_MACHINE_POD_DIM_Y)
+BSG_MACHINE_NAME                      =BSG_PX$(BSG_MACHINE_PODS_X)PY$(BSG_MACHINE_PODS_Y)
+BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_DX$(BSG_MACHINE_POD_TILES_X)DY$(BSG_MACHINE_POD_TILES_Y)
 BSG_MACHINE_NAME                     :=$(BSG_MACHINE_NAME)_$(BSG_MACHINE_MEM_CFG:e_%=%)
 
 # This flag has to be always 0 by default. Conditional
