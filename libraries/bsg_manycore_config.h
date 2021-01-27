@@ -58,8 +58,8 @@ extern "C" {
         #define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
         #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
-        #define HB_MC_CONFIG_VCORE_BASE_X 0
-        #define HB_MC_CONFIG_VCORE_BASE_Y 2
+        #define HB_MC_CONFIG_VCORE_BASE_X 16
+        #define HB_MC_CONFIG_VCORE_BASE_Y 8
 
         // normal limit for the flow-control parameters
         #define HB_MC_REMOTE_LOAD_MIN 1
