@@ -718,22 +718,22 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
         hb_mc_request_packet_set_load_id(&rqst.request, id);
         int shift = hb_mc_npa_get_epa(npa) & 0x3;
         /* set the byte mask */
-        switch (sz) {
-        case 4:
-                hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
-                break;
-        case 2:
-                hb_mc_request_packet_set_mask(&rqst.request,
-                                              static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
-                break;
-        case 1:
-                hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
-                break;
-        default:
-                return HB_MC_INVALID;
-        }
+        // switch (sz) {
+        // case 4:
+        //         hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
+        //         break;
+        // case 2:
+        //         hb_mc_request_packet_set_mask(&rqst.request,
+        //                                       static_cast<hb_mc_packet_mask_t>(
+        //                                               HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
+        //         break;
+        // case 1:
+        //         hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
+        //                                               HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
+        //         break;
+        // default:
+        //         return HB_MC_INVALID;
+        // }
 
         /* transmit the request to the hardware */
         manycore_pr_dbg(mc, "Sending %d-byte read request to NPA "
