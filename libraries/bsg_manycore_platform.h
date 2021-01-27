@@ -151,6 +151,13 @@ extern "C" {
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
         int hb_mc_platform_log_disable(hb_mc_manycore_t *mc);
+
+        /**
+         * Check if chip reset has completed.
+         * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */        
+        int hb_mc_platform_reset_is_done(hb_mc_manycore_t *mc);
 #ifdef __cplusplus
 }
 #endif

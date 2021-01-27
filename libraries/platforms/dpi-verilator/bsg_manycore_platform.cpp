@@ -547,3 +547,18 @@ int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         return hb_mc_tracer_log_disable(pl->tracer);
 }
+
+/**
+ * Check if chip reset has completed.
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */        
+int hb_mc_platform_reset_is_done(hb_mc_manycore_t *mc)
+{
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
+        manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
+        pl->top->eval();
+        unsigned char r = bsg_dpi_reset_is_done();
+        manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(r));
+        return r;
+}

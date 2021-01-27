@@ -235,6 +235,11 @@ int hb_mc_manycore_request_tx(hb_mc_manycore_t *mc,
                               long timeout)
 {
         /* send the request packet */
+        int i = 0;
+        while (!hb_mc_platform_reset_is_done(mc)) {
+            manycore_pr_dbg(mc, "Waiting for reset done\n");
+        }
+        manycore_pr_dbg(mc, "Transmiting...\n");
         return hb_mc_platform_transmit(mc, (hb_mc_packet_t*)request, HB_MC_FIFO_TX_REQ, timeout);
 }
 
