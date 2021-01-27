@@ -46,6 +46,13 @@ module bsg_manycore_endpoint_to_fifos
   , parameter max_out_credits_p = "inv"
   , parameter ep_fifo_els_p = "inv"
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
+  
+  , parameter pod_x_cord_width_p = 3
+  , parameter pod_y_cord_width_p = 3
+  
+  , parameter x_subcord_width_lp = 4
+  , parameter y_subcord_width_lp = 4
+
 ) (
   input                                      clk_i
   ,input                                      reset_i
@@ -162,6 +169,18 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
   end
 
   // synopsys translate_off
+  always @(posedge clk_i) begin
+    if (endpoint_out_v_li) begin
+      $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", endpoint_out_packet_li.op_v2); 
+      $display("bsg_manycore_endpoint_to_fifos: addr=%h", endpoint_out_packet_li.addr);
+      $display("bsg_manycore_endpoint_to_fifos: reg_id=%h", endpoint_out_packet_li.reg_id);
+      $display("bsg_manycore_endpoint_to_fifos: x_cord=%d", endpoint_out_packet_li.x_cord);
+      $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", endpoint_out_packet_li.y_cord);
+      $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", endpoint_out_packet_li.src_x_cord);
+      $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", endpoint_out_packet_li.src_y_cord);    
+    end    
+  end
+
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
       assert final ( endpoint_out_packet_li.op_v2 == e_remote_store ||
@@ -258,7 +277,10 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
     .returning_data_i     (returning_data_li     ),
     .returning_v_i        (returning_v_li        ),
 
-    .out_credits_o        (out_credits_o         )
+    .out_credits_o        (out_credits_o         ),
+
+    .global_x_i           ({pod_x_i,my_x_i}),
+    .global_y_i           ({pod_y_i,my_y_i})
   );
 
 endmodule
