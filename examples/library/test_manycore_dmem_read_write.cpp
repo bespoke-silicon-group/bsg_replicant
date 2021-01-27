@@ -165,12 +165,14 @@ int test_manycore_dmem_read_write () {
         }
 
         int r = HB_MC_FAIL;
+        /*
         if(test_mem_functions(mc) != HB_MC_SUCCESS)
                 goto cleanup;
         if(test_read_write<uint8_t>(mc) != HB_MC_SUCCESS)
                 goto cleanup;
         if(test_read_write<uint16_t>(mc) != HB_MC_SUCCESS)
                 goto cleanup;
+        */
         if(test_read_write<uint32_t>(mc) != HB_MC_SUCCESS)
                 goto cleanup;
         r = HB_MC_SUCCESS;
