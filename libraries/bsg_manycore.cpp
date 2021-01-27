@@ -46,6 +46,7 @@
 
 #include <type_traits>
 #include <stack>
+#include <map>
 #include <queue>
 #include <vector>
 
@@ -1032,7 +1033,8 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         for (int i = n_ids - 1; i >= 0; i--)
                 ids.push(static_cast<uint32_t>(i));
 
-        int id_to_rsp_i [n_ids];
+        std::map<uint32_t, uint32_t> id_to_rsp_i;
+        //        int id_to_rsp_i [n_ids] = {-1};
         hb_mc_npa_t id_to_npa[n_ids];
 
         /* until we've received all responses... */
@@ -1070,6 +1072,8 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                                 __func__, hb_mc_strerror(err));
                                 return err;
                         }
+                        manycore_pr_dbg(mc, "%s: Sent read request with load_id = %" PRIu32 "\n",
+                                        __func__, rqst_load_id);
                 }
 
                 /* read all available response packets */
@@ -1093,8 +1097,22 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                 return HB_MC_FAIL;
                         }
 
+                        // This would be an unexpected response
+                        if (id_to_rsp_i.count(load_id) == 0) {
+                                manycore_pr_err(mc, "%s: Unexpected load id = %" PRIu32 "\n",
+                                                __func__, load_id);
+                                return HB_MC_FAIL;
+                        }
+                        uint32_t idx = id_to_rsp_i[load_id];
+                        
+                        // This would be a runtime writer error... or worse.
+                        if (idx > cnt) {
+                                manycore_pr_err(mc, "%s: Return index outside of array. Idx = %" PRIu32 "\n",
+                                                __func__, idx);
+                                return HB_MC_FAIL;
+                        }
                         // write 'read_data' back to the correct location
-                        data[id_to_rsp_i[load_id]] = hb_mc_manycore_mask_load_data<UINT>(&id_to_npa[load_id], read_data);
+                        data[idx] = hb_mc_manycore_mask_load_data<UINT>(&id_to_npa[load_id], read_data);
 
                         // increment succesful responses
                         rsp_i++;

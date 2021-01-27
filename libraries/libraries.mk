@@ -89,6 +89,7 @@ LIB_STRICT_OBJECTS += $(LIBRARIES_PATH)/bsg_manycore_memsys.o
 # Objects that should be compiled with debug flags
 LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_config.o
 LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_memsys.o
+LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore.o
 
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))
