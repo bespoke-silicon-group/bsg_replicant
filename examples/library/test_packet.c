@@ -44,7 +44,7 @@ int test_wait (int argc, char **argv) {
 
         .op_v2 = HB_MC_PACKET_OP_REMOTE_SW,
         .addr  = 0x1000 >> 2,
-        .reg_id = 0x7,
+        .reg_id = 0xf,
         .payload = 0x01ADBEEF,
     };
     
@@ -60,19 +60,22 @@ int test_wait (int argc, char **argv) {
         .op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD,
         .addr = 0x1000 >> 2,
         .reg_id = 1,
+        .payload = 0,
     };
 
     BSG_CUDA_CALL(hb_mc_manycore_request_tx(&mc, &read_rqst, -1));
 
-    hb_mc_response_packet_t read_rsp;
-
-    BSG_CUDA_CALL(hb_mc_manycore_response_rx(&mc, &read_rsp, -1));
-
-    char buffer [256];
-    bsg_pr_info("Read dis: %s\n", hb_mc_response_packet_to_string(&read_rsp, buffer, sizeof(buffer)));
-
+    for (int i = 0; i < 1; i++)
+    {
+        hb_mc_response_packet_t read_rsp;
+        
+        BSG_CUDA_CALL(hb_mc_manycore_response_rx(&mc, &read_rsp, -1));
+        
+        char buffer [256];
+        bsg_pr_info("Read dis: %s\n", hb_mc_response_packet_to_string(&read_rsp, buffer, sizeof(buffer)));
+    }
+    
     BSG_CUDA_CALL(hb_mc_manycore_exit(&mc));
-
     return HB_MC_SUCCESS;
 }
 
