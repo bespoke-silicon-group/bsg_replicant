@@ -130,19 +130,19 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcore_dimensions.y = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.x)){
-                bsg_pr_err("%s: Invalid Host Interface index X %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        // if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.x)){
+        //         bsg_pr_err("%s: Invalid Host Interface index X %d: %s\n",
+        //                    __func__, idx, error_init_help);
+        //         return HB_MC_INVALID;
+        // }
         config->host_interface.x = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.y)){
-                bsg_pr_err("%s: Invalid Host Interface index Y %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        // if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.y)){
+        //         bsg_pr_err("%s: Invalid Host Interface index Y %d: %s\n",
+        //                    __func__, idx, error_init_help);
+        //         return HB_MC_INVALID;
+        // }
         config->host_interface.y = idx;
 
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
