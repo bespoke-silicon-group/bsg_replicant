@@ -53,18 +53,25 @@ int test_manycore_dram_read_write() {
                 return HB_MC_FAIL;
         }
 
-        const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-        uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
-        uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
-        uint32_t dram_coord_x = 0;
-        uint32_t dram_coord_y = hb_mc_config_get_dram_y(config);
+        hb_mc_idx_t num_dram_coord = hb_mc_config_get_num_dram_coordinates(cfg);
+        hb_mc_idx_t dram_coord_i = 0;
         int mismatch = 0;
 
         /**************************************************************/
         /* Loop over all DRAM banks and write ARRAY_LEN words to each */
         /**************************************************************/
-        for (dram_coord_x = 0; dram_coord_x < 1; dram_coord_x++) {
+        char str[256];
+        bsg_pr_info("V-core dimesion = %s\n",
+                    hb_mc_coordinate_to_string(hb_mc_config_get_dimension_vcore(cfg), str, sizeof(str)));
+
+        bsg_pr_info("Network dimesion = %s\n",
+                    hb_mc_coordinate_to_string(hb_mc_config_get_dimension_network(cfg), str, sizeof(str)));
+
+        bsg_pr_info("Looping over %d DRAM coordinates\n", (int)num_dram_coord);
+        for (dram_coord_i = 0; dram_coord_i < num_dram_coord; dram_coord_i++) {
+                hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(cfg, dram_coord_i);
                 uint32_t write_data[ARRAY_LEN];
                 uint32_t read_data[ARRAY_LEN];
                 int err;
@@ -76,15 +83,16 @@ int test_manycore_dram_read_write() {
                         if (i % 64 == 1)
                                 bsg_pr_test_info("%s: Have written %zu words to DRAM\n",
                                     __func__, i);
-                        
-                        hb_mc_npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = BASE_ADDR + (i*4) };
+
+                        hb_mc_npa_t npa = hb_mc_npa(dram_coord, BASE_ADDR + (i*4));
                         err = hb_mc_manycore_write_mem(mc, &npa,
                                                        &write_data[i], sizeof(write_data[i]));
                         if (err != HB_MC_SUCCESS) {
                                 bsg_pr_err("%s: failed to write A[%d] = 0x%08" PRIx32 " "
                                            "to DRAM coord(%d,%d) @ 0x%08" PRIx32 "\n",
                                            __func__, i, write_data[i],
-                                           dram_coord_x, dram_coord_y,
+                                           hb_mc_coordinate_get_x(dram_coord),
+                                           hb_mc_coordinate_get_y(dram_coord),
                                            BASE_ADDR + i);
                                 goto cleanup;
                         }
@@ -94,13 +102,16 @@ int test_manycore_dram_read_write() {
                         if (i % 64 == 1)
                                 bsg_pr_test_info("%s: Have read %zu words from DRAM\n",
                                                  __func__, i);
-                        hb_mc_npa_t npa = { .x = dram_coord_x, .y = dram_coord_y , .epa = BASE_ADDR + (i*4) };
+                        hb_mc_npa_t npa = hb_mc_npa(dram_coord, BASE_ADDR + (i*4));
                         err = hb_mc_manycore_read_mem(mc, &npa,
-                                                      &read_data[i], sizeof(read_data[i]));
+                                                     &read_data[i], sizeof(read_data[i]));
                         if (err != HB_MC_SUCCESS) {
                                 bsg_pr_err("%s: failed to read A[%d] "
                                            "from DRAM coord(%d,%d) @ 0x%08" PRIx32 "\n",
-                                           i, dram_coord_x, dram_coord_y, BASE_ADDR + i);
+                                           i,
+                                           hb_mc_coordinate_get_x(dram_coord),
+                                           hb_mc_coordinate_get_y(dram_coord),
+                                           BASE_ADDR + i);
                                 goto cleanup;
                         }
                 }
