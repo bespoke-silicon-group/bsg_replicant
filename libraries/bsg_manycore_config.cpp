@@ -145,6 +145,13 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         // }
         config->host_interface.y = idx;
 
+
+        idx = raw[HB_MC_CONFIG_NOC_COORD_X_WIDTH];
+        config->noc_coord_width.x = idx;
+
+        idx = raw[HB_MC_CONFIG_NOC_COORD_Y_WIDTH];
+        config->noc_coord_width.y = idx;
+
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];

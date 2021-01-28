@@ -93,6 +93,7 @@ extern "C" {
                 hb_mc_date_t timestamp;
                 uint32_t network_bitwidth_addr;
                 uint32_t network_bitwidth_data;
+                hb_mc_dimension_t noc_coord_width;
                 hb_mc_dimension_t vcore_dimensions;
                 hb_mc_coordinate_t host_interface;
                 hb_mc_githash_t basejump;
@@ -222,6 +223,10 @@ extern "C" {
                 // The Network has three additional Y rows: An IO Row, and two DRAM/Cache Rows
                 return hb_mc_dimension(hb_mc_dimension_get_x(dim),
                                        hb_mc_dimension_get_y(dim) + 2);
+        }
+
+        static inline hb_mc_dimension_t hb_mc_config_get_noc_coord_width(const hb_mc_config_t *cfg){
+                return cfg->noc_coord_width;
         }
 
         static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
