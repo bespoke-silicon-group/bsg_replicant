@@ -285,13 +285,21 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
 
 static uint32_t default_get_dram_max_x_coord(const hb_mc_config_t *cfg)
 {
-        hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
-        return hb_mc_dimension_get_x(dim);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+        hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
+        return hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim);
+}
+
+static uint32_t default_get_dram_min_x_coord(const hb_mc_config_t *cfg)
+{
+        hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
+        return hb_mc_coordinate_get_x(origin);
 }
 
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
 {
-        hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
+        // clog2 of the #(columns) in a pod
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
         return ceil(log2(hb_mc_dimension_get_x(dim)));
 }
 
@@ -336,12 +344,14 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
                                         const hb_mc_eva_t *eva,
                                         hb_mc_idx_t *x) { 
+        hb_mc_coordinate_t vcore_origin = hb_mc_config_get_origin_vcore(cfg);
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
         uint32_t xmask = default_get_dram_x_bitidx(cfg);
         uint32_t dram_max_x_coord = default_get_dram_max_x_coord(cfg);
-
+        uint32_t dram_min_x_coord = default_get_dram_min_x_coord(cfg);
         *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
-        if ( *x > dram_max_x_coord) { 
+        *x += hb_mc_coordinate_get_x(vcore_origin);
+        if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
                 bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
                            "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
                            __func__, hb_mc_eva_addr(eva),
