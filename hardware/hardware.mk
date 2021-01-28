@@ -143,10 +143,10 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call hex2bin,$(BSG_BLADERUNNER_COMPILATION_DATE))  >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_MAX_EPA_WIDTH))     >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_DATA_WIDTH))        >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_DIM_PODS_X))       >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_DIM_PODS_Y))       >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_POD_DIM_X))       >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_POD_DIM_Y))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_PODS_X))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_PODS_Y))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_POD_TILES_X))       >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_POD_TILES_Y))       >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_HOST_COORD_X))      >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_HOST_COORD_Y))      >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_X_WIDTH)) >> $@.temp
@@ -174,11 +174,11 @@ $(BSG_MACHINE_PATH)/bsg_manycore_machine.h: $(BSG_MACHINE_PATH)/Makefile.machine
 	@echo "#define BSG_MANYCORE_MACHINE_MAX_EPA_WIDTH $(BSG_MACHINE_MAX_EPA_WIDTH)" >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_DATA_WIDTH    $(BSG_MACHINE_DATA_WIDTH)"    >> $@.temp
 	@echo "/* Chip dimensions */"     >> $@.temp
-	@echo "#define BSG_MANYCORE_DIM_PODS_Y         $(BSG_MACHINE_DIM_PODS_Y)"       >> $@.temp
-	@echo "#define BSG_MANYCORE_DIM_PODS_X         $(BSG_MACHINE_DIM_PODS_X)"       >> $@.temp
+	@echo "#define BSG_MANYCORE_PODS_Y         $(BSG_MACHINE_PODS_Y)"       >> $@.temp
+	@echo "#define BSG_MANYCORE_PODS_X         $(BSG_MACHINE_PODS_X)"       >> $@.temp
 	@echo "/* Chip Pod dimensions */"     >> $@.temp
-	@echo "#define BSG_MANYCORE_POD_DIM_Y         $(BSG_MACHINE_POD_DIM_Y)"         >> $@.temp
-	@echo "#define BSG_MANYCORE_POD_DIM_X         $(BSG_MACHINE_POD_DIM_X)"         >> $@.temp
+	@echo "#define BSG_MANYCORE_POD_TILES_Y         $(BSG_MACHINE_POD_TILES_Y)"         >> $@.temp
+	@echo "#define BSG_MANYCORE_POD_TILES_X         $(BSG_MACHINE_POD_TILES_X)"         >> $@.temp
 	@echo "/* Host coordinates */"            >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_HOST_COORD_X  \\" >> $@.temp
 	@echo "    $(BSG_MACHINE_HOST_COORD_X)"  >> $@.temp
