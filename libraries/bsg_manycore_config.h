@@ -221,7 +221,7 @@ extern "C" {
                 hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
                 // The Network has three additional Y rows: An IO Row, and two DRAM/Cache Rows
                 return hb_mc_dimension(hb_mc_dimension_get_x(dim),
-                                       hb_mc_dimension_get_y(dim) + 3);
+                                       hb_mc_dimension_get_y(dim) + 2);
         }
 
         static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
@@ -268,20 +268,19 @@ extern "C" {
         __attribute__((deprecated))
         static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
         {
-                hb_mc_coordinate_t dims;
-                dims = hb_mc_config_get_dimension_network(cfg);
-                return hb_mc_coordinate_get_y(dims) - 1;
+            return hb_mc_config_get_dram_low_y(cfg);
         }
 
 
         static inline hb_mc_idx_t hb_mc_config_get_dram_low_y(const hb_mc_config_t *cfg)
         {
-                return 0;
+                return hb_mc_coordinate_get_y(hb_mc_config_get_origin_vcore(cfg))-1;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_dram_high_y(const hb_mc_config_t *cfg)
         {
-                return hb_mc_coordinate_get_y(hb_mc_config_get_dimension_network(cfg))-1;
+                return hb_mc_coordinate_get_y(hb_mc_config_get_origin_vcore(cfg)) +
+                       hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg));
         }
 
 
@@ -299,10 +298,10 @@ extern "C" {
         static inline hb_mc_coordinate_t
         hb_mc_config_get_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_idx_t cache_id)
         {
-                hb_mc_coordinate_t dims;
-                dims = hb_mc_config_get_dimension_network(cfg);
+                hb_mc_coordinate_t dims = hb_mc_config_get_dimension_vcore(cfg);
+                hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
 
-                hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims);
+                hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims) + hb_mc_coordinate_get_x(origin);
                 hb_mc_idx_t y = cache_id / hb_mc_dimension_get_x(dims) == 0
                         ? hb_mc_config_get_dram_low_y(cfg)
                         : hb_mc_config_get_dram_high_y(cfg);
@@ -314,7 +313,7 @@ extern "C" {
         hb_mc_idx_t hb_mc_config_get_num_dram_coordinates(const hb_mc_config_t *cfg)
         {
                 /* there are victim caches at the top and bottom of the mesh */
-                return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_network(cfg))*2;
+                return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(cfg))*2;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_dram_id
@@ -326,7 +325,7 @@ extern "C" {
                         return hb_mc_coordinate_get_x(dram_xy);
                 } else if (y == hb_mc_config_get_dram_high_y(cfg)) {
                         // southern cache
-                        return hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg))
+                        return hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg))
                                 + hb_mc_coordinate_get_x(dram_xy);
                 } else {
                         // error
