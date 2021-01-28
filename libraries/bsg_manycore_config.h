@@ -265,13 +265,6 @@ extern "C" {
                 return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
-        __attribute__((deprecated))
-        static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
-        {
-            return hb_mc_config_get_dram_low_y(cfg);
-        }
-
-
         static inline hb_mc_idx_t hb_mc_config_get_dram_low_y(const hb_mc_config_t *cfg)
         {
                 return hb_mc_coordinate_get_y(hb_mc_config_get_origin_vcore(cfg))-1;
@@ -283,6 +276,11 @@ extern "C" {
                        hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg));
         }
 
+        __attribute__((deprecated))
+        static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
+        {
+            return hb_mc_config_get_dram_low_y(cfg);
+        }
 
         static inline int hb_mc_config_is_dram_y(const hb_mc_config_t *cfg, hb_mc_idx_t y)
         {
