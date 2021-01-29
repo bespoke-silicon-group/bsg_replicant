@@ -345,7 +345,7 @@ static hb_mc_idx_t test_get_dram_x(test_t * test, hb_mc_manycore_t *mc)
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         return hb_mc_coordinate_get_x(hb_mc_config_get_dram_coordinate(cfg, 0));
 }
-y
+
 static int run_npa_to_eva_test(test_t *test)
 {
         /**************************************************************************************/
