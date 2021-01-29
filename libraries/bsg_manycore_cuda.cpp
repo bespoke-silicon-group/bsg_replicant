@@ -1469,7 +1469,7 @@ static int hb_mc_device_wait_for_tile_group_finish_any(hb_mc_device_t *device) {
                                                    hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id), 
                                                    recv.x_src, recv.y_src, 
                                                    recv.x_dst, recv.y_dst, 
-                                                   recv.addr, recv.data);
+                                                   recv.addr, recv.payload);
 
                                         error = hb_mc_tile_group_deallocate_tiles(device, tg);
                                         if (error != HB_MC_SUCCESS) { 
