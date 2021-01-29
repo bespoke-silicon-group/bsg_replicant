@@ -50,18 +50,18 @@
 #define DEFAULT_GROUP_BITIDX (DEFAULT_GROUP_Y_BITIDX + DEFAULT_GROUP_Y_LOGSZ)
 #define DEFAULT_GROUP_BITMASK (1ULL << DEFAULT_GROUP_BITIDX)
 
-#define DEFAULT_GLOBAL_X_LOGSZ 6
-#define DEFAULT_GLOBAL_X_BITIDX HB_MC_EPA_LOGSZ
+#define DEFAULT_GLOBAL_X_LOGSZ 7
+#define DEFAULT_GLOBAL_X_BITIDX HB_MC_GLOBAL_EPA_LOGSZ
 #define DEFAULT_GLOBAL_X_BITMASK (MAKE_MASK(DEFAULT_GLOBAL_X_LOGSZ) << DEFAULT_GLOBAL_X_BITIDX)
 
-#define DEFAULT_GLOBAL_Y_LOGSZ 6
+#define DEFAULT_GLOBAL_Y_LOGSZ 7
 #define DEFAULT_GLOBAL_Y_BITIDX (DEFAULT_GLOBAL_X_BITIDX + DEFAULT_GLOBAL_X_LOGSZ)
 #define DEFAULT_GLOBAL_Y_BITMASK (MAKE_MASK(DEFAULT_GLOBAL_Y_LOGSZ) << DEFAULT_GLOBAL_Y_BITIDX)
 
 #define DEFAULT_GLOBAL_BITIDX (DEFAULT_GLOBAL_Y_BITIDX + DEFAULT_GLOBAL_Y_LOGSZ)
 #define DEFAULT_GLOBAL_BITMASK (1ULL << DEFAULT_GLOBAL_BITIDX)
 
-#define DEFAULT_DRAM_BITIDX (DEFAULT_GLOBAL_BITIDX + 1)
+#define DEFAULT_DRAM_BITIDX 31
 #define DEFAULT_DRAM_BITMASK (1ULL << DEFAULT_DRAM_BITIDX)
 
 /**
@@ -602,7 +602,9 @@ static bool default_npa_is_dram(const hb_mc_manycore_t *mc,
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
         bool is_dram
                 = hb_mc_config_is_dram_y(config, hb_mc_npa_get_y(npa))
-                && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt);
+                && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt)
+                && (hb_mc_npa_get_x(npa) >= default_get_dram_min_x_coord(config))
+                && (hb_mc_npa_get_x(npa) <= default_get_dram_max_x_coord(config));
 
         bsg_pr_dbg("%s: npa %s %s DRAM\n",
                    __func__,
@@ -707,7 +709,7 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
 
         // See comments on default_eva_to_npa_dram for clarification
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
-        addr |= (hb_mc_npa_get_x(npa) << stripe_log); // Set the x coordinate
+        addr |= ((hb_mc_npa_get_x(npa)-default_get_dram_min_x_coord(cfg)) << stripe_log); // Set the x coordinate
         addr |= (is_south << (stripe_log + xdimlog)); // Set the N-S bit
         addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
