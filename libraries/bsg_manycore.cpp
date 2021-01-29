@@ -172,14 +172,13 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 free((void*)mc->name);
                 return err;
         }
-        bsg_pr_warn("%s: hb_mc_manycore_enable_dram is commented out!\n", __func__);
-        /*
+
         // enable dram
         if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS){
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
                 return err;
-                }*/
+        }
 
         return HB_MC_SUCCESS;
 }
