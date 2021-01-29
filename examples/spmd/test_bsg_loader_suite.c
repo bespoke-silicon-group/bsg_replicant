@@ -323,8 +323,8 @@ static int run_finish_packet_tests(void)
 /*********************************/
 static test_t npa_to_eva_tests [] = {
         /* Local memory tests */
-        NPA_TO_EVA_LOCAL_TEST("local mem middle",    0, 1, 1<<9, 0xDEADBEEF),
-        NPA_TO_EVA_LOCAL_TEST("local mem neighbor",  0, 2,    0, 0xDEADBEEF),
+        NPA_TO_EVA_LOCAL_TEST("local mem middle",    0, 0, 1<<9, 0xDEADBEEF),
+        NPA_TO_EVA_LOCAL_TEST("local mem neighbor",  0, 1,    0, 0xDEADBEEF),
         /* DRAM NPA tests */
         NPA_TO_EVA_DRAM_TEST("dram",      0,         0xDEADBEEF),
         NPA_TO_EVA_DRAM_TEST("dram+4K",   4*(1<<10), 0xCAFEBABE),
@@ -336,9 +336,16 @@ static test_t npa_to_eva_tests [] = {
 
 static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc)
 {
-        return hb_mc_config_get_dram_low_y(hb_mc_manycore_get_config(mc));
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        return hb_mc_coordinate_get_y(hb_mc_config_get_dram_coordinate(cfg, 0));
 }
 
+static hb_mc_idx_t test_get_dram_x(test_t * test, hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        return hb_mc_coordinate_get_x(hb_mc_config_get_dram_coordinate(cfg, 0));
+}
+y
 static int run_npa_to_eva_test(test_t *test)
 {
         /**************************************************************************************/
@@ -364,8 +371,10 @@ static int run_npa_to_eva_test(test_t *test)
         /* rewrite Y-coordinate if this is DRAM or Host */
         if (test->addr_is_dram) {
                 hb_mc_idx_t y = test_get_dram_y(test, mc);
+                hb_mc_idx_t x = test_get_dram_x(test, mc);
                 hb_mc_npa_set_y(&npa, y);
-        } else if (test->addr_is_host) {
+                hb_mc_npa_set_x(&npa, x);
+         } else if (test->addr_is_host) {
                 const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
                 hb_mc_coordinate_t hostif = hb_mc_config_get_host_interface(config);
                 hb_mc_npa_set_x(&npa, hb_mc_coordinate_get_x(hostif));
