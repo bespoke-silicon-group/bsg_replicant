@@ -382,7 +382,7 @@ extern "C" {
                 // The new network packet has not been fully implemented
                 // and implementing this check in hardware requires that
                 // that be done.
-                else if (hb_mc_request_packet_get_data(a) != hb_mc_request_packet_get_data(b)) {
+                else if (hb_mc_request_packet_get_data_valid(a) != hb_mc_request_packet_get_data_valid(b)) {
                         return HB_MC_FAIL;
                 }
                 else if (hb_mc_request_packet_get_addr(a) != hb_mc_request_packet_get_addr(b)) {

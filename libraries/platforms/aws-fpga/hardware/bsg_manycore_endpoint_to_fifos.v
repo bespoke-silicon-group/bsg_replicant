@@ -211,7 +211,7 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
   assign mc_req_lo_cast.src_x_cord   = x_cord_width_pad_lp'(in_src_x_cord_lo);
   assign mc_req_lo_cast.y_cord       = y_cord_width_pad_lp'(my_y_i);
   assign mc_req_lo_cast.x_cord       = x_cord_width_pad_lp'(my_x_i);
-
+  assign mc_req_lo_cast.reg_id       = 8'(endpoint_in_mask_lo);
 
   // host response to manycore
   // -------------------------
