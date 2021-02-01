@@ -55,8 +55,6 @@ int test_manycore_dram_read_write() {
 
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
-        hb_mc_idx_t num_dram_coord = hb_mc_config_get_num_dram_coordinates(cfg);
-        hb_mc_idx_t dram_coord_i = 0;
         int mismatch = 0;
 
         /**************************************************************/
@@ -69,9 +67,9 @@ int test_manycore_dram_read_write() {
         bsg_pr_info("Network dimesion = %s\n",
                     hb_mc_coordinate_to_string(hb_mc_config_get_dimension_network(cfg), str, sizeof(str)));
 
-        bsg_pr_info("Looping over %d DRAM coordinates\n", (int)num_dram_coord);
-        for (dram_coord_i = 0; dram_coord_i < num_dram_coord; dram_coord_i++) {
-                hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(cfg, dram_coord_i);
+        hb_mc_coordinate_t dram_coord;
+        hb_mc_config_foreach_dram_coordinate(dram_coord, cfg)
+        {
                 uint32_t write_data[ARRAY_LEN];
                 uint32_t read_data[ARRAY_LEN];
                 int err;
