@@ -77,23 +77,27 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 /**
  * Returns the EPA and number of contiguous bytes for an EVA in a tile,
  * regardless of the continuity of the underlying NPA.
- * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  eva    An Endpoint Virtual Address
- * @param[out] epa    An Endpoint Physical Address to be set by translating #eva
- * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @param[in]  cfg       An initialized manycore configuration struct
+ * @param[in]  eva       An Endpoint Virtual Address
+ * @param[out] epa       An Endpoint Physical Address to be set by translating #eva
+ * @param[out] sz        Number of contiguous bytes remaining in the #eva segment
+ * @param[in]  epa_mask  A mask for the EPA within the EVA
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_epa_tile(
-                                   const hb_mc_config_t *cfg,
+static int default_eva_to_epa_tile(const hb_mc_config_t *cfg,
                                    const hb_mc_eva_t *eva,
                                    hb_mc_epa_t *epa,
-                                   size_t *sz)
+                                   size_t *sz,
+                                   hb_mc_eva_t epa_mask)
 {
         hb_mc_eva_t eva_masked, eva_dmem;
         size_t dmem_size;
         dmem_size = hb_mc_config_get_dmem_size(cfg);
-        eva_masked = hb_mc_eva_addr(eva) & MAKE_MASK(HB_MC_EPA_LOGSZ);
+        eva_masked = hb_mc_eva_addr(eva) & epa_mask;
         eva_dmem = eva_masked - HB_MC_TILE_EVA_DMEM_BASE;
+
+        bsg_pr_dbg("%s: eva_dmem = 0x%08x, eva_masked = 0x%08x, dmem_size = 0x%08lx\n",
+                   __func__, eva_dmem, eva_masked, dmem_size);
 
         if(eva_dmem < dmem_size){
                 *epa = eva_dmem + HB_MC_TILE_EPA_DMEM_BASE;
@@ -119,6 +123,44 @@ static int default_eva_to_epa_tile(
 }
 
 
+
+/**
+ * Converts a local Endpoint Virtual Address to an Endpoint Physical Address for a global EVA
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_to_epa_tile_global(const hb_mc_config_t *cfg,
+                                          const hb_mc_eva_t *eva,
+                                          hb_mc_epa_t *epa,
+                                          size_t *sz)
+{
+        return default_eva_to_epa_tile(cfg, eva, epa, sz, MAKE_MASK(HB_MC_GLOBAL_EPA_LOGSZ));
+}
+
+
+/**
+ * Converts a local Endpoint Virtual Address to an Endpoint Physical Address for group EVA
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_to_epa_tile_group(const hb_mc_config_t *cfg,
+                                         const hb_mc_eva_t *eva,
+                                         hb_mc_epa_t *epa,
+                                         size_t *sz)
+{
+        return default_eva_to_epa_tile(cfg, eva, epa, sz, MAKE_MASK(HB_MC_EPA_LOGSZ));
+}
+
 /**
  * Converts a local Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
@@ -142,7 +184,7 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
         x = hb_mc_coordinate_get_x(*src);
         y = hb_mc_coordinate_get_y(*src);
 
-        rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
+        rc = default_eva_to_epa_tile_group(cfg, eva, &epa, sz);
         if (rc != HB_MC_SUCCESS)
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -210,7 +252,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
                 return HB_MC_FAIL;
         }
 
-        rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
+        rc = default_eva_to_epa_tile_group(cfg, eva, &epa, sz);
         if (rc != HB_MC_SUCCESS)
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -258,7 +300,9 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 
         x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
         y = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_Y_BITMASK) >> DEFAULT_GLOBAL_Y_BITIDX);
-        rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
+        bsg_pr_dbg("%s: EVA=%08x, x = %x, y = %x\n", __func__, *eva, x, y);
+
+        rc = default_eva_to_epa_tile_global(cfg, eva, &epa, sz);
         if (rc != HB_MC_SUCCESS)
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
