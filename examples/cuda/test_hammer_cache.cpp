@@ -68,7 +68,7 @@ int test_loader (int argc, char **argv) {
         CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
         // config tg
-        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
+        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 };
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
 
         // args
@@ -80,7 +80,7 @@ int test_loader (int argc, char **argv) {
         uint32_t block_words, n_caches, n_ways, n_hammers, n_sets;
         block_words = hb_mc_config_get_vcache_block_words(cfg);
         n_caches    = hb_mc_config_get_num_dram_coordinates(cfg);        
-        n_hammers   = 16;
+        n_hammers   = 4;
         n_ways      = hb_mc_config_get_vcache_ways(cfg);
         n_sets      = hb_mc_config_get_vcache_sets(cfg);
                 
