@@ -200,8 +200,9 @@ int test_vcache_flush() {
         for(int i = 1; i < NUM_TESTS - 1; i++)
                 addrs[i] = (rand() % addrs[NUM_TESTS - 1]) & ALIGN_4_MASK;
 
-        for (dram = 0; dram < ndrams; ++dram) {
-                hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, dram);
+        hb_mc_coordinate_t dram_coord;
+        hb_mc_config_foreach_dram_coordinate(dram_coord, config)
+        {
                 hb_mc_idx_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
                 hb_mc_idx_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
                 for(i = 0; i < NUM_TESTS; ++i) {

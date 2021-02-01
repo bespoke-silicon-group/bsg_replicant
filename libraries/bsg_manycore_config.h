@@ -305,9 +305,15 @@ extern "C" {
                 hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
 
                 hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims) + hb_mc_coordinate_get_x(origin);
-                hb_mc_idx_t y = cache_id / hb_mc_dimension_get_x(dims) == 0
-                        ? hb_mc_config_get_dram_low_y(cfg)
-                        : hb_mc_config_get_dram_high_y(cfg);
+                hb_mc_idx_t y;
+
+                if (cache_id / hb_mc_dimension_get_x(dims) == 0) {
+                        y = hb_mc_config_get_dram_low_y(cfg);
+                } else if (cache_id / hb_mc_dimension_get_x(dims) == 1) {
+                        y = hb_mc_config_get_dram_high_y(cfg);
+                } else {
+                        y = hb_mc_config_get_dram_high_y(cfg)+1;
+                }
 
                 return hb_mc_coordinate(x,y);
         }
@@ -319,22 +325,46 @@ extern "C" {
                 return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(cfg))*2;
         }
 
+#define hb_mc_config_foreach_dram_id(dram_id_var, config)               \
+        for (dram_id_var = 0;                                           \
+             dram_id_var < hb_mc_config_get_num_dram_coordinates(config); \
+             dram_id_var++)
+
         static inline hb_mc_idx_t hb_mc_config_get_dram_id
         (const hb_mc_config_t *cfg, hb_mc_coordinate_t dram_xy)
         {
+                hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
+                hb_mc_idx_t base_x = hb_mc_coordinate_get_x(origin);
                 hb_mc_idx_t y = hb_mc_coordinate_get_y(dram_xy);
+                hb_mc_idx_t x = hb_mc_coordinate_get_x(dram_xy) - base_x;
+                hb_mc_idx_t dim_x = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
                 if (y == hb_mc_config_get_dram_low_y(cfg)) {
                         // northern cache
-                        return hb_mc_coordinate_get_x(dram_xy);
+                        return x;
                 } else if (y == hb_mc_config_get_dram_high_y(cfg)) {
                         // southern cache
-                        return hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg))
-                                + hb_mc_coordinate_get_x(dram_xy);
+                        return dim_x + x;
                 } else {
                         // error
                         return -1;
                 }
         }
+
+        static inline hb_mc_coordinate_t hb_mc_config_get_next_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_coordinate_t cur)
+        {
+                hb_mc_idx_t id = hb_mc_config_get_dram_id(cfg, cur);
+                return hb_mc_config_get_dram_coordinate(cfg, id+1);
+        }
+
+        static inline int hb_mc_config_dram_coordinate_stop(const hb_mc_config_t *cfg, hb_mc_coordinate_t cur)
+        {
+                return hb_mc_config_get_dram_id(cfg, cur) == (hb_mc_idx_t)-1;
+        }
+
+#define hb_mc_config_foreach_dram_coordinate(cvar, cfg)                 \
+        for (cvar = hb_mc_config_get_dram_coordinate(cfg, 0);           \
+             !hb_mc_config_dram_coordinate_stop(cfg, cvar);             \
+             cvar = hb_mc_config_get_next_dram_coordinate(cfg, cvar))
 
         static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
         {
