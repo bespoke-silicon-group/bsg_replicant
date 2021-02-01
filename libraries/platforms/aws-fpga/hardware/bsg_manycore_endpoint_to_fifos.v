@@ -154,26 +154,26 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
   end
 
   // synopsys translate_off
-  always @(posedge clk_i) begin
-    if (endpoint_out_v_li) begin
-      $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", endpoint_out_packet_li.op_v2); 
-      $display("bsg_manycore_endpoint_to_fifos: addr=%h", endpoint_out_packet_li.addr);
-      $display("bsg_manycore_endpoint_to_fifos: data=%h", endpoint_out_packet_li.payload.data);
-      $display("bsg_manycore_endpoint_to_fifos: reg_id=%h", endpoint_out_packet_li.reg_id);
-      $display("bsg_manycore_endpoint_to_fifos: x_cord=%d", endpoint_out_packet_li.x_cord);
-      $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", endpoint_out_packet_li.y_cord);
-      $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", endpoint_out_packet_li.src_x_cord);
-      $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", endpoint_out_packet_li.src_y_cord);    
-    end    
-  end
+  // always @(posedge clk_i) begin
+  //   if (endpoint_out_v_li) begin
+  //     $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", endpoint_out_packet_li.op_v2);
+  //     $display("bsg_manycore_endpoint_to_fifos: addr=%h", endpoint_out_packet_li.addr);
+  //     $display("bsg_manycore_endpoint_to_fifos: data=%h", endpoint_out_packet_li.payload.data);
+  //     $display("bsg_manycore_endpoint_to_fifos: reg_id=%h", endpoint_out_packet_li.reg_id);
+  //     $display("bsg_manycore_endpoint_to_fifos: x_cord=%d", endpoint_out_packet_li.x_cord);
+  //     $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", endpoint_out_packet_li.y_cord);
+  //     $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", endpoint_out_packet_li.src_x_cord);
+  //     $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", endpoint_out_packet_li.src_y_cord);
+  //   end
+  // end
 
-  always @(posedge clk_i) begin
-    if (mc_rsp_v_o & mc_rsp_ready_i) begin
-      $display("bsg_manycore_endpoint_to_fifos (response): type=%s", returned_pkt_type_r_lo.name()); 
-      $display("bsg_manycore_endpoint_to_fifos (response): data=%h", mc_rsp_lo_cast.data);
-      $display("bsg_manycore_endpoint_to_fifos (response): reg_id=%h", mc_rsp_lo_cast.reg_id);
-    end    
-  end
+  // always @(posedge clk_i) begin
+  //   if (mc_rsp_v_o & mc_rsp_ready_i) begin
+  //     $display("bsg_manycore_endpoint_to_fifos (response): type=%s", returned_pkt_type_r_lo.name());
+  //     $display("bsg_manycore_endpoint_to_fifos (response): data=%h", mc_rsp_lo_cast.data);
+  //     $display("bsg_manycore_endpoint_to_fifos (response): reg_id=%h", mc_rsp_lo_cast.reg_id);
+  //   end
+  // end
 
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
