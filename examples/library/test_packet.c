@@ -28,9 +28,10 @@
 #include "bsg_manycore_printing.h"
 #include "test_packet.h"
 #include "bsg_manycore_cuda.h"
+#include "bsg_manycore_tile.h"
 #include <inttypes.h>
 
-#define ADDR (0x1000 >> 2)
+#define ADDR (HB_MC_TILE_EPA_DMEM_BASE >> 2)
 int test_wait (int argc, char **argv) {
     hb_mc_manycore_t mc = {0};
     BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", 0));

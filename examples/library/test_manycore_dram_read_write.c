@@ -29,12 +29,13 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_vcache.h>
 #include "test_manycore_dram_read_write.h"
 
 #define TEST_NAME "test_manycore_dram_read_write"
 
 #define ARRAY_LEN  4096
-#define BASE_ADDR 0x0000
+#define BASE_ADDR HB_MC_VCACHE_EPA_BASE
 
 int test_manycore_dram_read_write() {
         /********/
