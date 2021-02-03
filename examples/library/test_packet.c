@@ -30,51 +30,49 @@
 #include "bsg_manycore_cuda.h"
 #include <inttypes.h>
 
-
+#define ADDR (0x1000 >> 2)
 int test_wait (int argc, char **argv) {
     hb_mc_manycore_t mc = {0};
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "bullshit", 0));
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", 0));
 
     hb_mc_request_packet_t write_rqst = {
         .x_dst = 16,
-        .y_dst = 8,
+        .y_dst = 7,
 
         .x_src = 16,
         .y_src = 0,
 
-        .op_v2 = HB_MC_PACKET_OP_REMOTE_SW,
-        .addr  = 0x1000 >> 2,
-        .reg_id = 0xf,
-        .payload = 0x01ADBEEF,
+        .op_v2 = HB_MC_PACKET_OP_REMOTE_STORE,
+        .addr  = ADDR,
+        .reg_id = 0xF,
+        .payload = 0xDEADBEEF,
     };
     
     BSG_CUDA_CALL(hb_mc_manycore_request_tx(&mc, &write_rqst, -1));
 
     hb_mc_request_packet_t read_rqst = {
         .x_dst = 16,
-        .y_dst = 8,
+        .y_dst = 7,
 
         .x_src = 16,
         .y_src = 0,
 
         .op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD,
-        .addr = 0x1000 >> 2,
-        .reg_id = 1,
+        .addr = ADDR,
+        .reg_id = 0,
         .payload = 0,
     };
 
     BSG_CUDA_CALL(hb_mc_manycore_request_tx(&mc, &read_rqst, -1));
 
-    for (int i = 0; i < 1; i++)
-    {
-        hb_mc_response_packet_t read_rsp;
-        
-        BSG_CUDA_CALL(hb_mc_manycore_response_rx(&mc, &read_rsp, -1));
-        
-        char buffer [256];
-        bsg_pr_info("Read dis: %s\n", hb_mc_response_packet_to_string(&read_rsp, buffer, sizeof(buffer)));
-    }
-    
+    hb_mc_response_packet_t read_rsp;
+
+    BSG_CUDA_CALL(hb_mc_manycore_response_rx(&mc, &read_rsp, -1));
+
+    char buffer [256];
+    bsg_pr_info("Read this packet: %s\n",
+                hb_mc_response_packet_to_string(&read_rsp, buffer, sizeof(buffer)));
+
     BSG_CUDA_CALL(hb_mc_manycore_exit(&mc));
     return HB_MC_SUCCESS;
 }
