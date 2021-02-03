@@ -59,6 +59,7 @@ module replicant_tb_top
    localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_lp*2);
    localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2(1 + ((bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp) / bsg_machine_llcache_channel_width_gp));
    localparam bsg_machine_wh_coord_width_lp = bsg_machine_noc_coord_x_width_gp;
+   localparam bsg_machine_enable_profiling_lp = 1;
 
    // Clock generator period
    localparam lc_cycle_time_ps_lp = 1000;
@@ -180,6 +181,7 @@ module replicant_tb_top
 
        ,.bsg_manycore_mem_cfg_p(bsg_machine_dram_cfg_gp)
        ,.bsg_dram_size_p(bsg_machine_dram_words_gp)
+       ,.enable_profiling_p(bsg_machine_enable_profiling_lp)
 
        ,.reset_depth_p(reset_depth_lp)
        )
@@ -231,8 +233,9 @@ module replicant_tb_top
    mc_dpi
      (
       .clk_i(host_clk)
-      ,.reset_i(host_reset)
-      ,.reset_done_i(core_reset_done_r)
+      // DR: I don't particularly like this, but we'll leave it for now
+      ,.reset_i(host_reset | (~core_reset_done_r))
+      ,.reset_done_i(core_reset_done_lo)
 
       // manycore link
       ,.link_sif_i(host_link_sif_lo)

@@ -558,7 +558,8 @@ int hb_mc_platform_reset_is_done(hb_mc_manycore_t *mc)
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
         manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
         pl->top->eval();
-        unsigned char r = bsg_dpi_reset_is_done();
+        bool done;
+        pl->dpi->reset_is_done(done);
         manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(r));
-        return r;
+        return done;
 }
