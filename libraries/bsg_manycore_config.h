@@ -303,7 +303,7 @@ extern "C" {
                 hb_mc_coordinate_t dims = hb_mc_config_get_dimension_vcore(cfg);
                 hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
 
-                hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims) + hb_mc_coordinate_get_x(origin);
+                hb_mc_idx_t x = (cache_id % hb_mc_dimension_get_x(dims)) + hb_mc_coordinate_get_x(origin);
                 hb_mc_idx_t y;
 
                 if (cache_id / hb_mc_dimension_get_x(dims) == 0) {
