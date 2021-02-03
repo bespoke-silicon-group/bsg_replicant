@@ -16,8 +16,8 @@ const char * hb_mc_memsys_id_to_string(hb_mc_memsys_id_t id)
                 [HB_MC_MEMSYS_ID_AXI4] = "AXI4 Memory Controller",
                 [HB_MC_MEMSYS_ID_INFMEM] = "Ideal Memory System",
                 [HB_MC_MEMSYS_ID_DRAMSIM3] = "DRAMSim3 HBM2",
-                [HB_MC_MEMSYS_ID_TESTMEM] = "Non-synthesizable Test Memory",
-                [HB_MC_MEMSYS_ID_HBM2] = "High Bandwidth Memory 2",
+                [HB_MC_MEMSYS_ID_TESTMEM] = "Non-synthesizable Test Memory (via Wormhole Network)",
+                [HB_MC_MEMSYS_ID_HBM2] = "High Bandwidth Memory 2 (via Wormhole Network)",
         };
 
         return strtab[id];
