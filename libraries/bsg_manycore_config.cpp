@@ -100,19 +100,11 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->timestamp.month = date[7] * 10 + date[6] * 1;
 
         idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
-        if (idx > HB_MC_CONFIG_MAX_BITWIDTH_DATA){
-                bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_NETWORK_DATA_WIDTH, idx <= HB_MC_CONFIG_MAX_BITWIDTH_DATA);
         config->network_bitwidth_data = idx;
 
         idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
-        if (idx > HB_MC_CONFIG_MAX_BITWIDTH_ADDR){
-                bsg_pr_err("%s: Invalid Network Address Bitwidth %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_NETWORK_ADDR_WIDTH, idx <= HB_MC_CONFIG_MAX_BITWIDTH_ADDR);
         config->network_bitwidth_addr = idx;
 
         /* The maximum X dimension of the network is limited by the network
@@ -123,19 +115,11 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_POD_DIM_X];
         //Temporarily removed this condition until it is cleared up. TODO: Fix.
         //if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
-        if ((idx < HB_MC_COORDINATE_MIN)){
-                bsg_pr_err("%s: Invalid Device Dimension X %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_POD_DIM_X, idx >= HB_MC_COORDINATE_MIN);
         config->vcore_dimensions.x = idx;
 
         idx = raw[HB_MC_CONFIG_POD_DIM_Y];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
-                bsg_pr_err("%s: Invalid Device Dimension Y %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_POD_DIM_Y, idx >= HB_MC_COORDINATE_MIN && idx <= HB_MC_COORDINATE_MAX);
         config->vcore_dimensions.y = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
@@ -163,39 +147,22 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
 
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
-        if (idx < config->vcache_block_words) {
-                bsg_pr_err("%s: Invalid vcache stripe size %d: stripe size "
-                           "cannot be smaller than vcache block size %d: %s\n",
-                           __func__, idx, config->vcache_block_words, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_VCACHE_STRIPE_WORDS, idx >= config->vcache_block_words);
         config->vcache_stripe_words = idx;
 
 
         idx = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
-        if ((idx < HB_MC_REMOTE_LOAD_MIN) || (idx > HB_MC_REMOTE_LOAD_MAX)){
-                bsg_pr_err("%s: Invalid remote load caps %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, idx >= HB_MC_REMOTE_LOAD_MIN && idx <= HB_MC_REMOTE_LOAD_MAX);
         config->io_remote_load_cap = idx;
 
 
         idx = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
-        if ((idx < HB_MC_EP_OUT_CREDITS_MIN) || (idx > HB_MC_EP_OUT_CREDITS_MAX)){
-                bsg_pr_err("%s: Invalid endpoint max out credits %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS, idx >= HB_MC_EP_OUT_CREDITS_MIN && idx <= HB_MC_EP_OUT_CREDITS_MAX);
         config->io_endpoint_max_out_credits = idx;
 
 
         idx = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
-        if ((idx < HB_MC_HOST_CREDITS_MIN) || (idx > HB_MC_HOST_CREDITS_MAX)){
-                bsg_pr_err("%s: Invalid host credits CAP %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_IO_HOST_CREDITS_CAP, idx >= HB_MC_HOST_CREDITS_MIN && idx <= HB_MC_HOST_CREDITS_MAX);
         config->io_host_credits_cap = idx;
 
         err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
