@@ -435,10 +435,6 @@ extern "C" {
                 else if (hb_mc_request_packet_get_y_src(a) != hb_mc_request_packet_get_y_src(b)) {
                         return HB_MC_FAIL;
                 }
-                // TODO: should check for equality under valid mask
-                // The new network packet has not been fully implemented
-                // and implementing this check in hardware requires that
-                // that be done.
                 else if (hb_mc_request_packet_get_data_valid(a) != hb_mc_request_packet_get_data_valid(b)) {
                         return HB_MC_FAIL;
                 }
