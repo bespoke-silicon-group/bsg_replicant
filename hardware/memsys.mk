@@ -64,8 +64,6 @@ CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX := 0
 # disable the micron memory model by default
 DISABLE_MICRON_MEMORY_MODEL ?= yes
 
-include $(HARDWARE_PATH)/memsys_infinite_mem.mk
-include $(HARDWARE_PATH)/memsys_dramsim3.mk
 include $(HARDWARE_PATH)/memsys_axi4_f1.mk
 include $(HARDWARE_PATH)/memsys_test_mem.mk
 include $(HARDWARE_PATH)/memsys_hbm2.mk
