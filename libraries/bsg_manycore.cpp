@@ -174,8 +174,11 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         }
 
         // wait for reset to complete
-        while (!hb_mc_platform_reset_is_done(mc))
-            manycore_pr_dbg(mc, "Waiting for reset done\n");
+        if ((err = hb_mc_platform_wait_reset_done(mc)) != HB_MC_SUCCESS) {
+                hb_mc_platform_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
 
         // enable dram
         if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS){

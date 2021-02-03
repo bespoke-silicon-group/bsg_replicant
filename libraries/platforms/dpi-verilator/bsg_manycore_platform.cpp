@@ -553,13 +553,19 @@ int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
  * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */        
-int hb_mc_platform_reset_is_done(hb_mc_manycore_t *mc)
+int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
 {
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
-        manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
-        pl->top->eval();
         bool done;
         pl->dpi->reset_is_done(done);
-        manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(r));
-        return done;
+
+        while (!done) {
+            manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
+            pl->top->eval();
+            manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(r));
+            pl->dpi->reset_is_done(done);
+        }
+
+        return HB_MC_SUCCESS;
 }
+
