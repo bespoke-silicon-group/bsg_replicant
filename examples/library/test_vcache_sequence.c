@@ -53,7 +53,6 @@ int test_vcache_sequence() {
                 if (dram_count++ >= dram_break_after)
                         break;
 
-                /* To check all dram banks change 1 to manycore_dim_x */
                 uint32_t dram_coord_x, dram_coord_y;
                 dram_coord_x = hb_mc_coordinate_get_x(dram);
                 dram_coord_y = hb_mc_coordinate_get_y(dram);
