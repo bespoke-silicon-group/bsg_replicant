@@ -143,13 +143,16 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
       endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
     end
     else begin
-      endpoint_out_packet_li.payload.load_info_s.load_info.float_wb       = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.icache_fetch   = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.part_sel       = 2'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.is_unsigned_op = 1'b1;
-      endpoint_out_packet_li.payload.load_info_s.load_info.is_byte_op     = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.load_info.is_hex_op      = 1'b0;
-      endpoint_out_packet_li.payload.load_info_s.reserved                 = '0;
+      endpoint_out_packet_li.payload.load_info_s.load_info = {
+        1'b0,
+        1'b0,
+        host_req_li_cast.payload.load_info[2],
+        host_req_li_cast.payload.load_info[3],
+        host_req_li_cast.payload.load_info[4],
+        host_req_li_cast.payload.load_info[5+:2]
+      };
+
+      endpoint_out_packet_li.payload.load_info_s.reserved = '0;
     end
   end
 

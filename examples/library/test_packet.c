@@ -63,6 +63,14 @@ int test_wait (int argc, char **argv) {
         .payload = 0,
     };
 
+    hb_mc_request_packet_load_info_t info = {
+        .part_sel       = 2,
+        .is_byte_op     = 1,
+        .is_unsigned_op = 1,
+    };
+
+    hb_mc_request_packet_set_load_info(&read_rqst, info);
+
     BSG_CUDA_CALL(hb_mc_manycore_request_tx(&mc, &read_rqst, -1));
 
     hb_mc_response_packet_t read_rsp;
