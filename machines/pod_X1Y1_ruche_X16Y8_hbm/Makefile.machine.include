@@ -52,7 +52,7 @@ BSG_MACHINE_RUCHE_FACTOR_X            = 3
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
-BSG_MACHINE_MEM_CFG                   = e_vcache_test_mem
+BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
 
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
@@ -93,8 +93,8 @@ BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 ##################### Constants and Computations #####################
 
 # Aliases required for memsys.mk, and others.
-# Specific to the HBM2E chip we're modeling (4GB, 4-stack/8-channel)
-__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^30 | bc) # 4GB
+# Specific to the HBM2E chip we're modeling (8GB, 4-stack/8-channel)
+__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^31 | bc) # 4GB
 __BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/8 | bc)
 
 # TODO: Specific to pod (next 4)

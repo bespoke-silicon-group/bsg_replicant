@@ -17,6 +17,7 @@ const char * hb_mc_memsys_id_to_string(hb_mc_memsys_id_t id)
                 [HB_MC_MEMSYS_ID_INFMEM] = "Ideal Memory System",
                 [HB_MC_MEMSYS_ID_DRAMSIM3] = "DRAMSim3 HBM2",
                 [HB_MC_MEMSYS_ID_TESTMEM] = "Non-synthesizable Test Memory",
+                [HB_MC_MEMSYS_ID_HBM2] = "High Bandwidth Memory 2",
         };
 
         return strtab[id];
@@ -38,6 +39,8 @@ int hb_mc_memsys_get_id_from_rom_value(
                 *id = HB_MC_MEMSYS_ID_DRAMSIM3;
         else if (memcmp(HB_MC_ROM_MEMSYS_ID_TESTMEM, &rom_id, sizeof(rom_id))==0)
                 *id = HB_MC_MEMSYS_ID_TESTMEM;
+        else if (memcmp(HB_MC_ROM_MEMSYS_ID_HBM2, &rom_id, sizeof(rom_id))==0)
+                *id = HB_MC_MEMSYS_ID_HBM2;
         else { // error - bad memory system ID
                 bsg_pr_err("%s: Invalid Memory System ID 0x%" PRIx32 "\n",
                            __func__, rom_id);
@@ -60,6 +63,7 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
                 memsys->feature_dma = 1;
                 break;
         case HB_MC_MEMSYS_ID_DRAMSIM3:
+        case HB_MC_MEMSYS_ID_HBM2:
                 memsys->feature_cache = 1;
                 memsys->feature_dma = 1;
                 break;
@@ -195,7 +199,8 @@ int hb_mc_memsys_set_dram_address_map_info(hb_mc_memsys_t *memsys,
         memsys->dram_co.bitidx = rom_data[HB_MC_MEMSYS_ROM_IDX_DRAM_CO_BITIDX];
         memsys->dram_byte_offset.bitidx = rom_data[HB_MC_MEMSYS_ROM_IDX_DRAM_BYTE_OFF_BITIDX];
 
-        if (memsys->id == HB_MC_MEMSYS_ID_DRAMSIM3) {
+        if (memsys->id == HB_MC_MEMSYS_ID_DRAMSIM3 ||
+            memsys->id == HB_MC_MEMSYS_ID_HBM2) {
                 return hb_mc_memsys_check_dram_address_map_info_dramsim3(memsys);
         } else {
                 return hb_mc_memsys_check_dram_address_map_info_generic(memsys);
@@ -210,6 +215,7 @@ int hb_mc_memsys_set_dram_channels(hb_mc_memsys_t *memsys,
 
         switch (memsys->id) {
         case HB_MC_MEMSYS_ID_DRAMSIM3:
+        case HB_MC_MEMSYS_ID_HBM2:
                 CHECK(memsys->dram_channels,
                       memsys->dram_channels <= 8);
                 break;
@@ -306,6 +312,7 @@ hb_mc_memsys_map_to_physical_channel_address(const hb_mc_memsys_t *memsys, unsig
         switch (memsys->id)
         {
         case HB_MC_MEMSYS_ID_DRAMSIM3:
+        case HB_MC_MEMSYS_ID_HBM2:
                 return hb_mc_memsys_map_to_physical_channel_address_dramsim3(memsys, address);
         default:
                 return address;
