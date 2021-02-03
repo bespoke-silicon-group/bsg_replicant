@@ -123,7 +123,6 @@ int test_read_write(hb_mc_manycore_t *mc) {
                                    hb_mc_strerror(err));
                         return HB_MC_FAIL;
                 }
-                hb_mc_manycore_host_request_fence(mc, -1);
                 bsg_pr_test_info("Write successful\n");
                 
                 /******************************/
@@ -137,7 +136,6 @@ int test_read_write(hb_mc_manycore_t *mc) {
                                    hb_mc_strerror(err));
                         return HB_MC_FAIL;
                 }
-                hb_mc_manycore_host_request_fence(mc, -1);
                 bsg_pr_test_info("Completed read\n");
                 if (read_data == write_data) {
                         bsg_pr_test_info("Read back data written: 0x%08" PRIx32 "\n",
