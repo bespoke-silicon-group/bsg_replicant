@@ -218,15 +218,14 @@ extern "C" {
                 return hb_mc_coordinate(0, 0);
         }
 
-        static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
-                hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
-                // The Network has three additional Y rows: An IO Row, and two DRAM/Cache Rows
-                return hb_mc_dimension(hb_mc_dimension_get_x(dim),
-                                       hb_mc_dimension_get_y(dim) + 2);
-        }
-
         static inline hb_mc_dimension_t hb_mc_config_get_noc_coord_width(const hb_mc_config_t *cfg){
                 return cfg->noc_coord_width;
+        }
+
+        static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
+                hb_mc_dimension_t noc_width = hb_mc_config_get_noc_coord_width(cfg);
+                return hb_mc_dimension(1<<hb_mc_dimension_get_x(noc_width),
+                                       1<<hb_mc_dimension_get_y(noc_width));
         }
 
         static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
