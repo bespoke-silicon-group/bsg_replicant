@@ -996,7 +996,6 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                 ids.push(static_cast<uint32_t>(i));
 
         std::map<uint32_t, uint32_t> id_to_rsp_i;
-        //        int id_to_rsp_i [n_ids] = {-1};
         hb_mc_npa_t id_to_npa[n_ids];
 
         /* until we've received all responses... */
