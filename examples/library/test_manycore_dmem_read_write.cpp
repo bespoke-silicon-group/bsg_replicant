@@ -56,7 +56,6 @@ int test_mem_functions(hb_mc_manycore_t *mc) {
         }
         bsg_pr_test_info("Write successful\n");
 
-        // TODO: We need to move available IDs to global.
         /******************************/
         /* Read back Data from Memory */
         /******************************/
@@ -136,6 +135,7 @@ int test_read_write(hb_mc_manycore_t *mc) {
                                    hb_mc_strerror(err));
                         return HB_MC_FAIL;
                 }
+                
                 bsg_pr_test_info("Completed read\n");
                 if (read_data == write_data) {
                         bsg_pr_test_info("Read back data written: 0x%08" PRIx32 "\n",
@@ -165,7 +165,6 @@ int test_manycore_dmem_read_write () {
         }
 
         int r = HB_MC_FAIL;
-
         if(test_mem_functions(mc) != HB_MC_SUCCESS)
                 goto cleanup;
         if(test_read_write<uint8_t>(mc) != HB_MC_SUCCESS)

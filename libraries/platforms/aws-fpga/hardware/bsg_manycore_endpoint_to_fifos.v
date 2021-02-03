@@ -35,7 +35,6 @@
 
 module bsg_manycore_endpoint_to_fifos
   import bsg_manycore_pkg::*;
-//  import bsg_manycore_link_to_axil_pkg::*;
 #(
   parameter fifo_width_p = "inv"
   // these are endpoint parameters
@@ -46,6 +45,7 @@ module bsg_manycore_endpoint_to_fifos
   , parameter max_out_credits_p = "inv"
   , parameter ep_fifo_els_p = "inv"
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
+  , parameter debug_p = 0
 ) (
   input                                      clk_i
   ,input                                      reset_i
@@ -81,7 +81,6 @@ localparam x_cord_width_pad_lp = `BSG_CDIV(x_cord_width_p,8)*8;
 localparam y_cord_width_pad_lp = `BSG_CDIV(y_cord_width_p,8)*8;
 localparam addr_width_pad_lp = `BSG_CDIV(addr_width_p,8)*8;
 localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
-// TODO: Width of op_v2 field, using $bits   
 
   `declare_bsg_manycore_link_fifo_s(fifo_width_p, addr_width_pad_lp, data_width_pad_lp, x_cord_width_pad_lp, y_cord_width_pad_lp);
 
@@ -157,26 +156,26 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
   end
 
   // synopsys translate_off
-  // always @(posedge clk_i) begin
-  //   if (endpoint_out_v_li) begin
-  //     $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", endpoint_out_packet_li.op_v2);
-  //     $display("bsg_manycore_endpoint_to_fifos: addr=%h", endpoint_out_packet_li.addr);
-  //     $display("bsg_manycore_endpoint_to_fifos: data=%h", endpoint_out_packet_li.payload.data);
-  //     $display("bsg_manycore_endpoint_to_fifos: reg_id=%h", endpoint_out_packet_li.reg_id);
-  //     $display("bsg_manycore_endpoint_to_fifos: x_cord=%d", endpoint_out_packet_li.x_cord);
-  //     $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", endpoint_out_packet_li.y_cord);
-  //     $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", endpoint_out_packet_li.src_x_cord);
-  //     $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", endpoint_out_packet_li.src_y_cord);
-  //   end
-  // end
+  always @(posedge clk_i) begin
+    if (debug_p & endpoint_out_v_li) begin
+      $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", endpoint_out_packet_li.op_v2);
+      $display("bsg_manycore_endpoint_to_fifos: addr=%h", endpoint_out_packet_li.addr);
+      $display("bsg_manycore_endpoint_to_fifos: data=%h", endpoint_out_packet_li.payload.data);
+      $display("bsg_manycore_endpoint_to_fifos: reg_id=%h", endpoint_out_packet_li.reg_id);
+      $display("bsg_manycore_endpoint_to_fifos: x_cord=%d", endpoint_out_packet_li.x_cord);
+      $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", endpoint_out_packet_li.y_cord);
+      $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", endpoint_out_packet_li.src_x_cord);
+      $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", endpoint_out_packet_li.src_y_cord);
+    end
+  end
 
-  // always @(posedge clk_i) begin
-  //   if (mc_rsp_v_o & mc_rsp_ready_i) begin
-  //     $display("bsg_manycore_endpoint_to_fifos (response): type=%s", returned_pkt_type_r_lo.name());
-  //     $display("bsg_manycore_endpoint_to_fifos (response): data=%h", mc_rsp_lo_cast.data);
-  //     $display("bsg_manycore_endpoint_to_fifos (response): reg_id=%h", mc_rsp_lo_cast.reg_id);
-  //   end
-  // end
+  always @(posedge clk_i) begin
+    if (debug_p & mc_rsp_v_o & mc_rsp_ready_i) begin
+      $display("bsg_manycore_endpoint_to_fifos (response): type=%s", returned_pkt_type_r_lo.name());
+      $display("bsg_manycore_endpoint_to_fifos (response): data=%h", mc_rsp_lo_cast.data);
+      $display("bsg_manycore_endpoint_to_fifos (response): reg_id=%h", mc_rsp_lo_cast.reg_id);
+    end
+  end
 
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
