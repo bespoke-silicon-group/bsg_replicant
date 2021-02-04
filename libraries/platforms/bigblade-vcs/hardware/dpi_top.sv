@@ -264,7 +264,7 @@ module replicant_tb_top
       ,.reset_i(core_reset)
       ,.ctr_r_o(global_ctr)
       );
-/*
+
    bsg_print_stat_snoop
      #(
        .data_width_p(bsg_machine_noc_data_width_gp)
@@ -274,13 +274,13 @@ module replicant_tb_top
        )
    print_stat_snoop
      (
-      .loader_link_sif_in_i(host_link_sif_lo)
-      ,.loader_link_sif_out_i(host_link_sif_li)
+      .loader_link_sif_in_i(host_link_sif_lo) // output from manycore
+      ,.loader_link_sif_out_i(host_link_sif_li) // output from host
 
       ,.print_stat_v_o(print_stat_v)
       ,.print_stat_tag_o(print_stat_tag)
       );
-*/
+
    // In VCS, the C/C++ testbench is controlled by the
    // simulator. Therefore, we need to "call into" the C/C++ program
    // using the cosim_main function, during the initial block.
