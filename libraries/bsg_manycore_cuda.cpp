@@ -1678,6 +1678,28 @@ int hb_mc_device_pod_kernels_execute(hb_mc_device_t *device,
 }
 
 
+/**
+ * Launches all kernel invocations enqueued on pods.
+ * These kernel invocations are enqueued by
+ * hb_mc_device_pod_kernel_enqueue().
+ *
+ * This function blocks until all kernels have been invoked
+ * and completed.
+ * @param[in]  device        Pointer to device
+ * @param[in]  pods          List of Pod IDs
+ * @param[in]  num_pods      The number of Pod IDs
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device,
+                                      hb_mc_pod_id_t *pods,
+                                      int num_pods)
+{
+        for (int i = 0; i < num_pods; i++)
+                BSG_CUDA_CALL(hb_mc_device_pod_kernels_execute(device, pods[i]));
+
+        return HB_MC_SUCCESS;
+}
+
 
 /********************/
 /* Legacy Interface */
