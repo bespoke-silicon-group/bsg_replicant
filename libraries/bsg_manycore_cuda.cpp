@@ -1456,7 +1456,7 @@ int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod
 
                 bsg_pr_dbg("%s: %s %s\n",
                            __func__,
-                           hb_mc_coordinate_to_string(origin, buffer, sizeof(buffer)),
+                           hb_mc_coordinate_to_string(origin, origin_str, sizeof(origin_str)),
                            tiles_are_free ? "free" : "not free");
 
                 if (!tiles_are_free)
