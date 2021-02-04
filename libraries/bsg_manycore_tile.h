@@ -54,8 +54,8 @@ extern "C" {
         /*************/
 
         /* Offsets in bytes */
-#define HB_MC_TILE_EPA_DMEM_BASE   0x00001000
-#define HB_MC_TILE_EVA_DMEM_BASE   0x00001000
+#define HB_MC_TILE_EPA_DMEM_BASE   0x00000000
+#define HB_MC_TILE_EVA_DMEM_BASE   0x00000000
 #define HB_MC_TILE_EPA_ICACHE_BASE 0x01000000
 #define HB_MC_TILE_EPA_CSR_BASE                       0x20000
 #define HB_MC_TILE_EPA_CSR_FREEZE_OFFSET              0x00
