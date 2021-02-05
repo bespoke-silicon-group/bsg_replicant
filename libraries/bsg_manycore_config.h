@@ -93,8 +93,9 @@ extern "C" {
                 hb_mc_date_t timestamp;
                 uint32_t network_bitwidth_addr;
                 uint32_t network_bitwidth_data;
+                hb_mc_dimension_t pods;      // how many vcore pods?
+                hb_mc_dimension_t pod_shape; // what is the shape of a pod?
                 hb_mc_dimension_t noc_coord_width;
-                hb_mc_dimension_t vcore_dimensions;
                 hb_mc_coordinate_t host_interface;
                 hb_mc_githash_t basejump;
                 hb_mc_githash_t manycore;
@@ -198,7 +199,7 @@ extern "C" {
         }
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_vcore(const hb_mc_config_t *cfg){
-                return cfg->vcore_dimensions;
+                return cfg->pod_shape;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cfg){
@@ -519,10 +520,121 @@ extern "C" {
                 return cfg->memsys.id;
         }
 
-        static inline uint32_t hb_mc_config_get_pods(const hb_mc_config_t *cfg)
+        /**
+         * Returns the number of pods in each dimension.
+         */
+        static inline hb_mc_coordinate_t hb_mc_config_pods(const hb_mc_config_t *cfg)
         {
-                return 1;
+                return cfg->pods;
         }
+
+
+        /*******************************************/
+        /* Pod geometry, addressing, and iteration */
+        /*******************************************/
+
+        /**
+         * Return the number of bits used for pods in each dimension
+         */
+        static inline hb_mc_coordinate_t
+        hb_mc_config_pod_coord_width(const hb_mc_config_t *cfg)
+        {
+                return hb_mc_coordinate(3,4);
+        }
+
+        static inline hb_mc_coordinate_t
+        hb_mc_config_tile_coord_width(const hb_mc_config_t *cfg)
+        {
+                hb_mc_coordinate_t pod = hb_mc_config_pod_coord_width(cfg);
+                hb_mc_coordinate_t noc = hb_mc_config_get_noc_coord_width(cfg);
+                return hb_mc_coordinate(noc.x - pod.x, noc.y - pod.y);
+        }
+
+        /**
+         * Iterates over pods
+         */
+#define hb_mc_config_foreach_pod(coord, cfg)                            \
+        foreach_coordinate(coord, hb_mc_coordinate(0,0), (cfg)->pods)
+
+        /**
+         * Returns the network coordinate of the origin core for a pod ID
+         */
+        static inline hb_mc_coordinate_t
+        hb_mc_config_get_pod_vcore_origin(const hb_mc_config_t *cfg, hb_mc_coordinate_t pod_id)
+        {
+                hb_mc_coordinate_t og = hb_mc_config_get_origin_vcore(cfg);
+                hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
+                return hb_mc_coordinate( og.x + (1<<tile_w.x) * pod_id.x, og.y + (1<<tile_w.y) * (pod_id.y*2) );
+        }
+
+        static inline hb_mc_coordinate_t
+        hb_mc_config_vcore_to_pod(const hb_mc_config_t *cfg, hb_mc_coordinate_t vcore)
+        {
+                hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
+                return hb_mc_coordinate(vcore.x >> tile_w.x, vcore.y >> tile_w.y);
+        }
+
+        /**
+         * Iterates over a pod's vanilla cores
+         */
+#define hb_mc_config_pod_foreach_vcore(coord, pod_id, cfg)              \
+        foreach_coordinate(coord,                                       \
+                           hb_mc_config_get_pod_vcore_origin(cfg, pod_id), \
+                           (cfg)->pod_shape)
+
+        /**
+         * Start iteration over a pod's dram banks
+         */
+        static inline hb_mc_coordinate_t
+        hb_mc_config_get_pod_dram_start(const hb_mc_config_t *cfg, hb_mc_coordinate_t pod_id)
+        {
+                // subtract a row from the origin vcore of the pod
+                hb_mc_coordinate_t og = hb_mc_config_get_pod_vcore_origin(cfg, pod_id);
+                return hb_mc_coordinate( og.x, og.y - 1 );
+        }
+
+        /**
+         * Stop iteration over a pod's dram banks
+         */
+        static inline int
+        hb_mc_config_pod_dram_stop(const hb_mc_config_t *cfg,
+                                   hb_mc_coordinate_t pod_id,
+                                   hb_mc_coordinate_t pos)
+        {
+                hb_mc_coordinate_t og = hb_mc_config_get_pod_vcore_origin(cfg, pod_id);
+                return  pos.x >= (og.x + cfg->pod_shape.x) ||
+                        pos.y >= (og.y + cfg->pod_shape.y + 1);
+        }
+
+        /**
+         * Continue iteration over a pod's dram banks
+         */
+        static inline hb_mc_coordinate_t
+        hb_mc_config_get_pod_dram_next(const hb_mc_config_t *cfg,
+                                       hb_mc_coordinate_t pod_id,
+                                       hb_mc_coordinate_t pos)
+        {
+                hb_mc_coordinate_t og = hb_mc_config_get_pod_vcore_origin(cfg, pod_id);
+                hb_mc_idx_t north_y;
+                north_y = og.y - 1;
+
+                ++pos.x;
+                if (pos.x >= og.x + cfg->pod_shape.x &&
+                    pos.y == north_y) {
+                        pos.x = og.x;
+                        pos.y = og.y + cfg->pod_shape.y;
+                }
+                return pos;
+        }
+
+        /**
+         * Iterates over a pod's DRAM banks
+         */
+#define hb_mc_config_pod_foreach_dram(coord, pod_id, cfg)               \
+        for (coord = hb_mc_config_get_pod_dram_start(cfg, pod_id);      \
+             !hb_mc_config_pod_dram_stop(cfg, pod_id, coord);           \
+             coord = hb_mc_config_get_pod_dram_next(cfg, pod_id, coord))
+
 #ifdef __cplusplus
 }
 #endif

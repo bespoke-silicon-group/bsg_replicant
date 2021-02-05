@@ -73,6 +73,7 @@ INDEPENDENT_TESTS += test_manycore_credits
 INDEPENDENT_TESTS += test_manycore_eva_read_write
 INDEPENDENT_TESTS += test_read_mem_scatter_gather
 INDEPENDENT_TESTS += test_packet
+INDEPENDENT_TESTS += test_pod_iteration
 
 ###############################################################################
 # Host code compilation flags and flow
