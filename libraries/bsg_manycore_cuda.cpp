@@ -539,7 +539,8 @@ int hb_mc_device_init (hb_mc_device_t *device,
 
         // enumerate pods
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
-        int num_pods = hb_mc_config_get_pods(cfg);
+        hb_mc_dimension_t pod_geometry = hb_mc_config_pods(cfg);
+        int num_pods = hb_mc_dimension_to_length(pod_geometry);
         hb_mc_pod_t *pods;
         XMALLOC_N(pods, num_pods);
         device->pods = pods;
@@ -548,10 +549,14 @@ int hb_mc_device_init (hb_mc_device_t *device,
         device->default_mesh_dim = HB_MC_MESH_FULL_CORE;
 
         // initialize pods
-        hb_mc_pod_t *pod;
-        device_foreach_pod(device, pod)
+        hb_mc_coordinate_t pod_coord;
+        hb_mc_config_foreach_pod(pod_coord, cfg)
         {
+                hb_mc_pod_id_t pid = hb_mc_coordinate_to_index(pod_coord, pod_geometry);
+                hb_mc_pod_t *pod = &device->pods[pid];
                 hb_mc_device_pod_init(device, pod);
+                // set the pod coordinate
+                pod->pod_coord = pod_coord;
         }
 
         // set name

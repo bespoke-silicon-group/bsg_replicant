@@ -138,6 +138,7 @@ extern "C" {
                 uint32_t            num_tile_groups;
                 uint32_t            tile_group_capacity;
                 uint8_t             num_grids;
+                hb_mc_coordinate_t  pod_coord; // what pod am I in the global manycore?
                 int                 program_loaded;
         } hb_mc_pod_t;
 
