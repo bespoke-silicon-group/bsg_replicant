@@ -231,10 +231,10 @@ extern "C" {
          */
         static inline hb_mc_coordinate_t hb_mc_coordinate_next(hb_mc_coordinate_t now, hb_mc_coordinate_t origin, hb_mc_coordinate_t dim)
         {
-                now.y += 1;
-                if (now.y >= origin.y + dim.y) {
-                        now.y = origin.y;
-                        now.x += 1;
+                now.x += 1;
+                if (now.x >= origin.x + dim.x) {
+                        now.x = origin.x;
+                        now.y += 1;
                 }
                 return now;
         }
@@ -277,8 +277,8 @@ extern "C" {
          */
 #define foreach_x_y(x_var, y_var, origin, dim)                          \
         for ((x_var = origin.x, y_var = origin.y);                      \
-             x_var < (origin.x+dim.x);                                  \
-             ++y_var >= (origin.y+dim.y) ? (y_var = origin.y, x_var++) : y_var)
+             y_var < (origin.y+dim.y);                                  \
+             ++x_var >= (origin.x+dim.x) ? (x_var = origin.x, y_var++) : x_var)
 
 #ifdef __cplusplus
 }
