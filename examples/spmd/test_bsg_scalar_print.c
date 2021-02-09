@@ -181,7 +181,6 @@ int test_scalar_print (int argc, char **argv) {
                         goto cleanup;
                 }
 
-
                 // Receive bsg_print_unsigned packet
                 err = hb_mc_manycore_packet_rx(mc, &recv, HB_MC_FIFO_RX_REQ, -1);
                 if (err != HB_MC_SUCCESS) {
@@ -221,7 +220,6 @@ int test_scalar_print (int argc, char **argv) {
                         goto cleanup;
                 }
 
-
                 // Receive bsg_print_float packet
                 err = hb_mc_manycore_packet_rx(mc, &recv, HB_MC_FIFO_RX_REQ, -1);
                 if (err != HB_MC_SUCCESS) {
@@ -241,7 +239,6 @@ int test_scalar_print (int argc, char **argv) {
                                          MAGIC_FLOAT, f_data.f);
                         goto cleanup;
                 }
-
 
                 // Receive bsg_print_float_scientific packet
                 err = hb_mc_manycore_packet_rx(mc, &recv, HB_MC_FIFO_RX_REQ, -1);
@@ -263,7 +260,7 @@ int test_scalar_print (int argc, char **argv) {
                         goto cleanup;
                 }
 
-                // Receive bsg_print_float_scientific packet
+                // Receive finish
                 err = hb_mc_manycore_packet_rx(mc, &recv, HB_MC_FIFO_RX_REQ, -1);
                 if (err != HB_MC_SUCCESS) {
                         bsg_pr_err("failed to receive packet: %s\n",

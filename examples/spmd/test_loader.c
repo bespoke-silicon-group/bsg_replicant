@@ -127,26 +127,15 @@ int test_loader(int argc, char **argv) {
                         goto cleanup;
                 }
 
-                /* setup eva map */
-                hb_mc_eva_map_t map;
-                err = hb_mc_origin_eva_map_init(&map, origin);
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_err("failed to initialize address map\n");
-                        goto cleanup;
-                }
-
-
                 /* load the program */
                 err = hb_mc_loader_load(program_data, program_size,
-                                        mc, &map,
+                                        mc, &default_map,
                                         &target, 1);
                 if (err != HB_MC_SUCCESS) {
                         bsg_pr_err("failed to load binary '%s': %s\n",
                                    bin_path, hb_mc_strerror(err));
                         return err;
                 }
-
-                hb_mc_origin_eva_map_exit(&map);
 
                 err = hb_mc_tile_unfreeze(mc, &target);
                 if (err != HB_MC_SUCCESS) {
