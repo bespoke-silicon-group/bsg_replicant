@@ -167,6 +167,25 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
     end
   end
 
+  always @(posedge clk_i) begin
+    if (debug_p & mc_req_v_o & mc_req_ready_i) begin
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): time=%t",
+               $time);
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): type=%h",
+               mc_req_lo_cast.op_v2);
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): addr=%h",
+               mc_req_lo_cast.addr);
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): data=%h",
+               mc_req_lo_cast.payload.data);
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): src_x_cord=%d",
+               mc_req_lo_cast.src_x_cord);
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): src_y_cord=%d",
+               mc_req_lo_cast.src_y_cord);
+      $display("bsg_manycore_endpoint_to_fifos: (mc-request): reg_id=%h",
+               mc_req_lo_cast.reg_id);
+    end
+  end
+
   always_ff @(negedge clk_i) begin
     if (endpoint_out_v_li)
       assert final ( endpoint_out_packet_li.op_v2 == e_remote_store ||
