@@ -30,6 +30,7 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_config.h>
+#include <bsg_manycore_config_pod.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_epa.h>
 #include <bsg_manycore_packet.h>
