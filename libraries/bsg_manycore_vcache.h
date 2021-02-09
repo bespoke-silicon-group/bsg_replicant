@@ -33,6 +33,7 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_config_pod.h>
 #ifdef __cplusplus
 #include <cstdint>
 #include <cstdio>
@@ -119,7 +120,7 @@ static
 hb_mc_npa_t hb_mc_vcache_way_npa(const hb_mc_manycore_t *mc, hb_mc_idx_t cache, hb_mc_epa_t set, hb_mc_epa_t way)
 {
         const hb_mc_config_t *cfg  = hb_mc_manycore_get_config(mc);
-        hb_mc_coordinate_t cache_xy = hb_mc_config_get_dram_coordinate(cfg, cache);
+        hb_mc_coordinate_t cache_xy = hb_mc_config_dram(cfg, cache);
         return hb_mc_npa(cache_xy, hb_mc_vcache_way_addr(mc, set, way));
 }
 

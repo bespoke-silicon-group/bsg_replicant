@@ -2,6 +2,7 @@
 #include <bsg_mem_dma.hpp>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore_config_pod.h>
 /* these are convenience macros that are only good for one line prints */
 #define dma_pr_dbg(mc, fmt, ...)                   \
         bsg_pr_dbg("%s: " fmt, mc->name, ##__VA_ARGS__)
@@ -52,7 +53,7 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         /*
           Figure out which memory channel and bank this NPA maps to.
         */
-        hb_mc_idx_t cache_id = hb_mc_config_get_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
+        hb_mc_idx_t cache_id = hb_mc_config_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
         parameter_t id = cache_id / caches_per_channel; // which channel
         parameter_t bank = cache_id % caches_per_channel; // which bank within channel
 

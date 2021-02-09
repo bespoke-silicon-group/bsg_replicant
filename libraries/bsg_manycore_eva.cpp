@@ -327,17 +327,15 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
         return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
 }
 
-static uint32_t default_get_dram_max_x_coord(const hb_mc_config_t *cfg)
+static uint32_t default_dram_max_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *origin)
 {
         hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
-        hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
-        return hb_mc_coordinate_get_x(origin) + hb_mc_dimension_get_x(dim);
+        return hb_mc_coordinate_get_x(*origin) + hb_mc_dimension_get_x(dim);
 }
 
-static uint32_t default_get_dram_min_x_coord(const hb_mc_config_t *cfg)
+static uint32_t default_dram_min_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *origin)
 {
-        hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
-        return hb_mc_coordinate_get_x(origin);
+        return hb_mc_coordinate_get_x(*origin);
 }
 
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
@@ -386,13 +384,25 @@ static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
 // See comments on default_eva_to_npa_dram 
 static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
                                         const hb_mc_eva_t *eva,
-                                        hb_mc_idx_t *x) { 
-        hb_mc_coordinate_t vcore_origin = hb_mc_config_get_origin_vcore(cfg);
+                                        hb_mc_idx_t *x) {
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+#ifdef DEBUG
+        char pod_str[256];
+        char src_str [256];
+        hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+        hb_mc_coordinate_to_string(*src,  src_str,  sizeof(src_str));
+        bsg_pr_dbg("%s: Origin = %s maps to Pod %s\n",
+                   __func__, src_str, pod_str);
+#endif
+        hb_mc_coordinate_t vcore_origin = hb_mc_config_pod_vcore_origin(cfg, pod);
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
         uint32_t xmask = default_get_dram_x_bitidx(cfg);
-        uint32_t dram_max_x_coord = default_get_dram_max_x_coord(cfg);
-        uint32_t dram_min_x_coord = default_get_dram_min_x_coord(cfg);
+
+        uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
+        uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
+
         *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
         *x += hb_mc_coordinate_get_x(vcore_origin);
         if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
@@ -408,6 +418,7 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
 // See comments on default_eva_to_npa_dram 
 static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
                                         const hb_mc_eva_t *eva,
                                         hb_mc_idx_t *y) { 
 
@@ -417,10 +428,11 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                 + default_get_x_dimlog(cfg); // x-coordinate bits
 
         uint32_t is_south = (hb_mc_eva_addr(eva) >> shift) & 1;
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
 
         *y = is_south
-                ? hb_mc_config_get_dram_high_y(cfg)
-                : hb_mc_config_get_dram_low_y(cfg);
+            ? hb_mc_config_pod_dram_south_y(cfg, pod)
+            : hb_mc_config_pod_dram_north_y(cfg, pod);
 
         bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
                    __func__, *y, *eva);
@@ -519,7 +531,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         hb_mc_epa_t epa;
 
         // Calculate X coordinate of NPA from EVA
-        rc = default_eva_get_x_coord_dram (mc, cfg, eva, &x); 
+        rc = default_eva_get_x_coord_dram (mc, cfg, src, eva, &x); 
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to generate x coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
@@ -528,7 +540,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         }
 
         // Calculate Y coordinate of NPA from EVA
-        rc = default_eva_get_y_coord_dram (mc, cfg, eva, &y);
+        rc = default_eva_get_y_coord_dram (mc, cfg, src, eva, &y);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to generate y coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
@@ -644,11 +656,13 @@ static bool default_npa_is_dram(const hb_mc_manycore_t *mc,
 {
         char npa_str[64];
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
+        hb_mc_coordinate_t pod = hb_mc_config_pod(config, *tgt);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(config, pod);
         bool is_dram
-                = hb_mc_config_is_dram_y(config, hb_mc_npa_get_y(npa))
+            = hb_mc_config_is_dram(config, hb_mc_npa_get_xy(npa))
                 && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt)
-                && (hb_mc_npa_get_x(npa) >= default_get_dram_min_x_coord(config))
-                && (hb_mc_npa_get_x(npa) <= default_get_dram_max_x_coord(config));
+            && (hb_mc_npa_get_x(npa) >= default_dram_min_x_coord(config, &og))
+            && (hb_mc_npa_get_x(npa) <= default_dram_max_x_coord(config, &og));
 
         bsg_pr_dbg("%s: npa %s %s DRAM\n",
                    __func__,
@@ -746,14 +760,15 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
         hb_mc_eva_t addr = 0;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         uint32_t stripe_log, xdimlog;
-        uint32_t is_south = hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_high_y(cfg);
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *origin);
+        uint32_t is_south = hb_mc_npa_get_y(npa) == hb_mc_config_pod_dram_south_y(cfg, pod);
 
         stripe_log = default_get_dram_stripe_size_log(mc);
         xdimlog    = default_get_x_dimlog(cfg);
 
         // See comments on default_eva_to_npa_dram for clarification
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
-        addr |= ((hb_mc_npa_get_x(npa)-default_get_dram_min_x_coord(cfg)) << stripe_log); // Set the x coordinate
+        addr |= ((hb_mc_npa_get_x(npa)-default_dram_min_x_coord(cfg, origin)) << stripe_log); // Set the x coordinate
         addr |= (is_south << (stripe_log + xdimlog)); // Set the N-S bit
         addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
