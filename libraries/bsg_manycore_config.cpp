@@ -178,5 +178,12 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                 return err;
         }
 
+        // Dervived variables from the ROM
+        config->pod_coord_width  = hb_mc_coordinate(3, 4);
+        config->tile_coord_width = hb_mc_coordinate(
+            config->noc_coord_width.x - config->pod_coord_width.x,
+            config->noc_coord_width.y - config->pod_coord_width.y
+            );
+
         return hb_mc_config_init_check_memsys(config);
 }

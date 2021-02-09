@@ -33,7 +33,7 @@
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_origin_eva_map.h>
-
+#include <bsg_manycore_config_pod.h>
 
 #ifdef __cplusplus
 #include <cstring>

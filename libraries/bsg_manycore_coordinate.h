@@ -181,6 +181,10 @@ extern "C" {
                 return idx;
         } 
 
+        static inline hb_mc_coordinate_t hb_mc_index_to_coordinate (hb_mc_idx_t idx, hb_mc_dimension_t dim) {
+                return hb_mc_coordinate(idx % dim.x, idx / dim.x);
+        }
+
         /**
          * Calculates and returns a 1D length based on 2D dimensions 
          * @parma[in]  dim           Dimensions 
