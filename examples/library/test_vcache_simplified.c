@@ -28,6 +28,7 @@
 #include <inttypes.h>
 #include <bsg_manycore.h>
 #include "test_vcache_simplified.h"
+#include <bsg_manycore_config_pod.h>
 
 #define WRITE_BLOCK_NUM 3
 #define VCACHE_ADDR_WIDTH 9
@@ -61,7 +62,7 @@ int test_vcache_simplified() {
         uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
 
         // get the coordinate of the 1st logical victim cache
-        hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, 0);
+        hb_mc_coordinate_t dram_coord = hb_mc_config_dram(config, 0);
         uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
         uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
         int mismatch = 0; 

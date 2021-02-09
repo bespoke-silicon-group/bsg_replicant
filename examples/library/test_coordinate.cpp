@@ -124,8 +124,8 @@ int vcs_main(int argc, char ** argv) {
 int main(int argc, char ** argv) {
 #endif
 
-        bsg_pr_test_info("test_rom Regression Test \n");
-        int rc = test_rom(argc, argv);
+        bsg_pr_test_info("test_coordinate Regression Test \n");
+        int rc = test_coordinate(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }
