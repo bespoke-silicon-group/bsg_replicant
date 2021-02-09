@@ -200,29 +200,33 @@ int test_vcache_flush() {
         for(int i = 1; i < NUM_TESTS - 1; i++)
                 addrs[i] = (rand() % addrs[NUM_TESTS - 1]) & ALIGN_4_MASK;
 
-        hb_mc_coordinate_t dram_coord;
-        hb_mc_config_foreach_dram_coordinate(dram_coord, config)
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, config)
         {
-                hb_mc_idx_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
-                hb_mc_idx_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
-                for(i = 0; i < NUM_TESTS; ++i) {
-                        addr = addrs[i];
+                hb_mc_coordinate_t dram_coord;
+                hb_mc_config_pod_foreach_dram(dram_coord, pod, config)
+                {
+                        hb_mc_idx_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
+                        hb_mc_idx_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
+                        for(i = 0; i < NUM_TESTS; ++i) {
+                                addr = addrs[i];
 
-                        bsg_pr_test_info("Testing 32-bit\n");
-                        rc = test_address(&mc, addr, static_cast<uint32_t>(rand()), dram_coord_x, dram_coord_y);
+                                bsg_pr_test_info("Testing 32-bit\n");
+                                rc = test_address(&mc, addr, static_cast<uint32_t>(rand()), dram_coord_x, dram_coord_y);
 
-                        bsg_pr_test_info("Testing 16-bit\n");
-                        rc = test_address(&mc, addr    , static_cast<uint16_t>(rand() & 0xFFFF), dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 2, static_cast<uint16_t>(rand() & 0xFFFF), dram_coord_x, dram_coord_y);
+                                bsg_pr_test_info("Testing 16-bit\n");
+                                rc = test_address(&mc, addr    , static_cast<uint16_t>(rand() & 0xFFFF), dram_coord_x, dram_coord_y);
+                                rc = test_address(&mc, addr + 2, static_cast<uint16_t>(rand() & 0xFFFF), dram_coord_x, dram_coord_y);
 
-                        bsg_pr_test_info("Testing  8-bit\n");
-                        rc = test_address(&mc, addr    ,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 1,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 2,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
-                        rc = test_address(&mc, addr + 3,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                                bsg_pr_test_info("Testing  8-bit\n");
+                                rc = test_address(&mc, addr    ,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                                rc = test_address(&mc, addr + 1,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                                rc = test_address(&mc, addr + 2,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                                rc = test_address(&mc, addr + 3,  static_cast<uint8_t>(rand() & 0xFF), dram_coord_x, dram_coord_y);
+                        }
+                        if(rc != HB_MC_SUCCESS)
+                                return rc;
                 }
-                if(rc != HB_MC_SUCCESS)
-                        return rc;
         }
         return HB_MC_SUCCESS;
 }
