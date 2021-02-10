@@ -1197,11 +1197,12 @@ int hb_mc_device_pod_memcpy_to_device(hb_mc_device_t *device,
 {
         CHECK_POD_ID(device, pod_id);
 
-        hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(device->mc);
+        hb_mc_pod_t *pod = &device->pods[pod_id];
+
         BSG_MANYCORE_CALL(device->mc,
                           hb_mc_manycore_eva_write(device->mc,
                                                    &default_map,
-                                                   &host,
+                                                   &pod->mesh->origin,
                                                    &daddr, haddr, bytes));
 
         return HB_MC_SUCCESS;
@@ -1224,10 +1225,11 @@ int hb_mc_device_pod_memcpy_to_host(hb_mc_device_t *device,
 {
         CHECK_POD_ID(device, pod_id);
 
-        hb_mc_coordinate_t host = hb_mc_manycore_get_host_coordinate(device->mc);
+        hb_mc_pod_t *pod = &device->pods[pod_id];
+
         BSG_CUDA_CALL(hb_mc_manycore_eva_read(device->mc,
                                               &default_map,
-                                              &host,
+                                              &pod->mesh->origin,
                                               &daddr, haddr, bytes));
 
         return HB_MC_SUCCESS;
@@ -1250,11 +1252,11 @@ int hb_mc_device_pod_memset (hb_mc_device_t *device,
 {
         CHECK_POD_ID(device, pod_id);
 
-        hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc);
+        hb_mc_pod_t *pod = &device->pods[pod_id];
 
         BSG_CUDA_CALL(hb_mc_manycore_eva_memset (device->mc,
                                                  &default_map,
-                                                 &host_coordinate,
+                                                 &pod->mesh->origin,
                                                  &eva,
                                                  data,
                                                  sz));
