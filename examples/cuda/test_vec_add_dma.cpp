@@ -28,7 +28,6 @@
 #include "test_vec_add_dma.hpp"
 
 #define ALLOC_NAME "default_allocator"
-#define DMA
 #define CUDA_CALL(expr)                                                 \
         {                                                               \
                 int __err;                                              \
@@ -68,113 +67,131 @@ int kernel_vec_add (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles. */
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2};
         hb_mc_device_t device;
-        CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
+        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
 
         /* if DMA is not supported just return SUCCESS */
         if (!hb_mc_manycore_supports_dma_write(device.mc)
             || !hb_mc_manycore_supports_dma_read(device.mc)) {
                 bsg_pr_test_info("DMA not supported for this machine: returning success\n");
+                BSG_CUDA_CALL(hb_mc_device_finish(&device));
                 return HB_MC_SUCCESS;
         }
 
-        CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
+        hb_mc_pod_id_t pod;
+        hb_mc_device_foreach_pod_id(&device, pod)
+        {
+                BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
+                BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-        /* Allocate memory on the device for A, B and C. */
-        constexpr int N = (1 << 16);
-        constexpr size_t vsize = N * sizeof(uint32_t);
-        bsg_pr_test_info("Using DMA to write vectors of %d integers\n", N);
+                /* Allocate memory on the device for A, B and C. */
+                constexpr int N = (1 << 16);
+                constexpr size_t vsize = N * sizeof(uint32_t);
+                bsg_pr_test_info("Using DMA to write vectors of %d integers\n", N);
 
-        eva_t A_device, B_device, C_device;
-        CUDA_CALL(hb_mc_device_malloc(&device, vsize, &A_device)); /* allocate A[N] on the device */
-        CUDA_CALL(hb_mc_device_malloc(&device, vsize, &B_device)); /* allocate B[N] on the device */
-        CUDA_CALL(hb_mc_device_malloc(&device, vsize, &C_device)); /* allocate C[N] on the device */
+                eva_t A_device, B_device, C_device;
+                /* allocate A[N] on the device */
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &A_device));
+                 /* allocate B[N] on the device */
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &B_device));
+                 /* allocate C[N] on the device */
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &C_device));
 
 
-        /* Allocate memory on the host for A & B and initialize with random values. */
-        int32_t *A_host = new int32_t [N]; /* allocate A[N] on the host */
-        int32_t *B_host = new int32_t [N]; /* allocate B[N] on the host */
+                /* Allocate memory on the host for A & B and initialize with random values. */
+                int32_t *A_host = new int32_t [N]; /* allocate A[N] on the host */
+                int32_t *B_host = new int32_t [N]; /* allocate B[N] on the host */
 
-        /* fill A with arbitrary data */
-        for (int i = 0; i < N; i++) {
-                A_host[i] = rand() & 0xFFFF;
-                B_host[i] = rand() & 0xFFFF;
+                /* fill A with arbitrary data */
+                for (int i = 0; i < N; i++) {
+                        A_host[i] = rand() & 0xFFFF;
+                        B_host[i] = rand() & 0xFFFF;
+                }
+
+                /* Copy A & B from host onto device DRAM. */
+                hb_mc_dma_htod_t htod_jobs [] = {
+                        {
+                                .d_addr = A_device,
+                                .h_addr = A_host,
+                                .size   = vsize
+                        },
+                        {
+                                .d_addr = B_device,
+                                .h_addr = B_host,
+                                .size   = vsize
+                        }
+                };
+
+                bsg_pr_test_info("Writing A and B to device\n");
+
+                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 2));
+
+                /* Define block_size_x/y: amount of work for each tile group */
+                /* Define tg_dim_x/y: number of tiles in each tile group */
+                /* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y */
+                uint32_t block_size_x = N;
+                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+
+
+                /* Prepare list of input arguments for kernel. */
+                uint32_t cuda_argv[5] = {A_device, B_device, C_device, N, block_size_x};
+
+                /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
+                   kernel name, number and list of input arguments */
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add", 5, cuda_argv));
+
+                /* Launch and execute all tile groups on device and wait for all to finish.  */
+                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+
+                /* Copy result matrix back from device DRAM into host memory.  */
+                int32_t *C_host = new int32_t [N];
+
+                hb_mc_dma_dtoh_t dtoh_job = {
+                        .d_addr = C_device,
+                        .h_addr = C_host,
+                        .size   = vsize
+                };
+
+                bsg_pr_test_info("Reading C to host\n");
+
+                BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
+
+                /* Calculate the expected result using host code and compare the results.  */
+                int32_t *C_expected = new int32_t [N];
+                host_vec_add (A_host, B_host, C_expected, N);
+
+
+                int mismatch = 0;
+                for (int i = 0; i < N; i++) {
+                        if (A_host[i] + B_host[i] != C_host[i]) {
+                                bsg_pr_err(BSG_RED("Mismatch: ")
+                                           "C[%d]:  0x%08" PRIx32
+                                           " + 0x%08" PRIx32
+                                           " = 0x%08" PRIx32
+                                           "\t Expected: 0x%08" PRIx32 "\n",
+                                           i ,
+                                           A_host[i],
+                                           B_host[i],
+                                           C_host[i],
+                                           C_expected[i]);
+                                mismatch = 1;
+                        }
+                }
+
+                if (mismatch)
+                        return HB_MC_FAIL;
+
+                /* Freeze the tiles and memory manager cleanup.  */
+                BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
+
+                delete [] A_host;
+                delete [] B_host;
+                delete [] C_host;
+                delete [] C_expected;
         }
 
-        /* Copy A & B from host onto device DRAM. */
-        hb_mc_dma_htod_t htod_jobs [] = {
-                {
-                        .d_addr = A_device,
-                        .h_addr = A_host,
-                        .size   = vsize
-                },
-                {
-                        .d_addr = B_device,
-                        .h_addr = B_host,
-                        .size   = vsize
-                }
-        };
+        BSG_CUDA_CALL(hb_mc_device_finish(&device));
 
-        bsg_pr_test_info("Writing A and B to device\n");
-
-        CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 2));
-
-        /* Define block_size_x/y: amount of work for each tile group */
-        /* Define tg_dim_x/y: number of tiles in each tile group */
-        /* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y */
-        uint32_t block_size_x = N;
-        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
-
-
-        /* Prepare list of input arguments for kernel. */
-        uint32_t cuda_argv[5] = {A_device, B_device, C_device, N, block_size_x};
-
-        /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
-           kernel name, number and list of input arguments */
-        CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add", 5, cuda_argv));
-
-        /* Launch and execute all tile groups on device and wait for all to finish.  */
-        CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
-
-        /* Copy result matrix back from device DRAM into host memory.  */
-        int32_t *C_host = new int32_t [N];
-
-        hb_mc_dma_dtoh_t dtoh_job = {
-                .d_addr = C_device,
-                .h_addr = C_host,
-                .size   = vsize
-        };
-
-        bsg_pr_test_info("Reading C to host\n");
-
-        CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
-
-        /* Freeze the tiles and memory manager cleanup.  */
-        CUDA_CALL(hb_mc_device_finish(&device));
-
-
-        /* Calculate the expected result using host code and compare the results.  */
-        int32_t *C_expected = new int32_t [N];
-        host_vec_add (A_host, B_host, C_expected, N);
-
-
-        int mismatch = 0;
-        for (int i = 0; i < N; i++) {
-                if (A_host[i] + B_host[i] != C_host[i]) {
-                        bsg_pr_err(BSG_RED("Mismatch: ")
-                                   "C[%d]:  0x%08" PRIx32
-                                   " + 0x%08" PRIx32
-                                   " = 0x%08" PRIx32
-                                   "\t Expected: 0x%08" PRIx32 "\n",
-                                   i ,
-                                   A_host[i],
-                                   B_host[i],
-                                   C_host[i],
-                                   C_expected[i]);
-                        mismatch = 1;
-                }
-        }
-
-        return mismatch ? HB_MC_FAIL : HB_MC_SUCCESS;
+        return HB_MC_SUCCESS;
 }
 
 #ifdef VCS
