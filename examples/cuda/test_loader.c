@@ -49,70 +49,81 @@ int test_loader (int argc, char **argv) {
         /**********************************************************************/
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
-        BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-        /**********************************************************************/
-        /* Define block_size_x/y: amount of work for each tile group          */
-        /* Define tg_dim_x/y: number of tiles in each tile group              */
-        /* Calculate grid_dim_x/y: number of                                  */
-        /* tile groups needed based on block_size_x/y                         */
-        /**********************************************************************/
-        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 }; 
-        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
+        hb_mc_pod_id_t pod;
+        device_foreach_pod_id(&device, pod)
+        {
+                BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
+                BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-        /****************************************/
-        /* Allocate a word for the return value */
-        /****************************************/
-        hb_mc_eva_t raddr;
-        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t), &raddr));
-        BSG_CUDA_CALL(hb_mc_device_memset(&device, &raddr, 0, sizeof(uint32_t)));
+                /**********************************************************************/
+                /* Define block_size_x/y: amount of work for each tile group          */
+                /* Define tg_dim_x/y: number of tiles in each tile group              */
+                /* Calculate grid_dim_x/y: number of                                  */
+                /* tile groups needed based on block_size_x/y                         */
+                /**********************************************************************/
+                hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 };
+                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
 
-        /**********************************************************************/
-        /* Prepare list of input arguments for kernel.                        */
-        /**********************************************************************/
-        int kernel_argv[] = {raddr};
-        char kernel_name[256];
-        snprintf(kernel_name, sizeof(kernel_name), "kernel_%s", test_name + sizeof("test_") - 1);
+                /****************************************/
+                /* Allocate a word for the return value */
+                /****************************************/
+                hb_mc_eva_t raddr;
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t), &raddr));
+                BSG_CUDA_CALL(hb_mc_device_memset(&device, &raddr, 0, sizeof(uint32_t)));
 
-        /**********************************************************************/
-        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
-        /* kernel name, number and list of input arguments                    */
-        /**********************************************************************/
-        BSG_CUDA_CALL(hb_mc_kernel_enqueue(&device, grid_dim, tg_dim, kernel_name, 1, kernel_argv));
+                /**********************************************************************/
+                /* Prepare list of input arguments for kernel.                        */
+                /**********************************************************************/
+                int kernel_argv[] = {raddr};
+                char kernel_name[256];
+                snprintf(kernel_name, sizeof(kernel_name), "kernel_%s",
+                         test_name + sizeof("test_") - 1);
 
-        /**********************************************************************/
-        /* Launch and execute all tile groups on device and wait for finish.  */ 
-        /**********************************************************************/
-        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+                /**********************************************************************/
+                /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
+                /* kernel name, number and list of input arguments                    */
+                /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue(&device, grid_dim, tg_dim, kernel_name,
+                                                   1, kernel_argv));
 
-        /*************************/
-        /* Read the return value */
-        /*************************/
-        uint32_t rcode;
-        BSG_CUDA_CALL(hb_mc_device_memcpy(&device, &rcode, (void*)raddr, sizeof(rcode),
-                                          HB_MC_MEMCPY_TO_HOST));
+                /**********************************************************************/
+                /* Launch and execute all tile groups on device and wait for finish.  */
+                /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
-        /**********************************************************************/
-        /* Freeze the tiles and memory manager cleanup.                       */
-        /**********************************************************************/
+                /*************************/
+                /* Read the return value */
+                /*************************/
+                uint32_t rcode;
+                BSG_CUDA_CALL(hb_mc_device_memcpy(&device, &rcode, (void*)raddr, sizeof(rcode),
+                                                  HB_MC_MEMCPY_TO_HOST));
+
+                /**********************************************************************/
+                /* Freeze the tiles and memory manager cleanup.                       */
+                /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
+
+                /*************************/
+                /* Check the return code */
+                /*************************/
+                if (rcode != 0) {
+                        bsg_pr_err("kernel returned non-zero.\n");
+                        return HB_MC_FAIL;
+                }
+        } // foreach pod_id
+
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
-
-        /*************************/
-        /* Check the return code */
-        /*************************/
-        if (rcode != 0) {
-                bsg_pr_err("kernel returned non-zero.\n");
-                return HB_MC_FAIL;
-        }
 
         return HB_MC_SUCCESS;
 }
 
 #ifdef VCS
-int vcs_main(int argc, char ** argv) {
+int vcs_main(int argc, char ** argv)
 #else
-int main(int argc, char ** argv) {
+int main(int argc, char ** argv)
 #endif
+{
         bsg_pr_test_info("Unified Main CUDA Regression Test\n");
         int rc = test_loader(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
