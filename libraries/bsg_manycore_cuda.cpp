@@ -613,7 +613,7 @@ int hb_mc_device_finish (hb_mc_device_t *device)
 
         // cleanup pods
         hb_mc_pod_id_t pod_id;
-        device_foreach_pod_id(device, pod_id)
+        hb_mc_device_foreach_pod_id(device, pod_id)
         {
                 hb_mc_pod_t *pod = &device->pods[pod_id];
                 BSG_CUDA_CALL(hb_mc_device_pod_program_finish(device, pod_id));

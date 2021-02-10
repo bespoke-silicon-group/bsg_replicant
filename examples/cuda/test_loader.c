@@ -51,8 +51,11 @@ int test_loader (int argc, char **argv) {
         BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
 
         hb_mc_pod_id_t pod;
-        device_foreach_pod_id(&device, pod)
+        hb_mc_device_foreach_pod_id(&device, pod)
         {
+                bsg_pr_test_info("Loading program for test %s onto pod %d\n",
+                                 test_name, pod);
+
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
