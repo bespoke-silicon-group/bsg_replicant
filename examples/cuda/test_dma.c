@@ -60,87 +60,102 @@ int test_dma (int argc, char **argv) {
         /**********************************************************************/
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
-        BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-        /**********/
-        /* Read A */
-        /**********/
-        hb_mc_eva_t A_dev, B_dev;
-        int N = 32 * 2;
-        int A_host[N], B_host[N];
+        hb_mc_pod_id_t pod;
+        hb_mc_device_foreach_pod_id(&device, pod)
+        {
+                BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
+                BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-        for (int i = 0; i < N; i++) A_host[i] = i;
+                /**********/
+                /* Read A */
+                /**********/
+                hb_mc_eva_t A_dev, B_dev;
+                int N = 32 * 2;
+                int A_host[N], B_host[N];
 
-        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N, &A_dev));
-        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N, &B_dev));
+                for (int i = 0; i < N; i++) A_host[i] = i;
 
-        hb_mc_dma_htod_t htod = {
-            .d_addr = A_dev,
-            .h_addr = &A_host[0],
-            .size   = sizeof(A_host)
-        };
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N, &A_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N, &B_dev));
 
-        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
+                hb_mc_dma_htod_t htod = {
+                        .d_addr = A_dev,
+                        .h_addr = &A_host[0],
+                        .size   = sizeof(A_host)
+                };
 
-        /**********************************************************************/
-        /* Prepare list of input arguments for kernel.                        */
-        /**********************************************************************/
-        hb_mc_eva_t kernel_argv[] = {A_dev, B_dev, (hb_mc_eva_t)N};
+                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
-        char kernel_name [] = "kernel_dma";
+                /**********************************************************************/
+                /* Prepare list of input arguments for kernel.                        */
+                /**********************************************************************/
+                hb_mc_eva_t kernel_argv[] = {A_dev, B_dev, (hb_mc_eva_t)N};
 
-        /**********************************************************************/
-        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
-        /* kernel name, number and list of input arguments                    */
-        /**********************************************************************/
-        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, ARRAY_SIZE(kernel_argv), kernel_argv));
+                char kernel_name [] = "kernel_dma";
 
-        /**********************************************************************/
-        /* Launch and execute all tile groups on device and wait for finish.  */ 
-        /**********************************************************************/
-        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+                /**********************************************************************/
+                /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
+                /* kernel name, number and list of input arguments                    */
+                /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name,
+                                                    ARRAY_SIZE(kernel_argv), kernel_argv));
 
-        /**********/
-        /* Read B */
-        /**********/
-        hb_mc_dma_dtoh_t dtoh = {
-            .d_addr = B_dev,
-            .h_addr = &B_host[0],
-            .size   = sizeof(B_host)
-        };
+                /**********************************************************************/
+                /* Launch and execute all tile groups on device and wait for finish.  */
+                /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
-        BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh, 1));
+                /**********/
+                /* Read B */
+                /**********/
+                hb_mc_dma_dtoh_t dtoh = {
+                        .d_addr = B_dev,
+                        .h_addr = &B_host[0],
+                        .size   = sizeof(B_host)
+                };
 
-        /**********************************************************************/
-        /* Freeze the tiles and memory manager cleanup.                       */
-        /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh, 1));
+
+
+                /***********************************/
+                /* Check that the arrays are equal */
+                /***********************************/
+                int rc = HB_MC_SUCCESS;
+                for (int i = 0; i < N; i++) {
+                        if (A_host[i] != B_host[i]) {
+                                bsg_pr_err("%s: Mismatch: B_host[%d] = %d, Expected %d\n",
+                                           __func__, i, B_host[i], A_host[i]);
+                                rc = HB_MC_FAIL;
+                        }
+                }
+
+                if (rc != HB_MC_SUCCESS) {
+                        BSG_CUDA_CALL(hb_mc_device_finish(&device));
+                        return rc;
+                }
+
+                /**********************************************************************/
+                /* Freeze the tiles and memory manager cleanup.                       */
+                /**********************************************************************/
+                BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
+        }
+
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
 
 
-        /***********************************/
-        /* Check that the arrays are equal */
-        /***********************************/
-        int rc = HB_MC_SUCCESS;
-        for (int i = 0; i < N; i++) {
-            if (A_host[i] != B_host[i]) {
-                bsg_pr_err("%s: Mismatch: B_host[%d] = %d, Expected %d\n",
-                           __func__, i, B_host[i], A_host[i]);
-                rc = HB_MC_FAIL;
-            }
-        }
-
-        return rc;
+        return HB_MC_SUCCESS;
 }
 
 #ifdef VCS
 int vcs_main(int argc, char ** argv) {
 #else
-int main(int argc, char ** argv) {
+        int main(int argc, char ** argv) {
 #endif
-        bsg_pr_test_info("Unified Main CUDA Regression Test\n");
-        int rc = test_dma(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+                bsg_pr_test_info("Unified Main CUDA Regression Test\n");
+                int rc = test_dma(argc, argv);
+                bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+                return rc;
+        }
 
 
