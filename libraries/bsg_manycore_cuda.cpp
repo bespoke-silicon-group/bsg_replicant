@@ -1885,17 +1885,16 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
         if (!hb_mc_manycore_supports_dma_read(device->mc))
                 return HB_MC_NOIMPL;
 
+        hb_mc_pod_t *pod = &device->pods[pod_id];
+
         // flush cache
-        err = hb_mc_manycore_flush_vcache(device->mc);
+        err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to flush victim cache: %s\n",
                            __func__,
                            hb_mc_strerror(err));
                 return err;
         }
-
-        hb_mc_coordinate_t host =
-                hb_mc_manycore_get_host_coordinate(device->mc);
 
         // for each job...
         for (size_t i = 0; i < count; i++) {
@@ -1905,7 +1904,7 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
                 err = hb_mc_manycore_eva_write_dma
                         (device->mc,
                          &default_map,
-                         &host,
+                         &pod->mesh->origin,
                          &dma->d_addr,
                          dma->h_addr,
                          dma->size);
@@ -1920,7 +1919,7 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
         }
 
         // invalidate cache
-        err = hb_mc_manycore_invalidate_vcache(device->mc);
+        err = hb_mc_manycore_pod_invalidate_vcache(device->mc, pod->pod_coord);
         if (err != HB_MC_SUCCESS) {
                 return err;
         }
@@ -1938,16 +1937,14 @@ int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod_id, 
                 return HB_MC_NOIMPL;
 
         // flush cache
-        err = hb_mc_manycore_flush_vcache(device->mc);
+        hb_mc_pod_t *pod = &device->pods[pod_id];
+        err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to flush victim cache: %s\n",
                            __func__,
                            hb_mc_strerror(err));
                 return err;
         }
-
-        hb_mc_coordinate_t host =
-                hb_mc_manycore_get_host_coordinate(device->mc);
 
         // for each job...
         for (size_t i = 0; i < count; i++) {
@@ -1957,7 +1954,7 @@ int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod_id, 
                 err = hb_mc_manycore_eva_read_dma
                         (device->mc,
                          &default_map,
-                         &host,
+                         &pod->mesh->origin,
                          &dma->d_addr,
                          dma->h_addr,
                          dma->size);

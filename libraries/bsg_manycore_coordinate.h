@@ -177,12 +177,12 @@ extern "C" {
          */
         __attribute__((warn_unused_result))
         static inline hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim) {
-                hb_mc_idx_t idx = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(dim) + hb_mc_coordinate_get_x(coord); 
+                hb_mc_idx_t idx = coord.x * dim.y + coord.y;
                 return idx;
         } 
 
         static inline hb_mc_coordinate_t hb_mc_index_to_coordinate (hb_mc_idx_t idx, hb_mc_dimension_t dim) {
-                return hb_mc_coordinate(idx % dim.x, idx / dim.x);
+                return hb_mc_coordinate(idx / dim.y, idx % dim.y);
         }
 
         /**
@@ -235,10 +235,10 @@ extern "C" {
          */
         static inline hb_mc_coordinate_t hb_mc_coordinate_next(hb_mc_coordinate_t now, hb_mc_coordinate_t origin, hb_mc_coordinate_t dim)
         {
-                now.x += 1;
-                if (now.x >= origin.x + dim.x) {
-                        now.x = origin.x;
-                        now.y += 1;
+                now.y += 1;
+                if (now.y >= origin.y + dim.y) {
+                        now.y = origin.y;
+                        now.x += 1;
                 }
                 return now;
         }
@@ -281,8 +281,8 @@ extern "C" {
          */
 #define foreach_x_y(x_var, y_var, origin, dim)                          \
         for ((x_var = origin.x, y_var = origin.y);                      \
-             y_var < (origin.y+dim.y);                                  \
-             ++x_var >= (origin.x+dim.x) ? (x_var = origin.x, y_var++) : x_var)
+             x_var < (origin.x+dim.x);                                  \
+             ++y_var >= (origin.y+dim.y) ? (y_var = origin.y, x_var++) : y_var)
 
 #ifdef __cplusplus
 }
