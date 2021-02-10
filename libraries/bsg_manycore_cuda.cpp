@@ -460,9 +460,6 @@ static int mesh_num_tiles(hb_mc_mesh_t *mesh)
 #define device_foreach_pod(device, pod_ptr)                             \
         for (pod_ptr = device->pods; pod_ptr != device->pods+device->num_pods; pod_ptr++)
 
-#define device_foreach_pod_id(device, pod_id)   \
-        for (pod_id = 0; pod_id < device->num_pods; pod_id++)
-
 static hb_mc_pod_id_t hb_mc_device_pod_to_pod_id(hb_mc_device_t *device, hb_mc_pod_t *pod)
 {
         return pod - device->pods;
@@ -591,6 +588,26 @@ int hb_mc_device_init_custom_dimensions (hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+int hb_mc_device_program_finish (hb_mc_device_t *device)
+{
+
+        // cleanup pod
+        hb_mc_pod_id_t pod_id = device->default_pod_id;
+        hb_mc_pod_t *pod = &device->pods[pod_id];
+        BSG_CUDA_CALL(hb_mc_device_pod_program_finish(device, pod_id));
+
+        // fence on all requests
+        BSG_CUDA_CALL(hb_mc_manycore_host_request_fence(device->mc, -1));
+
+        return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
+ * @param[in]  device        Pointer to device
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
 int hb_mc_device_finish (hb_mc_device_t *device)
 {
 
@@ -693,7 +710,7 @@ int hb_mc_device_pod_mesh_init(hb_mc_device_t *device,
         }
 
         mesh->dim = dim;
-        mesh->origin = hb_mc_config_get_origin_vcore(cfg);
+        mesh->origin = hb_mc_config_pod_vcore_origin(cfg, pod->pod_coord);
         mesh->tiles = (hb_mc_tile_t *) malloc ( hb_mc_dimension_to_length(dim) * sizeof (hb_mc_tile_t));
         if (mesh->tiles == NULL) {
                 bsg_pr_err("%s: failed to allocate space on host for hb_mc_tile_t struct.\n", __func__);
