@@ -123,7 +123,7 @@ int test_pod_iteration (int argc, char **argv) {
             CHECK(hb_mc_config_is_dram(cfg,core) == 0);
             CHECK(hb_mc_config_is_vanilla_core(cfg, core) == 1);
             CHECK(hb_mc_config_is_host(cfg, core) == 0);
-            CHECK_M(pod_test.x == pod.x && pod_testq.y == pod.y,
+            CHECK_M(pod_test.x == pod.x && pod_test.y == pod.y,
                     "Pod(xy) function produces incorrect pod");
 
             // read a word of DMEM
