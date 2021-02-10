@@ -217,7 +217,8 @@ int hb_mc_memsys_set_dram_channels(hb_mc_memsys_t *memsys,
         case HB_MC_MEMSYS_ID_DRAMSIM3:
         case HB_MC_MEMSYS_ID_HBM2:
                 CHECK(memsys->dram_channels,
-                      memsys->dram_channels <= 8);
+                      memsys->dram_channels > 0 &&
+                      memsys->dram_channels <= 32);
                 break;
         case HB_MC_MEMSYS_ID_INFMEM:
         case HB_MC_MEMSYS_ID_TESTMEM:
