@@ -135,25 +135,7 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
   assign endpoint_out_packet_li.src_x_cord = x_cord_width_p'(host_req_li_cast.src_x_cord);
   assign endpoint_out_packet_li.y_cord     = y_cord_width_p'(host_req_li_cast.y_cord);
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
-
-  always_comb begin
-    if (endpoint_out_packet_li.op_v2 == e_remote_store ||
-        endpoint_out_packet_li.op_v2 == e_remote_sw) begin
-      endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
-    end
-    else begin
-      endpoint_out_packet_li.payload.load_info_s.load_info = {
-        1'b0,
-        1'b0,
-        host_req_li_cast.payload.load_info[2],
-        host_req_li_cast.payload.load_info[3],
-        host_req_li_cast.payload.load_info[4],
-        host_req_li_cast.payload.load_info[5+:2]
-      };
-
-      endpoint_out_packet_li.payload.load_info_s.reserved = '0;
-    end
-  end
+  assign endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
 
   // synopsys translate_off
   always @(posedge clk_i) begin
