@@ -594,20 +594,23 @@ int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa
         return hb_mc_manycore_request_tx(mc, &pkt, -1);
 }
 
+
 template <typename ApplyFunction>
-static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction apply_function)
+static int hb_mc_manycore_pod_apply_to_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod, ApplyFunction apply_function)
 {
         if (!hb_mc_manycore_has_cache(mc))
                 return HB_MC_SUCCESS;
 
         hb_mc_epa_t ways = hb_mc_vcache_num_ways(mc);
         hb_mc_epa_t sets = hb_mc_vcache_num_sets(mc);
-        hb_mc_epa_t caches = hb_mc_vcache_num_caches(mc);
         int err;
 
         for (hb_mc_epa_t way_id = 0; way_id < ways; way_id++) {
                 for (hb_mc_epa_t set_id = 0; set_id < sets; set_id++) {
-                        for (hb_mc_epa_t cache_id = 0; cache_id < caches; cache_id++) {
+                        hb_mc_coordinate_t dram;
+                        hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
+                        {
+                                hb_mc_epa_t cache_id = static_cast<hb_mc_epa_t>(hb_mc_config_dram_id(&mc->config, dram));
                                 // build the address for the way
                                 hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, set_id, way_id);
                                 // apply
@@ -621,13 +624,14 @@ static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction ap
         return HB_MC_SUCCESS;
 }
 
+
 /**
- * Invalidate entire victim cache.
+ * Invalidate entire victim cache for pod.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
-int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
+int hb_mc_manycore_pod_invalidate_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod)
 {
-        return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+        return hb_mc_manycore_pod_apply_to_vcache(mc, pod, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         // write way_id (no valid bit)
                         char npa_str [256];
                         manycore_pr_dbg(mc, "Invalidating vcache tag @ %s\n",
@@ -637,14 +641,13 @@ int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
                 });
 }
 
-
 /**
- * Validate entire victim cache.
+ * Mark each way in victim cache as valid for pod.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
-int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
+int hb_mc_manycore_pod_validate_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod)
 {
-        return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+        return hb_mc_manycore_pod_apply_to_vcache(mc, pod, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         char npa_str[256];
                         uint32_t tag = HB_MC_VCACHE_VALID | hb_mc_vcache_way(mc, hb_mc_npa_get_epa(way_addr));
                         manycore_pr_dbg(mc, "Validating vcache tag @ %s with tag = 0x%08" PRIx32 "\n",
@@ -656,15 +659,15 @@ int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
 }
 
 /**
- * Flush entire victim cache.
+ * Flush entire victim cache for pod.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
-int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
+int hb_mc_manycore_pod_flush_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod)
 {
         if (!hb_mc_manycore_has_cache(mc))
                 return HB_MC_SUCCESS;
 
-        int err = hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+        int err = hb_mc_manycore_pod_apply_to_vcache(mc, pod, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         // flush tag
                         char npa_str[256];
                         manycore_pr_dbg(mc, "Flushing vcach tag @ %s\n",
@@ -676,11 +679,65 @@ int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
                 return err;
 
         // read a word from each cache
-        for (hb_mc_epa_t cache_id = 0; cache_id < hb_mc_vcache_num_caches(mc); cache_id++) {
+        hb_mc_coordinate_t dram;
+        hb_mc_config_pod_foreach_dram(dram, pod, &mc->config) {
+                hb_mc_epa_t cache_id = static_cast<hb_mc_epa_t>(hb_mc_config_dram_id(&mc->config, dram));
                 hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, 0, 0);
                 hb_mc_npa_set_epa(&way_addr, 0);
                 uint32_t dummy;
                 err = hb_mc_manycore_read32(mc, &way_addr, &dummy);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Invalidate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
+{
+        int err;
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                err = hb_mc_manycore_pod_invalidate_vcache(mc, pod);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Validate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
+{
+        int err;
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                err = hb_mc_manycore_pod_validate_vcache(mc, pod);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Flush entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
+{
+        int err;
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                err = hb_mc_manycore_pod_flush_vcache(mc, pod);
                 if (err != HB_MC_SUCCESS)
                         return err;
         }
