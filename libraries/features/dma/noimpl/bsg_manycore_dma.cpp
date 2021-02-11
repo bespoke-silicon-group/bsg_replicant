@@ -58,3 +58,9 @@ int __attribute__((weak)) hb_mc_dma_read(hb_mc_manycore_t *mc,
                         __func__);
         return HB_MC_NOIMPL;
 }
+
+__attribute__((weak))
+int hb_mc_dma_init(hb_mc_manycore_t *mc)
+{
+        return HB_MC_SUCCESS;
+}

@@ -187,6 +187,13 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 return err;
         }
 
+        // initialize dma
+        if ((err = hb_mc_dma_init(mc)) != HB_MC_SUCCESS) {
+                hb_mc_platform_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
+
         return HB_MC_SUCCESS;
 }
 
