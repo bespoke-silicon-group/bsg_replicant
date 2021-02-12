@@ -1028,6 +1028,9 @@ int hb_mc_device_pod_program_finish(hb_mc_device_t *device,
         CHECK_POD_ID(device, pod_id);
         hb_mc_pod_t *pod = &device->pods[pod_id];
 
+        bsg_pr_dbg("%s: calling for pod %d\n",
+                   __func__, pod_id);
+
         if (!pod->program_loaded)
                 return HB_MC_SUCCESS;
 
@@ -1044,6 +1047,12 @@ int hb_mc_device_pod_program_finish(hb_mc_device_t *device,
         // free resources allocated for program
         hb_mc_program_t *program = pod->program;
 
+        // cleanup tile groups
+        BSG_CUDA_CALL(hb_mc_device_pod_tile_groups_exit(device, pod));
+
+        // cleanup mesh
+        BSG_CUDA_CALL(hb_mc_device_pod_mesh_exit(device, pod));
+
         // free allocator
         BSG_CUDA_CALL(hb_mc_program_allocator_exit(program->allocator));
 
@@ -1059,12 +1068,6 @@ int hb_mc_device_pod_program_finish(hb_mc_device_t *device,
         // free program
         free(program);
         pod->program = NULL;
-
-        // cleanup tile groups
-        BSG_CUDA_CALL(hb_mc_device_pod_tile_groups_exit(device, pod));
-
-        // cleanup mesh
-        BSG_CUDA_CALL(hb_mc_device_pod_mesh_exit(device, pod));
 
         pod->program_loaded = 0;
 
@@ -1130,8 +1133,9 @@ int hb_mc_device_pod_free(hb_mc_device_t *device,
         hb_mc_program_t *program = pod->program;
         // check pod has program loaded
         if (program == NULL) {
-                bsg_pr_err("%s: no program load on pod: %s\n",
+                bsg_pr_err("%s: no program load on pod %d: %s\n",
                            __func__,
+                           pod_id,
                            hb_mc_strerror(HB_MC_INVALID));
                 return HB_MC_INVALID;
         }
@@ -1303,8 +1307,10 @@ static int hb_mc_device_pod_tile_group_init(hb_mc_device_t* device,
 static int hb_mc_device_pod_tile_group_exit(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tg)
 {
 
-        // Free the memory location in the device that holds the list of arguments of tile group's kernel
-        BSG_CUDA_CALL(hb_mc_device_free(device, tg->argv_eva));
+        // Free the memory location in the device that holds the list of
+        // arguments of tile group's kernel
+        hb_mc_pod_id_t pod_id = hb_mc_device_pod_to_pod_id(device, pod);
+        BSG_CUDA_CALL(hb_mc_device_pod_free(device, pod_id, tg->argv_eva));
 
         // release tile gorup resources
         tg->dim = HB_MC_DIMENSION(0,0);
