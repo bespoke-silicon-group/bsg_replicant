@@ -1636,6 +1636,7 @@ int hb_mc_device_pod_try_launch_tile_groups(hb_mc_device_t *device,
 {
         int r;
         hb_mc_tile_group_t *tg;
+        hb_mc_dimension_t last_failed = hb_mc_dimension(0,0);
 
         // scan for ready tile groups
         pod_foreach_tile_group(pod, tg)
@@ -1644,10 +1645,18 @@ int hb_mc_device_pod_try_launch_tile_groups(hb_mc_device_t *device,
                 if (tg->status != HB_MC_TILE_GROUP_STATUS_INITIALIZED)
                         continue;
 
+                // skip if we know this shape fails
+                if (last_failed.x == tg->dim.x &&
+                    last_failed.y == tg->dim.y)
+                        continue;
+
                 // keep going if we can't allocate
                 r = hb_mc_device_pod_tile_group_allocate_tiles(device, pod, tg);
-                if (r != HB_MC_SUCCESS)
+                if (r != HB_MC_SUCCESS) {
+                        // mark this shape as the last failed
+                        last_failed = tg->dim;
                         continue;
+                }
 
                 // launch the tile tile group
                 BSG_CUDA_CALL(hb_mc_device_pod_tile_group_launch(device, pod, tg));
