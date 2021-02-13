@@ -1486,7 +1486,7 @@ int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod
 
                 bsg_pr_dbg("%s: %s %s\n",
                            __func__,
-                           hb_mc_coordinate_to_string(origin, buffer, sizeof(buffer)),
+                           hb_mc_coordinate_to_string(origin, origin_str, sizeof(origin_str)),
                            tiles_are_free ? "free" : "not free");
 
                 if (!tiles_are_free)
@@ -1606,60 +1606,55 @@ int hb_mc_device_pod_tile_group_launch(hb_mc_device_t *device, hb_mc_pod_t *pod,
         return HB_MC_SUCCESS;
 }
 
-__attribute__((warn_unused_result))
+// forward declaration
+static
+int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
+                                                     hb_mc_pod_id_t *podv,
+                                                     int podc,
+                                                     hb_mc_pod_id_t *pod_done);
+
+/**
+ * Wait for a tile group to complete for a pod.
+ */
 static
 int hb_mc_device_pod_wait_for_tile_group_finish_any(hb_mc_device_t *device, hb_mc_pod_t *pod)
 {
-        int tile_group_finished = 0;
-        hb_mc_request_packet_t recv, finish;
-        hb_mc_coordinate_t host_coordinate = hb_mc_manycore_get_host_coordinate(device->mc);
+        hb_mc_pod_id_t pid, pid_done;
+        pid = hb_mc_device_pod_to_pod_id(device, pod);
+        return hb_mc_device_podv_wait_for_tile_group_finish_any(device,
+                                                                &pid, 1,
+                                                                &pid_done);
+}
 
-        while (!tile_group_finished) {
-                // block until a packet is received
-                BSG_CUDA_CALL(hb_mc_manycore_request_rx (device->mc, &recv, -1));
+/**
+ * Try to launch as many tile groups as possible in pod
+ */
+static
+int hb_mc_device_pod_try_launch_tile_groups(hb_mc_device_t *device,
+                                            hb_mc_pod_t *pod)
 
-                /* Check all tile groups to see if the received packet is the finish packet from one of them */
-                hb_mc_tile_group_t *tg;
-                pod_foreach_tile_group(pod, tg)
-                {
-                        if (tg->status != HB_MC_TILE_GROUP_STATUS_LAUNCHED)
-                                continue;
+{
+        int r;
+        hb_mc_tile_group_t *tg;
 
-                        // construct expected finish packet for this tile group
-                        hb_mc_request_packet_set_x_dst(&finish, hb_mc_coordinate_get_x(host_coordinate));
-                        hb_mc_request_packet_set_y_dst(&finish, hb_mc_coordinate_get_y(host_coordinate));
-                        hb_mc_request_packet_set_x_src(&finish, hb_mc_coordinate_get_x(tg->origin));
-                        hb_mc_request_packet_set_y_src(&finish, hb_mc_coordinate_get_y(tg->origin));
-                        hb_mc_request_packet_set_data(&finish, HB_MC_CUDA_FINISH_SIGNAL_VAL);
-                        hb_mc_request_packet_set_mask(&finish, HB_MC_PACKET_REQUEST_MASK_WORD);
-                        hb_mc_request_packet_set_op(&finish, HB_MC_PACKET_OP_REMOTE_STORE);
-                        hb_mc_request_packet_set_addr(&finish, hb_mc_npa_get_epa(&tg->finish_signal_npa) >> 2);
+        // scan for ready tile groups
+        pod_foreach_tile_group(pod, tg)
+        {
+                // only look at ready tile groups
+                if (tg->status != HB_MC_TILE_GROUP_STATUS_INITIALIZED)
+                        continue;
 
-                        // continue if this packet does not match this tile group
-                        if (hb_mc_request_packet_equals(&recv, &finish) != HB_MC_SUCCESS)
-                                continue;
+                // keep going if we can't allocate
+                r = hb_mc_device_pod_tile_group_allocate_tiles(device, pod, tg);
+                if (r != HB_MC_SUCCESS)
+                        continue;
 
-                        // match! dellocate tile and return
-                        bsg_pr_dbg("%s: Finish packet received for grid %d tile group (%d,%d): \
-                                                    src (%d,%d), dst (%d,%d), addr: 0x%08" PRIx32 ", data: %d.\n",
-                                   __func__,
-                                   tg->grid_id,
-                                   hb_mc_coordinate_get_x(tg->id), hb_mc_coordinate_get_y(tg->id),
-                                   recv.x_src, recv.y_src,
-                                   recv.x_dst, recv.y_dst,
-                                   recv.addr, recv.data);
-
-                        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_deallocate_tiles(device, pod, tg));
-                        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_exit(device, pod, tg));
-
-                        tile_group_finished = 1;
-                        break;
-                }
+                // launch the tile tile group
+                BSG_CUDA_CALL(hb_mc_device_pod_tile_group_launch(device, pod, tg));
         }
 
         return HB_MC_SUCCESS;
 }
-
 
 /**
  * Launches all kernel invocations enqueued on pod.
@@ -1683,28 +1678,131 @@ int hb_mc_device_pod_kernels_execute(hb_mc_device_t *device,
                    __func__, device->name, pod->program->bin_name);
 
         while (hb_mc_device_pod_all_tile_groups_finished(device, pod) != HB_MC_SUCCESS) {
-                hb_mc_tile_group_t *tile_group;
-                // scan for ready tile groups
-                pod_foreach_tile_group(pod, tile_group)
-                {
-                        // skip if this tile is not initialized
-                        if (tile_group->status != HB_MC_TILE_GROUP_STATUS_INITIALIZED)
-                                continue;
-
-                        // try allocate tiles; skip on failure
-                        r = hb_mc_device_pod_tile_group_allocate_tiles(device, pod, tile_group);
-                        if (r != HB_MC_SUCCESS)
-                                continue;
-
-                        // launch tile group
-                        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_launch(device, pod, tile_group));
-                }
+                // try launching as many tile groups as possible
+                BSG_CUDA_CALL(hb_mc_device_pod_try_launch_tile_groups(device, pod));
 
                 // wait for any tile group to complete
                 BSG_CUDA_CALL(hb_mc_device_pod_wait_for_tile_group_finish_any(device, pod));
         }
 
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Returns true if all pods in podv have all tile-groups finished.
+ */
+static
+int hb_mc_device_podv_all_tile_groups_finished(hb_mc_device_t *device,
+                                               hb_mc_pod_id_t *podv,
+                                               int podc)
+{
+        for (int podi = 0; podi < podc; podi++)
+        {
+                hb_mc_pod_t *pod = &device->pods[podv[podi]];
+                if (hb_mc_device_pod_all_tile_groups_finished(device, pod) != HB_MC_SUCCESS) {
+                        return HB_MC_FAIL;
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Try to launch as many tile groups as possible in all pods in podv
+ */
+static
+int hb_mc_device_podv_try_launch_tile_groups(hb_mc_device_t *device,
+                                             hb_mc_pod_id_t *podv,
+                                             int podc)
+{
+        // try launching as many tile groups as possible on all pods
+        for (int podi = 0; podi < podc; podi++)
+        {
+                hb_mc_pod_t *pod = &device->pods[podv[podi]];
+                BSG_CUDA_CALL(hb_mc_device_pod_try_launch_tile_groups(device, pod));
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Wait for any tile group to complete. Cleanup and release that tile groups resources.
+ * @return pod_done  The pod on which a tile-group just completed
+ */
+static
+int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
+                                                     hb_mc_pod_id_t *podv,
+                                                     int podc,
+                                                     hb_mc_pod_id_t *pod_done)
+{
+        bsg_pr_dbg("%s: calling\n", __func__);
+
+        while (true) {
+                hb_mc_request_packet_t rqst;
+
+                // perform a blocking read from the request fifo
+                BSG_CUDA_CALL(hb_mc_manycore_request_rx(device->mc, &rqst, -1));
+
+                #ifdef DEBUG
+                char pkt_str[256];
+                hb_mc_request_packet_to_string(&rqst, pkt_str, sizeof(pkt_str));
+                bsg_pr_dbg("%s: received packet %s\n",
+                           __func__,
+                           pkt_str);
+                #endif
+                // request packet read
+                // is it a finish packet?
+                if (hb_mc_request_packet_get_data(&rqst) != HB_MC_CUDA_FINISH_SIGNAL_VAL) {
+                        bsg_pr_dbg("%s: not a finish packet\n", __func__);
+                        continue;
+                }
+
+                // identify the pod
+                hb_mc_coordinate_t src =
+                        hb_mc_coordinate(hb_mc_request_packet_get_x_src(&rqst),
+                                         hb_mc_request_packet_get_y_src(&rqst));
+
+                hb_mc_coordinate_t podco = hb_mc_config_pod(&device->mc->config, src);
+                hb_mc_pod_id_t pid = hb_mc_coordinate_to_index(podco, device->mc->config.pods);
+                hb_mc_pod_t *pod = &device->pods[pid];
+
+                // find the tile group with matching origin in pod
+                hb_mc_tile_group_t *tg;
+                pod_foreach_tile_group(pod, tg)
+                {
+                        // only look for launched tile groups
+                        if (tg->status != HB_MC_TILE_GROUP_STATUS_LAUNCHED) {
+                                continue;
+                        }
+
+                        // origin matches?
+                        if (!(tg->origin.x == src.x && tg->origin.y == src.y))
+                                continue;
+
+                        // finish signal epa matches?
+                        if (hb_mc_request_packet_get_epa(&rqst)
+                            != hb_mc_npa_get_epa(&tg->finish_signal_npa))
+                                continue;
+
+                        #ifdef DEBUG
+                        bsg_pr_dbg("%s: received finish packet from (%d,%d)\n",
+                                   __func__, tg->origin.x, tg->origin.y);
+                        #endif
+                        // this is the matching tile group
+                        // deallocate tiles
+                        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_deallocate_tiles(device, pod, tg));
+
+                        // cleanup tile group
+                        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_exit(device, pod, tg));
+
+                        // mark this pod as having completed a tile-group
+                        *pod_done = pid;
+                        return HB_MC_SUCCESS;
+                }
+
+                // should not reach this point
+                bsg_pr_err("%s: completion packet with no matching tile-group\n",
+                           __func__);
+                return HB_MC_FAIL;
+        }
 }
 
 /**
@@ -1723,9 +1821,19 @@ int hb_mc_device_podv_kernels_execute(hb_mc_device_t *device,
                                       hb_mc_pod_id_t *podv,
                                       int podc)
 {
-        for (int podi = 0; podi < podc; podi++)
+        /* launch as many tile groups as possible on all pods */
+        BSG_CUDA_CALL(hb_mc_device_podv_try_launch_tile_groups(device, podv, podc));
+
+        /* until all tile groups have completed */
+        while (hb_mc_device_podv_all_tile_groups_finished(device, podv, podc) != HB_MC_SUCCESS)
         {
-                BSG_CUDA_CALL(hb_mc_device_pod_kernels_execute(device, podv[podi]));
+                /* wait for any tile group to finish on any pod */
+                hb_mc_pod_id_t pod;
+                BSG_CUDA_CALL(hb_mc_device_podv_wait_for_tile_group_finish_any(device, podv, podc,
+                                                                               &pod));
+
+                /* try launching launching tile groups on pod with most recent completion */
+                BSG_CUDA_CALL(hb_mc_device_pod_try_launch_tile_groups(device, &device->pods[pod]));
         }
         return HB_MC_SUCCESS;
 }
@@ -1743,11 +1851,11 @@ int hb_mc_device_podv_kernels_execute(hb_mc_device_t *device,
 int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device)
 {
         hb_mc_pod_id_t podv[device->num_pods];
+        hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(device, pod)
         {
                 podv[pod]=pod;
         }
-
         return hb_mc_device_podv_kernels_execute(device, podv, device->num_pods);
 }
 
