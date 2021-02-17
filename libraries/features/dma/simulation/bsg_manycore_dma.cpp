@@ -29,9 +29,9 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
 {
         hb_mc_coordinate_t pod;
         static parameter_t pod_in_quad_base [2][2] = {
-                           /* Y0 */ /* Y1 */
-                /* X0 */ {     1,       5 },
-                /* X1 */ {     0,       4 },
+                /* Y/X     0   1  */
+                /* 0 */  { 0,  2 },
+                /* 1 */  { 4,  6 },
         };
 
         hb_mc_config_foreach_pod(pod, &mc->config)
@@ -45,9 +45,9 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
                 parameter_t memory_id_quad_base = quad.x*16 + quad.y*8;
                 parameter_t north_id
                         = memory_id_quad_base
-                        + pod_in_quad_base[pod_in_quad.x][pod_in_quad.y];
+                        + pod_in_quad_base[pod_in_quad.y][pod_in_quad.x];
 
-                parameter_t south_id = north_id+2;
+                parameter_t south_id = north_id+1;
                 hb_mc_coordinate_t dram;
                 hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
                 {
