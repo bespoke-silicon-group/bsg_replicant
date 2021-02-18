@@ -1886,6 +1886,7 @@ int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device)
  * @param[in]  alloc_name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_program_init_binary (hb_mc_device_t *device,
                                       const char *bin_name,
                                       const unsigned char *bin_data,
@@ -1915,6 +1916,7 @@ int hb_mc_device_program_init_binary (hb_mc_device_t *device,
  * @param[in]  alloc_name    Unique name of program's memory allocator
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_program_init (hb_mc_device_t *device,
                                const char *bin_name,
                                const char *alloc_name,
@@ -1939,6 +1941,7 @@ int hb_mc_device_program_init (hb_mc_device_t *device,
  * @param[out] eva           Eva address of the allocated memory
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva)
 {
         return hb_mc_device_pod_malloc(device, device->default_pod_id, size, eva);
@@ -1958,6 +1961,7 @@ int hb_mc_device_malloc (hb_mc_device_t *device, uint32_t size, hb_mc_eva_t *eva
  * @param[in]  hb_mc_memcpy_kind         Direction of copy (HB_MC_MEMCPY_TO_DEVICE / HB_MC_MEMCPY_TO_HOST)
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_memcpy (hb_mc_device_t *device,
                          void *dst,
                          const void *src,
@@ -1977,6 +1981,7 @@ int hb_mc_device_memcpy (hb_mc_device_t *device,
  * @param[in]  bytes         Size of buffer to be copied
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_memcpy_to_device(hb_mc_device_t *device,
                                   hb_mc_eva_t daddr,
                                   const void *haddr,
@@ -1994,6 +1999,7 @@ int hb_mc_device_memcpy_to_device(hb_mc_device_t *device,
  * @param[in]  bytes         Size of buffer to be copied
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_memcpy_to_host(hb_mc_device_t *device,
                                 void       *haddr,
                                 hb_mc_eva_t daddr,
@@ -2012,6 +2018,7 @@ int hb_mc_device_memcpy_to_host(hb_mc_device_t *device,
  * @param[in]  sz            The number of bytes to write into device DRAM
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_memset (hb_mc_device_t *device,
                          const hb_mc_eva_t *eva,
                          uint8_t data,
@@ -2122,6 +2129,7 @@ int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod_id, 
  * @param[in] jobs    Vector of host-to-device DMA jobs
  * @param[in] count   Number of host-to-device jobs
  */
+__attribute__((weak))
 int hb_mc_device_dma_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count)
 {
         return hb_mc_device_pod_dma_to_device(device, device->default_pod_id, jobs, count);
@@ -2133,6 +2141,7 @@ int hb_mc_device_dma_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *j
  * @param[in] jobs    Vector of device-to-host DMA jobs
  * @param[in] count   Number of device-to-host jobs
  */
+__attribute__((weak))
 int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
 {
         return hb_mc_device_pod_dma_to_host(device, device->default_pod_id, jobs, count);
@@ -2146,6 +2155,7 @@ int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *job
  * @param[out] eva           Eva address of the memory to be freed
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva)
 {
         return hb_mc_device_pod_free(device, device->default_pod_id, eva);
@@ -2168,6 +2178,7 @@ int hb_mc_device_free (hb_mc_device_t *device, hb_mc_eva_t eva)
  * @param[in]  argv          List of input arguments to kernel
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_kernel_enqueue (hb_mc_device_t *device,
                           hb_mc_dimension_t grid_dim,
                           hb_mc_dimension_t tg_dim,
@@ -2192,6 +2203,7 @@ int hb_mc_kernel_enqueue (hb_mc_device_t *device,
  * @param[in]  device        Pointer to device
  * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
  */
+__attribute__((weak))
 int hb_mc_device_tile_groups_execute (hb_mc_device_t *device)
 {
         return hb_mc_device_pod_kernels_execute(device, device->default_pod_id);

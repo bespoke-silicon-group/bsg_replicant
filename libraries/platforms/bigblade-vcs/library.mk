@@ -63,7 +63,13 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
 	ln -sf $@.0 $@
 
+$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1: %: %.0
+	ln -sf $@.0 $@
+
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
+	ln -sf $@.1 $@
+
+$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so: %: %.1
 	ln -sf $@.1 $@
 
 platform.clean:
