@@ -101,6 +101,48 @@ INDEPENDENT_TESTS += test_tracer
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
 
+# Tests that use the legacy API
+LEGACY_TESTS += test_matrix_mul
+LEGACY_TESTS += test_binary_load_buffer
+LEGACY_TESTS += test_multiple_binary_load
+LEGACY_TESTS += test_host_memset
+LEGACY_TESTS += test_stack_load
+LEGACY_TESTS += test_memory_leak
+LEGACY_TESTS += test_dram_load_store
+LEGACY_TESTS += test_dram_host_allocated
+LEGACY_TESTS += test_dram_device_allocated
+LEGACY_TESTS += test_device_memset
+LEGACY_TESTS += test_device_memcpy
+#LEGACY_TESTS += test_vec_add
+#LEGACY_TESTS += test_vec_add_dma
+#LEGACY_TESTS += test_vec_add_parallel
+LEGACY_TESTS += test_vec_add_parallel_multi_grid
+LEGACY_TESTS += test_vec_add_serial_multi_grid
+LEGACY_TESTS += test_vec_add_shared_mem
+LEGACY_TESTS += test_max_pool2d
+LEGACY_TESTS += test_shared_mem
+LEGACY_TESTS += test_shared_mem_load_store
+LEGACY_TESTS += test_matrix_mul
+LEGACY_TESTS += test_matrix_mul_shared_mem
+
+LEGACY_TESTS += test_float_all_ops
+LEGACY_TESTS += test_float_vec_add
+LEGACY_TESTS += test_float_vec_add_shared_mem
+LEGACY_TESTS += test_float_vec_mul
+LEGACY_TESTS += test_float_vec_div
+LEGACY_TESTS += test_float_vec_exp
+LEGACY_TESTS += test_float_vec_sqrt
+LEGACY_TESTS += test_float_vec_log
+LEGACY_TESTS += test_float_matrix_mul
+LEGACY_TESTS += test_float_matrix_mul_shared_mem
+LEGACY_TESTS += test_softmax
+LEGACY_TESTS += test_log_softmax
+LEGACY_TESTS += test_hammer_cache
+LEGACY_TESTS += test_profiler
+LEGACY_TESTS += test_tracer
+LEGACY_TESTS += test_conv1d
+LEGACY_TESTS += test_conv2d
+
 REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
 
 ###############################################################################
