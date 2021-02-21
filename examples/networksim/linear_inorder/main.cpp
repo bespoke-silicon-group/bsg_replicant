@@ -34,6 +34,37 @@
 
 #include <random>
 #include <limits>
+#include <string.h>
+
+#ifndef CACHE_START_TYPE
+#define CACHE_START_TYPE "ruchy"
+#endif
+
+// cache_start_index(y_i-origin.y,x_i-origin.x)
+
+int cache_start_index(int y,int x)
+{
+  if (strcmp(CACHE_START_TYPE,"ruchy")==0)
+    return (y << 2) + ((0x24924924 >> (x << 1)) & 3);
+  else
+   if (strcmp(CACHE_START_TYPE,"ruchydeux")==0)
+     return (y << 2) + (x & 3);
+   else
+   if (strcmp(CACHE_START_TYPE,"ruchytrois")==0)
+     return (y << 2) + (x & 2);
+   else
+    if (strcmp(CACHE_START_TYPE,"xstripe")==0)
+      return ((x << 1) + (y&1));
+    else
+    if (strcmp(CACHE_START_TYPE,"ystripe")==0)
+      return (y << 2);
+    else
+      if (strcmp(CACHE_START_TYPE,"zero")==0)
+	return 0;
+      else
+	return 0;
+}
+
 
 
 #ifdef VCS
@@ -102,7 +133,8 @@ int main(int argc, char ** argv) {
         hb_mc_idx_t idx = 0;
         for(hb_mc_idx_t y_i = origin.y; y_i <= max.y; ++y_i){
                 for(hb_mc_idx_t x_i = origin.x; x_i <= max.x; ++x_i){
-                        unsigned int cache_idx = ((y_i-origin.y) << 2) + ((0x24924924 >> (2*(x_i-origin.x))) & 3);
+		        //unsigned int cache_idx = ((y_i-origin.y) << 2) + ((0x24924924 >> (2*(x_i-origin.x))) & 3);
+  		        unsigned int cache_idx = cache_start_index(y_i-origin.y,x_i-origin.x); 
                         int offset;
                         offset = stripe * cache_idx;
                         for(uint32_t j = 0; j < niters; ++j){
@@ -140,7 +172,8 @@ int main(int argc, char ** argv) {
                         BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
 
                         // Per-Tile Offset into buffer
-                        unsigned int cache_idx = ((y_i-origin.y) << 2) + ((0x24924924 >> (2*(x_i-origin.x))) & 3);
+                        //unsigned int cache_idx = ((y_i-origin.y) << 2) + ((0x24924924 >> (2*(x_i-origin.x))) & 3);
+                        unsigned int cache_idx = cache_start_index(y_i-origin.y,x_i-origin.x); 
                         int offset;
                         offset = stripe * cache_idx;
                         write_data = offset;

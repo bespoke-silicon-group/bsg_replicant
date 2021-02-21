@@ -93,13 +93,18 @@ cache_utilization.png: $(TEST_NAME).log
 vcache_stall_detailed.png: $(TEST_NAME).log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
 
+# this rule does a sweep across many options
+sweep: $(foreach els,2 4 8 16 32 48 64 96 128 256,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(els)-$(stripe)-$(mode).deploy)))
+
+
 # this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
-# syntax <reply fifo size>-<vcache stripe words>.deploy
+# syntax <reply fifo size>-<vcache stripe words>-<ruchy|ruchydeux|ruchytrois|zero|xstripe|ystripe>.deploy
 # make -j 10 8-1.deploy 32-1.deploy 64-1.deploy 128-1.deploy 48-1.deploy 96-1.deploy
 
 %.deploy:
 	mkdir $@
-	cp $(TEST_NAME).cpp $@
+	echo "#define CACHE_START_TYPE \"$(call arg-item,3,$*)\"" > $@/$(TEST_NAME).cpp
+	cat $(TEST_NAME).cpp >> $@/$(TEST_NAME).cpp
 	echo "BSG_MACHINE_PATH=my_machine" > $@/Makefile
 	cat Makefile >> $@/Makefile
 	mkdir -p $@/my_machine
@@ -112,8 +117,18 @@ vcache_stall_detailed.png: $(TEST_NAME).log
 go: router_utilization.rpt vcache_stall_detailed.png router_utilization.png cache_utilization.png tile_execution.png
 
 # this will summarize the data; currently just the max time for each run
+# awk -F'[^0-9]*' '{print $1, $2, $3, $4}' will extract fields
+
 summarize:
 	find -iname "*.rpt" -exec grep -H Max '{}' ';'
+
+summarize-by-hash:
+	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.ruchy
+	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}'  > sum.ruchydeux
+	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.ruchytrois
+	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.zero
+	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.xstripe
+	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.ystripe
 
 ###############################################################################
 # C_ARGS: Use this to pass arguments that you want to appear in argc/argv
