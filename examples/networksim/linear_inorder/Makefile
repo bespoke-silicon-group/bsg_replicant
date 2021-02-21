@@ -37,7 +37,11 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../../environment.mk
+
+REPLICANT-TOP:=$(shell git rev-parse --show-toplevel)
+PY_ANALYTICS_PATH := $(REPLICANT-TOP)/examples/networksim
+
+include $(REPLICANT-TOP)/environment.mk
 
 # compillation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -51,6 +55,10 @@ include $(EXAMPLES_PATH)/execution.mk
 
 TEST_NAME = main
 
+arg-item = $(word $(1),$(subst -, ,$(2)))
+
+
+$(warning $(PY_ANALYTICS_PATH))
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
@@ -69,27 +77,44 @@ $(TEST_NAME).o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 $(TEST_NAME).log: $(TEST_NAME)
 
 router_utilization.rpt: $(TEST_NAME).log
-	python3 ../router_parser.py
+	python3 $(PY_ANALYTICS_PATH)/router_parser.py
 
 tile_execution.rpt: $(TEST_NAME).log
-	python3 ../tileparser.py
+	python3 $(PY_ANALYTICS_PATH)/tileparser.py
 
 %.png: %.rpt
 	pango-view  --font mono -qo $@ $<
 
 cache_utilization.png: $(TEST_NAME).log
-	python3 ../cacheutil.py
+	python3 $(PY_ANALYTICS_PATH)/cacheutil.py
 
 .PHONY: router_utilization.rpt vcache_stall_detailed.png
 
 vcache_stall_detailed.png: $(TEST_NAME).log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
 
-%_experiment: router_utilization.rpt vcache_stall_detailed.png router_utilization.png cache_utilization.png tile_execution.png
+# this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
+# syntax <reply fifo size>-<vcache stripe words>.deploy
+# make -j 10 8-1.deploy 32-1.deploy 64-1.deploy 128-1.deploy 48-1.deploy 96-1.deploy
+
+%.deploy:
 	mkdir $@
 	cp $(TEST_NAME).cpp $@
-	cp $(BSG_MACHINE_PATH)/Makefile.machine.include $@
-	mv *.png *.csv *.rpt *.log $@
+	echo "BSG_MACHINE_PATH=my_machine" > $@/Makefile
+	cat Makefile >> $@/Makefile
+	mkdir -p $@/my_machine
+	cp -r $(BSG_MACHINE_PATH)/* $@/my_machine/.
+	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,1,$*)" >> $@/my_machine/Makefile.machine.include
+	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
+	$(MAKE) -C $@ go
+
+# this will actually indirectly do the run
+go: router_utilization.rpt vcache_stall_detailed.png router_utilization.png cache_utilization.png tile_execution.png
+
+# this will summarize the data; currently just the max time for each run
+summarize:
+	find -iname "*.rpt" -exec grep -H Max '{}' ';'
+
 ###############################################################################
 # C_ARGS: Use this to pass arguments that you want to appear in argc/argv
 #
@@ -108,6 +133,7 @@ help:
 	@echo "      $(TEST_NAME).log: Run test and generate the log file"
 	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
 	@echo "      clean: Remove all subdirectory-specific outputs"
+
 
 .PHONY: clean
 
