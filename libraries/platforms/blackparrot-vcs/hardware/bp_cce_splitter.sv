@@ -1,12 +1,13 @@
 
+`include "bp_common_defines.svh"
+
 module bp_cce_splitter
- import bp_common_aviary_pkg::*;
  import bp_common_pkg::*;
  import bsg_manycore_pkg::*;
  #(parameter bp_params_e bp_params_p = e_bp_default_cfg
    `declare_bp_proc_params(bp_params_p)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce)
-   `declare_bp_bedrock_mem_if_widths(paddr_width_p, word_width_p, lce_id_width_p, lce_assoc_p, split)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce)
+   `declare_bp_bedrock_mem_if_widths(paddr_width_p, word_width_gp, lce_id_width_p, lce_assoc_p, split)
    )
   (input                                            clk_i
    , input                                          reset_i
@@ -28,8 +29,8 @@ module bp_cce_splitter
    , output logic [1:0]                             io_resp_yumi_o
    );
 
-  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_p, lce_id_width_p, lce_assoc_p, cce);
-  `declare_bp_bedrock_mem_if(paddr_width_p, word_width_p, lce_id_width_p, lce_assoc_p, split);
+  `declare_bp_bedrock_mem_if(paddr_width_p, dword_width_gp, lce_id_width_p, lce_assoc_p, cce);
+  `declare_bp_bedrock_mem_if(paddr_width_p, word_width_gp, lce_id_width_p, lce_assoc_p, split);
   bp_bedrock_cce_mem_msg_s io_cmd_cast_i;
   bp_bedrock_cce_mem_msg_s io_resp_cast_o;
   bp_bedrock_split_mem_msg_s [1:0] io_cmd_cast_o;
