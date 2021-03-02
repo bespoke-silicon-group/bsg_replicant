@@ -146,7 +146,7 @@ hb_mc_epa_t hb_mc_vcache_num_caches(const hb_mc_manycore_t *mc)
 }
 
 static
-hb_mc_epa_t hb_mc_vcache_tag_epa(const hb_mc_manycore *mc, uint32_t tag)
+hb_mc_epa_t hb_mc_vcache_tag_epa(const hb_mc_manycore_t *mc, uint32_t tag)
 {
     return tag;
 }

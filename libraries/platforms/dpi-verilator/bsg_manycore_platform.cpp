@@ -226,9 +226,9 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
 
         std::string profiler = hierarchy;
         profiler += ".network.manycore";
-        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_X, &rd);
+        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_POD_DIM_X, &rd);
         x = rd;
-        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_DEVICE_DIM_Y, &rd);
+        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_POD_DIM_Y, &rd);
         y = rd;
         err = hb_mc_profiler_init(&(platform->prof), x, y, profiler);
         if (err != HB_MC_SUCCESS){
@@ -304,6 +304,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NO_CREDITS || 
                   err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+                  err == BSG_NONSYNTH_DPI_BUSY ||
                   err == BSG_NONSYNTH_DPI_NOT_READY    ));
 
         if(err != BSG_NONSYNTH_DPI_SUCCESS){
@@ -356,6 +357,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+                  err == BSG_NONSYNTH_DPI_BUSY ||
                   err == BSG_NONSYNTH_DPI_NOT_VALID));
 
         if(err != BSG_NONSYNTH_DPI_SUCCESS){
@@ -545,3 +547,25 @@ int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         return hb_mc_tracer_log_disable(pl->tracer);
 }
+
+/**
+ * Check if chip reset has completed.
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */        
+int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
+{
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
+        bool done;
+        pl->dpi->reset_is_done(done);
+
+        while (!done) {
+            manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
+            pl->top->eval();
+            manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(r));
+            pl->dpi->reset_is_done(done);
+        }
+
+        return HB_MC_SUCCESS;
+}
+

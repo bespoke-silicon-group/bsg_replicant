@@ -59,6 +59,7 @@ extern "C" {
         int hb_mc_manycore_epa_check_alignment(const hb_mc_epa_t *epa, size_t sz);
 
 #define HB_MC_EPA_LOGSZ 18
+#define HB_MC_GLOBAL_EPA_LOGSZ 16
 
 #define HB_MC_HOST_EPA_FINISH 0xEAD0
 #define HB_MC_HOST_EPA_FAIL 0xEAD8

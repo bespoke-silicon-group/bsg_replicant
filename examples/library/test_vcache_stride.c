@@ -40,9 +40,7 @@ int test_vcache_stride() {
         int rc;
         hb_mc_manycore_t mc = HB_MC_MANYCORE_INIT;
         const hb_mc_config_t *config;
-        hb_mc_dimension_t dim;
-        hb_mc_coordinate_t host, dest;
-        hb_mc_idx_t host_x, host_y, dim_x, dim_y;
+        hb_mc_coordinate_t dest;
         srand(time(0));
 
         rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", 0);
@@ -53,22 +51,8 @@ int test_vcache_stride() {
 
         config = hb_mc_manycore_get_config(&mc);
 
-        host = hb_mc_config_get_host_interface(config);
-        host_x = hb_mc_coordinate_get_x(host);
-        host_y = hb_mc_coordinate_get_y(host);
-
-        dim = hb_mc_config_get_dimension_network(config);
-        dim_x = hb_mc_dimension_get_x(dim);
-        dim_y = hb_mc_dimension_get_y(dim);
-
         /* To increase the number of DRAM banks tested, increase ndrams (must be
          * less than dim_x) and add the X coordinates to dim_x */
-        int dram = 0, ndrams = dim_x;
-        hb_mc_idx_t dram_xs[dim_x];
-        for (hb_mc_idx_t x = 0; x < dim_x; x++) dram_xs[x] = x;
-
-        hb_mc_idx_t dram_coord_y = hb_mc_config_get_dram_y(config);
-        hb_mc_idx_t dram_coord_x = -1;
         hb_mc_epa_t epa;
         hb_mc_npa_t npa;
         int xidx, stride;
@@ -79,8 +63,11 @@ int test_vcache_stride() {
         hb_mc_request_packet_t req;
         hb_mc_response_packet_t res;
 
-        for (dram = 0; dram < ndrams; ++dram){
-                dram_coord_x = dram_xs[dram];
+        hb_mc_config_foreach_dram_coordinate(dest, config)
+        {
+                hb_mc_idx_t dram_coord_x, dram_coord_y;
+                dram_coord_x = hb_mc_coordinate_get_x(dest);
+                dram_coord_y = hb_mc_coordinate_get_y(dest);
                 bsg_pr_test_info("Testing DRAM/Cache Interface at (%d, %d).\n", dram_coord_x, dram_coord_y);
 
                 for (stride = 0; stride < NUM_STRIDES; ++stride) {

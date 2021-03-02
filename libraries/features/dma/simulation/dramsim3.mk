@@ -55,7 +55,7 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
 # Check if dramsim3 is the memory model for this design
-ifneq ($(filter dramsim3, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
+ifneq ($(filter hbm2, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 
 # Add a clean rule
 .PHONY: dramsim3.clean

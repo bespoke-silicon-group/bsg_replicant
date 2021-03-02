@@ -44,18 +44,18 @@ int test_vcache_sequence() {
         
 
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-        uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
-        uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
 
-
-        uint32_t dram_coord_x = 0;
-        uint32_t dram_coord_y = hb_mc_config_get_dram_y(config);
         int mismatch = 0; 
+        int dram_count = 0, dram_break_after = 1;
+        hb_mc_coordinate_t dram;
+        hb_mc_config_foreach_dram_coordinate(dram, config)
+        {
+                if (dram_count++ >= dram_break_after)
+                        break;
 
-
-        /* To check all dram banks change 1 to manycore_dim_x */
-        for (dram_coord_x = 0; dram_coord_x < 1; dram_coord_x ++) {
-
+                uint32_t dram_coord_x, dram_coord_y;
+                dram_coord_x = hb_mc_coordinate_get_x(dram);
+                dram_coord_y = hb_mc_coordinate_get_y(dram);
                 bsg_pr_test_info("Testing DRAM bank (%d,%d).\n", dram_coord_x, dram_coord_y);
                 uint32_t A_host;
                 uint32_t A_device;

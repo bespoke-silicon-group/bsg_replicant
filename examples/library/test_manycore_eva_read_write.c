@@ -271,7 +271,8 @@ int test_manycore_eva_read_write () {
         /*********************************************/
         /* Test RW to Group DMEM (DMEM within Group)*/
         /*********************************************/
-        x = 1, y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
+        x = 1;
+        y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
         eva_dest = TEST_BASE_EVA;
         eva_dest = (GROUP_INDICATOR) | (x << GROUP_X_OFFSET) |
                 (y << GROUP_Y_OFFSET) | (eva_dest);
@@ -299,7 +300,8 @@ int test_manycore_eva_read_write () {
         /*********************************************/
         /* Test RW to Group DMEM (DMEM within Group)*/
         /*********************************************/
-        x = 2, y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc)) + 1;
+        x = hb_mc_config_get_vcore_base_x(hb_mc_manycore_get_config(mc)) + 2;
+        y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc)) + 1;
         eva_dest = TEST_BASE_EVA;
         eva_dest = (GLOBAL_INDICATOR) | (x << GLOBAL_X_OFFSET) |
                 (y << GLOBAL_Y_OFFSET) | (eva_dest);

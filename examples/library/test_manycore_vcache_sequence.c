@@ -56,16 +56,17 @@ int test_manycore_vcache_sequence() {
         }
 
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-        uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
-
-        uint32_t dram_coord_x = 0;
-        uint32_t dram_coord_y = hb_mc_config_get_dram_y(config);
         int mismatch = 0;
 
         /**************************************************************/
         /* Loop over all DRAM banks and write ARRAY_LEN words to each */
         /**************************************************************/
-        for (dram_coord_x = 0; dram_coord_x < 1; dram_coord_x++) {
+        hb_mc_coordinate_t dram_coord;
+        hb_mc_config_foreach_dram_coordinate(dram_coord, config)
+        {
+                uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
+                uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
+
                 uint32_t write_data, read_data, byteaddr;
                 bsg_pr_test_info("%s: Testing DRAM bank (%" PRIu32 ",%" PRIu32 ")\n",
                                  __func__, dram_coord_x, dram_coord_y);

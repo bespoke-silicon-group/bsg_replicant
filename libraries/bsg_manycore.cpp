@@ -46,6 +46,7 @@
 
 #include <type_traits>
 #include <stack>
+#include <map>
 #include <queue>
 #include <vector>
 
@@ -62,10 +63,10 @@
 #define manycore_pr_err(mc, fmt, ...)                   \
         bsg_pr_err("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-#define manycore_pr_warn(mc, fmt, ...)                          \
+#define manycore_pr_warn(mc, fmt, ...)                  \
         bsg_pr_warn("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-#define manycore_pr_info(mc, fmt, ...)                          \
+#define manycore_pr_info(mc, fmt, ...)                  \
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
 
@@ -167,6 +168,13 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
 
         // initialize responders
         if ((err = hb_mc_responders_init(mc))){
+                hb_mc_platform_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
+
+        // wait for reset to complete
+        if ((err = hb_mc_platform_wait_reset_done(mc)) != HB_MC_SUCCESS) {
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
                 return err;
@@ -387,6 +395,7 @@ static bool hb_mc_manycore_dst_npa_is_valid(hb_mc_manycore_t *mc, const hb_mc_np
         if (hb_mc_npa_get_y(npa) >= hb_mc_dimension_get_y(dim)) {
                 char npa_str[256];
                 manycore_pr_err(mc, "%s: %s is not a valid destination\n",
+                                __func__,
                                 hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
                 return false;
         }
@@ -708,24 +717,15 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
 
         // mark request with id
         hb_mc_request_packet_set_load_id(&rqst.request, id);
-        int shift = hb_mc_npa_get_epa(npa) & 0x3;
-        /* set the byte mask */
-        switch (sz) {
-        case 4:
-                hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
-                break;
-        case 2:
-                hb_mc_request_packet_set_mask(&rqst.request,
-                                              static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
-                break;
-        case 1:
-                hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
-                break;
-        default:
-                return HB_MC_INVALID;
-        }
+
+        // set load info
+        hb_mc_request_packet_load_info_t info = {};
+        info.part_sel       = hb_mc_npa_get_epa(npa) & 0x3;
+        info.is_unsigned_op = 1;
+        info.is_hex_op      = sz == 2;
+        info.is_byte_op     = sz == 1;
+
+        hb_mc_request_packet_set_load_info(&rqst.request, info);
 
         /* transmit the request to the hardware */
         manycore_pr_dbg(mc, "Sending %d-byte read request to NPA "
@@ -773,33 +773,6 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
-template<typename UINT>
-static UINT hb_mc_manycore_mask_load_data(const hb_mc_npa_t *npa, uint32_t load_data)
-{
-        int shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
-        uint32_t result;
-
-        /* make sure this template is being used only as intended */
-        static_assert(std::is_unsigned<UINT>::value,
-                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
-
-        static_assert(std::is_integral<UINT>::value,
-                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
-
-        static_assert(sizeof(UINT) == 1 || sizeof(UINT) == 2 || sizeof(UINT) == 4,
-                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
-
-        if (sizeof(UINT) == 4) {
-                result = load_data;
-        } else if (sizeof(UINT) == 2) {
-                result = (load_data >> shift) & 0xFFFF;
-        } else if (sizeof(UINT) == 1) {
-                result = (load_data >> shift) & 0xFF;
-        }
-
-        return static_cast<UINT>(result);
-}
-
 /* read from a memory address on the manycore */
 template <typename UINT>
 static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, UINT *vp)
@@ -818,7 +791,7 @@ static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, UIN
                 return err;
 
         /* mask off unused bits */
-        *vp = hb_mc_manycore_mask_load_data<UINT>(npa, load_data);
+        *vp = static_cast<UINT>(load_data);
         return HB_MC_SUCCESS;
 }
 
@@ -1025,7 +998,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         for (int i = n_ids - 1; i >= 0; i--)
                 ids.push(static_cast<uint32_t>(i));
 
-        int id_to_rsp_i [n_ids];
+        std::map<uint32_t, uint32_t> id_to_rsp_i;
         hb_mc_npa_t id_to_npa[n_ids];
 
         /* until we've received all responses... */
@@ -1063,6 +1036,8 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                                 __func__, hb_mc_strerror(err));
                                 return err;
                         }
+                        manycore_pr_dbg(mc, "%s: Sent read request with load_id = %" PRIu32 "\n",
+                                        __func__, rqst_load_id);
                 }
 
                 /* read all available response packets */
@@ -1086,8 +1061,22 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                 return HB_MC_FAIL;
                         }
 
+                        // This would be an unexpected response
+                        if (id_to_rsp_i.count(load_id) == 0) {
+                                manycore_pr_err(mc, "%s: Unexpected load id = %" PRIu32 "\n",
+                                                __func__, load_id);
+                                return HB_MC_FAIL;
+                        }
+                        uint32_t idx = id_to_rsp_i[load_id];
+                        
+                        // This would be a runtime writer error... or worse.
+                        if (idx > cnt) {
+                                manycore_pr_err(mc, "%s: Return index outside of array. Idx = %" PRIu32 "\n",
+                                                __func__, idx);
+                                return HB_MC_FAIL;
+                        }
                         // write 'read_data' back to the correct location
-                        data[id_to_rsp_i[load_id]] = hb_mc_manycore_mask_load_data<UINT>(&id_to_npa[load_id], read_data);
+                        data[idx] = static_cast<UINT>(read_data);
 
                         // increment succesful responses
                         rsp_i++;

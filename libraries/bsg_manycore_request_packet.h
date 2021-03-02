@@ -58,19 +58,65 @@ extern "C" {
                 uint8_t  y_dst; //!< y coordinate of the responder
                 uint8_t  x_src; //!< x coordinate of the requester
                 uint8_t  y_src; //!< y coordinate of the requester
-                uint32_t data;  //!< packet's payload data
+                /*
+                  match op_v2 with
+                  [load]     => load_info
+                  [sw,amo_*] => payload data
+                  [store]    => payload_data + reg_id in unmasked bytes
+                 */
+                uint32_t payload;  //!< packet's payload data
+                /*
+                  match op_v2 with
+                  [store]      => store_mask
+                  [sw,load]    => register_id
+                  [cache_op]   => afl,ainv,aflinv,tagfl
+                 */
                 uint8_t  reg_id; //!< 5-bit id for load or amo
-                uint8_t  op_ex;  //!< 4-bit byte mask
-                uint8_t  op;    //!< opcode
+                uint8_t  op_v2;    //!< opcode
                 uint32_t addr;  //!< address field (EPA)
                 uint8_t  reserved[1];
         }  __attribute__((packed)) hb_mc_request_packet_t;
 
+        typedef struct hb_mc_request_packet_load_info {
+                uint32_t part_sel;
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_PARTSEL_MASK         0x60
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_PARTSEL_SHIFT        5
+                int      is_hex_op;
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_HEX_OP_MASK       0x10
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_HEX_OP_SHIFT      4
+                int      is_byte_op;
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_BYTE_OP_MASK      0x08
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_BYTE_OP_SHIFT     3
+                int      is_unsigned_op;
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_UNSIGNED_OP_MASK  0x04
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_UNSIGNED_OP_SHIFT 2
+        } hb_mc_request_packet_load_info_t;
+
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_GET(data, field)                 \
+                (((data) & HB_MC_REQUEST_PACKET_LOAD_INFO_ ## field ##_MASK) >> \
+                 HB_MC_REQUEST_PACKET_LOAD_INFO_ ## field ## _SHIFT)
+
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_SET(data, field, field_val)      \
+        do {                                                            \
+                data &= ~HB_MC_REQUEST_PACKET_LOAD_INFO_ ## field ## _MASK; \
+                data |= ((field_val) << HB_MC_REQUEST_PACKET_LOAD_INFO_ ## field ## _SHIFT) & \
+                        HB_MC_REQUEST_PACKET_LOAD_INFO_ ## field ## _MASK; \
+        } while (0)
 
         typedef enum __hb_mc_packet_op_t {
-                HB_MC_PACKET_OP_REMOTE_LOAD  = 0,
-                HB_MC_PACKET_OP_REMOTE_STORE = 1,
-                HB_MC_PACKET_OP_CACHE_OP     = 3, // AFL, AINV, AFLINV
+                HB_MC_PACKET_OP_REMOTE_LOAD    = 0,
+                HB_MC_PACKET_OP_REMOTE_STORE   = 1,
+                HB_MC_PACKET_OP_REMOTE_SW      = 2,
+                HB_MC_PACKET_OP_CACHE_OP       = 3, // AFL, AINV, AFLINV
+                HB_MC_PACKET_OP_REMOTE_AMOSWAP = 4,
+                HB_MC_PACKET_OP_REMOTE_AMOADD  = 5,
+                HB_MC_PACKET_OP_REMOTE_AMOXOR  = 6,
+                HB_MC_PACKET_OP_REMOTE_AMOAND  = 7,
+                HB_MC_PACKET_OP_REMOTE_AMOOR   = 8,
+                HB_MC_PACKET_OP_REMOTE_AMOMIN  = 9,
+                HB_MC_PACKET_OP_REMOTE_AMOMAX  =10,
+                HB_MC_PACKET_OP_REMOTE_AMOMINU =11,
+                HB_MC_PACKET_OP_REMOTE_AMOMAXU =12,
         } hb_mc_packet_op_t;
 
         typedef enum __hb_mc_packet_cache_op {
@@ -151,7 +197,7 @@ extern "C" {
          */
         static inline uint8_t hb_mc_request_packet_get_mask(const hb_mc_request_packet_t *packet)
         {
-                return packet->op_ex;
+                return packet->reg_id;
         }
 
         /**
@@ -161,7 +207,7 @@ extern "C" {
          */
         static inline uint8_t hb_mc_request_packet_get_cache_op(const hb_mc_request_packet_t *packet)
         {
-            return packet->op_ex;
+            return packet->reg_id;
         }
 
         /**
@@ -171,7 +217,7 @@ extern "C" {
          */
         static inline uint8_t hb_mc_request_packet_get_op(const hb_mc_request_packet_t *packet)
         {
-                return packet->op;
+                return packet->op_v2;
         }
 
         /**
@@ -184,6 +230,23 @@ extern "C" {
                 return le32toh(packet->addr);
         }
 
+
+        /**
+         * @param[in] packet a request packet
+         * @return the load info for the request
+         */
+        static inline hb_mc_request_packet_load_info_t
+        hb_mc_request_packet_get_load_info(const hb_mc_request_packet_t *packet)
+        {
+                hb_mc_request_packet_load_info_t load_info = {};
+                unsigned info = le32toh(packet->payload);
+                load_info.part_sel       = HB_MC_REQUEST_PACKET_LOAD_INFO_GET(info, PARTSEL);
+                load_info.is_hex_op      = HB_MC_REQUEST_PACKET_LOAD_INFO_GET(info, IS_HEX_OP);
+                load_info.is_byte_op     = HB_MC_REQUEST_PACKET_LOAD_INFO_GET(info, IS_BYTE_OP);
+                load_info.is_unsigned_op = HB_MC_REQUEST_PACKET_LOAD_INFO_GET(info, IS_UNSIGNED_OP);
+                return load_info;
+        }
+
         /**
          * Get the data field of a request packet
          * @param[in] packet a request packet
@@ -191,7 +254,7 @@ extern "C" {
          */
         static inline uint32_t hb_mc_request_packet_get_data(const hb_mc_request_packet_t *packet)
         {
-                return le32toh(packet->data);
+                return le32toh(packet->payload);
         }
 
         /**
@@ -203,8 +266,8 @@ extern "C" {
         {
                 uint32_t valid = 0;
                 for (int i = 0; i < 4; i++) { /* TODO: hardcoded */
-                        if (hb_mc_get_bits(packet->op_ex, i, 1) == 1)
-                                valid |=  hb_mc_get_bits(packet->data, i*8, 8);
+                        if (hb_mc_get_bits(packet->reg_id, i, 1) == 1)
+                                valid |=  hb_mc_get_bits(packet->payload, i*8, 8);
                 }
                 return le32toh(valid);
 
@@ -266,7 +329,7 @@ extern "C" {
          */
         static inline void hb_mc_request_packet_set_mask(hb_mc_request_packet_t *packet, hb_mc_packet_mask_t mask)
         {
-                packet->op_ex = mask;
+                packet->reg_id = mask;
         }
 
         /**
@@ -277,7 +340,7 @@ extern "C" {
         static inline void hb_mc_request_packet_set_cache_op(hb_mc_request_packet_t *packet,
                                                              hb_mc_packet_cache_op_t op)
         {
-                packet->op_ex = op;
+                packet->reg_id = op;
         }
 
         /**
@@ -287,7 +350,7 @@ extern "C" {
          */
         static inline void hb_mc_request_packet_set_op(hb_mc_request_packet_t *packet, hb_mc_packet_op_t op)
         {
-                packet->op = op;
+                packet->op_v2 = op;
         }
 
         /**
@@ -307,9 +370,24 @@ extern "C" {
          */
         static inline void hb_mc_request_packet_set_data(hb_mc_request_packet_t *packet, uint32_t data)
         {
-                packet->data = htole32(data); // TODO: byte mask?
+                packet->payload = htole32(data); // TODO: byte mask?
         }
 
+        /**
+         * Set the load info in a request packet
+         * @param[in] packet    a request packet
+         * @param[in] load_info the load info fields for a request packet
+         */
+        static inline void hb_mc_request_packet_set_load_info(hb_mc_request_packet_t *packet,
+                                                              hb_mc_request_packet_load_info_t load_info)
+        {
+                uint32_t data = 0;
+                HB_MC_REQUEST_PACKET_LOAD_INFO_SET(data, PARTSEL,        load_info.part_sel);
+                HB_MC_REQUEST_PACKET_LOAD_INFO_SET(data, IS_HEX_OP,      load_info.is_hex_op);
+                HB_MC_REQUEST_PACKET_LOAD_INFO_SET(data, IS_BYTE_OP,     load_info.is_byte_op);
+                HB_MC_REQUEST_PACKET_LOAD_INFO_SET(data, IS_UNSIGNED_OP, load_info.is_unsigned_op);
+                packet->payload = le32toh(data);
+        }
 
         /**
          * Get the EPA of a request packet.

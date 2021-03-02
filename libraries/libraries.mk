@@ -28,7 +28,8 @@
 ifndef __BSG_LIBRARIES_MK
 __BSG_LIBRARIES_MK := 1
 
-LIB_CSOURCES   += 
+LIB_CSOURCES   +=
+LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_config_id_to_string.c
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_epa.cpp
@@ -109,6 +110,7 @@ $(LIB_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_S
 #$(LIB_OBJECTS) $(PLATFORM_OBJECTS): $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
 $(LIB_DEBUG_OBJECTS):  CXXFLAGS += -DDEBUG
+$(LIB_DEBUG_OBJECTS):  CFLAGS += -DDEBUG
 
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable

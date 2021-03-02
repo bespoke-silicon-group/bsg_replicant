@@ -29,6 +29,7 @@
 // sure that time increases.
 
 #include "test_get_cycle.hpp"
+#include <bsg_manycore_vcache.h>
 #include <cstdint>
 
 int test_get_cycle (int argc, char **argv) {
@@ -55,12 +56,8 @@ int test_get_cycle (int argc, char **argv) {
         config = hb_mc_manycore_get_config(&mc);
 
         // To cause time to proceed, we write to DRAM.
-        uint32_t manycore_dim_x = hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(config));
-        uint32_t manycore_dim_y = hb_mc_coordinate_get_y(hb_mc_config_get_dimension_vcore(config));
-
-        uint32_t dram_coord_x = 0;
-        uint32_t dram_coord_y = hb_mc_config_get_dram_y(config);
-        hb_mc_npa_t npa = { .x = dram_coord_x, .y = dram_coord_y, .epa = 0};
+        hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, HB_MC_VCACHE_EPA_BASE);
+        hb_mc_npa_t npa = hb_mc_npa(dram_coord, 0);
 
         bsg_pr_test_info("Testing invalid input (This will print an ERROR message)\n");
         rc = hb_mc_manycore_get_cycle(&mc, nullptr);

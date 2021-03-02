@@ -30,52 +30,13 @@ ifndef HARDWARE_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: HARDWARE_PATH is not defined$(NC)"))
 endif
 
-ifndef __HARDWARE_MEMSYS_MEMSYS_MK
-__HARDWARE_MEMSYS_MEMSYS_MK := 1
+ifndef __HARDWARE_MEMSYS_TESTMEM_MK
+__HARDWARE_MEMSYS_TESTMEM_MK := 1
 
-# identify the dram backend
-CL_MANYCORE_MEMSYS_ID    := "NONE"
+# is this an inifinite memory configuration?
+ifneq ($(filter %_test_mem,$(BSG_MACHINE_MEM_CFG)),)
 
-# memory channels
-ifdef BSG_MACHINE_DRAM_CHANNELS
-CL_MANYCORE_MEMSYS_DRAM_CHANNELS := $(BSG_MACHINE_DRAM_CHANNELS)
-else
-CL_MANYCORE_MEMSYS_DRAM_CHANNELS := 1
+CL_MANYCORE_MEMSYS_ID := "TEST"
+
 endif
-
-# size of dram owned by a single hammerblade victim cache
-CL_MANYCORE_MEMSYS_DRAM_BANK_SIZE := $(shell echo 4*$(BSG_MACHINE_DRAM_BANK_WORDS) | bc)
-
-# memory hierarchy bits
-CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 0
-CL_MANYCORE_MEMSYS_DRAM_BG_BITS := 0
-CL_MANYCORE_MEMSYS_DRAM_BA_BITS := 0
-CL_MANYCORE_MEMSYS_DRAM_CO_BITS := 0
-CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITS := $(shell echo $(BSG_MACHINE_MAX_EPA_WIDTH)+2 | bc) # byte offset is all bits by default
-
-# memory hierarchy bitidx
-CL_MANYCORE_MEMSYS_DRAM_RO_BITIDX := 0
-CL_MANYCORE_MEMSYS_DRAM_BG_BITIDX := 0
-CL_MANYCORE_MEMSYS_DRAM_BA_BITIDX := 0
-CL_MANYCORE_MEMSYS_DRAM_CO_BITIDX := 0
-CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX := 0
-
-# yes/no flags the different memory systems can set
-# disable the micron memory model by default
-DISABLE_MICRON_MEMORY_MODEL ?= yes
-
-include $(HARDWARE_PATH)/memsys_axi4_f1.mk
-include $(HARDWARE_PATH)/memsys_test_mem.mk
-include $(HARDWARE_PATH)/memsys_hbm2.mk
-
-# setup vdefines for the memory system
-MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += AXI_MEMORY_MODEL=1
-MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += ECC_DIRECT_EN
-MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += RND_ECC_EN
-MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += ECC_ADDR_LO=0
-MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += ECC_ADDR_HI=0
-MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += RND_ECC_WEIGHT=0
-
-VDEFINES += $(MEMSYS_VDEFINES-yes)
-
 endif
