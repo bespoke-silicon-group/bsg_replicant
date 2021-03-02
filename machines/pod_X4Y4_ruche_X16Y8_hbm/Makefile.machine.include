@@ -71,6 +71,10 @@ BSG_MACHINE_NOC_COORD_Y_WIDTH         = 7
 BSG_MACHINE_POD_TILES_X               = 16
 BSG_MACHINE_POD_TILES_Y               = 8
 
+# Pod Tile subarray dimensions (Rarely changed, for physical design only)
+BSG_MACHINE_POD_TILES_SUBARRAY_X      = 1
+BSG_MACHINE_POD_TILES_SUBARRAY_Y      = 1
+
 # Host Coordinate (Rarely Changed)
 BSG_MACHINE_HOST_COORD_X              = 16
 BSG_MACHINE_HOST_COORD_Y              = 0
