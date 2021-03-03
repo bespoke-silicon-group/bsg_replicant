@@ -177,9 +177,13 @@ extern "C" {
          */
         __attribute__((warn_unused_result))
         static inline hb_mc_idx_t hb_mc_coordinate_to_index (hb_mc_coordinate_t coord, hb_mc_dimension_t dim) {
-                hb_mc_idx_t idx = hb_mc_coordinate_get_y(coord) * hb_mc_dimension_get_x(dim) + hb_mc_coordinate_get_x(coord); 
+                hb_mc_idx_t idx = coord.x * dim.y + coord.y;
                 return idx;
         } 
+
+        static inline hb_mc_coordinate_t hb_mc_index_to_coordinate (hb_mc_idx_t idx, hb_mc_dimension_t dim) {
+                return hb_mc_coordinate(idx / dim.y, idx % dim.y);
+        }
 
         /**
          * Calculates and returns a 1D length based on 2D dimensions 

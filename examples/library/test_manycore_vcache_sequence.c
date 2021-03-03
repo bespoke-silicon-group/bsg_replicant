@@ -31,6 +31,7 @@
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_npa.h>
+#include <bsg_manycore_config_pod.h>
 #include "test_manycore_vcache_sequence.h"
 
 #define TEST_NAME "test_manycore_vcache_sequence"
@@ -61,61 +62,64 @@ int test_manycore_vcache_sequence() {
         /**************************************************************/
         /* Loop over all DRAM banks and write ARRAY_LEN words to each */
         /**************************************************************/
-        hb_mc_coordinate_t dram_coord;
-        hb_mc_config_foreach_dram_coordinate(dram_coord, config)
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, config)
         {
-                uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
-                uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
+                hb_mc_coordinate_t dram_coord;
+                hb_mc_config_pod_foreach_dram(dram_coord, pod, config)
+                {
+                        uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
+                        uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
 
-                uint32_t write_data, read_data, byteaddr;
-                bsg_pr_test_info("%s: Testing DRAM bank (%" PRIu32 ",%" PRIu32 ")\n",
-                                 __func__, dram_coord_x, dram_coord_y);
+                        uint32_t write_data, read_data, byteaddr;
+                        bsg_pr_test_info("%s: Testing DRAM bank (%" PRIu32 ",%" PRIu32 ")\n",
+                                         __func__, dram_coord_x, dram_coord_y);
                 
-                for (size_t i = 0; i < ARRAY_LEN; i += 1) {
-                        byteaddr = i << 2;
-                        if ((i % 64) == 1)
-                                bsg_pr_test_info("%s: Have written and read back %4zu words\n",
-                                                 __func__, i);
+                        for (size_t i = 0; i < ARRAY_LEN; i += 1) {
+                                byteaddr = i << 2;
+                                if ((i % 64) == 1)
+                                        bsg_pr_test_info("%s: Have written and read back %4zu words\n",
+                                                         __func__, i);
                         
-                        hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                                             dram_coord_y,
-                                                             BASE_ADDR + byteaddr);
-                        write_data = rand();
-                        err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                        if (err != HB_MC_SUCCESS) {
-                                bsg_pr_err("\n%s: failed to write A[%d] = 0x%08" PRIx32 ""
-                                           " to DRAM coord (%d,%d) @ 0x08%" PRIx32 ": %s\n",
-                                           __func__, i, write_data,
-                                           dram_coord_x, dram_coord_y,
-                                           npa.epa + byteaddr,
-                                           hb_mc_strerror(err));
-                                goto cleanup;
+                                hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                                     dram_coord_y,
+                                                                     BASE_ADDR + byteaddr);
+                                write_data = rand();
+                                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
+                                if (err != HB_MC_SUCCESS) {
+                                        bsg_pr_err("\n%s: failed to write A[%d] = 0x%08" PRIx32 ""
+                                                   " to DRAM coord (%d,%d) @ 0x08%" PRIx32 ": %s\n",
+                                                   __func__, i, write_data,
+                                                   dram_coord_x, dram_coord_y,
+                                                   npa.epa + byteaddr,
+                                                   hb_mc_strerror(err));
+                                        goto cleanup;
+                                }
+
+                                err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
+                                if (err != HB_MC_SUCCESS) {
+                                        bsg_pr_err("\n%s: failed read A[%d] "
+                                                   "from DRAM coord (%d,%d) @ 0x%08" PRIx32 ": %s\n",
+                                                   __func__, i,
+                                                   dram_coord_x, dram_coord_y,
+                                                   npa.epa + byteaddr,
+                                                   hb_mc_strerror(err));
+                                        goto cleanup;
+                                }
+
+                                int data_match = read_data == write_data;
+                                if (!data_match) {
+                                        bsg_pr_test_info("\n%s: mismatch @ index %d: "
+                                                         "wrote 0x%08" PRIx32 " -- "
+                                                         "read 0x%08" PRIx32 ": @ 0x%08" PRIx32 "\n",
+                                                         __func__, i, i, write_data, read_data,
+                                                         hb_mc_npa_get_epa(&npa));
+                                }
+                        
+                                mismatch = mismatch || !data_match;
                         }
 
-                        err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
-                        if (err != HB_MC_SUCCESS) {
-                                bsg_pr_err("\n%s: failed read A[%d] "
-                                           "from DRAM coord (%d,%d) @ 0x%08" PRIx32 ": %s\n",
-                                           __func__, i,
-                                           dram_coord_x, dram_coord_y,
-                                           npa.epa + byteaddr,
-                                           hb_mc_strerror(err));
-                                goto cleanup;
-                        }
-
-                        int data_match = read_data == write_data;
-                        if (!data_match) {
-                                bsg_pr_test_info("\n%s: mismatch @ index %d: "
-                                                 "wrote 0x%08" PRIx32 " -- "
-                                                 "read 0x%08" PRIx32 ": @ 0x%08" PRIx32 "\n",
-                                                 __func__, i, i, write_data, read_data,
-                                                 hb_mc_npa_get_epa(&npa));
-                        }
-                        
-                        mismatch = mismatch || !data_match;
                 }
-
-
         }
 
         /********************************/

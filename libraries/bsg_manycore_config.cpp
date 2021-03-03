@@ -113,14 +113,20 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         xdim_max = (1 << xlogsz_max);
 
         idx = raw[HB_MC_CONFIG_POD_DIM_X];
-        //Temporarily removed this condition until it is cleared up. TODO: Fix.
-        //if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
         CHECK_FIELD(HB_MC_CONFIG_POD_DIM_X, idx >= HB_MC_COORDINATE_MIN);
-        config->vcore_dimensions.x = idx;
+        config->pod_shape.x = idx;
 
         idx = raw[HB_MC_CONFIG_POD_DIM_Y];
         CHECK_FIELD(HB_MC_CONFIG_POD_DIM_Y, idx >= HB_MC_COORDINATE_MIN && idx <= HB_MC_COORDINATE_MAX);
-        config->vcore_dimensions.y = idx;
+        config->pod_shape.y = idx;
+
+        idx = raw[HB_MC_CONFIG_DIM_PODS_X];
+        CHECK_FIELD(HB_MC_CONFIG_DIM_PODS_X, idx >= 0 && idx <= 64);
+        config->pods.x = idx;
+
+        idx = raw[HB_MC_CONFIG_DIM_PODS_Y];
+        CHECK_FIELD(HB_MC_CONFIG_DIM_PODS_Y, idx >= 0 && idx <= 64);
+        config->pods.y = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
         config->host_interface.x = idx;
@@ -171,6 +177,13 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                            __func__, error_init_help);
                 return err;
         }
+
+        // Dervived variables from the ROM
+        config->pod_coord_width  = hb_mc_coordinate(3, 4);
+        config->tile_coord_width = hb_mc_coordinate(
+            config->noc_coord_width.x - config->pod_coord_width.x,
+            config->noc_coord_width.y - config->pod_coord_width.y
+            );
 
         return hb_mc_config_init_check_memsys(config);
 }

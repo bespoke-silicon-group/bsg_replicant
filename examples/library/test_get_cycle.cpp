@@ -56,7 +56,7 @@ int test_get_cycle (int argc, char **argv) {
         config = hb_mc_manycore_get_config(&mc);
 
         // To cause time to proceed, we write to DRAM.
-        hb_mc_coordinate_t dram_coord = hb_mc_config_get_dram_coordinate(config, HB_MC_VCACHE_EPA_BASE);
+        hb_mc_coordinate_t dram_coord = hb_mc_config_dram(config, 0);
         hb_mc_npa_t npa = hb_mc_npa(dram_coord, 0);
 
         bsg_pr_test_info("Testing invalid input (This will print an ERROR message)\n");

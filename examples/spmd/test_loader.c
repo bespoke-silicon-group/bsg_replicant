@@ -24,14 +24,9 @@
 // ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
 #include "test_loader.h"
 #include <sys/stat.h>
-
-static hb_mc_coordinate_t get_target(hb_mc_manycore_t *mc)
-{
-        return hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
-}
+#include <bsg_manycore_config_pod.h>
 
 static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
 {
@@ -98,82 +93,93 @@ int test_loader(int argc, char **argv) {
         }
 
         /* initialize the tile */
-        hb_mc_coordinate_t target = get_target(mc);
-        hb_mc_coordinate_t origin = get_target(mc);
+        hb_mc_coordinate_t pod;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_config_foreach_pod(pod, cfg)
+        {
+                hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
+                hb_mc_coordinate_t target = origin;
 
-        // freeze the tile
-        err = hb_mc_tile_freeze(mc, &target);
-        if (err != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to freeze tile (%" PRId32 ", %" PRId32 "): %s\n",
-                           hb_mc_coordinate_get_x(target),
-                           hb_mc_coordinate_get_y(target),
-                           hb_mc_strerror(err));
-                goto cleanup;
-        }
+                char pod_str[256];
+                hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+                bsg_pr_test_info("Loading to pod %s\n", pod_str);
 
-        // set its origin
-        err = hb_mc_tile_set_origin(mc, &target, &origin);
-        if (err != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to set origin of (%" PRId32 ", %" PRId32 ") "
-                           "to (%" PRId32 ", %" PRId32 "): %s\n",
-                           hb_mc_coordinate_get_x(target),
-                           hb_mc_coordinate_get_y(target),
-                           hb_mc_coordinate_get_x(origin),
-                           hb_mc_coordinate_get_y(origin),
-                           hb_mc_strerror(err));
-                goto cleanup;
-        }
-
-        /* load the program */
-        err = hb_mc_loader_load(program_data, program_size,
-                                mc, &default_map,
-                                &target, 1);
-        if (err != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to load binary '%s': %s\n",
-                           bin_path, hb_mc_strerror(err));
-                return err;
-        }
-
-        err = hb_mc_tile_unfreeze(mc, &target);
-        if (err != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to unfreeze tile (%" PRId32", %" PRId32 "): %s\n",
-                           hb_mc_coordinate_get_x(target),
-                           hb_mc_coordinate_get_y(target),
-                           hb_mc_strerror(err));
-                goto cleanup;
-        }
-
-        usleep(100);
-
-        while (1) {
-                hb_mc_packet_t pkt;
-                bsg_pr_dbg("Waiting for finish packet\n");
-                
-                err = hb_mc_manycore_packet_rx(mc, &pkt, HB_MC_FIFO_RX_REQ, -1);
+                // freeze the tile
+                err = hb_mc_tile_freeze(mc, &target);
                 if (err != HB_MC_SUCCESS) {
-                        bsg_pr_err("failed to read response packet: %s\n",
+                        bsg_pr_err("failed to freeze tile (%" PRId32 ", %" PRId32 "): %s\n",
+                                   hb_mc_coordinate_get_x(target),
+                                   hb_mc_coordinate_get_y(target),
                                    hb_mc_strerror(err));
-                
-                        return HB_MC_FAIL;
+                        goto cleanup;
                 }
 
-                char pkt_str[128];
-                hb_mc_request_packet_to_string(&pkt.request, pkt_str, sizeof(pkt_str));
-
-                bsg_pr_dbg("received packet %s\n", pkt_str);
-                
-                switch (hb_mc_request_packet_get_epa(&pkt.request)) {
-                case 0xEAD0:
-                        bsg_pr_dbg("received finish packet\n");
-                        err = HB_MC_SUCCESS;
+                // set its origin
+                err = hb_mc_tile_set_origin(mc, &target, &origin);
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("failed to set origin of (%" PRId32 ", %" PRId32 ") "
+                                   "to (%" PRId32 ", %" PRId32 "): %s\n",
+                                   hb_mc_coordinate_get_x(target),
+                                   hb_mc_coordinate_get_y(target),
+                                   hb_mc_coordinate_get_x(origin),
+                                   hb_mc_coordinate_get_y(origin),
+                                   hb_mc_strerror(err));
                         goto cleanup;
-                case 0xEAD8:
-                        bsg_pr_dbg("received fail packet\n");
-                        err = HB_MC_FAIL;
-                        goto cleanup;
-                default: break;
                 }
-        }
+
+                /* load the program */
+                err = hb_mc_loader_load(program_data, program_size,
+                                        mc, &default_map,
+                                        &target, 1);
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("failed to load binary '%s': %s\n",
+                                   bin_path, hb_mc_strerror(err));
+                        return err;
+                }
+
+                err = hb_mc_tile_unfreeze(mc, &target);
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("failed to unfreeze tile (%" PRId32", %" PRId32 "): %s\n",
+                                   hb_mc_coordinate_get_x(target),
+                                   hb_mc_coordinate_get_y(target),
+                                   hb_mc_strerror(err));
+                        goto cleanup;
+                }
+
+                usleep(100);
+
+                int done = 0;
+                while (!done) {
+                        hb_mc_packet_t pkt;
+                        bsg_pr_dbg("Waiting for finish packet\n");
+
+                        err = hb_mc_manycore_packet_rx(mc, &pkt, HB_MC_FIFO_RX_REQ, -1);
+                        if (err != HB_MC_SUCCESS) {
+                                bsg_pr_err("failed to read response packet: %s\n",
+                                           hb_mc_strerror(err));
+
+                                return HB_MC_FAIL;
+                        }
+
+                        char pkt_str[128];
+                        hb_mc_request_packet_to_string(&pkt.request, pkt_str, sizeof(pkt_str));
+
+                        bsg_pr_dbg("received packet %s\n", pkt_str);
+                
+                        switch (hb_mc_request_packet_get_epa(&pkt.request)) {
+                        case 0xEAD0:
+                                bsg_pr_dbg("received finish packet\n");
+                                err = HB_MC_SUCCESS;
+                                done = 1;
+                                break;
+                        case 0xEAD8:
+                                bsg_pr_dbg("received fail packet\n");
+                                err = HB_MC_FAIL;
+                                return err;
+                        default: break;
+                        }
+                }
+        } // foreach pod...
 cleanup:
         hb_mc_manycore_exit(mc);
         return err;

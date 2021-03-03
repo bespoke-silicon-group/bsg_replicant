@@ -31,6 +31,7 @@
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_npa.h>
+#include <bsg_manycore_config_pod.h>
 #include "test_manycore_alignment.h"
 
 #define TEST_NAME "test_manycore_alignment"
@@ -58,231 +59,234 @@ int test_manycore_alignment() {
         /*
          * Loop over all DRAM banks and try to read/write to an unaligned address
          */
-        hb_mc_coordinate_t dram_coord;
-        hb_mc_config_foreach_dram_coordinate(dram_coord, config)
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, config)
         {
-                uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
-                uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
+                hb_mc_coordinate_t dram_coord;
+                hb_mc_config_pod_foreach_dram(dram_coord, pod, config)
+                {
+                        uint32_t dram_coord_x = hb_mc_coordinate_get_x(dram_coord);
+                        uint32_t dram_coord_y = hb_mc_coordinate_get_y(dram_coord);
 
-                uint32_t write_data, read_data;
-                bsg_pr_test_info("%s: Testing DRAM bank (%" PRIu32 ",%" PRIu32 ")\n",
-                                 __func__, dram_coord_x, dram_coord_y);
+                        uint32_t write_data, read_data;
+                        bsg_pr_test_info("%s: Testing DRAM bank (%" PRIu32 ",%" PRIu32 ")\n",
+                                         __func__, dram_coord_x, dram_coord_y);
 
-                // Write a 4-byte word into mis-aligned addresses to
-                // verify that API returns an invalid address error
-                hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                                     dram_coord_y,
-                                                     BASE_ADDR + 1);
-                write_data = rand();
-                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                if (err == HB_MC_UNALIGNED) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
+                        // Write a 4-byte word into mis-aligned addresses to
+                        // verify that API returns an invalid address error
+                        hb_mc_npa_t npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                             dram_coord_y,
+                                                             BASE_ADDR + 1);
+                        write_data = rand();
+                        err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
+                        if (err == HB_MC_UNALIGNED) { 
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 2);
+                        write_data = rand();
+                        err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 3);
+                        write_data = rand();
+                        err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+
+                        // Read a 4-byte word from mis-aligned addresses to 
+                        // verify that API returns an invalid address error
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 1);
+                        err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
+                        if (err == HB_MC_UNALIGNED) { 
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 2);
+                        err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 3);
+                        err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        // Write a 4-byte word into mis-aligned addresses to
+                        // verify that API returns an invalid address error
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 1);
+                        write_data = rand();
+                        err = hb_mc_manycore_write32(mc, &npa, &write_data);
+                        if (err == HB_MC_UNALIGNED) { 
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 2);
+                        write_data = rand();
+                        err = hb_mc_manycore_write32(mc, &npa, &write_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 3);
+                        write_data = rand();
+                        err = hb_mc_manycore_write32(mc, &npa, &write_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+
+                        // Read a 4-byte word from mis-aligned addresses to 
+                        // verify that API returns an invalid address error
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 1);
+                        err = hb_mc_manycore_read32(mc, &npa, &read_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 2);
+                        err = hb_mc_manycore_read32(mc, &npa, &read_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 3);
+                        err = hb_mc_manycore_read32(mc, &npa, &read_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        // Write a 2-byte value into mis-aligned addresses to
+                        // verify that API returns an invalid address error
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 1);
+                        write_data = rand();
+                        err = hb_mc_manycore_write16(mc, &npa, &write_data);
+                        if (err == HB_MC_UNALIGNED) { 
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 3);
+                        write_data = rand();
+                        err = hb_mc_manycore_write16(mc, &npa, &write_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+
+                        // Read a 2-byte value from mis-aligned addresses to 
+                        // verify that API returns an invalid address error
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 1);
+                        err = hb_mc_manycore_read16(mc, &npa, &read_data);
+                        if (err == HB_MC_UNALIGNED) { 
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
+
+                        npa = hb_mc_npa_from_x_y(dram_coord_x,
+                                                 dram_coord_y,
+                                                 BASE_ADDR + 3);
+                        err = hb_mc_manycore_read16(mc, &npa, &read_data);
+                        if (err == HB_MC_UNALIGNED) {
+                                bsg_pr_test_iqnfo("%s: Expected an invalid address error. We're good!\n", __func__);
+                        } else {
+                                bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
+                                           __func__, hb_mc_npa_get_epa(&npa));
+                                return HB_MC_FAIL;
+                        }
                 }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 2);
-                write_data = rand();
-                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 3);
-                write_data = rand();
-                err = hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data));
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-
-                // Read a 4-byte word from mis-aligned addresses to 
-                // verify that API returns an invalid address error
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 1);
-                err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
-                if (err == HB_MC_UNALIGNED) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 2);
-                err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 3);
-                err = hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data));
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                // Write a 4-byte word into mis-aligned addresses to
-                // verify that API returns an invalid address error
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 1);
-                write_data = rand();
-                err = hb_mc_manycore_write32(mc, &npa, &write_data);
-                if (err == HB_MC_UNALIGNED) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 2);
-                write_data = rand();
-                err = hb_mc_manycore_write32(mc, &npa, &write_data);
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 3);
-                write_data = rand();
-                err = hb_mc_manycore_write32(mc, &npa, &write_data);
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-
-                // Read a 4-byte word from mis-aligned addresses to 
-                // verify that API returns an invalid address error
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 1);
-                err = hb_mc_manycore_read32(mc, &npa, &read_data);
-                if (err == HB_MC_UNALIGNED) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 2);
-                err = hb_mc_manycore_read32(mc, &npa, &read_data);
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 3);
-                err = hb_mc_manycore_read32(mc, &npa, &read_data);
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                // Write a 2-byte value into mis-aligned addresses to
-                // verify that API returns an invalid address error
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 1);
-                write_data = rand();
-                err = hb_mc_manycore_write16(mc, &npa, &write_data);
-                if (err == HB_MC_UNALIGNED) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 3);
-                write_data = rand();
-                err = hb_mc_manycore_write16(mc, &npa, &write_data);
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-
-                // Read a 2-byte value from mis-aligned addresses to 
-                // verify that API returns an invalid address error
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 1);
-                err = hb_mc_manycore_read16(mc, &npa, &read_data);
-                if (err == HB_MC_UNALIGNED) { 
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
-                npa = hb_mc_npa_from_x_y(dram_coord_x,
-                                         dram_coord_y,
-                                         BASE_ADDR + 3);
-                err = hb_mc_manycore_read16(mc, &npa, &read_data);
-                if (err == HB_MC_UNALIGNED) {
-                        bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
-                } else {
-                        bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
-                                   __func__, hb_mc_npa_get_epa(&npa));
-                        return HB_MC_FAIL;
-                }
-
         }
 
         r = HB_MC_SUCCESS;
@@ -295,12 +299,12 @@ cleanup:
 #ifdef VCS
 int vcs_main(int argc, char ** argv) {
 #else
-int main(int argc, char ** argv) {
+        int main(int argc, char ** argv) {
 #endif
 
-        bsg_pr_test_info(TEST_NAME " Regression Test \n");
-        int rc = test_manycore_alignment();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+                bsg_pr_test_info(TEST_NAME " Regression Test \n");
+                int rc = test_manycore_alignment();
+                bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
+                return rc;
+        }
 

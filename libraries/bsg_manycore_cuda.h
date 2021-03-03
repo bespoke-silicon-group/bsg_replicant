@@ -138,13 +138,14 @@ extern "C" {
                 uint32_t            num_tile_groups;
                 uint32_t            tile_group_capacity;
                 uint8_t             num_grids;
+                hb_mc_coordinate_t  pod_coord; // what pod am I in the global manycore?
                 int                 program_loaded;
         } hb_mc_pod_t;
 
         typedef struct {
                 hb_mc_manycore_t *mc;
                 hb_mc_pod_t      *pods;
-                int               num_pods;
+                hb_mc_pod_id_t    num_pods;
                 const char       *name;
                 hb_mc_pod_id_t    default_pod_id;
                 hb_mc_dimension_t default_mesh_dim;
@@ -158,6 +159,24 @@ extern "C" {
 
         void hb_mc_program_options_default(hb_mc_program_options_t *popts);
 
+        static inline hb_mc_pod_id_t hb_mc_device_pods(hb_mc_device_t *device)
+        {
+                return device->num_pods;
+        }
+
+        static inline int hb_mc_device_set_default_pod(hb_mc_device_t *device,
+                                                       hb_mc_pod_id_t  pod)
+        {
+                if (pod < device->num_pods) {
+                        device->default_pod_id = pod;
+                        return HB_MC_SUCCESS;
+                } else {
+                        return HB_MC_INVALID;
+                }
+        }
+
+#define hb_mc_device_foreach_pod_id(device_ptr, pod_id)   \
+        for (pod_id = 0; pod_id < (device_ptr)->num_pods; pod_id++)
 
         /********************************/
         /* Pod Interface Initialization */
@@ -377,14 +396,27 @@ extern "C" {
          * This function blocks until all kernels have been invoked
          * and completed.
          * @param[in]  device        Pointer to device
-         * @param[in]  pods          List of Pod IDs
-         * @param[in]  num_pods      The number of Pod IDs
+         * @param[in]  podv          Vector of Pod IDs
+         * @param[in]  podc          Number of Pod IDs
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */
         __attribute__((warn_unused_result))
-        int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device,
-                                              hb_mc_pod_id_t *pods,
-                                              int num_pods);
+        int hb_mc_device_podv_kernels_execute(hb_mc_device_t *device,
+                                              hb_mc_pod_id_t *podv,
+                                              int podc);
+
+        /**
+         * Launches all kernel invocations enqueued on all pods.
+         * These kernel invocations are enqueued by
+         * hb_mc_device_pod_kernel_enqueue().
+         *
+         * This function blocks until all kernels have been invoked
+         * and completed.
+         * @param[in]  device        Pointer to device
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device);
 
         /*************************/
         /* Pod Interface Cleanup */
@@ -618,10 +650,18 @@ extern "C" {
 
 
 
+        /**
+         * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
+         * @param[in]  device        Pointer to device
+         * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_program_finish (hb_mc_device_t *device);
 
 
         /**
-         * Deletes memory manager, device and manycore struct, and freezes all tiles in device.
+         * Deletes memory manager, device and manycore struct, and freezes all tiles in device on
+         * all pods.
          * @param[in]  device        Pointer to device
          * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
          */

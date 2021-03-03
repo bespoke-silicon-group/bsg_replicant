@@ -31,7 +31,7 @@
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_eva.h>
-
+#include <bsg_manycore_config_pod.h>
 #include <sys/stat.h>
 
 #include "test_bsg_loader_suite.h"
@@ -205,7 +205,7 @@ static test_t finish_packet_tests [] = {
         FINISH_PACKET_TEST("npa_to_eva",        SUITE_DIR "/npa_to_eva/main.riscv"),
 };
 
-static int run_finish_packet_test(test_t *test)
+static int run_finish_packet_test(test_t *test, hb_mc_coordinate_t target)
 {
         hb_mc_manycore_t *mc = test->mc;
         const char *program_file_name = test->program_file_name;
@@ -213,7 +213,6 @@ static int run_finish_packet_test(test_t *test)
         unsigned char *program_data;
         size_t program_size;
         int rc = HB_MC_FAIL, err;
-        hb_mc_coordinate_t target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
 
         err = run_freeze_and_load(test, target, &program_data, &program_size);
         if (err != HB_MC_SUCCESS)
@@ -274,10 +273,17 @@ static int run_finish_packet_tests(void)
 
         bsg_pr_test_info("%s: " BSG_RED("RUNNING PACKET LOOPBACK TESTS") "\n", SUITE_NAME);
         for (int i = 0; i < array_size(finish_packet_tests); i++) {
-                err = run_finish_packet_test(&finish_packet_tests[i]);
-                if (err != HB_MC_SUCCESS)
-                        rc = HB_MC_FAIL;
-                // continue running all tests
+                hb_mc_coordinate_t pod;
+                test_t *test = &finish_packet_tests[i];
+                const hb_mc_config_t *cfg= hb_mc_manycore_get_config(test->mc);
+                hb_mc_config_foreach_pod(pod, cfg)
+                {
+                        hb_mc_coordinate_t target = hb_mc_config_pod_vcore_origin(cfg, pod);
+                        err = run_finish_packet_test(&finish_packet_tests[i], target);
+                        if (err != HB_MC_SUCCESS)
+                                rc = HB_MC_FAIL;
+                        // continue running all tests
+                }
         }
         return rc;
 }
@@ -297,26 +303,27 @@ static int run_finish_packet_tests(void)
 
 #define NPA_TO_EVA_TEST(tname, taddr, tdata)                            \
         { .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
-                        .magic = 0x3AB4, .npa = taddr, .data = tdata, .mc = &manycore }
+          .magic = 0x3AB4, .npa = taddr, .data = tdata, .mc = &manycore }
 
 // for DRAM, coordinate is rewritten at runtime according to configuration
 #define NPA_TO_EVA_DRAM_TEST(tname, epa, tdata)                         \
         { .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
-                        .magic = 0x3AB4, .npa = HB_MC_NPA(0,0,epa), .data = tdata, \
-                        .mc = &manycore,                                \
-                        .addr_is_dram = 1, .addr_is_host = 0 }
+          .magic = 0x3AB4, .npa = HB_MC_NPA(0,0,epa), .data = tdata,    \
+          .mc = &manycore,                                              \
+          .addr_is_dram = 1, .addr_is_host = 0 }
 
 #define NPA_TO_EVA_HOST_TEST(tname, epa, tdata)                         \
         { .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
-                        .magic = 0x3AB4, .npa = HB_MC_NPA(0,0,epa), .data = tdata, \
-                        .mc = &manycore,                                \
-                        .addr_is_dram = 0, .addr_is_host = 1 }
+          .magic = 0x3AB4, .npa = HB_MC_NPA(0,0,epa), .data = tdata,    \
+          .mc = &manycore,                                              \
+          .addr_is_dram = 0, .addr_is_host = 1 }
 
 #define NPA_TO_EVA_LOCAL_TEST(tname, x, y, epa, tdata)  \
         { .name = tname, .program_file_name = SUITE_DIR "/npa_to_eva/main.riscv", \
-                        .magic = 0x3AB4, .npa = HB_MC_NPA(x, y, 0x1000 | epa), .data = tdata, \
-                        .mc = &manycore,                                \
-                        .addr_is_dram = 0, .addr_is_host = 0 }
+          .magic = 0x3AB4,                                              \
+          .npa = HB_MC_NPA(x, y, HB_MC_TILE_EPA_DMEM_BASE | epa), .data = tdata, \
+          .mc = &manycore,                                              \
+          .addr_is_dram = 0, .addr_is_host = 0 }
 
 /*********************************/
 /* ADD NEW NPA TO EVA TESTS HERE */
@@ -334,19 +341,21 @@ static test_t npa_to_eva_tests [] = {
         NPA_TO_EVA_HOST_TEST("host 000C", 0x000C,    0x0000C0DA),
 };
 
-static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc)
+static hb_mc_idx_t test_get_dram_y(test_t *test, hb_mc_manycore_t *mc, hb_mc_coordinate_t target)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        return hb_mc_coordinate_get_y(hb_mc_config_get_dram_coordinate(cfg, 0));
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, target);
+        return hb_mc_config_pod_dram(cfg, pod, 0).y;
 }
 
-static hb_mc_idx_t test_get_dram_x(test_t * test, hb_mc_manycore_t *mc)
+static hb_mc_idx_t test_get_dram_x(test_t * test, hb_mc_manycore_t *mc, hb_mc_coordinate_t target)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        return hb_mc_coordinate_get_x(hb_mc_config_get_dram_coordinate(cfg, 0));
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, target);
+        return hb_mc_config_pod_dram(cfg, pod, 0).x;
 }
 
-static int run_npa_to_eva_test(test_t *test)
+static int run_npa_to_eva_test(test_t *test, hb_mc_coordinate_t target)
 {
         /**************************************************************************************/
         /* Each test does the following:                                                      */
@@ -363,15 +372,14 @@ static int run_npa_to_eva_test(test_t *test)
         unsigned char *program_data;
         size_t program_size;
         int rc = HB_MC_FAIL, err;
-        hb_mc_coordinate_t target = hb_mc_config_get_origin_vcore(hb_mc_manycore_get_config(mc));
         hb_mc_npa_t npa = test->npa;
         uint32_t data   = test->data;
         char npa_str [64];
 
         /* rewrite Y-coordinate if this is DRAM or Host */
         if (test->addr_is_dram) {
-                hb_mc_idx_t y = test_get_dram_y(test, mc);
-                hb_mc_idx_t x = test_get_dram_x(test, mc);
+                hb_mc_idx_t y = test_get_dram_y(test, mc, target);
+                hb_mc_idx_t x = test_get_dram_x(test, mc, target);
                 hb_mc_npa_set_y(&npa, y);
                 hb_mc_npa_set_x(&npa, x);
          } else if (test->addr_is_host) {
@@ -381,7 +389,8 @@ static int run_npa_to_eva_test(test_t *test)
                 hb_mc_npa_set_y(&npa, hb_mc_coordinate_get_y(hostif));
         } else { // if this is a vcore address add a base x-y
                 const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
-                hb_mc_coordinate_t tile = hb_mc_config_get_origin_vcore(config);
+                hb_mc_coordinate_t pod = hb_mc_config_pod(config, target);
+                hb_mc_coordinate_t tile = hb_mc_config_pod_vcore_origin(config, pod);
                 hb_mc_npa_set_x(&npa, hb_mc_npa_get_x(&npa) + hb_mc_coordinate_get_x(tile));
                 hb_mc_npa_set_y(&npa, hb_mc_npa_get_y(&npa) + hb_mc_coordinate_get_y(tile));
         }
@@ -593,10 +602,17 @@ static int run_npa_to_eva_tests()
 
         bsg_pr_test_info("%s: " BSG_RED("RUNNING NPA TO EVA TESTS") "\n", SUITE_NAME);
         for (int i = 0; i < array_size(npa_to_eva_tests); i++) {
-                err = run_npa_to_eva_test(&npa_to_eva_tests[i]);
-                if (err != HB_MC_SUCCESS)
-                        rc = HB_MC_FAIL;
-                // continue running all tests
+                hb_mc_coordinate_t pod;
+                test_t *test = &npa_to_eva_tests[i];
+                const hb_mc_config_t *cfg = hb_mc_manycore_get_config(test->mc);
+                hb_mc_config_foreach_pod(pod, cfg)
+                {
+                        hb_mc_coordinate_t target = hb_mc_config_pod_vcore_origin(cfg, pod);
+                        err = run_npa_to_eva_test(test, target);
+                        if (err != HB_MC_SUCCESS)
+                                rc = HB_MC_FAIL;
+                        // continue running all tests
+                }
         }
         return rc;
 }

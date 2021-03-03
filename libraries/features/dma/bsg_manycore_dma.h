@@ -49,4 +49,6 @@ int hb_mc_dma_write(hb_mc_manycore_t *mc,
                     const hb_mc_npa_t *npa,
                     const void *data, size_t sz);
 
+int hb_mc_dma_init(hb_mc_manycore_t *mc);
+
 #endif

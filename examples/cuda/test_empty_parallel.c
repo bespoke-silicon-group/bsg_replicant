@@ -30,8 +30,8 @@
 #define ALLOC_NAME "default_allocator"
 
 /*!
- * Runs an empty kernel on a 4x2 grid of 2x2 tile groups. 
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the BSG Manycore github repository.  
+ * Runs an empty kernel on a 4x2 grid of 2x2 tile groups.
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/empty_parallel/ Manycore binary in the BSG Manycore github repository.
 */
 
 int kernel_empty_parallel (int argc, char **argv) {
@@ -51,63 +51,48 @@ int kernel_empty_parallel (int argc, char **argv) {
         * Initialize device, load binary and unfreeze tiles.
         ******************************************************************************************************************/
         hb_mc_device_t device;
-        rc = hb_mc_device_init(&device, test_name, 0);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize device.\n");
-                return rc;
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+
+        hb_mc_pod_id_t pod;
+        hb_mc_device_foreach_pod_id(&device, pod)
+        {
+                BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
+                BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
+
+                /*****************************************************************************************************************
+                 * Define grid_dim_x/y: total number of tile groups
+                 * Define tg_dim_x/y: number of tiles in each tile group
+                 * Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
+                 ******************************************************************************************************************/
+                hb_mc_dimension_t grid_dim = { .x = 4, .y = 2};
+                hb_mc_dimension_t tg_dim = { .x = 2, .y = 2};
+
+                /*****************************************************************************************************************
+                 * Prepare list of input arguments for kernel.
+                 ******************************************************************************************************************/
+                int cuda_argv[1];
+
+                /*****************************************************************************************************************
+                 * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
+                 ******************************************************************************************************************/
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_empty", 0, cuda_argv));
+
+                /*****************************************************************************************************************
+                 * Launch and execute all tile groups on device and wait for all to finish.
+                 ******************************************************************************************************************/
+                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+
+                /******************************************/
+                /* Cleanup the program on the current pod */
+                /******************************************/
+                BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
         }
 
-
-        rc =hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize program.\n");
-                return rc;
-        }
-
-
         /*****************************************************************************************************************
-        * Define grid_dim_x/y: total number of tile groups
-        * Define tg_dim_x/y: number of tiles in each tile group
-        * Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
+        * Freeze the tiles and memory manager cleanup.
         ******************************************************************************************************************/
-        hb_mc_dimension_t grid_dim = { .x = 4, .y = 2}; 
-        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2}; 
+        BSG_CUDA_CALL(hb_mc_device_finish(&device));
 
-
-        /*****************************************************************************************************************
-        * Prepare list of input arguments for kernel.
-        ******************************************************************************************************************/
-        int cuda_argv[1];
-
-
-        /*****************************************************************************************************************
-        * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
-        ******************************************************************************************************************/
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_empty", 0, cuda_argv);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize grid.\n");
-                return rc;
-        }
-        
-
-        /*****************************************************************************************************************
-        * Launch and execute all tile groups on device and wait for all to finish. 
-        ******************************************************************************************************************/
-        rc = hb_mc_device_tile_groups_execute(&device);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to execute tile groups.\n");
-                return rc;
-        }
-        
-
-        /*****************************************************************************************************************
-        * Freeze the tiles and memory manager cleanup. 
-        ******************************************************************************************************************/
-        rc = hb_mc_device_finish(&device); /* freeze the tiles and memory manager cleanup */
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to de-initialize device.\n");
-                return rc;
-        }
 
         return HB_MC_SUCCESS;
 }

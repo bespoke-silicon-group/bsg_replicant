@@ -93,8 +93,11 @@ extern "C" {
                 hb_mc_date_t timestamp;
                 uint32_t network_bitwidth_addr;
                 uint32_t network_bitwidth_data;
+                hb_mc_dimension_t pods;      // how many vcore pods?
+                hb_mc_dimension_t pod_shape; // what is the shape of a pod?
                 hb_mc_dimension_t noc_coord_width;
-                hb_mc_dimension_t vcore_dimensions;
+                hb_mc_dimension_t pod_coord_width;
+                hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;
                 hb_mc_githash_t basejump;
                 hb_mc_githash_t manycore;
@@ -198,7 +201,7 @@ extern "C" {
         }
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_vcore(const hb_mc_config_t *cfg){
-                return cfg->vcore_dimensions;
+                return cfg->pod_shape;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cfg){
@@ -218,12 +221,12 @@ extern "C" {
                 return hb_mc_coordinate(0, 0);
         }
 
-        static inline hb_mc_dimension_t hb_mc_config_get_noc_coord_width(const hb_mc_config_t *cfg){
+        static inline hb_mc_dimension_t hb_mc_config_noc_coord_width(const hb_mc_config_t *cfg){
                 return cfg->noc_coord_width;
         }
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
-                hb_mc_dimension_t noc_width = hb_mc_config_get_noc_coord_width(cfg);
+                hb_mc_dimension_t noc_width = hb_mc_config_noc_coord_width(cfg);
                 return hb_mc_dimension(1<<hb_mc_dimension_get_x(noc_width),
                                        1<<hb_mc_dimension_get_y(noc_width));
         }
@@ -269,59 +272,11 @@ extern "C" {
                 return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
-        static inline hb_mc_idx_t hb_mc_config_get_dram_low_y(const hb_mc_config_t *cfg)
-        {
-                return hb_mc_coordinate_get_y(hb_mc_config_get_origin_vcore(cfg))-1;
-        }
-
-        static inline hb_mc_idx_t hb_mc_config_get_dram_high_y(const hb_mc_config_t *cfg)
-        {
-                return hb_mc_coordinate_get_y(hb_mc_config_get_origin_vcore(cfg)) +
-                       hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg));
-        }
-
-        __attribute__((deprecated))
-        static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
-        {
-            return hb_mc_config_get_dram_low_y(cfg);
-        }
-
-        static inline int hb_mc_config_is_dram_y(const hb_mc_config_t *cfg, hb_mc_idx_t y)
-        {
-                return y == hb_mc_config_get_dram_low_y(cfg)
-                        || y == hb_mc_config_get_dram_high_y(cfg);
-        }
-
-        static inline int hb_mc_config_coordinate_is_dram(const hb_mc_config_t *cfg, hb_mc_coordinate_t xy)
-        {
-                return hb_mc_config_is_dram_y(cfg, hb_mc_coordinate_get_y(xy));
-        }
-
-        static inline hb_mc_coordinate_t
-        hb_mc_config_get_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_idx_t cache_id)
-        {
-                hb_mc_coordinate_t dims = hb_mc_config_get_dimension_vcore(cfg);
-                hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
-
-                hb_mc_idx_t x = (cache_id % hb_mc_dimension_get_x(dims)) + hb_mc_coordinate_get_x(origin);
-                hb_mc_idx_t y;
-
-                if (cache_id / hb_mc_dimension_get_x(dims) == 0) {
-                        y = hb_mc_config_get_dram_low_y(cfg);
-                } else if (cache_id / hb_mc_dimension_get_x(dims) == 1) {
-                        y = hb_mc_config_get_dram_high_y(cfg);
-                } else {
-                        y = hb_mc_config_get_dram_high_y(cfg)+1;
-                }
-
-                return hb_mc_coordinate(x,y);
-        }
-
         static inline
         hb_mc_idx_t hb_mc_config_get_num_dram_coordinates(const hb_mc_config_t *cfg)
         {
-                /* there are victim caches at the top and bottom of the mesh */
-                return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_vcore(cfg))*2;
+                // each pod has banks at the north and south
+                return cfg->pods.x * cfg->pods.y * cfg->pod_shape.x * 2;
         }
 
 #define hb_mc_config_foreach_dram_id(dram_id_var, config)               \
@@ -329,41 +284,6 @@ extern "C" {
              dram_id_var < hb_mc_config_get_num_dram_coordinates(config); \
              dram_id_var++)
 
-        static inline hb_mc_idx_t hb_mc_config_get_dram_id
-        (const hb_mc_config_t *cfg, hb_mc_coordinate_t dram_xy)
-        {
-                hb_mc_coordinate_t origin = hb_mc_config_get_origin_vcore(cfg);
-                hb_mc_idx_t base_x = hb_mc_coordinate_get_x(origin);
-                hb_mc_idx_t y = hb_mc_coordinate_get_y(dram_xy);
-                hb_mc_idx_t x = hb_mc_coordinate_get_x(dram_xy) - base_x;
-                hb_mc_idx_t dim_x = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
-                if (y == hb_mc_config_get_dram_low_y(cfg)) {
-                        // northern cache
-                        return x;
-                } else if (y == hb_mc_config_get_dram_high_y(cfg)) {
-                        // southern cache
-                        return dim_x + x;
-                } else {
-                        // error
-                        return -1;
-                }
-        }
-
-        static inline hb_mc_coordinate_t hb_mc_config_get_next_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_coordinate_t cur)
-        {
-                hb_mc_idx_t id = hb_mc_config_get_dram_id(cfg, cur);
-                return hb_mc_config_get_dram_coordinate(cfg, id+1);
-        }
-
-        static inline int hb_mc_config_dram_coordinate_stop(const hb_mc_config_t *cfg, hb_mc_coordinate_t cur)
-        {
-                return hb_mc_config_get_dram_id(cfg, cur) == (hb_mc_idx_t)-1;
-        }
-
-#define hb_mc_config_foreach_dram_coordinate(cvar, cfg)                 \
-        for (cvar = hb_mc_config_get_dram_coordinate(cfg, 0);           \
-             !hb_mc_config_dram_coordinate_stop(cfg, cvar);             \
-             cvar = hb_mc_config_get_next_dram_coordinate(cfg, cvar))
 
         static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
         {
@@ -519,10 +439,7 @@ extern "C" {
                 return cfg->memsys.id;
         }
 
-        static inline uint32_t hb_mc_config_get_pods(const hb_mc_config_t *cfg)
-        {
-                return 1;
-        }
+
 #ifdef __cplusplus
 }
 #endif
