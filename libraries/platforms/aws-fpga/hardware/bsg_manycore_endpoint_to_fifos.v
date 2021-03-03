@@ -148,6 +148,17 @@ localparam data_width_pad_lp = `BSG_CDIV(data_width_p,8)*8;
       $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", endpoint_out_packet_li.y_cord);
       $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", endpoint_out_packet_li.src_x_cord);
       $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", endpoint_out_packet_li.src_y_cord);
+
+      if (endpoint_out_packet_li.op_v2 == e_remote_load) begin
+        $display("bsg_manycore_endpoint_to_fifos: load_info.is_unsigned_op=%d",
+                 endpoint_out_packet_li.payload.load_info_s.load_info.is_unsigned_op);
+        $display("bsg_manycore_endpoint_to_fifos: load_info.is_byte_op=%d",
+                 endpoint_out_packet_li.payload.load_info_s.load_info.is_byte_op);
+        $display("bsg_manycore_endpoint_to_fifos: load_info.is_hex_op=%d",
+                 endpoint_out_packet_li.payload.load_info_s.load_info.is_hex_op);
+        $display("bsg_manycore_endpoint_to_fifos: load_info.part_sel=%h",
+                 endpoint_out_packet_li.payload.load_info_s.load_info.part_sel);
+      end
     end
   end
 

@@ -79,17 +79,17 @@ extern "C" {
 
         typedef struct hb_mc_request_packet_load_info {
                 uint32_t part_sel;
-#define HB_MC_REQUEST_PACKET_LOAD_INFO_PARTSEL_MASK         0x60
-#define HB_MC_REQUEST_PACKET_LOAD_INFO_PARTSEL_SHIFT        5
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_PARTSEL_MASK         0x03
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_PARTSEL_SHIFT        0
                 int      is_hex_op;
-#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_HEX_OP_MASK       0x10
-#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_HEX_OP_SHIFT      4
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_HEX_OP_MASK       0x4
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_HEX_OP_SHIFT      2
                 int      is_byte_op;
 #define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_BYTE_OP_MASK      0x08
 #define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_BYTE_OP_SHIFT     3
                 int      is_unsigned_op;
-#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_UNSIGNED_OP_MASK  0x04
-#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_UNSIGNED_OP_SHIFT 2
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_UNSIGNED_OP_MASK  0x10
+#define HB_MC_REQUEST_PACKET_LOAD_INFO_IS_UNSIGNED_OP_SHIFT 4
         } hb_mc_request_packet_load_info_t;
 
 #define HB_MC_REQUEST_PACKET_LOAD_INFO_GET(data, field)                 \
