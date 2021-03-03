@@ -70,17 +70,9 @@ module bsg_manycore_endpoint_to_fifos
   // manycore link
   ,input  [            link_sif_width_lp-1:0] link_sif_i
   ,output [            link_sif_width_lp-1:0] link_sif_o
-  // ,input  [               x_cord_width_p-1:0] my_x_i
-  // ,input  [               y_cord_width_p-1:0] my_y_i
+  ,input  [               x_cord_width_p-1:0] my_x_i
+  ,input  [               y_cord_width_p-1:0] my_y_i
 
-   // subcord within a pod
-   , input [x_subcord_width_lp-1:0] my_x_i
-   , input [y_subcord_width_lp-1:0] my_y_i
-   
-   // pod coordinate
-   , input [pod_x_cord_width_p-1:0] pod_x_i
-   , input [pod_y_cord_width_p-1:0] pod_y_i   
-   
   ,output [`BSG_WIDTH(max_out_credits_p)-1:0] out_credits_o
 
 );
