@@ -35,4 +35,3 @@
 #include <stdlib.h>
 #include "library_tests.h"
 
-#define DMEM_BASE 0x1000

@@ -28,6 +28,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_printing.h>
+#include <bsg_manycore_tile.h>
 #include <cinttypes>
 #include <type_traits>
 #include "test_manycore_dmem_read_write.hpp"
@@ -43,7 +44,7 @@ int test_mem_functions(hb_mc_manycore_t *mc) {
         hb_mc_npa_t npa = {
                 .x = hb_mc_config_get_vcore_base_x(hb_mc_manycore_get_config(mc)),
                 .y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc)),
-                .epa = DMEM_BASE
+                .epa = HB_MC_TILE_EPA_DMEM_BASE
         };
 
         bsg_pr_test_info("Writing to DMEM\n");
@@ -111,7 +112,7 @@ int test_read_write(hb_mc_manycore_t *mc) {
                 hb_mc_npa_t npa = {
                         .x = hb_mc_config_get_vcore_base_x(hb_mc_manycore_get_config(mc)),
                         .y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc)),
-                        .epa = DMEM_BASE + sizeof(T) * i
+                        .epa = HB_MC_TILE_EPA_DMEM_BASE + sizeof(T) * i
 		};
                 
                 bsg_pr_test_info("Writing %u bytes to DMEM address 0x%08" PRIx32 "\n", sizeof(T), npa.epa);
