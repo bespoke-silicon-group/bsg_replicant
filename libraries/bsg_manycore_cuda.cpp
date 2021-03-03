@@ -1807,10 +1807,9 @@ int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
                         return HB_MC_SUCCESS;
                 }
 
-                // should not reach this point
-                bsg_pr_err("%s: completion packet with no matching tile-group\n",
+                bsg_pr_dbg("%s: packet received with finished signal "
+                           "value but no matching tile-group",
                            __func__);
-                return HB_MC_FAIL;
         }
 }
 

@@ -44,7 +44,7 @@ extern "C" {
         // Kernel is not loaded into tile if kernel poitner equals this value.
 #define HB_MC_CUDA_KERNEL_NOT_LOADED_VAL        0x0001
         // The value that is written on to finish_signal_addr to show that tile group execution is done.
-#define HB_MC_CUDA_FINISH_SIGNAL_VAL            0x0001  
+#define HB_MC_CUDA_FINISH_SIGNAL_VAL            0xFACE
         // The begining of section in host memory intended for tile groups to write finish signals into.
 #define HB_MC_CUDA_HOST_FINISH_SIGNAL_BASE_ADDR 0xF000  
 
