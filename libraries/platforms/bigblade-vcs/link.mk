@@ -55,7 +55,7 @@ VDEFINES += HOST_MODULE_PATH=replicant_tb_top
 VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES)
 VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
-VLOGAN_VFLAGS   += -ntb_opts tb_timescale=1ps/1ps -timescale=1ps/1ps
+VLOGAN_VFLAGS   += -timescale=1ps/1ps
 VLOGAN_VFLAGS   += -sverilog -v2005 +v2k
 VLOGAN_VFLAGS   += +systemverilogext+.svh +systemverilogext+.sv
 VLOGAN_VFLAGS   += +libext+.sv +libext+.v +libext+.vh +libext+.svh
@@ -93,7 +93,7 @@ VCS_VFLAGS     += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
 # otherwise make doesn't match the latter target(s)
 %: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
-	vcs replicant_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
+	vcs -top replicant_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
 
 %.debug: VCS_VFLAGS += -debug_pp
