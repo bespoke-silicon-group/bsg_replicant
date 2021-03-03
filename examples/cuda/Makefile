@@ -37,179 +37,63 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../environment.mk
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-REGRESSION_TESTS_TYPE = cuda
+include $(REPLICANT_PATH)/environment.mk
 
-###############################################################################
-# Examples List
-#
-# UNIFIED_TESTS use a generic top-level, test_unified_main.c. They depend on a
-# self-checking Manycore kernel to send a PASS/FAIL packet to the host
-#
-# INDEPENDENT_TESTS use a per-test top level, <test_name>.c/cpp. They check
-# correctness on the host.
-# 
-# REGRESSION_TESTS merges the two lists
-###############################################################################
-UNIFIED_TESTS = test_scalar_print
-UNIFIED_TESTS += test_empty
-UNIFIED_TESTS += test_tile_info
-UNIFIED_TESTS += test_barrier_deprecated
-UNIFIED_TESTS += test_barrier
-UNIFIED_TESTS += test_striped
+# Defines REGRESSION_PREBUILD
+include $(EXAMPLES_PATH)/link.mk
 
-INDEPENDENT_TESTS += test_binary_load_buffer
-INDEPENDENT_TESTS += test_empty_parallel
-INDEPENDENT_TESTS += test_multiple_binary_load
-INDEPENDENT_TESTS += test_host_memset
-INDEPENDENT_TESTS += test_stack_load
-INDEPENDENT_TESTS += test_memory_leak
-INDEPENDENT_TESTS += test_dram_load_store
-INDEPENDENT_TESTS += test_dram_host_allocated
-INDEPENDENT_TESTS += test_dram_device_allocated
-INDEPENDENT_TESTS += test_device_memset
-INDEPENDENT_TESTS += test_device_memcpy
-INDEPENDENT_TESTS += test_vec_add
-INDEPENDENT_TESTS += test_vec_add_dma
-INDEPENDENT_TESTS += test_dma
-INDEPENDENT_TESTS += test_vec_add_parallel
-INDEPENDENT_TESTS += test_vec_add_parallel_multi_grid
-INDEPENDENT_TESTS += test_vec_add_serial_multi_grid
-INDEPENDENT_TESTS += test_vec_add_shared_mem
-INDEPENDENT_TESTS += test_max_pool2d
-INDEPENDENT_TESTS += test_shared_mem
-INDEPENDENT_TESTS += test_shared_mem_load_store
-INDEPENDENT_TESTS += test_matrix_mul
-INDEPENDENT_TESTS += test_matrix_mul_shared_mem
+# Define the tests that get run
+TESTS += test_binary_load_buffer
+TESTS += test_empty_parallel
+TESTS += test_multiple_binary_load
+TESTS += test_host_memset
+TESTS += test_stack_load
+TESTS += test_memory_leak
+TESTS += test_dram_load_store
+TESTS += test_dram_host_allocated
+TESTS += test_dram_device_allocated
+TESTS += test_device_memset
+TESTS += test_device_memcpy
+TESTS += test_vec_add
+TESTS += test_vec_add_dma
+TESTS += test_dma
+TESTS += test_vec_add_parallel
+TESTS += test_vec_add_parallel_multi_grid
+TESTS += test_vec_add_serial_multi_grid
+TESTS += test_vec_add_shared_mem
+TESTS += test_max_pool2d
+TESTS += test_shared_mem
+TESTS += test_shared_mem_load_store
+TESTS += test_matrix_mul
+TESTS += test_matrix_mul_shared_mem
+TESTS += test_highmem
+TESTS += test_float_all_ops
+TESTS += test_float_vec_add
+TESTS += test_float_vec_add_shared_mem
+TESTS += test_float_vec_mul
+TESTS += test_float_vec_div
+TESTS += test_float_vec_exp
+TESTS += test_float_vec_sqrt
+TESTS += test_float_vec_log
+TESTS += test_float_matrix_mul
+TESTS += test_float_matrix_mul_shared_mem
+TESTS += test_softmax
+TESTS += test_log_softmax
+TESTS += test_hammer_cache
+TESTS += test_profiler
+TESTS += test_tracer
+TESTS += test_conv1d
+TESTS += test_conv2d
 
-INDEPENDENT_TESTS += test_float_all_ops
-INDEPENDENT_TESTS += test_float_vec_add
-INDEPENDENT_TESTS += test_float_vec_add_shared_mem
-INDEPENDENT_TESTS += test_float_vec_mul
-INDEPENDENT_TESTS += test_float_vec_div
-INDEPENDENT_TESTS += test_float_vec_exp
-INDEPENDENT_TESTS += test_float_vec_sqrt
-INDEPENDENT_TESTS += test_float_vec_log
-INDEPENDENT_TESTS += test_float_matrix_mul
-INDEPENDENT_TESTS += test_float_matrix_mul_shared_mem
-INDEPENDENT_TESTS += test_softmax
-INDEPENDENT_TESTS += test_log_softmax
-INDEPENDENT_TESTS += test_hammer_cache
-INDEPENDENT_TESTS += test_profiler
-INDEPENDENT_TESTS += test_tracer
-INDEPENDENT_TESTS += test_conv1d
-INDEPENDENT_TESTS += test_conv2d
-INDEPENDENT_TESTS += test_high_mem
+regression: $(TESTS) ;
+$(TESTS): $(REGRESSION_PREBUILD)
+	$(MAKE) -C $@ regression
 
-# Tests that use the legacy API
-LEGACY_TESTS += test_matrix_mul
-LEGACY_TESTS += test_binary_load_buffer
-LEGACY_TESTS += test_multiple_binary_load
-LEGACY_TESTS += test_host_memset
-LEGACY_TESTS += test_stack_load
-LEGACY_TESTS += test_memory_leak
-LEGACY_TESTS += test_dram_load_store
-LEGACY_TESTS += test_dram_host_allocated
-LEGACY_TESTS += test_dram_device_allocated
-LEGACY_TESTS += test_device_memset
-LEGACY_TESTS += test_device_memcpy
-#LEGACY_TESTS += test_vec_add
-#LEGACY_TESTS += test_vec_add_dma
-#LEGACY_TESTS += test_vec_add_parallel
-LEGACY_TESTS += test_vec_add_parallel_multi_grid
-LEGACY_TESTS += test_vec_add_serial_multi_grid
-LEGACY_TESTS += test_vec_add_shared_mem
-LEGACY_TESTS += test_max_pool2d
-LEGACY_TESTS += test_shared_mem
-LEGACY_TESTS += test_shared_mem_load_store
-LEGACY_TESTS += test_matrix_mul
-LEGACY_TESTS += test_matrix_mul_shared_mem
+clean: $(TESTS:=.clean)
 
-LEGACY_TESTS += test_float_all_ops
-LEGACY_TESTS += test_float_vec_add
-LEGACY_TESTS += test_float_vec_add_shared_mem
-LEGACY_TESTS += test_float_vec_mul
-LEGACY_TESTS += test_float_vec_div
-LEGACY_TESTS += test_float_vec_exp
-LEGACY_TESTS += test_float_vec_sqrt
-LEGACY_TESTS += test_float_vec_log
-LEGACY_TESTS += test_float_matrix_mul
-LEGACY_TESTS += test_float_matrix_mul_shared_mem
-LEGACY_TESTS += test_softmax
-LEGACY_TESTS += test_log_softmax
-LEGACY_TESTS += test_hammer_cache
-LEGACY_TESTS += test_profiler
-LEGACY_TESTS += test_tracer
-LEGACY_TESTS += test_conv1d
-LEGACY_TESTS += test_conv2d
+%.clean:
+	$(MAKE) -C $(@:.clean=) clean
 
-REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
-
-###############################################################################
-# Host code compilation flags and flow
-###############################################################################
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
-
-CDEFINES   += $(DEFINES)
-CXXDEFINES += $(DEFINES)
-
-FLAGS     = -g -Wall
-CFLAGS   += -std=c99 $(FLAGS) 
-CXXFLAGS += -std=c++11 $(FLAGS)
-
-###############################################################################
-# Execution Arguments (C_ARGS)
-#
-# All CUDA tests require two arguments: The path to the RISC-V Binary loaded
-# onto the manycore (KERNEL_PATH), and the test name (TEST_NAME).
-#
-###############################################################################
-SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
-CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
-KERNEL_PATH=$(CUDALITE_SRC_PATH)/$(subst test_,,$(TEST_NAME))/main.riscv
-C_ARGS = $(KERNEL_PATH) $(TEST_NAME)
-
-# flow.mk defines all of the host compilationk, link, and execution rules
-include $(EXAMPLES_PATH)/flow.mk
-
-###############################################################################
-# Kernel Binary Build Rules
-###############################################################################
-
-# The default Tile Group size is 2x2
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
-
-# Force rebuild targets that depend on .FORCE, like the
-# Manycore/SPMD/CUDA Binaries
-.FORCE:
-
-.PHONY: test_%.clean test_%.rule
-
-$(USER_RULES): test_%.rule: $(CUDALITE_SRC_PATH)/%/main.riscv
-
-$(USER_CLEAN_RULES):
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -j1 -C $(CUDALITE_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
-
-$(CUDALITE_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include .FORCE
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	$(MAKE) -j1 -C $(dir $@) clean $(notdir $@)
-
-.PHONY: clean
-
-clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+.PHONY: clean regression $(TESTS) %.clean

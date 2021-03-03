@@ -56,7 +56,7 @@ VLOGAN_SOURCES  += $(VHEADERS) $(VSOURCES)
 VLOGAN_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VLOGAN_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VLOGAN_VFLAGS   += -timescale=1ps/1ps
-VLOGAN_VFLAGS   += -sverilog -v2005 +v2k
+VLOGAN_VFLAGS   += -sverilog
 VLOGAN_VFLAGS   += +systemverilogext+.svh +systemverilogext+.sv
 VLOGAN_VFLAGS   += +libext+.sv +libext+.v +libext+.vh +libext+.svh
 VLOGAN_VFLAGS   += -full64 -lca -assert svaext
@@ -77,32 +77,40 @@ $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB: $(BSG_MA
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
 LDFLAGS += -lbsg_manycore_runtime -lm
 LDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
-LEGACY_TESTS_LDFLAGS := -lbsgmc_cuda_legacy_pod_repl $(LDFLAGS)
-$(LEGACY_TESTS): LDFLAGS := $(LEGACY_TESTS_LDFLAGS)
 
-VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS     += -M -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005
-VCS_VFLAGS     += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
-VCS_VFLAGS     += +warn=noLCA_FEATURES_ENABLED
-VCS_VFLAGS     += +warn=noMC-FCNAFTMI
-VCS_VFLAGS     += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
+VCS_LDFLAGS += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
+VCS_VFLAGS  += -M -L -ntb_opts tb_timescale=1ps/1ps -lca
+VCS_VFLAGS  += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
+VCS_VFLAGS  += +warn=noLCA_FEATURES_ENABLED
+VCS_VFLAGS  += +warn=noMC-FCNAFTMI
+VCS_VFLAGS  += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
 
-# VCS Generates an executable file by linking the %.o file with the
-# the VCS work libraries for the design, and the runtime shared libraries
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+
+# VCS Generates an executable file by linking the TEST_OBJECTS with
+# the the VCS work libraries for the design, and the runtime shared
+# libraries
 
 # The % and %.debug rules are identical. They must be separate
 # otherwise make doesn't match the latter target(s)
-%: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
-	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
-	vcs -top replicant_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
-		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
-
 %.debug: VCS_VFLAGS += -debug_pp
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-%.debug: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
+
+.PRECIOUS:%.debug %.profile
+%.debug %.profile: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
-	vcs replicant_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
-		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
+	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_LDFLAGS) $(VCS_VFLAGS) \
+		-Mdirectory=$@.tmp -l $@.vcs.log -o $@
+
+# When running recursive regression, make is launched in independent,
+# non-communicating parallel processes that try to build these objects
+# in parallel. That is no-bueno. We define REGRESSION_PREBUILD so that
+# regression tests can build them before launching parallel
+# compilation and execution
+REGRESSION_PREBUILD = $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 
 .PHONY: platform.link.clean
 platform.link.clean:
@@ -114,7 +122,7 @@ platform.link.clean:
 	rm -rf *.vcs.log
 	rm -rf vc_hdrs.h
 	rm -rf $(BSG_PLATFORM_PATH)/msg_config
-	rm -rf *.debug
+	rm -rf *.debug *.profile
 
 link.clean: platform.link.clean ;
 

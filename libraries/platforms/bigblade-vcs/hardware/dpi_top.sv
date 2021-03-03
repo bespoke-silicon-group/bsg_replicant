@@ -326,11 +326,13 @@ module replicant_tb_top
       longint t;
       $value$plusargs("c_args=%s", args);
       replicant_tb_top.cosim_main(exit_code, args);
-      if(exit_code < 0)
+      if(exit_code < 0) begin
         $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
-      else
+        $fatal;
+      end else begin
         $display("BSG COSIM PASS: Test passed!");
-      $finish;
+        $finish;
+      end
    end
 
 `endif
