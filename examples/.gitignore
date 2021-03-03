@@ -11,5 +11,8 @@ ucli.key
 *.out
 *.tmp
 *.daidir
-*.profile
 *.debug
+*.profile
+*.exec
+*.saif
+*.saifgen

@@ -117,9 +117,8 @@ include $(EXAMPLES_PATH)/execution.mk
 # Regression Flow
 ###############################################################################
 
-regression: main.profile.log
+regression: main.exec.log
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
-libraries/platforms/bigblade-vcs/
 
 ###############################################################################
 # Default rules, help, and clean

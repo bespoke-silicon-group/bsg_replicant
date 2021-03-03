@@ -337,4 +337,17 @@ module replicant_tb_top
 
 `endif
 
+`ifdef BSG_MACHINE_ENABLE_SAIF
+   wor saif_en = 0;
+
+   bind vanilla_core vanilla_core_saif_dumper
+     #(
+       )
+   saif_dumper
+   (
+    .*
+    ,.saif_en_i($root.`HOST_MODULE_PATH.saif_en)
+    ,.saif_en_o($root.`HOST_MODULE_PATH.saif_en)
+   );
+`endif
 endmodule

@@ -48,13 +48,15 @@ include $(EXAMPLES_PATH)/link.mk
 TESTS += test_bsg_dram_loopback_cache
 TESTS += test_bsg_loader_suite
 TESTS += test_bsg_scalar_print
-TESTS += test_loader
 TESTS += test_symbol_to_eva
 TESTS += test_bsg_print_stat
 TESTS += test_putchar_stream
 TESTS += test_fib
+TESTS += test_saif
 
-regression: $(TESTS) ;
+regression: $(TESTS)
+	@echo "SPMD REGRESSION PASSED"
+
 $(TESTS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
 

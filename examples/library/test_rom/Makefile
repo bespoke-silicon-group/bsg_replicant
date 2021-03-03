@@ -74,7 +74,7 @@ main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS += 
+LDFLAGS +=
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
@@ -97,7 +97,7 @@ include $(EXAMPLES_PATH)/execution.mk
 # Regression Flow
 ###############################################################################
 
-regression: main.profile.log
+regression: main.exec.log
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
 ###############################################################################

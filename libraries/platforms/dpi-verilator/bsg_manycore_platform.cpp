@@ -28,7 +28,6 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
-#include <bsg_manycore_profiler.hpp>
 #include <bsg_manycore_tracer.hpp>
 
 #include <bsg_manycore_simulator.hpp>
@@ -61,7 +60,6 @@ typedef struct hb_mc_platform_t {
         bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
         hb_mc_manycore_id_t id;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
-        hb_mc_profiler_t prof;
         hb_mc_tracer_t tracer;
 } hb_mc_platform_t;
 
@@ -152,7 +150,6 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 
         hb_mc_tracer_cleanup(&(platform->tracer));
 
-        hb_mc_profiler_cleanup(&(platform->prof));
 
         hb_mc_platform_dpi_cleanup(platform);
 
@@ -224,22 +221,8 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
                 return err;
         }
 
-        std::string profiler = hierarchy;
-        profiler += ".network.manycore";
-        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_POD_DIM_X, &rd);
-        x = rd;
-        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_POD_DIM_Y, &rd);
-        y = rd;
-        err = hb_mc_profiler_init(&(platform->prof), x, y, profiler);
-        if (err != HB_MC_SUCCESS){
-                hb_mc_platform_dpi_cleanup(platform);
-                delete platform;
-                return err;
-        }
-
         err = hb_mc_tracer_init(&(platform->tracer), hierarchy);
         if (err != HB_MC_SUCCESS){
-                hb_mc_profiler_cleanup(&(platform->prof));
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
                 return err;
@@ -248,7 +231,6 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         err = hb_mc_platform_drain(mc, HB_MC_FIFO_RX_REQ);
         if (err != HB_MC_SUCCESS){
                 hb_mc_tracer_cleanup(&(platform->tracer));
-                hb_mc_profiler_cleanup(&(platform->prof));
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
                 return err;
@@ -257,7 +239,6 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         hb_mc_platform_drain(mc, HB_MC_FIFO_RX_RSP);
         if (err != HB_MC_SUCCESS){
                 hb_mc_tracer_cleanup(&(platform->tracer));
-                hb_mc_profiler_cleanup(&(platform->prof));
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
                 return err;
@@ -504,8 +485,7 @@ int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 int hb_mc_platform_get_icount(hb_mc_manycore_t *mc, bsg_instr_type_e itype, int *count){
          hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
-         return hb_mc_profiler_get_icount(platform->prof, itype, count);
-
+         return HB_MC_NOIMPL;
 }
 
 /**
