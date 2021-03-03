@@ -1,4 +1,3 @@
-#define DEBUG
 #include <bsg_manycore.h>
 #include <bsg_mem_dma.hpp>
 #include <bsg_manycore_vcache.h>
