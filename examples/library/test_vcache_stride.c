@@ -64,7 +64,7 @@ int test_vcache_stride() {
         hb_mc_response_packet_t res;
 
         hb_mc_coordinate_t pod;
-        hb_mc_config_forqeach_pod(pod, config)
+        hb_mc_config_foreach_pod(pod, config)
         {
                 hb_mc_coordinate_t dest;
                 hb_mc_config_pod_foreach_dram(dest, pod, config)

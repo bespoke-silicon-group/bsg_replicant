@@ -280,7 +280,7 @@ int test_manycore_alignment() {
                                                  BASE_ADDR + 3);
                         err = hb_mc_manycore_read16(mc, &npa, &read_data);
                         if (err == HB_MC_UNALIGNED) {
-                                bsg_pr_test_iqnfo("%s: Expected an invalid address error. We're good!\n", __func__);
+                                bsg_pr_test_info("%s: Expected an invalid address error. We're good!\n", __func__);
                         } else {
                                 bsg_pr_err("%s: Did not catch write into invalid misaligned address: 0x%08" PRIx32 ".\n",
                                            __func__, hb_mc_npa_get_epa(&npa));
