@@ -19,7 +19,7 @@
 using namespace bsg_mem_dma;
 
 static parameter_t *cache_id_to_memory_id;
-
+static parameter_t *cache_id_to_bank_id;
 /**
  * Initializes a specialized DRAM bank to channel map for the BigBlade Chip
  */
@@ -32,6 +32,10 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
                 /* 0 */  { 0,  2 },
                 /* 1 */  { 4,  6 },
         };
+
+        unsigned long caches_per_channel =
+                hb_mc_vcache_num_caches(mc) /
+                hb_mc_config_get_dram_channels(&mc->config);
 
         hb_mc_config_foreach_pod(pod, &mc->config)
         {
@@ -55,10 +59,49 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
                                 hb_mc_config_is_dram_north(&mc->config, dram) ?
                                 north_id :
                                 south_id ;
+
+                        cache_id_to_bank_id[id] = id % caches_per_channel;
                 }
         }
         return HB_MC_SUCCESS;
 }
+
+/**
+ * Initializes a specialized DRAM bank to channel map 1x1 pod model of the BigBlade Chip
+ */
+static
+int hb_mc_dma_init_pod_X1Y1_X16_hbm(hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = &mc->config;
+        hb_mc_coordinate_t pod = {0,0};
+        parameter_t west_id = 0, east_id = 1;
+
+        hb_mc_idx_t bx = hb_mc_config_pod_vcore_origin(cfg, pod).x;
+        hb_mc_coordinate_t dram;
+        hb_mc_config_pod_foreach_dram(dram, pod, cfg)
+        {
+                hb_mc_idx_t id = hb_mc_config_dram_id(cfg, dram);
+                hb_mc_idx_t pid = hb_mc_config_pod_dram_id(cfg, dram);
+
+                int east_not_west = (dram.x - bx) >= cfg->pod_shape.x/2;
+                cache_id_to_memory_id[id] =
+                        east_not_west ?
+                        east_id :
+                        west_id ;
+
+                cache_id_to_bank_id[id] =
+                        east_not_west
+                        ? (hb_mc_config_is_dram_north(cfg, dram)
+                           ? (dram.x-bx) - (cfg->pod_shape.x/2)
+                           : (dram.x-bx))
+                        : (hb_mc_config_is_dram_north(cfg, dram)
+                           ? (dram.x-bx)
+                           : (dram.x-bx) + (cfg->pod_shape.x/2));
+        }
+
+        return HB_MC_SUCCESS;
+}
+
 
 /**
  * A default DRAM bank to channel map setup - works for most configurations we use
@@ -72,20 +115,24 @@ int hb_mc_dma_init_default(hb_mc_manycore_t *mc)
                         hb_mc_vcache_num_caches(mc) /
                         hb_mc_config_get_dram_channels(&mc->config);
 
-                cache_id_to_memory_id[cache_id] = cache_id/caches_per_channel;
+                cache_id_to_memory_id[cache_id] = cache_id / caches_per_channel;
+                cache_id_to_bank_id[cache_id] = cache_id % caches_per_channel;
         }
 }
 
 int hb_mc_dma_init(hb_mc_manycore_t *mc)
 {
         cache_id_to_memory_id = new parameter_t [hb_mc_vcache_num_caches(mc)];
+        cache_id_to_bank_id   = new parameter_t [hb_mc_vcache_num_caches(mc)];
 
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2
-            && mc->config.pods.x == 4
-            && mc->config.pods.y == 4
             && mc->config.pod_shape.x == 16
             && mc->config.pod_shape.y == 8) {
-                return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
+                if (mc->config.pods.x == 4 && mc->config.pods.y == 4) {
+                        return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
+                } else if (mc->config.pods.x == 1 && mc->config.pods.y == 1) {
+                        return hb_mc_dma_init_pod_X1Y1_X16_hbm(mc);
+                }
         } else {
                 return hb_mc_dma_init_default(mc);
         }
@@ -128,7 +175,7 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         */
         hb_mc_idx_t cache_id = hb_mc_config_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
         parameter_t id = cache_id_to_memory_id[cache_id];
-        parameter_t bank = cache_id % caches_per_channel; // which bank within channel
+        parameter_t bank = cache_id_to_bank_id[cache_id]; // which bank within channel
 
         /*
           Use the backdoor to our non-synthesizable memory.

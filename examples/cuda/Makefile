@@ -100,6 +100,7 @@ INDEPENDENT_TESTS += test_profiler
 INDEPENDENT_TESTS += test_tracer
 INDEPENDENT_TESTS += test_conv1d
 INDEPENDENT_TESTS += test_conv2d
+INDEPENDENT_TESTS += test_high_mem
 
 # Tests that use the legacy API
 LEGACY_TESTS += test_matrix_mul
