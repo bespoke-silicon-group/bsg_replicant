@@ -75,9 +75,10 @@ $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB: $(BSG_MA
 		-l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.log
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
-$(LEGACY_TESTS): LDFLAGS += -lbsgmc_cuda_legacy_pod_repl
-test_loader $(INDEPENDENT_TESTS): LDFLAGS += -lbsg_manycore_runtime -lm
-test_loader $(INDEPENDENT_TESTS): LDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
+LDFLAGS += -lbsg_manycore_runtime -lm
+LDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
+LEGACY_TESTS_LDFLAGS := -lbsgmc_cuda_legacy_pod_repl $(LDFLAGS)
+$(LEGACY_TESTS): LDFLAGS := $(LEGACY_TESTS_LDFLAGS)
 
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS     += -M -L -ntb_opts tb_timescale=1ps/1ps -lca -v2005
