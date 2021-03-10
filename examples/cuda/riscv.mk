@@ -36,19 +36,20 @@ NC=\033[0m
 _REPO_ROOT ?= $(shell git rev-parse --show-toplevel)
 -include $(_REPO_ROOT)/environment.mk
 
-_BSG_MANYCORE_SPMD_PATH = $(BSG_MANYCORE_DIR)/software/spmd/
-_BSG_MANYCORE_CUDALITE_PATH = $(_BSG_MANYCORE_SPMD_PATH)/bsg_cuda_lite_runtime/
-_BSG_MANYCORE_CUDALITE_MAIN_PATH = $(_BSG_MANYCORE_CUDALITE_PATH)/main
+BSG_MANYCORE_SPMD_PATH = $(BSG_MANYCORE_DIR)/software/spmd/
+BSG_MANYCORE_CUDALITE_PATH = $(BSG_MANYCORE_SPMD_PATH)/bsg_cuda_lite_runtime/
+BSG_MANYCORE_CUDALITE_MAIN_PATH = $(BSG_MANYCORE_CUDALITE_PATH)/main
 
-_BSG_MANYCORE_LIB_PATH    = $(BSG_MANYCORE_DIR)/software/bsg_manycore_lib
-_BSG_MANYCORE_COMMON_PATH = $(_BSG_MANYCORE_SPMD_PATH)/common/
+BSG_MANYCORE_LIB_PATH    = $(BSG_MANYCORE_DIR)/software/bsg_manycore_lib
+BSG_MANYCORE_COMMON_PATH = $(BSG_MANYCORE_SPMD_PATH)/common/
+
+RISCV_TOOLS_PATH := $(BSG_MANYCORE_DIR)/software/riscv-tools/
+RISCV_GNU_PATH   := $(RISCV_TOOLS_PATH)/riscv-install
+RISCV_LLVM_PATH  := $(RISCV_TOOLS_PATH)/llvm/llvm-install
 
 ################################################################################
 # Include RISC-V Tool Configuration
 ################################################################################
-RISCV_TOOLS_PATH := $(BSG_MANYCORE_DIR)/software/riscv-tools/
-RISCV_GNU_PATH   := $(RISCV_TOOLS_PATH)/riscv-install
-RISCV_LLVM_PATH  := $(RISCV_TOOLS_PATH)/llvm/llvm-install
 
 RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
 
@@ -76,15 +77,16 @@ RISCV_LLVM_OPT    ?= $(RISCV_LLVM_PATH)/bin/opt
 RISCV_LLVM_LLC    ?= $(RISCV_LLVM_PATH)/bin/llc
 RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 
-RUNTIME_FNS      ?= $(BSG_MANYCORE_DIR)/software/bsg_manycore_lib/bsg_tilegroup.h
-
-
-# Default Compilers
+# Set the default RISC-V Compilers. To override these globally set
+# RISCV_CXX = $(RISCV_CLANGXX), etc. This can also be done on a
+# per-object basis. For example, foo.rvo: RISCV_CXX=$(RISCV_CLANGXX)
 RISCV_CXX ?= $(RISCV_GXX)
 RISCV_CC  ?= $(RISCV_GCC)
 
 ################################################################################
 # C/C++ Compilation Flags
+#
+# All RISCV C/C++ compilation variables simply have RISCV_* appended.
 ################################################################################
 RISCV_OPT_LEVEL   ?= -O2
 RISCV_ARCH_OP     := rv32imaf
@@ -102,9 +104,10 @@ RISCV_CFLAGS   += -std=gnu99 $(RISCV_CCPPFLAGS)
 RISCV_CXXFLAGS += -std=c++11 $(RISCV_CCPPFLAGS)
 RISCV_CXXFLAGS += -fno-threadsafe-statics
 
-RISCV_INCLUDES += -I$(_BSG_MANYCORE_COMMON_PATH)
+RISCV_INCLUDES += -I$(BSG_MANYCORE_COMMON_PATH)
 RISCV_INCLUDES += -I$(BSG_MANYCORE_DIR)/software/bsg_manycore_lib
 
+# TODO: Fail if bsg_tiles_X/Y are not set
 RISCV_DEFINES += -Dbsg_global_X=$(BSG_MACHINE_GLOBAL_X)
 RISCV_DEFINES += -Dbsg_global_Y=$(BSG_MACHINE_GLOBAL_Y)
 RISCV_DEFINES += -Dbsg_group_size=$(BSG_MACHINE_POD_TILES)
@@ -115,34 +118,26 @@ RISCV_DEFINES += -DIO_Y_INDEX=$(BSG_MACHINE_HOST_Y_CORD)
 RISCV_DEFINES += -DPREALLOCATE=0
 RISCV_DEFINES += -DHOST_DEBUG=0
 
+# We build and name a machine-specific crt.rvo because it's REALLY
+# difficult to figure out why your program/cosimulation is hanging
+# when the wrong link script was used during linking
+crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
+	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.comp.log
+
+# We compile these locally so that we don't interfere with the files in
+# $(BSG_MANYCORE_LIB_PATH).
 # BSG Manycore Library Objects
 LIBBSG_MANYCORE_OBJECTS  += bsg_set_tile_x_y.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_printf.rvo
 
-# We build and name a machine-specific crt.rvo because it's REALLY
-# difficult to figure out why your program/cosimulation is hanging
-# when the wrong link script was used during linking
-crt.rvo: $(_BSG_MANYCORE_COMMON_PATH)/crt.S
-	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.comp.log
-
-# We compile these locally so that we don't interfere with the files in
-# $(_BSG_MANYCORE_LIB_PATH). They are not architecture specific, and not
-# tile-group-size specific, but we do have to define them... soo...
-
-# The following two lines that define bsg_tiles_X and bsg_tiles_Y for
-# bsg_printf.rvo *** IS A HACK ***. They aren't used in any source file or
-# function that CUDA uses, but bsg_manycore.h will FAIL to compile if they
-# aren't defined because they are used in macros.
 $(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(RISCV_GCC)
 
-$(LIBBSG_MANYCORE_OBJECTS): %.rvo:$(_BSG_MANYCORE_LIB_PATH)/%.c
+$(LIBBSG_MANYCORE_OBJECTS): %.rvo:$(BSG_MANYCORE_LIB_PATH)/%.c
 	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
 
-main.rvo: $(_BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
+main.rvo: $(BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
 	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
-
-%.rvo: RISCV_INCLUDES += $(KERNEL_INCLUDES)
 
 %.rvo: %.c
 	$(RISCV_CC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.gcc.log
@@ -151,14 +146,15 @@ main.rvo: $(_BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
 	$(RISCV_CXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.gcc.log
 
 kernel.compile.clean:
-	rm -rf *.rvo *.gcc.log *.rva *.a
+	rm -rf *.rvo *.a
 
 .PRECIOUS: %.rvo
 
-# Link flow
 ################################################################################
+# Linker Flow
+################################################################################
+
 # ELF File Parameters
-################################################################################
 # Default .data section location; LOCAL=>DMEM, SHARED=>DRAM.
 BSG_ELF_DEFAULT_DATA_LOC ?= LOCAL
 
@@ -180,31 +176,26 @@ BSG_ELF_VCACHE_COLUMN_SIZE := $(shell expr $(_BSG_ELF_VCACHE_COLUMN_WORDS) \* 4)
 _BSG_ELF_VCACHE_MANYCORE_WORDS ?= $(shell expr $(BSG_MACHINE_GLOBAL_X) \* $(_BSG_ELF_VCACHE_COLUMN_WORDS))
 BSG_ELF_VCACHE_MANYCORE_SIZE := $(shell expr $(_BSG_ELF_VCACHE_MANYCORE_WORDS) \* 4)
 
-# EVA of stack pointer
-BSG_ELF_DRAM_EVA_OFFSET = 0x80000000
-
-# Determine the correct linker script from machine parameters. The
-# presence of DRAM/Off-Chip memory, and the location of the .data
-# segment determine which (poorly named) link script will be
-# chosen. Errors are thrown if an incorrect configuration is found
-
-# Compute the ELF Stack Pointer Location. If the .data segment is in
-# DMEM (LOCAL) then put it at the top of DMEM. Otherwise, use the top
-# of DRAM (if present), or the Victim Cache address space (if DRAM is
-# disabled/not present).
+# Compute the ELF Stack Pointer Location.  
 ifeq ($(BSG_ELF_DEFAULT_DATA_LOC), LOCAL)
+# If the .data segment is in DMEM (LOCAL) then put it at the top of DMEM. (This is the typical case)
 BSG_ELF_STACK_PTR ?= 0x00000ffc
 else
+  # EVA Offset in DRAM
+  BSG_ELF_DRAM_EVA_OFFSET = 0x80000000
+
   ifeq ($(BSG_ELF_OFF_CHIP_MEM), 1)
+  # Otherwise, use the top of DRAM (if present),
   _BSG_ELF_DRAM_LIMIT = $(shell expr $(BSG_ELF_DRAM_EVA_OFFSET) + $(BSG_ELF_DRAM_SIZE))
   else
+  # Or the Victim Cache address space (if DRAM is disabled/not present).
   _BSG_ELF_DRAM_LIMIT = $(shell expr $(BSG_ELF_DRAM_EVA_OFFSET) + $(BSG_ELF_VCACHE_MANYCORE_SIZE))
   endif
-# Stack Pointer Address: Subtract 4 from the maximum memory space
-# address address
+# Finally, Subtract 4 from the maximum memory space address
 BSG_ELF_STACK_PTR = $(shell expr $(_BSG_ELF_DRAM_LIMIT) - 4)
 endif
 
+# Linker script generation parameters
 ifeq ($(BSG_ELF_OFF_CHIP_MEM), 1)
   ifeq ($(BSG_ELF_DEFAULT_DATA_LOC), LOCAL)
     LINK_GEN_OPTS ?= --default_data_loc=dmem --dram_size=$(BSG_ELF_DRAM_SIZE) --sp=$(BSG_ELF_STACK_PTR)
@@ -230,12 +221,10 @@ else
 endif
 
 RISCV_LINK_SCRIPT ?= bsg_link.ld
-bsg_link.ld: $(RISCV_LINK_GEN)
+$(RISCV_LINK_SCRIPT): $(RISCV_LINK_GEN)
 	$(RISCV_LINK_GEN) $(LINK_GEN_OPTS) --out=$@
 
-################################################################################
-# Linker Flags
-################################################################################
+# Link commands and definitions
 
 RISCV_LDFLAGS += -Wl,--defsym,_bsg_elf_dram_size=$(BSG_ELF_DRAM_SIZE)
 RISCV_LDFLAGS += -Wl,--defsym,_bsg_elf_vcache_size=$(BSG_ELF_VCACHE_MANYCORE_SIZE)
@@ -252,13 +241,17 @@ RISCV_LDFLAGS += -lgcc
 # TODO: temporary fix to solve this problem: https://stackoverflow.com/questions/56518056/risc-v-linker-throwing-sections-lma-overlap-error-despite-lmas-belonging-to-dif
 RISCV_LDFLAGS += -Wl,--no-check-sections 
 
-################################################################################
-# Linker Targets
-################################################################################
-# This builds a kernel.riscv binary for the current machine type and
-# tile group size. KERNEL_OBJECTS can be used to include other object
-# files in the linker. KERNEL_DEFAULT can be overridden by the user,
-# but defaults to kernel.cpp
+# This builds a .riscv binary for the current machine type and tile
+# group size. RISCV_TARGET_OBJECTS are .rvo files that will be linked
+# in the final binary.
+%.riscv: crt.rvo bsg_set_tile_x_y.rvo bsg_tile_config_vars.rvo main.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT) 
+	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(RISCV_LDFLAGS) $(filter %.rvo,$^) -o $@
 
-%.riscv: bsg_link.ld crt.rvo bsg_set_tile_x_y.rvo bsg_tile_config_vars.rvo main.rvo $(RISCV_TARGET_OBJECTS) 
-	$(RISCV_LD) -T $^ $(RISCV_LDFLAGS) -o $@
+kernel.link.clean:
+	rm -rf *.riscv $(RISCV_LINK_SCRIPT)
+
+
+.PRECIOUS: %.riscv
+.PHONY: kernel.link.clean kernel.compile.clean
+clean: kernel.link.clean kernel.compile.clean
+
