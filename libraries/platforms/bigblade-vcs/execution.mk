@@ -42,6 +42,10 @@ SIM_ARGS += +ntb_random_seed_automatic
 %.log: % $(BSG_MANYCORE_KERNELS)
 	./$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
 
+vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
+
+%.saif: %.saifgen.log ;
+
 %.vpd: SIM_ARGS += +vpdfile+$(@:.debug.log=.vpd)
 %.vpd: %.debug.log ;
 

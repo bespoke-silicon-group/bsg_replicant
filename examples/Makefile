@@ -50,7 +50,9 @@ TARGETS = library spmd cuda python
 # Define the tests that get run
 TESTS += test_loader
 
-regression: $(TARGETS) ;
+regression: $(TARGETS)
+	@echo "REGRESSION PASSED"
+
 $(TARGETS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
 

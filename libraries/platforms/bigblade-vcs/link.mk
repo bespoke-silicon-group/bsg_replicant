@@ -61,6 +61,7 @@ VLOGAN_VFLAGS   += +systemverilogext+.svh +systemverilogext+.sv
 VLOGAN_VFLAGS   += +libext+.sv +libext+.v +libext+.vh +libext+.svh
 VLOGAN_VFLAGS   += -full64 -lca -assert svaext
 VLOGAN_VFLAGS   += -undef_vcs_macro
+VLOGAN_FLAGS    = $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) $(VLOGAN_INCLUDES) $(VLOGAN_SOURCES)
 
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM):
 	mkdir -p $@
@@ -68,11 +69,27 @@ $(BSG_MACHINE_PATH)/$(BSG_PLATFORM):
 $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup: | $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
 	echo "replicant_tb_top : $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/64" >> $@;
 
-$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup $(VHEADERS) $(VSOURCES)
-	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
-	vlogan -work replicant_tb_top $(VLOGAN_VFLAGS) $(VLOGAN_DEFINES) \
-		$(VLOGAN_SOURCES) $(VLOGAN_INCLUDES) \
-		-l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.log
+# The SAIF-generation simulation and fast simulation (exec) turns off the profilers using macros
+# so it must be compiled into a separate library.
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen: | $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
+	echo "replicant_tb_top : $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/64" >> $@;
+
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec: | $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
+	echo "replicant_tb_top : $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/64" >> $@;
+
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup $(VLOGAN_SOURCES)
+	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.log
+
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
+
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: VDEFINES += BSG_MACHINE_ENABLE_SAIF
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen $(VLOGAN_SOURCES)
+	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top -debug_access+pp $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.saifgen.log
+
+$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec $(VLOGAN_SOURCES)
+	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.exec.log
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
 LDFLAGS += -lbsg_manycore_runtime -lm
@@ -84,6 +101,7 @@ VCS_VFLAGS  += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
 VCS_VFLAGS  += +warn=noLCA_FEATURES_ENABLED
 VCS_VFLAGS  += +warn=noMC-FCNAFTMI
 VCS_VFLAGS  += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
+VCS_FLAGS   = $(VCS_LDFLAGS) $(VCS_VFLAGS)
 
 TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
 TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
@@ -94,35 +112,45 @@ TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 # the the VCS work libraries for the design, and the runtime shared
 # libraries
 
-# The % and %.debug rules are identical. They must be separate
-# otherwise make doesn't match the latter target(s)
-%.debug: VCS_VFLAGS += -debug_pp
+%.saifgen %.debug: VCS_VFLAGS += -debug_pp
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
-.PRECIOUS:%.debug %.profile
 %.debug %.profile: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
-	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_LDFLAGS) $(VCS_VFLAGS) \
-		-Mdirectory=$@.tmp -l $@.vcs.log -o $@
+	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+
+%.saifgen: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen \
+	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+
+%.exec: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec \
+	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+
+.PRECIOUS:%.debug %.profile %.saifgen %.exec
 
 # When running recursive regression, make is launched in independent,
 # non-communicating parallel processes that try to build these objects
 # in parallel. That is no-bueno. We define REGRESSION_PREBUILD so that
 # regression tests can build them before launching parallel
 # compilation and execution
-REGRESSION_PREBUILD = $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+REGRESSION_PREBUILD += $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB
+REGRESSION_PREBUILD += $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB
+REGRESSION_PREBUILD += $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 
 .PHONY: platform.link.clean
 platform.link.clean:
 	rm -rf $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/
+	rm -rf $(BSG_PLATFORM_PATH)/msg_config
 	rm -rf ucli.key
 	rm -rf .cxl* *.jou
 	rm -rf *.daidir *.tmp
 	rm -rf *.jou
 	rm -rf *.vcs.log
 	rm -rf vc_hdrs.h
-	rm -rf $(BSG_PLATFORM_PATH)/msg_config
-	rm -rf *.debug *.profile
+	rm -rf *.debug *.profile *.saifgen *.exec
 
 link.clean: platform.link.clean ;
 

@@ -68,7 +68,7 @@ TESTS += test_shared_mem
 TESTS += test_shared_mem_load_store
 TESTS += test_matrix_mul
 TESTS += test_matrix_mul_shared_mem
-TESTS += test_highmem
+TESTS += test_high_mem
 TESTS += test_float_all_ops
 TESTS += test_float_vec_add
 TESTS += test_float_vec_add_shared_mem
@@ -87,7 +87,9 @@ TESTS += test_tracer
 TESTS += test_conv1d
 TESTS += test_conv2d
 
-regression: $(TESTS) ;
+regression: $(TESTS)
+	@echo "CUDA REGRESSION PASSED"
+
 $(TESTS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
 

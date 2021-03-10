@@ -77,7 +77,7 @@ $(EXAMPLES_PATH)/spmd/loader.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS += 
+LDFLAGS += -lbsgmc_cuda_legacy_pod_repl
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
@@ -114,6 +114,13 @@ SIM_ARGS ?=
 
 # Include platform-specific execution rules
 include $(EXAMPLES_PATH)/execution.mk
+
+###############################################################################
+# Regression Flow
+###############################################################################
+
+regression: main.exec.log
+	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
 ###############################################################################
 # Default rules, help, and clean

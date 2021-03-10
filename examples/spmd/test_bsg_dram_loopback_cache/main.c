@@ -96,8 +96,6 @@ int test_loopback (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-                return HB_MC_FAIL;
-
         // read in the program data from the file system
         err = read_program_file(bin_path, &program_data, &program_size);
         if (err != HB_MC_SUCCESS)
