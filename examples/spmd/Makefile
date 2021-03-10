@@ -37,95 +37,30 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../environment.mk
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-REGRESSION_TESTS_TYPE = spmd
+include $(REPLICANT_PATH)/environment.mk
 
-###############################################################################
-# Examples List
-#
-# UNIFIED_TESTS use a generic top-level, test_unified_main.c. They depend on a
-# self-checking Manycore kernel to send a PASS/FAIL packet to the host
-#
-# INDEPENDENT_TESTS use a per-test top level, <test_name>.c/cpp. They check
-# correctness on the host.
-# 
-# REGRESSION_TESTS merges the two lists
-###############################################################################
-UNIFIED_TESTS = test_fib 
-UNIFIED_TESTS += test_bsg_print_stat
-UNIFIED_TESTS += test_putchar_stream
+# Defines REGRESSION_PREBUILD
+include $(EXAMPLES_PATH)/link.mk
 
-INDEPENDENT_TESTS := test_bsg_dram_loopback_cache
-INDEPENDENT_TESTS += test_symbol_to_eva
-INDEPENDENT_TESTS += test_bsg_loader_suite
-INDEPENDENT_TESTS += test_bsg_scalar_print
+# Define the tests that get run
+TESTS += test_bsg_dram_loopback_cache
+TESTS += test_bsg_loader_suite
+TESTS += test_bsg_scalar_print
+TESTS += test_loader
+TESTS += test_symbol_to_eva
+TESTS += test_bsg_print_stat
+TESTS += test_putchar_stream
+TESTS += test_fib
 
-REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
+regression: $(TESTS) ;
+$(TESTS): $(REGRESSION_PREBUILD)
+	$(MAKE) -C $@ regression
 
-###############################################################################
-# Host code compilation flags and flow
-###############################################################################
-# The following define is DEPRECATED. Do not use BSG_MANYCORE_DIR as a
-# macro! Instead, pass it as an argument and parse it using argparse.
-DEFINES += -DBSG_MANYCORE_DIR=$(abspath $(BSG_MANYCORE_DIR))
+.PHONY: clean regression $(TESTS)
 
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+clean: $(TESTS:=.clean)
 
-CDEFINES   += $(DEFINES)
-CXXDEFINES += $(DEFINES)
-
-FLAGS     = -g -Wall
-CFLAGS   += -std=c11 $(FLAGS) 
-CXXFLAGS += -std=c++11 $(FLAGS)
-
-###############################################################################
-# Execution Arguments (C_ARGS)
-#
-# All SPMD programs require two arguments: The path to the RISC-V Binary loaded
-# onto the manycore (KERNEL_PATH), and the test name (TEST_NAME).
-#
-###############################################################################
-
-SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
-KERNEL_PATH = $(SPMD_SRC_PATH)/$(TEST_NAME:test_%=%)/main.riscv
-C_ARGS = $(KERNEL_PATH) $(TEST_NAME)
-
-include $(EXAMPLES_PATH)/flow.mk
-
-###############################################################################
-# Kernel Binary Build Rules
-###############################################################################
-
-# Force rebuild targets that depend on .FORCE, like the
-# Manycore/SPMD/CUDA Binaries
-.FORCE:
-
-.PHONY: test_%.clean test_%.rule
-
-$(USER_RULES): test_%.rule: $(SPMD_SRC_PATH)/%/main.riscv
-
-$(USER_CLEAN_RULES): 
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(subst .clean,,$(subst test_,,$@)) clean
-
-$(SPMD_SRC_PATH)/%/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include .FORCE
-	CL_DIR=$(CL_DIR) \
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -j1 -C $(dir $@) clean $(notdir $@)
-
-.PHONY: clean
-
-clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+%.clean:
+	$(MAKE) -C $(@:.clean=) clean

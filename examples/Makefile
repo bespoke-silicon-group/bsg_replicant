@@ -37,28 +37,21 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../environment.mk
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
+include $(REPLICANT_PATH)/environment.mk
+
+# Defines REGRESSION_PREBUILD
 include $(EXAMPLES_PATH)/link.mk
 
 # Supported example suites
 TARGETS = library spmd cuda python
 
-regression: $(BSG_MACHINE_PATH)/regression.log
-$(BSG_MACHINE_PATH)/regression.log: regression.log
-	cp $< $@
+# Define the tests that get run
+TESTS += test_loader
 
-regression.log: $(TARGETS)
-	@cat $(foreach tgt,$(TARGETS),$(tgt)/regression.log) | tee $@
-
-# This is kinda weird, but it guarantees that the platform libraries
-# are built before recursing. We call it PHONY so that it always gets
-# re-built
-.PHONY: library/test_rom
-library/test_rom:
-	$(MAKE) -C library test_rom
-
-$(TARGETS): library/test_rom
+regression: $(TARGETS) ;
+$(TARGETS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
 
 .DEFAULT_GOAL := help

@@ -1,5 +1,4 @@
 *.o
-test_*
 !*.c
 !*.cpp
 !*.h
@@ -7,3 +6,10 @@ test_*
 .test_*
 vc_hdrs.h
 ucli.key
+*.rpt
+*.log
+*.out
+*.tmp
+*.daidir
+*.profile
+*.debug

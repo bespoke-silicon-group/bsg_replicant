@@ -37,80 +37,42 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../environment.mk
-include $(HARDWARE_PATH)/hardware.mk
-REGRESSION_TESTS_TYPE = library
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-###############################################################################
-# Examples List
-#
-# UNIFIED_TESTS use a generic top-level, test_unified_main.c. They depend on a
-# self-checking Manycore kernel to send a PASS/FAIL packet to the host
-#
-# INDEPENDENT_TESTS use a per-test top level, <test_name>.c/cpp. They check
-# correctness on the host.
-# 
-# REGRESSION_TESTS merges the two lists
-###############################################################################
-UNIFIED_TESTS = 
+include $(REPLICANT_PATH)/environment.mk
 
-INDEPENDENT_TESTS += test_rom
-INDEPENDENT_TESTS += test_coordinate
-INDEPENDENT_TESTS += test_get_cycle
-INDEPENDENT_TESTS += test_struct_size
-INDEPENDENT_TESTS += test_vcache_flush
-INDEPENDENT_TESTS += test_vcache_simplified
-INDEPENDENT_TESTS += test_vcache_stride
-INDEPENDENT_TESTS += test_vcache_sequence
-INDEPENDENT_TESTS += test_printing
-INDEPENDENT_TESTS += test_manycore_alignment
-INDEPENDENT_TESTS += test_manycore_packets
-INDEPENDENT_TESTS += test_manycore_init
-INDEPENDENT_TESTS += test_manycore_dmem_read_write
-INDEPENDENT_TESTS += test_manycore_vcache_sequence
-INDEPENDENT_TESTS += test_manycore_dram_read_write
-INDEPENDENT_TESTS += test_manycore_credits
-INDEPENDENT_TESTS += test_manycore_eva_read_write
-INDEPENDENT_TESTS += test_read_mem_scatter_gather
-INDEPENDENT_TESTS += test_packet
-INDEPENDENT_TESTS += test_pod_iteration
+# Defines REGRESSION_PREBUILD
+include $(EXAMPLES_PATH)/link.mk
 
-###############################################################################
-# Host code compilation flags and flow
-###############################################################################
-REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
+# Define the tests that get run
+TESTS += test_rom
+TESTS += test_coordinate
+TESTS += test_get_cycle
+TESTS += test_struct_size
+TESTS += test_vcache_flush
+TESTS += test_vcache_simplified
+TESTS += test_vcache_stride
+TESTS += test_vcache_sequence
+TESTS += test_printing
+TESTS += test_manycore_alignment
+TESTS += test_manycore_packets
+TESTS += test_manycore_init
+TESTS += test_manycore_dmem_read_write
+TESTS += test_manycore_vcache_sequence
+TESTS += test_manycore_dram_read_write
+TESTS += test_manycore_credits
+TESTS += test_manycore_eva_read_write
+TESTS += test_read_mem_scatter_gather
+#TESTS += test_packet
+TESTS += test_pod_iteration
 
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+regression: $(TESTS) ;
+$(TESTS): $(REGRESSION_PREBUILD)
+	$(MAKE) -C $@ regression
 
-CDEFINES   += $(DEFINES)
-CXXDEFINES += $(DEFINES)
+.PHONY: clean regression $(TESTS)
 
-FLAGS     = -g -Wall
-CFLAGS   += -std=c99 $(FLAGS) 
-CXXFLAGS += -std=c++11 $(FLAGS)
+clean: $(TESTS:=.clean)
 
-test_rom.o: INCLUDES += -I$(BSG_MACHINE_PATH)
-test_rom.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
-
-###############################################################################
-# Execution Arguments (C_ARGS)
-#
-# The library tests do not have execution arguments
-#
-###############################################################################
-C_ARGS = 
-
-# flow.mk defines all of the host compilationk, link, and execution rules
-include $(EXAMPLES_PATH)/flow.mk
-
-###############################################################################
-# Kernel Binary Build Rules
-#
-# The library tests do not load/run programs
-#
-###############################################################################
-
-.PHONY: clean
-
-clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+%.clean:
+	$(MAKE) -C $(@:.clean=) clean

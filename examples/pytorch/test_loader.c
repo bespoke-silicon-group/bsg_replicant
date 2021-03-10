@@ -32,7 +32,10 @@
 #include <time.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "pytorch_tests.h"
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#include <bsg_manycore.h>
+#include <cl_manycore_regression.h>
 
 int test_pytorch(int argc, char **argv) {
         // Initialize the interpreter

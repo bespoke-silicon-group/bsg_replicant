@@ -37,54 +37,23 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../environment.mk
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-REGRESSION_TESTS_TYPE = python
+include $(REPLICANT_PATH)/environment.mk
 
-###############################################################################
-# Examples List
-#
-# UNIFIED_TESTS use a generic top-level, test_unified_main.c. They depend on a
-# self-checking Manycore kernel to send a PASS/FAIL packet to the host
-#
-# INDEPENDENT_TESTS use a per-test top level, <test_name>.c/cpp. They check
-# correctness on the host.
-# 
-# REGRESSION_TESTS merges the two lists
-###############################################################################
-UNIFIED_TESTS = test_python
+# Defines REGRESSION_PREBUILD
+include $(EXAMPLES_PATH)/link.mk
 
-INDEPENDENT_TESTS := 
+# Define the tests that get run
+TESTS += test_loader
 
-REGRESSION_TESTS = $(UNIFIED_TESTS) $(INDEPENDENT_TESTS)
+regression: $(TESTS) ;
+$(TESTS): $(REGRESSION_PREBUILD)
+	$(MAKE) -C $@ regression
 
-###############################################################################
-# Host code compilation flags and flow
-###############################################################################
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+.PHONY: clean regression $(TESTS)
 
-CDEFINES   += $(DEFINES)
-CXXDEFINES += $(DEFINES)
+clean: $(TESTS:=.clean)
 
-FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 
-CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++11 $(FLAGS) 
-LDFLAGS  += $(shell python3-config --ldflags)
-
-###############################################################################
-# Execution Arguments (C_ARGS)
-#
-# Python tests require one argument: the path to the python file
-#
-###############################################################################
-
-PYTHON_TEST_PATH = $(EXAMPLES_PATH)/python
-TEST_NAME=$(subst .log,,$(notdir $@))
-C_ARGS = $(PYTHON_TEST_PATH)/$(TEST_NAME).py
-
-include $(EXAMPLES_PATH)/flow.mk
-
-.PHONY: clean
-
-clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+%.clean:
+	$(MAKE) -C $(@:.clean=) clean
