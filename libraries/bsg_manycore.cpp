@@ -422,21 +422,7 @@ static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_requ
         hb_mc_request_packet_set_x_src(pkt, hb_mc_coordinate_get_x(host_coordinate));
         hb_mc_request_packet_set_y_src(pkt, hb_mc_coordinate_get_y(host_coordinate));
         hb_mc_request_packet_set_addr(pkt, hb_mc_npa_get_epa(npa) >> 2);
-        return 0;
-}
-
-static int hb_mc_manycore_format_store_request_packet(hb_mc_manycore_t *mc,
-                                                      hb_mc_request_packet_t *pkt,
-                                                      const hb_mc_npa_t *npa)
-{
-        int r;
-
-        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
-                return r;
-
-        hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_STORE);
-
-        return 0;
+        return HB_MC_SUCCESS;
 }
 
 static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
@@ -445,13 +431,13 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 {
         int r;
 
-        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != HB_MC_SUCCESS)
                 return r;
 
         hb_mc_request_packet_set_data(pkt, HB_MC_PACKET_PAYLOAD_REMOTE_LOAD);
         hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
 
-        return 0;
+        return HB_MC_SUCCESS;
 }
 
 static int hb_mc_manycore_format_cache_op_request_packet(hb_mc_manycore_t *mc,
@@ -461,13 +447,13 @@ static int hb_mc_manycore_format_cache_op_request_packet(hb_mc_manycore_t *mc,
 {
         int r;
 
-        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != HB_MC_SUCCESS)
                 return r;
 
         hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_CACHE_OP);
         hb_mc_request_packet_set_cache_op(pkt, opcode);
 
-        return 0;
+        return HB_MC_SUCCESS;
 }
 
 
@@ -865,8 +851,8 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         int err;
         hb_mc_packet_t rqst;
 
-        /* format the packet */
-        err = hb_mc_manycore_format_store_request_packet(mc, &rqst.request, npa);
+        /* format the request packet */
+        err = hb_mc_manycore_format_request_packet(mc, &rqst.request, npa);
         if (err != HB_MC_SUCCESS)
                 return err;
 
@@ -882,15 +868,17 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         /* set data and size */
         switch (sz) {
         case 4:
+                hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_SW);
                 hb_mc_request_packet_set_data(&rqst.request, *(const uint32_t*)vp);
-                hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
+                hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_STORE);
                 hb_mc_request_packet_set_data(&rqst.request, static_cast<uint32_t>(*(const uint16_t*)vp) << data_shift);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_SHORT << mask_shift));
                 break;
         case 1:
+                hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_STORE);
                 hb_mc_request_packet_set_data(&rqst.request, static_cast<uint32_t>(*(const  uint8_t*)vp) << data_shift);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_BYTE << mask_shift));
