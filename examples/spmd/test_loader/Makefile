@@ -61,7 +61,7 @@ CXXDEFINES +=
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++14 $(FLAGS)
+CXXFLAGS += -std=c++11 $(FLAGS)
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
