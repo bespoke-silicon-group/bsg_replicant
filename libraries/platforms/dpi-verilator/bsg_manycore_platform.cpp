@@ -110,7 +110,7 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 static int hb_mc_platform_dpi_init(hb_mc_platform_t *platform, std::string hierarchy)
 {
         svScope scope;
-        int credits = 0, err;
+        int err;
         SimulationWrapper *top = platform->top;
 
         top->eval();
@@ -273,15 +273,13 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                 return HB_MC_INVALID;
         }
 
-        if (type == HB_MC_FIFO_TX_RSP) {
-                manycore_pr_err(mc, "TX Response Not Supported!\n", typestr);
-                return HB_MC_NOIMPL;
-        }
-
-
         do {
                 top->eval();
-                err = platform->dpi->tx_req(*pkt);
+                if (type == HB_MC_FIFO_TX_REQ) {
+                        err = platform->dpi->tx_req(*pkt);
+                } else {
+                        err = platform->dpi->tx_rsp(*pkt);
+                }
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NO_CREDITS || 
                   err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
@@ -372,13 +370,13 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
 }
 
 /**
- * Read the number of remaining credits of host
+ * Read the count of credits currently in use
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
- * @param[out] credits The number of remaining credits
+ * @param[out] credits The number of consumed credits
  * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout){
+int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long timeout){
         int res;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
         SimulationWrapper *top = platform->top;
@@ -390,7 +388,7 @@ int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout)
 
         do {
                 top->eval();
-                res = platform->dpi->get_credits(*credits);
+                res = platform->dpi->get_credits_used(*credits);
         } while(res == BSG_NONSYNTH_DPI_NOT_WINDOW);
 
         if(res != BSG_NONSYNTH_DPI_SUCCESS){
@@ -409,20 +407,55 @@ int hb_mc_platform_get_credits(hb_mc_manycore_t *mc, int *credits, long timeout)
 }
 
 /**
+ * Read the maximum number of credits available to the host
+ * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
+ * @param[out] credits Maximum number of credits available
+ * @param[in] timeout  A timeout counter. Unused - set to -1 to wait forever.
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long timeout){
+        int res;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        SimulationWrapper *top = platform->top;
+        if (timeout != -1) {
+                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
+                                __func__);
+                return HB_MC_NOIMPL;
+        }
+
+        do {
+                top->eval();
+                res = platform->dpi->get_credits_max(*credits);
+        } while(res == BSG_NONSYNTH_DPI_NOT_WINDOW);
+
+        if(res != BSG_NONSYNTH_DPI_SUCCESS){
+                manycore_pr_err(mc, "%s: Unexpected return value.\n",
+                                __func__);
+                return HB_MC_INVALID;
+        }
+
+        if(*credits < 0){
+                manycore_pr_err(mc, "%s: Invalid credit value. Must be non-negative\n",
+                                __func__, *credits);
+                return HB_MC_INVALID;
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+
+/**
  * Stall until the all requests (and responses) have reached their destination.
- * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] timeout A timeout counter. Unused - set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
 {
-        int credits, err = HB_MC_SUCCESS;
+        int credits_used = -1, err = HB_MC_SUCCESS;
         bool isvacant;
-        uint32_t max_credits;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-
-        max_credits = hb_mc_config_get_io_endpoint_max_out_credits(cfg);
 
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -431,9 +464,9 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
         }
 
         do {
-                err = hb_mc_platform_get_credits(mc, &credits, timeout);
+                err = hb_mc_platform_get_credits_used(mc, &credits_used, timeout);
                 platform->dpi->tx_is_vacant(isvacant);
-        } while(err == HB_MC_SUCCESS && !(credits == max_credits && isvacant));
+        } while(err == HB_MC_SUCCESS && !(credits_used == 0 && isvacant));
 
         return err;
 }
