@@ -52,7 +52,7 @@ vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
 %.dve: %.vpd
 	$(DVE) -full64 -vpd $< &
 
-.PRECIOUS: %.log
+.PRECIOUS: %.log %.vpd
 
 .PHONY: platform.execution.clean %.log %.vpd
 platform.execution.clean:

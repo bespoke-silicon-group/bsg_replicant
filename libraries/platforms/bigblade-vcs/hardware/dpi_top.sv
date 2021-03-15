@@ -262,7 +262,7 @@ module replicant_tb_top
        ,.rom_els_p(bsg_machine_rom_els_gp)
        ,.rom_width_p(bsg_machine_rom_width_gp)
        ,.rom_arr_p(bsg_machine_rom_arr_gp)
-       ,.max_out_credits_p(bsg_machine_io_credits_max_gp)
+       ,.credit_counter_width_p(`BSG_WIDTH(bsg_machine_io_credits_max_gp))
        )
    mc_dpi
      (
