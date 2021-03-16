@@ -34,7 +34,21 @@
 // NOTE: A_HEIGHT * A_WIDTH + B_HEIGHT * B_WIDTH + C_HEIGHT * C_WIDTH <= 4KB,
 // the size of DMEM on the tile.
 
-#include "test_profiler.hpp"
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_loader.h>
+#include <bsg_manycore_cuda.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <cl_manycore_regression.h>
+#include <sys/stat.h>
+#include <random>
+#include <iostream>
 
 // Matrix sizes:
 #define A_HEIGHT 8
@@ -155,11 +169,7 @@ int run_test(hb_mc_device_t &device, const char* kernel,
 
         // Launch and execute all tile groups on device and wait for all to
         // finish.
-        int instr_start, fops_start;
-        int instr_end, fops_end;
         uint64_t cycle_start, cycle_end;
-        hb_mc_manycore_get_icount((&device)->mc, e_instr_float, &fops_start);
-        hb_mc_manycore_get_icount((&device)->mc, e_instr_all, &instr_start);
         hb_mc_manycore_get_cycle((&device)->mc, &cycle_start);
 
         rc = hb_mc_device_tile_groups_execute(&device);
@@ -169,8 +179,6 @@ int run_test(hb_mc_device_t &device, const char* kernel,
         }
 
         hb_mc_manycore_get_cycle((&device)->mc, &cycle_end);
-        hb_mc_manycore_get_icount((&device)->mc, e_instr_float, &fops_end);
-        hb_mc_manycore_get_icount((&device)->mc, e_instr_all, &instr_end);
         
         // Copy result matrix back from device DRAM into host memory.
         src = (void *) ((intptr_t) C_device);
@@ -195,9 +203,6 @@ int run_test(hb_mc_device_t &device, const char* kernel,
 
         bsg_pr_info("\n\n====== EXECUTION STATISTICS ====== \n");
         bsg_pr_info("Cycles: %d\n", cycle_end-cycle_start);
-        bsg_pr_info("Instrs: %d, Flop Count: %d\n", instr_end-instr_start, fops_end-fops_start);
-        bsg_pr_info("Flop Rate: %3.2f\%\n", 100.0f  * static_cast<float>(fops_end-fops_start) / static_cast<float>(instr_end-instr_start));
-        bsg_pr_info("IPC: %.2f\%\n", static_cast<float>(instr_end-instr_start) / static_cast<float>(cycle_end-cycle_start));
         bsg_pr_info("====== END EXECUTION STATISTICS ====== \n\n\n");
 
         return HB_MC_SUCCESS;
