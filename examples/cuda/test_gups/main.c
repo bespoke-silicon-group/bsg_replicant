@@ -76,7 +76,7 @@ int test_dma (int argc, char **argv) {
         hb_mc_eva_t G_dev, A_dev;
         hb_mc_eva_t G_n, A_n_per_core, A_n;
 
-        A_n_per_core = 1024;
+        A_n_per_core = 32;
         A_n = A_n_per_core * cfg->pod_shape.x * cfg->pod_shape.y;
         G_n = 1024 * 1024 * 256;
 
@@ -95,8 +95,8 @@ int test_dma (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, A_n * sizeof(int), &A_dev));
 
                 int *A_host, *G_host;
-                xmalloc(A_host, A_n * sizeof(int));
-                xmalloc(G_host, G_n * sizeof(int));
+                xmalloc(A_n * sizeof(int), &A_host);
+                xmalloc(G_n * sizeof(int), &G_host);
 
                 hb_mc_coordinate_t core;
                 foreach_coordinate(core, hb_mc_coordinate(0,0), cfg->pod_shape)
