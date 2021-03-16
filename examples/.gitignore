@@ -16,3 +16,5 @@ ucli.key
 *.exec
 *.saif
 *.saifgen
+*.json
+dramsim3.txt

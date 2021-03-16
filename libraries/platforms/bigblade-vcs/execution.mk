@@ -66,5 +66,6 @@ platform.execution.clean:
 	rm -rf remote_load_trace.csv
 	rm -rf vanilla.log
 	rm -rf *.vpd
+	rm -rf dramsim3.json dramsim3.tag.json dramsim3.txt dramsim3epoch.json
 
 execution.clean: platform.execution.clean
