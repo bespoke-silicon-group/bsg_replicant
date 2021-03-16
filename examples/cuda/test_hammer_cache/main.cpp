@@ -32,7 +32,18 @@
 /* It then stores a word to an address maping to the evicted line. */
 /*******************************************************************/
 
-#include "test_hammer_cache.hpp"
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_loader.h>
+#include <bsg_manycore_cuda.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <cl_manycore_regression.h>
 #include <sys/stat.h>
 
 #define ALLOC_NAME "default_allocator"
