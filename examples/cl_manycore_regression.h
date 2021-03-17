@@ -34,6 +34,8 @@
 #include <cstdio>
 #include <cstdbool>
 #include <cfloat>
+#include <cmath>
+#include <cstdint>
 #else
 
 #include <stdlib.h>
@@ -41,6 +43,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <float.h>
+#include <math.h>
+#include <stdint.h>
 
 #endif
 
