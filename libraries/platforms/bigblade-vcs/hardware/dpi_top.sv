@@ -212,6 +212,7 @@ module replicant_tb_top
        ,.enable_vcore_profiling_p(bsg_machine_enable_vcore_profiling_lp)
        ,.enable_router_profiling_p(bsg_machine_enable_router_profiling_lp)
        ,.enable_cache_profiling_p(bsg_machine_enable_cache_profiling_lp)
+       ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
 
        ,.reset_depth_p(reset_depth_lp)
        )
