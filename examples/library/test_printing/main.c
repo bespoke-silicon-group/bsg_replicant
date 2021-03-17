@@ -49,6 +49,7 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
+#include <bsg_manycore.h>
 #include <cl_manycore_regression.h>
 
 static int test_printing(void)

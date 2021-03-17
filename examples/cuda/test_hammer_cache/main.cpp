@@ -97,11 +97,8 @@ int test_loader (int argc, char **argv) {
                 
         uint32_t kernel_argv[] = {mem, block_words, n_caches, n_ways, n_sets, n_hammers};
 
-        char kernel_name[256];
-        snprintf(kernel_name, sizeof(kernel_name), "kernel_%s", test_name + sizeof("test_") - 1);
-
         // call kernel
-        CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name,
+        CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_hammer_cache",
                                         array_size(kernel_argv), kernel_argv));
         
         CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
