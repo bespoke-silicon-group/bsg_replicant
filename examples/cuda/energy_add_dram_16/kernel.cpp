@@ -14,6 +14,7 @@ int kernel_energy_add_dram(int *A, int *B, int *C, int N, int block_size) {
 
   int start_id = __bsg_id * block_size;
   bsg_saif_start();
+  bsg_cuda_print_stat_kernel_start();
 	for (int iter_x = start_id; iter_x < start_id + block_size; iter_x+=16) {
 		C[iter_x + 0]  = A[iter_x + 0]  + B[iter_x + 0];
 		C[iter_x + 1]  = A[iter_x + 1]  + B[iter_x + 1];
@@ -32,6 +33,7 @@ int kernel_energy_add_dram(int *A, int *B, int *C, int N, int block_size) {
 		C[iter_x + 14] = A[iter_x + 14] + B[iter_x + 14];
 		C[iter_x + 15] = A[iter_x + 15] + B[iter_x + 15];
 	}
+  bsg_cuda_print_stat_kernel_end();
   bsg_saif_end();
 
 	barrier.sync();
