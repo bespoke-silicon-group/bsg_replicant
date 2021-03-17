@@ -4,9 +4,6 @@
 #include <bsg_set_tile_x_y.h>
 #include <bsg_tile_group_barrier.hpp>
 
-#define bsg_saif_start() asm volatile ("addi zero,zero,1")
-#define bsg_saif_end() asm volatile ("addi zero,zero,2")
-
 bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;
 
 extern "C" __attribute__ ((noinline))

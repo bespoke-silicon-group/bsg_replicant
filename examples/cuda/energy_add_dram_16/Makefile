@@ -93,8 +93,8 @@ kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
