@@ -51,6 +51,7 @@
 #include <stdlib.h>
 #include <bsg_manycore.h>
 #include <cl_manycore_regression.h>
+#include <bsg_manycore_printing.h>
 
 static int test_printing(void)
 {
