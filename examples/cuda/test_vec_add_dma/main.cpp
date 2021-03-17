@@ -25,7 +25,19 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include "test_vec_add_dma.hpp"
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_errno.h>
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_loader.h>
+#include <bsg_manycore_cuda.h>
+#include <stdlib.h>
+#include <time.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <stdio.h>
+#include <cl_manycore_regression.h>
+#include <math.h>
 
 #define ALLOC_NAME "default_allocator"
 #define CUDA_CALL(expr)                                                 \

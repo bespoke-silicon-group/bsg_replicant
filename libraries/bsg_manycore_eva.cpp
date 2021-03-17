@@ -25,6 +25,14 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+///////////////////////////////////////////////////////////////////////////////////////
+// This code is written to match the System Verilog found here:                      //
+// https://github.com:bespoke-silicon-group/bsg_manycore/v/bsg_manycore_eva_to_npa.v //
+//                                                                                   //
+// It also matches address translation code found here:                              //
+// https://github.com:bespoke-silicon-group/bsg_manycore/software/py/nbf.py          //
+///////////////////////////////////////////////////////////////////////////////////////
+
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
