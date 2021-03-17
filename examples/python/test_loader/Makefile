@@ -58,7 +58,7 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES   +=
 CXXDEFINES +=
 
-FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 
+FLAGS     = -g -Wall $(shell python3.6m-config --cflags) -O1 
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS) 
 
@@ -73,7 +73,7 @@ main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS  += $(shell python3-config --ldflags)
+LDFLAGS  += $(shell python3.6m-config --ldflags)
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk

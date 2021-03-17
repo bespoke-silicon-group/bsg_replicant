@@ -618,7 +618,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
                                       const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
         const Elf32_Ehdr *ehdr = (const Elf32_Ehdr *)bin;
-        int rc, icache_segidx;
+        int rc, icache_segidx=0;
 
         /////////////////////////////////////
         // Load all segments to their EVAs //
