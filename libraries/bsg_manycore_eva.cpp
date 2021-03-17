@@ -335,15 +335,19 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
         return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
 }
 
-static uint32_t default_dram_max_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *origin)
+static uint32_t default_dram_max_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
         hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
-        return hb_mc_coordinate_get_x(*origin) + hb_mc_dimension_get_x(dim);
+        hb_mc_dimension_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        return hb_mc_coordinate_get_x(og) + hb_mc_dimension_get_x(dim) - 1;
 }
 
-static uint32_t default_dram_min_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *origin)
+static uint32_t default_dram_min_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
-        return hb_mc_coordinate_get_x(*origin);
+        hb_mc_dimension_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        return hb_mc_coordinate_get_x(og);
 }
 
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
@@ -396,15 +400,17 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_eva_t *eva,
                                         hb_mc_idx_t *x) {
         hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
 #ifdef DEBUG
         char pod_str[256];
         char src_str [256];
+        char og_str [256];
         hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
-        hb_mc_coordinate_to_string(*src,  src_str,  sizeof(src_str));
-        bsg_pr_dbg("%s: Origin = %s maps to Pod %s\n",
-                   __func__, src_str, pod_str);
+        hb_mc_coordinate_to_string(*src, src_str,  sizeof(src_str));
+        hb_mc_coordinate_to_string(og, og_str,  sizeof(og_str));
+        bsg_pr_dbg("%s: Source = %s maps to (Logical) Pod %s with origin %s\n",
+                    __func__, src_str, pod_str, og_str);
 #endif
-        hb_mc_coordinate_t vcore_origin = hb_mc_config_pod_vcore_origin(cfg, pod);
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
         uint32_t xmask = default_get_dram_x_bitidx(cfg);
 
@@ -412,12 +418,13 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
         *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
-        *x += hb_mc_coordinate_get_x(vcore_origin);
+        *x += hb_mc_coordinate_get_x(og);
         if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
-                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
-                           "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
+                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X-coordinate "
+                           "of the NPA of requested DRAM bank (%d) is outside of "
+                           "DRAM X-coordinate range [%d, %d]\n.",
                            __func__, hb_mc_eva_addr(eva),
-                           *x, dram_max_x_coord);
+                           *x, dram_min_x_coord, dram_max_x_coord);
                 return HB_MC_INVALID;
         }
         return HB_MC_SUCCESS;
