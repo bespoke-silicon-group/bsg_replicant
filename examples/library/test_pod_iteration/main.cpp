@@ -24,13 +24,13 @@
 // ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include <test_pod_iteration.hpp>
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_cuda.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_config_pod.h>
+#include <cl_manycore_regression.h>
 #include <inttypes.h>
 #include <vector>
 
