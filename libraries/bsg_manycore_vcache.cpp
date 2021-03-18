@@ -7,6 +7,8 @@ int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc)
         const hb_mc_config_t *cfg = &mc->config;
 
         // initialize vcache wh_dest register
+        // tells vcaches how to route DMA requests on
+        // the wh network to offchip memory
         hb_mc_coordinate_t pod;
         hb_mc_config_foreach_pod(pod, cfg)
         {
