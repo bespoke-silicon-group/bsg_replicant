@@ -6,6 +6,7 @@ int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = &mc->config;
 
+        // initialize vcache wh_dest register
         hb_mc_coordinate_t pod;
         hb_mc_config_foreach_pod(pod, cfg)
         {
@@ -13,6 +14,8 @@ int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc)
                 hb_mc_coordinate_t dram;
                 hb_mc_config_pod_foreach_dram(dram, pod, cfg)
                 {
+                        // one pod column -> split pod in half
+                        // o/w -> split pod array in half
                         int east_not_west = cfg->pods.x == 1    ?
                                 ((dram.x-bx) >= cfg->pod_shape.x/2) :
                                 (pod.x >= cfg->pods.x/2);
