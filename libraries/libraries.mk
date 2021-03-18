@@ -48,6 +48,7 @@ LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_responder.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_tile.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_uart_responder.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_trace_responder.cpp
+LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_vcache.cpp
 
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_bits.h
