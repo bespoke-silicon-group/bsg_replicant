@@ -42,26 +42,18 @@ REPLICANT-TOP:=$(shell git rev-parse --show-toplevel)
 PY_ANALYTICS_PATH := $(REPLICANT-TOP)/examples/networksim
 
 include $(REPLICANT-TOP)/environment.mk
-
-# compillation.mk defines rules for compilation of C/C++
-include $(EXAMPLES_PATH)/compilation.mk
-
-# link.mk defines rules for linking of .o files for regression tests.
-# It defines the linking target (%) for each regression test.
-include $(EXAMPLES_PATH)/link.mk
-
-# Include platform-specific execution rules
-include $(EXAMPLES_PATH)/execution.mk
+$(warning $(PY_ANALYTICS_PATH))
 
 TEST_NAME = main
 
 arg-item = $(word $(1),$(subst -, ,$(2)))
 
-
-$(warning $(PY_ANALYTICS_PATH))
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+
+# TEST_SOURCES is a list of source files that need to be compiled
+TEST_SOURCES = $(TEST_NAME).cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 
@@ -69,12 +61,25 @@ FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++14 $(FLAGS)
 
+# compilation.mk defines rules for compilation of C/C++
+include $(EXAMPLES_PATH)/compilation.mk
+
 # Again, TEST_NAME is not required
 $(TEST_NAME).o: INCLUDES += -I$(EXAMPLES_PATH)
 $(TEST_NAME).o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
 $(TEST_NAME).o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+$(TEST_NAME).o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
 
 $(TEST_NAME).log: $(TEST_NAME)
+
+###############################################################################
+# Host code link flags and flow
+###############################################################################
+
+LDFLAGS +=
+
+# link.mk defines rules for linking of the final execution binary.
+include $(EXAMPLES_PATH)/link.mk
 
 router_utilization.rpt: $(TEST_NAME).log
 	python3 $(PY_ANALYTICS_PATH)/router_parser.py
@@ -139,6 +144,9 @@ summarize-by-hash:
 C_ARGS ?=
 
 SIM_ARGS ?=
+
+# Include platform-specific execution rules
+include $(EXAMPLES_PATH)/execution.mk
 
 .DEFAULT_GOAL := help
 help:

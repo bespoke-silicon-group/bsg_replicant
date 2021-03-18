@@ -80,6 +80,7 @@ int main(int argc, char ** argv) {
         hb_mc_coordinate_t origin, dim, max, tg, dram, target;
         hb_mc_npa_t npa;
         uint32_t write_data = 0, read_data = 0;
+        hb_mc_coordinate_t pod = {.x = 0, .y = 0};
 
         unsigned int nels, niters, stride, stripe;
 
@@ -88,7 +89,7 @@ int main(int argc, char ** argv) {
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_init(mc, __FILE__, 0));
 
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        origin = hb_mc_config_get_origin_vcore(cfg);
+        origin = hb_mc_config_pod_vcore_origin(cfg, pod);
         dim = hb_mc_config_get_dimension_vcore(cfg);
 
         stripe = hb_mc_config_get_vcache_stripe_words(cfg);
@@ -145,7 +146,7 @@ int main(int argc, char ** argv) {
         }
 
         // Construct DRAM EVA for cache at index 0.
-        dram = hb_mc_config_get_dram_coordinate(cfg, 0);
+        dram = hb_mc_config_pod_dram_start(cfg, pod);
         npa.x = dram.x;
         npa.y = dram.y;
         npa.epa = HB_MC_VCACHE_EPA_BASE;
