@@ -23,6 +23,7 @@ int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc)
                                 (pod.x >= cfg->pods.x/2);
 
                         hb_mc_npa_t wh_dst_addr = hb_mc_npa(dram, HB_MC_VCACHE_EPA_OFFSET_WH_DST);
+                        // cannot write32 here because wh_dest register only supports remote_store opcode
                         BSG_MANYCORE_CALL(mc, hb_mc_manycore_write8(mc, &wh_dst_addr, east_not_west));
                 }
         }
