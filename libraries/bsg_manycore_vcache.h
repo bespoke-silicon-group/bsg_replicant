@@ -50,6 +50,7 @@ extern "C" {
 #define HB_MC_VCACHE_EPA_BASE          0x00000000
 #define HB_MC_VCACHE_EPA_OFFSET_DRAM   0x00000000
 #define HB_MC_VCACHE_EPA_OFFSET_TAG    0x20000000
+#define HB_MC_VCACHE_EPA_OFFSET_WH_DST 0x30000000
 #define HB_MC_VCACHE_EPA_RESERVED_BITS 1
 
         /* EPA Macros */
@@ -65,6 +66,12 @@ extern "C" {
         /* Victim Cache Data Bits */
 #define HB_MC_VCACHE_VALID_BITIDX 31
 #define HB_MC_VCACHE_VALID (1 << HB_MC_VCACHE_VALID_BITIDX)
+
+/**
+ * Initialize vcaches.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc);
 
 static
 hb_mc_epa_t hb_mc_vcache_set_mask(const hb_mc_manycore_t *mc)
