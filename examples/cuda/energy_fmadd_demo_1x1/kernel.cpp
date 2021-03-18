@@ -13,12 +13,20 @@ int kernel_energy_fmadd_demo(float *A, float *B, float *C, int N) {
   float A_spm[255];
   float B_spm[255];
   float A_tmp, B_tmp, C_tmp = 0.0f;
-  for(uint32_t i = 0; i < 255; i++) {
-    A_spm[i] = A[i];
-    B_spm[i] = B[i];
-  }
   float* A_ptr = &A_spm[0];
   float* B_ptr = &B_spm[0];
+  for(uint32_t i = 0; i < 255; i++) {
+    asm volatile("flw     %0,    0(%1)"   : "=f"(A_tmp) : "r"(A)     : "memory");
+    asm volatile("fsw     %0,    0(%1)"   :: "f"(A_tmp) , "r"(A_ptr) : "memory");
+    asm volatile("flw     %0,    0(%1)"   : "=f"(B_tmp) : "r"(B)     : "memory");
+    asm volatile("fsw     %0,    0(%1)"   :: "f"(B_tmp) , "r"(B_ptr) : "memory");
+    A++;
+    B++;
+    A_ptr++;
+    B_ptr++;
+  }
+  A_ptr = &A_spm[0];
+  B_ptr = &B_spm[0];
   //------------------------------------
   bsg_saif_start();
   //------------------------------------

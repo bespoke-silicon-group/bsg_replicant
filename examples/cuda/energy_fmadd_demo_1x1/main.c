@@ -664,6 +664,8 @@ int kernel_energy_ubmark (int argc, char **argv) {
                         bsg_pr_err(BSG_RED("Mismatch: ") "result = %f but expected %f\n", C_host[0], C_expected[0]);
                         return HB_MC_FAIL;
                 }
+
+                bsg_pr_test_info("result = %f but expected %f\n", C_host[0], C_expected[0]);
         }
 
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
