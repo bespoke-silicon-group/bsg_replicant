@@ -50,6 +50,7 @@ public:
                                    me.x, me.y, get_cycle(), __func__, new_limit, max_credits_available);
                         exit(1);
                 }
+                credit_limit = new_limit;
                 return old;
         }
 
