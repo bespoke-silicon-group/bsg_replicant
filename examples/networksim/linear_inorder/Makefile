@@ -81,25 +81,25 @@ LDFLAGS +=
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
 
-router_utilization.rpt: $(TEST_NAME).log
+router_utilization.rpt: $(TEST_NAME).netsim.log
 	python3 $(PY_ANALYTICS_PATH)/router_parser.py
 
-tile_execution.rpt: $(TEST_NAME).log
+tile_execution.rpt: $(TEST_NAME).netsim.log
 	python3 $(PY_ANALYTICS_PATH)/tileparser.py
 
 %.png: %.rpt
 	pango-view  --font mono -qo $@ $<
 
-cache_utilization.png: $(TEST_NAME).log
+cache_utilization.png: $(TEST_NAME).netsim.log
 	python3 $(PY_ANALYTICS_PATH)/cacheutil.py
 
 .PHONY: router_utilization.rpt vcache_stall_detailed.png
 
-vcache_stall_detailed.png: $(TEST_NAME).log
+vcache_stall_detailed.png: $(TEST_NAME).netsim.log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
 
 # this rule does a sweep across many options
-sweep: $(foreach els,2 4 8 16 32 48 64 96 128 256,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(els)-$(stripe)-$(mode).deploy)))
+sweep: $(foreach els,2 4 8 16 32,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(els)-$(stripe)-$(mode).deploy)))
 
 
 # this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
