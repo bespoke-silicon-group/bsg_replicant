@@ -43,6 +43,10 @@ public:
         }
 
         uint32_t set_credit_limit(uint32_t new_limit){
+                bsg_pr_info("Tile (X:%d,Y:%d) @ %lu -- %s: "
+                            "New credit limit (%u).\n",
+                            me.x, me.y, get_cycle(), __func__, new_limit);
+                
                 uint32_t old = credit_limit;
                 if(new_limit > max_credits_available){
                         bsg_pr_err("Tile (X:%d,Y:%d) @ %lu -- %s: "
