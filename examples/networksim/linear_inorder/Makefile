@@ -99,7 +99,7 @@ vcache_stall_detailed.png: $(TEST_NAME).netsim.log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
 
 # this rule does a sweep across many options
-sweep: $(foreach alloc,double-dist norm-dist 32 16 8,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(els)-$(stripe)-$(mode).deploy))))
+sweep: $(foreach alloc,doubledist normdist 32 16 8,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(els)-$(stripe)-$(mode).deploy))))
 
 # this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
 # syntax <reply fifo size>-<vcache stripe words>-<ruchy|ruchydeux|ruchytrois|zero|xstripe|ystripe>.deploy
