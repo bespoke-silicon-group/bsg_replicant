@@ -40,6 +40,17 @@
 #define CACHE_START_TYPE "ruchy"
 #endif
 
+int credit_allocations[8][16] = {{30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30},
+                                 {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
+                                 {26, 24, 24, 24, 22, 22, 22, 20, 20, 22, 22, 22, 24, 24, 24, 26},
+                                 {24, 22, 22, 22, 20, 20, 20, 18, 18, 20, 20, 20, 22, 22, 22, 24},
+                                 {24, 22, 22, 22, 20, 20, 20, 18, 18, 20, 20, 20, 22, 22, 22, 24},
+                                 {26, 24, 24, 24, 22, 22, 22, 20, 20, 22, 22, 22, 24, 24, 24, 26},
+                                 {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
+                                 {30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30}};
+
+/*int credit_allocations[8][16] = {{32}};*/
+
 // cache_start_index(y_i-origin.y,x_i-origin.x)
 
 int cache_start_index(int y,int x)
@@ -328,6 +339,7 @@ void BsgDpiTile::send_request(bool *req_v_o, hb_mc_request_packet_t *req_o){
 
         // Start stats for the vcache (but only send from origin)
         if(phase == 0){
+                set_credit_limit(credit_allocations[me.y-origin.y][me.x-origin.x]);
                 if(is_origin()){
                         *req_v_o = get_packet_stat_kernel_start(req_o);
                 }
