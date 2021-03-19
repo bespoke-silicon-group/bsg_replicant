@@ -57,7 +57,7 @@ uint32_t get_credit_alloc(uint32_t y,uint32_t x){
                                           {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
                                           {30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30}};
                 return allocs[y][x];
-        if (strcmp(xstr(CREDIT_ALLOCATION),"norm-dist")==0){
+        }else if (strcmp(xstr(CREDIT_ALLOCATION),"norm-dist")==0){
                 uint32_t allocs[8][16] = {{12, 11, 11, 11, 10, 10, 10,  9,  9, 10, 10, 10, 11, 11, 11, 12},
                                           {11, 10, 10, 10,  9,  9,  9,  8,  8,  9,  9,  9, 10, 10, 10, 11},
                                           {10,  9,  9,  9,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9, 10},
