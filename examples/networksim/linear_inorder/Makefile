@@ -99,8 +99,7 @@ vcache_stall_detailed.png: $(TEST_NAME).netsim.log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
 
 # this rule does a sweep across many options
-sweep: $(foreach els,2 4 8 16 32,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(els)-$(stripe)-$(mode).deploy)))
-
+sweep: $(foreach alloc,double-dist norm-dist 32 16 8,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(els)-$(stripe)-$(mode).deploy))))
 
 # this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
 # syntax <reply fifo size>-<vcache stripe words>-<ruchy|ruchydeux|ruchytrois|zero|xstripe|ystripe>.deploy
@@ -108,14 +107,15 @@ sweep: $(foreach els,2 4 8 16 32,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,r
 
 %.deploy:
 	mkdir $@
-	echo "#define CACHE_START_TYPE \"$(call arg-item,3,$*)\"" > $@/$(TEST_NAME).cpp
+	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/$(TEST_NAME).cpp
+	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/$(TEST_NAME).cpp
 	cat $(TEST_NAME).cpp >> $@/$(TEST_NAME).cpp
 	echo "BSG_MACHINE_PATH=my_machine" > $@/Makefile
 	cat Makefile >> $@/Makefile
 	mkdir -p $@/my_machine
 	cp -r $(BSG_MACHINE_PATH)/* $@/my_machine/.
-	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,1,$*)" >> $@/my_machine/Makefile.machine.include
-	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
+	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
+	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,3,$*)" >> $@/my_machine/Makefile.machine.include
 	$(MAKE) -C $@ go
 
 # this will actually indirectly do the run
@@ -128,12 +128,18 @@ summarize:
 	find -iname "*.rpt" -exec grep -H Max '{}' ';'
 
 summarize-by-hash:
-	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.ruchy
-	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}'  > sum.ruchydeux
-	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.ruchytrois
-	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.zero
-	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.xstripe
-	find -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' > sum.ystripe
+	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.ruchy
+	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.ruchy
+	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}'  > sum.ruchydeux
+	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}'  >> sum.ruchydeux
+	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.ruchytrois
+	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.ruchytrois
+	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.zero
+	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.zero
+	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.xstripe
+	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.xstripe
+	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.ystripe
+	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.ystripe
 
 ###############################################################################
 # C_ARGS: Use this to pass arguments that you want to appear in argc/argv

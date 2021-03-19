@@ -29,16 +29,21 @@ def calc_hops(src, dest):
     y_hops = y_dist
     return Hops(X=x_hops, Y=y_hops, Ruche=ruche_hops)
 
-def linear(src, dest):
+def linear1(src, dest):
     h = calc_hops(src, dest)
     return 2*(h.Ruche + h.Y + h.X)
+
+def linear2(src, dest):
+    h = calc_hops(src, dest)
+    return (h.Ruche + h.Y + h.X)
 
 def ysquare(src, dest):
     h = calc_hops(src, dest)
     return h.Ruche + h.Y**2 + h.X
 
 default = {tuple(t): 32 for t in tiles}
-lin = {tuple(t): max([linear(t, c) for c in caches]) for t in tiles}
+lin1 = {tuple(t): max([linear1(t, c) for c in caches]) for t in tiles}
+lin2 = {tuple(t): (12*max([linear2(t, c) for c in caches]))//15 for t in tiles}
 ysq = {tuple(t): max([ysquare(t, c) for c in caches]) for t in tiles}
 
 def format(ds):
@@ -57,8 +62,10 @@ def format(ds):
 
 print("Default")
 print(format(default))
-print("Linear (X + Ruche + Y)")
-print(format(lin))
+print("Linear1: 2*(X + Ruche + Y)")
+print(format(lin1))
+print("Linear2: 2*(X + Ruche + Y)")
+print(format(lin2))
 print("Y-Squared (X + Ruche + Y**2)")
 print(format(ysq))
 

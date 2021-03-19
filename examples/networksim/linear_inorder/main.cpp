@@ -35,30 +35,52 @@
 #include <random>
 #include <limits>
 #include <string.h>
-
+#include <string>
 #ifndef CACHE_START_TYPE
 #define CACHE_START_TYPE "ruchy"
 #endif
-
-#ifdef CREDIT_LINEAR
-int credit_allocations[8][16] = {{30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30},
-                                 {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
-                                 {26, 24, 24, 24, 22, 22, 22, 20, 20, 22, 22, 22, 24, 24, 24, 26},
-                                 {24, 22, 22, 22, 20, 20, 20, 18, 18, 20, 20, 20, 22, 22, 22, 24},
-                                 {24, 22, 22, 22, 20, 20, 20, 18, 18, 20, 20, 20, 22, 22, 22, 24},
-                                 {26, 24, 24, 24, 22, 22, 22, 20, 20, 22, 22, 22, 24, 24, 24, 26},
-                                 {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
-                                 {30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30}};
-#else // DEFAULT
-int credit_allocations[8][16] = {{32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32},
-                                 {32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32}};
+#define xstr(x) str(x)
+#define str(x) #x
+#ifndef CREDIT_ALLOCATION
+#define CREDIT_ALLOCATION 32
 #endif
+
+uint32_t get_credit_alloc(uint32_t y,uint32_t x){
+        uint32_t allocs[8][16];
+        if (strcmp(xstr(CREDIT_ALLOCATION),"double-dist")==0){
+                uint32_t allocs[8][16] = {{30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30},
+                                          {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
+                                          {26, 24, 24, 24, 22, 22, 22, 20, 20, 22, 22, 22, 24, 24, 24, 26},
+                                          {24, 22, 22, 22, 20, 20, 20, 18, 18, 20, 20, 20, 22, 22, 22, 24},
+                                          {24, 22, 22, 22, 20, 20, 20, 18, 18, 20, 20, 20, 22, 22, 22, 24},
+                                          {26, 24, 24, 24, 22, 22, 22, 20, 20, 22, 22, 22, 24, 24, 24, 26},
+                                          {28, 26, 26, 26, 24, 24, 24, 22, 22, 24, 24, 24, 26, 26, 26, 28},
+                                          {30, 28, 28, 28, 26, 26, 26, 24, 24, 26, 26, 26, 28, 28, 28, 30}};
+                return allocs[y][x];
+        if (strcmp(xstr(CREDIT_ALLOCATION),"norm-dist")==0){
+                uint32_t allocs[8][16] = {{12, 11, 11, 11, 10, 10, 10,  9,  9, 10, 10, 10, 11, 11, 11, 12},
+                                          {11, 10, 10, 10,  9,  9,  9,  8,  8,  9,  9,  9, 10, 10, 10, 11},
+                                          {10,  9,  9,  9,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9, 10},
+                                          { 9,  8,  8,  8,  8,  8,  8,  7,  7,  8,  8,  8,  8,  8,  8,  9},
+                                          { 9,  8,  8,  8,  8,  8,  8,  7,  7,  8,  8,  8,  8,  8,  8,  9},
+                                          {10,  9,  9,  9,  8,  8,  8,  8,  8,  8,  8,  8,  9,  9,  9, 10},
+                                          {11, 10, 10, 10,  9,  9,  9,  8,  8,  9,  9,  9, 10, 10, 10, 11},
+                                          {12, 11, 11, 11, 10, 10, 10,  9,  9, 10, 10, 10, 11, 11, 11, 12}};
+                return allocs[y][x];
+        } else {
+                uint32_t val = std::stoi(xstr(CREDIT_ALLOCATION));
+                uint32_t allocs[8][16] = {{val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val},
+                                          {val, val, val, val, val, val, val, val, val, val, val, val, val, val, val, val}};
+                return allocs[y][x];
+        }
+         
+}
 
 // cache_start_index(y_i-origin.y,x_i-origin.x)
 
@@ -348,7 +370,7 @@ void BsgDpiTile::send_request(bool *req_v_o, hb_mc_request_packet_t *req_o){
 
         // Start stats for the vcache (but only send from origin)
         if(phase == 0){
-                set_credit_limit(credit_allocations[me.y-origin.y][me.x-origin.x]);
+                set_credit_limit(get_credit_alloc(me.y-origin.y, me.x-origin.x));
                 if(is_origin()){
                         *req_v_o = get_packet_stat_kernel_start(req_o);
                 }
