@@ -54,7 +54,7 @@ RISCV_LLVM_PATH  := $(RISCV_TOOLS_PATH)/llvm/llvm-install
 RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
 
 # These flags are not supported by clang
-RISCV_GNU_FLAGS = -mno-fdiv -frerun-cse-after-loop -fweb -frename-registers
+RISCV_GNU_FLAGS = -frerun-cse-after-loop -fweb -frename-registers -mtune=bsg_vanilla_2020
 
 RISCV_GCC        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-gcc $(RISCV_GNU_FLAGS)
 RISCV_GXX        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV_GNU_FLAGS)
@@ -66,7 +66,7 @@ RISCV_LINK       ?= $(RISCV_GCC) -t -T $(LINK_SCRIPT) $(RISCV_LDFLAGS)
 RISCV_LD         ?= $(RISCV_GCC)
 
 RISCV_CLANG_ABI        = ilp32f
-RISCV_CLANG_CCPPFLAGS += --target=riscv32 -mabi=$(RISCV_CLANG_ABI)
+RISCV_CLANG_CCPPFLAGS += --target=riscv32 -mabi=$(RISCV_CLANG_ABI) -march=riscv32imaf -mtune=hb-rv32
 RISCV_CLANG_CXXFLAGS  += --sysroot=$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs
 RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0
 RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0/riscv32-unknown-elf-dramfs  
