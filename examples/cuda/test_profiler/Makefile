@@ -55,7 +55,7 @@ KERNEL_NAME = profiler
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = main.c
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES += 
@@ -63,7 +63,7 @@ CXXDEFINES +=
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++11 $(FLAGS)
+CXXFLAGS += -std=gnu++11 $(FLAGS)
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
