@@ -1,3 +1,4 @@
+#pragma once
 #ifndef __PR_PULL_BENCHMARK_HPP
 #define __PR_PULL_BENCHMARK_HPP
 
@@ -14,7 +15,6 @@
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_cuda.h>
 #include <cl_manycore_regression.h>
-//#include "../common.h"
 
 
 using hammerblade::Device;

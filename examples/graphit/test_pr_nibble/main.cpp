@@ -57,7 +57,8 @@ int launch(int argc, char ** argv){
   hammerblade::builtin_loadMicroCodeFromFile(ucode_path);
 
   std::cerr << "load graph" << std::endl;
-  std::string graph_f = input.getCmdOption("-g");
+  //std::string graph_f = input.getCmdOption("-g");
+  std::string graph_f = "~/research/bladerunner6.0/graphit-new/test/graphs/darpa-eval/jhu.mtx"; 
   edges = hammerblade::builtin_loadEdgesFromFileToHB (graph_f.c_str()); 
 
   std::cerr << "size of graph: " << std::endl;
@@ -225,15 +226,8 @@ int launch(int argc, char ** argv){
 
 #ifdef VCS
 int vcs_main(int argc, char ** argv){
-    // int argc = get_argc(args);
-    // char *argv[argc];
-    // get_argv(args, argc, argv);
-    // svScope scope;
-    // scope = svGetScopeFromName("tb");
-    // svSetScope(scope);
     bsg_pr_test_info("Unified Main Regression Test (COSIMULATION)\n");
     int rc = launch(argc, argv); 
-    //*exit_code = rc;
     bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
     return rc;
 }
