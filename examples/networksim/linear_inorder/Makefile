@@ -128,17 +128,23 @@ summarize:
 	find -iname "*.rpt" -exec grep -H Max '{}' ';'
 
 summarize-by-hash:
-	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.ruchy
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' > sum.ruchy
+	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> sum.ruchy
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "ruchy\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.ruchy
-	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}'  > sum.ruchydeux
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}'  > sum.ruchydeux
+	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}'  >> sum.ruchydeux
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchydeux |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}'  >> sum.ruchydeux
-	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.ruchytrois
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' > sum.ruchytrois
+	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> sum.ruchytrois
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ruchytrois |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.ruchytrois
-	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.zero
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' > sum.zero
+	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> sum.zero
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep zero |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.zero
-	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.xstripe
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' > sum.xstripe
+	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> sum.xstripe
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep xstripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.xstripe
-	find linear* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print "linear", $$1, $$2, $$3, $$4}' > sum.ystripe
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' > sum.ystripe
+	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> sum.ystripe
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep ystripe |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> sum.ystripe
 
 ###############################################################################
