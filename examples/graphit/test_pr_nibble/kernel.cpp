@@ -25,9 +25,9 @@ bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;
 #define pr_dbg(fmt, ...)
 #endif
 
-__attribute__((section(".dram"))) double  * __restrict p;
-__attribute__((section(".dram"))) double  * __restrict old_rank;
-__attribute__((section(".dram"))) double  * __restrict new_rank;
+__attribute__((section(".dram"))) float  * __restrict p;
+__attribute__((section(".dram"))) float  * __restrict old_rank;
+__attribute__((section(".dram"))) float  * __restrict new_rank;
 __attribute__((section(".dram"))) int  * __restrict out_degree;
 __attribute__((section(".dram"))) int  * __restrict generated_tmp_vector_3;
 //__attribute__((section(".dram"))) double alpha = 0.15; 
@@ -106,7 +106,7 @@ struct updateEdge
 {
   void operator() (int src, int dst)
   {
-    double alpha = 0.15; 
+    float alpha = 0.15; 
     new_rank[dst] = (new_rank[dst] + (((((1)  - alpha) / ((1)  + alpha)) * old_rank[src]) / out_degree[src]));
   };
 };
@@ -114,7 +114,7 @@ struct updateSelf
 {
   void operator() (int v)
   {
-    double alpha = 0.15; 
+    float alpha = 0.15; 
     p[v] = (p[v] + ((((2)  * alpha) / ((1)  + alpha)) * old_rank[v]));
     new_rank[v] = (0) ;
   };
@@ -123,7 +123,7 @@ struct filter_frontier
 {
   bool operator() (int v)
   {
-    double epsilon = (double) 1e-6; 
+    float epsilon = (float) 1e-6; 
     bool output ;
     if(old_rank[v] == 0) return 0;
     //output = (old_rank[v]) > ((out_degree[v] * epsilon));

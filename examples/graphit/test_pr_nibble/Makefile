@@ -67,7 +67,7 @@ CXXDEFINES +=
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++14 $(FLAGS)
+CXXFLAGS += -std=c++14 $(FLAGS) 
 
 HOST_CXX = /mnt/users/ssd0/homes/eafurst/research/gcc-build/bin/g++ 
 
@@ -82,7 +82,7 @@ main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS +=
+LDFLAGS += 
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
@@ -116,7 +116,7 @@ include $(EXAMPLES_PATH)/graphit/riscv.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) -g $(GRAPH_PATH)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) #-g $(GRAPH_PATH)
 
 SIM_ARGS ?=
 
