@@ -44,18 +44,22 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
+GRAPHIT_PATH = $(REPLICANT_PATH)/../graphit-new
+CURRENT_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
 
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = vec_add_parallel
+KERNEL_NAME = pr_nibble
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = main.c
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES += 
@@ -63,13 +67,15 @@ CXXDEFINES +=
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++11 $(FLAGS)
+CXXFLAGS += -std=c++14 $(FLAGS)
+
+HOST_CXX = /mnt/users/ssd0/homes/eafurst/research/gcc-build/bin/g++ 
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Specify any header file dependencies
-main.o: INCLUDES += -I$(EXAMPLES_PATH)
+main.o: INCLUDES += -I$(EXAMPLES_PATH) -I$(CURRENT_PATH) -I$(GRAPHIT_PATH)/src/runtime_lib/
 main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
 
 ###############################################################################
@@ -89,14 +95,16 @@ include $(EXAMPLES_PATH)/link.mk
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
 
-kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+kernel.rvo: RISCV_CXX = $(RISCV_GXX)
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
+
+RISCV_INCLUDES += -I$(REPLICANT_PATH)/examples/graphit/test_pr_nibble/kernel/include -I$(GRAPHIT_PATH)/src/runtime_lib/infra_hb/device/
 
 include $(EXAMPLES_PATH)/graphit/riscv.mk
 
@@ -108,7 +116,7 @@ include $(EXAMPLES_PATH)/graphit/riscv.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) -g $(GRAPH_PATH)
 
 SIM_ARGS ?=
 
