@@ -53,7 +53,8 @@ uint32_t    in          [WORDS];
 static void initialize_target_npas(void)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        hb_mc_idx_t y = hb_mc_config_get_dram_y(cfg);
+        hb_mc_coordinate_t pod = {.x=0, .y=0};
+        hb_mc_idx_t y = hb_mc_config_pod_dram_y(cfg, pod, 0);
         hb_mc_idx_t columns = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
         hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(cfg);
 

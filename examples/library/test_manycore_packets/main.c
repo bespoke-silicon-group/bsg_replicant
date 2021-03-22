@@ -49,7 +49,7 @@ void request_packet_to_array(/*const*/ hb_mc_request_packet_t *pack, /*out*/ uin
         *arr++ = hb_mc_request_packet_get_y_dst(pack);
         *arr++ = hb_mc_request_packet_get_x_src(pack);
         *arr++ = hb_mc_request_packet_get_y_src(pack);
-        *arr++ = hb_mc_request_packet_get_mask (pack);
+        *arr++ = hb_mc_request_packet_get_load_id(pack);
         *arr++ = hb_mc_request_packet_get_op   (pack);
         *arr++ = hb_mc_request_packet_get_addr (pack);
         *arr++ = hb_mc_request_packet_get_data (pack);
@@ -62,7 +62,8 @@ void response_packet_to_array(/*const*/ hb_mc_response_packet_t *pack, /*out*/ u
         
         *arr++ = hb_mc_response_packet_get_x_dst(pack);
         *arr++ = hb_mc_response_packet_get_y_dst(pack);
-        *arr++ = hb_mc_response_packet_get_op   (pack);
+        *arr++ = hb_mc_response_packet_get_load_id(pack);
+        //        *arr++ = hb_mc_response_packet_get_op   (pack); No encoding for response op in C++
         *arr++ = hb_mc_response_packet_get_data (pack);
 }
 
@@ -92,6 +93,7 @@ int test_manycore_packets() {
         uint8_t target_y = hb_mc_config_get_vcore_base_y(hb_mc_manycore_get_config(mc));
         uint32_t addr = HB_MC_TILE_EPA_DMEM_BASE >> 2; // EPA
         uint32_t data  = rand();
+        uint32_t load_id = 31;
 
         bsg_pr_test_info("Address: 0x%08" PRIx32 ", Expected data: %08" PRIx32 "\n", addr, data);
 
@@ -100,26 +102,26 @@ int test_manycore_packets() {
 
         const char *req_desc[] = {
                 "Destination X", "Destination Y",
-                     "Source X",      "Source Y",
-                         "Mask",        "Opcode",
-                      "Address",          "Data",
+                "Source X",      "Source Y",
+                "Load ID",        "Opcode",
+                "Address",          "Data",
         };
 
         uint32_t req_expected[] = {
                 target_x,                       target_y,
                 host_x,                         host_y,
-                HB_MC_PACKET_REQUEST_MASK_WORD, HB_MC_PACKET_OP_REMOTE_STORE,
+                load_id,     HB_MC_PACKET_OP_REMOTE_SW,
                 addr,                           data,
         };
 
         const char *res_desc[] = {
                 "Destination X", "Destination Y",
-                       "Opcode",          "Data",
+                "Load ID",
+                "Opcode",          "Data",
         };
 
-        uint32_t res_expected[] = {
-                                      host_x, host_y,
-                HB_MC_PACKET_OP_REMOTE_STORE,   data,
+        uint32_t res_expected[] = {host_x, host_y, load_id,
+                /*HB_MC_PACKET_OP_REMOTE_LOAD,*/   data,
         };
 
         uint32_t actual[8];
@@ -133,8 +135,8 @@ int test_manycore_packets() {
         hb_mc_request_packet_set_x_src(&req1, host_x);
         hb_mc_request_packet_set_y_src(&req1, host_y);
         hb_mc_request_packet_set_data (&req1, data);
-        hb_mc_request_packet_set_mask (&req1, 0xF);
-        hb_mc_request_packet_set_op   (&req1, HB_MC_PACKET_OP_REMOTE_STORE);
+        hb_mc_request_packet_set_load_id(&req1, load_id);
+        hb_mc_request_packet_set_op   (&req1, HB_MC_PACKET_OP_REMOTE_SW);
         hb_mc_request_packet_set_addr (&req1, addr);
 
         request_packet_to_array(&req1, actual);
@@ -160,6 +162,8 @@ int test_manycore_packets() {
         /* Test transmitting a load packet and receiving the result */
         /************************************************************/
         hb_mc_request_packet_set_op(&req1, HB_MC_PACKET_OP_REMOTE_LOAD);
+        hb_mc_request_packet_load_info_t load_info = {{0}};
+        hb_mc_request_packet_set_load_info(&req1, load_info);
         bsg_pr_test_info("Testing reading packet\n");
         err = hb_mc_manycore_packet_tx(mc, (hb_mc_packet_t*)&req1, HB_MC_MMIO_FIFO_TO_DEVICE, -1);      
         if(err != HB_MC_SUCCESS) {
