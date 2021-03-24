@@ -1652,7 +1652,7 @@ int hb_mc_device_pod_try_launch_tile_groups(hb_mc_device_t *device,
 
                 // keep going if we can't allocate
                 r = hb_mc_device_pod_tile_group_allocate_tiles(device, pod, tg);
-                if (r != HB_MC_SUCCESS) {
+                if (r != HB_MC_SUCCESS) { // TODO: Fix.
                         // mark this shape as the last failed
                         last_failed = tg->dim;
                         continue;
