@@ -12,7 +12,7 @@ int kernel_ubmark_fadd_spm(float *A, float *B, float *C, int N) {
   // load data into SPM
   float A_spm[255];
   float B_spm[255];
-  float A_tmp, B_tmp, C_tmp = 0.0f;
+  float A_tmp, B_tmp;
   float* A_ptr = &A_spm[0];
   float* B_ptr = &B_spm[0];
   float* A_base = A;
@@ -29,518 +29,528 @@ int kernel_ubmark_fadd_spm(float *A, float *B, float *C, int N) {
   }
   A_ptr = &A_spm[0];
   B_ptr = &B_spm[0];
+  float tmp0 = A_spm[0];
+  float tmp1 = A_spm[1];
+  float tmp2 = A_spm[2];
+  float tmp3 = A_spm[3];
+  float tmp4 = A_spm[4];
+  float tmp5 = A_spm[5];
+  float tmp6 = A_spm[6];
+  float tmp7 = A_spm[7];
+  float tmp8 = A_spm[8];
+  float tmp9 = A_spm[9];
   //------------------------------------
   bsg_saif_start();
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp5) : "f"(tmp6),  "f"(tmp7));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp6) : "f"(tmp7),  "f"(tmp8));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp7) : "f"(tmp8),  "f"(tmp9));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp8) : "f"(tmp9),  "f"(tmp0));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp9) : "f"(tmp0),  "f"(tmp1));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp0) : "f"(tmp1),  "f"(tmp2));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp1) : "f"(tmp2),  "f"(tmp3));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp2) : "f"(tmp3),  "f"(tmp4));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp3) : "f"(tmp4),  "f"(tmp5));
   //------------------------------------
-  asm volatile("fadd.s  %0, %1, %2"     : "+f"(C_tmp) : "f"(A_tmp),  "f"(B_tmp));
+  asm volatile("fadd.s  %0, %1, %2"     : "+f"(tmp4) : "f"(tmp5),  "f"(tmp6));
   //------------------------------------
   bsg_saif_end();
   //------------------------------------
