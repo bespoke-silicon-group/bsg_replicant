@@ -60,7 +60,9 @@ int kernel_profiler(float *A, float *B, float *C,
         barrier.sync();
         bsg_cuda_print_stat_end(0);
         bsg_cuda_print_stat_start(15);
+        bsg_cuda_print_stat_start(0);
         rc = function(sub, A, B, C, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
+        bsg_cuda_print_stat_end(0);
         rc = function(mul, B, C, A, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
         bsg_cuda_print_stat_end(15);
         barrier.sync();

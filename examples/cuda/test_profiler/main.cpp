@@ -200,8 +200,6 @@ int run_test(hb_mc_device_t &device, const char* kernel,
         float max = 0.1;
         double sse = matrix_sse(gold, C, HEIGHT, WIDTH);
 
-        matrix_print(C, HEIGHT, WIDTH);
-
         if (std::isnan(sse) || sse > max) {
                 bsg_pr_test_err(BSG_RED("Matrix Mismatch. SSE: %f\n"), sse);
                 return HB_MC_FAIL;
@@ -258,7 +256,7 @@ int main(int argc, char ** argv) {
                        !std::isfinite(res) ||
                        std::isnan(res));
 
-                A[i] = i;//static_cast<float>(res);
+                A[i] = static_cast<float>(res);
                 C[i] = 0.0f;
                 R[i] = 0.0f;
         }
@@ -270,7 +268,7 @@ int main(int argc, char ** argv) {
                        !std::isfinite(res) ||
                        std::isnan(res));
 
-                B[i] = 0;//static_cast<float>(res);
+                B[i] = static_cast<float>(res);
         }
 
         // Initialize device, load binary and unfreeze tiles.
