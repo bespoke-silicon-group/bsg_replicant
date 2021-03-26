@@ -236,7 +236,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter int bsg_machine_pod_tiles_y_gp = $(BSG_MACHINE_POD_TILES_Y);" >> $@
 	@echo "parameter int bsg_machine_pod_tiles_x_gp = $(BSG_MACHINE_POD_TILES_X);" >> $@
-	@echo "parameter int bsg_machine_pod_llcaches_gp = (bsg_machine_pod_tiles_x_gp * 2);" >> $@
+	@echo "parameter int bsg_machine_pod_llcache_rows_gp = $(BSG_MACHINE_POD_VCACHE_NUM_ROWS);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_pod_tiles_subarray_y_gp = $(BSG_MACHINE_POD_TILES_SUBARRAY_Y);" >> $@
 	@echo "parameter int bsg_machine_pod_tiles_subarray_x_gp = $(BSG_MACHINE_POD_TILES_SUBARRAY_X);" >> $@
@@ -256,6 +256,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter int bsg_machine_llcache_words_gp = bsg_machine_llcache_line_words_gp * bsg_machine_llcache_ways_gp * bsg_machine_llcache_sets_gp;" >> $@
 	@echo "parameter int bsg_machine_llcache_miss_fifo_els_gp = $(BSG_MACHINE_VCACHE_MISS_FIFO_ELS);" >> $@
 	@echo "parameter int bsg_machine_llcache_channel_width_gp = $(BSG_MACHINE_VCACHE_DMA_DATA_WIDTH);" >> $@
+	@echo "parameter int bsg_machine_llcache_dram_channel_ratio_gp = $(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_dram_bank_words_gp = $(BSG_MACHINE_DRAM_BANK_WORDS);" >> $@
 	@echo "parameter int bsg_machine_dram_channels_gp = $(BSG_MACHINE_DRAM_CHANNELS);" >> $@
