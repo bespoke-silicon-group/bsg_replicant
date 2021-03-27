@@ -7,7 +7,6 @@
 import pandas as pd
 import sys
 import os
-sys.path.append("/mnt/users/ssd2/homes/drichmond/Research/repositories/git/bsg_bladerunner.release/bsg_manycore/software/py/vanilla_parser/")
 from CudaStatTag import CudaStatTag
 import ManycoreCoordinate
 from collections import Counter
@@ -79,20 +78,3 @@ tdf[[c for c in tdf.columns if "_latency" not in c]].columns
 
 
 # In[ ]:
-
-
-
-
-
-# In[80]:
-
-
-df.read_latency
-
-
-# In[ ]:
-
-
-bus_width = 128
-burst_len = 8
-
