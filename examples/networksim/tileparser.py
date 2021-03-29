@@ -189,3 +189,6 @@ with open("tile_execution.rpt", "w") as fd:
 
 fig = sns.displot(tg["Total Cycles"])
 fig.savefig("cycle_dist.png")
+
+fig = sns.heatmap(tg["Total Cycles"].unstack())
+fig.get_figure().savefig("cycle_heat.png")
