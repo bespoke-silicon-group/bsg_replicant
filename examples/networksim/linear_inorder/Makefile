@@ -99,8 +99,7 @@ vcache_stall_detailed.png: $(TEST_NAME).netsim.log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
 
 # this rule does a sweep across many options
-#sweep: $(foreach alloc,normdist doubledist 32 16 8,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(els)-$(stripe)-$(mode).deploy))))
-sweep: $(foreach alloc,16 15 14 13 12 11 10 9,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(els)-$(stripe)-$(mode).deploy))))
+sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(stripe)-$(els)-$(mode).deploy))))
 
 # this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
 # syntax <reply fifo size>-<vcache stripe words>-<ruchy|ruchydeux|ruchytrois|zero|xstripe|ystripe>.deploy
@@ -115,8 +114,8 @@ sweep: $(foreach alloc,16 15 14 13 12 11 10 9,$(foreach els,2 4 8 16 32 64 128,$
 	cat Makefile >> $@/Makefile
 	mkdir -p $@/my_machine
 	cp -r $(BSG_MACHINE_PATH)/Makefile.machine.include $@/my_machine/.
-	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
-	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,3,$*)" >> $@/my_machine/Makefile.machine.include
+	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,3,$*)" >> $@/my_machine/Makefile.machine.include
+	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
 	$(MAKE) -C $@ go
 
 # this will actually indirectly do the run
@@ -130,8 +129,9 @@ summarize:
 
 RESULTS = $(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,sum.$(mode))
 $(RESULTS):
-	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' > $@
-	find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> $@
+	echo "Allocation,Stripe Size (Words),Cache Response Elements,Cycles"
+	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' >> $@
+	#find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> $@
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> $@
 	python3 results.py $@
 
