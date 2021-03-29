@@ -44,8 +44,8 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
-GRAPHIT_PATH = $(REPLICANT_PATH)/../graphit-new
 CURRENT_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+GRAPHIT_PATH = $(CURRENT_PATH)/../graphit-new
 
 GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
 
@@ -106,7 +106,7 @@ RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
 RISCV_INCLUDES += -I$(REPLICANT_PATH)/examples/graphit/test_pr_nibble/kernel/include -I$(GRAPHIT_PATH)/src/runtime_lib/infra_hb/device/
 
-include $(EXAMPLES_PATH)/graphit/riscv.mk
+include $(EXAMPLES_PATH)/cuda/riscv.mk
 
 ###############################################################################
 # Execution flow
@@ -116,7 +116,7 @@ include $(EXAMPLES_PATH)/graphit/riscv.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) #-g $(GRAPH_PATH)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) -g $(GRAPH_PATH)
 
 SIM_ARGS ?=
 
@@ -142,6 +142,7 @@ help:
 	@echo "      $(TEST_NAME).{profile,debug}.log: Run specific executable"
 	@echo "      clean: Remove all subdirectory-specific outputs"
 
+print-%  : ; @echo $* = $($*)
 
 .PHONY: clean
 
