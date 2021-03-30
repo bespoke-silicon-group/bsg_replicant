@@ -13,7 +13,7 @@ from collections import Counter
 import seaborn as sns
 
 bus_width = 128
-burst_len = 8
+burst_len = 2
 
 
 # In[2]:
@@ -30,7 +30,7 @@ df = df.apply(lambda col: col.map(Counter) if(col.dtype == object) else col)
 df = pd.concat([df, CudaStatTag.parse_raw_tag(df)], axis='columns')
 df = df.drop(['tag', 'raw_tag', 'epoch_num'], axis='columns')
 df = df.drop(filter(lambda s: s.startswith("average_"), df.columns), axis='columns')
-
+df = df[df["channel"].isin([0,1])]
 
 # In[4]:
 
@@ -62,6 +62,8 @@ cdf = (ends - starts).groupby(["Tag", "channel"]).apply(lambda x: x.sum()) # Jus
 tdf = (ends - starts).groupby(["Tag"]).apply(lambda x: x.sum())
 
 # post-Processing
+cdf["Total Bits"] = (cdf.num_reads_done + cdf.num_writes_done) * bus_width * burst_len
+tdf["Total Bits"] = (tdf.num_reads_done + tdf.num_writes_done) * bus_width * burst_len
 # Compute pJ/bit using the same method that DRAMSim3 does
 cdf["pJ/bit"] = cdf.total_energy / ((cdf.num_reads_done + cdf.num_writes_done) * bus_width * burst_len)
 tdf["pJ/bit"] = tdf.total_energy / ((tdf.num_reads_done + tdf.num_writes_done) * bus_width * burst_len)
@@ -74,7 +76,8 @@ tdf["Write Hit Rate"] = tdf.num_write_row_hits / tdf.num_write_cmds
 # In[20]:
 
 
-tdf[[c for c in tdf.columns if "_latency" not in c]].columns
+print(cdf[[c for c in cdf.columns if "_energy" in c] + ["pJ/bit"] + ["Total Bits"]])
+print(tdf[[c for c in tdf.columns if "_energy" in c] + ["pJ/bit"] + ["Total Bits"]])
 
 
 # In[ ]:
