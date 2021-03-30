@@ -84,6 +84,7 @@ $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/im
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/refresh.cc
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/simple_stats.cc
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/timing.cc
+$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/blood_graph.cc
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
