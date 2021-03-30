@@ -109,16 +109,12 @@ int test_dma (int argc, char **argv) {
                 hb_mc_npa_t data_o;
                 BSG_CUDA_CALL(hb_mc_manycore_read_mem(&mc, &addr, &data_o, sizeof(data_o)));
 
-                // check last access
-                unsigned long long ch, ch_addr;
-                BSG_CUDA_CALL(bsg_mem_dma::bsg_mem_dma_last(&ch, &ch_addr));
-
                 // print out addresses
                 hb_mc_npa_to_string(&addr,   addr_str,   sizeof(addr_str));
                 hb_mc_npa_to_string(&data_i, data_i_str, sizeof(data_i_str));
                 hb_mc_npa_to_string(&data_o, data_o_str, sizeof(data_o_str));
-                bsg_pr_info("[%s] DMA Wrote %s, NW Read %s, to Channel %2u (0x%08llx)\n",
-                            addr_str, data_i_str, data_o_str, ch, ch_addr & ~(127));
+                bsg_pr_info("[%s] DMA Wrote %s, NW Read %s\n",
+                            addr_str, data_i_str, data_o_str);
 
                 if (data_i.x   != data_o.x ||
                     data_i.y   != data_o.y ||
