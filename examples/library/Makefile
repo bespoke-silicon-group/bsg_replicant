@@ -74,7 +74,7 @@ $(TESTS): $(REGRESSION_PREBUILD)
 
 .PHONY: clean regression $(TESTS)
 
-clean: $(TESTS:=.clean)
+clean: $(TESTS:=.clean) hardware.clean platform.clean libraries.clean link.clean
 
 %.clean:
 	$(MAKE) -C $(@:.clean=) clean

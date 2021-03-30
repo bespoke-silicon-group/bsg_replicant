@@ -42,20 +42,16 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
-SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
-CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
 
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
-# KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = high_mem
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = main.c
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES += 
@@ -64,6 +60,7 @@ CXXDEFINES +=
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS)
+CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -76,42 +73,19 @@ main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS +=
+LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
 
 ###############################################################################
-# Device code compilation flow
-###############################################################################
-
-# BSG_MANYCORE_KERNELS is a list of manycore executables that should
-# be built before executing.
-BSG_MANYCORE_KERNELS = $(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv
-
-# Tile Group Dimensions
-TILE_GROUP_DIM_X = 2
-TILE_GROUP_DIM_Y = 2
-
-$(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	$(MAKE) -j1 -C $(CUDALITE_SRC_PATH)/$(KERNEL_NAME) clean main.riscv
-
-###############################################################################
 # Execution flow
 #
 # C_ARGS: Use this to pass arguments that you want to appear in argv
-#         For SPMD tests C arguments are: <Path to RISC-V Binary> <Test Name>
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
+C_ARGS ?=
 
 SIM_ARGS ?=
 
@@ -141,11 +115,6 @@ help:
 .PHONY: clean
 
 clean:
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -j1 -C $(CUDALITE_SRC_PATH)/$(KERNEL_NAME) clean
+
 
 
