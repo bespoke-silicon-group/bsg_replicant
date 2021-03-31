@@ -119,7 +119,10 @@ include $(EXAMPLES_PATH)/execution.mk
 # Regression Flow
 ###############################################################################
 
-regression: main.exec.log
+stats: main.profile.log
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ python3 -m vanilla_parser --vcache-stats vcache_stats.csv
+
+regression: stats
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
 ###############################################################################

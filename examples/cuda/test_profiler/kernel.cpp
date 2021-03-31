@@ -62,12 +62,17 @@ int kernel_profiler(float *A, float *B, float *C,
         bsg_cuda_print_stat_start(15);
         bsg_cuda_print_stat_start(0);
         rc = function(sub, A, B, C, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
-        bsg_cuda_print_stat_end(0);
-        rc = function(mul, B, C, A, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
         bsg_cuda_print_stat_end(15);
+        rc = function(mul, B, C, A, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
+        bsg_cuda_print_stat_end(0);
         barrier.sync();
-        rc = transpose(A, C, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
+        rc = transpose(C, B, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
         barrier.sync();
         bsg_cuda_print_stat_kernel_end();
+        bsg_cuda_print_stat_kernel_start();
+        rc = function(mul, A, B, C, HEIGHT, WIDTH, BLOCK_Y, BLOCK_X);
+        barrier.sync();
+        bsg_cuda_print_stat_kernel_end();
+        barrier.sync();
         return rc;
 }

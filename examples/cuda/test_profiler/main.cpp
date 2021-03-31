@@ -194,7 +194,8 @@ int run_test(hb_mc_device_t &device, const char* kernel,
         matrix_transpose(gold, A, HEIGHT, WIDTH);
         matrix_op(sub, A, B, gold, HEIGHT, WIDTH);
         matrix_op(mul, B, gold, A, HEIGHT, WIDTH);
-        matrix_transpose(A, gold, HEIGHT, WIDTH);
+        matrix_transpose(gold, B, HEIGHT, WIDTH);
+        matrix_op(mul, A, B, gold, HEIGHT, WIDTH);
 
         // Compare the known-correct matrix (gold) and the result matrix (C)
         float max = 0.1;
