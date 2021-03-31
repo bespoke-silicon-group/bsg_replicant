@@ -49,6 +49,13 @@ endif
 # BSG_DESIGN_TOP
 include $(HARDWARE_PATH)/hardware.mk
 
+# Replace synthesizable files to speed up simulation
+VSOURCES := $(filter-out VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_encode_one_hot.v,$(VSOURCES))
+VSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/hardware/bsg_nonsynth_encode_one_hot.v
+VSOURCES := $(filter-out VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_mux_one_hot.v,$(VSOURCES))
+VSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/hardware/bsg_nonsynth_mux_one_hot.v
+
+
 # libraries.mk defines how to build libbsg_manycore_runtime.so, which is
 # pre-linked against all other simulation binaries (libdramsim3.so, etc.)
 include $(LIBRARIES_PATH)/libraries.mk
@@ -56,19 +63,28 @@ include $(LIBRARIES_PATH)/libraries.mk
 
 
 # Generic Verilator source files that are compiiled into libmachine.so
-LIBMACHINE_CXXSRCS := verilated.cpp verilated_vcd_c.cpp verilated_dpi.cpp
+LIBMACHINE_CXXSRCS += verilated_vcd_c.cpp
+LIBMACHINE_CXXSRCS += verilated.cpp
+LIBMACHINE_CXXSRCS += verilated_dpi.cpp
+# Uncomment for Verilator threads
+# LIBMACHINE_CXXSRCS += verilated_threads.cpp
 LIBMACHINE_OBJS += $(LIBMACHINE_CXXSRCS:%.cpp=%.o)
 LIBMACHINE_OBJECTS = $(LIBMACHINE_OBJS:%.o=$(MACHINES_PATH)/%.o)
 
 $(LIBMACHINE_OBJECTS): DEFINES := -DVL_PRINTF=printf
 $(LIBMACHINE_OBJECTS): DEFINES += -DVM_SC=0
 $(LIBMACHINE_OBJECTS): DEFINES += -DVM_TRACE=0
+# Uncomment for Verilator threads
+# $(LIBMACHINE_OBJECTS): DEFINES += -DVL_THREADED=1
 $(LIBMACHINE_OBJECTS): INCLUDES := -I$(VERILATOR_ROOT)/include
 $(LIBMACHINE_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(LIBMACHINE_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)
 
-$(LIBMACHINE_OBJECTS): CFLAGS    += -std=c11 -fPIC $(INCLUDES) $(DEFINES)
-$(LIBMACHINE_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC $(INCLUDES) $(DEFINES)
+$(LIBMACHINE_OBJECTS): CFLAGS    += -fPIC -std=c11 $(INCLUDES) $(DEFINES)
+$(LIBMACHINE_OBJECTS): CXXFLAGS  += -fPIC -std=c++11 $(INCLUDES) $(DEFINES)
+# Uncomment to enable Verilator profiling with operf
+# $(LIBMACHINE_OBJECTS): CFLAGS    += -g -pg
+# $(LIBMACHINE_OBJECTS): CXXFLAGS  += -g -pg
 $(LIBMACHINE_OBJECTS): $(MACHINES_PATH)/%.o: $(VERILATOR_ROOT)/include/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
@@ -83,28 +99,42 @@ $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(BSG_MACHINE_PATH)
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(VERILATOR_ROOT)/include
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
-$(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: CXXFLAGS := -std=c++11 -fPIC $(INCLUDES)
+# Uncomment for Verilator threads
+# $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: DEFINES  += -DVL_THREADED
+$(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: CXXFLAGS := -fPIC -std=c++11 $(INCLUDES)
+# Uncomment to enable Verilator profiling with operf
+# $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: CXXFLAGS += -g -pg
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
 
 # Verilator compilation is a little funky. Compiling the HDL generates
 # a Makefile fragment, <top-level-module-name>.mk and transpiled C++
 # files. This makefile fragment compiles the transpiled C++ into an
 # archive file <top-level-module-name>_ALL.a.
-VCFLAGS = -fPIC
+VCFLAGS += -fPIC
+# Uncomment to enable Verilator profiling with operf
+# VCFLAGS += -g -pg
+# VLDFLAGS += -g -pg
+
 VERILATOR_CFLAGS    += $(foreach vcf,$(VCFLAGS),-CFLAGS "$(vcf)")
+VERILATOR_LDFLAGS   += $(foreach vlf,$(LDFLAGS),-LDFLAGS "$(vlf)")
 VERILATOR_VINCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VERILATOR_VDEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VERILATOR_VFLAGS = $(VERILATOR_VINCLUDES) $(VERILATOR_VDEFINES)
-VERILATOR_VFLAGS += -Wno-widthconcat -Wno-unoptflat -Wno-lint
-VERILATOR_VFLAGS += --assert
+VERILATOR_VFLAGS += -Wno-widthconcat -Wno-lint
+VERILATOR_VFLAGS += --assert -O3
+# Uncomment to enable Verilator profiling with operf
+#VERILATOR_VFLAGS += --prof-cfuncs
+# Uncomment for Verilator threads
+# VERILATOR_VFLAGS += --threads 4
+VERILATOR_FLAGS = $(VERILATOR_VFLAGS) $(VERILATOR_CFLAGS) $(VERILATOR_LDFLAGS)
 # These enable verilator tracing
 # VERILATOR_VFLAGS += --trace --trace-structs
 $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP).mk: $(VHEADERS) $(VSOURCES) 
 	$(info BSG_INFO: Running verilator)
-	@$(VERILATOR) -Mdir $(dir $@) --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $^ --top-module $(BSG_DESIGN_TOP)
+	@$(VERILATOR) -Mdir $(dir $@) --cc $(VERILATOR_FLAGS) $^ --top-module $(BSG_DESIGN_TOP)
 
 $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a: $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP).mk
-	$(MAKE) -j -C $(dir $@) -f $(notdir $<) default
+	$(MAKE) OPT_FAST="-O2 -march=native" -j8 -C $(dir $@) -f $(notdir $<) default
 
 # libmachine.so is the machine-specific shared object file that implements the
 # Verilator simulation. It is generated by compiling the archive file (above),
@@ -119,18 +149,24 @@ $(BSG_MACHINE_PATH)/libmachine.so: $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
 
 # Executable compilation rules
 LDFLAGS    += -lbsg_manycore_runtime -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
-LDFLAGS    += -lmachine -L$(BSG_MACHINE_PATH) -Wl,-rpath=$(BSG_MACHINE_PATH)
-LDFLAGS    += -lm
+LDFLAGS    += -ldmamem -L$() -Wl,-rpath=$(BSG_PLATFORM_PATH)
+LDFLAGS    += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
+# Uncomment for Verilator threads
+# LDFLAGS    += -lpthread
 
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_MACHINE_PATH)
 
-%: %.o $(BSG_MACHINE_PATH)/libmachine.so $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
-	g++ -std=c++11 $< -o $@ $(LDFLAGS)
+# Uncomment to enable Verilator profiling with operf
+# %: LDFLAGS += -g -pg
+%: LD=$(CXX)
+%: %.o $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o $(LIBMACHINE_OBJECTS)
+	$(LD) -std=c++11 $(LDFLAGS) $< -o $@ $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o $(LIBMACHINE_OBJECTS) $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
 
 # Remove the machine library files. 
 machine.clean:
 	rm -rf $(BSG_MACHINE_PATH)/libmachine.so
+	rm -rf $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
 	rm -rf $(LIBMACHINE_OBJECTS)
 	rm -rf $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)*
 	rm -rf $(BSG_MACHINE_PATH)/notrace

@@ -137,7 +137,7 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_out_packet_li.x_cord     = x_cord_width_p'(host_req_li_cast.x_cord);
 
   always_comb begin
-    if (endpoint_out_packet_li.op == e_remote_store) begin
+    if (bsg_manycore_packet_op_e'(host_req_li_cast.op) == e_remote_store) begin
       endpoint_out_packet_li.payload.data = host_req_li_cast.payload.data;
     end
     else begin
