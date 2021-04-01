@@ -52,7 +52,7 @@ GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = pr_nibble
+KERNEL_NAME = sssp 
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -104,7 +104,7 @@ TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
-RISCV_INCLUDES += -I$(REPLICANT_PATH)/examples/graphit/test_pr_nibble/kernel/include -I$(GRAPHIT_PATH)/src/runtime_lib/infra_hb/device/
+RISCV_INCLUDES += -I$(REPLICANT_PATH)/examples/graphit/test_sssp_delta/kernel/include -I$(GRAPHIT_PATH)/src/runtime_lib/infra_hb/device/
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
