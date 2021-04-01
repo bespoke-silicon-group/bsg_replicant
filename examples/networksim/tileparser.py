@@ -156,10 +156,11 @@ res["Idle"] = res["Idle"] - res["Stall RegID"]
 
 cs = ["Total Cycles",
       "Stall Credit",
+      "Stall !Ready",
       "Stall RegID",
-      "Idle",
-      "Stall !Ready",]
-des = {"Idle": "Endpoint ready, Credits/RegID available, no packet sent.",
+      "Idle"]
+      
+des = {"Idle": "Endpoint ready, no packet sent by Tile.",
        "Total Cycles" : "Total cycles executed.",
        "Stall Credit": "Out of Credits (Packets in Flight). TX stalled (RX possible).",
        "Stall RegID": "Out of Register IDs (Packets out-of-order). TX stalled (RX possible)",
@@ -190,5 +191,5 @@ with open("tile_execution.rpt", "w") as fd:
 fig = sns.displot(tg["Total Cycles"])
 fig.savefig("cycle_dist.png")
 
-fig = sns.heatmap(tg["Total Cycles"].unstack())
+fig = sns.heatmap(tg["Total Cycles"].unstack(), vmin=3000, vmax=7000)
 fig.get_figure().savefig("cycle_heat.png")

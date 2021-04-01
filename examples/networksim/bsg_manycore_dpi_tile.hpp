@@ -247,24 +247,20 @@ public:
                 // or there is data available.
 
                 // 1: Transmit one request per cycle (if the interface is ready)
-                if(!finished && !frozen && (network_req_credits_used_i == credit_limit)){
-                        bsg_pr_dbg("Tile (X:%d,Y:%d) @ %lu -- %s:"
-                                    "Tile out of credits.\n",
-                                   me.x, me.y, get_cycle(), __func__);
-                        stats["Stall Credit"] ++;
-                }
 
                 if(!finished && !frozen && (network_req_credits_used_i != credit_limit) && endpoint_req_ready_i){
                         send_request_internal(endpoint_req_v_o, endpoint_req_o);
                         if(*endpoint_req_v_o)
                                 stats["Packet TX"] ++;
                 }
-
-                if(!finished && !frozen && !endpoint_req_ready_i){
+                if(!finished && !frozen && (network_req_credits_used_i == credit_limit) && endpoint_req_ready_i){
+                        bsg_pr_dbg("Tile (X:%d,Y:%d) @ %lu -- %s:"
+                                    "Tile out of credits.\n",
+                                   me.x, me.y, get_cycle(), __func__);
+                        stats["Stall Credit"] ++;
+                } else if(!finished && !frozen && !endpoint_req_ready_i){
                         stats["Stall !Ready"] ++;
-                }
-
-                if(!finished && !frozen && endpoint_req_ready_i && !(*endpoint_req_v_o)){
+                } else if(!finished && !frozen && endpoint_req_ready_i && !(*endpoint_req_v_o)){
                         stats["Idle"] ++;
                 }
 
