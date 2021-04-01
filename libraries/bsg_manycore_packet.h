@@ -40,7 +40,7 @@ extern "C" {
                 hb_mc_request_packet_t request; /**/
                 hb_mc_response_packet_t response; /* from the Hammerblade Manycore */
                 uint32_t words[4];
-        } hb_mc_packet_t;
+        } __attribute__((aligned(4))) hb_mc_packet_t;
 
         /**
          * Fill a response packet fields using a request packet.

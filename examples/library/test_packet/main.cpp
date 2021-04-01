@@ -32,45 +32,79 @@
 #include <bsg_manycore_cuda.h>
 #include <bsg_manycore_tile.h>
 #include <inttypes.h>
+#include <type_traits>
 
 #define ADDR (HB_MC_TILE_EPA_DMEM_BASE >> 2)
-int test_wait (int argc, char **argv) {
+
+#define CHECK(cond)                                        \
+    do {                                                   \
+        if (!(cond)) {                                     \
+            bsg_pr_err("Condition '%s' failed\n", #cond);  \
+            return HB_MC_FAIL;                             \
+        }                                                  \
+    } while (0)
+
+/* 
+   Check how the compiler handles packets.
+   i.e. are all packet types the same size and aligned to a word boundary?
+*/
+int test_compile(int argc, char **argv)
+{
+    // check size
+    static_assert(sizeof(hb_mc_request_packet_t) == sizeof(hb_mc_packet_t),  "Request packet size mismatch");
+    static_assert(sizeof(hb_mc_response_packet_t) == sizeof(hb_mc_packet_t), "Response packet size mismatch");
+
+    // check alignment
+    hb_mc_request_packet_t rqst;
+    hb_mc_response_packet_t rsp;
+    uintptr_t rqst_addr = reinterpret_cast<uintptr_t>(&rqst);
+    uintptr_t rsp_addr  = reinterpret_cast<uintptr_t>(&rsp);
+
+    CHECK(rqst_addr % sizeof(uint32_t) == 0);
+    CHECK(rsp_addr  % sizeof(uint32_t) == 0);
+    return HB_MC_SUCCESS;
+}
+/*
+  Transmit a write request.
+  Then read it back with by transmitting a read request.
+  Finally, receive a response packet for the read request.
+ */
+int test_wait (int argc, char **argv)
+{
     hb_mc_manycore_t mc = {0};
     BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", 0));
 
-    hb_mc_request_packet_t write_rqst = {
-        .x_dst = 16,
-        .y_dst = 7,
+    hb_mc_request_packet_t write_rqst;
 
-        .x_src = 16,
-        .y_src = 0,
+    write_rqst.x_dst = 16;
+    write_rqst.y_dst = 7;
 
-        .op_v2 = HB_MC_PACKET_OP_REMOTE_STORE,
-        .addr  = ADDR,
-        .reg_id = 0xF,
-        .payload = 0xDEADBEEF,
-    };
+    write_rqst.x_src = 16;
+    write_rqst.y_src = 0;
+
+    write_rqst.op_v2 = HB_MC_PACKET_OP_REMOTE_STORE;
+    write_rqst.addr  = ADDR;
+    write_rqst.reg_id = 0xF;
+    write_rqst.payload = 0xDEADBEEF;
     
     BSG_CUDA_CALL(hb_mc_manycore_request_tx(&mc, &write_rqst, -1));
 
-    hb_mc_request_packet_t read_rqst = {
-        .x_dst = 16,
-        .y_dst = 7,
+    hb_mc_request_packet_t read_rqst;
+    read_rqst.x_dst = 16;
+    read_rqst.y_dst = 7;
 
-        .x_src = 16,
-        .y_src = 0,
+    read_rqst.x_src = 16;
+    read_rqst.y_src = 0;
 
-        .op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD,
-        .addr = ADDR,
-        .reg_id = 0,
-        .payload = 0,
-    };
+    read_rqst.op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD;
+    read_rqst.addr = ADDR;
+    read_rqst.reg_id = 0;
+    read_rqst.payload = 0;
 
-    hb_mc_request_packet_load_info_t info = {
-        .part_sel       = 2,
-        .is_byte_op     = 1,
-        .is_unsigned_op = 1,
-    };
+    hb_mc_request_packet_load_info_t info;
+    info.part_sel       = 2;
+    info.is_byte_op     = 1;
+    info.is_unsigned_op = 1;
 
     hb_mc_request_packet_set_load_info(&read_rqst, info);
 
@@ -88,6 +122,13 @@ int test_wait (int argc, char **argv) {
     return HB_MC_SUCCESS;
 }
 
+int test_packet(int argc, char **argv)
+{
+    BSG_CUDA_CALL(test_compile(argc, argv));
+    BSG_CUDA_CALL(test_wait(argc, argv));
+    return HB_MC_SUCCESS;
+}
+
 #ifdef VCS
 int vcs_main(int argc, char ** argv) {
 #else
@@ -95,7 +136,7 @@ int main(int argc, char ** argv) {
 #endif
 
         bsg_pr_test_info("test_rom Regression Test \n");
-        int rc = test_wait(argc, argv);
+        int rc = test_packet(argc, argv);
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return rc;
 }
