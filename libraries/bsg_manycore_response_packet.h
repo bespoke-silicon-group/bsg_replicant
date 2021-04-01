@@ -51,7 +51,7 @@ extern "C" {
                 uint32_t  data; //!< packet's payload data
                 uint8_t   op;    //!< opcode
                 uint8_t   reserved[8];
-        } __attribute__((packed)) hb_mc_response_packet_t;
+        } __attribute__((packed, aligned(4))) hb_mc_response_packet_t;
 
 
         /**
