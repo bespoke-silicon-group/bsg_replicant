@@ -2,7 +2,7 @@
 
 //#define DEBUG
 
-#define VERIFY 1
+#define VERIFY 0
 
 #ifdef DEBUG
 #define X 1 
@@ -66,7 +66,6 @@ int launch(int argc, char ** argv){
   std::cerr << "init global scalars" << std::endl; 
 
   p_dev = GlobalScalar<hb_mc_eva_t>("p");
-
   hammerblade::init_global_array<float>(hammerblade::builtin_getVerticesHB(edges), p_dev);
   old_rank_dev = GlobalScalar<hb_mc_eva_t>("old_rank");
   hammerblade::init_global_array<float>(hammerblade::builtin_getVerticesHB(edges), old_rank_dev);
@@ -76,14 +75,11 @@ int launch(int argc, char ** argv){
   hammerblade::init_global_array<int32_t>(hammerblade::builtin_getVerticesHB(edges), out_degree_dev);
   //alpha_dev = GlobalScalar<float>("alpha");
   //epsilon_dev = GlobalScalar<float>("epsilon");
-
   std::cerr << "init locks" << std::endl;
   GlobalScalar<hb_mc_eva_t> glbl_locks = GlobalScalar<hb_mc_eva_t>("locks");
   hammerblade::init_global_array<std::atomic<int>>(NUM_LOCKS, glbl_locks);
   std::atomic<int> tmp_a[NUM_LOCKS] = {};
-
   Device::Ptr device = Device::GetInstance();
-
   float alpha = ((float) 0.15) ;
   float epsilon = ((float) 1e-06) ;
   int start_vertex = ROOT;
@@ -123,13 +119,6 @@ int launch(int argc, char ** argv){
       version = 1; //push
     }
   }
-
-  //alpha_dev.set(alpha);
-  //epsilon_dev.set(epsilon);
-
-  //hammerblade::builtin_addVertexHB(frontier, start_vertex);
-  //hammerblade::insert_val(start_vertex, ((double) 1) , old_rank_dev);
-  //hammerblade::insert_val(start_vertex, ((double) 1) , new_rank_dev);
 
   std::cerr << "start of while loop\n";
   int tag_c = 0;
@@ -219,6 +208,7 @@ int launch(int argc, char ** argv){
     }
     ver_file.close();  
   }
+  device->finish(); 
   return 0;
 }
 

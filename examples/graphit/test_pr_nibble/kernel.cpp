@@ -125,9 +125,10 @@ struct filter_frontier
   {
     float epsilon = (float) 1e-6; 
     bool output ;
-    if(old_rank[v] == 0) return 0;
+    //if(old_rank[v] == 0) return 0;
+    if(new_rank[v] == 0) return 0;
     //output = (old_rank[v]) > ((out_degree[v] * epsilon));
-    output = (old_rank[v]) > ((out_degree[v] * epsilon));
+    output = (new_rank[v]) > ((out_degree[v] * epsilon));
     return output;
   };
 };
@@ -185,7 +186,9 @@ extern "C" int __attribute__ ((noinline)) edgeset_apply_pull_parallel_from_verte
 	barrier.sync();
         //pr_dbg("%i: on update edges %i\n", bsg_id, tag_c);
   bsg_cuda_print_stat_start(tag_c);
+  bsg_saif_start();
 	edgeset_apply_pull_parallel_from_vertexset(in_indices, in_neighbors, frontier, updateEdge(), V, E, block_size_x);
+  bsg_saif_end();
   bsg_cuda_print_stat_end(tag_c);
 	barrier.sync();
 	return 0;
@@ -194,7 +197,9 @@ extern "C" int __attribute__ ((noinline)) edgeset_apply_pull_parallel_from_verte
  extern "C" int __attribute__ ((noinline)) edgeset_apply_push_parallel_from_vertexset_call(int *out_indices, int *out_neighbors, int *frontier, int V, int E, int block_size_x, int tag_c) {
 	barrier.sync(); 
   bsg_cuda_print_stat_start(tag_c);
+  bsg_saif_start();
 	edgeset_apply_push_parallel_from_vertexset(out_indices, out_neighbors, frontier, updateEdge(), V, E, block_size_x);
+  bsg_saif_end();
   bsg_cuda_print_stat_end(tag_c);
 	barrier.sync();
 	return 0;
