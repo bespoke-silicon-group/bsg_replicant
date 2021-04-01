@@ -50,7 +50,9 @@ awsbwhal::MemoryManager::alloc(size_t size)
         const size_t pad = (mod_size > 0) ? (mAlignment - mod_size) : 0;
         size += pad;
 
-        std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #ifdef _MMAN_MUTEX_
+          std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #endif
         for (PairList::iterator i = mFreeBufferList.begin(), e = mFreeBufferList.end(); i != e; ++i) {
                 if (i->second < size)
                         continue;
@@ -74,7 +76,9 @@ awsbwhal::MemoryManager::alloc(size_t size)
 void
 awsbwhal::MemoryManager::free(uint64_t buf)
 {
-        std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #ifdef _MMAN_MUTEX_
+          std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #endif
         PairList::iterator i = find(buf);
         if (i == mBusyBufferList.end())
                 return;
@@ -134,7 +138,9 @@ awsbwhal::MemoryManager::find(uint64_t buf)
 void
 awsbwhal::MemoryManager::reset()
 {
-        std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #ifdef _MMAN_MUTEX_
+          std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #endif
         mFreeBufferList.clear();
         mBusyBufferList.clear();
         mFreeBufferList.push_back(std::make_pair(mStart, mSize));
@@ -144,7 +150,9 @@ awsbwhal::MemoryManager::reset()
 std::pair<uint64_t, uint64_t>
 awsbwhal::MemoryManager::lookup(uint64_t buf)
 {
-        std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #ifdef _MMAN_MUTEX_
+          std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #endif
         PairList::iterator i = find(buf);
         if (i != mBusyBufferList.end())
                 return *i;
@@ -173,7 +181,9 @@ awsbwhal::MemoryManager::reserve(uint64_t base, size_t size)
         const size_t pad = (mod_size > 0) ? (mAlignment - mod_size) : 0;
         size += pad;
 
-        std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #ifdef _MMAN_MUTEX_
+          std::lock_guard<std::mutex> lock(mMemManagerMutex);
+        #endif
         for (PairList::iterator i = mFreeBufferList.begin(), e = mFreeBufferList.end(); i != e; ++i) {
                 if (i->second < size)
                         continue;

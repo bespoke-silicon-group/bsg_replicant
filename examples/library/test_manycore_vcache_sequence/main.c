@@ -33,7 +33,6 @@
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_config_pod.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
@@ -118,7 +117,7 @@ int test_manycore_vcache_sequence() {
                                         bsg_pr_test_info("\n%s: mismatch @ index %d: "
                                                          "wrote 0x%08" PRIx32 " -- "
                                                          "read 0x%08" PRIx32 ": @ 0x%08" PRIx32 "\n",
-                                                         __func__, i, i, write_data, read_data,
+                                                         __func__, i, write_data, read_data,
                                                          hb_mc_npa_get_epa(&npa));
                                 }
                         

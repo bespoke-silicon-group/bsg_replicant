@@ -33,7 +33,6 @@
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_config_pod.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>

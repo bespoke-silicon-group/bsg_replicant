@@ -33,7 +33,6 @@
 #include "test_manycore_parameters.h"
 
 #include <stdio.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
@@ -166,7 +165,7 @@ int test_manycore_eva () {
                         tgt_epa = rand() % DRAM_EPA_SIZE; // Small, but we'll deal.
 
                         tgt_x = (rand() % (dim_x - 1)) + origin_x;
-                        tgt_y = hb_mc_config_get_dram_y(config);
+                        // tgt_y = hb_mc_config_get_dram_y(config);
 
                         eva =   (  (tgt_epa & DRAM_STRIPE_MASK)
                                  | (tgt_x << dram_x_offset)

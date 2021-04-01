@@ -31,7 +31,6 @@
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_vcache.h>
 #include <stdio.h>
-#include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
@@ -121,7 +120,7 @@ int test_manycore_dram_read_write() {
                                 if (err != HB_MC_SUCCESS) {
                                         bsg_pr_err("%s: failed to read A[%d] "
                                                    "from DRAM coord(%d,%d) @ 0x%08" PRIx32 "\n",
-                                                   i,
+                                                   __func__, i,
                                                    hb_mc_coordinate_get_x(dram_coord),
                                                    hb_mc_coordinate_get_y(dram_coord),
                                                    BASE_ADDR + i);
