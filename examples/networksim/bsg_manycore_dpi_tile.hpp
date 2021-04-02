@@ -4,6 +4,7 @@
 #include <cinttypes>
 #include <bsg_manycore.h>
 #include <bsg_manycore_npa.h>
+#include <bsg_manycore_eva.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_packet.h>
 
@@ -17,6 +18,24 @@
 #include <utility>
 #include <unistd.h>
 
+// These two macro definitions are similar to those in
+// bsg_manycore_tile.h. The RTL tile does not define a CSR for
+// changing the EVA map, so we do it here!
+#define HB_MC_TILE_EPA_CSR_EVA_MAP_OFFSET HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET + 4
+#define HB_MC_TILE_EPA_CSR_EVA_MAP                                      \
+        EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_EVA_MAP_OFFSET)
+
+// Add new mappings here:
+// Enum for EVA Map. Write this value to the EVA CSR to change EVA maps
+typedef enum __bsg_dpi_tile_eva_map_id_t {
+        BSG_DPI_TILE_EVA_MAP_ID_DEFAULT = 0,
+        BSG_DPI_TILE_EVA_MAP_ID_TOPLRBOTRL = 1,
+        BSG_DPI_TILE_EVA_MAP_ID_MAX = BSG_DPI_TILE_EVA_MAP_ID_TOPLRBOTRL + 1,
+} bsg_dpi_tile_eva_map_id_t;
+
+hb_mc_eva_map_t * bsg_dpi_tile_eva_maps[] =
+        {[BSG_DPI_TILE_EVA_MAP_ID_DEFAULT] = &default_map,
+         [BSG_DPI_TILE_EVA_MAP_ID_TOPLRBOTRL] = &toplrbotrl_map};
 
 typedef enum __bsg_dpi_tile_packet_op_t {
         DPI_PACKET_OP_REMOTE_LOAD    = 0,
@@ -151,7 +170,6 @@ public:
                 char *map_name = new char[bufsz];
 
                 snprintf(mc_name, bufsz, "Manycore Config @ Tile (X:%d,Y:%d)", me.x, me.y);
-                snprintf(map_name, bufsz, "EVA Map @ Tile (X:%d,Y:%d)", me.x, me.y);
                 mc.name = mc_name;
 
                 // Technically a CSR, set by the host.
@@ -170,11 +188,12 @@ public:
                 mc.config.vcache_block_words = vcache_block_words_p;
                 mc.config.vcache_stripe_words = vcache_stripe_words_p;
 
-                eva_map.eva_map_name = map_name;
+                // Initialize the EVA Map to default
+                eva_map.eva_map_name = default_map.eva_map_name;
                 eva_map.priv = (const void *)(&origin);
-                eva_map.eva_to_npa = default_eva_to_npa;
-                eva_map.eva_size = default_eva_size;
-                eva_map.npa_to_eva  = default_npa_to_eva;
+                eva_map.eva_to_npa = default_map.eva_to_npa;
+                eva_map.eva_size = default_map.eva_size;
+                eva_map.npa_to_eva = default_map.npa_to_eva;
 
                 // Insert this tile into the static tile dictionary.
                 tiles[key()] = this;
@@ -188,7 +207,6 @@ public:
         ~BsgDpiTile(){
                 delete dmem;
                 delete icache;
-                delete eva_map.eva_map_name;
                 delete mc.name;
                 for(reg_id_t id = 0; id < max_reg_id; ++id){
                         delete reorder_buf[id].second;
@@ -614,7 +632,7 @@ private:
         }
 
         bool epa_is_csr(hb_mc_epa_t addr){
-                return epa_in_range(addr, HB_MC_TILE_EPA_CSR_BASE, HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET + 4);
+                return epa_in_range(addr, HB_MC_TILE_EPA_CSR_BASE, HB_MC_TILE_EPA_CSR_EVA_MAP_OFFSET + 4);
         }
 
         bool epa_is_epa(hb_mc_epa_t addr){
@@ -898,6 +916,23 @@ private:
                 case HB_MC_TILE_EPA_CSR_DRAM_ENABLE:
                         mc.dram_enabled = 1;
                         csr_name = "CSR DRAM Enable";
+                        break;
+                case HB_MC_TILE_EPA_CSR_EVA_MAP:
+                        if(data >= BSG_DPI_TILE_EVA_MAP_ID_MAX){
+                                bsg_pr_err("Tile (X:%d,Y:%d) @ %lu -- %s: "
+                                           "Unknown EVA Map %u\n",
+                                           me.x, me.y, get_cycle(), __func__, data);
+                                exit(1);
+                        }
+                        bsg_pr_info("Tile (X:%d,Y:%d) @ %lu -- %s: "
+                                    "Set EVA map to %s\n",
+                                    me.x, me.y, get_cycle(), __func__,
+                                    bsg_dpi_tile_eva_maps[data]->eva_map_name),
+                        eva_map.eva_map_name = bsg_dpi_tile_eva_maps[data]->eva_map_name;
+                        eva_map.eva_to_npa = bsg_dpi_tile_eva_maps[data]->eva_to_npa;
+                        eva_map.eva_size = bsg_dpi_tile_eva_maps[data]->eva_size;
+                        eva_map.npa_to_eva = bsg_dpi_tile_eva_maps[data]->npa_to_eva;
+                        csr_name = "CSR EVA Map";
                         break;
                 default:
                         csr_name = "CSR EPA Unknown";
