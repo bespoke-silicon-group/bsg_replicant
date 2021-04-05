@@ -39,20 +39,23 @@
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 ###############################################################################
 
+CURRENT_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
-CURRENT_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
-GRAPHIT_PATH = $(CURRENT_PATH)/../graphit-new
+GRAPHIT_PATH = $(REPLICANT_PATH)/../graphit-new
 
 GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
-
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
 KERNEL_NAME = pr_nibble
+
+VERSIONS = hybrid
+DEFAULT_VERSION := hybrid
+KERNEL_DEFAULT 	:= kernel/$(DEFAULT_VERSION)/kernel.cpp
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -69,7 +72,6 @@ FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS) 
 
-HOST_CXX = /mnt/users/ssd0/homes/eafurst/research/gcc-build/bin/g++ 
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -93,10 +95,12 @@ include $(EXAMPLES_PATH)/link.mk
 
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
-BSG_MANYCORE_KERNELS = kernel.riscv
+BSG_MANYCORE_KERNELS = kernel.riscv 
 
 kernel.rvo: RISCV_CXX = $(RISCV_GXX)
 kernel.riscv: kernel.rvo
+
+%/kernel.rvo: RISCV_CXX = $(RISCV_GXX)
 
 # Tile Group Dimensions
 TILE_GROUP_DIM_X = 16
@@ -108,6 +112,9 @@ RISCV_INCLUDES += -I$(REPLICANT_PATH)/examples/graphit/test_pr_nibble/kernel/inc
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
+%/kernel.riscv: crt.rvo bsg_set_tile_x_y.rvo bsg_tile_config_vars.rvo main.rvo %/kernel.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT)
+	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(RISCV_LDFLAGS) $(filter %.rvo,$^) -o $@
+
 ###############################################################################
 # Execution flow
 #
@@ -116,12 +123,36 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) -g $(GRAPH_PATH)
+#C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) -g $(GRAPH_PATH)
+C_ARGS ?= $(KERNEL_NAME) -g $(GRAPH_PATH)
 
 SIM_ARGS ?=
 
 # Include platform-specific execution rules
 include $(EXAMPLES_PATH)/execution.mk
+
+HOST_TARGET := $(TEST_NAME).profile
+
+$(VERSIONS): %: kernel/%/$(HOST_TARGET).log
+
+ALIASES = vanilla_stats.csv vcache_stats.csv
+$(ALIASES): $(HOST_TARGET).log ;
+$(HOST_TARGET).log: kernel.riscv $(HOST_TARGET)
+	./$(HOST_TARGET) $(SIM_ARGS) +c_args="kernel.riscv $(DEFAULT_VERSION) $(C_ARGS)" 2>&1 | tee $@  
+
+
+KERNEL_ALIASES = $(foreach a,$(ALIASES),kernel/%/$a)
+.PRECIOUS: $(KERNEL_ALIASES)
+$(KERNEL_ALIASES): kernel/%/$(HOST_TARGET).log ;
+kernel/%/$(HOST_TARGET).log: kernel/%/kernel.riscv $(HOST_TARGET)
+	$(eval EXEC_PATH   := $(patsubst %/,%,$(dir $@)))
+	$(eval KERNEL_PATH := $(CURRENT_PATH)/$(EXEC_PATH))
+	$(eval _VERSION    := $(notdir $(EXEC_PATH)))
+	cd $(EXEC_PATH) && \
+	$(CURRENT_PATH)/$(HOST_TARGET) $(SIM_ARGS) +c_args="$(KERNEL_PATH)/kernel.riscv $(_VERSION) $(C_ARGS)" \
+		2>&1 | tee $(notdir $a)
+
+versions: $(foreach v,$(VERSIONS),kernel/$v/$(HOST_TARGET).log)
 
 ###############################################################################
 # Regression Flow
@@ -144,8 +175,11 @@ help:
 
 print-%  : ; @echo $* = $($*)
 
+version.clean:
+	rm -rf kernel/*/*{.ucli,.csv,.log,.rvo,.riscv,.vpd,.key,.dis,.ll,.ll.s}
+
 .PHONY: clean
 
-clean:
+clean: version.clean
 
 
