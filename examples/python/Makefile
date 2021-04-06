@@ -66,7 +66,7 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 CDEFINES   += $(DEFINES)
 CXXDEFINES += $(DEFINES)
 
-FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 
+FLAGS     = -g -Wall $(shell python3-config --cflags) -O1 -fPIC
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS) 
 LDFLAGS  += $(shell python3-config --ldflags)

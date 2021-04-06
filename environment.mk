@@ -49,6 +49,7 @@ HARDWARE_PATH    := $(CL_DIR)/hardware
 LIBRARIES_PATH   := $(CL_DIR)/libraries
 MACHINES_PATH    := $(CL_DIR)/machines
 EXAMPLES_PATH    := $(CL_DIR)/examples
+SHELL            := $(shell which bash)
 
 # Check if we are running inside of the BSG Bladerunner repository by searching
 # for project.mk. If project.mk is found, then we are and we should use
