@@ -6,7 +6,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 from itertools import chain
 
-df = pd.read_csv(sys.argv[1], sep="\s+")
+df = pd.read_csv(sys.argv[1], sep="\s+", names =["Allocation","Stripe Size (Words)","Cache Response Elements","Cycles"])
 df["Cycles"] = df.Cycles.map(int)
 
 df = df.set_index(["Stripe Size (Words)", "Cache Response Elements", "Allocation"]).unstack()
