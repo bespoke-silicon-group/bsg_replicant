@@ -43,6 +43,9 @@
 #ifndef CREDIT_ALLOCATION
 #define CREDIT_ALLOCATION 32
 #endif
+#ifndef CACHE_HASH_TYPE
+#define CACHE_HASH_TYPE BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL
+#endif
 
 uint32_t get_credit_alloc(uint32_t y,uint32_t x){
         uint32_t allocs[8][16];
@@ -135,8 +138,8 @@ int main(int argc, char ** argv) {
 
         stripe = hb_mc_config_get_vcache_stripe_words(cfg);
 
-        tg.x = dim.x;
-        tg.y = dim.y;
+        tg.x = 1;
+        tg.y = 1;
 
         max.x = origin.x + tg.x - 1;
         max.y = origin.y + tg.y - 1;
@@ -187,7 +190,7 @@ int main(int argc, char ** argv) {
         }
 
         // Set EVA Map on each tile
-        bsg_dpi_tile_eva_map_id_t map = BSG_DPI_TILE_EVA_MAP_ID_TOPLRBOTRL;
+        bsg_dpi_tile_eva_map_id_t map = CACHE_HASH_TYPE;
         for(hb_mc_idx_t y_i = origin.y; y_i <= max.y; ++y_i){
                 for(hb_mc_idx_t x_i = origin.x; x_i <= max.x; ++x_i){
                         npa.x = x_i;
