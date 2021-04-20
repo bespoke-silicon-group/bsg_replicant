@@ -13,16 +13,16 @@ inline void host_pr_calc(std::vector<float> & p, std::vector<float> & old_rank, 
     ofstream ofile;
     ofile.open (fname);
     for(int i = 0; i < iter; i++) {
-        //std::memcpy(new_rank, old_rank, sizeof(float)*edges.num_nodes());
-	    //new_rank = old_rank;
         new_rank.assign(old_rank.begin(), old_rank.end());
         //print out iteration and size:
         int num_items = std::count(frontier.begin(), frontier.end(), 1);
         std::cerr << "on iteration: " << i << " with frontier size: " << num_items << std::endl;
         //update_self
         for(int v = 0; v < g.num_nodes(); v++) {
-            p[v] += (2.0 * alpha) / (1.0  + alpha) * old_rank[v];
-            new_rank[v] = (float) 0.0 ;
+						if(frontier[v]) {
+            	p[v] += (2.0 * alpha) / (1.0  + alpha) * old_rank[v];
+            	new_rank[v] = (float) 0.0 ;
+						}
         }
         //update edges
         for(int d = 0; d < g.num_nodes(); d++) {
@@ -35,9 +35,6 @@ inline void host_pr_calc(std::vector<float> & p, std::vector<float> & old_rank, 
                 }
             }
         }
-        //old_rank.swap(new_rank);
-        //std::memcpy(old_rank, new_rank, sizeof(float)*edges.num_nodes());
-        //old_rank = new_rank;
         old_rank.assign(new_rank.begin(), new_rank.end());
         //update frontier
         for(int v = 0; v < g.num_nodes(); v++) {
