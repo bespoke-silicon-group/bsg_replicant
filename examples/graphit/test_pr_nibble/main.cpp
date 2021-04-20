@@ -34,11 +34,11 @@ int launch(int argc, char ** argv){
   std::string ucode_path = input.getRISCVFile();
 
   int iter = 0;
-  // std::string iterstrbase = "iteration-";
-  // auto pos = ucode_path.find(iterstrbase);
-  // auto iterstr = ucode_path.substr(pos+iterstrbase.size(), std::string::npos);
-  // std::stringstream ss(iterstr);
-  // ss >> iter;
+  std::string iterstrbase = "iteration-";
+  auto pos = ucode_path.find(iterstrbase);
+  auto iterstr = ucode_path.substr(pos+iterstrbase.size(), std::string::npos);
+  std::stringstream ss(iterstr);
+  ss >> iter;
   std::cerr << "iteration: " << iter << std::endl;
 
   int version = 0; //default to vertex pull
@@ -84,7 +84,6 @@ int launch(int argc, char ** argv){
   float epsilon = ((float) 1e-06) ;
   int start_vertex = ROOT;
   Vector<int32_t> frontier = Vector<int32_t>(hammerblade::builtin_getVerticesHB(edges));
-  //Vector<int32_t> next_frontier = Vector<int32_t>(hammerblade::builtin_getVerticesHB(edges));
 
   std::vector<int32_t> hfrontier(edges.num_nodes(), 0);
   std::vector<float> p(edges.num_nodes(), (float) 0.0);
@@ -122,12 +121,7 @@ int launch(int argc, char ** argv){
 
   std::cerr << "start of while loop\n";
   int tag_c = 0;
-  //double host_rank[edges.num_nodes()];
-  //ofstream prog_file;
-  //prog_file.open("./progress.txt");
-  //prog_file << "starting computation w/ root vertex: " << start_vertex << std::endl;
   //while ( builtin_getVertexSetSizeHB(frontier, edges.num_nodes()) != 0) 
-  //while ( iter < 16) 
   for(int i = 0; i < 1; i++)
   {
     int f_sz = 0;
@@ -136,10 +130,10 @@ int launch(int argc, char ** argv){
       case 0: //vertex pull
 	    std::cerr << "pull kernel\n";
     	std::cerr << "run update self vertex kernel\n";
-    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {edges.num_nodes(), tag_c});
+    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {frontier.getAddr(), edges.num_nodes(), tag_c});
     	device->runJobs();
     	tag_c++;
-    	std::cerr << "run update edges kernel on iter : " << iter << "\n";
+ 			std::cerr << "run update edges kernel on iter : " << iter << "\n";
       device->enqueueJob("edgeset_apply_pull_parallel_from_vertexset_call", hb_mc_dimension(X,Y),{edges.getInIndicesAddr() , edges.getInNeighborsAddr(), frontier.getAddr(), edges.num_nodes(), edges.num_edges(), edges.num_nodes(), tag_c});
     	device->runJobs();
       tag_c++;
@@ -154,25 +148,25 @@ int launch(int argc, char ** argv){
       case 1: //vertex push
 	    std::cerr << "push kernel\n";
     	std::cerr << "run update self vertex kernel\n";
-    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {edges.num_nodes(), tag_c});
+    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {frontier.getAddr(), edges.num_nodes(), tag_c});
     	device->runJobs();
     	tag_c++;
     	std::cerr << "run update edges kernel on iter : " << iter << "\n";
       device->enqueueJob("edgeset_apply_push_parallel_from_vertexset_call", hb_mc_dimension(X,Y),{edges.getOutIndicesAddr() , edges.getOutNeighborsAddr(), frontier.getAddr(), edges.num_nodes(), edges.num_edges(), edges.num_nodes(), tag_c}); 
     	device->runJobs();
       tag_c++;
-    	std::cerr << "swap arrays\n";
-   	hammerblade::swap_global_arrays<float>(new_rank_dev, old_rank_dev);
     	std::cerr << "create next frontier\n";
     	device->enqueueJob("filter_frontier_where_call", hb_mc_dimension(X,Y),{frontier.getAddr(), edges.num_nodes(), edges.num_edges(), tag_c});
     	device->runJobs();
+    	std::cerr << "swap arrays\n";
+   	  hammerblade::swap_global_arrays<float>(new_rank_dev, old_rank_dev);
       f_sz = builtin_getVertexSetSizeHB(frontier, edges.num_nodes());
       std::cerr << "size of frontier after iteration " << iter << " : " << f_sz << std::endl;
       break;
       case 2: //blocked pull
 	    std::cerr << "blocked pull kernel\n";
     	std::cerr << "run update self vertex kernel\n";
-    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {edges.num_nodes(), tag_c});
+    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {frontier.getAddr(), edges.num_nodes(), tag_c});
     	device->runJobs();
     	tag_c++;
     	std::cerr << "run update edges kernel on iter : " << iter << "\n";
@@ -191,13 +185,9 @@ int launch(int argc, char ** argv){
     tag_c++;
 
     iter++;
-    //prog_file << "finished iteration: " << iter << std::endl; 
   }
   std::cerr << "*******end of program********\n";
-  //prog_file << "*******end of program********\n";
   std::cerr << "took: " << iter << " iterations to complete\n";
-  //prog_file << "took: " << iter << " iterations to complete\n";
-  //prog_file.close();
   if(VERIFY) {
     ofstream ver_file;
     ver_file.open("./rank.txt");

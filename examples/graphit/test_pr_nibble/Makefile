@@ -52,8 +52,29 @@ GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
 KERNEL_NAME = pr_nibble
+HOST_TARGET := $(TEST_NAME).profile
 
-VERSIONS = hybrid
+BASE_VERSIONS += hybrid-update
+
+ITERATIONS := 0 1 2 3 4 5 6 7 8 9
+v-from-basev-and-iter = $1-iteration-$2
+basev-from-v          = $(word 1,$(subst -iteration-, ,$1))
+iter-from-v           = $(word 2,$(subst -iteration-, ,$1))
+
+VERSIONS := $(foreach i,$(ITERATIONS),$(foreach v,$(BASE_VERSIONS),\
+        $(call v-from-basev-and-iter,$v,$i)))
+
+VERSION-DIRS := $(foreach v,$(VERSIONS),kernel/$v)
+
+.PHONY: $(VERSION-DIRS)
+$(VERSION-DIRS): 
+	cp -r $(call basev-from-v,$@) $@
+
+.PHONY: versions bleach-versions
+versions: $(VERSION-DIRS)
+bleach-versions: 
+	rm -rf $(VERSION-DIRS)
+
 DEFAULT_VERSION := hybrid
 KERNEL_DEFAULT 	:= kernel/$(DEFAULT_VERSION)/kernel.cpp
 
@@ -131,20 +152,19 @@ SIM_ARGS ?=
 # Include platform-specific execution rules
 include $(EXAMPLES_PATH)/execution.mk
 
-HOST_TARGET := $(TEST_NAME).profile
 
 $(VERSIONS): %: kernel/%/$(HOST_TARGET).log
 
-ALIASES = vanilla_stats.csv vcache_stats.csv
+ALIASES = vanilla_stats.csv vcache_stats.csv dramsim3epoch.json dramsim3.json dramsim3.tag.json dramsim3.txt 
 $(ALIASES): $(HOST_TARGET).log ;
-$(HOST_TARGET).log: kernel.riscv $(HOST_TARGET)
+$(HOST_TARGET).log: $(HOST_TARGET) kernel.riscv 
 	./$(HOST_TARGET) $(SIM_ARGS) +c_args="kernel.riscv $(DEFAULT_VERSION) $(C_ARGS)" 2>&1 | tee $@  
 
 
 KERNEL_ALIASES = $(foreach a,$(ALIASES),kernel/%/$a)
 .PRECIOUS: $(KERNEL_ALIASES)
 $(KERNEL_ALIASES): kernel/%/$(HOST_TARGET).log ;
-kernel/%/$(HOST_TARGET).log: kernel/%/kernel.riscv $(HOST_TARGET)
+kernel/%/$(HOST_TARGET).log: $(HOST_TARGET) kernel/%/kernel.riscv 
 	$(eval EXEC_PATH   := $(patsubst %/,%,$(dir $@)))
 	$(eval KERNEL_PATH := $(CURRENT_PATH)/$(EXEC_PATH))
 	$(eval _VERSION    := $(notdir $(EXEC_PATH)))
@@ -152,7 +172,9 @@ kernel/%/$(HOST_TARGET).log: kernel/%/kernel.riscv $(HOST_TARGET)
 	$(CURRENT_PATH)/$(HOST_TARGET) $(SIM_ARGS) +c_args="$(KERNEL_PATH)/kernel.riscv $(_VERSION) $(C_ARGS)" \
 		2>&1 | tee $(notdir $a)
 
-versions: $(foreach v,$(VERSIONS),kernel/$v/$(HOST_TARGET).log)
+.PRECIOUS: %.log
+
+all-versions: $(foreach v,$(VERSIONS),kernel/$v/$(HOST_TARGET).log)
 
 ###############################################################################
 # Regression Flow
