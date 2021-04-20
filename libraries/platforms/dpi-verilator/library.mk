@@ -67,9 +67,6 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
 	ln -sf $@.1 $@
 
-platform.clean:
-	rm -f $(PLATFORM_OBJECTS)
-
 .PHONY: platform.clean
 platform.clean:
 	rm -f $(PLATFORM_OBJECTS)
