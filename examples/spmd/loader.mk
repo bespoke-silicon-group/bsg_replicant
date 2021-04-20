@@ -58,7 +58,7 @@ endif
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = $(EXAMPLES_PATH)/spmd/loader.c
 
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
 
