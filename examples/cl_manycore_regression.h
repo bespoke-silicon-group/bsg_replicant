@@ -413,4 +413,22 @@ void cosim_main(uint32_t *exit_code, char * args) {
 }
 #endif
 
+#ifdef VCS
+#define declare_test(name, entry)                               \
+    int vcs_main(int argc, char *argv[]) {                      \
+        bsg_pr_test_info("%s: Regression Test\n", name);        \
+        int rc = entry(argc, argv);                             \
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);             \
+        return rc;                                              \
+    }
+#else
+#define declare_test(name, entry)                               \
+    int main(int argc, char *argv[]) {                          \
+        bsg_pr_test_info("%s: Regression Test\n", name);        \
+        int rc = entry(argc, argv);                             \
+        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);             \
+        return rc;                                              \
+    }
+#endif
+
 #endif
