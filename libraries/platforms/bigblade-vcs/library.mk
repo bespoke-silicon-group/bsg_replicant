@@ -32,6 +32,8 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_sim
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
 
+PLATFORM_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
+
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration
 # at runtime.
@@ -39,7 +41,6 @@ include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
-
 
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler

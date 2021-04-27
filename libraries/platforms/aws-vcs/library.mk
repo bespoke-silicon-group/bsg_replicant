@@ -40,7 +40,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platfor
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
-
+PLATFORM_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
 # aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
 # features/dma/noimpl/feature.mk that simply returns
 # HB_MC_NO_IMPL for each function call.

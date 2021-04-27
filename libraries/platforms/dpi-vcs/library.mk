@@ -32,7 +32,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-vcs/bsg_manycore_simulato
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/simulation/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
-
+PLATFORM_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration
 # at runtime.

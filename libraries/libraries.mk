@@ -31,6 +31,7 @@ __BSG_LIBRARIES_MK := 1
 LIB_CSOURCES   +=
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_config_id_to_string.c
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
+LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_regression.c
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_epa.cpp
 LIB_CXXSOURCES += $(LIBRARIES_PATH)/bsg_manycore_bits.cpp
@@ -76,6 +77,7 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_request_packet.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_fifo.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_memsys.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_rom.h
+LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_regression.h
 
 # Objects that should be compiled with strict compilation flags
 LIB_STRICT_OBJECTS +=
@@ -104,10 +106,11 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES :=
 
 include $(BSG_PLATFORM_PATH)/library.mk
 
-
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL): INCLUDES := -I$(LIBRARIES_PATH)
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
+$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL): INCLUDES += -I$(BSG_PLATFORM_PATH)
+
 # We should move this from AWS (and keep the license)
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL): INCLUDES += -I$(AWS_FPGA_REPO_DIR)/SDAccel/userspace/include
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL): CFLAGS    += -std=c11 -fPIC -D_GNU_SOURCE $(INCLUDES) -D_BSD_SOURCE
