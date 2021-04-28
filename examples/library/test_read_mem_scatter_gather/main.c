@@ -26,7 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <bsg_manycore_errno.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_printing.h>
@@ -126,7 +126,7 @@ static int compare(void)
         }
 }
 
-static int run_tests(void)
+static int run_tests(int argc, char *argv[])
 {
         int err, rc = HB_MC_FAIL;
 
@@ -157,15 +157,4 @@ done:
 
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info(TEST_NAME " Regression Test \n");
-        int rc = run_tests();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main(TEST_NAME, run_tests);
