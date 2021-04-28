@@ -29,7 +29,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore.h>
 #include <inttypes.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #define TEST_NAME "test_manycore_init"
 
@@ -103,7 +103,7 @@ static struct test tests [] = {
 };
 
 static
-int test_manycore_init(void)
+int test_manycore_init(int argc, char *argv[])
 {
     int testno, fail = 0, err;
 
@@ -166,15 +166,5 @@ int test_manycore_init(void)
     
     return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
 
-        bsg_pr_test_info(TEST_NAME " Regression Test \n");
-        int rc = test_manycore_init();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main(TEST_NAME, test_manycore_init);
