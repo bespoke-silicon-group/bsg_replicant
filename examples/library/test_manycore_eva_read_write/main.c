@@ -31,7 +31,7 @@
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_tile.h>
 #include <inttypes.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include "../test_manycore_eva/test_manycore_parameters.h"
 
 #define TEST_NAME "test_manycore_eva_read_write"
@@ -216,7 +216,7 @@ int test_eva_srwr(hb_mc_manycore_t *mc, hb_mc_eva_map_t *map, hb_mc_coordinate_t
         return HB_MC_SUCCESS;
 }
 
-int test_manycore_eva_read_write () {
+int test_manycore_eva_read_write (int argc, char *argv[]) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL, i;
         uint32_t write_data[DATA_WORDS], read_data[DATA_WORDS] = {0};
@@ -333,15 +333,4 @@ cleanup:
         return r;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info(TEST_NAME " Regression Test \n");
-        int rc = test_manycore_eva_read_write();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main(TEST_NAME, test_manycore_eva_read_write);
