@@ -68,10 +68,6 @@ CXXFLAGS += -std=gnu++11 $(FLAGS)
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
 
-# Specify any header file dependencies
-main.o: INCLUDES += -I$(EXAMPLES_PATH)
-main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
-
 ###############################################################################
 # Host code link flags and flow
 ###############################################################################
