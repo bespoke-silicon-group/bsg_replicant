@@ -40,7 +40,7 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_printing.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 
 //TODO(sasha): Make this const once accessor api is fixed in bsg_manycore_packet
@@ -67,7 +67,7 @@ void response_packet_to_array(/*const*/ hb_mc_response_packet_t *pack, /*out*/ u
         *arr++ = hb_mc_response_packet_get_data (pack);
 }
 
-int test_manycore_packets() {
+int test_manycore_packets(int argc, char *argv[]) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err;
 
@@ -140,7 +140,7 @@ int test_manycore_packets() {
         hb_mc_request_packet_set_addr (&req1, addr);
 
         request_packet_to_array(&req1, actual);
-        if(compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
+        if(hb_mc_compare_results(8, req_desc, req_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
 
         /************************************/
@@ -184,7 +184,7 @@ int test_manycore_packets() {
         bsg_pr_test_info("Comparing to expected read packet:\n");
 
         response_packet_to_array(&res, actual);
-        if(compare_results(4, res_desc, res_expected, actual) == HB_MC_FAIL)
+        if(hb_mc_compare_results(4, res_desc, res_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
 
         /*******/
@@ -194,15 +194,4 @@ int test_manycore_packets() {
         return HB_MC_SUCCESS;   
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("%s Regression Test \n", basename(__FILE__));
-        int rc = test_manycore_packets();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main(basename(__FILE__), test_manycore_packets);
