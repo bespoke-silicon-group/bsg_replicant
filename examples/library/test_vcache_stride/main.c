@@ -34,14 +34,14 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <bsg_manycore_config_pod.h>
 
 #define STRIDE_SIZE 1024
 #define DRAM_BASE 0x0000
 #define NUM_STRIDES 16
 
-int test_vcache_stride() {
+int test_vcache_stride(int argc, char *argv[]) {
         int rc;
         hb_mc_manycore_t mc = HB_MC_MANYCORE_INIT;
         const hb_mc_config_t *config;
@@ -120,14 +120,4 @@ int test_vcache_stride() {
         return HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_vcache_stride Regression Test \n");
-        int rc = test_vcache_stride();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_vcache_stride", test_vcache_stride);
