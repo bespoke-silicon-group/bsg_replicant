@@ -35,7 +35,7 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_printing.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #include <inttypes.h>
 #include <bsg_manycore.h>
@@ -55,7 +55,7 @@ static hb_mc_npa_t make_npa(hb_mc_idx_t x, hb_mc_idx_t y, hb_mc_epa_t addr)
     return npa;
 }
 
-int test_vcache_simplified() {
+int test_vcache_simplified(int argc, char *argv[]) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL;
 
@@ -150,15 +150,4 @@ cleanup:
         return r;               
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test vcache simplified Regression Test \n");
-        int rc = test_vcache_simplified();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main("test_vcache_simplified", test_vcache_simplified);
