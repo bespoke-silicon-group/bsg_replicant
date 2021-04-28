@@ -32,7 +32,7 @@
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_loader.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #include <stdint.h>
 #include <sys/stat.h>
@@ -212,17 +212,4 @@ int test_symbol_to_eva (int argc, char **argv) {
         return r;
 }
 
-
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_symbol_to_eva Regression Test \n");
-        int rc = test_symbol_to_eva(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
-
+declare_program_main("test_symbol_to_eva", test_symbol_to_eva);
