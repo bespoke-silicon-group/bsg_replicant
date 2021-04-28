@@ -32,7 +32,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #define NUM_TESTS 32
 
@@ -154,7 +154,7 @@ int test_address(hb_mc_manycore_t *mc, hb_mc_epa_t addr, T data, hb_mc_idx_t x, 
         return HB_MC_SUCCESS;
 }
 
-int test_vcache_flush() {
+int test_vcache_flush(int argc, char *argv[]) {
         int rc, i;
         hb_mc_manycore_t mc = HB_MC_MANYCORE_INIT;
         const hb_mc_config_t *config;
@@ -235,14 +235,4 @@ int test_vcache_flush() {
         return HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_vcache_flush Regression Test \n");
-        int rc = test_vcache_flush();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_vcache_flush", test_vcache_flush);
