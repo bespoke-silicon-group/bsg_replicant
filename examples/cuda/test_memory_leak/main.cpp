@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <math.h>
 
 #define ALLOC_NAME "default_allocator"
@@ -130,14 +130,4 @@ int kernel_memory_leak (int argc, char **argv) {
         return mismatch ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info("test_memory_leak Regression Test\n");
-        int rc = kernel_memory_leak(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main("test_memory_leak", kernel_memory_leak);
