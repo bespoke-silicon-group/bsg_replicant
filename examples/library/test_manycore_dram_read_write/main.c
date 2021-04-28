@@ -40,7 +40,7 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_printing.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 
 #define TEST_NAME "test_manycore_dram_read_write"
@@ -48,7 +48,7 @@
 #define ARRAY_LEN  4096
 #define BASE_ADDR HB_MC_VCACHE_EPA_BASE
 
-int test_manycore_dram_read_write() {
+int test_manycore_dram_read_write(int argc, char *argv[]) {
         /********/
         /* INIT */
         /********/
@@ -155,15 +155,4 @@ cleanup:
         return r;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info(TEST_NAME " Regression Test \n");
-        int rc = test_manycore_dram_read_write();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main(TEST_NAME, test_manycore_dram_read_write);
