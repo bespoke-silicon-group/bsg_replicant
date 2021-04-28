@@ -28,7 +28,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_mmio.h>
 #include <inttypes.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #define array_size(x)                           \
         (sizeof(x)/sizeof(x[0]))
@@ -46,7 +46,7 @@ void print_config(hb_mc_manycore_t *manycore)
 }
 
 static
-int test_manycore_compile(void)
+int test_manycore_compile(int argc, char *argv[])
 {
         int rc;
         hb_mc_manycore_t manycore;
@@ -65,13 +65,5 @@ int test_manycore_compile(void)
         print_config(&manycore);
         return 0;
 }
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info("test_manycore_compile Regression Test \n");
-        int rc = test_manycore_compile();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+
+declare_program_main("test_manycore_compile", test_manycore_compile);
