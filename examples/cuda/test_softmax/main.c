@@ -36,7 +36,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <stdio.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <math.h>
 
 #define ALLOC_NAME "default_allocator"
@@ -183,15 +183,4 @@ int kernel_softmax(int argc, char **argv)
         return HB_MC_FAIL;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info("test_softmax Regression Test\n");
-        int rc = kernel_softmax(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
-
+declare_program_main("test_softmax", kernel_softmax);
