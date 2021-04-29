@@ -32,7 +32,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_sim
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
 
-PLATFORM_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
+PLATFORM_REGRESSION_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
 
 # The aws-vcs platform supports simulation DMA on certain
 # machines. Support is determined by the memory system configuration
@@ -42,21 +42,25 @@ include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
-$(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/dpi-verilator
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace/
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/
-$(PLATFORM_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test/
+PLATFORM_REGRESSION_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_REGRESSION_CXXSOURCES))
+PLATFORM_REGRESSION_OBJECTS += $(patsubst %c,%o,$(PLATFORM_REGRESSION_CSOURCES))
 
-$(PLATFORM_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
-$(PLATFORM_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
-$(PLATFORM_OBJECTS): LDFLAGS   = -fPIC
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/dpi-verilator
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace/
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test/
+
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -DVERILATOR $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -fPIC
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)
 
 # Mirror the extensions linux installation in /usr/lib provides so
 # that we can use -lbsg_manycore_runtime
@@ -66,15 +70,23 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1: %: %.0
 	ln -sf $@.0 $@
 
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1: %: %.0
+	ln -sf $@.0 $@
+
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
 	ln -sf $@.1 $@
 
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so: %: %.1
 	ln -sf $@.1 $@
 
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so: %: %.1
+	ln -sf $@.1 $@
+
 platform.clean:
 	rm -f $(PLATFORM_OBJECTS)
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1
+	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so*
+	rm -f $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so*
 
 libraries.clean: platform.clean
