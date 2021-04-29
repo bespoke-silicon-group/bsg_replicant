@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <unistd.h>
-#include "bsg_manycore_regression.h"
+#include <bsg_manycore_regression.h>
 // Given a string, determine the number of space-separated arguments
 static int get_argc(char * args){
         char *cur = args, prev=' ';
