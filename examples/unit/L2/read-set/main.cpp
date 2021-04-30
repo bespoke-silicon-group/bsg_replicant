@@ -19,7 +19,7 @@ typedef enum {
     EXE,
     POD_X,
     POD_Y,
-    NORTH_NOT_SOUTH,
+    SOUTH_NOT_NORTH,
     L2_X,
     SET,
     NARGS
@@ -30,11 +30,11 @@ static hb_mc_config_t *cfg = &mc.config;
 
 static int pod_x;
 static int pod_y;
-static int north_not_south;
+static int south_not_north;
 static int l2_x;
 static int set;
 
-static hb_mc_npa_t make_npa(int pod_x, int pod_y, int north_not_south, int l2_x, int set, unsigned way)
+static hb_mc_npa_t make_npa(int pod_x, int pod_y, int south_not_north, int l2_x, int set, unsigned way)
 {
     hb_mc_coordinate_t pod;
     pod.x = pod_x;
@@ -42,7 +42,7 @@ static hb_mc_npa_t make_npa(int pod_x, int pod_y, int north_not_south, int l2_x,
 
     hb_mc_coordinate_t l2 = hb_mc_config_pod_dram(cfg, pod, 0);
     l2.x += l2_x;
-    l2.y  = north_not_south ? hb_mc_config_pod_dram_north_y(cfg, pod) : hb_mc_config_pod_dram_south_y(cfg, pod);
+    l2.y  = south_not_north ? hb_mc_config_pod_dram_south_y(cfg, pod) : hb_mc_config_pod_dram_north_y(cfg, pod);
 
     hb_mc_npa_t addr;
     addr.x = l2.x;
@@ -54,7 +54,7 @@ static hb_mc_npa_t make_npa(int pod_x, int pod_y, int north_not_south, int l2_x,
 
 static int TestOneWay(unsigned way, const std::vector<unsigned> &w_data)
 {
-    hb_mc_npa_t addr = make_npa(pod_x, pod_y, north_not_south, l2_x, set, way);
+    hb_mc_npa_t addr = make_npa(pod_x, pod_y, south_not_north, l2_x, set, way);
     char addr_str[256];
 
     hb_mc_npa_to_string(&addr, addr_str, sizeof(addr_str));
@@ -104,13 +104,13 @@ static int Test(int argc, char *argv[])
 
     pod_x           = from_string<int>(argv[POD_X]);
     pod_y           = from_string<int>(argv[POD_Y]);
-    north_not_south = from_string<int>(argv[NORTH_NOT_SOUTH]);
+    south_not_north = from_string<int>(argv[SOUTH_NOT_NORTH]);
     l2_x            = from_string<int>(argv[L2_X]);
     set             = from_string<int>(argv[SET]);
 
     bsg_pr_test_info("Pod-X:           %2d\n", pod_x);
     bsg_pr_test_info("Pod-Y:           %2d\n", pod_y);
-    bsg_pr_test_info("North-not-South: %2d\n", north_not_south);
+    bsg_pr_test_info("South-not-North: %2d\n", south_not_north);
     bsg_pr_test_info("VCache-X:        %2d\n", l2_x);
     bsg_pr_test_info("Set:             %08x\n", set);    
     
