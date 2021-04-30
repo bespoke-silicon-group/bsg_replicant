@@ -30,7 +30,7 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_config_pod.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -198,13 +198,4 @@ cleanup:
         
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        int rc = test_loader(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main("SPMD loader", test_loader);

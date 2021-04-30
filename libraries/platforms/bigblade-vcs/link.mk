@@ -93,8 +93,8 @@ $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB: $(B
 	SYNOPSYS_SIM_SETUP=$< vlogan -work replicant_tb_top $(VLOGAN_FLAGS) -l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.exec.log
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
-LDFLAGS += -lbsg_manycore_runtime -lm
 LDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
+LDFLAGS += -lbsg_manycore_regression -lbsg_manycore_runtime -lm
 
 VCS_LDFLAGS += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
 VCS_VFLAGS  += -M -L -ntb_opts tb_timescale=1ps/1ps -lca
@@ -116,15 +116,15 @@ TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 %.saifgen %.debug: VCS_VFLAGS += -debug_pp
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
-%.debug %.profile: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+%.debug %.profile: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
 	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
-%.saifgen: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+%.saifgen: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen \
 	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
-%.exec: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+%.exec: $(TEST_OBJECTS) $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec \
 	vcs -top replicant_tb_top $(TEST_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
@@ -140,6 +140,7 @@ REGRESSION_PREBUILD += $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant
 REGRESSION_PREBUILD += $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 
 .PHONY: platform.link.clean
 platform.link.clean:

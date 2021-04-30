@@ -38,13 +38,13 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #define TEST_NAME "test_manycore_alignment"
 
 #define BASE_ADDR 0x0000
 
-int test_manycore_alignment() {
+int test_manycore_alignment(int argc, char *argv[]) {
         /********/
         /* INIT */
         /********/
@@ -302,15 +302,4 @@ cleanup:
         return r;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-        int main(int argc, char ** argv) {
-#endif
-
-                bsg_pr_test_info(TEST_NAME " Regression Test \n");
-                int rc = test_manycore_alignment();
-                bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-                return rc;
-        }
-
+declare_program_main(TEST_NAME, test_manycore_alignment);

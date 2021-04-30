@@ -65,10 +65,6 @@ CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
 
-# Specify any header file dependencies
-main.o: INCLUDES += -I$(EXAMPLES_PATH)
-main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
-
 ###############################################################################
 # Host code link flags and flow
 ###############################################################################

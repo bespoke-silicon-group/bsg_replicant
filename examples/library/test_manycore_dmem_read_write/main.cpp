@@ -41,7 +41,7 @@
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_printing.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 
 #define TEST_NAME "test_manycore_dmem_read_write"
@@ -161,7 +161,7 @@ int test_read_write(hb_mc_manycore_t *mc) {
         return HB_MC_SUCCESS;
 }
 
-int test_manycore_dmem_read_write () {
+int test_manycore_dmem_read_write (int argc, char *argv[]) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
 
         srand(0xBEEF);
@@ -194,14 +194,4 @@ cleanup:
         return r;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info(TEST_NAME " Regression Test \n");
-        int rc = test_manycore_dmem_read_write();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main(TEST_NAME, test_manycore_dmem_read_write);

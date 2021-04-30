@@ -28,7 +28,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_eva.h>
 #include <inttypes.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #include "test_manycore_parameters.h"
 
@@ -53,7 +53,7 @@ typedef enum __hb_mc_region_t{
 #define NUM_EVAS 100
 #define NUM_NPAS 100
 
-int test_manycore_eva () {
+int test_manycore_eva (int argc, char *argv[]) {
         int rc = 0, fail = 0, i = 0;
         uint8_t dram_x_offset;
         hb_mc_region_t region;
@@ -226,15 +226,4 @@ int test_manycore_eva () {
         return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_manycore_eva Regression Test \n");
-        int rc = test_manycore_eva();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main("test_manycore_eva", test_manycore_eva);

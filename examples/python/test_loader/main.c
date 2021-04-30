@@ -34,7 +34,7 @@
 #include <limits.h>
 #include <Python.h>
 #include <bsg_manycore.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 int test_python(int argc, char **argv) {
         // Initialize the interpreter
@@ -58,13 +58,4 @@ int test_python(int argc, char **argv) {
         return Py_Main(py_argc, py_argv);
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info("Python Test Loader\n");
-        int rc = test_python(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("Python Test Loader", test_python);

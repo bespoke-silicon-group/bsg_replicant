@@ -26,7 +26,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <bsg_manycore.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_printing.h>
 #include <inttypes.h>
@@ -119,14 +119,4 @@ int test_coordinate (int argc, char **argv) {
     return HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_coordinate Regression Test \n");
-        int rc = test_coordinate(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_coordinate", test_coordinate);

@@ -34,9 +34,9 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_printing.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
-int test_struct_size() {
+int test_struct_size(int argc, char *argv[]) {
         size_t sz = sizeof(hb_mc_packet_t);
         if(sz == 16){
                 return HB_MC_SUCCESS;
@@ -46,14 +46,4 @@ int test_struct_size() {
         }
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_struct_size Regression Test \n");
-        int rc = test_struct_size();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_struct_size", test_struct_size);

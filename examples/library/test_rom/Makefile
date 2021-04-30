@@ -65,8 +65,6 @@ CXXFLAGS += -std=c++11 $(FLAGS)
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Specify any header file dependencies
-main.o: INCLUDES += -I$(EXAMPLES_PATH)
-main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
 main.o: INCLUDES   += -I$(BSG_MACHINE_PATH)
 main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 

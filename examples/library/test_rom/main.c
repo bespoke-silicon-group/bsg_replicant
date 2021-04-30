@@ -25,7 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_machine.h>
 #include <inttypes.h>
@@ -221,14 +221,4 @@ cleanup:
         return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_rom Regression Test \n");
-        int rc = test_rom(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_rom", test_rom);
