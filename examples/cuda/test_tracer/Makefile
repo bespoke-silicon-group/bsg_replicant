@@ -57,7 +57,7 @@ KERNEL_NAME = tracer
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.c
 
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
+DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
 
