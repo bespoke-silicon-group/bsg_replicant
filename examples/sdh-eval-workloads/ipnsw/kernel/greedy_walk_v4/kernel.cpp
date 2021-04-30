@@ -6,8 +6,8 @@
 // before bsg_manycore.h and bsg_tile_group_barrier.h are
 // included. bsg_tiles_X and bsg_tiles_Y must also be defined for
 // legacy reasons, but they are deprecated.
-#define BSG_TILE_GROUP_X_DIM 1
-#define BSG_TILE_GROUP_Y_DIM 1
+#define BSG_TILE_GROUP_X_DIM 2
+#define BSG_TILE_GROUP_Y_DIM 2
 #define bsg_tiles_X BSG_TILE_GROUP_X_DIM
 #define bsg_tiles_Y BSG_TILE_GROUP_Y_DIM
 #include <bsg_manycore.h>
@@ -45,6 +45,7 @@ struct graph {
     int E;
 };
 
+using InnerProduct = InnerProductParallel_v1<BSG_TILE_GROUP_X_DIM, BSG_TILE_GROUP_Y_DIM>;
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,12 +80,11 @@ extern "C" {
 
 // Uncomment to turn on debugging
 //#define DEBUG_GREEDY_VCURR_TR
-//#define DEBUG_GREEDY_VIS_TR
+#define DEBUG_GREEDY_VIS_TR
 
-#define distance(v0, v1)                                                \
-    (-1 * inner_product_v3<BSG_TILE_GROUP_X_DIM, BSG_TILE_GROUP_Y_DIM>(v0, v1))
-
-    int ipnsw_greedy_search (const graph *Gs, bsg_attr_remote const float *__restrict database, const float *query, int *seen,
+    int ipnsw_greedy_search (const graph *Gs,
+                             bsg_attr_remote const float *__restrict database,
+                             const float *query, int *seen,
                              int *v_curr_o, float *d_curr_o)
     {
         float q[VSIZE];
@@ -93,51 +93,56 @@ extern "C" {
 
         memcpy(q, query, sizeof(q));
 
-        int   v_curr = V_ENTRY;
-        float d_curr = 0;
+        InnerProduct ip(database, q);
+        ip.init();
+        if (__bsg_id == 0) {
+            bsg_saif_start();
+            int   v_curr = V_ENTRY;
+            float d_curr = 0;
 
-        d_curr = distance(q, &database[v_curr*VSIZE]);
+            d_curr = -1.0 * ip.inner_product(v_curr);
 
 #if defined(DEBUG_GREEDY_VCURR_TR) || defined(DEBUG_GREEDY_VIS_TR)
-        bsg_print_int(v_curr);
-        bsg_print_float(d_curr);
+            bsg_print_int(v_curr);
+            bsg_print_float(d_curr);
 #endif // #if defined(DEBUG_GREEDY_VCURR_TR) || defined(DEBUG_GREEDY_VIS_TR)
 
-        for (int i = 0; i < NG-1; i++) {
-            struct graph G = Gs[i];
-            bool changed = true;
-            while (changed) {
-                changed = false;
-                // fetch neighbors
-                int dst_0 = G.offsets[v_curr];
-                int degree = v_curr == G.V-1 ? G.E - dst_0 : G.offsets[v_curr+1] - dst_0;
-                for (int dst_i = 0; dst_i < degree; dst_i++) {
-                    int dst = G.neighbors[dst_0+dst_i];
-                    // calc. iproduct
-                    float d = distance(q, &database[dst*VSIZE]);
+            for (int i = 0; i < NG-1; i++) {
+                struct graph G = Gs[i];
+                bool changed = true;
+                while (changed) {
+                    changed = false;
+                    // fetch neighbors
+                    int dst_0 = G.offsets[v_curr];
+                    int degree = v_curr == G.V-1 ? G.E - dst_0 : G.offsets[v_curr+1] - dst_0;
+                    for (int dst_i = 0; dst_i < degree; dst_i++) {
+                        int dst = G.neighbors[dst_0+dst_i];
+                        // calc. iproduct
+                        float d = -1.0 * ip.inner_product(dst);
 
 #if defined(DEBUG_GREEDY_VIS_TR)
-                    bsg_print_int(dst);
-                    bsg_print_float(d);
+                        bsg_print_int(dst);
+                        bsg_print_float(d);
 #endif // #if defined(DEBUG_GREEDY_VIS_TR)
 
-                    if (d < d_curr) {
-                        d_curr = d;
-                        v_curr = dst;
-                        changed = true;
+                        if (d < d_curr) {
+                            d_curr = d;
+                            v_curr = dst;
+                            changed = true;
 
 #if defined(DEBUG_GREEDY_VCURR_TR)
-                        bsg_print_int(v_curr);
-                        bsg_print_float(d_curr);
+                            bsg_print_int(v_curr);
+                            bsg_print_float(d_curr);
 #endif // #if defined(DEBUG_GREEDY_VIS_TR)
+                        }
                     }
                 }
             }
+
+            *v_curr_o = v_curr;
+            *d_curr_o = d_curr;
+            bsg_saif_end();
         }
-
-        *v_curr_o = v_curr;
-        *d_curr_o = d_curr;
-
         bsg_cuda_print_stat_end(0);
         return 0;
     }

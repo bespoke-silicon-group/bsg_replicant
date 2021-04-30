@@ -136,6 +136,38 @@ namespace ipnsw {
             return n;
         }
 
+        int grid_x() const {
+            auto s = option("--grid-x");
+            if (!s.empty())
+                return from_string<int>(s);
+            else
+                return 1;
+        }
+
+        int grid_y() const {
+            auto s = option("--grid-y");
+            if (!s.empty())
+                return from_string<int>(s);
+            else
+                return 1;
+        }
+
+        int grp_x() const {
+            auto s = option("--group-x");
+            if (!s.empty())
+                return from_string<int>(s);
+            else
+                return 1;
+        }
+
+        int grp_y() const {
+            auto s = option("--group-y");
+            if (!s.empty())
+                return from_string<int>(s);
+            else
+                return 1;
+        }
+
         std::string ucode() const   { return _ucode; }
         std::string version() const { return _version; }
         std::string exe() const     { return _exe; }

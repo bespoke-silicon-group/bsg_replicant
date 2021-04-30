@@ -6,8 +6,8 @@
 // before bsg_manycore.h and bsg_tile_group_barrier.h are
 // included. bsg_tiles_X and bsg_tiles_Y must also be defined for
 // legacy reasons, but they are deprecated.
-#define BSG_TILE_GROUP_X_DIM 1
-#define BSG_TILE_GROUP_Y_DIM 1
+#define BSG_TILE_GROUP_X_DIM 2
+#define BSG_TILE_GROUP_Y_DIM 2
 #define bsg_tiles_X BSG_TILE_GROUP_X_DIM
 #define bsg_tiles_Y BSG_TILE_GROUP_Y_DIM
 #include <bsg_manycore.h>
@@ -38,6 +38,8 @@
 #define G_1 2
 #define G_2 1
 #define G_3 0
+
+using InnerProduct = InnerProductParallel_v1<BSG_TILE_GROUP_X_DIM, BSG_TILE_GROUP_Y_DIM>;
 
 struct graph {
     const int *offsets;
@@ -93,11 +95,6 @@ extern "C" {
 
 // Uncomment to turn on debugging
 //#define DEBUG_BEAM_SEARCH_TRAVERSED_TRACE
-//#define DEBUG_BEAM_SEARCH_INPUT
-
-#define distance(v0, v1)                                                \
-    (-1 * inner_product_v3<BSG_TILE_GROUP_X_DIM, BSG_TILE_GROUP_Y_DIM>(v0, v1))
-
 
     int ipnsw_beam_search(const graph *Gs,
                           bsg_attr_remote const float *__restrict database, const float *query, int *seen_mem,
@@ -112,78 +109,84 @@ extern "C" {
         // fetch graph and q out of memory
         struct graph G = Gs[G_0];
         float q[VSIZE];
+
+        // Pepare other tiles for parallel inner products
+        InnerProduct ip(database, q);
+
         bsg_cuda_print_stat_start(0);
         memcpy(q, query, sizeof(q));
+        ip.init();
 
-        // retrieve results from greedy walk
-        int v_curr   = *v_curr_o;
-        float d_curr = *d_curr_o;
-#ifdef DEBUG_BEAM_SEARCH_INPUT
-        bsg_print_int(v_curr);
-        bsg_print_float(d_curr);
-#endif
+        if (__bsg_id == 0) {
 
-        // initialize priority queues
-        DynHeap<std::pair<float, int>, GT> candidates(candidates_mem, 512);
-        DynHeap<std::pair<float, int>, LT> results(results_mem, 128);
+            // retrieve results from greedy walk
+            int v_curr   = *v_curr_o;
+            float d_curr = *d_curr_o;
+            //bsg_print_int(v_curr);
+            //bsg_print_float(d_curr);
 
-        candidates.push({d_curr, v_curr});
-        results.push({d_curr, v_curr});
+            // initialize priority queues
+            DynHeap<std::pair<float, int>, GT> candidates(candidates_mem, 512);
+            DynHeap<std::pair<float, int>, LT> results(results_mem, 128);
 
-        float d_worst = d_curr;
-        seen.insert(v_curr);
+            candidates.push({d_curr, v_curr});
+            results.push({d_curr, v_curr});
 
-        while (!candidates.empty()) {
-            int   v_best;
-            float d_best;
+            float d_worst = d_curr;
+            seen.insert(v_curr);
 
-            auto best = candidates.pop();
-            v_best = std::get<1>(best);
-            d_best = std::get<0>(best);
+            while (!candidates.empty()) {
+                int   v_best;
+                float d_best;
 
-            d_worst = std::get<0>(results.top());
+                auto best = candidates.pop();
+                v_best = std::get<1>(best);
+                d_best = std::get<0>(best);
+
+                d_worst = std::get<0>(results.top());
 #ifdef DEBUG_BEAM_SEARCH_TRAVERSED_TRACE
-            bsg_print_int(-v_best);
+                bsg_print_int(-v_best);
 #endif
 
-            if (d_best > d_worst) {
-                break;
-            }
+                if (d_best > d_worst) {
+                    break;
+                }
 
-            // traverse neighbors of v_best
-            int dst_0 = G.offsets[v_best];
-            int degree = v_curr == G.V-1 ? G.E - dst_0 : G.offsets[v_best+1] - dst_0;
-            for (int dst_i = 0; dst_i < degree; dst_i++) {
-                int dst = G.neighbors[dst_0+dst_i];
+                // traverse neighbors of v_best
+                int dst_0 = G.offsets[v_best];
+                int degree = v_curr == G.V-1 ? G.E - dst_0 : G.offsets[v_best+1] - dst_0;
+                for (int dst_i = 0; dst_i < degree; dst_i++) {
+                    int dst = G.neighbors[dst_0+dst_i];
 #ifdef DEBUG_BEAM_SEARCH_TRAVERSED_TRACE
-                bsg_print_int(dst);
+                    bsg_print_int(dst);
 #endif
-                if (!seen.in(dst)) {
-                    // mark as seen
-                    seen.insert(dst);
-                    float d_neib = distance(q, &database[dst*VSIZE]);
-                    d_worst = std::get<0>(results.top());
-                    // if there's room for new result or this distance is promising
-                    if ((results.size() < EF) || (d_neib < d_worst)) {
-                        // push onto candidates and results
-                        candidates.push({d_neib, dst});
-                        results.push({d_neib, dst});
+                    if (!seen.in(dst)) {
+                        // mark as seen
+                        seen.insert(dst);
+                        float d_neib = -1 * ip.inner_product(dst);
+                        d_worst = std::get<0>(results.top());
+                        // if there's room for new result or this distance is promising
+                        if ((results.size() < EF) || (d_neib < d_worst)) {
+                            // push onto candidates and results
+                            candidates.push({d_neib, dst});
+                            results.push({d_neib, dst});
 
-                        // prune down to recall
-                        if (results.size() > EF)
-                            results.pop();
+                            // prune down to recall
+                            if (results.size() > EF)
+                                results.pop();
+                        }
                     }
                 }
+
             }
 
+            //ip.exit();
+
+            int n_res = std::min(results.size(), N_RESULTS);
+            std::sort(results_mem, results_mem+results.size(), LT());
+            *n_results = n_res;
         }
-
-        int n_res = std::min(results.size(), N_RESULTS);
-        std::sort(results_mem, results_mem+results.size(), LT());
         bsg_cuda_print_stat_end(0);
-
-        *n_results = n_res;
-
         return 0;
     }
 

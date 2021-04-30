@@ -100,30 +100,17 @@ KERNEL_DEFAULT      := kernel/$(DEFAULT_VERSION)/kernel.cpp
 # END OF KERNEL-SPECIFIC RULES / START OF HOST-SPECIFIC RULES
 ################################################################################
 
-
-################################################################################
-# Define the $(HOST_TARGET), the name of the host executable to generate. The
-# cosimulation host executable will be called
-# $(HOST_TARGET).cosim. HOST_*SOURCES list the host files that should be
-# compiled and linked into the executable.
-################################################################################
-
-HOST_TARGET         := ipnsw
-HOST_CSOURCES       := 
-HOST_CXXSOURCES     += GreedyWalkResults.cpp
-HOST_INCLUDES       := -I$(CURRENT_PATH)
-
 ################################################################################
 # Include the Cosimulation host build rules (This must be included after
 # HOST_*SOURCES, HOST_TARGET, HOST_INCLUDES, etc)
 ################################################################################
-
-ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/database_music100.bin
-ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/query_music100.bin
-ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_0
-ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_1
-ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_2
-ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_3
+HOST_TARGET = ipnsw
+C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/database_music100.bin
+C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/query_music100.bin
+C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_0
+C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_1
+C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_2
+C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_3
 
 
 ################################
@@ -140,7 +127,9 @@ kernel/iproduct_ubmk-$(1)/kernel.cpp: kernel/$(IPRODUCT-BASENAME)/kernel.cpp
 	cp $$< $$@
 
 # adds arguments
-kernel/iproduct_ubmk-$(1)/$(HOST_TARGET).log: ARGS += --num-iproducts $(1)
+kernel/iproduct_ubmk-$(1)/$(HOST_TARGET).log: C_ARGS += --num-iproducts $(1)
+kernel/iproduct_ubmk-$(1)/$(HOST_TARGET).log: BSG_MANYCORE_KERNELS = kernel/iproduct_ubmk-$(1)/kernel.riscv
+kernel/iproduct_ubmk-$(1)/kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 # adds to list of iproduct u-bmk
 IPRODUCT-UBMK-VERSIONS += iproduct_ubmk-$(1)
@@ -162,7 +151,7 @@ purge-iproduct-ubmk:
 
 # collect stats for all
 iproduct-ubmk-stats: create-iproduct-ubmk
-iproduct-ubmk-stats: $(foreach v,$(IPRODUCT-UBMK-VERSIONS),kernel/$v/stats)
+iproduct-ubmk-stats: $(foreach v,$(IPRODUCT-UBMK-VERSIONS),kernel/$v/$(HOST_TARGET).exec.log)
 
 # Add to versions
 VERSIONS += $(IPRODUCT-UBMK-VERSIONS)
@@ -179,7 +168,9 @@ kernel/greedy_walk-query$(1)/kernel.cpp: kernel/$(GREEDY-WALK-BASENAME)/kernel.c
 	cp $$< $$@
 
 # adds arguments
-kernel/greedy_walk-query$(1)/$(HOST_TARGET).log: ARGS += --queries $(1)
+kernel/greedy_walk-query$(1)/$(HOST_TARGET).log: C_ARGS += --queries $(1)
+kernel/greedy_walk-query$(1)/$(HOST_TARGET).log: BSG_MANYCORE_KERNELS = kernel/iproduct_ubmk-$(1)/kernel.riscv
+kernel/greedy_walk-query$(1)/kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 # adds to list of greedy walk versions
 GREEDY-WALK-VERSIONS += greedy_walk-query$(1)
@@ -201,7 +192,7 @@ purge-greedy-walk:
 
 # collect stats for all
 greedy-walk-stats: create-greedy-walk
-greedy-walk-stats: $(foreach v,$(GREEDY-WALK-VERSIONS),kernel/$v/stats)
+greedy-walk-stats: $(foreach v,$(GREEDY-WALK-VERSIONS),kernel/$v/$(HOST_TARGET).exec.log)
 
 # Add to versions
 VERSIONS += $(GREEDY-WALK-VERSIONS)
@@ -219,7 +210,9 @@ kernel/beam_search-query$(1)/kernel.cpp: kernel/$(BEAM-SEARCH-BASENAME)/kernel.c
 	cp $$< $$@
 
 # adds arguments
-kernel/beam_search-query$(1)/$(HOST_TARGET).log: ARGS += --queries $(1)
+kernel/beam_search-query$(1)/$(HOST_TARGET).log: C_ARGS += --queries $(1)
+kernel/beam_search-query$(1)/$(HOST_TARGET).log: BSG_MANYCORE_KERNELS = kernel/beam_search-query$(1)/kernel.riscv
+kernel/beam_search-query$$(1)/kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 # adds to list of greedy walk versions
 BEAM-SEARCH-VERSIONS += beam_search-query$(1)
@@ -242,7 +235,7 @@ purge-beam-search:
 
 # collect stats for all
 beam-search-stats: create-beam-search
-beam-search-stats: $(foreach v,$(BEAM-SEARCH-VERSIONS),kernel/$v/stats)
+beam-search-stats: $(foreach v,$(BEAM-SEARCH-VERSIONS),kernel/$v/$(HOST_TARGET).exec.log)
 
 # Add to versions
 VERSIONS += $(BEAM-SEARCH-VERSIONS)
@@ -251,31 +244,32 @@ VERSIONS += $(BEAM-SEARCH-VERSIONS)
 # Continue including cosim build rules #
 ########################################
 
--include $(FRAGMENTS_PATH)/host/cosim.mk
-
-GRAPH-TOOLS := $(CURRENT_PATH)/graph-tools
+GRAPH-TOOLS := $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/graph-tools
 graphtools-dir := $(GRAPH-TOOLS)
 
 include $(GRAPH-TOOLS)/libgraphtools.mk
 
-HB-HELPERS := $(CURRENT_PATH)/hammerblade-helpers
+HB-HELPERS := $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hammerblade-helpers
+hammerblade-helpers-dir := $(HB-HELPERS)
 include $(HB-HELPERS)/libhammerblade-helpers-host.mk
 
 CXXFLAGS += $(libhammerblade-helpers-host-interface-cxxflags)
 CXXFLAGS += $(libgraphtools-interface-cxxflags)
+CXXFLAGS += -I$(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw
+CXXFLAGS += -DCOSIM
 
 LDFLAGS  += $(libhammerblade-helpers-host-interface-ldflags)
 LDFLAGS  += $(libgraphtools-interface-ldflags)
-VSOURCES += GreedyWalkResults.cpp
 
-$(HOST_TARGET): $(libhammerblade-helpers-host-interface-headers)
-$(HOST_TARGET): $(libgraphtools-interface-headers)
-$(HOST_TARGET): $(libgraphtools-interface-libraries)
-$(HOST_TARGET): GreedyWalkResults.o
-
+GreedyWalkResults.o: $(libhammerblade-helpers-host-interface-headers)
+GreedyWalkResults.o: $(libgraphtools-interface-headers)
+GreedyWalkResults.o: $(libgraphtools-interface-libraries)
 GreedyWalkResults.o: GreedyWalkResults.cpp
 GreedyWalkResults.o: GreedyWalkResults.hpp
 
+ipnsw.o: $(libhammerblade-helpers-host-interface-headers)
+ipnsw.o: $(libgraphtools-interface-headers)
+ipnsw.o: $(libgraphtools-interface-libraries)
 ipnsw.o: IO.hpp
 ipnsw.o: IPNSWGraph.hpp
 ipnsw.o: IPNSWRunner.hpp
@@ -292,6 +286,13 @@ ipnsw.o: GreedyWalkFactory.hpp
 ipnsw.o: BeamSearchFactory.hpp
 ipnsw.o: IProductUBmkFactory.hpp
 ipnsw.o: StringHelpers.hpp
+
+TEST_SOURCES = ipnsw.cpp GreedyWalkResults.cpp
+
+-include $(EXAMPLES_PATH)/compilation.mk
+-include $(EXAMPLES_PATH)/link.mk
+-include $(EXAMPLES_PATH)/execution.mk
+
 ################################################################################
 # Define the clean rules. clean calls the makefile-specific cleans, whereas
 # users can add commands and dependencies to custom.clean.
@@ -301,51 +302,4 @@ version.clean:
 	rm -rf kernel/*/{stats,pc_stats}
 
 custom.clean: version.clean
-
-clean: cosim.clean analysis.clean cudalite.clean custom.clean
-
-################################################################################
-# Define overall-goals. The all rule runs all kernel versions, and the default
-# kernel.
-################################################################################
-
-_HELP_STRING := "Makefile Rules\n"
-
-_HELP_STRING += "    default: \n"
-_HELP_STRING += "        - Run the default kernel ($KERNEL_DEFAULT) and generate all of the\n"
-_HELP_STRING += "          analysis products\n"
-default: pc_stats graphs stats
-
-_HELP_STRING += "    analysis: \n"
-_HELP_STRING += "        - Launch indpendent cosimulation executions of each kernel version.\n"
-_HELP_STRING += "          When execution finishes, it generates all the analysis products \n"
-_HELP_STRING += "          for each kernel in each respective kernel/<version_name>/ \n"
-_HELP_STRING += "          directory\n"
-analysis: $(foreach v,$(VERSIONS),kernel/$v/pc_stats kernel/$v/graphs kernel/$v/stats)
-
-_HELP_STRING += "    statistics: \n"
-_HELP_STRING += "        - Launch indpendent cosimulation executions of each kernel version.\n"
-_HELP_STRING += "          When execution finishes, it generates ONLY the parsed operation \n"
-_HELP_STRING += "          stats for each kernel in each respective kernel/<version_name>/ \n"
-_HELP_STRING += "          directory\n"
-statistics: $(foreach v,$(VERSIONS),kernel/$v/stats)
-
-_HELP_STRING += "    all: \n"
-_HELP_STRING += "        - Launch both the default and analysis target\n"
-all: analysis default
-
-.DEFAULT_GOAL = help
-_HELP_STRING += "    help: \n"
-_HELP_STRING += "        - Output a friendly help message.\n"
-help:
-	@echo -e $(HELP_STRING)
-
-# Always re-run, if asked.
-.PHONY: default analysis help
-
-# These last three lines ensure that _HELP_STRING is appended to the top of
-# whatever else comes before it.
-_HELP_STRING += "\n"
-_HELP_STRING += $(HELP_STRING)
-HELP_STRING := $(_HELP_STRING)
 

@@ -96,7 +96,7 @@ extern "C" {
 //#define DEBUG_BEAM_SEARCH_INPUT
 
 #define distance(v0, v1)                                                \
-    (-1 * inner_product_v3<BSG_TILE_GROUP_X_DIM, BSG_TILE_GROUP_Y_DIM>(v0, v1))
+    (-1 * inner_product_v4_serial(v0, v1))
 
 
     int ipnsw_beam_search(const graph *Gs,

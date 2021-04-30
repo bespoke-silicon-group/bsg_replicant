@@ -10,8 +10,8 @@ namespace ipnsw {
             int v_curr;
             float d_curr;
 
-            hb->read(runner.v_curr_dev(), &v_curr, sizeof(int));
-            hb->read(runner.d_curr_dev(), &d_curr, sizeof(float));
+            hb->read(runner.v_curr_dev(0), &v_curr, sizeof(int));
+            hb->read(runner.d_curr_dev(0), &d_curr, sizeof(float));
 
             std::cout << "Greedy walk (v_curr,d_curr) = "
                       << "(" << v_curr << "," << d_curr << ")"

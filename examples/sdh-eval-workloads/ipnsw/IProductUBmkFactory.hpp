@@ -9,9 +9,9 @@ namespace ipnsw {
             _iterations(iterations) {
         }
 
-    private:
-        IPNSWKernelRunner *_KernelRunner() const { return new IProductUBmkKernelRunner(_iterations); }
-        IPNSWResultReader *_ResultReader() const { return new IProductUBmkResultReader; }
+    protected:
+        virtual IPNSWKernelRunner *_KernelRunner() const { return new IProductUBmkKernelRunner(_iterations); }
+        virtual IPNSWResultReader *_ResultReader() const { return new IProductUBmkResultReader; }
 
         int _iterations;
     };

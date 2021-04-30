@@ -175,7 +175,7 @@ extern "C" {
         }
 
         int n_res = std::min(results.size(), N_RESULTS);
-        std::sort(results_mem, results_mem+n_res, LT());
+        std::sort(results_mem, results_mem+results.size(), LT());
         bsg_cuda_print_stat_end(0);
 
         *n_results = n_res;
