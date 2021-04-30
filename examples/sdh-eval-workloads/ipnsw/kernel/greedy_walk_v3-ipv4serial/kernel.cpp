@@ -82,7 +82,7 @@ extern "C" {
 //#define DEBUG_GREEDY_VIS_TR
 
 #define distance(v0, v1)                                                \
-    (-1 * inner_product_v3<BSG_TILE_GROUP_X_DIM, BSG_TILE_GROUP_Y_DIM>(v0, v1))
+    (-1 * inner_product_v4_serial(v0, v1))
 
     int ipnsw_greedy_search (const graph *Gs, bsg_attr_remote const float *__restrict database, const float *query, int *seen,
                              int *v_curr_o, float *d_curr_o)

@@ -15,17 +15,16 @@ namespace ipnsw {
             return "inner_product_ubmk";
         }
 
-        std::vector<hb_mc_eva_t> argv(const IPNSWRunner & runner) const {
+        virtual std::vector<hb_mc_eva_t> argv(const IPNSWRunner & runner) const {
             std::vector<hb_mc_eva_t> argv = {
                 runner.db_dev(), // database
-                runner.query_dev(), // query
+                runner.query_dev(0), // query
                 static_cast<hb_mc_eva_t>(_iterations), // number of inner products
             };
             return argv;
-        };
-        Dim gd(const IPNSWRunner &runner) const {return Dim(1,1);}
-        Dim tgd(const IPNSWRunner &runner) const {return Dim(1,1);}
+        }
 
+    protected:
         int _iterations;
     };
 }

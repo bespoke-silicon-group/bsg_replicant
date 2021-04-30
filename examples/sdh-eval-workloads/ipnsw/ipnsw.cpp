@@ -1,3 +1,4 @@
+#include "bsg_manycore_regression.h"
 #include "ipnsw.hpp"
 #include "HammerBlade.hpp"
 #include "Graph500Data.hpp"
@@ -8,6 +9,7 @@
 #include "IProductUBmkKernelRunner.hpp"
 #include "IProductUBmkResultReader.hpp"
 #include "IProductUBmkFactory.hpp"
+#include "IProductUBmkParallelFactory.hpp"
 #include "BeamSearchKernelRunner.hpp"
 #include "BeamSearchResultReader.hpp"
 #include "BeamSearchFactory.hpp"
@@ -19,8 +21,6 @@
 #include <iostream>
 #include <memory>
 
-#include "GreedyWalkResults.cpp"
-
 using namespace ipnsw;
 
 int Main(int argc, char *argv[])
@@ -31,6 +31,12 @@ int Main(int argc, char *argv[])
     std::unique_ptr<IPNSWRunner> runner;
     std::unique_ptr<IPNSWFactory> factory;
 
+    IPNSWRunnerConfig cfg;
+    cfg.grid_x() = args.grid_x();
+    cfg.grid_y() = args.grid_y();
+    cfg.grp_x()  = args.grp_x();
+    cfg.grp_y()  = args.grp_y();
+
     if (ipnsw::startswith(args.version(), "greedy_walk")) {
         factory = std::unique_ptr<IPNSWFactory>(new GreedyWalkFactory);
     } else if (ipnsw::startswith(args.version(), "beam_search")) {
@@ -39,11 +45,20 @@ int Main(int argc, char *argv[])
         /* parse the number of inner products */
         std::cout << "num inner products " << args.num_iproducts() << std::endl;
         int n_iproducts = args.num_iproducts();
-        factory = std::unique_ptr<IPNSWFactory>(new IProductUBmkFactory(n_iproducts));
+
+        bool parallel = args.version().find("parallel") != std::string::npos;
+        if (parallel) {
+            factory = std::unique_ptr<IPNSWFactory>(new IProductUBmkParallelFactory(n_iproducts));
+        } else {
+            factory = std::unique_ptr<IPNSWFactory>(new IProductUBmkFactory(n_iproducts)) ;
+        }
+
     } else if (args._version == "debug") {
         /* just for debugging */
         std::cout << "--num-iproducts=" << args.num_iproducts() << std::endl;
-        std::cout << "--queries=";
+        std::cout << "--queries=" << std::endl;
+        std::cout << "--group-x=" << args.grp_x() << std::endl;
+        std::cout << "--group-y=" << args.grp_y() << std::endl;
         auto do_queries = args.do_queries();
         for (auto q : do_queries) {
             std::cout << q << " ";
@@ -54,33 +69,10 @@ int Main(int argc, char *argv[])
         return 0;
     }
 
-    runner = std::unique_ptr<IPNSWRunner>(new IPNSWRunner(args, factory));
+    runner = std::unique_ptr<IPNSWRunner>(new IPNSWRunner(args, factory, cfg));
     runner->run();
 
     return 0;
 }
 
-#ifdef COSIM
-void cosim_main(uint32_t *exit_code, char * args) {
-    // We aren't passed command line arguments directly so we parse them
-    // from *args. args is a string from VCS - to pass a string of arguments
-    // to args, pass c_args to VCS as follows: +c_args="<space separated
-    // list of args>"
-    int argc = get_argc(args);
-    char *argv[argc];
-    get_argv(args, argc, argv);
-
-#ifdef VCS
-    svScope scope;
-    scope = svGetScopeFromName("tb");
-    svSetScope(scope);
-#endif
-    int rc = Main(argc, argv);
-    *exit_code = rc;
-    return;
-}
-#else
-int main(int argc, char ** argv) {
-    return Main(argc, argv);
-}
-#endif
+declare_program_main("IPNSW", Main);

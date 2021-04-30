@@ -34,4 +34,3 @@
 #include <typeinfo>
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_cuda.h>
-#include "../common.h"
