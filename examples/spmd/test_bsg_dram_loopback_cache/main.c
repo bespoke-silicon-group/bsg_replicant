@@ -41,7 +41,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 static hb_mc_coordinate_t get_target(hb_mc_manycore_t *mc)
 {
@@ -188,15 +188,4 @@ cleanup:
         return r;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info("test_bsg_dram_loopback_cache Regression Test \n");
-        int rc = test_loopback(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
-
+declare_program_main("test_bsg_dram_loopback_cache", test_loopback);

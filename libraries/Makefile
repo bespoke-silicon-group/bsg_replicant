@@ -70,6 +70,7 @@ _DOCSTRING += "        - Compile the BSG Manycore Runtime Libraries (libbsg_many
 _DOCSTRING += "          in BSG_PLATFORM_PATH (./$(shell realpath --relative-to . $(BSG_PLATFORM_PATH)))\n"
 build: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 build: $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0
+build: $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0
 
 _TARGETS += "clean"
 _DOCSTRING += "    clean:\n"

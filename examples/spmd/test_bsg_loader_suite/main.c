@@ -34,7 +34,7 @@
 #include <bsg_manycore_config_pod.h>
 #include <bsg_manycore_loader.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #include <sys/stat.h>
 #include <stdio.h>
@@ -656,14 +656,4 @@ int test_loader_suite (int argc, char **argv) {
         return err;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info(SUITE_NAME " Regression Test \n");
-        int rc = test_loader_suite(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
-
+declare_program_main(SUITE_NAME, test_loader_suite);

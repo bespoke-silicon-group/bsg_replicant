@@ -41,7 +41,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 
 #define MAGIC_INT    1234
 #define MAGIC_UINT   99220011
@@ -294,14 +294,4 @@ cleanup:
         return r;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-        int main(int argc, char ** argv) {
-#endif
-                bsg_pr_test_info("test_bsg_scalar_print Regression Test \n");
-                int rc = test_scalar_print(argc, argv);
-                bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-                return rc;
-        }
-
+declare_program_main("test_bsg_scalar_print", test_scalar_print);

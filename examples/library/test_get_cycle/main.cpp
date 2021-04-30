@@ -30,7 +30,7 @@
 
 #include <bsg_manycore.h>
 #include <inttypes.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <cstdint>
 
 int test_get_cycle (int argc, char **argv) {
@@ -104,14 +104,4 @@ cleanup:
         return fail ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-
-        bsg_pr_test_info("test_get_cycle Regression Test \n");
-        int rc = test_get_cycle(argc, argv);
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_get_cycle", test_get_cycle);

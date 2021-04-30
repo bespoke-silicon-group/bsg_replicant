@@ -50,10 +50,10 @@
 #include <time.h>
 #include <stdlib.h>
 #include <bsg_manycore.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_regression.h>
 #include <bsg_manycore_printing.h>
 
-static int test_printing(void)
+static int test_printing(int argc, char *argv[])
 {
         int rc;
         hb_mc_manycore_t mc = {0};
@@ -84,13 +84,4 @@ static int test_printing(void)
         return 0;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-int main(int argc, char ** argv) {
-#endif
-        bsg_pr_test_info("test_printing Regression Test\n");
-        int rc = test_printing();
-        bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-        return rc;
-}
+declare_program_main("test_printing", test_printing);

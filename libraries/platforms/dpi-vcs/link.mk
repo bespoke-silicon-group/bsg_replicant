@@ -76,7 +76,7 @@ $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/manycore_tb_top/AN.DB: $(BSG_MAC
 		-l $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vlogan.log
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
-LDFLAGS        += -lbsg_manycore_runtime -lm
+LDFLAGS        += -lbsg_manycore_regression -lbsg_manycore_runtime -lm
 LDFLAGS        += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
 
 VCS_LDFLAGS    += $(foreach def,$(LDFLAGS),-LDFLAGS "$(def)")
@@ -92,14 +92,14 @@ VCS_VFLAGS     += -msg_config=$(BSG_PLATFORM_PATH)/msg_config
 
 # The % and %.debug rules are identical. They must be separate
 # otherwise make doesn't match the latter target(s)
-%: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/manycore_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config
+%: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/manycore_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
 	vcs manycore_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
 
 %.debug: VCS_VFLAGS += -debug_pp
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
-%.debug: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/manycore_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config
+%.debug: %.o $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/manycore_tb_top/AN.DB $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/msg_config $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
 	vcs manycore_tb_top $< $(VCS_LDFLAGS) $(VCS_VFLAGS) \
 		-Mdirectory=$@.tmp -o $@ -l $@.vcs.log
