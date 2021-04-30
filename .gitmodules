@@ -1,0 +1,3 @@
+[submodule "n"]
+	path = examples/sdh-eval-workloads/ipnsw/hb-prog-eval
+	url = git@github.com:bespoke-silicon-group/hb-prog-eval
