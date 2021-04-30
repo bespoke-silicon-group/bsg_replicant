@@ -28,7 +28,9 @@
 
 namespace awsbwhal {
         class MemoryManager {
-                std::mutex mMemManagerMutex;
+                #ifdef _MMAN_MUTEX_
+                  std::mutex mMemManagerMutex;
+                #endif
                 std::list<std::pair<uint64_t, uint64_t> > mFreeBufferList;
                 std::list<std::pair<uint64_t, uint64_t> > mBusyBufferList;
                 const uint64_t mSize;
