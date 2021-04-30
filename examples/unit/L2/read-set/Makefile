@@ -1,115 +1,56 @@
-# Copyright (c) 2021, University of Washington All rights reserved.
-#
-# Redistribution and use in source and binary forms, with or without modification,
-# are permitted provided that the following conditions are met:
-#
-# Redistributions of source code must retain the above copyright notice, this list
-# of conditions and the following disclaimer.
-#
-# Redistributions in binary form must reproduce the above copyright notice, this
-# list of conditions and the following disclaimer in the documentation and/or
-# other materials provided with the distribution.
-#
-# Neither the name of the copyright holder nor the names of its contributors may
-# be used to endorse or promote products derived from this software without
-# specific prior written permission.
-#
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-# ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-# ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-# (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-# This Makefile compiles, links, and executes examples Run `make help`
-# to see the available targets for the selected platform.
-
-################################################################################
-# environment.mk verifies the build environment and sets the following
-# makefile variables:
-#
-# LIBRAIRES_PATH: The path to the libraries directory
-# HARDWARE_PATH: The path to the hardware directory
-# EXAMPLES_PATH: The path to the examples directory
-# BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
-# BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
-###############################################################################
-
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 
-# TEST_NAME is the basename of the executable
-TEST_NAME = main
+# $1 = pod-x
+# $2 = pod-y
+# $3 = north-not-south
+# $4 = vcache-x
+# $5 = set
+all:
 
-###############################################################################
-# Host code compilation flags and flow
-###############################################################################
+test-name = pod-x-$1_pod-y-$2_north-not-south-$3_vcache-x-$4_set-$5
+define test
+.PHONY: generate-$(call test-name,$1,$2,$3,$4,$5)
+generate-$(call test-name,$1,$2,$3,$4,$5): run/$(call test-name,$1,$2,$3,$4,$5)/main.cpp
+generate-$(call test-name,$1,$2,$3,$4,$5): run/$(call test-name,$1,$2,$3,$4,$5)/Makefile
+run/$(call test-name,$1,$2,$3,$4,$5)/main.cpp: main.cpp
+	@mkdir -p $$(dir $$@)
+	cp $$< $$(dir $$@)
 
-# TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = main.cpp
+run/$(call test-name,$1,$2,$3,$4,$5)/Makefile: template.mk
+	@mkdir -p $$(dir $$@)
+	echo "C_ARGS = $1 $2 $3 $4 $5" > $$@
+	cat $$< >> $$@
 
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
-CDEFINES += 
-CXXDEFINES += 
+.PHONY: run-$(call test-name,$1,$2,$3,$4,$5)
+run-$(call test-name,$1,$2,$3,$4,$5): generate-$(call test-name,$1,$2,$3,$4,$5)
+	$(MAKE) -C run/$(call test-name,$1,$2,$3,$4,$5) main.exec.log
 
-FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
-CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++11 $(FLAGS)
+tests     += run-$(call test-name,$1,$2,$3,$4,$5)
+generates += generate-$(call test-name,$1,$2,$3,$4,$5)
 
-# compilation.mk defines rules for compilation of C/C++
-include $(EXAMPLES_PATH)/compilation.mk
+endef
 
-###############################################################################
-# Host code link flags and flow
-###############################################################################
+range = $(shell echo {0..$(shell echo $1-1|bc)})
 
-LDFLAGS +=
+$(foreach pod-x,$(call range,$(BSG_MACHINE_PODS_X)),\
+$(foreach pod-y,$(call range,$(BSG_MACHINE_PODS_Y)),\
+$(foreach north-not-south,$(call range,2),\
+$(foreach l2-x,$(call range,$(BSG_MACHINE_POD_TILES_X)),\
+$(foreach set,$(call range,$(BSG_MACHINE_VCACHE_SET)),\
+$(eval $(call test,0,0,$(north-not-south),$(l2-x),$(set))))))))
 
-# link.mk defines rules for linking of the final execution binary.
-include $(EXAMPLES_PATH)/link.mk
+#$(eval $(call test,0,0,0,0,0))
 
-###############################################################################
-# Execution flow
-#
-# C_ARGS: Use this to pass arguments that you want to appear in argv
-#
-# SIM_ARGS: Use this to pass arguments to the simulator
-###############################################################################
-C_ARGS ?= 0 0 0 0 0
+.PHONY: clean all debug generate
 
-SIM_ARGS ?=
+debug:
+	@echo $(tests)
 
-# Include platform-specific execution rules
-include $(EXAMPLES_PATH)/execution.mk
-
-###############################################################################
-# Regression Flow
-###############################################################################
-
-regression: main.exec.log
-	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
-
-###############################################################################
-# Default rules, help, and clean
-###############################################################################
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean | $(TEST_NAME).{profile,debug} | $(TEST_NAME).{profile,debug}.log}"
-	@echo "      $(TEST_NAME).profile: Build executable with profilers enabled"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      $(TEST_NAME).{profile,debug}.log: Run specific executable"
-	@echo "      clean: Remove all subdirectory-specific outputs"
-
-
-.PHONY: clean
+all: $(tests)
+generate: $(generates)
 
 clean:
-
-
-
+	rm -rf run
