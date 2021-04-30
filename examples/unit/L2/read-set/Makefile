@@ -5,12 +5,12 @@ include $(BSG_MACHINE_PATH)/Makefile.machine.include
 
 # $1 = pod-x
 # $2 = pod-y
-# $3 = north-not-south
+# $3 = south-not-north
 # $4 = vcache-x
 # $5 = set
 all:
 
-test-name = pod-x-$1_pod-y-$2_north-not-south-$3_vcache-x-$4_set-$5
+test-name = pod-x-$1_pod-y-$2_south-not-north-$3_vcache-x-$4_set-$5
 define test
 .PHONY: generate-$(call test-name,$1,$2,$3,$4,$5)
 generate-$(call test-name,$1,$2,$3,$4,$5): run/$(call test-name,$1,$2,$3,$4,$5)/main.cpp
@@ -37,12 +37,12 @@ range = $(shell echo {0..$(shell echo $1-1|bc)})
 
 $(foreach pod-x,$(call range,$(BSG_MACHINE_PODS_X)),\
 $(foreach pod-y,$(call range,$(BSG_MACHINE_PODS_Y)),\
-$(foreach north-not-south,$(call range,2),\
+$(foreach south-not-north,$(call range,2),\
 $(foreach l2-x,$(call range,$(BSG_MACHINE_POD_TILES_X)),\
 $(foreach set,$(call range,$(BSG_MACHINE_VCACHE_SET)),\
-$(eval $(call test,0,0,$(north-not-south),$(l2-x),$(set))))))))
+$(eval $(call test,0,0,$(south-not-north),$(l2-x),$(set))))))))
 
-#$(eval $(call test,0,0,0,0,0))
+$(eval $(call test,0,0,0,0,0))
 
 .PHONY: clean all debug generate
 
