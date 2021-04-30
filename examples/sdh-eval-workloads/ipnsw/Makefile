@@ -44,24 +44,125 @@ BSG_MACHINE_PATH=$(BSG_F1_DIR)/machines/pod_X1Y1_ruche_X16Y8_hbm
 ################################################################################
 # Define the range of versions
 ################################################################################
-# Kernel versions. See kernel/README.md for more information.  Version names do
-# not need to use v* and can be any string
-VERSIONS := greedy_walk    #  inner product with ipc=0.3 (8x4)
-VERSIONS += greedy_walk_v1 #  inner product with ipc=0.43 (8x4)
-VERSIONS += greedy_walk_v2 #  inner product with FLOPS/cycle=0.2  (8x4)
-VERSIONS += greedy_walk_v3 #  inner product with FLOPS/cycle=0.26 (8x4)
-VERSIONS += beam_search    #  very slow - uses a very dumb sparse set
-VERSIONS += beam_search_v1 #  dense set - inner product with ipc=0.3  (8x4)
-VERSIONS += beam_search_v2 #  dense set - inner product with ipc=0.43 (8x4)
-VERSIONS += beam_search_v3 #  + inner_product_v2 (flops/cycle=0.2039) (8x4)
-VERSIONS += beam_search_v4 #  + inner_product_v3 (flops/cycle=0.2663) (8x4)
-VERSIONS += beam_search_v5 #  + Bit vector for dense set
+ #  inner product with ipc=0.3 (8x4)
+VERSIONS := greedy_walk
+greedy_walk-grp-x := 1
+greedy_walk-grp-y := 1
+#  inner product with ipc=0.43 (8x4)
+VERSIONS += greedy_walk_v1
+greedy_walk_v1-grp-x := 1
+greedy_walk_v1-grp-y := 1
+#  inner product with FLOPS/cycle=0.2  (8x4)
+VERSIONS += greedy_walk_v2
+greedy_walk_v2-grp-x := 1
+greedy_walk_v2-grp-y := 1
+#  inner product with FLOPS/cycle=0.26 (8x4)
+VERSIONS += greedy_walk_v3
+greedy_walk_v3-grp-x := 1
+greedy_walk_v3-grp-y := 1
+#  inner product v4-serial
+VERSIONS += greedy_walk_v3-ipv4serial
+greedy_walk_v3-ipv4serial-grp-x := 1
+greedy_walk_v3-ipv4serial-grp-y := 1
+#  greedy_walk_v3 + ParallelInnerProduct_v1
+VERSIONS += greedy_walk_v4
+greedy_walk_v4-grp-x := 2
+greedy_walk_v4-grp-y := 2
+
+#  very slow - uses a very dumb sparse set
+VERSIONS += beam_search
+beam_search-grp-x := 1
+beam_search-grp-y := 1
+#  dense set - inner product with ipc=0.3  (8x4)
+VERSIONS += beam_search_v1
+beam_search_v1-grp-x := 1
+beam_search_v1-grp-y := 1
+#  dense set - inner product with ipc=0.43 (8x4)
+VERSIONS += beam_search_v2
+beam_search_v2-grp-x := 1
+beam_search_v2-grp-y := 1
+#  + inner_product_v2 (flops/cycle=0.2039) (8x4)
+VERSIONS += beam_search_v3
+beam_search_v3-grp-x := 1
+beam_search_v3-grp-y := 1
+#  + inner_product_v3 (flops/cycle=0.2663) (8x4)
+VERSIONS += beam_search_v4
+beam_search_v4-grp-x := 1
+beam_search_v4-grp-y := 1
+#  + Bit vector for dense set
+VERSIONS += beam_search_v5
+beam_search_v5-grp-x := 1
+beam_search_v5-grp-y := 1
+#  + Bit vector for dense set + inner product v4 seria;
+VERSIONS += beam_search_v5-ipv4serial
+beam_search_v5-ipv4serial-grp-x := 1
+beam_search_v5-ipv4serial-grp-y := 1
+#  beam_search_v5 + inner_product_parallel_v3
+VERSIONS += beam_search_v6
+beam_search_v6-grp-x := 2
+beam_search_v6-grp-y := 2
+# beam_search_v6 but with 1x2 tile group
+VERSIONS += beam_search_v7
+beam_search_v7-grp-x := 1
+beam_search_v7-grp-y := 2
+# beam_search_v5 but edges of candidates traversed in parallel
+VERSIONS += beam_search_v8
+beam_search_v8-grp-x := 4
+beam_search_v8-grp-y := 4
+# combination of beam_search_v8 + beam_search_v6
+VERSIONS += beam_search_v9
+beam_search_v9-grp-x := 4
+beam_search_v9-grp-y := 4
+# beam_search_v5 but edges of candidates traversed in parallel
+VERSIONS += beam_search_v10
+beam_search_v10-grp-x := 8
+beam_search_v10-grp-y := 4
+
+# debugging this makefile
 VERSIONS += debug
-VERSIONS += iproduct_ubmk # baseline - ipc = 0.3
-VERSIONS += iproduct_ubmk_v1 # using clang and NBLs, ipc = 0.43, flops/cycle = 0.1867
-VERSIONS += iproduct_ubmk_v2 # + FMA, ipc = 0.386, flops/cycle = 0.2039
-VERSIONS += iproduct_ubmk_v3 # + explicit parallel fma (ipc=0.45,flops/cycle = 0.2663) (8x4)
-VERSIONS += iproduct_ubmk_v4 # Slightly cleaner code than v3 - similar performance
+debug-grp-x := 0
+debug-grp-y := 0
+
+ # baseline - ipc = 0.3
+VERSIONS += iproduct_ubmk
+iproduct_ubmk-grp-x := 1
+iproduct_ubmk-grp-y := 1
+# using clang and NBLs, ipc = 0.43, flops/cycle = 0.1867
+VERSIONS += iproduct_ubmk_v1
+iproduct_ubmk_v1-grp-x := 1
+iproduct_ubmk_v1-grp-y := 1
+# + FMA, ipc = 0.386, flops/cycle = 0.2039
+VERSIONS += iproduct_ubmk_v2
+iproduct_ubmk_v2-grp-x := 1
+iproduct_ubmk_v2-grp-y := 1
+# + explicit parallel fma (ipc=0.45,flops/cycle = 0.2663) (8x4)
+VERSIONS += iproduct_ubmk_v3
+iproduct_ubmk_v3-grp-x := 1
+iproduct_ubmk_v3-grp-y := 1
+# Slightly cleaner code than v3 - similar performance
+VERSIONS += iproduct_ubmk_v4
+iproduct_ubmk_v4-grp-x := 1
+iproduct_ubmk_v4-grp-y := 1
+ #...
+VERSIONS += iproduct_ubmk_parallel
+iproduct_ubmk_parallel-grp-x := 1
+iproduct_ubmk_parallel-grp-y := 1
+ #...
+VERSIONS += iproduct_ubmk-parallel_v1
+iproduct_ubmk-parallel_v1-grp-x := 2
+iproduct_ubmk-parallel_v1-grp-y := 2
+ #...
+VERSIONS += iproduct_ubmk-parallel_v1.1
+iproduct_ubmk-parallel_v1.1-grp-x := 2
+iproduct_ubmk-parallel_v1.1-grp-y := 2
+ #...
+VERSIONS += iproduct_ubmk-parallel_v2
+iproduct_ubmk-parallel_v2-grp-x := 2
+iproduct_ubmk-parallel_v2-grp-y := 2
+#... same as v2 but with (1x4 tg)
+VERSIONS += iproduct_ubmk-parallel_v3
+iproduct_ubmk-parallel_v3-grp-x := 2
+iproduct_ubmk-parallel_v3-grp-y := 2
 
 _KERNEL_COMPILER = CLANG
 ################################################################################
@@ -112,6 +213,12 @@ C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_1
 C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_2
 C_ARGS += $(CURRENT_PATH)/hb-prog-eval/ipnsw/data/music.edges.level_3
 
+# set group x/y values
+define VERSION-SET-ARGS
+kernel/$(1)/$(HOST_TARGET).log: ARGS += --group-x $($(1)-grp-x)
+kernel/$(1)/$(HOST_TARGET).log: ARGS += --group-y $($(1)-grp-y)
+endef
+$(foreach v,$(VERSIONS),$(eval $(call VERSION-SET-ARGS,$v)))
 
 ################################
 # Inner Product U-Benchmarking #
@@ -156,11 +263,61 @@ iproduct-ubmk-stats: $(foreach v,$(IPRODUCT-UBMK-VERSIONS),kernel/$v/$(HOST_TARG
 # Add to versions
 VERSIONS += $(IPRODUCT-UBMK-VERSIONS)
 
+#########################################
+# Parallel Inner Product U-Benchmarking #
+#########################################
+# number iproducts
+N-IPRODUCTS := 1500
+GRID-X := 1 2 4 8
+GRID-Y := 1 2 4
+
+IPRODUCT-PARALLEL-BASENAME := iproduct_ubmk-parallel_v1
+
+define IPRODUCT-UBMK-PARALLEL-RULE
+# creates run directory from template
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/kernel.cpp: kernel/$(IPRODUCT-PARALLEL-BASENAME)/kernel.cpp
+	mkdir -p $$(dir $$@)
+	cp $$< $$@
+
+# adds arguments
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/$(HOST_TARGET).log: C_ARGS += --num-iproducts $(1)
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/$(HOST_TARGET).log: C_ARGS += --grid-x $(2)
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/$(HOST_TARGET).log: C_ARGS += --grid-y $(3)
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/$(HOST_TARGET).log: C_ARGS += --group-x $($(IPRODUCT-PARALLEL-BASENAME)-grp-x)
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/$(HOST_TARGET).log: C_ARGS += --group-y $($(IPRODUCT-PARALLEL-BASENAME)-grp-y)
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/$(HOST_TARGET).log: BSG_MANYCORE_KERNELS = kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/kernel.riscv
+kernel/iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)/kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+# adds to list of iproduct u-bmk
+IPRODUCT-UBMK-PARALLEL-VERSIONS += iproduct_ubmk-parallel-$(1)-gx$(2)-gy$(3)
+endef
+
+# Expand rule for each inner product input
+$(foreach gy,$(GRID-Y),$(foreach gx,$(GRID-X),$(foreach nip,$(N-IPRODUCTS), $(eval $(call IPRODUCT-UBMK-PARALLEL-RULE,$(nip),$(gx),$(gy))))))
+
+.PHONY: create-iproduct-ubmk-parallel
+.PHONY: purge-iproduct-ubmk-parallel
+.PHONY: iproduct-ubmk-parallel-stats
+
+# create rule
+create-iproduct-ubmk-parallel: $(foreach v,$(IPRODUCT-UBMK-PARALLEL-VERSIONS),kernel/$v/kernel.cpp)
+
+# purge rule
+purge-iproduct-ubmk-parallel:
+	rm -rf $(foreach v,$(IPRODUCT-UBMK-PARALLEL-VERSIONS),kernel/$v)
+
+# collect stats for all
+iproduct-ubmk-parallel-stats: create-iproduct-ubmk-parallel
+iproduct-ubmk-parallel-stats: $(foreach v,$(IPRODUCT-UBMK-PARALLEL-VERSIONS),kernel/$v/$(HOST_TARGET).exec.log)
+
+# Add to versions
+VERSIONS += $(IPRODUCT-UBMK-PARALLEL-VERSIONS)
+
 ####################
 # Greedy Walk Runs #
 ####################
 GREEDY-WALK-QUERIES := 4 16 229 276 461 470 490
-GREEDY-WALK-BASENAME := greedy_walk_v3
+GREEDY-WALK-QUERIES := 4 16 229 276 461 470 490
+GREEDY-WALK-BASENAME := greedy_walk_v4
 define GREEDY-WALK-RULE
 # creates run directory from template
 kernel/greedy_walk-query$(1)/kernel.cpp: kernel/$(GREEDY-WALK-BASENAME)/kernel.cpp
@@ -168,8 +325,8 @@ kernel/greedy_walk-query$(1)/kernel.cpp: kernel/$(GREEDY-WALK-BASENAME)/kernel.c
 	cp $$< $$@
 
 # adds arguments
-kernel/greedy_walk-query$(1)/$(HOST_TARGET).log: C_ARGS += --queries $(1)
-kernel/greedy_walk-query$(1)/$(HOST_TARGET).log: BSG_MANYCORE_KERNELS = kernel/iproduct_ubmk-$(1)/kernel.riscv
+kernel/greedy_walk-query$(1)/$(HOST_TARGET).exec.log: C_ARGS += --queries $(1)
+kernel/greedy_walk-query$(1)/$(HOST_TARGET).exec.log: BSG_MANYCORE_KERNELS = kernel/iproduct_ubmk-$(1)/kernel.riscv
 kernel/greedy_walk-query$(1)/kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 # adds to list of greedy walk versions
@@ -201,7 +358,11 @@ VERSIONS += $(GREEDY-WALK-VERSIONS)
 # Beam Search Runs #
 ####################
 BEAM-SEARCH-QUERIES := 2 188 229 355 427 472
-BEAM-SEARCH-BASENAME := beam_search_v5
+BEAM-SEARCH-QUERIES += 25  74  112 140 148 178
+BEAM-SEARCH-QUERIES += 214 244 278 302 331
+BEAM-SEARCH-QUERIES += 396 420 452 489 511
+
+BEAM-SEARCH-BASENAME := beam_search_v10
 
 define BEAM-SEARCH-RULE
 # creates run directory from template
