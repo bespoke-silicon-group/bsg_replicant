@@ -25,13 +25,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-///////////////////////////////////////////////////////////////////////////////////////
-// This code is written to match the System Verilog found here:                      //
-// https://github.com:bespoke-silicon-group/bsg_manycore/v/bsg_manycore_eva_to_npa.v //
-//                                                                                   //
-// It also matches address translation code found here:                              //
-// https://github.com:bespoke-silicon-group/bsg_manycore/software/py/nbf.py          //
-///////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// This code is written to match the System Verilog found here:                                      //
+// https://github.com:bespoke-silicon-group/bsg_manycore/v/bsg_manycore_eva_to_npa.v                 //
+//                                                                                                   //
+// It also matches address translation code found here:                                              //
+// https://github.com:bespoke-silicon-group/bsg_manycore/software/py/nbf.py                          //
+//                                                                                                   //
+// Changing the EVA map should reflect corresponding changes in:                                     //
+// https://github.com:bespoke-silicon-group/bsg_replicant/examples/library/test_manycore_eva/main.c  //
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_tile.h>
