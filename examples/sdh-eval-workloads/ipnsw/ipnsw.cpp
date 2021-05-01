@@ -28,6 +28,8 @@ int Main(int argc, char *argv[])
     Parser args;
     args.parse(argc, argv);
 
+    std::cout << args.str() << std::endl;
+
     std::unique_ptr<IPNSWRunner> runner;
     std::unique_ptr<IPNSWFactory> factory;
 
