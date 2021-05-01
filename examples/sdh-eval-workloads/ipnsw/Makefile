@@ -22,7 +22,7 @@ run/$1/Makefile: template.mk
 	@echo "C_ARGS += $3" >> $$@
 	@echo "MAKING $$@"
 
-.PHONY: generate-$1 build-$1 purge-$1 run-$1
+.PHONY: generate-$1 build-$1 purge-$1 run-$1 profile-$1
 
 generate-$1: run/$1/Makefile run/$1/kernel.cpp
 purge-$1:
@@ -31,6 +31,8 @@ build-$1: generate-$1
 	$(MAKE) -C run/$1 main.riscv
 run-$1: generate-$1
 	$(MAKE) -C run/$1 main.exec.log
+profile-$1: generate-$1
+	$(MAKE) -C run/$1 main.profile.log
 endef
 
 #################################
@@ -82,11 +84,13 @@ greedy-walk-generate: generate-$(call greedy-walk-name,$1,$2)
 greedy-walk-purge:    purge-$(call greedy-walk-name,$1,$2)
 greedy-walk-build:    build-$(call greedy-walk-name,$1,$2)
 greedy-walk-run:      run-$(call greedy-walk-name,$1,$2)
+greedy-walk-profile:  profile-$(call greedy-walk-name,$1,$2)
 endef
 .PHONY: greedy-walk-generate
 .PHONY: greedy-walk-purge
 .PHONY: greedy-walk-build
 .PHONY: greedy-walk-run
+.PHONY: greedy-walk-profile
 
 ###############
 # Beam Search #
@@ -146,11 +150,13 @@ beam-search-generate: generate-$(call beam-search-name,$1,$2)
 beam-search-purge:    purge-$(call beam-search-name,$1,$2)
 beam-search-build:    build-$(call beam-search-name,$1,$2)
 beam-search-run:      run-$(call beam-search-name,$1,$2)
+beam-search-profile:  profile-$(call beam-search-name,$1,$2)
 endef
 .PHONY: beam-search-generate
 .PHONY: beam-search-purge
 .PHONY: beam-search-build
 .PHONY: beam-search-run
+.PHONY: beam-search-profile
 
 #############################################################
 # Define which queries we want to run and instantiate rules #
