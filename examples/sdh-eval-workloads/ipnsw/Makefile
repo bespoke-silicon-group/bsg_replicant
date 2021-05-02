@@ -4,6 +4,8 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 
+all:
+
 #######################################
 # Base clase run directory generation #
 #######################################
@@ -25,14 +27,24 @@ run/$1/Makefile: template.mk
 .PHONY: generate-$1 build-$1 purge-$1 run-$1 profile-$1
 
 generate-$1: run/$1/Makefile run/$1/kernel.cpp
+
 purge-$1:
 	rm -rf run/$1
+
 build-$1: generate-$1
-	$(MAKE) -C run/$1 main.riscv
-run-$1: generate-$1
-	$(MAKE) -C run/$1 main.exec.log
+	+$(MAKE) -C run/$1 main.riscv
+
+exec-$1: generate-$1
+	+$(MAKE) -C run/$1 main.exec.log
+
 profile-$1: generate-$1
-	$(MAKE) -C run/$1 main.profile.log
+	+$(MAKE) -C run/$1 main.profile.log
+
+debug-$1: generate-$1
+	+$(MAKE) -C run/$1/main.debug.log
+
+saif-$1: generate-$1
+	+$(MAKE) -C run/$1/main.saifgen.log
 endef
 
 #################################
@@ -67,30 +79,6 @@ greedy_walk_v3-ipv4serial-grp-y := 1
 #  greedy_walk_v3 + ParallelInnerProduct_v1
 greedy_walk_v4-grp-x := 2
 greedy_walk_v4-grp-y := 2
-
-# $1 = version
-# $2 = query
-greedy-walk-name = $(1)_query$(2)
-define greedy-walk
-$(eval $(call run-dir,$(call greedy-walk-name,$1,$2),$1,\
-$(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/run/$(call greedy-walk-name,$1,$2)/kernel.riscv \
-$1 \
-$(C_ARGS) \
---queries $(2) \
---group-x $($(1)-grp-x) \
---group-y $($(1)-grp-y) \
-))
-greedy-walk-generate: generate-$(call greedy-walk-name,$1,$2)
-greedy-walk-purge:    purge-$(call greedy-walk-name,$1,$2)
-greedy-walk-build:    build-$(call greedy-walk-name,$1,$2)
-greedy-walk-run:      run-$(call greedy-walk-name,$1,$2)
-greedy-walk-profile:  profile-$(call greedy-walk-name,$1,$2)
-endef
-.PHONY: greedy-walk-generate
-.PHONY: greedy-walk-purge
-.PHONY: greedy-walk-build
-.PHONY: greedy-walk-run
-.PHONY: greedy-walk-profile
 
 ###############
 # Beam Search #
@@ -136,37 +124,43 @@ beam_search_v10-grp-y := 4
 
 # $1 = version
 # $2 = query
-beam-search-name = $(1)_query$(2)
-define beam-search
-$(eval $(call run-dir,$(call beam-search-name,$1,$2),$1,\
-$(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/run/$(call beam-search-name,$1,$2)/kernel.riscv \
+run-name = $(1)_query$(2)
+define run
+$(eval $(call run-dir,$(call run-name,$1,$2),$1,\
+$(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/run/$(call run-name,$1,$2)/kernel.riscv \
 $1 \
 $(C_ARGS) \
 --queries $(2) \
 --group-x $($(1)-grp-x) \
 --group-y $($(1)-grp-y) \
 ))
-beam-search-generate: generate-$(call beam-search-name,$1,$2)
-beam-search-purge:    purge-$(call beam-search-name,$1,$2)
-beam-search-build:    build-$(call beam-search-name,$1,$2)
-beam-search-run:      run-$(call beam-search-name,$1,$2)
-beam-search-profile:  profile-$(call beam-search-name,$1,$2)
+generate: generate-$(call run-name,$1,$2)
+purge:    purge-$(call run-name,$1,$2)
+build:    build-$(call run-name,$1,$2)
+exec:     exec-$(call run-name,$1,$2)
+profile:  profile-$(call run-name,$1,$2)
+debug:    debug-$(call run-name,$1,$2)
+saifgen:  saifgen-$(call run-name,$1,$2)
 endef
-.PHONY: beam-search-generate
-.PHONY: beam-search-purge
-.PHONY: beam-search-build
-.PHONY: beam-search-run
-.PHONY: beam-search-profile
+.PHONY: generate
+.PHONY: purge
+.PHONY: build
+.PHONY: exec
+.PHONY: profile
+.PHONY: debug
+.PHONY: saifgen
 
 #############################################################
 # Define which queries we want to run and instantiate rules #
 #############################################################
 greedy-walk-queries := 4 16 229 276 461 470 490
-$(foreach q,$(greedy-walk-queries),$(eval $(call greedy-walk,greedy_walk_v4,$(q))))
+$(foreach q,$(greedy-walk-queries),$(eval $(call run,greedy_walk_v4,$(q))))
 
 beam-search-queries := 2   188 229 355 427 472
 beam-search-queries += 25  74  112 140 148 178
 beam-search-queries += 214 244 278 302 331
 beam-search-queries += 396 420 452 489 511
-$(foreach q,$(beam-search-queries),$(eval $(call beam-search,beam_search_v10,$(q))))
+$(foreach q,$(beam-search-queries),$(eval $(call run,beam_search_v10,$(q))))
 
+.PHONY: all
+all: exec
