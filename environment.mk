@@ -129,5 +129,4 @@ include $(CL_DIR)/platform.mk
 
 BSG_MACHINExPLATFORM_PATH=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
 
-
 endif
