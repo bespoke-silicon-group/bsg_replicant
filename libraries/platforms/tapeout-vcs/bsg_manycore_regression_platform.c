@@ -61,6 +61,12 @@ void cosim_main(uint32_t *exit_code, char *args, char *sopath) {
         char *error;
         get_argv(args, argc, argv);
 
+        // To reduce the number of VCS compilations we do, this
+        // platform compiles the executable machine and then loads the
+        // program as a shared object file. This shared object is
+        // passed as the string sopath and _must_ define a method
+        // vcs_main that can be called as the main function of the
+        // program
         void *handle = dlopen(sopath, RTLD_LAZY);
         int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
 
