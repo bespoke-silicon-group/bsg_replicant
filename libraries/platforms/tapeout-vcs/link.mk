@@ -87,20 +87,23 @@ $(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHINExPLATFORM_PATH)/debug $(BSG_MACHI
 %/machine: $(VCS_VSOURCES) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so %
 	vcs -top replicant_tb_top $(VCS_VSOURCES) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
-.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/machine.exec
-.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/machine.debug
-.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/machine.profile
-.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/machine.saifgen
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/exec/machine
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/debug/machine
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/proile/machine
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/saifgen/machine
 
 # When running recursive regression, make is launched in independent,
 # non-communicating parallel processes that try to build these objects
 # in parallel. That is no-bueno. We define REGRESSION_PREBUILD so that
 # regression tests can build them before launching parallel
 # compilation and execution
-REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/machine.exec
-REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
-REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/libbsg_manycore_runtime.so
-REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/libbsg_manycore_regression.so
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/exec/machine
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/debug/machine
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/profile/machine
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/saifgen/machine
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 
 .PHONY: platform.link.clean
 platform.link.clean:
