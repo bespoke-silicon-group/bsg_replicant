@@ -72,7 +72,7 @@ include $(EXAMPLES_PATH)/compilation.mk
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS += -lbsgmc_cuda_legacy_pod_repl 
+LDFLAGS += -L$(BSG_PLATFORM_PATH) -lbsgmc_cuda_legacy_pod_repl
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
