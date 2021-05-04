@@ -127,4 +127,7 @@ include $(CL_DIR)/machine.mk
 # simulate (VCS or Verilator) or run on (AWS)
 include $(CL_DIR)/platform.mk
 
+BSG_MACHINExPLATFORM_PATH=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
+
+
 endif

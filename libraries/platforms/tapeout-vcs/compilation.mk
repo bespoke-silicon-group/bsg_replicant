@@ -25,28 +25,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifndef __BSG_LINK_MK
-__BSG_LINK_MK := 1
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
-# This Makefile Fragment defines rules for linking object files of
-# regression tests.
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
-# BSG_PLATFORM_PATH: The path to the execution platform
-ifndef BSG_PLATFORM_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
-endif
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
 
-# Override automatic rules. If these are not overridden, then Make
-# will gladly build AND link the source file in one step and cause all
-# sorts of wonderful linker errors.
-%: %.c
-%: %.cpp
+DEFINES    += -DVCS
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-include $(BSG_PLATFORM_PATH)/link.mk
+CXXFLAGS   += -lstdc++ $(DEFINES) -fPIC
+CFLAGS     += $(DEFINES) -fPIC
 
-.PHONY: link.clean
-link.clean:
+# each regression target needs to build its .o from a .c and .h of the
+# same name
+%.o: %.c
+	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES)
 
-clean:
+# ... or a .cpp and .hpp of the same name
+%.o: %.cpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
 
-endif
+# Compile all of the sources into a shared object file for dynamic loading.
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+
+main.so: $(TEST_OBJECTS)
+	$(LD) -shared -o $@ $^ $(LDFLAGS)
+
+.PRECIOUS: %.o %.so
+
+.PHONY: platform.compilation.clean
+platform.compilation.clean:
+	rm -rf *.o *.so
+
+compilation.clean: platform.compilation.clean
