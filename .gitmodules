@@ -3,7 +3,7 @@
 	url = git@github.com:bespoke-silicon-group/hb-prog-eval
 [submodule "examples/sdh-eval-workloads/ipnsw/graph-tools"]
 	path = examples/sdh-eval-workloads/ipnsw/graph-tools
-	url = git@github.com:mrutt92/graph-tools
+	url = git@github.com:bespoke-silicon-group/graph-tools
 [submodule "examples/sdh-eval-workloads/ipnsw/hammerblade-helpers"]
 	path = examples/sdh-eval-workloads/ipnsw/hammerblade-helpers
-	url = git@github.com:mrutt92/hammerblade-helpers
+	url = git@github.com:bespoke-silicon-group/hammerblade-helpers
