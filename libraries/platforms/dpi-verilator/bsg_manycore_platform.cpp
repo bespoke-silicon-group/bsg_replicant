@@ -62,12 +62,16 @@ typedef struct hb_mc_platform_t {
         hb_mc_manycore_id_t id;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
         hb_mc_tracer_t tracer;
-        // unsigned int capacity;
+        // This is a software fifo for holding manycore responses.
+        // hb_mc_platform_service() fills this, and
+        // hb_mc_platform_recieve drains it
         std::queue<hb_mc_packet_t> responses;
 } hb_mc_platform_t;
 
 /**
- * Service the response fifo 
+ * Service the response fifo. The response fifo must be drained to
+ * avoid backpressure on the response network, and allow the host to
+ * transmit (and make progress)
  * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] response A packet into which data should be read
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h
@@ -85,11 +89,8 @@ int hb_mc_platform_service(hb_mc_manycore_t *mc, int *err)
         if(*err == BSG_NONSYNTH_DPI_SUCCESS) {
 
                 // Enqueue reponses (but not credits)
-                // TODO: Create OP enum
+                // TODO: Create OP enum to make this safer
                 if(packet.response.op){
-                        char str[64];
-                        hb_mc_response_packet_to_string(&packet.response, str, sizeof(str));
-                        manycore_pr_info(mc, "Got response %s\n", str);
                         platform->responses.push(packet);
                 } else {
                         *err = BSG_NONSYNTH_DPI_NOT_VALID;
@@ -356,18 +357,14 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                         
                 if (type == HB_MC_FIFO_TX_REQ) {
                         err = platform->dpi->tx_req(*pkt);
-                        if(err == BSG_NONSYNTH_DPI_SUCCESS){
-                                char str[256];
-                                hb_mc_request_packet_to_string(&packet->request, str, sizeof(str));
-                                manycore_pr_info(mc, "Sent request %s\n", str);
-                        }
                 } else {
                         err = platform->dpi->tx_rsp(*pkt);
-                        manycore_pr_info(mc, "Sent Response\n");
                 }
 
                 // We use rc to filter API success here, so that we
                 // can use err for DPI return codes.
+                // Service the response fifo so that the transmit
+                // pipeline can make progress if there is no capacity.
                 rc = hb_mc_platform_service(mc, &rx_err);
                 if(rc != HB_MC_SUCCESS){
                         manycore_pr_err(mc, "%s: Servicing response fifo failed\n", __func__);
