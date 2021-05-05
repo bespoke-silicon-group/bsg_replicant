@@ -45,7 +45,7 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
-GRAPHIT_PATH = $(REPLICANT_PATH)/../graphit-new
+GRAPHIT_PATH = $(CURRENT_PATH)/../graphit-src
 
 GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
 # TEST_NAME is the basename of the executable
@@ -54,7 +54,7 @@ TEST_NAME = main
 KERNEL_NAME = pr_nibble
 HOST_TARGET := $(TEST_NAME).profile
 
-BASE_VERSIONS += hybrid-update
+BASE_VERSIONS += hybrid
 
 ITERATIONS := 0 1 2 3 4 5 6 7 8 9
 v-from-basev-and-iter = $1-iteration-$2
@@ -98,8 +98,7 @@ CXXFLAGS += -std=c++11 $(FLAGS)
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Specify any header file dependencies
-main.o: INCLUDES += -I$(EXAMPLES_PATH) -I$(CURRENT_PATH) -I$(GRAPHIT_PATH)/src/runtime_lib/
-main.o: $(EXAMPLES_PATH)/cl_manycore_regression.h
+main.o: INCLUDES += -I$(CURRENT_PATH) -I$(GRAPHIT_PATH)/src/runtime_lib/
 
 ###############################################################################
 # Host code link flags and flow
@@ -162,7 +161,7 @@ $(HOST_TARGET).log: $(HOST_TARGET) kernel.riscv
 
 
 KERNEL_ALIASES = $(foreach a,$(ALIASES),kernel/%/$a)
-.PRECIOUS: $(KERNEL_ALIASES)
+.PRECIOUS: $(KERNEL_ALIASES) kernel/%/kernel.riscv
 $(KERNEL_ALIASES): kernel/%/$(HOST_TARGET).log ;
 kernel/%/$(HOST_TARGET).log: $(HOST_TARGET) kernel/%/kernel.riscv 
 	$(eval EXEC_PATH   := $(patsubst %/,%,$(dir $@)))

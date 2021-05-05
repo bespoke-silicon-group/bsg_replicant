@@ -25,7 +25,7 @@ GlobalScalar<hb_mc_eva_t> out_degree_dev;
 
 #include "pr_host.hpp"
 
-int launch(int argc, char ** argv){
+int test_pr_nibble(int argc, char ** argv){
   InputParser input(argc, argv);
   if(!input.cmdOptionExists("-g")){
     std::cerr << "no input args\n";
@@ -202,18 +202,4 @@ int launch(int argc, char ** argv){
   return 0;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv){
-    bsg_pr_test_info("Unified Main Regression Test (COSIMULATION)\n");
-    int rc = launch(argc, argv); 
-    bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-    return rc;
-}
-#else
-int main(int argc, char ** argv) {
-    bsg_pr_test_info("Unified Main CUDA Regression Test (F1)\n");
-    int rc = launch(argc, argv);
-    bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-    return rc;
-}
-#endif 
+declare_program_main("test_pr_nibble", test_pr_nibble); 

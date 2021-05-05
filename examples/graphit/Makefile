@@ -45,7 +45,6 @@ include $(REPLICANT_PATH)/environment.mk
 include $(EXAMPLES_PATH)/link.mk
 
 # Define the tests that get run
-TESTS += test_vec_add_parallel
 TESTS += test_pr_nibble
 
 regression: $(TESTS)

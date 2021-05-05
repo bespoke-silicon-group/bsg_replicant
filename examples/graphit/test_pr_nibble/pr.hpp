@@ -4,6 +4,7 @@
 
 #include "hb_intrinsics.h"
 #include "infra_hb/host/arg_parser.hpp"
+#include <bsg_manycore_regression.h>
 #include <string.h>
 #include <stdio.h>
 #include <iostream>
@@ -14,7 +15,6 @@
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_loader.h>
 #include <bsg_manycore_cuda.h>
-#include <cl_manycore_regression.h>
 
 
 using hammerblade::Device;
