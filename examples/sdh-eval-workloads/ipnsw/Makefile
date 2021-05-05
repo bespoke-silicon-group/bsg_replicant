@@ -6,6 +6,23 @@ include $(REPLICANT_PATH)/environment.mk
 
 all:
 
+##################
+# Prepare inputs #
+##################
+ipnsw-eval-dir := $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw
+ipnsw-inputs  = $(ipnsw-eval-dir)/data/database_music100.bin
+ipnsw-inputs += $(ipnsw-eval-dir)/data/query_music100.bin
+ipnsw-inputs += $(ipnsw-eval-dir)/data/music.edges.level_0
+ipnsw-inputs += $(ipnsw-eval-dir)/data/music.edges.level_1
+ipnsw-inputs += $(ipnsw-eval-dir)/data/music.edges.level_2
+ipnsw-inputs += $(ipnsw-eval-dir)/data/music.edges.level_3
+
+ipnsw-input := $(ipnsw-eval-dir)/data/database_music100.bin
+# this rule generates all the inputs, but we just target one
+# to avoid running this more than once
+$(ipnsw-input):
+	cd $(ipnsw-eval-dir) && bash prep.sh
+
 #######################################
 # Base clase run directory generation #
 #######################################
@@ -50,12 +67,7 @@ endef
 #################################
 # Common command line arguments #
 #################################
-C_ARGS += $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw/data/database_music100.bin
-C_ARGS += $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw/data/query_music100.bin
-C_ARGS += $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw/data/music.edges.level_0
-C_ARGS += $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw/data/music.edges.level_1
-C_ARGS += $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw/data/music.edges.level_2
-C_ARGS += $(EXAMPLES_PATH)/sdh-eval-workloads/ipnsw/hb-prog-eval/ipnsw/data/music.edges.level_3
+C_ARGS += $(ipnsw-inputs)
 
 ###############
 # Greedy Walk #
@@ -141,6 +153,12 @@ exec:     exec-$(call run-name,$1,$2)
 profile:  profile-$(call run-name,$1,$2)
 debug:    debug-$(call run-name,$1,$2)
 saifgen:  saifgen-$(call run-name,$1,$2)
+
+saifgen-$(call run-name,$1,$2): $(ipnsw-input)
+profile-$(call run-name,$1,$2): $(ipnsw-input)
+debug-$(call run-name,$1,$2):   $(ipnsw-input)
+exec-$(call run-name,$1,$2):    $(ipnsw-input)
+
 endef
 .PHONY: generate
 .PHONY: purge
