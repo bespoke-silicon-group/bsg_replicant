@@ -81,8 +81,6 @@ module bsg_manycore_endpoint_to_fifos
   // manycore link
   ,input  [            link_sif_width_lp-1:0] link_sif_i
   ,output [            link_sif_width_lp-1:0] link_sif_o
-  ,input  [               x_cord_width_p-1:0] my_x_i
-  ,input  [               y_cord_width_p-1:0] my_y_i
 
   ,output [credit_counter_width_p-1:0] out_credits_used_o
 
