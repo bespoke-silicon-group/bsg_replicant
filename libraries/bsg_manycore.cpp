@@ -311,17 +311,6 @@ int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
                 bsg_pr_err("responder failure to %s\n", request_str);
                 return err;
         }
-
-        switch(request->op_v2) {
-        case HB_MC_PACKET_OP_REMOTE_SW:
-        case HB_MC_PACKET_OP_REMOTE_STORE:
-                hb_mc_response_packet_t response;
-                hb_mc_response_packet_fill(&response, request);
-                err = hb_mc_manycore_response_tx(mc, &response, timeout);
-                return err;
-        default:
-                return HB_MC_NOIMPL;
-        }
 }
 
 /**

@@ -82,6 +82,9 @@ module bsg_manycore_endpoint_to_fifos
   ,input  [            link_sif_width_lp-1:0] link_sif_i
   ,output [            link_sif_width_lp-1:0] link_sif_o
 
+  ,input  [               x_cord_width_p-1:0] global_x_i
+  ,input  [               y_cord_width_p-1:0] global_y_i
+
   ,output [credit_counter_width_p-1:0] out_credits_used_o
 
   );
@@ -98,27 +101,33 @@ module bsg_manycore_endpoint_to_fifos
   assign endpoint_req_cast_li = endpoint_req_i;
 
   // Manycore Response
-  logic                                packet_mc_rsp_v_lo;
-  bsg_manycore_return_packet_s         packet_mc_rsp_lo;
-  logic                                packet_mc_rsp_yumi_li;
-
   bsg_manycore_return_packet_aligned_s mc_rsp_cast_lo;
   assign mc_rsp_o                    = mc_rsp_cast_lo;
 
-  // Manycore Request
-  logic                 packet_mc_req_v_lo;
-  bsg_manycore_packet_s packet_mc_req_lo;
-  logic                 packet_mc_req_yumi_li;
+  logic                                    mc_rsp_v_r_lo;
+  logic                                    mc_rsp_yumi_li;
+  logic                                    mc_rsp_fifo_full_lo;
+  bsg_manycore_return_packet_type_e        mc_rsp_pkt_type_r_lo;
+  logic [                data_width_p-1:0] mc_rsp_data_r_lo;
+  wire  [bsg_manycore_reg_id_width_gp-1:0] mc_rsp_reg_id_r_lo;
 
+  // Manycore Request
   bsg_manycore_packet_aligned_s mc_req_cast_lo;
   assign mc_req_o = mc_req_cast_lo;
 
-  // Endpoint Response
-  logic                 packet_ep_rsp_v_li;
-  bsg_manycore_return_packet_s packet_ep_rsp_li;
+  logic                         mc_req_v_lo;
+  logic                         mc_req_yumi_li;
+  logic [     data_width_p-1:0] mc_req_data_lo;
+  logic [(data_width_p>>3)-1:0] mc_req_mask_lo;
+  logic [     addr_width_p-1:0] mc_req_addr_lo;
+  logic                         mc_req_we_lo;
+  bsg_manycore_load_info_s      mc_req_load_info_lo;
+  logic [   x_cord_width_p-1:0] mc_req_src_x_cord_lo;
+  logic [   y_cord_width_p-1:0] mc_req_src_y_cord_lo;
 
-  bsg_manycore_return_packet_aligned_s endpoint_rsp_cast_li;
-  assign endpoint_rsp_cast_li = endpoint_rsp_i;
+  // Endpoint Response
+  logic                    ep_rsp_v_li;
+  logic [data_width_p-1:0] ep_rsp_data_li;
 
   // Endpoint Request
   // -------------------------
@@ -136,51 +145,54 @@ module bsg_manycore_endpoint_to_fifos
 
   // Manycore Response
   // -----------------------------
-  assign mc_rsp_v_o = packet_mc_rsp_v_lo;
-  assign packet_mc_rsp_yumi_li = mc_rsp_ready_i & mc_rsp_v_o; // TODO: Fix
+  assign mc_rsp_v_o = mc_rsp_v_r_lo;
+  assign mc_rsp_yumi_li = mc_rsp_ready_i & mc_rsp_v_o;
 
   assign mc_rsp_cast_lo.padding  = '0;
-  assign mc_rsp_cast_lo.pkt_type = 8'(packet_mc_rsp_lo.pkt_type);
-  assign mc_rsp_cast_lo.data     = data_width_pad_lp'(packet_mc_rsp_lo.data);
-  assign mc_rsp_cast_lo.reg_id   = reg_id_width_pad_lp'(packet_mc_rsp_lo.reg_id);
-  assign mc_rsp_cast_lo.y_cord   = y_cord_width_pad_lp'(packet_mc_rsp_lo.y_cord);
-  assign mc_rsp_cast_lo.x_cord   = x_cord_width_pad_lp'(packet_mc_rsp_lo.x_cord);
+  assign mc_rsp_cast_lo.pkt_type = 8'(mc_rsp_pkt_type_r_lo);
+  assign mc_rsp_cast_lo.data     = data_width_pad_lp'(mc_rsp_data_r_lo);
+  assign mc_rsp_cast_lo.reg_id   = 8'(mc_rsp_reg_id_r_lo);
+  assign mc_rsp_cast_lo.y_cord   = y_cord_width_pad_lp'(global_y_i);
+  assign mc_rsp_cast_lo.x_cord   = x_cord_width_pad_lp'(global_x_i);
 
   // Manycore Request
   // ----------------------------
-  assign mc_req_v_o = packet_mc_req_v_lo;
-  assign packet_mc_req_yumi_li = mc_req_ready_i & mc_req_v_o; // TODO: Fix
+  assign mc_req_v_o = mc_req_v_lo;
+  assign mc_req_yumi_li = mc_req_ready_i & mc_req_v_o;
 
   assign mc_req_cast_lo.padding    = '0;
-  assign mc_req_cast_lo.addr       = addr_width_pad_lp'(packet_mc_req_lo.addr);
-  assign mc_req_cast_lo.op_v2      = 8'(packet_mc_req_lo.op_v2);
-  assign mc_req_cast_lo.reg_id     = reg_id_width_pad_lp'(packet_mc_req_lo.reg_id);
-  assign mc_req_cast_lo.payload    = data_width_pad_lp'(packet_mc_req_lo.payload);
-  assign mc_req_cast_lo.src_y_cord = y_cord_width_pad_lp'(packet_mc_req_lo.src_y_cord);
-  assign mc_req_cast_lo.src_x_cord = x_cord_width_pad_lp'(packet_mc_req_lo.src_x_cord);
-  assign mc_req_cast_lo.y_cord     = y_cord_width_pad_lp'(packet_mc_req_lo.y_cord);
-  assign mc_req_cast_lo.x_cord     = x_cord_width_pad_lp'(packet_mc_req_lo.x_cord);
+  assign mc_req_cast_lo.addr       = addr_width_pad_lp'(mc_req_addr_lo);
+  assign mc_req_cast_lo.op_v2      = mc_req_we_lo ? e_remote_store: e_remote_load;
+  assign mc_req_cast_lo.reg_id     = 8'(mc_req_mask_lo);
+  assign mc_req_cast_lo.payload    = data_width_p'(mc_req_data_lo);
+  assign mc_req_cast_lo.src_y_cord = y_cord_width_pad_lp'(mc_req_src_y_cord_lo);
+  assign mc_req_cast_lo.src_x_cord = x_cord_width_pad_lp'(mc_req_src_x_cord_lo);
+  assign mc_req_cast_lo.y_cord     = y_cord_width_pad_lp'(global_y_i);
+  assign mc_req_cast_lo.x_cord     = x_cord_width_pad_lp'(global_x_i);
 
   // Endpoint Response
-  // -----------------------------
-  assign packet_ep_rsp_v_li = endpoint_rsp_v_i;
-  assign endpoint_rsp_ready_o = '1;
+  // ---------------------------
+  // Delay fake write response by one cycle. This is dictated by the endpoint standard.
+  // The endpoint is always ready for a response.
+  logic ep_rsp_wr_v_r;
+  always_ff @(posedge clk_i) begin
+    if(reset_i)
+      ep_rsp_wr_v_r <= '0;
+    else
+      ep_rsp_wr_v_r <= mc_req_yumi_li & mc_req_we_lo;
+  end
 
-  assign packet_ep_rsp_li.pkt_type = bsg_manycore_return_packet_type_e'(endpoint_rsp_cast_li.pkt_type);
-  assign packet_ep_rsp_li.data = data_width_p'(endpoint_rsp_cast_li.data);
-  assign packet_ep_rsp_li.reg_id = bsg_manycore_reg_id_width_gp'(endpoint_rsp_cast_li.reg_id);
-  assign packet_ep_rsp_li.y_cord = y_cord_width_p'(endpoint_rsp_cast_li.y_cord);
-  assign packet_ep_rsp_li.x_cord = x_cord_width_p'(endpoint_rsp_cast_li.x_cord);
+  assign ep_rsp_data_li = '0; // ep_rsp data is zero by default. The endpoint cannot respond.
+  assign ep_rsp_v_li    = ep_rsp_wr_v_r;
 
-  bsg_manycore_endpoint_fc #(
+  bsg_manycore_endpoint_standard #(
     .x_cord_width_p(x_cord_width_p)
     ,.y_cord_width_p(y_cord_width_p)
     ,.fifo_els_p(ep_fifo_els_p)
     ,.addr_width_p(addr_width_p)
     ,.data_width_p(data_width_p)
     ,.credit_counter_width_p(credit_counter_width_p)
-  //  ,.use_credits_for_local_fifo_p(1'b1)
-    ,.rev_fifo_els_p(rev_fifo_els_p) // TODO: Increase size
+    ,.rev_fifo_els_p(rev_fifo_els_p)
   ) epsd (
     .clk_i(clk_i)
     ,.reset_i(reset_i)
@@ -189,28 +201,46 @@ module bsg_manycore_endpoint_to_fifos
     ,.link_sif_o(link_sif_o)
 
     // Manycore Request -> Endpoint
-    ,.packet_v_o(packet_mc_req_v_lo)
-    ,.packet_o(packet_mc_req_lo)
-    ,.packet_yumi_i(packet_mc_req_yumi_li)
+    ,.in_v_o(mc_req_v_lo)
+    ,.in_yumi_i(mc_req_yumi_li)
+    ,.in_data_o(mc_req_data_lo)
+    ,.in_mask_o(mc_req_mask_lo)
+    ,.in_addr_o(mc_req_addr_lo)
+    ,.in_we_o(mc_req_we_lo)
+    ,.in_load_info_o(mc_req_load_info_lo)
+    ,.in_src_x_cord_o(mc_req_src_x_cord_lo)
+    ,.in_src_y_cord_o(mc_req_src_y_cord_lo)
 
     // Endpoint Request -> Manycore
-    ,.packet_v_i(packet_ep_req_v_li)
-    ,.packet_i(packet_ep_req_li)
-    ,.packet_credit_or_ready_o(packet_ep_req_ready_lo)
+    ,.out_v_i(packet_ep_req_v_li)
+    ,.out_packet_i(packet_ep_req_li)
+    ,.out_credit_or_ready_o(packet_ep_req_ready_lo)
 
     // Manycore Response -> Endpoint
-    ,.return_packet_o(packet_mc_rsp_lo)
-    ,.return_packet_v_o(packet_mc_rsp_v_lo)
-    ,.return_packet_yumi_i(packet_mc_rsp_yumi_li)
+    ,.returned_v_r_o(mc_rsp_v_r_lo)
+    ,.returned_yumi_i(mc_rsp_yumi_li)
+    ,.returned_data_r_o(mc_rsp_data_r_lo)
+    ,.returned_reg_id_r_o(mc_rsp_reg_id_r_lo)
+    ,.returned_pkt_type_r_o(mc_rsp_pkt_type_r_lo)
+    ,.returned_fifo_full_o(mc_rsp_fifo_full_lo) // TODO: Assert
 
     // Endpoint Response -> Manycore
-    ,.return_packet_i(packet_ep_rsp_li)
-    ,.return_packet_v_i(packet_ep_rsp_v_li)
+    ,.returning_data_i(ep_rsp_data_li)
+    ,.returning_v_i(ep_rsp_v_li)
 
     ,.out_credits_used_o(out_credits_used_o)
+
+    ,.global_x_i(global_x_i)
+    ,.global_y_i(global_y_i)
   );
 
   // synopsys translate_off
+  always @(negedge clk_i) begin
+    if (~reset_i & mc_req_v_lo) begin
+       assert (mc_req_we_lo) else $error("[BSG_ERROR] Host interface cannot respond to read requests");
+    end
+  end
+
   always @(posedge clk_i) begin
     if (debug_p & packet_ep_req_v_li & packet_ep_req_ready_lo) begin
       $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", packet_ep_req_li.op_v2);
@@ -226,7 +256,7 @@ module bsg_manycore_endpoint_to_fifos
 
   always @(posedge clk_i) begin
     if (debug_p & mc_rsp_v_o & mc_rsp_ready_i) begin
-      $display("bsg_manycore_endpoint_to_fifos (response): type=%s", packet_mc_rsp_lo.pkt_type.name());
+      $display("bsg_manycore_endpoint_to_fifos (response): type=%s", mc_rsp_pkt_type_r_lo.name());
       $display("bsg_manycore_endpoint_to_fifos (response): data=%h", mc_rsp_cast_lo.data);
       $display("bsg_manycore_endpoint_to_fifos (response): reg_id=%h", mc_rsp_cast_lo.reg_id);
     end

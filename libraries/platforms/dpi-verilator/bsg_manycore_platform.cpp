@@ -1,19 +1,19 @@
 // Copyright (c) 2020, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -39,7 +39,6 @@
 
 #include <cstring>
 #include <set>
-#include <queue>
 #include <map>
 #include <xmmintrin.h>
 
@@ -62,60 +61,14 @@ typedef struct hb_mc_platform_t {
         hb_mc_manycore_id_t id;
         bsg_nonsynth_dpi::dpi_cycle_counter<uint64_t> *ctr;
         hb_mc_tracer_t tracer;
-        // This is a software fifo for holding manycore responses.
-        // hb_mc_platform_service() fills this, and
-        // hb_mc_platform_recieve drains it
-        std::queue<hb_mc_packet_t> responses;
 } hb_mc_platform_t;
-
-/**
- * Service the response fifo. The response fifo must be drained to
- * avoid backpressure on the response network, and allow the host to
- * transmit (and make progress)
- * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
- * @param[in] response A packet into which data should be read
- * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h
- */
-int hb_mc_platform_service(hb_mc_manycore_t *mc, int *err)
-{
-
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
-        SimulationWrapper *top = platform->top;
-        hb_mc_packet_t packet;
-        __m128i *pkt = reinterpret_cast<__m128i*>(&packet);
-
-        *err = platform->dpi->rx_rsp(*pkt);
-
-        if(*err == BSG_NONSYNTH_DPI_SUCCESS) {
-
-                // Enqueue reponses (but not credits)
-                // TODO: Create OP enum to make this safer
-                if(packet.response.op){
-                        platform->responses.push(packet);
-                } else {
-                        *err = BSG_NONSYNTH_DPI_NOT_VALID;
-                }
-
-        } else if(*err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-                  *err == BSG_NONSYNTH_DPI_BUSY ||
-                  *err == BSG_NONSYNTH_DPI_NOT_VALID){
-                // Normal operating conditions, continue
-                ;
-        } else {
-                manycore_pr_err(mc, "%s: Failed to service response queue: %s\n",
-                                __func__, bsg_nonsynth_dpi_strerror(*err));
-                return HB_MC_INVALID;
-        }
-
-        return HB_MC_SUCCESS;
-}
 
 /* read all unread packets from a fifo (rx only) */
 int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 {
 
-        int err, rc, drains = 0;
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        int err, drains = 0;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
         __m128i *pkt;
 
@@ -125,33 +78,18 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
         // can hold before packets are dropped. It is reused for the
         // request FIFOs.
 
-        // The configuration struct  hasn't been initialized yet, so use the low-level API 
+        // The configuration struct  hasn't been initialized yet, so use the low-level API
         hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, &cap);
 
         do {
                 top->eval();
-
-                // We use rc to record API success here, so that we
-                // can use err for DPI return codes.
-                rc = hb_mc_platform_service(mc, &err);
-                if(rc != HB_MC_SUCCESS){
-                        manycore_pr_err(mc, "%s: Servicing response fifo failed\n", __func__);
-                        return rc;
-                }
 
                 switch(type){
                 case HB_MC_FIFO_RX_REQ:
                         err = platform->dpi->rx_req(*pkt);
                         break;
                 case HB_MC_FIFO_RX_RSP:
-                        // err is set by hb_mc_platform_service() so
-                        // that NOT_WINDOW/BUSY/NOT_VALID can be
-                        // detected. We override err when removing
-                        // packets from the queue to exit the loop
-                        if(!platform->responses.empty()){
-                                platform->responses.pop();
-                                err = BSG_NONSYNTH_DPI_SUCCESS;
-                        }
+                        err = platform->dpi->rx_rsp(*pkt);
                         break;
                 default:
                         manycore_pr_err(mc, "%s: Unknown packet type\n", __func__);
@@ -161,11 +99,10 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
                 // Only increment on valid packet
                 if (err == BSG_NONSYNTH_DPI_SUCCESS)
                         drains ++;
-
         } while ((err == BSG_NONSYNTH_DPI_NOT_WINDOW  // Not in window
                   || err == BSG_NONSYNTH_DPI_SUCCESS) // Still got a packet
                  && (drains <= cap)); // Still haven't drained the IO capacity
-        
+
         if(drains == cap){
                 manycore_pr_err(mc, "%s: Failed to drain fifo %s\n", __func__,
                                 hb_mc_fifo_rx_to_string(type));
@@ -214,7 +151,7 @@ static std::map<hb_mc_manycore_id_t,SimulationWrapper*> machines;
  */
 void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
         hb_mc_tracer_cleanup(&(platform->tracer));
 
@@ -312,16 +249,6 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
                 return err;
         }
 
-        /*
-        hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, &cap);
-        if(cap > 4096){
-                hb_mc_tracer_cleanup(&(platform->tracer));
-                hb_mc_platform_dpi_cleanup(platform);
-                delete platform;
-                return HB_MC_INVALID;
-        }
-        platform->capacity = cap;*/
-
         // Enable assertions for two-state simulators
         platform->top->assertOn(true);
         return HB_MC_SUCCESS;
@@ -340,35 +267,33 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                             hb_mc_fifo_tx_t type,
                             long timeout)
 {
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
         const char *typestr = hb_mc_fifo_tx_to_string(type);
 
-        int err, rc, rx_err;
+        int err;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
                                 __func__);
                 return HB_MC_INVALID;
         }
 
-        do {                
-                top->eval();
-                        
-                if (type == HB_MC_FIFO_TX_REQ) {
-                        err = platform->dpi->tx_req(*pkt);
-                } else {
-                        err = platform->dpi->tx_rsp(*pkt);
-                }
+        if (type == HB_MC_FIFO_TX_RSP) {
+                manycore_pr_err(mc, "TX Response Not Supported!\n", typestr);
+                return HB_MC_NOIMPL;
+        }
 
-                // We use rc to filter API success here, so that we
-                // can use err for DPI return codes.
-                // Service the response fifo so that the transmit
-                // pipeline can make progress if there is no capacity.
-                rc = hb_mc_platform_service(mc, &rx_err);
-                if(rc != HB_MC_SUCCESS){
-                        manycore_pr_err(mc, "%s: Servicing response fifo failed\n", __func__);
-                        return rc;
+        bool response =
+                (packet->request.op_v2 != HB_MC_PACKET_OP_REMOTE_STORE) &&
+                (packet->request.op_v2 != HB_MC_PACKET_OP_REMOTE_SW) &&
+                (packet->request.op_v2 != HB_MC_PACKET_OP_CACHE_OP);
+
+        do {
+                top->eval();
+
+                if (type == HB_MC_FIFO_TX_REQ) {
+                        err = platform->dpi->tx_req(*pkt, response);
                 }
 
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
@@ -400,8 +325,8 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
                            long timeout)
 {
 
-        int err, rc;
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        int err;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
 
@@ -414,29 +339,12 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
         do {
                 top->eval();
 
-                // We use rc to record API success here, so that we
-                // can use err for DPI return codes.
-                rc = hb_mc_platform_service(mc, &err);
-                if(rc != HB_MC_SUCCESS){
-                        manycore_pr_err(mc, "%s: Servicing response fifo failed\n", __func__);
-                        return rc;
-                }
-
                 switch(type){
                 case HB_MC_FIFO_RX_REQ:
                         err = platform->dpi->rx_req(*pkt);
                         break;
                 case HB_MC_FIFO_RX_RSP:
-                        // err is set by hb_mc_platform_service() so
-                        // that NOT_WINDOW/BUSY/NOT_VALID can be
-                        // detected. We override err when removing
-                        // packets from the queue to exit the loop
-                        if(!platform->responses.empty()){
-                                *packet = platform->responses.front();
-                                platform->responses.pop();
-                                
-                                err = BSG_NONSYNTH_DPI_SUCCESS;
-                        }
+                        err = platform->dpi->rx_rsp(*pkt);
                         break;
                 default:
                         manycore_pr_err(mc, "%s: Unknown packet type\n", __func__);
@@ -464,11 +372,11 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
  * @param[out] config Configuration value at index
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, 
+int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
                                  unsigned int idx,
                                  hb_mc_config_raw_t *config)
 {
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
         if(idx < HB_MC_CONFIG_MAX){
                 *config = platform->dpi->config[idx];
@@ -486,8 +394,8 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long timeout){
-        int err, rc;
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        int err;
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -497,14 +405,6 @@ int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long tim
 
         do {
                 top->eval();
-
-                // We use rc to record API success here, so that we
-                // can use err for DPI return codes.
-                rc = hb_mc_platform_service(mc, &err);
-                if(rc != HB_MC_SUCCESS){
-                        manycore_pr_err(mc, "%s: Servicing response fifo failed\n", __func__);
-                        return rc;
-                }
 
                 err = platform->dpi->get_credits_used(*credits);
         } while(err == BSG_NONSYNTH_DPI_NOT_WINDOW);
@@ -520,7 +420,7 @@ int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long tim
                                 __func__, *credits);
                 return HB_MC_INVALID;
         }
-        
+
         return HB_MC_SUCCESS;
 }
 
@@ -532,7 +432,7 @@ int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long tim
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long timeout){
-        int err, rc;
+        int err;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
         if (timeout != -1) {
@@ -543,14 +443,6 @@ int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long time
 
         do {
                 top->eval();
-
-                // We use rc to record API success here, so that we
-                // can use err for DPI return codes.
-                rc = hb_mc_platform_service(mc, &err);
-                if(rc != HB_MC_SUCCESS){
-                        manycore_pr_err(mc, "%s: Servicing response fifo failed\n", __func__);
-                        return rc;
-                }
 
                 err = platform->dpi->get_credits_max(*credits);
         } while(err == BSG_NONSYNTH_DPI_NOT_WINDOW);
@@ -582,7 +474,7 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
         int credits_used = -1, err = HB_MC_SUCCESS;
         bool isvacant;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -628,7 +520,7 @@ int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc)
  */
 int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
-        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
+        hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
 
         platform->ctr->read(*time);
 
@@ -692,7 +584,7 @@ int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
  * Check if chip reset has completed.
  * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
- */        
+ */
 int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
 {
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
