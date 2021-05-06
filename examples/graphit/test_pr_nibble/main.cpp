@@ -45,14 +45,12 @@ int test_pr_nibble(int argc, char ** argv){
   if(ucode_path.find("push") != std::string::npos) {
     version = 1;
   }
-  else if(ucode_path.find("block") != std::string::npos) {
-    version = 2;
-  }
   int hybrid = 0; //default to vertex pull
   if(ucode_path.find("hybrid") != std::string::npos) {
     hybrid = 1;
   }
   std::cerr << "version: " << version << std::endl;
+  std::cerr << "hybrid: " << hybrid << std::endl;
   std::cerr << "load microcode" << std::endl;
   hammerblade::builtin_loadMicroCodeFromFile(ucode_path);
 
@@ -129,6 +127,9 @@ int test_pr_nibble(int argc, char ** argv){
     switch(version) {
       case 0: //vertex pull
 	    std::cerr << "pull kernel\n";
+      std::cerr << "preloading the cache\n";
+      device->enqueueJob("prefetch", hb_mc_dimension(X,Y),{edges.getInIndicesAddr() , edges.getInNeighborsAddr(), frontier.getAddr(), edges.num_nodes(), edges.num_edges()});
+      device->runJobs();
     	std::cerr << "run update self vertex kernel\n";
     	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {frontier.getAddr(), edges.num_nodes(), tag_c});
     	device->runJobs();
@@ -147,6 +148,9 @@ int test_pr_nibble(int argc, char ** argv){
       break;
       case 1: //vertex push
 	    std::cerr << "push kernel\n";
+      std::cerr << "preloading the cache\n";
+      device->enqueueJob("prefetch", hb_mc_dimension(X,Y),{edges.getOutIndicesAddr() , edges.getOutNeighborsAddr(), frontier.getAddr(), edges.num_nodes(), edges.num_edges()});
+      device->runJobs();
     	std::cerr << "run update self vertex kernel\n";
     	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {frontier.getAddr(), edges.num_nodes(), tag_c});
     	device->runJobs();
@@ -160,24 +164,6 @@ int test_pr_nibble(int argc, char ** argv){
     	device->runJobs();
     	std::cerr << "swap arrays\n";
    	  hammerblade::swap_global_arrays<float>(new_rank_dev, old_rank_dev);
-      f_sz = builtin_getVertexSetSizeHB(frontier, edges.num_nodes());
-      std::cerr << "size of frontier after iteration " << iter << " : " << f_sz << std::endl;
-      break;
-      case 2: //blocked pull
-	    std::cerr << "blocked pull kernel\n";
-    	std::cerr << "run update self vertex kernel\n";
-    	device->enqueueJob("updateSelf_kernel",hb_mc_dimension(X,Y), {frontier.getAddr(), edges.num_nodes(), tag_c});
-    	device->runJobs();
-    	tag_c++;
-    	std::cerr << "run update edges kernel on iter : " << iter << "\n";
-      device->enqueueJob("edgeset_apply_pull_parallel_from_vertexset_call", hb_mc_dimension(X,Y),{edges.getInVertexlistAddr() , edges.getInNeighborsAddr(), frontier.getAddr(), edges.num_nodes(), edges.num_edges(), edges.num_nodes(), tag_c});
-    	device->runJobs();
-      tag_c++;
-    	std::cerr << "create next frontier\n";
-    	device->enqueueJob("filter_frontier_where_call", hb_mc_dimension(X,Y),{frontier.getAddr(), edges.num_nodes(), edges.num_edges(), tag_c});
-    	device->runJobs();
-    	std::cerr << "swap arrays\n";
-    	hammerblade::swap_global_arrays<float>(new_rank_dev, old_rank_dev);
       f_sz = builtin_getVertexSetSizeHB(frontier, edges.num_nodes());
       std::cerr << "size of frontier after iteration " << iter << " : " << f_sz << std::endl;
       break;

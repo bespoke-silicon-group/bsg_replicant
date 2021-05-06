@@ -52,7 +52,7 @@ GRAPH_PATH := $(GRAPHIT_PATH)/test/graphs/darpa-eval/jhu.mtx
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
 KERNEL_NAME = pr_nibble
-HOST_TARGET := $(TEST_NAME).profile
+HOST_TARGET := $(TEST_NAME).exec
 
 BASE_VERSIONS += hybrid
 
@@ -179,7 +179,7 @@ all-versions: $(foreach v,$(VERSIONS),kernel/$v/$(HOST_TARGET).log)
 # Regression Flow
 ###############################################################################
 
-regression: main.exec.log
+regression: versions all-versions 
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
 ###############################################################################
@@ -201,6 +201,6 @@ version.clean:
 
 .PHONY: clean
 
-clean: version.clean
+clean: bleach-versions version.clean
 
 

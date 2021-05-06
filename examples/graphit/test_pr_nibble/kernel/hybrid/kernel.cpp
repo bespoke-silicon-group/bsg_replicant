@@ -29,9 +29,10 @@ __attribute__((section(".dram"))) float  * __restrict p;
 __attribute__((section(".dram"))) float  * __restrict old_rank;
 __attribute__((section(".dram"))) float  * __restrict new_rank;
 __attribute__((section(".dram"))) int  * __restrict out_degree;
-__attribute__((section(".dram"))) int  * __restrict generated_tmp_vector_3;
+//__attribute__((section(".dram"))) int  * __restrict generated_tmp_vector_3;
 //__attribute__((section(".dram"))) double alpha = 0.15; 
 //__attribute__((section(".dram"))) double epsilon = (double) 1e-6; 
+
 
 template <typename APPLY_FUNC > int edgeset_apply_pull_parallel_from_vertexset(int *in_indices , int *in_neighbors, int* from_vertexset, APPLY_FUNC apply_func, int V, int E, int block_size_x) 
 {
@@ -73,35 +74,6 @@ template <typename APPLY_FUNC > int edgeset_apply_push_parallel_from_vertexset(i
   return 0;
 } //end of edgeset apply function 
 
-
-struct generated_vector_op_apply_func_4
-{
-  void operator() (int v)
-  {
-    out_degree[v] = generated_tmp_vector_3[v];
-  };
-};
-struct new_rank_generated_vector_op_apply_func_2
-{
-  void operator() (int v)
-  {
-    new_rank[v] = ((float) 0) ;
-  };
-};
-struct old_rank_generated_vector_op_apply_func_1
-{
-  void operator() (int v)
-  {
-    old_rank[v] = ((float) 0) ;
-  };
-};
-struct p_generated_vector_op_apply_func_0
-{
-  void operator() (int v)
-  {
-    p[v] = ((float) 0) ;
-  };
-};
 struct updateEdge
 {
   void operator() (int src, int dst)
@@ -133,49 +105,14 @@ struct filter_frontier
   };
 };
 
-extern "C" int  __attribute__ ((noinline)) p_generated_vector_op_apply_func_0_kernel(int V) {
-	int start, end;
-	local_range(V, &start, &end);
-	for (int iter_x = start; iter_x < end; iter_x++) {
-		p_generated_vector_op_apply_func_0()(iter_x);
-	}
-	barrier.sync();
-	return 0;
-}
-extern "C" int  __attribute__ ((noinline)) old_rank_generated_vector_op_apply_func_1_kernel(int V) {
-	int start, end;
-	local_range(V, &start, &end);
-	for (int iter_x = start; iter_x < end; iter_x++) {
-		old_rank_generated_vector_op_apply_func_1()(iter_x);
-	}
-	barrier.sync();
-	return 0;
-}
-extern "C" int  __attribute__ ((noinline)) new_rank_generated_vector_op_apply_func_2_kernel(int V) {
-	int start, end;
-	local_range(V, &start, &end);
-	for (int iter_x = start; iter_x < end; iter_x++) {
-		new_rank_generated_vector_op_apply_func_2()(iter_x);
-	}
-	barrier.sync();
-	return 0;
-}
-extern "C" int  __attribute__ ((noinline)) generated_vector_op_apply_func_4_kernel(int V) {
-	int start, end;
-	local_range(V, &start, &end);
-	for (int iter_x = start; iter_x < end; iter_x++) {
-		generated_vector_op_apply_func_4()(iter_x);
-	}
-	barrier.sync();
-	return 0;
-}
 extern "C" int  __attribute__ ((noinline)) updateSelf_kernel(int * frontier, int V, int tag_c) {
+        //pr_dbg("%i: on update self tag: %i\n", bsg_id, tag_c);
   bsg_cuda_print_stat_start(tag_c);
 	barrier.sync();
 	int start, end;
 	local_range(V, &start, &end);
 	for (int iter_x = start; iter_x < end; iter_x++) {
-		if(frontier[iter_x]) { updateSelf()(iter_x); }
+		if(frontier[iter_x]) {updateSelf()(iter_x);}
 	}
   bsg_cuda_print_stat_end(tag_c);
 	barrier.sync();
@@ -224,6 +161,36 @@ extern "C" int __attribute__ ((noinline)) filter_frontier_where_call(int * next5
   bsg_cuda_print_stat_end(tag_c);
 	barrier.sync();
 	return 0;
+}
+
+extern "C" void prefetch(int * in_indices, int * in_neighbors, int * from_vertexset, int V, int E) {
+  	int id = __bsg_id;
+  	int threads = bsg_tiles_X * bsg_tiles_Y;
+    // prefetch all data;
+    for (int i = 32 * id; i < E; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (in_neighbors[i]));
+    }
+    for (int i = 32 * id; i < V; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (in_indices[i]));
+    }
+    for (int i = 32 * id; i < V; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (from_vertexset[i]));
+    }
+    for (int i = 32 * id; i < V; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (out_degree[i]));
+    }
+    for (int i = 32 * id; i < V; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (p[i]));
+    }
+    for (int i = 32 * id; i < V; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (old_rank[i]));
+    }
+    for (int i = 32 * id; i < V; i += 32 * threads) {
+        asm volatile ("lw x0, %[p]" :: [p] "m" (new_rank[i]));
+    }
+		barrier.sync();
+    return ;
+
 }
 
 
