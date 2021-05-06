@@ -5,14 +5,14 @@ include $(BSG_MACHINE_PATH)/Makefile.machine.include
 
 # $1 = pod-x
 # $2 = pod-y
-# $3 = south-not-north
-# $4 = vcache-x
+# $3 = tile-x
+# $4 = tile-y
 all:
 
 # range function
 range = $(shell echo {0..$(shell echo $1-1|bc)})
 # test name function
-test-name = pod-x-$1_pod-y-$2_south-not-north-$3_vcache-x-$4
+test-name = pod-x-$1_pod-y-$2_tile-x-$3_tile-y-$4
 define test
 .PHONY: generate-$(call test-name,$1,$2,$3,$4)
 generate-$(call test-name,$1,$2,$3,$4): run/$(call test-name,$1,$2,$3,$4)/main.cpp
@@ -29,8 +29,8 @@ run/$(call test-name,$1,$2,$3,$4)/Makefile: template.mk
 run/$(call test-name,$1,$2,$3,$4)/unit.inc:
 	@mkdir -p $$(dir $$@)
 	touch $$@
-	@$(foreach set,$(call range,$(BSG_MACHINE_VCACHE_SET)),\
-	printf "DECLARE_TEST(%d,%d,%d,%d,%d)\n" $1 $2 $3 $4 $(set) >> $$@;)
+	@$(foreach word,$(call range,1024),\
+	printf "DECLARE_TEST(%d,%d,%d,%d,%d)\n" $1 $2 $3 $4 $(word) >> $$@;)
 
 .PHONY: run-$(call test-name,$1,$2,$3,$4)
 run-$(call test-name,$1,$2,$3,$4): generate-$(call test-name,$1,$2,$3,$4)
@@ -43,13 +43,12 @@ endef
 
 $(foreach pod-x,$(call range,$(BSG_MACHINE_PODS_X)),\
 $(foreach pod-y,$(call range,$(BSG_MACHINE_PODS_Y)),\
-$(foreach south-not-north,$(call range,2),\
-$(foreach l2-x,$(call range,$(BSG_MACHINE_POD_TILES_X)),\
-$(eval $(call test,$(pod-x),$(pod-y),$(south-not-north),$(l2-x)))))))
+$(foreach tile-x,$(call range,$(BSG_MACHINE_POD_TILES_X)),\
+$(foreach tile-y,$(call range,$(BSG_MACHINE_POD_TILES_Y)),\
+$(eval $(call test,$(pod-x),$(pod-y),$(tile-x),$(tile-y)))))))
 
 
 .PHONY: clean all debug generate report.txt
-
 
 report.txt: $(run)
 	@rm -f $@.tmp
@@ -66,11 +65,10 @@ report.txt: $(run)
 	@echo "===================================================" >> $@
 	@cat $@.tmp >> $@
 
-
 debug:
 	@echo $(tests)
 
-all: $(tests)
+all: $(run)
 generate: $(generates)
 
 clean:
