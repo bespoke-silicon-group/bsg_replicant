@@ -206,8 +206,6 @@ module manycore_tb_top
       // manycore link
       ,.link_sif_i(host_link_sif_li)
       ,.link_sif_o(host_link_sif_lo)
-      ,.my_x_i(host_x_cord_li)
-      ,.my_y_i(host_y_cord_li)
       );
 
    bsg_print_stat_snoop

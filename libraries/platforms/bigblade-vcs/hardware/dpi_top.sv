@@ -274,8 +274,6 @@ module replicant_tb_top
       // manycore link
       ,.link_sif_i(host_link_sif_lo)
       ,.link_sif_o(host_link_sif_li)
-      ,.my_x_i(host_x_coord_li)
-      ,.my_y_i(host_y_coord_li)
       );
 
    bsg_dff_chain
