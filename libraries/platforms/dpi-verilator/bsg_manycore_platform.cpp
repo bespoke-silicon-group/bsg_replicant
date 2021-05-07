@@ -183,7 +183,6 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
 {
 
         int err;
-        hb_mc_config_raw_t cap;
         hb_mc_platform_t *platform = new hb_mc_platform_t;
         std::string hierarchy;
         hb_mc_idx_t x, y;
@@ -248,7 +247,6 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
                 delete platform;
                 return err;
         }
-
         // Enable assertions for two-state simulators
         platform->top->assertOn(true);
         return HB_MC_SUCCESS;
@@ -291,10 +289,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
 
         do {
                 top->eval();
-
-                if (type == HB_MC_FIFO_TX_REQ) {
-                        err = platform->dpi->tx_req(*pkt, response);
-                }
+                err = platform->dpi->tx_req(*pkt, response);
 
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NO_CREDITS ||
@@ -462,7 +457,6 @@ int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long time
         return HB_MC_SUCCESS;
 }
 
-
 /**
  * Stall until the all requests (and responses) have reached their destination.
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
@@ -485,7 +479,7 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
         do {
                 err = hb_mc_platform_get_credits_used(mc, &credits_used, timeout);
                 platform->dpi->tx_is_vacant(isvacant);
-        } while(err == HB_MC_SUCCESS && !(credits_used == 0 && isvacant));
+        } while(err == HB_MC_SUCCESS && !((credits_used == 0) && isvacant));
 
         return err;
 }
