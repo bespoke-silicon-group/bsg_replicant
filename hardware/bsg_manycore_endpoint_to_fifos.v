@@ -172,7 +172,15 @@ module bsg_manycore_endpoint_to_fifos
 
   // Endpoint Response
   // ---------------------------
-  // Delay fake write response by one cycle. This is dictated by the endpoint standard.
+
+  // Delay automatic write responses by one cycle. This is dictated
+  // by the endpoint standard, which expects a 1-cycle SRAM interface
+  // to maintain full throughput.
+  //
+  // Responses are NOT sent for reads, just for writes. The
+  // endpoint_standard handles amoswap responses and they do not need
+  // to be handled here.
+  // 
   // The endpoint is always ready for a response.
   logic ep_rsp_wr_v_r;
   always_ff @(posedge clk_i) begin
