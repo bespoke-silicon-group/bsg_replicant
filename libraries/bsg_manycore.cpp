@@ -311,6 +311,7 @@ int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
                 bsg_pr_err("responder failure to %s\n", request_str);
                 return err;
         }
+        return HB_MC_SUCCESS;
 }
 
 /**
