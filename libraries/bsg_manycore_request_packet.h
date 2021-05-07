@@ -462,6 +462,7 @@ extern "C" {
                          "dst=(X:%" PRIu8 ",Y:%" PRIu8 "), "
                          "addr=0x%08" PRIx32 ", "
                          "data=0x%08" PRIx32 ", "
+                         "id=0x%02" PRIx8 ","
                          "op=0x%02" PRIx8 ""
                          "}",
                          hb_mc_request_packet_get_x_src(packet),
@@ -470,6 +471,7 @@ extern "C" {
                          hb_mc_request_packet_get_y_dst(packet),
                          hb_mc_request_packet_get_addr(packet),
                          hb_mc_request_packet_get_data(packet),
+                         hb_mc_request_packet_get_load_id(packet),
                          hb_mc_request_packet_get_op(packet)
                          );
 

@@ -309,8 +309,8 @@ int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
                 char request_str[64];
                 hb_mc_request_packet_to_string(request, request_str, sizeof(request_str));
                 bsg_pr_err("responder failure to %s\n", request_str);
+                return err;
         }
-
         return HB_MC_SUCCESS;
 }
 

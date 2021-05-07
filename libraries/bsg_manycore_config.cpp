@@ -156,17 +156,17 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         CHECK_FIELD(HB_MC_CONFIG_VCACHE_STRIPE_WORDS, idx >= config->vcache_block_words);
         config->vcache_stripe_words = idx;
 
-
+        // Response fifo capacity
         idx = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
         CHECK_FIELD(HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, idx >= HB_MC_REMOTE_LOAD_MIN && idx <= HB_MC_REMOTE_LOAD_MAX);
         config->io_remote_load_cap = idx;
 
-
+        // Field no longer used
         idx = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
-        CHECK_FIELD(HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS, idx >= HB_MC_EP_OUT_CREDITS_MIN && idx <= HB_MC_EP_OUT_CREDITS_MAX);
+        //CHECK_FIELD(HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS, idx >= HB_MC_EP_OUT_CREDITS_MIN && idx <= HB_MC_EP_OUT_CREDITS_MAX);
         config->io_endpoint_max_out_credits = idx;
 
-
+        // Host endpoint credits
         idx = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
         CHECK_FIELD(HB_MC_CONFIG_IO_HOST_CREDITS_CAP, idx >= HB_MC_HOST_CREDITS_MIN && idx <= HB_MC_HOST_CREDITS_MAX);
         config->io_host_credits_cap = idx;

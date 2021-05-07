@@ -193,7 +193,7 @@ module manycore_tb_top
        ,.data_width_p(bsg_machine_noc_data_width_gp)
        ,.ep_fifo_els_p(ep_fifo_els_lp)
        ,.dpi_fifo_els_p(bsg_machine_dpi_fifo_els_gp)
-       ,.fifo_width_p(128) // It would be better to read this from somewhere
+       ,.fifo_width_p(bsg_manycore_packet_aligned_width_gp)
        ,.rom_els_p(bsg_machine_rom_els_gp)
        ,.rom_width_p(bsg_machine_rom_width_gp)
        ,.rom_arr_p(bsg_machine_rom_arr_gp)
@@ -206,8 +206,6 @@ module manycore_tb_top
       // manycore link
       ,.link_sif_i(host_link_sif_li)
       ,.link_sif_o(host_link_sif_lo)
-      ,.my_x_i(host_x_cord_li)
-      ,.my_y_i(host_y_cord_li)
       );
 
    bsg_print_stat_snoop

@@ -162,7 +162,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_VCACHE_MISS_FIFO_ELS)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_REMOTE_LOAD_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_EP_CREDITS)) >> $@.temp
-	@echo $(call dec2bin,$(BSG_MACHINE_IO_HOST_CREDITS)) >> $@.temp
+	@echo $(call dec2bin,0)                            >> $@.temp
 	@cat $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom >> $@.temp
 	mv $@.temp $@
 
@@ -226,7 +226,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "import bsg_manycore_network_cfg_pkg::*;" >> $@
 	@echo "import bsg_manycore_mem_cfg_pkg::*;" >> $@
 	@echo >> $@
-	@echo "parameter bsg_machine_dpi_fifo_els_gp = $(BSG_MACHINE_IO_EP_CREDITS);" >> $@
+	@echo "parameter bsg_machine_dpi_fifo_els_gp = $(BSG_MACHINE_IO_REMOTE_LOAD_CAP);" >> $@
 	@echo >> $@
 	@echo "parameter bsg_machine_rom_width_gp = 32;" >> $@
 	@echo "parameter bsg_machine_rom_els_gp = `wc -l < $<`;" >> $@
@@ -267,8 +267,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter int bsg_machine_io_coord_y_gp = $(BSG_MACHINE_HOST_COORD_Y);" >> $@
 	@echo "parameter int bsg_machine_io_coord_x_gp = $(BSG_MACHINE_HOST_COORD_X);" >> $@
-	@echo "parameter int bsg_machine_io_credits_max_gp = $(BSG_MACHINE_IO_EP_CREDITS);" >> $@
-	@echo "parameter int bsg_machine_io_pkts_max_gp = $(BSG_MACHINE_IO_EP_CREDITS);" >> $@
+	@echo "parameter int bsg_machine_io_credits_max_gp = $(BSG_MACHINE_IO_EP_CREDITS);" >> $@ # credits for endpoint
 	@echo >> $@
 	@echo "parameter int bsg_machine_origin_coord_y_gp = $(BSG_MACHINE_ORIGIN_COORD_Y);" >> $@
 	@echo "parameter int bsg_machine_origin_coord_x_gp = $(BSG_MACHINE_ORIGIN_COORD_X);" >> $@

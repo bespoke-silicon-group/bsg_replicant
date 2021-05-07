@@ -169,7 +169,7 @@ extern "C" {
                          "response_pkt{"
                          "dst=(X:%" PRIu8 ",Y:%" PRIu8 "), "
                          "data=0x%08" PRIx32 ","
-                         "id=0x%08" PRIx32 ","
+                         "id=0x%02" PRIx8 ","
                          "op=0x%02" PRIx8 ""
                          "}",
                          hb_mc_response_packet_get_x_dst(packet),

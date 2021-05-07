@@ -262,7 +262,7 @@ module replicant_tb_top
        ,.rom_els_p(bsg_machine_rom_els_gp)
        ,.rom_width_p(bsg_machine_rom_width_gp)
        ,.rom_arr_p(bsg_machine_rom_arr_gp)
-       ,.max_out_credits_p(bsg_machine_io_credits_max_gp)
+       ,.credit_counter_width_p(`BSG_WIDTH(bsg_machine_io_credits_max_gp))
        )
    mc_dpi
      (
@@ -274,8 +274,9 @@ module replicant_tb_top
       // manycore link
       ,.link_sif_i(host_link_sif_lo)
       ,.link_sif_o(host_link_sif_li)
-      ,.my_x_i(host_x_coord_li)
-      ,.my_y_i(host_y_coord_li)
+
+      ,.global_y_i(host_y_coord_li)
+      ,.global_x_i(host_x_coord_li)
       );
 
    bsg_dff_chain

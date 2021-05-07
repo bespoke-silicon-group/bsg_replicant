@@ -65,11 +65,8 @@ extern "C" {
         #define HB_MC_REMOTE_LOAD_MIN 1
         #define HB_MC_REMOTE_LOAD_MAX 32
 
-        #define HB_MC_EP_OUT_CREDITS_MIN 1
-        #define HB_MC_EP_OUT_CREDITS_MAX 64
-
         #define HB_MC_HOST_CREDITS_MIN 1
-        #define HB_MC_HOST_CREDITS_MAX 512
+        #define HB_MC_HOST_CREDITS_MAX 32
 
         typedef hb_mc_rom_word_t hb_mc_config_raw_t;
 
