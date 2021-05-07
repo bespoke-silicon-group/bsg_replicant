@@ -282,14 +282,20 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                 return HB_MC_NOIMPL;
         }
 
-        bool response =
+        // The DPI interface doesn't understand packets, but it does
+        // track response fifo occupancy. However, only some requests
+        // produce responses because we use the endpoint standard
+        // (which filters write responses). We use expect_response to
+        // indicate that this request will produce a response, so that
+        // the DPI interface can track the response fifo capacity.
+        bool expect_response =
                 (packet->request.op_v2 != HB_MC_PACKET_OP_REMOTE_STORE) &&
                 (packet->request.op_v2 != HB_MC_PACKET_OP_REMOTE_SW) &&
                 (packet->request.op_v2 != HB_MC_PACKET_OP_CACHE_OP);
 
         do {
                 top->eval();
-                err = platform->dpi->tx_req(*pkt, response);
+                err = platform->dpi->tx_req(*pkt, expect_response);
 
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
                  (err == BSG_NONSYNTH_DPI_NO_CREDITS ||
