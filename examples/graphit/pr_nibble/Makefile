@@ -128,7 +128,7 @@ TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
-RISCV_INCLUDES += -I$(REPLICANT_PATH)/examples/graphit/test_pr_nibble/kernel/include -I$(GRAPHIT_PATH)/src/runtime_lib/infra_hb/device/
+RISCV_INCLUDES += -I$(CURRENT_PATH)/kernel/include -I$(GRAPHIT_PATH)/src/runtime_lib/infra_hb/device/
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
