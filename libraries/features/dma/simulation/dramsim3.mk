@@ -45,12 +45,6 @@ ifndef LIBRARIES_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
 endif
 
-# PROJECT: The project name, used to as the work directory of the hardware
-# library during analysis
-ifndef PROJECT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
-endif
-
 # Don't include more than once
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
