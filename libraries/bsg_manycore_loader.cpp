@@ -719,11 +719,13 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                 return rc;
         }
 
-        /* set/clear DRAM enabled */
-        if (hb_mc_manycore_dram_is_enabled(mc)) {
-                rc = hb_mc_tile_set_dram_enabled(mc, &tile);
-        } else {
-                rc = hb_mc_tile_clear_dram_enabled(mc, &tile);
+        // Before 05/21 this called set_dram_enabled /
+        // clear_dram_enabled depending on the return value from
+        // hb_mc_manycore_dram_is_enabled. The DRAM Enable CSR has
+        // been removed and this functionality has been deprecated.
+        // If DRAM is disabled fail with an appropriate error message.
+        if (!hb_mc_manycore_dram_is_enabled(mc)) {
+                rc = HB_MC_NOIMPL;
         }
 
         if (rc != HB_MC_SUCCESS) {

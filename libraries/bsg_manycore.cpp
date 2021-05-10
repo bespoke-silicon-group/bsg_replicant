@@ -1286,21 +1286,12 @@ int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_
 int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        /* for each tile */
-        hb_mc_idx_t
-                n_rows = hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg)),
-                n_cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
 
-        for (hb_mc_idx_t row = 0; row < n_rows; row++) {
-                for (hb_mc_idx_t col = 0; col < n_cols; col++) {
-                        hb_mc_idx_t x = col + hb_mc_config_get_vcore_base_x(cfg);
-                        hb_mc_idx_t y = row + hb_mc_config_get_vcore_base_y(cfg);
-                        hb_mc_coordinate_t tile = hb_mc_coordinate(x,y);
-                        int err = hb_mc_tile_set_dram_enabled(mc, &tile);
-                        if (err != HB_MC_SUCCESS)
-                                return err;
-                }
-        }
+        // Before 05/21 this method wrote 1 to the DRAM Enable CSR on
+        // each tile (using hb_mc_tile_set_dram_enable). This CSR has
+        // been removed. This method remains as a placeholder in case
+        // further support is needed in the future
+
         mc->dram_enabled = 1;
         return HB_MC_SUCCESS;
 }
@@ -1313,23 +1304,18 @@ int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc)
 int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        /* for each tile */
-        hb_mc_idx_t
-                n_rows = hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg)),
-                n_cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
 
-        for (hb_mc_idx_t row = 0; row < n_rows; row++) {
-                for (hb_mc_idx_t col = 0; col < n_cols; col++) {
-                        hb_mc_idx_t x = col + hb_mc_config_get_vcore_base_x(cfg);
-                        hb_mc_idx_t y = row + hb_mc_config_get_vcore_base_y(cfg);
-                        hb_mc_coordinate_t tile = hb_mc_coordinate(x,y);
-                        int err = hb_mc_tile_clear_dram_enabled(mc, &tile);
-                        if (err != HB_MC_SUCCESS)
-                                return err;
-                }
-        }
+        // Before 05/21 this method wrote 0 to the DRAM Enable CSR on
+        // each tile (using hb_mc_tile_set_dram_enable). This CSR has
+        // been removed. This method remains as a placeholder in case
+        // further support is needed in the future
+
+        bsg_pr_warn("%s (%s): %s", mc->name, __func__, "DEPRECATED:"
+                    " The No-DRAM CSR has been removed as of 05/21."
+                    " This Mode is no longer managed by the runtime.\n");
+
         mc->dram_enabled = 0;
-        return HB_MC_SUCCESS;
+        return HB_MC_NOIMPL;
 }
 
 //------------------------------------------------------------

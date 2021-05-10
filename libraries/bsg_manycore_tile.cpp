@@ -45,8 +45,19 @@
  */
 int hb_mc_tile_set_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
 {
-        hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_DRAM_ENABLE);
-        return hb_mc_manycore_write32(mc, &npa, 1);
+        // Before 05/21 this cleared the DRAM ENABLE CSR. The DRAM
+        // Enable CSR has been removed and this functionality has been
+        // deprecated.
+
+        // hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_DRAM_ENABLE);
+        // return hb_mc_manycore_write32(mc, &npa, 0);
+        static bool warned = false;
+        if(!warned)
+                bsg_pr_warn("%s: %s", mc->name, "DEPRECATED:"
+                            " The No-DRAM CSR has been removed as of 05/21."
+                            " This Mode is no longer managed by the runtime.\n");
+        warned = true;
+        return HB_MC_SUCCESS;
 }
 
 /**
@@ -58,8 +69,19 @@ int hb_mc_tile_set_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *
  */
 int hb_mc_tile_clear_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
 {
-        hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_DRAM_ENABLE);
-        return hb_mc_manycore_write32(mc, &npa, 0);
+        // Before 05/21 this cleared the DRAM ENABLE CSR. The DRAM
+        // Enable CSR has been removed and this functionality has been
+        // deprecated.
+
+        // hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_DRAM_ENABLE);
+        // return hb_mc_manycore_write32(mc, &npa, 0);
+        static bool warned = false;
+        if(!warned)
+                bsg_pr_warn("%s: %s", mc->name, "DEPRECATED:"
+                            " The No-DRAM CSR has been removed as of 05/21."
+                            " This Mode is no longer managed by the runtime.\n");
+        warned = true;
+        return HB_MC_NOIMPL;
 }
 
 /**

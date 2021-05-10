@@ -382,7 +382,13 @@ static uint32_t default_get_dram_bitwidth(const hb_mc_manycore_t *mc)
         if (hb_mc_manycore_dram_is_enabled(mc)) {
                 return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
         } else {
-                return ceil(log2(hb_mc_config_get_vcache_size(cfg))); // clog2(victim cache size)
+                // Before 05/21 this method returned clog2(vcache
+                // size). It now returns 0 since No-DRAM
+                // mode has been deprecated in the runtime.
+                bsg_pr_warn("%s (%s): %s", mc->name, __func__, "DEPRECATED:"
+                            " The No-DRAM CSR has been removed as of 05/21."
+                            " This Mode is no longer managed by the runtime.\n");
+                return 0;
         }
 }
 
@@ -392,7 +398,13 @@ static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
         if (hb_mc_manycore_dram_is_enabled(mc)) {
                 return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
         } else {
-                return ceil(log2(hb_mc_config_get_vcache_size(cfg))); // clog2(victim cache size)
+                // Before 05/21 this method returned clog2(vcache
+                // size). It now returns 32 since No-DRAM
+                // mode has been deprecated in the runtime.
+                bsg_pr_warn("%s (%s): %s", mc->name, __func__, "DEPRECATED:"
+                            " The No-DRAM CSR has been removed as of 05/21."
+                            " This Mode is no longer managed by the runtime.\n");
+                return 32;
         }
 }
 
@@ -640,7 +652,13 @@ static bool default_dram_epa_is_valid(const hb_mc_manycore_t *mc,
         if (hb_mc_manycore_dram_is_enabled(mc)) {
                 return epa < hb_mc_config_get_dram_size(cfg);
         } else {
-                return epa < hb_mc_config_get_vcache_size(cfg);
+                // Before 05/21 this method returned true if the EPA
+                // was less than the totcal vcache size
+                // (hb_mc_config_get_vcache_size). This CSR has been
+                // removed, so this method now returns false
+                // since No-DRAM mode has been deprecated in the
+                // runtime.
+                return false;
         }
 }
 
