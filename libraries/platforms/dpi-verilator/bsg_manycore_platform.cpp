@@ -226,7 +226,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         }
 
         err = hb_mc_tracer_init(&(platform->tracer), hierarchy);
-        if (err != HB_MC_SUCCESS){
+        if (err != HB_MC_SUCCESS && err != HB_MC_NOIMPL){
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
                 return err;
