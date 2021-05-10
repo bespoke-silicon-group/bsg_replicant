@@ -26,17 +26,13 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/dpi-verilator/bsg_manycore_platform.cpp
-
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_simulator.cpp
-
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/tapeout-vcs/bsg_manycore_simulator.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
 
 PLATFORM_REGRESSION_CSOURCES += $(LIBRARIES_PATH)/platforms/tapeout-vcs/bsg_manycore_regression_platform.c
 
-# The aws-vcs platform supports simulation DMA on certain
-# machines. Support is determined by the memory system configuration
-# at runtime.
-include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
+# no DMA for now...
+include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
