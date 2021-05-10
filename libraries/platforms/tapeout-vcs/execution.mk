@@ -41,13 +41,10 @@ SIM_ARGS += +ntb_random_seed_automatic
 
 #CURDIR = $(notdir $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
 
-$(TEST_NAME).saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/machine
-$(TEST_NAME).debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/machine
-$(TEST_NAME).exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/machine
-$(TEST_NAME).profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/machine
+$(TEST_NAME).exec.log: $(BSG_MACHINE_PATH)/simv
 
 %.log: main.so $(BSG_MANYCORE_KERNELS) 
-	$(filter %/machine, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
+	$(filter %/simv, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
 
