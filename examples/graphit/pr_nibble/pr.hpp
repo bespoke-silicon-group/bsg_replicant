@@ -2,7 +2,7 @@
 #ifndef __PR_PULL_BENCHMARK_HPP
 #define __PR_PULL_BENCHMARK_HPP
 
-#include "hb_intrinsics.h"
+#include "hb_intrinsics.h" //graphit host runtime libs
 #include "infra_hb/host/arg_parser.hpp"
 #include <bsg_manycore_regression.h>
 #include <string.h>
