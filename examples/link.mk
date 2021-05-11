@@ -42,7 +42,7 @@ endif
 %: %.c
 %: %.cpp
 
-include $(BSG_PLATFORM_PATH)/link.mk
+-include $(BSG_PLATFORM_PATH)/link.mk
 
 .PHONY: link.clean
 link.clean:
