@@ -251,22 +251,22 @@ module bsg_manycore_endpoint_to_fifos
 
   always @(posedge clk_i) begin
     if (debug_p & packet_ep_req_v_li & packet_ep_req_ready_lo) begin
-      $display("bsg_manycore_endpoint_to_fifos: op_v2=%d", packet_ep_req_li.op_v2);
-      $display("bsg_manycore_endpoint_to_fifos: addr=%h", packet_ep_req_li.addr);
-      $display("bsg_manycore_endpoint_to_fifos: data=%h", packet_ep_req_li.payload.data);
-      $display("bsg_manycore_endpoint_to_fifos: reg_id=%h", packet_ep_req_li.reg_id);
-      $display("bsg_manycore_endpoint_to_fifos: x_cord=%d", packet_ep_req_li.x_cord);
-      $display("bsg_manycore_endpoint_to_fifos: y_cord=%d", packet_ep_req_li.y_cord);
-      $display("bsg_manycore_endpoint_to_fifos: src_x_cord=%d", packet_ep_req_li.src_x_cord);
-      $display("bsg_manycore_endpoint_to_fifos: src_y_cord=%d", packet_ep_req_li.src_y_cord);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): op_v2=%d", packet_ep_req_li.op_v2);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): addr=%h", packet_ep_req_li.addr);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): data=%h", packet_ep_req_li.payload.data);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): reg_id=%h", packet_ep_req_li.reg_id);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): x_cord=%d", packet_ep_req_li.x_cord);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): y_cord=%d", packet_ep_req_li.y_cord);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): src_x_cord=%d", packet_ep_req_li.src_x_cord);
+      $display("bsg_manycore_endpoint_to_fifos (request (host->mc)): src_y_cord=%d", packet_ep_req_li.src_y_cord);
     end
   end
 
   always @(posedge clk_i) begin
     if (debug_p & mc_rsp_v_o & mc_rsp_ready_i) begin
-      $display("bsg_manycore_endpoint_to_fifos (response): type=%s", mc_rsp_pkt_type_r_lo.name());
-      $display("bsg_manycore_endpoint_to_fifos (response): data=%h", mc_rsp_cast_lo.data);
-      $display("bsg_manycore_endpoint_to_fifos (response): reg_id=%h", mc_rsp_cast_lo.reg_id);
+      $display("bsg_manycore_endpoint_to_fifos (response (mc->host)): type=%s", mc_rsp_pkt_type_r_lo.name());
+      $display("bsg_manycore_endpoint_to_fifos (response (mc->host)): data=%h", mc_rsp_cast_lo.data);
+      $display("bsg_manycore_endpoint_to_fifos (response (mc->host)): reg_id=%h", mc_rsp_cast_lo.reg_id);
     end
   end
   // synopsys translate_on
