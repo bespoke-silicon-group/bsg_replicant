@@ -40,7 +40,7 @@ DEFINES    += -DVCS
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-LDFLAGS    += -lstdc++ -lc
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
 CXXFLAGS   += $(DEFINES) -fPIC
 CFLAGS     += $(DEFINES) -fPIC
 
