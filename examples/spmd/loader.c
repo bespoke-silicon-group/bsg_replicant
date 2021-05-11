@@ -148,6 +148,13 @@ int test_loader(int argc, char **argv) {
                                    bin_path, hb_mc_strerror(err));
                         return err;
                 }
+        }
+
+        /* unfreeze tile */
+        hb_mc_config_foreach_pod(pod, cfg)
+        {
+                hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
+                hb_mc_coordinate_t target = origin;
 
                 err = hb_mc_tile_unfreeze(mc, &target);
                 if (err != HB_MC_SUCCESS) {
@@ -157,41 +164,48 @@ int test_loader(int argc, char **argv) {
                                    hb_mc_strerror(err));
                         goto cleanup;
                 }
+        }
 
-                usleep(100);
+        /* wait until all pods have completed */
+        int done = 0;
+        while (done < cfg->pods.x * cfg->pods.y) {
+                hb_mc_packet_t pkt;
+                bsg_pr_dbg("Waiting for finish packet\n");
 
-                int done = 0;
-                while (!done) {
-                        hb_mc_packet_t pkt;
-                        bsg_pr_dbg("Waiting for finish packet\n");
+                err = hb_mc_manycore_packet_rx(mc, &pkt, HB_MC_FIFO_RX_REQ, -1);
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("failed to read response packet: %s\n",
+                                   hb_mc_strerror(err));
 
-                        err = hb_mc_manycore_packet_rx(mc, &pkt, HB_MC_FIFO_RX_REQ, -1);
-                        if (err != HB_MC_SUCCESS) {
-                                bsg_pr_err("failed to read response packet: %s\n",
-                                           hb_mc_strerror(err));
-
-                                return HB_MC_FAIL;
-                        }
-
-                        char pkt_str[128];
-                        hb_mc_request_packet_to_string(&pkt.request, pkt_str, sizeof(pkt_str));
-
-                        bsg_pr_dbg("received packet %s\n", pkt_str);
-                
-                        switch (hb_mc_request_packet_get_epa(&pkt.request)) {
-                        case 0xEAD0:
-                                bsg_pr_dbg("received finish packet\n");
-                                err = HB_MC_SUCCESS;
-                                done = 1;
-                                break;
-                        case 0xEAD8:
-                                bsg_pr_dbg("received fail packet\n");
-                                err = HB_MC_FAIL;
-                                return err;
-                        default: break;
-                        }
+                        return HB_MC_FAIL;
                 }
-        } // foreach pod...
+
+                char pkt_str[128];
+                hb_mc_request_packet_to_string(&pkt.request, pkt_str, sizeof(pkt_str));
+                bsg_pr_dbg("received packet %s\n", pkt_str);
+
+                hb_mc_coordinate_t src;
+                src.x = hb_mc_request_packet_get_x_src(&pkt.request);
+                src.y = hb_mc_request_packet_get_y_src(&pkt.request);
+                pod = hb_mc_config_pod(cfg, src);
+
+                switch (hb_mc_request_packet_get_epa(&pkt.request)) {
+                case 0xEAD0:
+                        bsg_pr_test_info("Received finish packet from (%3,%3)\n", pod.x, pod.y);
+                        bsg_pr_dbg("received finish packet\n");
+                        err = (err == HB_MC_FAIL ? HB_MC_FAIL : HB_MC_SUCCESS);
+                        done += 1;
+                        break;
+                case 0xEAD8:
+                        bsg_pr_test_info("Received failed packet from (%3,%3)\n", pod.x, pod.y);
+                        bsg_pr_dbg("received fail packet\n");
+                        err = HB_MC_FAIL;
+                        done += 1;
+                        break;
+                default: break;
+                }
+        }
+
 cleanup:
         hb_mc_manycore_exit(mc);
         return err;
