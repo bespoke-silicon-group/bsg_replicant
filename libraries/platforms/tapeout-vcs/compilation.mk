@@ -40,8 +40,9 @@ DEFINES    += -DVCS
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-CXXFLAGS   += -lstdc++ $(DEFINES) -fPIC
-CFLAGS     += -lc $(DEFINES) -fPIC
+LDFLAGS    += -lstdc++ -lc
+CXXFLAGS   += $(DEFINES) -fPIC
+CFLAGS     += $(DEFINES) -fPIC
 
 # each regression target needs to build its .o from a .c and .h of the
 # same name
@@ -59,7 +60,7 @@ TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
 main.so: $(TEST_OBJECTS)
-	$(LD) -shared -o $@ $^ $(LDFLAGS)
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
 
 .PRECIOUS: %.o %.so
 
