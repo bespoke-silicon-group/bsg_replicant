@@ -138,8 +138,8 @@ module bsg_manycore_endpoint_to_fifos
   assign packet_ep_req_li.op_v2      = bsg_manycore_packet_op_e'(endpoint_req_cast_li.op_v2);
   assign packet_ep_req_li.reg_id     = bsg_manycore_reg_id_width_gp'(endpoint_req_cast_li.reg_id);
   assign packet_ep_req_li.payload    = endpoint_req_cast_li.payload;
-  assign packet_ep_req_li.src_y_cord = y_cord_width_p'(endpoint_req_cast_li.src_y_cord);
-  assign packet_ep_req_li.src_x_cord = x_cord_width_p'(endpoint_req_cast_li.src_x_cord);
+  assign packet_ep_req_li.src_y_cord = y_cord_width_p'(global_y_i);
+  assign packet_ep_req_li.src_x_cord = x_cord_width_p'(global_x_i);
   assign packet_ep_req_li.y_cord     = y_cord_width_p'(endpoint_req_cast_li.y_cord);
   assign packet_ep_req_li.x_cord     = x_cord_width_p'(endpoint_req_cast_li.x_cord);
 
