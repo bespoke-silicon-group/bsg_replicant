@@ -39,14 +39,6 @@
 # CL_DIR: Path to the directory of this AWS F1 Project
 include ../environment.mk
 
-# The following variables are set by $(CL_DIR)/hdk.mk
-#
-# HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
-# AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
-# HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
-# SDK_DIR: Path to the SDK directory in the aws-fpga repo
-include $(CL_DIR)/hdk.mk
-
 # libraries.mk defines rules for building the BSG Manycore Runtime libraries,
 # flags, and a list of sources.
 include $(LIBRARIES_PATH)/libraries.mk
