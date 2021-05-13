@@ -41,7 +41,8 @@ SIM_ARGS += +ntb_random_seed_automatic
 
 #CURDIR = $(notdir $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
 
-$(TEST_NAME).exec.log: $(BSG_MACHINE_PATH)/simv
+$(TEST_NAME).exec.log: $(BSG_MACHINE_PATH)/cuda/simv
+$(TEST_NAME).debug.log: $(BSG_MACHINE_PATH)/cuda/simv-debug
 
 %.log: main.so $(BSG_MANYCORE_KERNELS) 
 	$(filter %/simv, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@

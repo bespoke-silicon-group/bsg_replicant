@@ -40,6 +40,15 @@ ifndef BSG_MACHINE_NAME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_NAME is not defined$(NC)"))
 endif
 
+# If we're inside bladerunner, check for verilator and define variables
+ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
+VERILATOR_ROOT = $(BLADERUNNER_ROOT)/verilator
+VERILATOR = $(BLADERUNNER_ROOT)/verilator/bin/verilator
+else
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Bladerunner is cloned, but verilator not found.$(NC)"))
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Compile verilator in bsg_bladerunner to remove this warning$(NC)"))
+endif
+
 ################################################################################
 # Simulation Sources
 ################################################################################
