@@ -191,13 +191,13 @@ int test_loader(int argc, char **argv) {
 
                 switch (hb_mc_request_packet_get_epa(&pkt.request)) {
                 case 0xEAD0:
-                        bsg_pr_test_info("Received finish packet from (%3,%3)\n", pod.x, pod.y);
+                        bsg_pr_test_info("Received finish packet from (%3d,%3d)\n", pod.x, pod.y);
                         bsg_pr_dbg("received finish packet\n");
                         err = (err == HB_MC_FAIL ? HB_MC_FAIL : HB_MC_SUCCESS);
                         done += 1;
                         break;
                 case 0xEAD8:
-                        bsg_pr_test_info("Received failed packet from (%3,%3)\n", pod.x, pod.y);
+                        bsg_pr_test_info("Received failed packet from (%3d,%3d)\n", pod.x, pod.y);
                         bsg_pr_dbg("received fail packet\n");
                         err = HB_MC_FAIL;
                         done += 1;
