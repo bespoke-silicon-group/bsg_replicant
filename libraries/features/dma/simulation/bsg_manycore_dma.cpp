@@ -184,7 +184,7 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
                         return hb_mc_dma_init_pod_X4Y4_X16_test_mem(mc);
                 } else {
                         // for now, we don't support this
-                        config.memsys.feature_dma = 0;
+                        mc->config.memsys.feature_dma = 0;
                         return HB_MC_SUCCESS;
                 }
         } else {
