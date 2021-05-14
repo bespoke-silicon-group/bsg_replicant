@@ -69,7 +69,7 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
                 break;
         case HB_MC_MEMSYS_ID_TESTMEM:
                 memsys->feature_cache = 1;
-                memsys->feature_dma = 0;
+                memsys->feature_dma = 1;
                 break;
         case HB_MC_MEMSYS_ID_NONE: // TODO - throw this error somewhere else?
                 return HB_MC_INVALID;

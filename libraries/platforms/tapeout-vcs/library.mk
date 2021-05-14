@@ -32,7 +32,7 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tra
 PLATFORM_REGRESSION_CSOURCES += $(LIBRARIES_PATH)/platforms/tapeout-vcs/bsg_manycore_regression_platform.c
 
 # no DMA for now...
-include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
+include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
