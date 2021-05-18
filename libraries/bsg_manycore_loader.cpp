@@ -617,7 +617,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
                                       const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
         const Elf32_Ehdr *ehdr = (const Elf32_Ehdr *)bin;
-        int rc, icache_segidx;
+        int rc, icache_segidx = -1;
 
         /////////////////////////////////////
         // Load all segments to their EVAs //
@@ -664,6 +664,11 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
 
         const Elf32_Phdr *icache_phdr;
         const unsigned char *icache_data;
+
+        if (icache_segidx == -1) {
+                bsg_pr_err("RISCV program has no loadable segment that is executable\n");
+                return HB_MC_INVALID;
+        }
 
         rc = hb_mc_loader_get_segment(bin, sz, icache_segidx, &icache_phdr, &icache_data);
         if (rc != HB_MC_SUCCESS) {
