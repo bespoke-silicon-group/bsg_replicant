@@ -363,5 +363,12 @@ module replicant_tb_top
     ,.saif_en_i($root.`HOST_MODULE_PATH.saif_en)
     ,.saif_en_o($root.`HOST_MODULE_PATH.saif_en)
    );
-`endif
+`endif //  `ifdef BSG_MACHINE_ENABLE_SAIF
+
+    // synopsys translate off   
+  final begin
+     $display("BSG INFO: %d cycles completed @ finish", global_ctr);
+  end
+  // synopsys translate on
+  
 endmodule
