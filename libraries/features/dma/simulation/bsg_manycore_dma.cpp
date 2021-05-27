@@ -235,7 +235,7 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
           Use the backdoor to our non-synthesizable memory.
         */
         Memory *memory = bsg_mem_dma_get_memory(id);
-        parameter_t bank_size = memory->_data.size()/caches_per_channel;
+        parameter_t bank_size = memory->size()/caches_per_channel;
 
         hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
         char npa_str[256];
@@ -258,9 +258,8 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         /*
           Don't overflow memory if you can help it.
         */
-        assert(addr + sz <= memory->_data.size());
-
-        *buffer = &memory->_data[addr];
+        assert(addr + sz <= memory->size());
+        *buffer = memory->get_ptr(addr);
 
         return HB_MC_SUCCESS;
 }
