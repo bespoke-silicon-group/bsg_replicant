@@ -389,11 +389,7 @@ static uint32_t default_get_dram_bitwidth(const hb_mc_manycore_t *mc)
 static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        if (hb_mc_manycore_dram_is_enabled(mc)) {
-                return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
-        } else {
-                return ceil(log2(hb_mc_config_get_vcache_size(cfg))); // clog2(victim cache size)
-        }
+        return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
 }
 
 // See comments on default_eva_to_npa_dram 
