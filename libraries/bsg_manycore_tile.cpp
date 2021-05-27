@@ -37,32 +37,6 @@
 #endif
 
 /**
- * Set the DRAM enabled bit for a tile.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile   A tile to unfreeze.
- * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
- */
-int hb_mc_tile_set_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
-{
-        hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_DRAM_ENABLE);
-        return hb_mc_manycore_write32(mc, &npa, 1);
-}
-
-/**
- * Clear the DRAM enabled bit for a tile.
- * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
- * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
- * @param[in] tile   A tile to unfreeze.
- * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
- */
-int hb_mc_tile_clear_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
-{
-        hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_DRAM_ENABLE);
-        return hb_mc_manycore_write32(mc, &npa, 0);
-}
-
-/**
  * Freeze a tile.
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
