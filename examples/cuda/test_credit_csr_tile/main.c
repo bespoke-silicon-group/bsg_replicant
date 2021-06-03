@@ -39,6 +39,8 @@
 #include <bsg_manycore_regression.h>
 #include <bsg_manycore.h>
 #include <stdint.h>
+//#include <bsg_set_tile_x_y.h>
+
 
 #define ALLOC_NAME "default_allocator"
 
@@ -61,8 +63,7 @@ int kernel_vec_add_parallel (int argc, char **argv) {
         int rc;
         char *bin_path, *test_name;
         struct arguments_path args = {NULL, NULL};
-        uint64_t cycle;
-        hb_mc_manycore_t mc = {0};
+        uint64_t cycle_start, cycle_end;
 
         argp_parse (&argp_path, argc, argv, 0, 0, &args);
         bin_path = args.path;
@@ -77,6 +78,7 @@ int kernel_vec_add_parallel (int argc, char **argv) {
         /*********************/
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+
 
         hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(&device, pod)
@@ -123,73 +125,78 @@ int kernel_vec_add_parallel (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE)); /* Copy B to the device */
 
                 /*****************************************************************************************************************
-                 * Define block_size_x/y: amount of work for each tile group
                  * Define tg_dim_x/y: number of tiles in each tile group
-                 * Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
+                 * Calculate grid_dim_x/y: number of tile groups needed
                  ******************************************************************************************************************/
-                uint32_t block_size_x = 1024;
                 hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 };
-                hb_mc_dimension_t grid_dim = { .x = N / block_size_x, .y = 1 };
+                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+                uint32_t blocks = N/32;
 
+                int mismatch = 0;
                 /*****************************************************************************************************************
                  * Prepare list of input arguments for kernel.
                  ******************************************************************************************************************/
-                int cuda_argv[5] = {A_device, B_device, C_device, N, block_size_x};
+                for (int curr_limit = 32; curr_limit > 0; --curr_limit) {
 
-                /*****************************************************************************************************************
-                 * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
-                 ******************************************************************************************************************/
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add_parallel", 5, cuda_argv));
+                        int cuda_argv[5] = {A_device, B_device, C_device, blocks, curr_limit};
 
-                /*****************************************************************************************************************
-                 * Launch and execute all tile groups on device and wait for all to finish.
-                 ******************************************************************************************************************/
-                rc = hb_mc_manycore_get_cycle(&mc, &cycle);
-                if(rc != HB_MC_SUCCESS){
-                    bsg_pr_test_err("Failed to read cycle counter: %s\n",
-                                    hb_mc_strerror(rc));
-                    return HB_MC_FAIL;
+                        /*****************************************************************************************************************
+                         * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
+                         ******************************************************************************************************************/
+                        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add_parallel", 5, cuda_argv));
+
+                        /*****************************************************************************************************************
+                         * Launch and execute all tile groups on device and wait for all to finish.
+                         ******************************************************************************************************************/
+
+                        rc = hb_mc_manycore_get_cycle((device.mc), &cycle_start);
+                        if(rc != HB_MC_SUCCESS){
+                                bsg_pr_test_err("Failed to read cycle counter: %s\n",
+                                                hb_mc_strerror(rc));
+                                return HB_MC_FAIL;
+                        }
+                        bsg_pr_test_info("curr_limit=%d, Current cycle is: %llu\n", curr_limit, cycle_start);
+
+                        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+
+
+                        rc = hb_mc_manycore_get_cycle((device.mc), &cycle_end);
+                        if(rc != HB_MC_SUCCESS){
+                                bsg_pr_test_err("Failed to read cycle counter: %s\n",
+                                                hb_mc_strerror(rc));
+                                return HB_MC_FAIL;
+                        }
+                        bsg_pr_test_info("curr_limit=%d, Current cycle is: %llu. Difference: %llu \n", curr_limit, cycle_end, cycle_end-cycle_start);
+
+                        /*****************************************************************************************************************
+                         * Copy result matrix back from device DRAM into host memory.
+                         ******************************************************************************************************************/
+                        uint32_t C_host[N];
+                        src = (void *) ((intptr_t) C_device);
+                        dst = (void *) &C_host[0];
+                        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST)); /* copy C to the host */
+
+                        /*****************************************************************************************************************
+                         * Calculate the expected result using host code and compare the results.
+                         ******************************************************************************************************************/
+                        uint32_t C_expected[N];
+                        host_vec_add (A_host, B_host, C_expected, N);
+
+                        for (int i = 0; i < N; i++) {
+                                if (A_host[i] + B_host[i] != C_host[i]) {
+                                        bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]:  0x%08" PRIx32 " + 0x%08" PRIx32 " = 0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n",
+                                                   i , A_host[i], B_host[i], C_host[i], C_expected[i]);
+                                        mismatch = 1;
+                                        exit(1);
+                                }
+                        }
                 }
-                bsg_pr_test_info("Current cycle is: %llu\n", cycle);
-
-                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
-
-                rc = hb_mc_manycore_get_cycle(&mc, &cycle);
-                if(rc != HB_MC_SUCCESS){
-                    bsg_pr_test_err("Failed to read cycle counter: %s\n",
-                                    hb_mc_strerror(rc));
-                    return HB_MC_FAIL;
-                }
-                bsg_pr_test_info("Current cycle is: %llu\n", cycle);
-
-                /*****************************************************************************************************************
-                 * Copy result matrix back from device DRAM into host memory.
-                 ******************************************************************************************************************/
-                uint32_t C_host[N];
-                src = (void *) ((intptr_t) C_device);
-                dst = (void *) &C_host[0];
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST)); /* copy C to the host */
 
                 /*****************************************************************************************************************
                  * Freeze the tiles and memory manager cleanup.
                  ******************************************************************************************************************/
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
-                /*****************************************************************************************************************
-                 * Calculate the expected result using host code and compare the results.
-                 ******************************************************************************************************************/
-                uint32_t C_expected[N];
-                host_vec_add (A_host, B_host, C_expected, N);
-
-
-                int mismatch = 0;
-                for (int i = 0; i < N; i++) {
-                        if (A_host[i] + B_host[i] != C_host[i]) {
-                                bsg_pr_err(BSG_RED("Mismatch: ") "C[%d]:  0x%08" PRIx32 " + 0x%08" PRIx32 " = 0x%08" PRIx32 "\t Expected: 0x%08" PRIx32 "\n",
-                                           i , A_host[i], B_host[i], C_host[i], C_expected[i]);
-                                mismatch = 1;
-                        }
-                }
 
                 if (mismatch) {
                         return HB_MC_FAIL;
