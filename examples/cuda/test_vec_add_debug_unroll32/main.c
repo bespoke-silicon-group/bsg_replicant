@@ -125,48 +125,46 @@ int kernel_vec_add_parallel (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE)); /* Copy B to the device */
 
                 /*****************************************************************************************************************
-                 * Define block_size_x/y: amount of work for each tile group
                  * Define tg_dim_x/y: number of tiles in each tile group
-                 * Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y
+                 * Calculate grid_dim_x/y: number of tile groups needed
                  ******************************************************************************************************************/
-                uint32_t block_size_x = 1024;
                 hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 };
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
-
+                uint32_t blocks = N/32;
                 /*****************************************************************************************************************
                  * Prepare list of input arguments for kernel.
                  ******************************************************************************************************************/
                 for (int curr_limit = 32; curr_limit > 0; --curr_limit) {
 
-                int cuda_argv[6] = {A_device, B_device, C_device, N, block_size_x, curr_limit};
+                        int cuda_argv[6] = {A_device, B_device, C_device, N, blocks, curr_limit};
 
-                /*****************************************************************************************************************
-                 * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
-                 ******************************************************************************************************************/
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add_parallel", 6, cuda_argv));
+                        /*****************************************************************************************************************
+                         * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
+                         ******************************************************************************************************************/
+                        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add_parallel", 6, cuda_argv));
 
-                /*****************************************************************************************************************
-                 * Launch and execute all tile groups on device and wait for all to finish.
-                 ******************************************************************************************************************/
+                        /*****************************************************************************************************************
+                         * Launch and execute all tile groups on device and wait for all to finish.
+                         ******************************************************************************************************************/
 
-                rc = hb_mc_manycore_get_cycle((device.mc), &cycle);
-                if(rc != HB_MC_SUCCESS){
-                    bsg_pr_test_err("Failed to read cycle counter: %s\n",
-                                    hb_mc_strerror(rc));
-                    return HB_MC_FAIL;
-                }
-                bsg_pr_test_info("curr_limit=%d, Current cycle is: %llu\n", curr_limit, cycle);
+                        rc = hb_mc_manycore_get_cycle((device.mc), &cycle);
+                        if(rc != HB_MC_SUCCESS){
+                                bsg_pr_test_err("Failed to read cycle counter: %s\n",
+                                                hb_mc_strerror(rc));
+                                return HB_MC_FAIL;
+                        }
+                        bsg_pr_test_info("curr_limit=%d, Current cycle is: %llu\n", curr_limit, cycle);
 
-                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+                        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
 
-                rc = hb_mc_manycore_get_cycle((device.mc), &cycle);
-                if(rc != HB_MC_SUCCESS){
-                    bsg_pr_test_err("Failed to read cycle counter: %s\n",
-                                    hb_mc_strerror(rc));
-                    return HB_MC_FAIL;
-                }
-                bsg_pr_test_info("curr_limit=%d, Current cycle is: %llu\n", curr_limit, cycle);
+                        rc = hb_mc_manycore_get_cycle((device.mc), &cycle);
+                        if(rc != HB_MC_SUCCESS){
+                                bsg_pr_test_err("Failed to read cycle counter: %s\n",
+                                                hb_mc_strerror(rc));
+                                return HB_MC_FAIL;
+                        }
+                        bsg_pr_test_info("curr_limit=%d, Current cycle is: %llu\n", curr_limit, cycle);
                 }
 
                 /*****************************************************************************************************************

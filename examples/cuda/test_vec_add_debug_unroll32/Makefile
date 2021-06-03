@@ -64,7 +64,7 @@ CXXDEFINES +=
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=gnu99 $(FLAGS)
-CXXFLAGS += -std=c++11 $(FLAGS)
+CXXFLAGS += -std=c++11 $(FLAGS) -O3
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -86,7 +86,8 @@ include $(EXAMPLES_PATH)/link.mk
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
 
-kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+# GCC beats clang, because it uses the integer registers...
+#kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions
