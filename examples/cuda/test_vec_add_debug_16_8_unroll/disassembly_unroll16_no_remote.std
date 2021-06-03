@@ -1,0 +1,295 @@
+
+kernel.riscv:     file format elf32-littleriscv
+
+
+Disassembly of section .text.dram:
+
+00000000 <_start>:
+   0:	00000093          	li	ra,0
+   4:	00000193          	li	gp,0
+   8:	00000213          	li	tp,0
+   c:	00000293          	li	t0,0
+  10:	00000313          	li	t1,0
+  14:	00000393          	li	t2,0
+  18:	00000413          	li	s0,0
+  1c:	00000493          	li	s1,0
+  20:	00000513          	li	a0,0
+  24:	00000593          	li	a1,0
+  28:	00000613          	li	a2,0
+  2c:	00000693          	li	a3,0
+  30:	00000713          	li	a4,0
+  34:	00000793          	li	a5,0
+  38:	00000813          	li	a6,0
+  3c:	00000893          	li	a7,0
+  40:	00000913          	li	s2,0
+  44:	00000993          	li	s3,0
+  48:	00000a13          	li	s4,0
+  4c:	00000a93          	li	s5,0
+  50:	00000b13          	li	s6,0
+  54:	00000b93          	li	s7,0
+  58:	00000c13          	li	s8,0
+  5c:	00000c93          	li	s9,0
+  60:	00000d13          	li	s10,0
+  64:	00000d93          	li	s11,0
+  68:	00000e13          	li	t3,0
+  6c:	00000e93          	li	t4,0
+  70:	00000f13          	li	t5,0
+  74:	00000f93          	li	t6,0
+  78:	000032b7          	lui	t0,0x3
+  7c:	3002a073          	csrs	mstatus,t0
+  80:	00301073          	fscsr	zero
+  84:	00000293          	li	t0,0
+  88:	d0007053          	fcvt.s.w	ft0,zero
+  8c:	d00070d3          	fcvt.s.w	ft1,zero
+  90:	d0007153          	fcvt.s.w	ft2,zero
+  94:	d00071d3          	fcvt.s.w	ft3,zero
+  98:	d0007253          	fcvt.s.w	ft4,zero
+  9c:	d00072d3          	fcvt.s.w	ft5,zero
+  a0:	d0007353          	fcvt.s.w	ft6,zero
+  a4:	d00073d3          	fcvt.s.w	ft7,zero
+  a8:	d0007453          	fcvt.s.w	fs0,zero
+  ac:	d00074d3          	fcvt.s.w	fs1,zero
+  b0:	d0007553          	fcvt.s.w	fa0,zero
+  b4:	d00075d3          	fcvt.s.w	fa1,zero
+  b8:	d0007653          	fcvt.s.w	fa2,zero
+  bc:	d00076d3          	fcvt.s.w	fa3,zero
+  c0:	d0007753          	fcvt.s.w	fa4,zero
+  c4:	d00077d3          	fcvt.s.w	fa5,zero
+  c8:	d0007853          	fcvt.s.w	fa6,zero
+  cc:	d00078d3          	fcvt.s.w	fa7,zero
+  d0:	d0007953          	fcvt.s.w	fs2,zero
+  d4:	d00079d3          	fcvt.s.w	fs3,zero
+  d8:	d0007a53          	fcvt.s.w	fs4,zero
+  dc:	d0007ad3          	fcvt.s.w	fs5,zero
+  e0:	d0007b53          	fcvt.s.w	fs6,zero
+  e4:	d0007bd3          	fcvt.s.w	fs7,zero
+  e8:	d0007c53          	fcvt.s.w	fs8,zero
+  ec:	d0007cd3          	fcvt.s.w	fs9,zero
+  f0:	d0007d53          	fcvt.s.w	fs10,zero
+  f4:	d0007dd3          	fcvt.s.w	fs11,zero
+  f8:	d0007e53          	fcvt.s.w	ft8,zero
+  fc:	d0007ed3          	fcvt.s.w	ft9,zero
+ 100:	d0007f53          	fcvt.s.w	ft10,zero
+ 104:	d0007fd3          	fcvt.s.w	ft11,zero
+ 108:	00000197          	auipc	gp,0x0
+ 10c:	70018193          	addi	gp,gp,1792 # 808 <_gp>
+ 110:	08700213          	li	tp,135
+ 114:	fc027213          	andi	tp,tp,-64
+ 118:	00001117          	auipc	sp,0x1
+ 11c:	ee410113          	addi	sp,sp,-284 # ffc <_bsg_elf_stack_ptr>
+ 120:	2440006f          	j	364 <main>
+ 124:	0000006f          	j	124 <__dmem_end+0xdc>
+
+00000128 <bsg_set_tile_x_y>:
+ 128:	200007b7          	lui	a5,0x20000
+ 12c:	02c00593          	li	a1,44
+ 130:	00b7e2b3          	or	t0,a5,a1
+ 134:	02800613          	li	a2,40
+ 138:	0002a023          	sw	zero,0(t0) # 3000 <_bsg_elf_stack_ptr+0x2004>
+ 13c:	00c7e333          	or	t1,a5,a2
+ 140:	00032023          	sw	zero,0(t1)
+ 144:	02c02383          	lw	t2,44(zero) # 2c <__bsg_x>
+ 148:	fe03cee3          	bltz	t2,144 <bsg_set_tile_x_y+0x1c>
+ 14c:	02802503          	lw	a0,40(zero) # 28 <__bsg_y>
+ 150:	fe054ee3          	bltz	a0,14c <bsg_set_tile_x_y+0x24>
+ 154:	02c02803          	lw	a6,44(zero) # 2c <__bsg_x>
+ 158:	00081a63          	bnez	a6,16c <bsg_set_tile_x_y+0x44>
+ 15c:	02802883          	lw	a7,40(zero) # 28 <__bsg_y>
+ 160:	00089663          	bnez	a7,16c <bsg_set_tile_x_y+0x44>
+ 164:	0002a023          	sw	zero,0(t0)
+ 168:	00032023          	sw	zero,0(t1)
+ 16c:	02802e03          	lw	t3,40(zero) # 28 <__bsg_y>
+ 170:	02c02e83          	lw	t4,44(zero) # 2c <__bsg_x>
+ 174:	20020f37          	lui	t5,0x20020
+ 178:	018e1f93          	slli	t6,t3,0x18
+ 17c:	012e9713          	slli	a4,t4,0x12
+ 180:	00efe7b3          	or	a5,t6,a4
+ 184:	004f0593          	addi	a1,t5,4 # 20020004 <_bsg_elf_vcache_size+0x1ff20004>
+ 188:	00b7e6b3          	or	a3,a5,a1
+ 18c:	0006a283          	lw	t0,0(a3)
+ 190:	008f0613          	addi	a2,t5,8
+ 194:	00c7e333          	or	t1,a5,a2
+ 198:	02502023          	sw	t0,32(zero) # 20 <__bsg_grp_org_x>
+ 19c:	00032503          	lw	a0,0(t1)
+ 1a0:	01de08b3          	add	a7,t3,t4
+ 1a4:	00100813          	li	a6,1
+ 1a8:	00a02e23          	sw	a0,28(zero) # 1c <__bsg_grp_org_y>
+ 1ac:	03102223          	sw	a7,36(zero) # 24 <__bsg_id>
+ 1b0:	01002c23          	sw	a6,24(zero) # 18 <__bsg_grid_dim_x>
+ 1b4:	01002a23          	sw	a6,20(zero) # 14 <__bsg_grid_dim_y>
+ 1b8:	00002823          	sw	zero,16(zero) # 10 <__bsg_tile_group_id_x>
+ 1bc:	00002623          	sw	zero,12(zero) # c <__bsg_tile_group_id_y>
+ 1c0:	00002423          	sw	zero,8(zero) # 8 <__bsg_tile_group_id>
+ 1c4:	00008067          	ret
+
+000001c8 <write_finish_signal>:
+ 1c8:	02402283          	lw	t0,36(zero) # 24 <__bsg_id>
+ 1cc:	00029863          	bnez	t0,1dc <write_finish_signal+0x14>
+ 1d0:	03802383          	lw	t2,56(zero) # 38 <cuda_finish_signal_addr>
+ 1d4:	03402503          	lw	a0,52(zero) # 34 <cuda_finish_signal_val>
+ 1d8:	00a3a023          	sw	a0,0(t2)
+ 1dc:	00008067          	ret
+
+000001e0 <kernel_vec_add_parallel>:
+ 1e0:	00100693          	li	a3,1
+ 1e4:	fc079073          	csrw	0xfc0,a5
+ 1e8:	16d74a63          	blt	a4,a3,35c <kernel_vec_add_parallel+0x17c>
+ 1ec:	fff70693          	addi	a3,a4,-1
+ 1f0:	00f00793          	li	a5,15
+ 1f4:	00f77893          	andi	a7,a4,15
+ 1f8:	00000293          	li	t0,0
+ 1fc:	12f6e463          	bltu	a3,a5,324 <kernel_vec_add_parallel+0x144>
+ 200:	41170833          	sub	a6,a4,a7
+ 204:	02060713          	addi	a4,a2,32
+ 208:	02058693          	addi	a3,a1,32
+ 20c:	02050793          	addi	a5,a0,32
+ 210:	fe07a007          	flw	ft0,-32(a5) # 1fffffe0 <_bsg_elf_vcache_size+0x1fefffe0>
+ 214:	fe06a087          	flw	ft1,-32(a3)
+ 218:	fe47a107          	flw	ft2,-28(a5)
+ 21c:	fe46a187          	flw	ft3,-28(a3)
+ 220:	0000f053          	fadd.s	ft0,ft1,ft0
+ 224:	fe072027          	fsw	ft0,-32(a4)
+ 228:	0021f053          	fadd.s	ft0,ft3,ft2
+ 22c:	fe87a087          	flw	ft1,-24(a5)
+ 230:	fe86a107          	flw	ft2,-24(a3)
+ 234:	fec7a187          	flw	ft3,-20(a5)
+ 238:	fec6a207          	flw	ft4,-20(a3)
+ 23c:	fe072227          	fsw	ft0,-28(a4)
+ 240:	00117053          	fadd.s	ft0,ft2,ft1
+ 244:	fe072427          	fsw	ft0,-24(a4)
+ 248:	00327053          	fadd.s	ft0,ft4,ft3
+ 24c:	ff07a087          	flw	ft1,-16(a5)
+ 250:	ff06a107          	flw	ft2,-16(a3)
+ 254:	ff47a187          	flw	ft3,-12(a5)
+ 258:	ff46a207          	flw	ft4,-12(a3)
+ 25c:	fe072627          	fsw	ft0,-20(a4)
+ 260:	00117053          	fadd.s	ft0,ft2,ft1
+ 264:	fe072827          	fsw	ft0,-16(a4)
+ 268:	00327053          	fadd.s	ft0,ft4,ft3
+ 26c:	ff87a087          	flw	ft1,-8(a5)
+ 270:	ff86a107          	flw	ft2,-8(a3)
+ 274:	ffc7a187          	flw	ft3,-4(a5)
+ 278:	ffc6a207          	flw	ft4,-4(a3)
+ 27c:	fe072a27          	fsw	ft0,-12(a4)
+ 280:	00117053          	fadd.s	ft0,ft2,ft1
+ 284:	fe072c27          	fsw	ft0,-8(a4)
+ 288:	00327053          	fadd.s	ft0,ft4,ft3
+ 28c:	0007a087          	flw	ft1,0(a5)
+ 290:	0006a107          	flw	ft2,0(a3)
+ 294:	0047a187          	flw	ft3,4(a5)
+ 298:	0046a207          	flw	ft4,4(a3)
+ 29c:	fe072e27          	fsw	ft0,-4(a4)
+ 2a0:	00117053          	fadd.s	ft0,ft2,ft1
+ 2a4:	00072027          	fsw	ft0,0(a4)
+ 2a8:	00327053          	fadd.s	ft0,ft4,ft3
+ 2ac:	0087a087          	flw	ft1,8(a5)
+ 2b0:	0086a107          	flw	ft2,8(a3)
+ 2b4:	00c7a187          	flw	ft3,12(a5)
+ 2b8:	00c6a207          	flw	ft4,12(a3)
+ 2bc:	00072227          	fsw	ft0,4(a4)
+ 2c0:	00117053          	fadd.s	ft0,ft2,ft1
+ 2c4:	00072427          	fsw	ft0,8(a4)
+ 2c8:	00327053          	fadd.s	ft0,ft4,ft3
+ 2cc:	0107a087          	flw	ft1,16(a5)
+ 2d0:	0106a107          	flw	ft2,16(a3)
+ 2d4:	0147a187          	flw	ft3,20(a5)
+ 2d8:	0146a207          	flw	ft4,20(a3)
+ 2dc:	00072627          	fsw	ft0,12(a4)
+ 2e0:	00117053          	fadd.s	ft0,ft2,ft1
+ 2e4:	00072827          	fsw	ft0,16(a4)
+ 2e8:	00327053          	fadd.s	ft0,ft4,ft3
+ 2ec:	0187a087          	flw	ft1,24(a5)
+ 2f0:	0186a107          	flw	ft2,24(a3)
+ 2f4:	01c7a187          	flw	ft3,28(a5)
+ 2f8:	01c6a207          	flw	ft4,28(a3)
+ 2fc:	00072a27          	fsw	ft0,20(a4)
+ 300:	00117053          	fadd.s	ft0,ft2,ft1
+ 304:	00072c27          	fsw	ft0,24(a4)
+ 308:	00327053          	fadd.s	ft0,ft4,ft3
+ 30c:	00072e27          	fsw	ft0,28(a4)
+ 310:	01028293          	addi	t0,t0,16
+ 314:	04070713          	addi	a4,a4,64
+ 318:	04068693          	addi	a3,a3,64
+ 31c:	04078793          	addi	a5,a5,64
+ 320:	ee5818e3          	bne	a6,t0,210 <kernel_vec_add_parallel+0x30>
+ 324:	02088c63          	beqz	a7,35c <kernel_vec_add_parallel+0x17c>
+ 328:	00229693          	slli	a3,t0,0x2
+ 32c:	00d60633          	add	a2,a2,a3
+ 330:	00d585b3          	add	a1,a1,a3
+ 334:	00d50533          	add	a0,a0,a3
+ 338:	00052007          	flw	ft0,0(a0)
+ 33c:	0005a087          	flw	ft1,0(a1)
+ 340:	0000f053          	fadd.s	ft0,ft1,ft0
+ 344:	00062027          	fsw	ft0,0(a2)
+ 348:	fff88893          	addi	a7,a7,-1
+ 34c:	00460613          	addi	a2,a2,4
+ 350:	00458593          	addi	a1,a1,4
+ 354:	00450513          	addi	a0,a0,4
+ 358:	fe0890e3          	bnez	a7,338 <kernel_vec_add_parallel+0x158>
+ 35c:	00000513          	li	a0,0
+ 360:	00008067          	ret
+
+00000364 <main>:
+ 364:	03002283          	lw	t0,48(zero) # 30 <cuda_kernel_not_loaded_val>
+ 368:	04400413          	li	s0,68
+ 36c:	1004232f          	lr.w	t1,(s0)
+ 370:	00629463          	bne	t0,t1,378 <__init_param>
+ 374:	140422af          	lr.w.aq	t0,(s0)
+
+00000378 <__init_param>:
+ 378:	04400293          	li	t0,68
+ 37c:	0002a483          	lw	s1,0(t0)
+ 380:	04000293          	li	t0,64
+ 384:	0002a903          	lw	s2,0(t0)
+ 388:	03c00293          	li	t0,60
+ 38c:	0002a983          	lw	s3,0(t0)
+ 390:	03800293          	li	t0,56
+ 394:	0002aa03          	lw	s4,0(t0)
+
+00000398 <__load_argument>:
+ 398:	0009a503          	lw	a0,0(s3)
+ 39c:	0049a583          	lw	a1,4(s3)
+ 3a0:	0089a603          	lw	a2,8(s3)
+ 3a4:	00c9a683          	lw	a3,12(s3)
+ 3a8:	0109a703          	lw	a4,16(s3)
+ 3ac:	0149a783          	lw	a5,20(s3)
+ 3b0:	0189a803          	lw	a6,24(s3)
+ 3b4:	01c9a883          	lw	a7,28(s3)
+ 3b8:	00800293          	li	t0,8
+ 3bc:	0322de63          	bge	t0,s2,3f8 <__invoke_kernel>
+ 3c0:	ff890293          	addi	t0,s2,-8
+ 3c4:	00229293          	slli	t0,t0,0x2
+ 3c8:	40510133          	sub	sp,sp,t0
+ 3cc:	00800293          	li	t0,8
+ 3d0:	02000313          	li	t1,32
+ 3d4:	00000e13          	li	t3,0
+
+000003d8 <__load_stack>:
+ 3d8:	013303b3          	add	t2,t1,s3
+ 3dc:	0003ae83          	lw	t4,0(t2)
+ 3e0:	002e0f33          	add	t5,t3,sp
+ 3e4:	01df2023          	sw	t4,0(t5)
+ 3e8:	00128293          	addi	t0,t0,1
+ 3ec:	00430313          	addi	t1,t1,4
+ 3f0:	004e0e13          	addi	t3,t3,4
+ 3f4:	ff22c2e3          	blt	t0,s2,3d8 <__load_stack>
+
+000003f8 <__invoke_kernel>:
+ 3f8:	000480e7          	jalr	s1
+ 3fc:	00800293          	li	t0,8
+ 400:	0122d863          	bge	t0,s2,410 <__kernel_return>
+ 404:	ff890293          	addi	t0,s2,-8
+ 408:	00229293          	slli	t0,t0,0x2
+ 40c:	00510133          	add	sp,sp,t0
+
+00000410 <__kernel_return>:
+ 410:	03002283          	lw	t0,48(zero) # 30 <cuda_kernel_not_loaded_val>
+ 414:	00542023          	sw	t0,0(s0)
+ 418:	02402283          	lw	t0,36(zero) # 24 <__bsg_id>
+ 41c:	00029863          	bnez	t0,42c <__kernel_return+0x1c>
+ 420:	03802383          	lw	t2,56(zero) # 38 <cuda_finish_signal_addr>
+ 424:	03402503          	lw	a0,52(zero) # 34 <cuda_finish_signal_val>
+ 428:	00a3a023          	sw	a0,0(t2)
+ 42c:	f39ff06f          	j	364 <main>
+ 430:	00000513          	li	a0,0
+ 434:	00008067          	ret
