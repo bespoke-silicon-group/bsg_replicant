@@ -39,17 +39,11 @@
 #include <bsg_manycore_regression.h>
 #include <bsg_manycore.h>
 #include <stdint.h>
-//#include <bsg_set_tile_x_y.h>
 
 
 #define ALLOC_NAME "default_allocator"
 
-/*!
- * Runs the vector addition a grid of 2x2 tile groups. A[N] + B[N] --> C[N]
- * Grid dimensions are determines by how much of a load we want for each tile group (block_size_x)
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add_parallel/ Manycore binary in the BSG Manycore bitbucket repository.
-*/
-
+// Runs the vector addition a grid of 2x2 tile groups, while varying the credit limit.
 
 void host_vec_add (int *A, int *B, int *C, int N) {
         for (int i = 0; i < N; i ++) {
@@ -208,4 +202,4 @@ int kernel_vec_add_parallel (int argc, char **argv) {
         return HB_MC_SUCCESS;
 }
 
-declare_program_main("test_vec_add_parallel", kernel_vec_add_parallel);
+declare_program_main("test_credit_csr_tile", kernel_vec_add_parallel);
