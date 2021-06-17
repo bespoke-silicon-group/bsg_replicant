@@ -1,4 +1,8 @@
 *.o
+*.so
+*.ld
+*.rvo
+*.riscv
 !*.c
 !*.cpp
 !*.h

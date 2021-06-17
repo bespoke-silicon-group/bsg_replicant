@@ -97,14 +97,6 @@ endif # Matches: ifdef _BSG_MANYCORE_DIR
 # Undefine the temporary variable to prevent its use
 undefine _BSG_MANYCORE_DIR
 
-# If we're inside bladerunner, check for verilator and define variables
-ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
-VERILATOR_ROOT = $(BLADERUNNER_ROOT)/verilator
-VERILATOR = $(BLADERUNNER_ROOT)/verilator/bin/verilator
-else
-$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Bladerunner is cloned, but verilator not found.$(NC)"))
-$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Compile verilator in bsg_bladerunner to remove this warning$(NC)"))
-endif
 endif # Matches: ifneq ("$(wildcard $(CL_DIR)/../project.mk)","")
 
 # If BASEJUMP_STL_DIR is not defined at this point, raise an error.
@@ -126,5 +118,7 @@ include $(CL_DIR)/machine.mk
 # platform.mk defines BSG_PLATFORM_PATH, which is the host platform to
 # simulate (VCS or Verilator) or run on (AWS)
 include $(CL_DIR)/platform.mk
+
+BSG_MACHINExPLATFORM_PATH=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
 
 endif

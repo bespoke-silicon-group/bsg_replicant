@@ -226,7 +226,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
         }
 
         err = hb_mc_tracer_init(&(platform->tracer), hierarchy);
-        if (err != HB_MC_SUCCESS){
+        if (err != HB_MC_SUCCESS && err != HB_MC_NOIMPL){
                 hb_mc_platform_dpi_cleanup(platform);
                 delete platform;
                 return err;
@@ -591,11 +591,26 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
         bool done;
         pl->dpi->reset_is_done(done);
 
+        // print every some thousand of attempts
+        // quit after some even more thousand of attemps
+        // this loop should not need to execute more than a few times
+        int iter = 0, interval = 10000, quit = interval * 10;
         while (!done) {
-            manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
+            if (iter % interval == 0)
+                manycore_pr_dbg(mc, "%s: calling eval()\n", __func__);
+
             pl->top->eval();
-            manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(r));
+
+            if (iter % interval == 0)
+                manycore_pr_dbg(mc, "%s: read %u\n", __func__, static_cast<unsigned>(done));
+
             pl->dpi->reset_is_done(done);
+            iter++;
+
+            if (iter >= quit) {
+                manycore_pr_err(mc, "%s: reset_done low after %d cycles\n", __func__, iter);
+                return HB_MC_TIMEOUT;
+            }
         }
 
         return HB_MC_SUCCESS;
