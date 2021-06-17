@@ -72,6 +72,12 @@ BSG_MANYCORE_COMMIT_ID ?= feedcafe
 BSG_F1_COMMIT_ID       ?= 42c0ffee
 FPGA_IMAGE_VERSION     ?= 0.0.0
 
+ifdef BSG_MACHINE_CHIP_ID
+CHIP_ID = $(BSG_MACHINE_CHIP_ID)
+else
+CHIP_ID = 0x00000000
+endif
+
 # The manycore architecture sources are defined in arch_filelist.mk. The
 # unsynthesizable simulation sources (for tracing, etc) are defined in
 # sim_filelist.mk. Each file adds to VSOURCES and VINCLUDES and depends on
@@ -163,6 +169,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_REMOTE_LOAD_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_EP_CREDITS)) >> $@.temp
 	@echo $(call dec2bin,0)                            >> $@.temp
+	@echo $(call hex2bin,$(CHIP_ID))                   >> $@.temp
 	@cat $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom >> $@.temp
 	mv $@.temp $@
 

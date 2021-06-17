@@ -106,6 +106,7 @@ extern "C" {
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
+                uint32_t chip_id;
                 hb_mc_memsys_t memsys;
         } hb_mc_config_t;
 
@@ -135,7 +136,8 @@ extern "C" {
                 HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 21,
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 22,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 23,
-                HB_MC_CONFIG_MEMSYS = 24,
+                HB_MC_CONFIG_CHIP_ID = 24,
+                HB_MC_CONFIG_MEMSYS = 25,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 

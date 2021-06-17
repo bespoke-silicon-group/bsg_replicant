@@ -28,6 +28,7 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_errno.h>
+#include <bsg_manycore_chip_id.h>
 
 #ifdef __cplusplus
 #include <cmath>
@@ -146,6 +147,8 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];
+        config->chip_id = raw[HB_MC_CONFIG_CHIP_ID];
+        CHECK_FIELD(HB_MC_CONFIG_CHIP_ID, HB_MC_IS_CHIP_ID(config->chip_id));
 
         /* set the victim cache parameters from the values in the ROM */
         config->vcache_ways         = raw[HB_MC_CONFIG_VCACHE_WAYS];
