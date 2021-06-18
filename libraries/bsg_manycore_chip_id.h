@@ -11,7 +11,7 @@ extern "C" {
     ((id) == HB_MC_CHIP_ID_MASTER ||            \
      (id) == HB_MC_CHIP_ID_BIGBLADE )
 
-#ifdef
+#ifdef __cplusplus
 }
 #endif
 #endif
