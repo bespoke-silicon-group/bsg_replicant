@@ -62,7 +62,7 @@ RISCV_GXX        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV
 RISCV_ELF2HEX    ?= LD_LIBRARY_PATH=$(RISCV_GNU_PATH)/lib $(RISCV_GNU_PATH)/bin/elf2hex
 RISCV_OBJCOPY    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objcopy
 RISCV_AR         ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-ar
-RISCV_OBJDUMP    ?= $(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs-objdump
+RISCV_OBJDUMP    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objdump
 RISCV_LINK       ?= $(RISCV_GCC) -t -T $(LINK_SCRIPT) $(RISCV_LDFLAGS)
 RISCV_LD         ?= $(RISCV_GCC)
 
