@@ -25,4 +25,5 @@ ucli.key
 *.json
 dramsim3.txt
 *.riscv
+*.elf
 
