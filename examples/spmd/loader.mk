@@ -44,9 +44,6 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
-ifndef TEST_NAME
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: TEST_NAME is not defined$(NC)"))
-endif
 ifndef SPMD_NAME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: SPMD_NAME is not defined$(NC)"))
 endif
@@ -116,18 +113,7 @@ include $(EXAMPLES_PATH)/execution.mk
 regression: main.exec.log
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
-###############################################################################
-# Default rules, help, and clean
-###############################################################################
 .DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean | $(TEST_NAME).{profile,debug} | $(TEST_NAME).{profile,debug}.log}"
-	@echo "      $(TEST_NAME).profile: Build executable with profilers enabled"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      $(TEST_NAME).{profile,debug}.log: Run specific executable"
-	@echo "      clean: Remove all subdirectory-specific outputs"
-
 
 .PHONY: clean
 

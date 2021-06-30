@@ -43,8 +43,6 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
 
-# TEST_NAME is the basename of the executable
-TEST_NAME = main
 
 SPMD_TESTS = fib
 
@@ -112,18 +110,7 @@ $(EXE_TARGETS):
 %.vpd: SIM_ARGS += +vpdfile+$(@:.debug.log=.vpd)
 %.vpd: %.debug.log ;
 
-###############################################################################
-# Default rules, help, and clean
-###############################################################################
 .DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean | $(TEST_NAME).{profile,debug} | $(TEST_NAME).{profile,debug}.log}"
-	@echo "      $(TEST_NAME).profile: Build executable with profilers enabled"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      $(TEST_NAME).{profile,debug}.log: Run specific executable"
-	@echo "      clean: Remove all subdirectory-specific outputs"
-
 
 .PHONY: clean
 

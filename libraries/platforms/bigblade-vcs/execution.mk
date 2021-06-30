@@ -76,3 +76,12 @@ platform.execution.clean:
 	rm -rf dramsim3.json dramsim3.tag.json dramsim3.txt dramsim3epoch.json
 
 execution.clean: platform.execution.clean
+
+help:
+	@echo "Usage:"
+	@echo "make {clean | exec.log | profile.log | debug.log | debug.vpd | saifgen.log | saifgen.saif }"
+	@echo "      exec.log: Run program with SAIF, profilers, and waveform generation disabled (Fastest)"
+	@echo "      profile.log: Run program with profilers enabled, SAIF and waveform generation disabled"
+	@echo "      saifgen.log saifgen.saif: Run program with SAIF generation enabled, profilers and waveform generation disabled"
+	@echo "      debug.log debug.vpd: Run program with waveform and profiles enabled, SAIF generation disabled"
+	@echo "      clean: Remove all subdirectory-specific outputs"
