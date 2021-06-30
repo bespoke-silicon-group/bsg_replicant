@@ -32,6 +32,13 @@ include $(REPLICANT_PATH)/environment.mk
 
 include $(EXAMPLES_PATH)/cuda/bfs/config.mk
 
+TEST_GRAPH_TYPE = graph500
+TEST_VERTICES = $(shell echo   1*1024*1024|bc)
+TEST_EDGES    = $(shell echo  16*1024*1024|bc)
+TEST_ROOT_NODE    = 182
+TEST_ITERS        = 1 2 6
+
+
 # $1 = graph_type
 # $2 = vertices
 # $3 = edges
