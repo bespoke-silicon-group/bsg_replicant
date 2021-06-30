@@ -48,14 +48,11 @@ include $(HARDWARE_PATH)/hardware.mk
 # pre-linked against all other simulation binaries.
 include $(LIBRARIES_PATH)/libraries.mk
 
-
 # VHEADERS must be compiled before VSOURCES.
 VDEFINES += BSG_MACHINE_ORIGIN_X_CORD=$(BSG_MACHINE_ORIGIN_COORD_X)
 VDEFINES += BSG_MACHINE_ORIGIN_Y_CORD=$(BSG_MACHINE_ORIGIN_COORD_Y)
 VDEFINES += HOST_MODULE_PATH=replicant_tb_top
 VDEFINES += BSG_MACHINE_DRAMSIM3_PKG=$(BSG_MACHINE_MEM_DRAMSIM3_PKG)
-# VLOGAN_VFLAGS   += +systemverilogext+.svh +systemverilogext+.sv
-# VLOGAN_VFLAGS   += +libext+.sv +libext+.v +libext+.vh +libext+.svh
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
 VLDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
