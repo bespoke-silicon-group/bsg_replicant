@@ -94,7 +94,7 @@ include $(EXAMPLES_PATH)/execution.mk
 # Regression Flow
 ###############################################################################
 
-regression: main.exec.log
+regression: exec.log
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
 ###############################################################################

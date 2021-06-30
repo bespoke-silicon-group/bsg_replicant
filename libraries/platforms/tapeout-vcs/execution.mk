@@ -39,27 +39,23 @@ SIM_ARGS += +ntb_random_seed_automatic
 # them as the VCS plusarg argument +c_args. Users can specify C-style
 # arguments using the C_ARGS make variable.
 
-#CURDIR = $(notdir $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
+.PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd
+.PHONY: platform.execution.clean dve
 
-$(TEST_NAME).exec.log: $(BSG_MACHINE_PATH)/cuda/simv
-$(TEST_NAME).debug.log: $(BSG_MACHINE_PATH)/cuda/simv-debug
+# With the tapeout-vcs platform, the simv binaries are built in the
+# tapeout repository, independently from replicant.
+exec.log: $(BSG_MACHINE_PATH)/cuda/simv
+debug.log: $(BSG_MACHINE_PATH)/cuda/simv-debug
 
 %.log: main.so $(BSG_MANYCORE_KERNELS) 
 	$(filter %/simv, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
-vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
+debug.vpd: SIM_ARGS += +vpdfile+debug.vpd
+debug.vpd: debug.log ;
 
-%.saif: %.saifgen.log ;
-
-%.vpd: SIM_ARGS += +vpdfile+$(@:.debug.log=.vpd)
-%.vpd: %.debug.log ;
-
-%.dve: %.vpd
+dve: debug.vpd
 	$(DVE) -full64 -vpd $< &
 
-.PRECIOUS: %.log
-
-.PHONY: platform.execution.clean %.vpd %.log
 platform.execution.clean:
 	rm -rf vanilla_stats.csv
 	rm -rf infinite_mem_stats.csv

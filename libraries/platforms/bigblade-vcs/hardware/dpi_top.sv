@@ -324,13 +324,15 @@ module replicant_tb_top
    //
    // This mirrors the DPI functions in aws simulation
 `ifndef VERILATOR
-   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args);
+   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args, input string path);
    initial begin
       int exit_code;
       string args;
+      string path;
       longint t;
+      $value$plusargs("c_path=%s", path);
       $value$plusargs("c_args=%s", args);
-      replicant_tb_top.cosim_main(exit_code, args);
+      replicant_tb_top.cosim_main(exit_code, args, path);
       if(exit_code < 0) begin
         $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
         $fatal;
@@ -339,7 +341,6 @@ module replicant_tb_top
         $finish;
       end
    end
-
 `endif
 
 `ifdef BSG_MACHINE_ENABLE_SAIF
