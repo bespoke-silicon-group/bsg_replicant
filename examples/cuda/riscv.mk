@@ -57,23 +57,25 @@ RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
 # These flags are not supported by clang
 RISCV_GNU_FLAGS = -frerun-cse-after-loop -fweb -frename-registers -mtune=bsg_vanilla_2020
 
-RISCV_GCC        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-gcc $(RISCV_GNU_FLAGS)
-RISCV_GXX        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV_GNU_FLAGS)
+_RISCV_GCC        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-gcc $(RISCV_GNU_FLAGS)
+_RISCV_GXX        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV_GNU_FLAGS)
 RISCV_ELF2HEX    ?= LD_LIBRARY_PATH=$(RISCV_GNU_PATH)/lib $(RISCV_GNU_PATH)/bin/elf2hex
 RISCV_OBJCOPY    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objcopy
 RISCV_AR         ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-ar
 RISCV_OBJDUMP    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objdump
-RISCV_LINK       ?= $(RISCV_GCC) -t -T $(LINK_SCRIPT) $(RISCV_LDFLAGS)
-RISCV_LD         ?= $(RISCV_GCC)
+RISCV_LINK       ?= $(_RISCV_GCC) -t -T $(LINK_SCRIPT) $(RISCV_LDFLAGS)
+RISCV_LD         ?= $(_RISCV_GCC)
 
 RISCV_CLANG_ABI        = ilp32f
-RISCV_CLANG_CCPPFLAGS += --target=riscv32 -mabi=$(RISCV_CLANG_ABI) -march=riscv32imaf -mtune=hb-rv32
+RISCV_CLANG_CCPPFLAGS += --target=riscv32 -march=riscv32imaf -mabi=$(RISCV_CLANG_ABI)
 RISCV_CLANG_CXXFLAGS  += --sysroot=$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs
 RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0
-RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0/riscv32-unknown-elf-dramfs  
+RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0/riscv32-unknown-elf-dramfs
+RISCV_LLVM_LLC_FLAGS   = -march=riscv32 -mcpu=hb-rv32 -mattr=+m,+a,+f
 
-RISCV_CLANG       ?= $(RISCV_LLVM_PATH)/bin/clang $(RISCV_CLANG_CFLAGS) $(RISCV_CLANG_CCPPFLAGS)
-RISCV_CLANGXX     ?= $(RISCV_LLVM_PATH)/bin/clang++ $(RISCV_CLANG_CXXFLAGS) $(RISCV_CLANG_CCPPFLAGS)
+
+_RISCV_CLANG       ?= $(RISCV_LLVM_PATH)/bin/clang $(RISCV_CLANG_CFLAGS) $(RISCV_CLANG_CCPPFLAGS)
+_RISCV_CLANGXX     ?= $(RISCV_LLVM_PATH)/bin/clang++ $(RISCV_CLANG_CXXFLAGS) $(RISCV_CLANG_CCPPFLAGS)
 RISCV_LLVM_OPT    ?= $(RISCV_LLVM_PATH)/bin/opt
 RISCV_LLVM_LLC    ?= $(RISCV_LLVM_PATH)/bin/llc
 RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
@@ -123,7 +125,7 @@ RISCV_DEFINES += -DHOST_DEBUG=0
 # difficult to figure out why your program/cosimulation is hanging
 # when the wrong link script was used during linking
 crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
-	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.comp.log
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
 
 # We compile these locally so that we don't interfere with the files in
 # $(BSG_MANYCORE_LIB_PATH).
@@ -132,19 +134,46 @@ LIBBSG_MANYCORE_OBJECTS  += bsg_set_tile_x_y.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_printf.rvo
 
-$(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(RISCV_GCC)
+$(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(_RISCV_GCC)
 
 $(LIBBSG_MANYCORE_OBJECTS): %.rvo:$(BSG_MANYCORE_LIB_PATH)/%.c
-	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
 
 main.rvo: $(BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
-	$(RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
+
+
+# This is ugly, I know. But this seems to be the only way to provide
+# per-object selection of GCC/LLVM.  The issue is that LLC (the
+# internal compiler) doesn't infer the correct architecture weights
+# for important HB features like bsg_attr_remote.
+#
+# Providing RISCV_GCC/RISCV_GXX and RISCV_CLANG/RISCV_CLANGXX as
+# callable functions provides the abstraction of being able to choose
+# the compiler on a per-object basis (e.g. kernel.rvo:
+# RISCV_CC=RISC_GCC) or globally.
+RISCV_GCC = $(_RISCV_GCC) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+
+# The clang version of the functions hide the fact that LLC (the
+# optimizer) is being called between steps.
+define RISCV_CLANGXX
+$(_RISCV_CLANGXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm && \
+$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S && \
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
+endef 
+
+define RISCV_CLANG
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm |& tee $*.rvo.ll.log && \
+$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S |& tee $*.rvo.S.log && \
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
+endef 
 
 %.rvo: %.c
-	$(RISCV_CC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.gcc.log
+	$(call RISCV_CC)
 
 %.rvo: %.cpp
-	$(RISCV_CXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.gcc.log
+	$(call RISCV_CXX)
 
 kernel.compile.clean:
 	rm -rf *.rvo *.a
@@ -248,11 +277,13 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 %.riscv: crt.rvo bsg_set_tile_x_y.rvo bsg_tile_config_vars.rvo main.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT) 
 	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(RISCV_LDFLAGS) $(filter %.rvo,$^) -o $@
 
+%.dis: %.riscv
+	$(RISCV_OBJDUMP) -dS $<
+
 kernel.link.clean:
-	rm -rf *.riscv $(RISCV_LINK_SCRIPT)
+	rm -rf *.riscv *.rvo.S *.rvo.ll $(RISCV_LINK_SCRIPT)
 
 
 .PRECIOUS: %.riscv
 .PHONY: kernel.link.clean kernel.compile.clean
 clean: kernel.link.clean kernel.compile.clean
-
