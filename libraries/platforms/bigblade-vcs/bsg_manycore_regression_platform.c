@@ -68,7 +68,6 @@ void cosim_main(uint32_t *exit_code, char *args, char *sopath) {
         // vcs_main that can be called as the main function of the
         // program
         void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
-	printf("%s\n", sopath);
         int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
 
         error = dlerror();
