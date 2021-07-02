@@ -67,7 +67,7 @@ RISCV_LINK       ?= $(_RISCV_GCC) -t -T $(LINK_SCRIPT) $(RISCV_LDFLAGS)
 RISCV_LD         ?= $(_RISCV_GCC)
 
 RISCV_CLANG_ABI        = ilp32f
-RISCV_CLANG_CCPPFLAGS += --target=riscv32 -march=riscv32imaf -mabi=$(RISCV_CLANG_ABI)
+RISCV_CLANG_CCPPFLAGS += --target=riscv32 -mtune=hb-rv32 -mcpu=hb-rv32 -mabi=$(RISCV_CLANG_ABI)
 RISCV_CLANG_CXXFLAGS  += --sysroot=$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs
 RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0
 RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0/riscv32-unknown-elf-dramfs
