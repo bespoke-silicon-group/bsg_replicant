@@ -65,7 +65,7 @@ help:
 	@echo "             a specific sub-directory (Options are: $(TARGETS))"
 	@echo "      clean: Remove all build files"
 
-clean: hardware.clean libraries.clean
+clean: hardware.clean libraries.clean link.clean
 	$(foreach t,$(TARGETS), $(MAKE) -C $t clean;)
 	rm -rf regression.log runtime.log
 

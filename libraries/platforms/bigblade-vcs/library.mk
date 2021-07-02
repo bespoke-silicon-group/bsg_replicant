@@ -34,9 +34,6 @@ PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore
 
 PLATFORM_REGRESSION_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
 
-# The aws-vcs platform supports simulation DMA on certain
-# machines. Support is determined by the memory system configuration
-# at runtime.
 include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
@@ -58,6 +55,7 @@ $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BASEJUMP_STL
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE -DVERILATOR $(INCLUDES)
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE -DVERILATOR $(INCLUDES)
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -fPIC
+$(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -ldl
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)
@@ -83,7 +81,7 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so: %: %.1
 	ln -sf $@.1 $@
 
 platform.clean:
-	rm -f $(PLATFORM_OBJECTS)
+	rm -f $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS)
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so*

@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <bsg_manycore_regression.h>
+#include <dlfcn.h>
 // Given a string, determine the number of space-separated arguments
 static int get_argc(char * args){
         char *cur = args, prev=' ';
@@ -50,16 +51,36 @@ void get_argv(char * args, int argc, char **argv){
 }
 
 // This function is the VCS hook for cosimulation
-void cosim_main(uint32_t *exit_code, char *args) {
+void cosim_main(uint32_t *exit_code, char *args, char *sopath) {
         // We aren't passed command line arguments directly so we parse them
         // from *args. args is a string from VCS - to pass a string of arguments
         // to args, pass c_args to VCS as follows: +c_args="<space separated
         // list of args>"
         int argc = get_argc(args);
         char *argv[argc];
+        char *error;
         get_argv(args, argc, argv);
 
-        int rc = vcs_main(argc, argv);
+        // To reduce the number of VCS compilations we do, this
+        // platform compiles the executable machine and then loads the
+        // program as a shared object file. This shared object is
+        // passed as the string sopath and _must_ define a method
+        // vcs_main that can be called as the main function of the
+        // program
+        void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
+        int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
+
+        error = dlerror();
+        if (error != NULL) {
+                bsg_pr_err("Error when finding dynamically loaded symbol vcs_main: %s\n", error);
+                *exit_code = -1;
+                dlclose(handle);
+                return;
+        }
+
+        int rc = (*vcs_main)(argc, argv);
+
+        dlclose(handle);
         *exit_code = rc;
         bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
         return;

@@ -39,27 +39,23 @@ SIM_ARGS += +ntb_random_seed_automatic
 # them as the VCS plusarg argument +c_args. Users can specify C-style
 # arguments using the C_ARGS make variable.
 
-#CURDIR = $(notdir $(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
+.PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd
+.PHONY: platform.execution.clean dve
 
-$(TEST_NAME).exec.log: $(BSG_MACHINE_PATH)/cuda/simv
-$(TEST_NAME).debug.log: $(BSG_MACHINE_PATH)/cuda/simv-debug
+# With the tapeout-vcs platform, the simv binaries are built in the
+# tapeout repository, independently from replicant.
+exec.log: $(BSG_MACHINE_PATH)/cuda/simv
+debug.log: $(BSG_MACHINE_PATH)/cuda/simv-debug
 
 %.log: main.so $(BSG_MANYCORE_KERNELS) 
 	$(filter %/simv, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
-vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
+debug.vpd: SIM_ARGS += +vpdfile+debug.vpd
+debug.vpd: debug.log ;
 
-%.saif: %.saifgen.log ;
-
-%.vpd: SIM_ARGS += +vpdfile+$(@:.debug.log=.vpd)
-%.vpd: %.debug.log ;
-
-%.dve: %.vpd
+dve: debug.vpd
 	$(DVE) -full64 -vpd $< &
 
-.PRECIOUS: %.log
-
-.PHONY: platform.execution.clean %.vpd %.log
 platform.execution.clean:
 	rm -rf vanilla_stats.csv
 	rm -rf infinite_mem_stats.csv
@@ -75,3 +71,10 @@ platform.execution.clean:
 	rm -rf dramsim3.json dramsim3.tag.json dramsim3.txt dramsim3epoch.json
 
 execution.clean: platform.execution.clean
+
+help:
+	@echo "Usage:"
+	@echo "make {clean | exec.log | debug.log | debug.vpd}"
+	@echo "      exec.log: Run program with SAIF, profilers, and waveform generation disabled (Fastest)"
+	@echo "      debug.log debug.vpd: Run program with waveform and profiles enabled, SAIF generation disabled"
+	@echo "      clean: Remove all subdirectory-specific outputs"

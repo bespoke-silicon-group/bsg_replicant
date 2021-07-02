@@ -44,8 +44,6 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
-# TEST_NAME is the basename of the executable
-TEST_NAME = main
 # SPMD name is the name of the SPMD test
 SPMD_NAME = fib
 

@@ -47,6 +47,4 @@ include $(BSG_PLATFORM_PATH)/link.mk
 .PHONY: link.clean
 link.clean:
 
-clean: link.clean
-
 endif

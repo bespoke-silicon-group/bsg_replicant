@@ -50,20 +50,10 @@ include $(EXAMPLES_PATH)/execution.mk
 # Regression Flow
 ###############################################################################
 
-regression: main.exec.log
+regression: exec.log
 	@grep "BSG REGRESSION TEST .*PASSED.*" $< > /dev/null
 
-###############################################################################
-# Default rules, help, and clean
-###############################################################################
 .DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean | $(TEST_NAME).{profile,debug} | $(TEST_NAME).{profile,debug}.log}"
-	@echo "      $(TEST_NAME).profile: Build executable with profilers enabled"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      $(TEST_NAME).{profile,debug}.log: Run specific executable"
-	@echo "      clean: Remove all subdirectory-specific outputs"
 
 
 .PHONY: clean
