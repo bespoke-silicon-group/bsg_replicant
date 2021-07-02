@@ -167,7 +167,17 @@ define RISCV_CLANG
 $(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm |& tee $*.rvo.ll.log && \
 $(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S |& tee $*.rvo.S.log && \
 $(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
-endef 
+endef
+
+# To chose between GCC and CLANG set RISCV_CC to RISCV_GCC or RISCV_CLANG, respectively.
+# To chose between G++ and CLANG++ set RISCV_CXX to RISCV_GXX or RISCV_CLANGXX, respectively.
+# This can be done on a per-object basis, or globally
+#
+# YOU MUST USE = WHEN SETTING RISCV_CC OR RISCV_CXX.
+#
+# Using := will cause the automatic variables in the functions above
+# to be evaluated before the rule is executed, and they will appear as
+# empty spaces when the RISC-V object is compiled.
 
 %.rvo: %.c
 	$(call RISCV_CC)
