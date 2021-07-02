@@ -152,7 +152,7 @@ main.rvo: $(BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
 # callable functions provides the abstraction of being able to choose
 # the compiler on a per-object basis (e.g. kernel.rvo:
 # RISCV_CC=RISC_GCC) or globally.
-RISCV_GCC = $(_RISCV_GCC) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
 RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
 
 # The clang version of the functions hide the fact that LLC (the
