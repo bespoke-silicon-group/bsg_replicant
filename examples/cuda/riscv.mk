@@ -25,10 +25,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# TODO: Makefile comment
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+# riscv.mk is a way to compile manycore/RISC-V code in bsg_replicant,
+# so that the application code can co-exist with the binary, and
+# remove the need to file two PRs when adding applications. 
+# riscv.mk was originally in the "baseline" repository, but
+# maintaining that repository is difficult when there's a lot of code
+# churn, so we brought riscv.mk here and deprecated baseline. In
+# short, it eases the development of kernels, and explaining how to
+# develop kernels.
+
+# RISC-V sources are compiled into .rvo files, and then linked into
+# .riscv ELF binaries. .o files are for host/x86 code and RISC-V code
+# should not be compiled into .o files (that will lead to compiler and
+# linker errors.
+
+# For an example of how to use this file see
+# test_credit_csr_tile/Makefile.
 
 ################################################################################
 # Paths
@@ -49,7 +61,7 @@ RISCV_GNU_PATH   := $(RISCV_TOOLS_PATH)/riscv-install
 RISCV_LLVM_PATH  := $(RISCV_TOOLS_PATH)/llvm/llvm-install
 
 ################################################################################
-# Include RISC-V Tool Configuration
+# RISC-V Tool Configuration
 ################################################################################
 
 RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
@@ -57,8 +69,10 @@ RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
 # These flags are not supported by clang
 RISCV_GNU_FLAGS = -frerun-cse-after-loop -fweb -frename-registers -mtune=bsg_vanilla_2020
 
-_RISCV_GCC        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-gcc $(RISCV_GNU_FLAGS)
-_RISCV_GXX        ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV_GNU_FLAGS)
+# See comment below about _RISCV_GCC and _RISCV_GXX for explanation of
+# the preceding underscore.
+_RISCV_GCC       ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-gcc $(RISCV_GNU_FLAGS)
+_RISCV_GXX       ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV_GNU_FLAGS)
 RISCV_ELF2HEX    ?= LD_LIBRARY_PATH=$(RISCV_GNU_PATH)/lib $(RISCV_GNU_PATH)/bin/elf2hex
 RISCV_OBJCOPY    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objcopy
 RISCV_AR         ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-ar
@@ -73,18 +87,115 @@ RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/
 RISCV_CLANG_CXXFLAGS  += -I$(RISCV_GNU_PATH)/riscv32-unknown-elf-dramfs/include/c++/9.2.0/riscv32-unknown-elf-dramfs
 RISCV_LLVM_LLC_FLAGS   = -march=riscv32 -mcpu=hb-rv32 -mattr=+m,+a,+f
 
-
+# See comment below about _RISCV_CLANG and _RISCV_CLANGXX for
+# explanation of the preceding underscore.
 _RISCV_CLANG       ?= $(RISCV_LLVM_PATH)/bin/clang $(RISCV_CLANG_CFLAGS) $(RISCV_CLANG_CCPPFLAGS)
 _RISCV_CLANGXX     ?= $(RISCV_LLVM_PATH)/bin/clang++ $(RISCV_CLANG_CXXFLAGS) $(RISCV_CLANG_CCPPFLAGS)
 RISCV_LLVM_OPT    ?= $(RISCV_LLVM_PATH)/bin/opt
 RISCV_LLVM_LLC    ?= $(RISCV_LLVM_PATH)/bin/llc
 RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 
-# Set the default RISC-V Compilers. To override these globally set
-# RISCV_CXX = $(RISCV_CLANGXX), etc. This can also be done on a
-# per-object basis. For example, foo.rvo: RISCV_CXX=$(RISCV_CLANGXX)
+# When compiling RISC-V code we often compile part of a program with
+# LLVM and part of a program with GCC because sometimes one compiler
+# does better than the other. 
+
+# In a typical x86 flow you can change your C/C++ compiler by setting
+# CC or CXX like this:
+
+# Globally:
+
+# CC=clang
+# OR
+# CXX=clang++
+
+# Per-object:
+
+# foo.o: CC=clang
+# OR
+# foo_cpp.o: CXX=clang++
+
+# This behavior is not currently an option for HB RISC-V (as of
+# 7/1/2021) because llc (the internal optimizer for LLVM) doesn't
+# infer the correct scheduling weights for important HB features like
+# bsg_attr_remote because -mcpu and other flags are not passed from
+# clang (the front end). See:
+# https://github.com/bespoke-silicon-group/bsg_manycore/blob/3a05e000aef1fba896f756e9836c9e002e5a06f7/software/mk/Makefile.builddefs#L208
+
+# As a result clang/LLVM compilation is split into
+# multiple steps:
+#   1. Clang (.c/.cpp -> .ll (LLVM IR))
+#   2. llc (.ll (LLVM IR) -> .s)
+#   3. gcc/clang (.s -> .rvo)
+
+# This is problematic if we want to selectively compile objects with
+# clang/LLVM because it adds intermediate targets that GCC does not
+# have. AFAIK there is no easy way to express two different
+# compilation paths in a single run of make. If clang correctly passed
+# the arguments to lcc and HB RV32 objects could be optimally comiled
+# with a single clang command, this issue would be resolved and we
+# could use a flow like the x86 example above.
+
+# The current approach in bsg_manycore removes the ability to do
+# per-object compiler selection. CLANG=1 is set globally, which
+# compiles ALL application objects with LLVM, or none of them.
+
+# Hence, this solution. The approach below seems to be the only way to
+# provide per-object selection of GCC/LLVM with our current flow.
+#
+# Instead of having a single command, we wrap clang/LLVM into a
+# makefile function to provide the abstraction of a single
+# command. These functions are RISCV_GCC/RISCV_GXX or
+# RISCV_CLANG/RISCV_CLANGXX for C and C++ respectively.
+#
+# Providing RISCV_GCC/RISCV_GXX and RISCV_CLANG/RISCV_CLANGXX as
+# callable functions provides the abstraction of being able to choose
+# the compiler on a per-object basis (e.g. kernel.rvo:RISCV_CC=RISC_GCC) or globally.
+
+# For an example of how to use this file see
+# test_credit_csr_tile/Makefile.
+
+RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+
+# The clang version of the functions hide the fact that LLC (the
+# optimizer) is being called between steps.
+define RISCV_CLANGXX
+$(_RISCV_CLANGXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm && \
+$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S && \
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
+endef 
+
+define RISCV_CLANG
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm |& tee $*.rvo.ll.log && \
+$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S |& tee $*.rvo.S.log && \
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
+endef
+
+# Set the default RISC-V Compilers.
 RISCV_CXX ?= $(RISCV_GXX)
 RISCV_CC  ?= $(RISCV_GCC)
+
+# To chose between GCC and CLANG set RISCV_CC to RISCV_GCC or RISCV_CLANG, respectively.
+# To chose between G++ and CLANG++ set RISCV_CXX to RISCV_GXX or RISCV_CLANGXX, respectively.
+# This can be done on a per-object basis, or globally. For example:
+# 
+# Globally:
+# RISCV_CXX = $(RISCV_CLANGXX)
+#
+# Per-object:
+# foo.rvo: RISCV_CXX=$(RISCV_CLANGXX)
+
+# ****************************** NOTE ******************************
+#
+# ***** YOU MUST USE = WHEN SETTING RISCV_CC OR RISCV_CXX. DO NOT USE := *****
+#
+# ****************************** NOTE ******************************
+
+# Using := will cause the automatic variables in the functions above
+# to be evaluated before the rule is executed, and they will appear as
+# empty spaces when the RISC-V object is compiled.
+
+# Here endeth the lesson.
 
 ################################################################################
 # C/C++ Compilation Flags
@@ -134,6 +245,8 @@ LIBBSG_MANYCORE_OBJECTS  += bsg_set_tile_x_y.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_printf.rvo
 
+# See comment above about _RISCV_GCC and _RISCV_GXX for explanation of
+# the preceding underscore.
 $(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(_RISCV_GCC)
 
 $(LIBBSG_MANYCORE_OBJECTS): %.rvo:$(BSG_MANYCORE_LIB_PATH)/%.c
@@ -141,43 +254,6 @@ $(LIBBSG_MANYCORE_OBJECTS): %.rvo:$(BSG_MANYCORE_LIB_PATH)/%.c
 
 main.rvo: $(BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
-
-
-# This is ugly, I know. But this seems to be the only way to provide
-# per-object selection of GCC/LLVM.  The issue is that LLC (the
-# internal compiler) doesn't infer the correct architecture weights
-# for important HB features like bsg_attr_remote.
-#
-# Providing RISCV_GCC/RISCV_GXX and RISCV_CLANG/RISCV_CLANGXX as
-# callable functions provides the abstraction of being able to choose
-# the compiler on a per-object basis (e.g. kernel.rvo:
-# RISCV_CC=RISC_GCC) or globally.
-RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
-RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
-
-# The clang version of the functions hide the fact that LLC (the
-# optimizer) is being called between steps.
-define RISCV_CLANGXX
-$(_RISCV_CLANGXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm && \
-$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S && \
-$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
-endef 
-
-define RISCV_CLANG
-$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm |& tee $*.rvo.ll.log && \
-$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S |& tee $*.rvo.S.log && \
-$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
-endef
-
-# To chose between GCC and CLANG set RISCV_CC to RISCV_GCC or RISCV_CLANG, respectively.
-# To chose between G++ and CLANG++ set RISCV_CXX to RISCV_GXX or RISCV_CLANGXX, respectively.
-# This can be done on a per-object basis, or globally
-#
-# YOU MUST USE = WHEN SETTING RISCV_CC OR RISCV_CXX.
-#
-# Using := will cause the automatic variables in the functions above
-# to be evaluated before the rule is executed, and they will appear as
-# empty spaces when the RISC-V object is compiled.
 
 %.rvo: %.c
 	$(call RISCV_CC)
