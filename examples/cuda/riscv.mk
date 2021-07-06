@@ -195,8 +195,6 @@ RISCV_CC  ?= $(RISCV_GCC)
 # to be evaluated before the rule is executed, and they will appear as
 # empty spaces when the RISC-V object is compiled.
 
-# Here endeth the lesson.
-
 ################################################################################
 # C/C++ Compilation Flags
 #
