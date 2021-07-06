@@ -42,6 +42,10 @@
 # For an example of how to use this file see
 # test_credit_csr_tile/Makefile.
 
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
+
 ################################################################################
 # Paths
 ################################################################################
@@ -131,7 +135,7 @@ RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 # clang/LLVM because it adds intermediate targets that GCC does not
 # have. AFAIK there is no easy way to express two different
 # compilation paths in a single run of make. If clang correctly passed
-# the arguments to lcc and HB RV32 objects could be optimally comiled
+# the arguments to lcc and HB RV32 objects could be optimally compiled
 # with a single clang command, this issue would be resolved and we
 # could use a flow like the x86 example above.
 
@@ -145,7 +149,7 @@ RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 # Instead of having a single command, we wrap clang/LLVM into a
 # makefile function to provide the abstraction of a single
 # command. These functions are RISCV_GCC/RISCV_GXX or
-# RISCV_CLANG/RISCV_CLANGXX for C and C++ respectively.
+# RISCV_CLANG/RISCV_CLANGXX for C and C++, respectively.
 #
 # Providing RISCV_GCC/RISCV_GXX and RISCV_CLANG/RISCV_CLANGXX as
 # callable functions provides the abstraction of being able to choose
@@ -183,17 +187,17 @@ RISCV_CC  ?= $(RISCV_GCC)
 # RISCV_CXX = $(RISCV_CLANGXX)
 #
 # Per-object:
-# foo.rvo: RISCV_CXX=$(RISCV_CLANGXX)
+# foo_cpp.rvo: RISCV_CXX=$(RISCV_CLANGXX)
 
 # ****************************** NOTE ******************************
 #
 # ***** YOU MUST USE = WHEN SETTING RISCV_CC OR RISCV_CXX. DO NOT USE := *****
 #
-# ****************************** NOTE ******************************
-
 # Using := will cause the automatic variables in the functions above
 # to be evaluated before the rule is executed, and they will appear as
 # empty spaces when the RISC-V object is compiled.
+#
+# ****************************** NOTE ******************************
 
 ################################################################################
 # C/C++ Compilation Flags
@@ -219,20 +223,42 @@ RISCV_CXXFLAGS += -fno-threadsafe-statics
 RISCV_INCLUDES += -I$(BSG_MANYCORE_COMMON_PATH)
 RISCV_INCLUDES += -I$(BSG_MANYCORE_DIR)/software/bsg_manycore_lib
 
-# TODO: Fail if bsg_tiles_X/Y are not set
+# Check for machine definitions. These are typically set by
+# Makefile.machine.include
+
+ifndef BSG_MACHINE_GLOBAL_X
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_GLOBAL_X undefined"))
+endif
+ifndef BSG_MACHINE_GLOBAL_Y
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_GLOBAL_Y undefined"))
+endif
 RISCV_DEFINES += -Dbsg_global_X=$(BSG_MACHINE_GLOBAL_X)
 RISCV_DEFINES += -Dbsg_global_Y=$(BSG_MACHINE_GLOBAL_Y)
+
+ifndef BSG_MACHINE_POD_TILES
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_POD_TILES undefined"))
+endif
+ifndef BSG_MACHINE_PODS_X
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PODS_X undefined"))
+endif
+ifndef BSG_MACHINE_PODS_Y
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PODS_Y undefined"))
+endif
 RISCV_DEFINES += -Dbsg_group_size=$(BSG_MACHINE_POD_TILES)
 RISCV_DEFINES += -Dbsg_pods_X=$(BSG_MACHINE_PODS_X)
 RISCV_DEFINES += -Dbsg_pods_Y=$(BSG_MACHINE_PODS_Y)
+
+ifndef BSG_MACHINE_HOST_X_CORD
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_HOST_X_CORD undefined"))
+endif
+ifndef BSG_MACHINE_HOST_Y_CORD
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_HOST_Y_CORD undefined"))
+endif
 RISCV_DEFINES += -DIO_X_INDEX=$(BSG_MACHINE_HOST_X_CORD)
 RISCV_DEFINES += -DIO_Y_INDEX=$(BSG_MACHINE_HOST_Y_CORD)
 RISCV_DEFINES += -DPREALLOCATE=0
 RISCV_DEFINES += -DHOST_DEBUG=0
 
-# We build and name a machine-specific crt.rvo because it's REALLY
-# difficult to figure out why your program/cosimulation is hanging
-# when the wrong link script was used during linking
 crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
 
