@@ -40,14 +40,14 @@ ifndef BSG_MACHINE_NAME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_NAME is not defined$(NC)"))
 endif
 
-# The following variables are set by $(BSG_F1_DIR)/hdk.mk, which will fail if
-# hdk_setup.sh has not been run, or environment.mk is not included
-#
-# HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
-# AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
-# HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
-# SDK_DIR: Path to the SDK directory in the aws-fpga repo
-include $(BSG_F1_DIR)/hdk.mk
+# If we're inside bladerunner, check for verilator and define variables
+ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
+VERILATOR_ROOT = $(BLADERUNNER_ROOT)/verilator
+VERILATOR = $(BLADERUNNER_ROOT)/verilator/bin/verilator
+else
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Bladerunner is cloned, but verilator not found.$(NC)"))
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Compile verilator in bsg_bladerunner to remove this warning$(NC)"))
+endif
 
 ################################################################################
 # Simulation Sources

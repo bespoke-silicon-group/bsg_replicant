@@ -54,15 +54,14 @@ extern "C" {
         /*************/
 
         /* Offsets in bytes */
-#define HB_MC_TILE_EPA_DMEM_BASE   0x00001000
-#define HB_MC_TILE_EVA_DMEM_BASE   0x00001000
+#define HB_MC_TILE_EPA_DMEM_BASE   0x00000000
+#define HB_MC_TILE_EVA_DMEM_BASE   0x00000000
 #define HB_MC_TILE_EPA_ICACHE_BASE 0x01000000
 #define HB_MC_TILE_EPA_CSR_BASE                       0x20000
 #define HB_MC_TILE_EPA_CSR_FREEZE_OFFSET              0x00
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_X_OFFSET 0x04
 #define HB_MC_TILE_EPA_CSR_TILE_GROUP_ORIGIN_Y_OFFSET 0x08
 #define HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET       0x0C
-#define HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET         0x10
 
 #define EPA_TILE_CSR_FROM_BYTE_OFFSET(offset)                           \
         EPA_FROM_BASE_AND_OFFSET(HB_MC_TILE_EPA_CSR_BASE, offset)
@@ -82,9 +81,6 @@ extern "C" {
 
 #define HB_MC_TILE_EPA_CSR_PC_INIT_VALUE                                \
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET)
-
-#define HB_MC_TILE_EPA_CSR_DRAM_ENABLE                                  \
-        EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET)
 
         /**
          * Set a tile's x origin
@@ -140,25 +136,6 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_tile_unfreeze(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
 
-        /**
-         * Set the DRAM enabled bit for a tile.
-         * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
-         * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
-         * @param[in] tile   A tile to unfreeze.
-         * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
-         */
-        __attribute__((warn_unused_result))
-        int hb_mc_tile_set_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
-
-        /**
-         * Clear the DRAM enabled bit for a tile.
-         * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
-         * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
-         * @param[in] tile   A tile to unfreeze.
-         * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
-         */
-        __attribute__((warn_unused_result))
-        int hb_mc_tile_clear_dram_enabled(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile);
 
         /****************************************************************************************/
         /* TODO: these should actually check if there's a vanilla core at the given tile.       */

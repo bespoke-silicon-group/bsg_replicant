@@ -1,5 +1,10 @@
 *.o
-test_*
+*.so
+*.ld
+*.rvo
+*.rvo.ll
+*.rvo.S
+*.riscv
 !*.c
 !*.cpp
 !*.h
@@ -7,3 +12,15 @@ test_*
 .test_*
 vc_hdrs.h
 ucli.key
+*.rpt
+*.log
+*.out
+*.tmp
+*.daidir
+*.debug
+*.profile
+*.exec
+*.saif
+*.saifgen
+*.json
+dramsim3.txt

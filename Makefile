@@ -63,18 +63,6 @@ build:
 regression:
 	$(MAKE) -C examples $@ 
 
-__BSG_MACHINES += machines/16x8_fast_n_fake
-__BSG_MACHINES += machines/4x4_fast_n_fake
-__BSG_MACHINES += machines/4x4_blocking_dramsim3_hbm2_512mb
-__BSG_MACHINES += machines/8x4_blocking_dramsim3_hbm2_4gb
-__BSG_MACHINES += machines/4x4_blocking_vcache_f1_model
-__BSG_MACHINES += machines/timing_v0_8_4
-__BSG_MACHINES += machines/timing_v0_16_8
-#__BSG_MACHINES += machines/timing_v0_32_16
-#__BSG_MACHINES += machines/timing_v0_64_32  
-multiverse:
-	$(foreach m,$(__BSG_MACHINES),$(MAKE) -k -C examples regression BSG_MACHINE_PATH=`pwd`/$m &&) echo ;
-
 clean:
 	$(MAKE) -C examples clean 
 	$(MAKE) -C build clean 

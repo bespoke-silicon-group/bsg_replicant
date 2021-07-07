@@ -45,17 +45,11 @@ ifndef LIBRARIES_PATH
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: LIBRARIES_PATH is not defined$(NC)"))
 endif
 
-# PROJECT: The project name, used to as the work directory of the hardware
-# library during analysis
-ifndef PROJECT
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: PROJECT is not defined$(NC)"))
-endif
-
 # Don't include more than once
 ifndef (_BSG_F1_TESTBENCHES_DRAMSIM3_MK)
 _BSG_F1_TESTBENCHES_DRAMSIM3_MK := 1
 # Check if dramsim3 is the memory model for this design
-ifneq ($(filter dramsim3, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
+ifneq ($(filter hbm2, $(subst _, ,$(BSG_MACHINE_MEM_CFG))),)
 
 # Add a clean rule
 .PHONY: dramsim3.clean
@@ -64,7 +58,7 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PA
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so
 
 # Rules for building dramsim3 library
-$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS := -std=c++11 -D_GNU_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS := -std=c++11 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/src
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/headers
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/imports/DRAMSim3/ext/fmt/include
@@ -84,6 +78,7 @@ $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/im
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/refresh.cc
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/simple_stats.cc
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/timing.cc
+$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/imports/DRAMSim3/src/blood_graph.cc
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: $(BASEJUMP_STL_DIR)/bsg_test/bsg_dramsim3.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 

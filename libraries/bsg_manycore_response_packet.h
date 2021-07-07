@@ -51,7 +51,7 @@ extern "C" {
                 uint32_t  data; //!< packet's payload data
                 uint8_t   op;    //!< opcode
                 uint8_t   reserved[8];
-        } __attribute__((packed)) hb_mc_response_packet_t;
+        } __attribute__((packed, aligned(4))) hb_mc_response_packet_t;
 
 
         /**
@@ -169,7 +169,7 @@ extern "C" {
                          "response_pkt{"
                          "dst=(X:%" PRIu8 ",Y:%" PRIu8 "), "
                          "data=0x%08" PRIx32 ","
-                         "id=0x%08" PRIx32 ","
+                         "id=0x%02" PRIx8 ","
                          "op=0x%02" PRIx8 ""
                          "}",
                          hb_mc_response_packet_get_x_dst(packet),

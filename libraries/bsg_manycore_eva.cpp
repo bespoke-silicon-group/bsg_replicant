@@ -25,6 +25,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+// This code is written to match the System Verilog found here:                                      //
+// https://github.com:bespoke-silicon-group/bsg_manycore/v/bsg_manycore_eva_to_npa.v                 //
+//                                                                                                   //
+// It also matches address translation code found here:                                              //
+// https://github.com:bespoke-silicon-group/bsg_manycore/software/py/nbf.py                          //
+//                                                                                                   //
+// Changing the EVA map should reflect corresponding changes in:                                     //
+// https://github.com:bespoke-silicon-group/bsg_replicant/examples/library/test_manycore_eva/main.c  //
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #include <bsg_manycore_eva.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
@@ -50,18 +61,18 @@
 #define DEFAULT_GROUP_BITIDX (DEFAULT_GROUP_Y_BITIDX + DEFAULT_GROUP_Y_LOGSZ)
 #define DEFAULT_GROUP_BITMASK (1ULL << DEFAULT_GROUP_BITIDX)
 
-#define DEFAULT_GLOBAL_X_LOGSZ 6
-#define DEFAULT_GLOBAL_X_BITIDX HB_MC_EPA_LOGSZ
+#define DEFAULT_GLOBAL_X_LOGSZ 7
+#define DEFAULT_GLOBAL_X_BITIDX HB_MC_GLOBAL_EPA_LOGSZ
 #define DEFAULT_GLOBAL_X_BITMASK (MAKE_MASK(DEFAULT_GLOBAL_X_LOGSZ) << DEFAULT_GLOBAL_X_BITIDX)
 
-#define DEFAULT_GLOBAL_Y_LOGSZ 6
+#define DEFAULT_GLOBAL_Y_LOGSZ 7
 #define DEFAULT_GLOBAL_Y_BITIDX (DEFAULT_GLOBAL_X_BITIDX + DEFAULT_GLOBAL_X_LOGSZ)
 #define DEFAULT_GLOBAL_Y_BITMASK (MAKE_MASK(DEFAULT_GLOBAL_Y_LOGSZ) << DEFAULT_GLOBAL_Y_BITIDX)
 
 #define DEFAULT_GLOBAL_BITIDX (DEFAULT_GLOBAL_Y_BITIDX + DEFAULT_GLOBAL_Y_LOGSZ)
 #define DEFAULT_GLOBAL_BITMASK (1ULL << DEFAULT_GLOBAL_BITIDX)
 
-#define DEFAULT_DRAM_BITIDX (DEFAULT_GLOBAL_BITIDX + 1)
+#define DEFAULT_DRAM_BITIDX 31
 #define DEFAULT_DRAM_BITMASK (1ULL << DEFAULT_DRAM_BITIDX)
 
 /**
@@ -77,23 +88,27 @@ static bool default_eva_is_local(const hb_mc_eva_t *eva)
 /**
  * Returns the EPA and number of contiguous bytes for an EVA in a tile,
  * regardless of the continuity of the underlying NPA.
- * @param[in]  cfg    An initialized manycore configuration struct
- * @param[in]  eva    An Endpoint Virtual Address
- * @param[out] epa    An Endpoint Physical Address to be set by translating #eva
- * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @param[in]  cfg       An initialized manycore configuration struct
+ * @param[in]  eva       An Endpoint Virtual Address
+ * @param[out] epa       An Endpoint Physical Address to be set by translating #eva
+ * @param[out] sz        Number of contiguous bytes remaining in the #eva segment
+ * @param[in]  epa_mask  A mask for the EPA within the EVA
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int default_eva_to_epa_tile(
-                                   const hb_mc_config_t *cfg,
+static int default_eva_to_epa_tile(const hb_mc_config_t *cfg,
                                    const hb_mc_eva_t *eva,
                                    hb_mc_epa_t *epa,
-                                   size_t *sz)
+                                   size_t *sz,
+                                   hb_mc_eva_t epa_mask)
 {
         hb_mc_eva_t eva_masked, eva_dmem;
         size_t dmem_size;
         dmem_size = hb_mc_config_get_dmem_size(cfg);
-        eva_masked = hb_mc_eva_addr(eva) & MAKE_MASK(HB_MC_EPA_LOGSZ);
+        eva_masked = hb_mc_eva_addr(eva) & epa_mask;
         eva_dmem = eva_masked - HB_MC_TILE_EVA_DMEM_BASE;
+
+        bsg_pr_dbg("%s: eva_dmem = 0x%08x, eva_masked = 0x%08x, dmem_size = 0x%08lx\n",
+                   __func__, eva_dmem, eva_masked, dmem_size);
 
         if(eva_dmem < dmem_size){
                 *epa = eva_dmem + HB_MC_TILE_EPA_DMEM_BASE;
@@ -119,6 +134,44 @@ static int default_eva_to_epa_tile(
 }
 
 
+
+/**
+ * Converts a local Endpoint Virtual Address to an Endpoint Physical Address for a global EVA
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_to_epa_tile_global(const hb_mc_config_t *cfg,
+                                          const hb_mc_eva_t *eva,
+                                          hb_mc_epa_t *epa,
+                                          size_t *sz)
+{
+        return default_eva_to_epa_tile(cfg, eva, epa, sz, MAKE_MASK(HB_MC_GLOBAL_EPA_LOGSZ));
+}
+
+
+/**
+ * Converts a local Endpoint Virtual Address to an Endpoint Physical Address for group EVA
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_to_epa_tile_group(const hb_mc_config_t *cfg,
+                                         const hb_mc_eva_t *eva,
+                                         hb_mc_epa_t *epa,
+                                         size_t *sz)
+{
+        return default_eva_to_epa_tile(cfg, eva, epa, sz, MAKE_MASK(HB_MC_EPA_LOGSZ));
+}
+
 /**
  * Converts a local Endpoint Virtual Address to a Network Physical Address
  * @param[in]  cfg    An initialized manycore configuration struct
@@ -142,7 +195,7 @@ static int default_eva_to_npa_local(const hb_mc_config_t *cfg,
         x = hb_mc_coordinate_get_x(*src);
         y = hb_mc_coordinate_get_y(*src);
 
-        rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
+        rc = default_eva_to_epa_tile_group(cfg, eva, &epa, sz);
         if (rc != HB_MC_SUCCESS)
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -210,7 +263,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
                 return HB_MC_FAIL;
         }
 
-        rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
+        rc = default_eva_to_epa_tile_group(cfg, eva, &epa, sz);
         if (rc != HB_MC_SUCCESS)
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -258,7 +311,9 @@ static int default_eva_to_npa_global(const hb_mc_config_t *cfg,
 
         x = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_X_BITMASK) >> DEFAULT_GLOBAL_X_BITIDX);
         y = ((hb_mc_eva_addr(eva) & DEFAULT_GLOBAL_Y_BITMASK) >> DEFAULT_GLOBAL_Y_BITIDX);
-        rc = default_eva_to_epa_tile(cfg, eva, &epa, sz);
+        bsg_pr_dbg("%s: EVA=%08x, x = %x, y = %x\n", __func__, *eva, x, y);
+
+        rc = default_eva_to_epa_tile_global(cfg, eva, &epa, sz);
         if (rc != HB_MC_SUCCESS)
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
@@ -283,15 +338,25 @@ static bool default_eva_is_dram(const hb_mc_eva_t *eva)
         return (hb_mc_eva_addr(eva) & DEFAULT_DRAM_BITMASK) != 0;
 }
 
-static uint32_t default_get_dram_max_x_coord(const hb_mc_config_t *cfg)
+static uint32_t default_dram_max_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
-        hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
-        return hb_mc_dimension_get_x(dim);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+        hb_mc_dimension_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        return hb_mc_coordinate_get_x(og) + hb_mc_dimension_get_x(dim) - 1;
+}
+
+static uint32_t default_dram_min_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
+{
+        hb_mc_dimension_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        return hb_mc_coordinate_get_x(og);
 }
 
 static uint32_t default_get_x_dimlog(const hb_mc_config_t *cfg)
 {
-        hb_mc_dimension_t dim = hb_mc_config_get_dimension_network(cfg);
+        // clog2 of the #(columns) in a pod
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
         return ceil(log2(hb_mc_dimension_get_x(dim)));
 }
 
@@ -324,28 +389,41 @@ static uint32_t default_get_dram_bitwidth(const hb_mc_manycore_t *mc)
 static uint32_t default_get_dram_x_shift_dep(const hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        if (hb_mc_manycore_dram_is_enabled(mc)) {
-                return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
-        } else {
-                return ceil(log2(hb_mc_config_get_vcache_size(cfg))); // clog2(victim cache size)
-        }
+        return hb_mc_config_get_vcache_bitwidth_data_addr(cfg);
 }
 
 // See comments on default_eva_to_npa_dram 
 static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
                                         const hb_mc_eva_t *eva,
-                                        hb_mc_idx_t *x) { 
+                                        hb_mc_idx_t *x) {
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+#ifdef DEBUG
+        char pod_str[256];
+        char src_str [256];
+        char og_str [256];
+        hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+        hb_mc_coordinate_to_string(*src, src_str,  sizeof(src_str));
+        hb_mc_coordinate_to_string(og, og_str,  sizeof(og_str));
+        bsg_pr_dbg("%s: Source = %s maps to (Logical) Pod %s with origin %s\n",
+                    __func__, src_str, pod_str, og_str);
+#endif
         uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
         uint32_t xmask = default_get_dram_x_bitidx(cfg);
-        uint32_t dram_max_x_coord = default_get_dram_max_x_coord(cfg);
+
+        uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
+        uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
         *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
-        if ( *x > dram_max_x_coord) { 
-                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X coordinate "
-                           "of the DRAM bank for the requested EPA %d is larger than max %d\n.",
+        *x += hb_mc_coordinate_get_x(og);
+        if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
+                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X-coordinate "
+                           "of the NPA of requested DRAM bank (%d) is outside of "
+                           "DRAM X-coordinate range [%d, %d]\n.",
                            __func__, hb_mc_eva_addr(eva),
-                           *x, dram_max_x_coord);
+                           *x, dram_min_x_coord, dram_max_x_coord);
                 return HB_MC_INVALID;
         }
         return HB_MC_SUCCESS;
@@ -354,6 +432,7 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
 // See comments on default_eva_to_npa_dram 
 static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
                                         const hb_mc_eva_t *eva,
                                         hb_mc_idx_t *y) { 
 
@@ -363,10 +442,11 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                 + default_get_x_dimlog(cfg); // x-coordinate bits
 
         uint32_t is_south = (hb_mc_eva_addr(eva) >> shift) & 1;
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
 
         *y = is_south
-                ? hb_mc_config_get_dram_high_y(cfg)
-                : hb_mc_config_get_dram_low_y(cfg);
+            ? hb_mc_config_pod_dram_south_y(cfg, pod)
+            : hb_mc_config_pod_dram_north_y(cfg, pod);
 
         bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
                    __func__, *y, *eva);
@@ -465,7 +545,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         hb_mc_epa_t epa;
 
         // Calculate X coordinate of NPA from EVA
-        rc = default_eva_get_x_coord_dram (mc, cfg, eva, &x); 
+        rc = default_eva_get_x_coord_dram (mc, cfg, src, eva, &x); 
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to generate x coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
@@ -474,7 +554,7 @@ static int default_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         }
 
         // Calculate Y coordinate of NPA from EVA
-        rc = default_eva_get_y_coord_dram (mc, cfg, eva, &y);
+        rc = default_eva_get_y_coord_dram (mc, cfg, src, eva, &y);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("%s: failed to generate y coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
@@ -590,9 +670,13 @@ static bool default_npa_is_dram(const hb_mc_manycore_t *mc,
 {
         char npa_str[64];
         const hb_mc_config_t *config = hb_mc_manycore_get_config(mc);
+        hb_mc_coordinate_t pod = hb_mc_config_pod(config, *tgt);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(config, pod);
         bool is_dram
-                = hb_mc_config_is_dram_y(config, hb_mc_npa_get_y(npa))
-                && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt);
+            = hb_mc_config_is_dram(config, hb_mc_npa_get_xy(npa))
+                && default_dram_epa_is_valid(mc, hb_mc_npa_get_epa(npa), tgt)
+            && (hb_mc_npa_get_x(npa) >= default_dram_min_x_coord(config, &og))
+            && (hb_mc_npa_get_x(npa) <= default_dram_max_x_coord(config, &og));
 
         bsg_pr_dbg("%s: npa %s %s DRAM\n",
                    __func__,
@@ -656,17 +740,9 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
                                   const hb_mc_npa_t *npa,
                                   const hb_mc_coordinate_t *tgt)
 {
-        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(config);
-        hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(config);
-        hb_mc_idx_t base_y = hb_mc_config_get_vcore_base_y(config);
-        hb_mc_idx_t ceil_x = base_x + hb_mc_coordinate_get_x(dim);
-        hb_mc_idx_t ceil_y = base_y + hb_mc_coordinate_get_y(dim);
-
         // does your coordinate map to any v-core and is your epa valid?
-        return (hb_mc_npa_get_x(npa) >= base_x) && (hb_mc_npa_get_x(npa) <= ceil_x) &&
-                (hb_mc_npa_get_y(npa) >= base_y) && (hb_mc_npa_get_y(npa) <= ceil_y) &&
+        return hb_mc_config_is_vanilla_core(config, hb_mc_npa_get_xy(npa)) &&
                 default_local_epa_is_valid(config, hb_mc_npa_get_epa(npa), tgt);
-
 }
 
 /**
@@ -680,7 +756,7 @@ static bool default_npa_is_global(const hb_mc_config_t *config,
  * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
  */
 static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
-                                   const hb_mc_coordinate_t *origin,
+                                   const hb_mc_coordinate_t *o,
                                    const hb_mc_coordinate_t *tgt,
                                    const hb_mc_npa_t *npa,
                                    hb_mc_eva_t *eva,
@@ -690,14 +766,18 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
         hb_mc_eva_t addr = 0;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         uint32_t stripe_log, xdimlog;
-        uint32_t is_south = hb_mc_npa_get_y(npa) == hb_mc_config_get_dram_high_y(cfg);
+        // get the pod and pod origin
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
+
+        uint32_t is_south = hb_mc_config_is_dram_south(cfg, hb_mc_npa_get_xy(npa));
 
         stripe_log = default_get_dram_stripe_size_log(mc);
         xdimlog    = default_get_x_dimlog(cfg);
 
         // See comments on default_eva_to_npa_dram for clarification
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
-        addr |= (hb_mc_npa_get_x(npa) << stripe_log); // Set the x coordinate
+        addr |= ((hb_mc_npa_get_x(npa)-default_dram_min_x_coord(cfg, &origin)) << stripe_log); // Set the x coordinate
         addr |= (is_south << (stripe_log + xdimlog)); // Set the N-S bit
         addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
@@ -705,7 +785,15 @@ static int default_npa_to_eva_dram(hb_mc_manycore_t *mc,
 
         // this is lame but we are basically saying "you can write to this word only"
         *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
+#ifdef DEBUG
+        char npa_str [256];
+        char tgt_str [256];
+        hb_mc_coordinate_to_string(*tgt, tgt_str, sizeof(tgt_str));
+        hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str));
 
+        bsg_pr_dbg("%s: translating %s for %s to 0x%08x\n",
+                   __func__, npa_str, tgt_str, *eva);
+#endif
         return HB_MC_SUCCESS;
 }
 

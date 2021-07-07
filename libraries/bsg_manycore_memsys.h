@@ -13,6 +13,8 @@ extern "C" {
 #define HB_MC_ROM_MEMSYS_ID_AXI4     "AXI4"
 #define HB_MC_ROM_MEMSYS_ID_INFMEM   "INFM"
 #define HB_MC_ROM_MEMSYS_ID_DRAMSIM3 "DRS3"
+#define HB_MC_ROM_MEMSYS_ID_TESTMEM  "TEST"
+#define HB_MC_ROM_MEMSYS_ID_HBM2     "HBM2"
 
 /* Memory system IDs */
 typedef enum __hb_mc_memsys_id_t {
@@ -20,6 +22,8 @@ typedef enum __hb_mc_memsys_id_t {
         HB_MC_MEMSYS_ID_AXI4,     //!< AXI4 memory controller
         HB_MC_MEMSYS_ID_INFMEM,   //!< Ideal single-cycle memory
         HB_MC_MEMSYS_ID_DRAMSIM3, //!< DRAMSim3 memory controller
+        HB_MC_MEMSYS_ID_TESTMEM,  //!< Non-synthesizable test memory via Wormhole Network
+        HB_MC_MEMSYS_ID_HBM2,     //!< HBM2 via Wormhole Network
 } hb_mc_memsys_id_t;
 
 /**

@@ -39,14 +39,6 @@
 # CL_DIR: Path to the directory of this AWS F1 Project
 include ../environment.mk
 
-# The following variables are set by $(CL_DIR)/hdk.mk
-#
-# HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
-# AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
-# HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
-# SDK_DIR: Path to the SDK directory in the aws-fpga repo
-include $(CL_DIR)/hdk.mk
-
 # libraries.mk defines rules for building the BSG Manycore Runtime libraries,
 # flags, and a list of sources.
 include $(LIBRARIES_PATH)/libraries.mk
@@ -69,6 +61,8 @@ _DOCSTRING += "    build:\n"
 _DOCSTRING += "        - Compile the BSG Manycore Runtime Libraries (libbsg_manycore_runtime.so)\n"
 _DOCSTRING += "          in BSG_PLATFORM_PATH (./$(shell realpath --relative-to . $(BSG_PLATFORM_PATH)))\n"
 build: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
+build: $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0
+build: $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0
 
 _TARGETS += "clean"
 _DOCSTRING += "    clean:\n"

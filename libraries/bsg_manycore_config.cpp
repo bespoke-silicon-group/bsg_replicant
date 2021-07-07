@@ -28,6 +28,7 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_errno.h>
+#include <bsg_manycore_chip_id.h>
 
 #ifdef __cplusplus
 #include <cmath>
@@ -55,6 +56,15 @@ int hb_mc_config_init_check_memsys(hb_mc_config_t *config)
         }
         return HB_MC_SUCCESS;
 }
+
+#define CHECK_FIELD(field, cond)                                        \
+    do {                                                                \
+        if (!(cond)) {                                                  \
+            bsg_pr_err("%s: Configuration field %s: Condition '%s' failed: %s\n", \
+                       __func__, #field, #cond, error_init_help);       \
+            return HB_MC_INVALID;                                       \
+        }                                                               \
+    } while(0)
 
 int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                       hb_mc_config_t *config)
@@ -91,19 +101,11 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->timestamp.month = date[7] * 10 + date[6] * 1;
 
         idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
-        if (idx > HB_MC_CONFIG_MAX_BITWIDTH_DATA){
-                bsg_pr_err("%s: Invalid Network Datapath Bitwidth %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_NETWORK_DATA_WIDTH, idx <= HB_MC_CONFIG_MAX_BITWIDTH_DATA);
         config->network_bitwidth_data = idx;
 
         idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
-        if (idx > HB_MC_CONFIG_MAX_BITWIDTH_ADDR){
-                bsg_pr_err("%s: Invalid Network Address Bitwidth %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_NETWORK_ADDR_WIDTH, idx <= HB_MC_CONFIG_MAX_BITWIDTH_ADDR);
         config->network_bitwidth_addr = idx;
 
         /* The maximum X dimension of the network is limited by the network
@@ -111,43 +113,42 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         xlogsz_max = HB_MC_CONFIG_MAX_BITWIDTH_ADDR - config->network_bitwidth_addr;
         xdim_max = (1 << xlogsz_max);
 
-        idx = raw[HB_MC_CONFIG_DEVICE_DIM_X];
-        //Temporarily removed this condition until it is cleared up. TODO: Fix.
-        //if ((idx < HB_MC_COORDINATE_MIN) || (idx > xdim_max)){
-        if ((idx < HB_MC_COORDINATE_MIN)){
-                bsg_pr_err("%s: Invalid Device Dimension X %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
-        config->vcore_dimensions.x = idx;
+        idx = raw[HB_MC_CONFIG_POD_DIM_X];
+        CHECK_FIELD(HB_MC_CONFIG_POD_DIM_X, idx >= HB_MC_COORDINATE_MIN);
+        config->pod_shape.x = idx;
 
-        idx = raw[HB_MC_CONFIG_DEVICE_DIM_Y];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > HB_MC_COORDINATE_MAX)){
-                bsg_pr_err("%s: Invalid Device Dimension Y %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
-        config->vcore_dimensions.y = idx;
+        idx = raw[HB_MC_CONFIG_POD_DIM_Y];
+        CHECK_FIELD(HB_MC_CONFIG_POD_DIM_Y, idx >= HB_MC_COORDINATE_MIN && idx <= HB_MC_COORDINATE_MAX);
+        config->pod_shape.y = idx;
+
+        idx = raw[HB_MC_CONFIG_DIM_PODS_X];
+        CHECK_FIELD(HB_MC_CONFIG_DIM_PODS_X, idx >= 0 && idx <= 64);
+        config->pods.x = idx;
+
+        idx = raw[HB_MC_CONFIG_DIM_PODS_Y];
+        CHECK_FIELD(HB_MC_CONFIG_DIM_PODS_Y, idx >= 0 && idx <= 64);
+        config->pods.y = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.x)){
-                bsg_pr_err("%s: Invalid Host Interface index X %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
         config->host_interface.x = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y];
-        if ((idx < HB_MC_COORDINATE_MIN) || (idx > config->vcore_dimensions.y)){
-                bsg_pr_err("%s: Invalid Host Interface index Y %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
         config->host_interface.y = idx;
+
+
+        idx = raw[HB_MC_CONFIG_NOC_COORD_X_WIDTH];
+        CHECK_FIELD(HB_MC_CONFIG_NOC_COORD_X_WIDTH, idx > 0 && idx < 32);
+        config->noc_coord_width.x = idx;
+
+        idx = raw[HB_MC_CONFIG_NOC_COORD_Y_WIDTH];
+        CHECK_FIELD(HB_MC_CONFIG_NOC_COORD_Y_WIDTH, idx > 0 && idx < 32);
+        config->noc_coord_width.y = idx;
 
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];
+        config->chip_id = raw[HB_MC_CONFIG_CHIP_ID];
+        CHECK_FIELD(HB_MC_CONFIG_CHIP_ID, HB_MC_IS_CHIP_ID(config->chip_id));
 
         /* set the victim cache parameters from the values in the ROM */
         config->vcache_ways         = raw[HB_MC_CONFIG_VCACHE_WAYS];
@@ -155,39 +156,22 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
 
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
-        if (idx < config->vcache_block_words) {
-                bsg_pr_err("%s: Invalid vcache stripe size %d: stripe size "
-                           "cannot be smaller than vcache block size %d: %s\n",
-                           __func__, idx, config->vcache_block_words, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_VCACHE_STRIPE_WORDS, idx >= config->vcache_block_words);
         config->vcache_stripe_words = idx;
 
-
+        // Response fifo capacity
         idx = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
-        if ((idx < HB_MC_REMOTE_LOAD_MIN) || (idx > HB_MC_REMOTE_LOAD_MAX)){
-                bsg_pr_err("%s: Invalid remote load caps %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, idx >= HB_MC_REMOTE_LOAD_MIN && idx <= HB_MC_REMOTE_LOAD_MAX);
         config->io_remote_load_cap = idx;
 
-
+        // Field no longer used
         idx = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
-        if ((idx < HB_MC_EP_OUT_CREDITS_MIN) || (idx > HB_MC_EP_OUT_CREDITS_MAX)){
-                bsg_pr_err("%s: Invalid endpoint max out credits %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        //CHECK_FIELD(HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS, idx >= HB_MC_EP_OUT_CREDITS_MIN && idx <= HB_MC_EP_OUT_CREDITS_MAX);
         config->io_endpoint_max_out_credits = idx;
 
-
+        // Host endpoint credits
         idx = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
-        if ((idx < HB_MC_HOST_CREDITS_MIN) || (idx > HB_MC_HOST_CREDITS_MAX)){
-                bsg_pr_err("%s: Invalid host credits CAP %d: %s\n",
-                           __func__, idx, error_init_help);
-                return HB_MC_INVALID;
-        }
+        CHECK_FIELD(HB_MC_CONFIG_IO_HOST_CREDITS_CAP, idx >= HB_MC_HOST_CREDITS_MIN && idx <= HB_MC_HOST_CREDITS_MAX);
         config->io_host_credits_cap = idx;
 
         err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
@@ -196,6 +180,13 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                            __func__, error_init_help);
                 return err;
         }
+
+        // Dervived variables from the ROM
+        config->pod_coord_width  = hb_mc_coordinate(3, 4);
+        config->tile_coord_width = hb_mc_coordinate(
+            config->noc_coord_width.x - config->pod_coord_width.x,
+            config->noc_coord_width.y - config->pod_coord_width.y
+            );
 
         return hb_mc_config_init_check_memsys(config);
 }

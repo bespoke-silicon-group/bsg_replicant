@@ -30,6 +30,7 @@
 
 #include <bsg_manycore_features.h>
 #include <bsg_manycore_config.h>
+#include <bsg_manycore_config_pod.h>
 #include <bsg_manycore_npa.h>
 #include <bsg_manycore_epa.h>
 #include <bsg_manycore_packet.h>
@@ -462,6 +463,27 @@ extern "C" {
          */
         __attribute__((warn_unused_result))
         int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc);
+
+        /**
+         * Invalidate entire victim cache for pod.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_pod_invalidate_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod);
+
+       /**
+        * Mark each way in victim cache as valid for pod.
+        * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+        */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_pod_validate_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod);
+
+        /**
+         * Flush entire victim cache for pod.
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_pod_flush_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod);
 
         /**
          * Query if we are operating in no DRAM mode.

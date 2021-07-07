@@ -58,18 +58,15 @@ extern "C" {
         #define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
         #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
-        #define HB_MC_CONFIG_VCORE_BASE_X 0
-        #define HB_MC_CONFIG_VCORE_BASE_Y 2
+        #define HB_MC_CONFIG_VCORE_BASE_X 16
+        #define HB_MC_CONFIG_VCORE_BASE_Y 8
 
         // normal limit for the flow-control parameters
         #define HB_MC_REMOTE_LOAD_MIN 1
         #define HB_MC_REMOTE_LOAD_MAX 32
 
-        #define HB_MC_EP_OUT_CREDITS_MIN 1
-        #define HB_MC_EP_OUT_CREDITS_MAX 64
-
         #define HB_MC_HOST_CREDITS_MIN 1
-        #define HB_MC_HOST_CREDITS_MAX 512
+        #define HB_MC_HOST_CREDITS_MAX 32
 
         typedef hb_mc_rom_word_t hb_mc_config_raw_t;
 
@@ -93,7 +90,11 @@ extern "C" {
                 hb_mc_date_t timestamp;
                 uint32_t network_bitwidth_addr;
                 uint32_t network_bitwidth_data;
-                hb_mc_dimension_t vcore_dimensions;
+                hb_mc_dimension_t pods;      // how many vcore pods?
+                hb_mc_dimension_t pod_shape; // what is the shape of a pod?
+                hb_mc_dimension_t noc_coord_width;
+                hb_mc_dimension_t pod_coord_width;
+                hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;
                 hb_mc_githash_t basejump;
                 hb_mc_githash_t manycore;
@@ -105,6 +106,7 @@ extern "C" {
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
+                uint32_t chip_id;
                 hb_mc_memsys_t memsys;
         } hb_mc_config_t;
 
@@ -114,23 +116,28 @@ extern "C" {
                 HB_MC_CONFIG_TIMESTAMP = 1,
                 HB_MC_CONFIG_NETWORK_ADDR_WIDTH = 2,
                 HB_MC_CONFIG_NETWORK_DATA_WIDTH = 3,
-                HB_MC_CONFIG_DEVICE_DIM_X = 4,
-                HB_MC_CONFIG_DEVICE_DIM_Y = 5,
-                HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X = 6,
-                HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y = 7,
-                HB_MC_CONFIG_NOT_IMPLEMENTED = 8,
-                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 9,
-                HB_MC_CONFIG_REPO_MANYCORE_HASH = 10,
-                HB_MC_CONFIG_REPO_F1_HASH = 11,
-                HB_MC_CONFIG_VCACHE_WAYS = 12,
-                HB_MC_CONFIG_VCACHE_SETS = 13,
-                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 14,
-                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 15,
-                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 16,
-                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 17,
-                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 18,
-                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 19,
-                HB_MC_CONFIG_MEMSYS = 20,
+                HB_MC_CONFIG_DIM_PODS_X = 4,
+                HB_MC_CONFIG_DIM_PODS_Y = 5,
+                HB_MC_CONFIG_POD_DIM_X = 6,
+                HB_MC_CONFIG_POD_DIM_Y = 7,
+                HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X = 8,
+                HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y = 9,
+                HB_MC_CONFIG_NOC_COORD_X_WIDTH = 10,
+                HB_MC_CONFIG_NOC_COORD_Y_WIDTH = 11,
+                HB_MC_CONFIG_NOT_IMPLEMENTED = 12,
+                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 13,
+                HB_MC_CONFIG_REPO_MANYCORE_HASH = 14,
+                HB_MC_CONFIG_REPO_F1_HASH = 15,
+                HB_MC_CONFIG_VCACHE_WAYS = 16,
+                HB_MC_CONFIG_VCACHE_SETS = 17,
+                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 18,
+                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 19,
+                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 20,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 21,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 22,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 23,
+                HB_MC_CONFIG_CHIP_ID = 24,
+                HB_MC_CONFIG_MEMSYS = 25,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
@@ -141,32 +148,7 @@ extern "C" {
                 return (addr + (id << 2));
         }
 
-        static inline const char *hb_mc_config_id_to_string(hb_mc_config_id_t id)
-        {
-                static const char *strtab [] = {
-                        [HB_MC_CONFIG_VERSION] = "BLADERUNNER HARDWARE VERSION",
-                        [HB_MC_CONFIG_TIMESTAMP] = "BLADERUNNER COMPILATION DATE TIMESTAMP",
-                        [HB_MC_CONFIG_NETWORK_ADDR_WIDTH] = "BLADERUNNER NETWORK ADDRESS WDITH",
-                        [HB_MC_CONFIG_NETWORK_DATA_WIDTH] = "BLADERUNNER NETWORK DATA WIDTH",
-                        [HB_MC_CONFIG_DEVICE_DIM_X] = "BLADERUNNER DEVICE DIMENSION X",
-                        [HB_MC_CONFIG_DEVICE_DIM_Y] = "BLADERUNNER DEVICE DIMENSION Y",
-                        [HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X] = "BLADERUNNER HOST INTERFACE DIMENSION X",
-                        [HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y] = "BLADERUNNER HOST INTERFACE DIMENSION Y",
-                        [HB_MC_CONFIG_NOT_IMPLEMENTED] = "BLADERUNNER NOT IMPLEMENTED",
-                        [HB_MC_CONFIG_REPO_BASEJUMP_HASH] = "BLADERUNNER REPO BASEJUMP HASH",
-                        [HB_MC_CONFIG_REPO_MANYCORE_HASH] = "BLADERUNNER REPO MANYCORE HASH",
-                        [HB_MC_CONFIG_REPO_F1_HASH] = "BLADERUNNER REPO F1 HASH",
-                        [HB_MC_CONFIG_VCACHE_WAYS]  = "BLADERUNNER VCACHE WAYS",
-                        [HB_MC_CONFIG_VCACHE_SETS]  = "BLADERUNNER VCACHE SETS",
-                        [HB_MC_CONFIG_VCACHE_BLOCK_WORDS] = "BLADERUNNER VCACHE BLOCK SIZE IN WORDS",
-                        [HB_MC_CONFIG_VCACHE_STRIPE_WORDS] = "BLADERUNNER VCACHE STRIPE SIZE IN WORDS",
-                        [HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS] = "BLADERUNNER VCACHE MISS FIFO ELS",
-                        [HB_MC_CONFIG_IO_REMOTE_LOAD_CAP] = "BLADERUNNER IO REMOTE LOAD CAPACITY",
-                        [HB_MC_CONFIG_IO_HOST_CREDITS_CAP] = "BLADERUNNER IO HOST REQUEST CREDITS CAPACITY",
-                        [HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS] = "BLADERUNNER IO ENDPOINT MAX OUT CREDITS",
-                };
-                return strtab[id];
-        }
+        const char *hb_mc_config_id_to_string(hb_mc_config_id_t id);
 
         static inline uint8_t hb_mc_config_get_version_major(const hb_mc_config_t *cfg){
                 return cfg->design_version.major;
@@ -218,7 +200,7 @@ extern "C" {
         }
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_vcore(const hb_mc_config_t *cfg){
-                return cfg->vcore_dimensions;
+                return cfg->pod_shape;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cfg){
@@ -238,11 +220,14 @@ extern "C" {
                 return hb_mc_coordinate(0, 0);
         }
 
+        static inline hb_mc_dimension_t hb_mc_config_noc_coord_width(const hb_mc_config_t *cfg){
+                return cfg->noc_coord_width;
+        }
+
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
-                hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
-                // The Network has three additional Y rows: An IO Row, and two DRAM/Cache Rows
-                return hb_mc_dimension(hb_mc_dimension_get_x(dim),
-                                       hb_mc_dimension_get_y(dim) + 3);
+                hb_mc_dimension_t noc_width = hb_mc_config_noc_coord_width(cfg);
+                return hb_mc_dimension(1<<hb_mc_dimension_get_x(noc_width),
+                                       1<<hb_mc_dimension_get_y(noc_width));
         }
 
         static inline uint8_t hb_mc_config_get_vcache_bitwidth_tag_addr(const hb_mc_config_t *cfg)
@@ -286,74 +271,18 @@ extern "C" {
                 return (1 << hb_mc_config_get_icache_bitwidth_addr(cfg));
         }
 
-        __attribute__((deprecated))
-        static inline hb_mc_idx_t hb_mc_config_get_dram_y(const hb_mc_config_t *cfg)
-        {
-                hb_mc_coordinate_t dims;
-                dims = hb_mc_config_get_dimension_network(cfg);
-                return hb_mc_coordinate_get_y(dims) - 1;
-        }
-
-
-        static inline hb_mc_idx_t hb_mc_config_get_dram_low_y(const hb_mc_config_t *cfg)
-        {
-                return 0;
-        }
-
-        static inline hb_mc_idx_t hb_mc_config_get_dram_high_y(const hb_mc_config_t *cfg)
-        {
-                return hb_mc_coordinate_get_y(hb_mc_config_get_dimension_network(cfg))-1;
-        }
-
-
-        static inline int hb_mc_config_is_dram_y(const hb_mc_config_t *cfg, hb_mc_idx_t y)
-        {
-                return y == hb_mc_config_get_dram_low_y(cfg)
-                        || y == hb_mc_config_get_dram_high_y(cfg);
-        }
-
-        static inline int hb_mc_config_coordinate_is_dram(const hb_mc_config_t *cfg, hb_mc_coordinate_t xy)
-        {
-                return hb_mc_config_is_dram_y(cfg, hb_mc_coordinate_get_y(xy));
-        }
-
-        static inline hb_mc_coordinate_t
-        hb_mc_config_get_dram_coordinate(const hb_mc_config_t *cfg, hb_mc_idx_t cache_id)
-        {
-                hb_mc_coordinate_t dims;
-                dims = hb_mc_config_get_dimension_network(cfg);
-
-                hb_mc_idx_t x = cache_id % hb_mc_dimension_get_x(dims);
-                hb_mc_idx_t y = cache_id / hb_mc_dimension_get_x(dims) == 0
-                        ? hb_mc_config_get_dram_low_y(cfg)
-                        : hb_mc_config_get_dram_high_y(cfg);
-
-                return hb_mc_coordinate(x,y);
-        }
-
         static inline
         hb_mc_idx_t hb_mc_config_get_num_dram_coordinates(const hb_mc_config_t *cfg)
         {
-                /* there are victim caches at the top and bottom of the mesh */
-                return hb_mc_coordinate_get_x(hb_mc_config_get_dimension_network(cfg))*2;
+                // each pod has banks at the north and south
+                return cfg->pods.x * cfg->pods.y * cfg->pod_shape.x * 2;
         }
 
-        static inline hb_mc_idx_t hb_mc_config_get_dram_id
-        (const hb_mc_config_t *cfg, hb_mc_coordinate_t dram_xy)
-        {
-                hb_mc_idx_t y = hb_mc_coordinate_get_y(dram_xy);
-                if (y == hb_mc_config_get_dram_low_y(cfg)) {
-                        // northern cache
-                        return hb_mc_coordinate_get_x(dram_xy);
-                } else if (y == hb_mc_config_get_dram_high_y(cfg)) {
-                        // southern cache
-                        return hb_mc_dimension_get_x(hb_mc_config_get_dimension_network(cfg))
-                                + hb_mc_coordinate_get_x(dram_xy);
-                } else {
-                        // error
-                        return -1;
-                }
-        }
+#define hb_mc_config_foreach_dram_id(dram_id_var, config)               \
+        for (dram_id_var = 0;                                           \
+             dram_id_var < hb_mc_config_get_num_dram_coordinates(config); \
+             dram_id_var++)
+
 
         static inline size_t hb_mc_config_get_dram_bank_size(const hb_mc_config_t *cfg)
         {
@@ -508,6 +437,7 @@ extern "C" {
         {
                 return cfg->memsys.id;
         }
+
 
 #ifdef __cplusplus
 }

@@ -33,6 +33,7 @@
 #include <bsg_manycore_config.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_coordinate.h>
+#include <bsg_manycore_config_pod.h>
 #ifdef __cplusplus
 #include <cstdint>
 #include <cstdio>
@@ -49,6 +50,7 @@ extern "C" {
 #define HB_MC_VCACHE_EPA_BASE          0x00000000
 #define HB_MC_VCACHE_EPA_OFFSET_DRAM   0x00000000
 #define HB_MC_VCACHE_EPA_OFFSET_TAG    0x20000000
+#define HB_MC_VCACHE_EPA_OFFSET_WH_DST 0x30000000
 #define HB_MC_VCACHE_EPA_RESERVED_BITS 1
 
         /* EPA Macros */
@@ -64,6 +66,12 @@ extern "C" {
         /* Victim Cache Data Bits */
 #define HB_MC_VCACHE_VALID_BITIDX 31
 #define HB_MC_VCACHE_VALID (1 << HB_MC_VCACHE_VALID_BITIDX)
+
+/**
+ * Initialize vcaches.
+ */
+__attribute__((warn_unused_result))
+int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc);
 
 static
 hb_mc_epa_t hb_mc_vcache_set_mask(const hb_mc_manycore_t *mc)
@@ -119,7 +127,7 @@ static
 hb_mc_npa_t hb_mc_vcache_way_npa(const hb_mc_manycore_t *mc, hb_mc_idx_t cache, hb_mc_epa_t set, hb_mc_epa_t way)
 {
         const hb_mc_config_t *cfg  = hb_mc_manycore_get_config(mc);
-        hb_mc_coordinate_t cache_xy = hb_mc_config_get_dram_coordinate(cfg, cache);
+        hb_mc_coordinate_t cache_xy = hb_mc_config_dram(cfg, cache);
         return hb_mc_npa(cache_xy, hb_mc_vcache_way_addr(mc, set, way));
 }
 
@@ -146,7 +154,7 @@ hb_mc_epa_t hb_mc_vcache_num_caches(const hb_mc_manycore_t *mc)
 }
 
 static
-hb_mc_epa_t hb_mc_vcache_tag_epa(const hb_mc_manycore *mc, uint32_t tag)
+hb_mc_epa_t hb_mc_vcache_tag_epa(const hb_mc_manycore_t *mc, uint32_t tag)
 {
     return tag;
 }

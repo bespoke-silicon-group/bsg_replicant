@@ -1,4 +1,4 @@
-synopsys_sim.setup
+synopsys_sim.*
 f1_parameters.vh
 bsg_bladerunner_configuration.rom
 bsg_bladerunner_memsys.rom
@@ -12,3 +12,7 @@ verilated_dpi.o
 verilated_vcd_c.o
 dpi-vcs
 aws-vcs
+bigblade-vcs
+bsg_tag_boot_rom.v
+bsg_tag_boot_rom.tr
+tapeout-vcs

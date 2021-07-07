@@ -46,6 +46,7 @@
 
 #include <type_traits>
 #include <stack>
+#include <map>
 #include <queue>
 #include <vector>
 
@@ -62,10 +63,10 @@
 #define manycore_pr_err(mc, fmt, ...)                   \
         bsg_pr_err("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-#define manycore_pr_warn(mc, fmt, ...)                          \
+#define manycore_pr_warn(mc, fmt, ...)                  \
         bsg_pr_warn("%s: " fmt, mc->name, ##__VA_ARGS__)
 
-#define manycore_pr_info(mc, fmt, ...)                          \
+#define manycore_pr_info(mc, fmt, ...)                  \
         bsg_pr_info("%s: " fmt, mc->name, ##__VA_ARGS__)
 
 
@@ -172,8 +173,29 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 return err;
         }
 
+        // wait for reset to complete
+        if ((err = hb_mc_platform_wait_reset_done(mc)) != HB_MC_SUCCESS) {
+                hb_mc_platform_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
+
         // enable dram
         if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS){
+                hb_mc_platform_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
+
+        // initialize vcaches
+        if ((err = hb_mc_manycore_vcache_init(mc)) != HB_MC_SUCCESS) {
+                hb_mc_platform_cleanup(mc);
+                free((void*)mc->name);
+                return err;
+        }
+
+        // initialize dma
+        if ((err = hb_mc_dma_init(mc)) != HB_MC_SUCCESS) {
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
                 return err;
@@ -287,8 +309,8 @@ int hb_mc_manycore_request_rx(hb_mc_manycore_t *mc,
                 char request_str[64];
                 hb_mc_request_packet_to_string(request, request_str, sizeof(request_str));
                 bsg_pr_err("responder failure to %s\n", request_str);
+                return err;
         }
-
         return HB_MC_SUCCESS;
 }
 
@@ -387,6 +409,7 @@ static bool hb_mc_manycore_dst_npa_is_valid(hb_mc_manycore_t *mc, const hb_mc_np
         if (hb_mc_npa_get_y(npa) >= hb_mc_dimension_get_y(dim)) {
                 char npa_str[256];
                 manycore_pr_err(mc, "%s: %s is not a valid destination\n",
+                                __func__,
                                 hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
                 return false;
         }
@@ -406,21 +429,7 @@ static int hb_mc_manycore_format_request_packet(hb_mc_manycore_t *mc, hb_mc_requ
         hb_mc_request_packet_set_x_src(pkt, hb_mc_coordinate_get_x(host_coordinate));
         hb_mc_request_packet_set_y_src(pkt, hb_mc_coordinate_get_y(host_coordinate));
         hb_mc_request_packet_set_addr(pkt, hb_mc_npa_get_epa(npa) >> 2);
-        return 0;
-}
-
-static int hb_mc_manycore_format_store_request_packet(hb_mc_manycore_t *mc,
-                                                      hb_mc_request_packet_t *pkt,
-                                                      const hb_mc_npa_t *npa)
-{
-        int r;
-
-        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
-                return r;
-
-        hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_STORE);
-
-        return 0;
+        return HB_MC_SUCCESS;
 }
 
 static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
@@ -429,13 +438,13 @@ static int hb_mc_manycore_format_load_request_packet(hb_mc_manycore_t *mc,
 {
         int r;
 
-        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != HB_MC_SUCCESS)
                 return r;
 
         hb_mc_request_packet_set_data(pkt, HB_MC_PACKET_PAYLOAD_REMOTE_LOAD);
         hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_REMOTE_LOAD);
 
-        return 0;
+        return HB_MC_SUCCESS;
 }
 
 static int hb_mc_manycore_format_cache_op_request_packet(hb_mc_manycore_t *mc,
@@ -445,13 +454,13 @@ static int hb_mc_manycore_format_cache_op_request_packet(hb_mc_manycore_t *mc,
 {
         int r;
 
-        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != 0)
+        if ((r = hb_mc_manycore_format_request_packet(mc, pkt, npa)) != HB_MC_SUCCESS)
                 return r;
 
         hb_mc_request_packet_set_op(pkt, HB_MC_PACKET_OP_CACHE_OP);
         hb_mc_request_packet_set_cache_op(pkt, opcode);
 
-        return 0;
+        return HB_MC_SUCCESS;
 }
 
 
@@ -585,20 +594,23 @@ int hb_mc_manycore_vcache_flush_tag(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa
         return hb_mc_manycore_request_tx(mc, &pkt, -1);
 }
 
+
 template <typename ApplyFunction>
-static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction apply_function)
+static int hb_mc_manycore_pod_apply_to_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod, ApplyFunction apply_function)
 {
         if (!hb_mc_manycore_has_cache(mc))
                 return HB_MC_SUCCESS;
 
         hb_mc_epa_t ways = hb_mc_vcache_num_ways(mc);
         hb_mc_epa_t sets = hb_mc_vcache_num_sets(mc);
-        hb_mc_epa_t caches = hb_mc_vcache_num_caches(mc);
         int err;
 
         for (hb_mc_epa_t way_id = 0; way_id < ways; way_id++) {
                 for (hb_mc_epa_t set_id = 0; set_id < sets; set_id++) {
-                        for (hb_mc_epa_t cache_id = 0; cache_id < caches; cache_id++) {
+                        hb_mc_coordinate_t dram;
+                        hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
+                        {
+                                hb_mc_epa_t cache_id = static_cast<hb_mc_epa_t>(hb_mc_config_dram_id(&mc->config, dram));
                                 // build the address for the way
                                 hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, set_id, way_id);
                                 // apply
@@ -612,13 +624,14 @@ static int hb_mc_manycore_apply_to_vcache(hb_mc_manycore_t *mc, ApplyFunction ap
         return HB_MC_SUCCESS;
 }
 
+
 /**
- * Invalidate entire victim cache.
+ * Invalidate entire victim cache for pod.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
-int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
+int hb_mc_manycore_pod_invalidate_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod)
 {
-        return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+        return hb_mc_manycore_pod_apply_to_vcache(mc, pod, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         // write way_id (no valid bit)
                         char npa_str [256];
                         manycore_pr_dbg(mc, "Invalidating vcache tag @ %s\n",
@@ -628,14 +641,13 @@ int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
                 });
 }
 
-
 /**
- * Validate entire victim cache.
+ * Mark each way in victim cache as valid for pod.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
-int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
+int hb_mc_manycore_pod_validate_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod)
 {
-        return hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+        return hb_mc_manycore_pod_apply_to_vcache(mc, pod, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         char npa_str[256];
                         uint32_t tag = HB_MC_VCACHE_VALID | hb_mc_vcache_way(mc, hb_mc_npa_get_epa(way_addr));
                         manycore_pr_dbg(mc, "Validating vcache tag @ %s with tag = 0x%08" PRIx32 "\n",
@@ -647,15 +659,15 @@ int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
 }
 
 /**
- * Flush entire victim cache.
+ * Flush entire victim cache for pod.
  * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
  */
-int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
+int hb_mc_manycore_pod_flush_vcache(hb_mc_manycore_t *mc, hb_mc_coordinate_t pod)
 {
         if (!hb_mc_manycore_has_cache(mc))
                 return HB_MC_SUCCESS;
 
-        int err = hb_mc_manycore_apply_to_vcache(mc, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
+        int err = hb_mc_manycore_pod_apply_to_vcache(mc, pod, [](hb_mc_manycore_t *mc, const hb_mc_npa_t *way_addr) {
                         // flush tag
                         char npa_str[256];
                         manycore_pr_dbg(mc, "Flushing vcach tag @ %s\n",
@@ -667,11 +679,65 @@ int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
                 return err;
 
         // read a word from each cache
-        for (hb_mc_epa_t cache_id = 0; cache_id < hb_mc_vcache_num_caches(mc); cache_id++) {
+        hb_mc_coordinate_t dram;
+        hb_mc_config_pod_foreach_dram(dram, pod, &mc->config) {
+                hb_mc_epa_t cache_id = static_cast<hb_mc_epa_t>(hb_mc_config_dram_id(&mc->config, dram));
                 hb_mc_npa_t way_addr = hb_mc_vcache_way_npa(mc, cache_id, 0, 0);
                 hb_mc_npa_set_epa(&way_addr, 0);
                 uint32_t dummy;
                 err = hb_mc_manycore_read32(mc, &way_addr, &dummy);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Invalidate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_invalidate_vcache(hb_mc_manycore_t *mc)
+{
+        int err;
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                err = hb_mc_manycore_pod_invalidate_vcache(mc, pod);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Validate entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_validate_vcache(hb_mc_manycore_t *mc)
+{
+        int err;
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                err = hb_mc_manycore_pod_validate_vcache(mc, pod);
+                if (err != HB_MC_SUCCESS)
+                        return err;
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Flush entire victim cache.
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ */
+int hb_mc_manycore_flush_vcache(hb_mc_manycore_t *mc)
+{
+        int err;
+        hb_mc_coordinate_t pod;
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                err = hb_mc_manycore_pod_flush_vcache(mc, pod);
                 if (err != HB_MC_SUCCESS)
                         return err;
         }
@@ -708,24 +774,15 @@ static int hb_mc_manycore_send_read_rqst(hb_mc_manycore_t *mc,
 
         // mark request with id
         hb_mc_request_packet_set_load_id(&rqst.request, id);
-        int shift = hb_mc_npa_get_epa(npa) & 0x3;
-        /* set the byte mask */
-        switch (sz) {
-        case 4:
-                hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
-                break;
-        case 2:
-                hb_mc_request_packet_set_mask(&rqst.request,
-                                              static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_SHORT << shift));
-                break;
-        case 1:
-                hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
-                                                      HB_MC_PACKET_REQUEST_MASK_BYTE << shift));
-                break;
-        default:
-                return HB_MC_INVALID;
-        }
+
+        // set load info
+        hb_mc_request_packet_load_info_t info = {};
+        info.part_sel       = hb_mc_npa_get_epa(npa) & 0x3;
+        info.is_unsigned_op = 1;
+        info.is_hex_op      = sz == 2;
+        info.is_byte_op     = sz == 1;
+
+        hb_mc_request_packet_set_load_info(&rqst.request, info);
 
         /* transmit the request to the hardware */
         manycore_pr_dbg(mc, "Sending %d-byte read request to NPA "
@@ -773,33 +830,6 @@ static int hb_mc_manycore_recv_read_rsp(hb_mc_manycore_t *mc,
         return HB_MC_SUCCESS;
 }
 
-template<typename UINT>
-static UINT hb_mc_manycore_mask_load_data(const hb_mc_npa_t *npa, uint32_t load_data)
-{
-        int shift = CHAR_BIT * (hb_mc_npa_get_epa(npa) & 0x3);
-        uint32_t result;
-
-        /* make sure this template is being used only as intended */
-        static_assert(std::is_unsigned<UINT>::value,
-                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
-
-        static_assert(std::is_integral<UINT>::value,
-                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
-
-        static_assert(sizeof(UINT) == 1 || sizeof(UINT) == 2 || sizeof(UINT) == 4,
-                      "hb_mc_manycore_mask_load_data: UINT must be uint8_t, uint16_t, or uint32_t");
-
-        if (sizeof(UINT) == 4) {
-                result = load_data;
-        } else if (sizeof(UINT) == 2) {
-                result = (load_data >> shift) & 0xFFFF;
-        } else if (sizeof(UINT) == 1) {
-                result = (load_data >> shift) & 0xFF;
-        }
-
-        return static_cast<UINT>(result);
-}
-
 /* read from a memory address on the manycore */
 template <typename UINT>
 static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, UINT *vp)
@@ -818,7 +848,7 @@ static int hb_mc_manycore_read(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, UIN
                 return err;
 
         /* mask off unused bits */
-        *vp = hb_mc_manycore_mask_load_data<UINT>(npa, load_data);
+        *vp = static_cast<UINT>(load_data);
         return HB_MC_SUCCESS;
 }
 
@@ -828,8 +858,8 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         int err;
         hb_mc_packet_t rqst;
 
-        /* format the packet */
-        err = hb_mc_manycore_format_store_request_packet(mc, &rqst.request, npa);
+        /* format the request packet */
+        err = hb_mc_manycore_format_request_packet(mc, &rqst.request, npa);
         if (err != HB_MC_SUCCESS)
                 return err;
 
@@ -845,15 +875,17 @@ static int hb_mc_manycore_write(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, co
         /* set data and size */
         switch (sz) {
         case 4:
+                hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_SW);
                 hb_mc_request_packet_set_data(&rqst.request, *(const uint32_t*)vp);
-                hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
                 break;
         case 2:
+                hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_STORE);
                 hb_mc_request_packet_set_data(&rqst.request, static_cast<uint32_t>(*(const uint16_t*)vp) << data_shift);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_SHORT << mask_shift));
                 break;
         case 1:
+                hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_STORE);
                 hb_mc_request_packet_set_data(&rqst.request, static_cast<uint32_t>(*(const  uint8_t*)vp) << data_shift);
                 hb_mc_request_packet_set_mask(&rqst.request, static_cast<hb_mc_packet_mask_t>(
                                                       HB_MC_PACKET_REQUEST_MASK_BYTE << mask_shift));
@@ -1025,7 +1057,7 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
         for (int i = n_ids - 1; i >= 0; i--)
                 ids.push(static_cast<uint32_t>(i));
 
-        int id_to_rsp_i [n_ids];
+        std::map<uint32_t, uint32_t> id_to_rsp_i;
         hb_mc_npa_t id_to_npa[n_ids];
 
         /* until we've received all responses... */
@@ -1063,6 +1095,8 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                                 __func__, hb_mc_strerror(err));
                                 return err;
                         }
+                        manycore_pr_dbg(mc, "%s: Sent read request with load_id = %" PRIu32 "\n",
+                                        __func__, rqst_load_id);
                 }
 
                 /* read all available response packets */
@@ -1086,8 +1120,22 @@ static int hb_mc_manycore_read_mem_internal(hb_mc_manycore_t *mc,
                                 return HB_MC_FAIL;
                         }
 
+                        // This would be an unexpected response
+                        if (id_to_rsp_i.count(load_id) == 0) {
+                                manycore_pr_err(mc, "%s: Unexpected load id = %" PRIu32 "\n",
+                                                __func__, load_id);
+                                return HB_MC_FAIL;
+                        }
+                        uint32_t idx = id_to_rsp_i[load_id];
+                        
+                        // This would be a runtime writer error... or worse.
+                        if (idx > cnt) {
+                                manycore_pr_err(mc, "%s: Return index outside of array. Idx = %" PRIu32 "\n",
+                                                __func__, idx);
+                                return HB_MC_FAIL;
+                        }
                         // write 'read_data' back to the correct location
-                        data[id_to_rsp_i[load_id]] = hb_mc_manycore_mask_load_data<UINT>(&id_to_npa[load_id], read_data);
+                        data[idx] = static_cast<UINT>(read_data);
 
                         // increment succesful responses
                         rsp_i++;
@@ -1238,21 +1286,6 @@ int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_
 int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        /* for each tile */
-        hb_mc_idx_t
-                n_rows = hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg)),
-                n_cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
-
-        for (hb_mc_idx_t row = 0; row < n_rows; row++) {
-                for (hb_mc_idx_t col = 0; col < n_cols; col++) {
-                        hb_mc_idx_t x = col + hb_mc_config_get_vcore_base_x(cfg);
-                        hb_mc_idx_t y = row + hb_mc_config_get_vcore_base_y(cfg);
-                        hb_mc_coordinate_t tile = hb_mc_coordinate(x,y);
-                        int err = hb_mc_tile_set_dram_enabled(mc, &tile);
-                        if (err != HB_MC_SUCCESS)
-                                return err;
-                }
-        }
         mc->dram_enabled = 1;
         return HB_MC_SUCCESS;
 }
@@ -1265,21 +1298,6 @@ int hb_mc_manycore_enable_dram(hb_mc_manycore_t *mc)
 int hb_mc_manycore_disable_dram(hb_mc_manycore_t *mc)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        /* for each tile */
-        hb_mc_idx_t
-                n_rows = hb_mc_dimension_get_y(hb_mc_config_get_dimension_vcore(cfg)),
-                n_cols = hb_mc_dimension_get_x(hb_mc_config_get_dimension_vcore(cfg));
-
-        for (hb_mc_idx_t row = 0; row < n_rows; row++) {
-                for (hb_mc_idx_t col = 0; col < n_cols; col++) {
-                        hb_mc_idx_t x = col + hb_mc_config_get_vcore_base_x(cfg);
-                        hb_mc_idx_t y = row + hb_mc_config_get_vcore_base_y(cfg);
-                        hb_mc_coordinate_t tile = hb_mc_coordinate(x,y);
-                        int err = hb_mc_tile_clear_dram_enabled(mc, &tile);
-                        if (err != HB_MC_SUCCESS)
-                                return err;
-                }
-        }
         mc->dram_enabled = 0;
         return HB_MC_SUCCESS;
 }
@@ -1298,7 +1316,7 @@ static inline int hb_mc_manycore_npa_is_dram(hb_mc_manycore_t *mc,
                                              const hb_mc_npa_t *npa)
 {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        return hb_mc_config_is_dram_y(cfg, hb_mc_npa_get_y(npa));
+        return hb_mc_config_is_dram(cfg, hb_mc_npa_get_xy(npa));
 }
 
 /**

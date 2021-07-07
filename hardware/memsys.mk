@@ -37,8 +37,8 @@ __HARDWARE_MEMSYS_MEMSYS_MK := 1
 CL_MANYCORE_MEMSYS_ID    := "NONE"
 
 # memory channels
-ifdef BSG_MACHINE_DRAM_NUM_CHANNELS
-CL_MANYCORE_MEMSYS_DRAM_CHANNELS := $(BSG_MACHINE_DRAM_NUM_CHANNELS)
+ifdef BSG_MACHINE_DRAM_CHANNELS
+CL_MANYCORE_MEMSYS_DRAM_CHANNELS := $(BSG_MACHINE_DRAM_CHANNELS)
 else
 CL_MANYCORE_MEMSYS_DRAM_CHANNELS := 1
 endif
@@ -64,9 +64,9 @@ CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX := 0
 # disable the micron memory model by default
 DISABLE_MICRON_MEMORY_MODEL ?= yes
 
-include $(HARDWARE_PATH)/memsys_infinite_mem.mk
-include $(HARDWARE_PATH)/memsys_dramsim3.mk
 include $(HARDWARE_PATH)/memsys_axi4_f1.mk
+include $(HARDWARE_PATH)/memsys_test_mem.mk
+include $(HARDWARE_PATH)/memsys_hbm2.mk
 
 # setup vdefines for the memory system
 MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += AXI_MEMORY_MODEL=1
