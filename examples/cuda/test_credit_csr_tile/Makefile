@@ -84,8 +84,10 @@ include $(EXAMPLES_PATH)/link.mk
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
 
-# GCC beats clang, because it uses the integer registers...
-#kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+# To switch between g++ and clang, uncomment the line below. g++ is
+# the default. To view the disassembly, type `make kernel.dis`
+
+# kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions

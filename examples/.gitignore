@@ -2,6 +2,8 @@
 *.so
 *.ld
 *.rvo
+*.rvo.ll
+*.rvo.S
 *.riscv
 !*.c
 !*.cpp
