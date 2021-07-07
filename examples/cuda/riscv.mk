@@ -25,12 +25,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# riscv.mk is a way to compile manycore/RISC-V code in bsg_replicant,
-# so that the application code can co-exist with the binary, and
-# remove the need to file two PRs when adding applications. 
-# riscv.mk was originally in the "baseline" repository, but
-# maintaining that repository is difficult when there's a lot of code
-# churn, so we brought riscv.mk here and deprecated baseline. In
+# riscv.mk is a method to compile manycore/RISC-V code in
+# bsg_replicant so that the host code can co-exist with the kernel
+# source. This removes the need to file two PRs (one for this
+# repository and one for bsg_manycore) when adding applications. In
 # short, it eases the development of kernels, and explaining how to
 # develop kernels.
 
@@ -39,8 +37,31 @@
 # should not be compiled into .o files (that will lead to compiler and
 # linker errors.
 
-# For an example of how to use this file see
-# test_credit_csr_tile/Makefile.
+# To chose between GCC and CLANG set RISCV_CC to RISCV_GCC or RISCV_CLANG, respectively.
+# To chose between G++ and CLANG++ set RISCV_CXX to RISCV_GXX or RISCV_CLANGXX, respectively.
+# This can be done on a per-object basis, or globally. For example:
+# 
+# Globally:
+# RISCV_CXX = $(RISCV_CLANGXX)
+#
+# Per-object:
+# foo_cpp.rvo: RISCV_CXX=$(RISCV_CLANGXX)
+
+# ****************************** NOTE ******************************
+#
+# ***** YOU MUST USE = WHEN SETTING RISCV_CC OR RISCV_CXX. DO NOT USE := *****
+#
+# Using := will cause the automatic variables in the functions above
+# to be evaluated before the rule is executed, and they will appear as
+# empty spaces when the RISC-V object is compiled.
+#
+# ****************************** NOTE ******************************
+
+# For an example see test_credit_csr_tile/Makefile.
+
+# riscv.mk was originally in the "baseline" repository, but
+# maintaining that repository is difficult when there's a lot of code
+# churn, so we brought riscv.mk here and deprecated baseline. 
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
@@ -73,8 +94,9 @@ RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
 # These flags are not supported by clang
 RISCV_GNU_FLAGS = -frerun-cse-after-loop -fweb -frename-registers -mtune=bsg_vanilla_2020
 
-# See comment below about _RISCV_GCC and _RISCV_GXX for explanation of
-# the preceding underscore.
+# The preceeding underscore is used to provide single-invocation like
+# semantics for clang. See comment below about _RISCV_GCC and
+# _RISCV_GXX for more explanation.
 _RISCV_GCC       ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-gcc $(RISCV_GNU_FLAGS)
 _RISCV_GXX       ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-g++ $(RISCV_GNU_FLAGS)
 RISCV_ELF2HEX    ?= LD_LIBRARY_PATH=$(RISCV_GNU_PATH)/lib $(RISCV_GNU_PATH)/bin/elf2hex
@@ -126,7 +148,7 @@ RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 # https://github.com/bespoke-silicon-group/bsg_manycore/blob/3a05e000aef1fba896f756e9836c9e002e5a06f7/software/mk/Makefile.builddefs#L208
 
 # As a result clang/LLVM compilation is split into
-# multiple steps:
+# multiple steps, instead of a single invocation:
 #   1. Clang (.c/.cpp -> .ll (LLVM IR))
 #   2. llc (.ll (LLVM IR) -> .s)
 #   3. gcc/clang (.s -> .rvo)
@@ -139,15 +161,15 @@ RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 # with a single clang command, this issue would be resolved and we
 # could use a flow like the x86 example above.
 
-# The current approach in bsg_manycore removes the ability to do
-# per-object compiler selection. CLANG=1 is set globally, which
+# The current approach in bsg_manycore does not provide the ability to
+# do per-object compiler selection. CLANG=1 is set globally, which
 # compiles ALL application objects with LLVM, or none of them.
 
 # Hence, this solution. The approach below seems to be the only way to
 # provide per-object selection of GCC/LLVM with our current flow.
 #
-# Instead of having a single command, we wrap clang/LLVM into a
-# makefile function to provide the abstraction of a single
+# Instead of having a single invocation of clang, we wrap clang/LLVM
+# into a makefile function to provide the abstraction of a single
 # command. These functions are RISCV_GCC/RISCV_GXX or
 # RISCV_CLANG/RISCV_CLANGXX for C and C++, respectively.
 #
@@ -178,26 +200,6 @@ endef
 # Set the default RISC-V Compilers.
 RISCV_CXX ?= $(RISCV_GXX)
 RISCV_CC  ?= $(RISCV_GCC)
-
-# To chose between GCC and CLANG set RISCV_CC to RISCV_GCC or RISCV_CLANG, respectively.
-# To chose between G++ and CLANG++ set RISCV_CXX to RISCV_GXX or RISCV_CLANGXX, respectively.
-# This can be done on a per-object basis, or globally. For example:
-# 
-# Globally:
-# RISCV_CXX = $(RISCV_CLANGXX)
-#
-# Per-object:
-# foo_cpp.rvo: RISCV_CXX=$(RISCV_CLANGXX)
-
-# ****************************** NOTE ******************************
-#
-# ***** YOU MUST USE = WHEN SETTING RISCV_CC OR RISCV_CXX. DO NOT USE := *****
-#
-# Using := will cause the automatic variables in the functions above
-# to be evaluated before the rule is executed, and they will appear as
-# empty spaces when the RISC-V object is compiled.
-#
-# ****************************** NOTE ******************************
 
 ################################################################################
 # C/C++ Compilation Flags
