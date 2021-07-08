@@ -90,7 +90,8 @@ TESTS += $(SPMD_TESTS)
 regression: $(TESTS)
 	@echo "SPMD REGRESSION PASSED"
 
-
+FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
+CFLAGS   += -std=c99 $(FLAGS)
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 REGRESSION_PREBUILD += loader.o
 
