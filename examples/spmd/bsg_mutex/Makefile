@@ -42,10 +42,14 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 # Name of the SPMD test. In this case, the name of the directory
+
 SPMD_NAME := $(notdir $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
 
 include $(REPLICANT_PATH)/environment.mk
 
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
+
+TILE_GROUP_DIM_X = 2
+TILE_GROUP_DIM_Y = 4
 
 include $(EXAMPLES_PATH)/spmd/loader.mk
