@@ -48,4 +48,7 @@ include $(REPLICANT_PATH)/environment.mk
 
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
+
 include $(EXAMPLES_PATH)/spmd/loader.mk
