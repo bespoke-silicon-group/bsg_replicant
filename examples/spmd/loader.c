@@ -81,15 +81,20 @@ int test_loader(int argc, char **argv) {
         size_t program_size;
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL;
-
+        hb_mc_dimension_t tg;
         char *bin_path, *test_name;
-        struct arguments_path args = {NULL, NULL};
+        struct arguments_spmd args = {NULL, NULL, 0, 0};
 
-        argp_parse (&argp_path, argc, argv, 0, 0, &args);
+        argp_parse (&argp_spmd, argc, argv, 0, 0, &args);
         bin_path = args.path;
         test_name = args.name;
+        tg.x = args.tg_x;
+        tg.y = args.tg_y;
+
 
         bsg_pr_test_info("Reading from file: %s\n", bin_path);
+        bsg_pr_test_info("Tile group dimension: %d %d\n", tg.x, tg.y);
+
 
         // read in the program data from the file system
         err = read_program_file(bin_path, &program_data, &program_size);
@@ -116,37 +121,52 @@ int test_loader(int argc, char **argv) {
                 hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
                 bsg_pr_test_info("Loading to pod %s\n", pod_str);
 
-                // freeze the tile
-                err = hb_mc_tile_freeze(mc, &target);
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_err("failed to freeze tile (%" PRId32 ", %" PRId32 "): %s\n",
-                                   hb_mc_coordinate_get_x(target),
-                                   hb_mc_coordinate_get_y(target),
-                                   hb_mc_strerror(err));
-                        goto cleanup;
-                }
+                foreach_coordinate(target, origin, tg){
+                        // freeze the tile
+                        err = hb_mc_tile_freeze(mc, &target);
+                        if (err != HB_MC_SUCCESS) {
+                                bsg_pr_err("failed to freeze tile (%" PRId32 ", %" PRId32 "): %s\n",
+                                           hb_mc_coordinate_get_x(target),
+                                           hb_mc_coordinate_get_y(target),
+                                           hb_mc_strerror(err));
+                                goto cleanup;
+                        }
 
-                // set its origin
-                err = hb_mc_tile_set_origin(mc, &target, &origin);
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_err("failed to set origin of (%" PRId32 ", %" PRId32 ") "
-                                   "to (%" PRId32 ", %" PRId32 "): %s\n",
-                                   hb_mc_coordinate_get_x(target),
-                                   hb_mc_coordinate_get_y(target),
-                                   hb_mc_coordinate_get_x(origin),
-                                   hb_mc_coordinate_get_y(origin),
-                                   hb_mc_strerror(err));
-                        goto cleanup;
-                }
+                        /* load the program */
+                        err = hb_mc_loader_load(program_data, program_size,
+                                                mc, &default_map,
+                                                &target, 1);
+                        if (err != HB_MC_SUCCESS) {
+                                bsg_pr_err("failed to load binary '%s': %s\n",
+                                           bin_path, hb_mc_strerror(err));
+                                return err;
+                        }
+                        // set its origin
+                        err = hb_mc_tile_set_origin(mc, &target, &origin);
+                        if (err != HB_MC_SUCCESS) {
+                                bsg_pr_err("failed to set origin of (%" PRId32 ", %" PRId32 ") "
+                                           "to (%" PRId32 ", %" PRId32 "): %s\n",
+                                           hb_mc_coordinate_get_x(target),
+                                           hb_mc_coordinate_get_y(target),
+                                           hb_mc_coordinate_get_x(origin),
+                                           hb_mc_coordinate_get_y(origin),
+                                           hb_mc_strerror(err));
+                                goto cleanup;
+                        }
 
-                /* load the program */
-                err = hb_mc_loader_load(program_data, program_size,
-                                        mc, &default_map,
-                                        &target, 1);
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_err("failed to load binary '%s': %s\n",
-                                   bin_path, hb_mc_strerror(err));
-                        return err;
+                        // set its tg origin
+                        err = hb_mc_tile_set_origin_registers(mc, &target, &origin);
+                        if (err != HB_MC_SUCCESS) {
+                                bsg_pr_err("failed to set origin of (%" PRId32 ", %" PRId32 ") "
+                                           "to (%" PRId32 ", %" PRId32 "): %s\n",
+                                           hb_mc_coordinate_get_x(target),
+                                           hb_mc_coordinate_get_y(target),
+                                           hb_mc_coordinate_get_x(origin),
+                                           hb_mc_coordinate_get_y(origin),
+                                           hb_mc_strerror(err));
+                                goto cleanup;
+                        }
+
                 }
         }
 
@@ -155,14 +175,15 @@ int test_loader(int argc, char **argv) {
         {
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
-
-                err = hb_mc_tile_unfreeze(mc, &target);
-                if (err != HB_MC_SUCCESS) {
-                        bsg_pr_err("failed to unfreeze tile (%" PRId32", %" PRId32 "): %s\n",
-                                   hb_mc_coordinate_get_x(target),
-                                   hb_mc_coordinate_get_y(target),
-                                   hb_mc_strerror(err));
-                        goto cleanup;
+                foreach_coordinate(target, origin, tg){
+                        err = hb_mc_tile_unfreeze(mc, &target);
+                        if (err != HB_MC_SUCCESS) {
+                                bsg_pr_err("failed to unfreeze tile (%" PRId32", %" PRId32 "): %s\n",
+                                           hb_mc_coordinate_get_x(target),
+                                           hb_mc_coordinate_get_y(target),
+                                           hb_mc_strerror(err));
+                                goto cleanup;
+                        }
                 }
         }
 

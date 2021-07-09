@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <float.h>
 #include <argp.h>
+#include <string.h>
 
 /****************************/
 /* Array comparison helpers */
@@ -149,6 +150,7 @@ static char doc[] = "A regression test for BSG Manycore on F1";
 */
 static char desc_name[] = "<Test Name>";
 static char desc_path[] = "<Path to Manycore Binary> <Name of Test>";
+static char desc_spmd[] = "<Path to Manycore Binary> <Name of Test> <Tile Group Dimension X> <Tile Group Dimension Y>";
 static char desc_path_py[] = "<Path to Python Tests Directory> <Name of Test>";
 static char desc_none[] = "";
 
@@ -159,6 +161,13 @@ static struct argp_option opts_name[] = {
 static struct argp_option opts_path[] = {
         {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
         {0, 'p', "PATH", 0, "Path to RISC-V Manycore Binary"},
+        {0}};
+
+static struct argp_option opts_spmd[] = {
+        {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
+        {0, 'p', "PATH", 0, "Path to RISC-V Manycore Binary"},
+        {0, 'x', "TG_X", 0, "Tile Group X Dimension"},
+        {0, 'y', "TG_Y", 0, "Tile Group Y Dimension"},
         {0}};
 
 static struct argp_option opts_path_py[] = {
@@ -236,6 +245,65 @@ static error_t parse_path (int key, char *arg, struct argp_state *state){
         return 0;
 }
 
+static error_t parse_spmd (int key, char *arg, struct argp_state *state){
+        struct arguments_spmd *args = (struct arguments_spmd *)state->input;
+
+        switch (key)
+                {
+                case 'p':
+                        args->path = arg;
+                        break;
+                case 'n':
+                        args->name = arg;
+                        break;
+                case 'x':
+                        args->tg_x = arg;
+                        break;
+                case 'y':
+                        args->tg_y = arg;
+                        break;
+                case ARGP_KEY_ARG:
+                        if (state->arg_num == 0){
+                                args->path = arg;
+                        }
+                        if (state->arg_num == 1){
+                                args->name = arg;
+                        }
+                        if (state->arg_num == 2){
+                                args->tg_x = atoi(arg);
+                        }
+                        if (state->arg_num == 3){
+                                args->tg_y = atoi(arg);
+                        }
+                        if (state->arg_num > 4){
+                                bsg_pr_test_err("Too Many Arguments provided!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                case ARGP_KEY_END:
+                        if (!args->path){
+                                bsg_pr_test_err("Executable path not provided!\n");
+                                argp_usage(state);
+                        }
+                        if (!args->name){
+                                bsg_pr_test_err("Test Name not provided!\n");
+                                argp_usage(state);
+                        }
+                        if (args->tg_x > 32){
+                                bsg_pr_test_err("Tile Group X dimension not valid!\n");
+                                argp_usage(state);
+                        }
+                        if (args->tg_y > 32){
+                                bsg_pr_test_err("Tile Group X dimension not valid!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                default:
+                        return ARGP_ERR_UNKNOWN;
+                }
+        return 0;
+}
+
 static error_t parse_path_py (int key, char *arg, struct argp_state *state){
         return parse_path(key, arg, state);
 }
@@ -256,5 +324,6 @@ static error_t parse_none (int key, char *arg, struct argp_state *state){
 
 struct argp argp_name = {opts_name, parse_name, desc_name, doc};
 struct argp argp_path = {opts_path, parse_path, desc_path, doc};
+struct argp argp_spmd = {opts_spmd, parse_spmd, desc_spmd, doc};
 struct argp argp_path_py = {opts_path_py, parse_path_py, desc_path_py, doc};
 struct argp argp_none = {opts_none, parse_none, desc_none, doc};

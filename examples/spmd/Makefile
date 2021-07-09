@@ -41,21 +41,60 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
 
+# list of subdirectories that we don't treat as SPMD tests
+NOT_SPMD = specint2000
+NOT_SPMD += bsg_hetero_nodes
+NOT_SPMD += bsg_loader_suite \
+NOT_SPMD += go_viral
+NOT_SPMD += bsg_remote_congestion
+NOT_SPMD += memtest1
+NOT_SPMD += deprecated
+NOT_SPMD += c++
+NOT_SPMD += fft
+NOT_SPMD += memtest16
+NOT_SPMD += fhello_malloc
+NOT_SPMD += striped_vector_sum
+NOT_SPMD += striped_hello
+NOT_SPMD += coremark-top
+NOT_SPMD += deprecated
+NOT_SPMD += gather_scatter
+NOT_SPMD += gather_scatter_multi
+NOT_SPMD += striped_struct_vector
+NOT_SPMD += beebs
+NOT_SPMD += interrupt_tests
+NOT_SPMD += bp_manycore_test
+NOT_SPMD += bsg_cuda_lite_runtime
+NOT_SPMD += common
+# Already run as part of test_saif
+NOT_SPMD += saif
+# Breaks our flow (but could be used)
+NOT_SPMD += bsg_riscv_tests
+
+SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
+SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
+
 # Defines REGRESSION_PREBUILD
 include $(EXAMPLES_PATH)/link.mk
+
+# compilation.mk defines rules for compilation of C/C++
+include $(EXAMPLES_PATH)/compilation.mk
 
 # Define the tests that get run
 TESTS += test_bsg_dram_loopback_cache
 TESTS += test_bsg_loader_suite
 TESTS += test_bsg_scalar_print
 TESTS += test_symbol_to_eva
-TESTS += test_bsg_print_stat
-TESTS += test_putchar_stream
-TESTS += test_fib
 TESTS += test_saif
+TESTS += $(SPMD_TESTS)
 
 regression: $(TESTS)
 	@echo "SPMD REGRESSION PASSED"
+
+FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
+CFLAGS   += -std=c99 $(FLAGS)
+DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
+REGRESSION_PREBUILD += loader.o
+
 
 $(TESTS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
@@ -63,6 +102,7 @@ $(TESTS): $(REGRESSION_PREBUILD)
 .PHONY: clean regression $(TESTS)
 
 clean: $(TESTS:=.clean) hardware.clean platform.clean libraries.clean link.clean
-
+	rm -rf loader.o
 %.clean:
 	$(MAKE) -C $(@:.clean=) clean
+

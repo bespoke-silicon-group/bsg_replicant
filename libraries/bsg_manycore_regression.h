@@ -100,6 +100,15 @@ struct arguments_path{
         char *name; // Name of Test to Run
 };
 
+extern struct argp argp_spmd;
+struct arguments_spmd{
+        char *path; // Path to RISC-V Manycore Binary to run
+        char *name; // Name of Test to Run
+        int tg_x;
+        int tg_y;
+};
+
+
 #ifdef __cplusplus
 }
 #endif

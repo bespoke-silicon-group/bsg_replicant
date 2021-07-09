@@ -80,9 +80,16 @@ include $(EXAMPLES_PATH)/link.mk
 
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
-BSG_MANYCORE_KERNELS = $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv
+BSG_MANYCORE_KERNELS += $(SPMD_SRC_PATH)/bsg_loader_suite/loopback/main.riscv
+BSG_MANYCORE_KERNELS += $(SPMD_SRC_PATH)/bsg_loader_suite/loopback_cache/main.riscv
+BSG_MANYCORE_KERNELS += $(SPMD_SRC_PATH)/bsg_loader_suite/loopback_fail/main.riscv
+BSG_MANYCORE_KERNELS += $(SPMD_SRC_PATH)/bsg_loader_suite/loopback_big_text/main.riscv
+BSG_MANYCORE_KERNELS += $(SPMD_SRC_PATH)/bsg_loader_suite/npa_to_eva/main.riscv
 
-$(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
+TILE_GROUP_DIM_X = 1
+TILE_GROUP_DIM_Y = 1
+
+$(BSG_MANYCORE_KERNELS):
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
@@ -90,7 +97,7 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(SPMD_NAME) main.riscv
+	$(MAKE) -j1 -C $(dir $@) main.riscv
 
 ###############################################################################
 # Execution flow
