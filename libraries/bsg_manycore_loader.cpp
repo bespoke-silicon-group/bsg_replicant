@@ -844,7 +844,11 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
         int rc;
         hb_mc_eva_t pc_init;
 
-        hb_mc_loader_symbol_to_eva(bin, sz, "_start", &pc_init);
+        rc = hb_mc_loader_symbol_to_eva(bin, sz, "_start", &pc_init);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_warn("%s: failed to find _start symbol. Defaulting to 0\n", __func__);
+                pc_init = 0;
+        }
 
         if (ntiles < 1)
                 return HB_MC_INVALID;
