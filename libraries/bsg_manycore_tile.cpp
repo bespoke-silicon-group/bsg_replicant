@@ -50,6 +50,20 @@ int hb_mc_tile_freeze(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile)
 }
 
 /**
+ * Set the initial PC CSR
+ * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
+ * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().
+ * @param[in] tile   A tile to unfreeze.
+ * @param[in] pc_init Initial PC address.
+ * @return HB_MC_SUCCESS if succesful. Otherwise an error code is returned.
+ */
+int hb_mc_tile_set_initial_pc(hb_mc_manycore_t *mc, const hb_mc_coordinate_t *tile, hb_mc_eva_t pc_init)
+{
+        hb_mc_npa_t npa = hb_mc_npa(*tile, HB_MC_TILE_EPA_CSR_PC_INIT_VALUE);
+        return hb_mc_manycore_write32(mc, &npa, pc_init);
+}
+
+/**
  * Unfreeze a tile.
  * Behavior is undefined if #mc is not initialized with hb_mc_manycore_init().
  * @param[in] mc     A manycore instance initialized with hb_mc_manycore_init().

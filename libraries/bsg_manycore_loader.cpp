@@ -689,6 +689,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
  * Perform register setup for a tile.
  * @param[in] mc         A manycore instance.
  * @param[in] map        An EVA<->NPA map.
+ * @param[in] pc_init    Initial PC address.
  * @param[in] tile       A tile to setup.
  * @param[in] all_tiles  All tiles being loaded.
  * @param[in] ntiles     Number of tiles being loaded.
@@ -696,6 +697,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
  */
 static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                                            const hb_mc_eva_map_t *map,
+                                           hb_mc_eva_t pc_init,
                                            hb_mc_coordinate_t tile,
                                            const hb_mc_coordinate_t *all_tiles,
                                            uint32_t ntiles)
@@ -724,6 +726,18 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
                 return rc;
         }
 
+        /* set the initial PC value */
+        rc = hb_mc_tile_set_initial_pc(mc, &tile, pc_init);
+
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_dbg("%s: failed to write (%d,%d)'s intial PC register: %s\n",
+                           __func__,
+                           hb_mc_coordinate_get_x(tile),
+                           hb_mc_coordinate_get_y(tile),
+                           hb_mc_strerror(rc));
+                return rc;
+        }
+
         if (rc != HB_MC_SUCCESS) {
                 char tile_str[32];
                 bsg_pr_dbg("%s: failed to %s DRAM-enabled for %s: %s\n",
@@ -741,6 +755,7 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
  * Performance miscellaneous initialization on one tile.
  * @param[in] mc      A manycore instance.
  * @param[in] map     An EVA<->NPA map.
+ * @param[in] pc_init Initial PC address.
  * @param[in] tile    A tile to initialize
  * @param[in] tiles   The list of tiles being initialized.
  * @param[in] ntiles  The number of tiles being initialized.
@@ -748,13 +763,14 @@ static int hb_mc_loader_tile_set_registers(hb_mc_manycore_t *mc,
  */
 static int hb_mc_loader_tile_initialize(hb_mc_manycore_t *mc,
                                         const hb_mc_eva_map_t *map,
+                                        hb_mc_eva_t pc_init,
                                         hb_mc_coordinate_t tile,
                                         const hb_mc_coordinate_t *all_tiles,
                                         uint32_t ntiles)
 {
         int rc;
 
-        rc = hb_mc_loader_tile_set_registers(mc, map, tile, all_tiles, ntiles);
+        rc = hb_mc_loader_tile_set_registers(mc, map, pc_init, tile, all_tiles, ntiles);
         if (rc != HB_MC_SUCCESS)
                 return rc;
 
@@ -779,12 +795,14 @@ static int hb_mc_loader_columns_validate_victim_cache(hb_mc_manycore_t *mc,
  * Performance miscellaneous initialization of tiles.
  * @param[in] mc      A manycore instance.
  * @param[in] map     An EVA<->NPA map.
+ * @param[in] pc_init Initial PC address.
  * @param[in] tiles   The list of tiles to initialize.
  * @param[in] ntiles  The number of tiles to initialize.
  * @return HB_MC_SUCCESS if an error occured. Otherwise an error code is returned.
  */
 static int hb_mc_loader_tiles_initialize(hb_mc_manycore_t *mc,
                                          const hb_mc_eva_map_t *map,
+                                         hb_mc_eva_t pc_init,
                                          const hb_mc_coordinate_t *tiles,
                                          uint32_t ntiles)
 {
@@ -794,7 +812,7 @@ static int hb_mc_loader_tiles_initialize(hb_mc_manycore_t *mc,
                 return HB_MC_INVALID;
 
         for (uint32_t i = 0; i < ntiles; i++) {
-                rc = hb_mc_loader_tile_initialize(mc, map, tiles[i], tiles, ntiles);
+                rc = hb_mc_loader_tile_initialize(mc, map, pc_init, tiles[i], tiles, ntiles);
                 if (rc != HB_MC_SUCCESS)
                         return rc;
         }
@@ -824,6 +842,9 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
                       const hb_mc_coordinate_t *tiles, uint32_t ntiles)
 {
         int rc;
+        hb_mc_eva_t pc_init;
+
+        hb_mc_loader_symbol_to_eva(bin, sz, "_start", &pc_init);
 
         if (ntiles < 1)
                 return HB_MC_INVALID;
@@ -836,7 +857,7 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
         }
 
         // Set CSRs
-        rc = hb_mc_loader_tiles_initialize(mc, map, tiles, ntiles);
+        rc = hb_mc_loader_tiles_initialize(mc, map, pc_init, tiles, ntiles);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_dbg("%s: failed to initialize tiles\n", __func__);
                 return rc;
