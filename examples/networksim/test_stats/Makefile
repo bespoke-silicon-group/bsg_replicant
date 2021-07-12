@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-#
+#etsim
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
 #
@@ -41,18 +41,14 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
 
-# Set TEST_NAME to the name of this directory. For this test, it
-# matches the name of the source file but that is not required. If the
-# .cpp file has a different name that the directory you can manually
-# type it instead.
-TEST_NAME = $(notdir $(shell pwd))
+NETSIM_PATH := $(EXAMPLES_PATH)/networksim
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = $(TEST_NAME).cpp
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 
@@ -64,25 +60,23 @@ CXXFLAGS += -std=c++11 $(FLAGS)
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Again, TEST_NAME is not required
-$(TEST_NAME).o: INCLUDES += -I$(EXAMPLES_PATH)
-$(TEST_NAME).o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
-$(TEST_NAME).o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
-$(TEST_NAME).o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
+main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+main.o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
 
-router_utilization.rpt: $(TEST_NAME).log
-	python3 ../router_parser.py
-
-.PHONY: router_utilization.rpt
+bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
 
 ###############################################################################
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS += -lbsgmc_cuda_legacy_pod_repl 
+LDFLAGS +=
+
+# Sources used to implement the C/C++ tile
+netsim/simv: VCS_FLAGS += bsg_dpi_tile.o
+netsim/simv: bsg_dpi_tile.o
 
 # link.mk defines rules for linking of the final execution binary.
-include $(EXAMPLES_PATH)/link.mk
-
+include $(NETSIM_PATH)/link.mk
 
 ###############################################################################
 # C_ARGS: Use this to pass arguments that you want to appear in argc/argv
@@ -95,18 +89,9 @@ C_ARGS ?=
 SIM_ARGS ?=
 
 # Include platform-specific execution rules
-include $(EXAMPLES_PATH)/execution.mk
-
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean|<test_name>|<test_name>.log}"
-	@echo "      $(TEST_NAME): Build executable for this platform"
-	@echo "      $(TEST_NAME).log: Run test and generate the log file"
-	@echo "      $(TEST_NAME).vpd: Build waveform executable (if VCS)"
-	@echo "      clean: Remove all subdirectory-specific outputs"
+include $(NETSIM_PATH)/execution.mk
 
 .PHONY: clean
+.PHONY: router_utilization.rpt
 
-clean:
-	rm -rf $(TEST_NAME)
+.DEFAULT_GOAL := help

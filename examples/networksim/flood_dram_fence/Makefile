@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-#
+#etsim
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
 #
@@ -37,23 +37,18 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
-include ../../../environment.mk
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-# compillation.mk defines rules for compilation of C/C++
-include $(EXAMPLES_PATH)/compilation.mk
+include $(REPLICANT_PATH)/environment.mk
 
-# link.mk defines rules for linking of .o files for regression tests.
-# It defines the linking target (%) for each regression test.
-include $(EXAMPLES_PATH)/link.mk
-
-# Include platform-specific execution rules
-include $(EXAMPLES_PATH)/execution.mk
-
-TEST_NAME = flood_dram
+NETSIM_PATH := $(EXAMPLES_PATH)/networksim
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+
+# TEST_SOURCES is a list of source files that need to be compiled
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 
@@ -61,17 +56,27 @@ FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS)
 
+# compilation.mk defines rules for compilation of C/C++
+include $(EXAMPLES_PATH)/compilation.mk
+
 # Again, TEST_NAME is not required
-$(TEST_NAME).o: INCLUDES += -I$(EXAMPLES_PATH)
-$(TEST_NAME).o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
-$(TEST_NAME).o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+main.o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
 
-$(TEST_NAME).log: $(TEST_NAME)
+main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
 
-router_utilization.rpt: $(TEST_NAME).log
-	python3 ../router_parser.py
+###############################################################################
+# Host code link flags and flow
+###############################################################################
 
-.PHONY: router_utilization.rpt
+LDFLAGS +=
+
+# Sources used to implement the C/C++ tile
+netsim/simv: VCS_FLAGS += bsg_dpi_tile.o
+netsim/simv: bsg_dpi_tile.o
+
+# link.mk defines rules for linking of the final execution binary.
+include $(NETSIM_PATH)/link.mk
 
 ###############################################################################
 # C_ARGS: Use this to pass arguments that you want to appear in argc/argv
@@ -83,17 +88,10 @@ C_ARGS ?=
 
 SIM_ARGS ?=
 
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean|<test_name>|<test_name>.log}"
-	@echo "      $(TEST_NAME): Build executable for this platform"
-	@echo "      $(TEST_NAME).log: Run test and generate the log file"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      clean: Remove all subdirectory-specific outputs"
+# Include platform-specific execution rules
+include $(NETSIM_PATH)/execution.mk
 
 .PHONY: clean
+.PHONY: router_utilization.rpt
 
-clean:
-	rm -rf *.o $(TEST_NAME) *.rpt
-
+.DEFAULT_GOAL := help

@@ -27,9 +27,10 @@
 
 #include <bsg_manycore.h>
 #include <bsg_manycore_npa.h>
-#include <bsg_manycore_dpi_tile.hpp>
-#include <bsg_manycore_packet.h>
-#include <cl_manycore_regression.h>
+#include <bsg_manycore_tile.h>
+#include <bsg_manycore_vcache.h>
+#include <bsg_manycore_regression.h>
+
 
 #ifdef VCS
 int vcs_main(int argc, char ** argv) {
@@ -39,11 +40,21 @@ int main(int argc, char ** argv) {
         bsg_pr_test_info(__FILE__ " Regression Test \n");
         int err = HB_MC_SUCCESS;
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
-        hb_mc_coordinate_t origin, dim, target;
+        hb_mc_coordinate_t origin, dim, target, dram;
         hb_mc_npa_t npa;
         uint32_t write_data = 0, read_data = 0;
         hb_mc_coordinate_t pod = {.x = 0, .y = 0};
 
+        unsigned int data[32] = {
+                0, 1, 2, 3, 4, 5, 6, 7,
+                8, 9, 10, 11, 12, 13, 14, 15,
+                16, 17, 18, 19, 20, 21, 22, 23,
+                24, 25, 26, 27, 28, 29, 30, 31};
+        int len = sizeof(data)/sizeof(*data);
+        uint32_t expected = len * (len - 1)/2;
+
+        hb_mc_eva_t dram_eva;
+        size_t sz = 0;
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_init(mc, __FILE__, 0));
 
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
@@ -52,26 +63,64 @@ int main(int argc, char ** argv) {
 
         target.x = origin.x + dim.x - 1;
         target.y = origin.y + dim.y - 1;
+
+        // Construct DRAM EVA for cache at index 0.
+        dram = hb_mc_config_pod_dram_start(cfg, pod);
+        npa.x = dram.x;
+        npa.y = dram.y;
+        npa.epa = HB_MC_VCACHE_EPA_BASE;
+        BSG_MANYCORE_CALL(mc, hb_mc_npa_to_eva(mc, &default_map, &target, &npa, &dram_eva, &sz));
+
+        // Write Buffer to DRAM
+        BSG_MANYCORE_CALL(mc, hb_mc_manycore_eva_write(mc, &default_map, &target, &dram_eva, data, sizeof(data)));
+
+        // Writes to DMEM, use the target x/y
         npa.x = target.x;
         npa.y = target.y;
 
-
-        // Write the iteration index to DMEM
-        bsg_pr_test_info("Writing to DMEM... \n");
-        write_data = 0;
-        npa.epa =  HB_MC_TILE_EPA_DMEM_BASE;
+        bsg_pr_test_info("Writing buffer EVA to Tile DMEM\n");
+        write_data = dram_eva;
+        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 4;
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
-        bsg_pr_test_info("Write successful\n");
+
+        bsg_pr_test_info("Writing buffer length to Tile DMEM\n");
+        write_data = len;
+        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 8;
+        BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
+
+        bsg_pr_test_info("Writing iteration pointer into to Tile DMEM\n");
+        write_data = dram_eva;
+        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 12;
+        BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
+
+        // Set the origin of the target tile
+        BSG_MANYCORE_CALL(mc, hb_mc_tile_set_origin(mc, &target, &origin));
 
         // Fence to make sure host credits return to their origin.
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_host_request_fence(mc, -1));
 
-        // Unfreeze the target and wait for a finish packet
         bsg_pr_test_info("Unfreezing target(s)...\n");
         BSG_MANYCORE_CALL(mc, hb_mc_tile_unfreeze(mc, &target));
 
+        // The target(s) will now add all of the numbers in the buffer together.
+
+
         bsg_pr_test_info("Waiting for finish packet...\n");
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_wait_finish(mc, -1));
+
+        // After the finish packet, read the result from DMEM
+        bsg_pr_test_info("Reading result from DMEM\n");
+        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + hb_mc_config_get_dmem_size(cfg) - 4;
+
+        BSG_MANYCORE_CALL(mc, hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data)));
+
+        if(read_data != expected){
+                bsg_pr_err("%s: Read data (%d) and expected (%d) do not match\n",
+                           __func__,read_data, expected);
+                return HB_MC_FAIL;
+        }
+
+        bsg_pr_test_info("Read successful\n");
 
         // Freeze the tile
         BSG_MANYCORE_CALL(mc, hb_mc_tile_freeze(mc, &target));
@@ -83,60 +132,4 @@ int main(int argc, char ** argv) {
         bsg_pr_test_pass_fail(err == HB_MC_SUCCESS);
         return err;
 };
-
-
-// This method executes requests to dmem, icache, and csr-space like
-// any normal tile.
-void BsgDpiTile::execute_request(const hb_mc_request_packet_t *req,
-                                 hb_mc_response_packet_t *rsp){
-        this->default_request_handler(req, rsp);
-}
-
-
-// This is the traffic generator method. This particular test sends stats packets
-// for all tag x start/end and kernel x start/end combinations
-void BsgDpiTile::send_request(bool *req_v_o, hb_mc_request_packet_t *req_o){
-        uint32_t *dmem_p = reinterpret_cast<uint32_t *>(this->dmem);
-        // The iteration counter, iter, is set to 0 by the host during initialization
-        uint32_t &iter = dmem_p[0];
-
-        // in this particular test... always fences
-        if(fence())
-                return;
-
-        if(iter == 0){
-                *req_v_o = get_packet_stat_kernel_start(req_o);
-                iter ++;
-                return;
-        }
-
-        if((iter >= 1) && (iter <= 16)){
-                *req_v_o = get_packet_stat_tag_start(req_o, iter - 1);
-                iter ++;
-                return;
-        }
-
-
-        if((iter >= 17) && (iter <= 32)){
-                *req_v_o = get_packet_stat_tag_end(req_o, iter - 17);
-                iter ++;
-                return;
-        }
-        
-        if(iter == 33){
-                *req_v_o = get_packet_stat_kernel_end(req_o);
-                iter ++;
-                return;
-        }
-
-        *req_v_o = get_packet_finish(req_o);
-
-        // Setting finished to true means this method will no longer
-        // be called on this tile.
-        finished = true;
-}
-
-void BsgDpiTile::receive_response(const hb_mc_response_packet_t *rsp_i){
-        // Do nothing. Internally, BsgDpiTile will track and free IDs.
-}
 

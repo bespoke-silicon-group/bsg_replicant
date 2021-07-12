@@ -25,23 +25,23 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifndef __BSG_EXECUTION_MK
-__BSG_EXECUTION_MK := 1
+ifndef __BSG_NETSIM_LINK_MK
+__BSG_NETSIM_LINK_MK := 1
 
-# This Makefile fragment defines all of the rules for executing
-# cosimulation binaries
+include $(EXAMPLES_PATH)/link.mk
 
-# BSG_PLATFORM_PATH: The path to the execution platform
-ifndef BSG_PLATFORM_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
-endif
+netsim:
+	@mkdir netsim
 
-include $(BSG_PLATFORM_PATH)/execution.mk
+netsim/simv: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
 
-.PHONY: execution.clean
-execution.clean: 
-	rm -rf *.log
+# netsim/simv: VCS_FLAGS += bsg_dpi_tile.o
+# netsim/simv: bsg_dpi_tile.o
 
-clean: execution.clean
+.PHONY: netsim.link.clean
+netsim.link.clean:
+	rm -rf netsim
+
+clean: netsim.link.clean
 
 endif

@@ -38,13 +38,10 @@
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
 
-REPLICANT-TOP:=$(shell git rev-parse --show-toplevel)
-PY_ANALYTICS_PATH := $(REPLICANT-TOP)/examples/networksim
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-include $(REPLICANT-TOP)/environment.mk
-$(warning $(PY_ANALYTICS_PATH))
-
-TEST_NAME = main
+include $(REPLICANT_PATH)/environment.mk
+NETSIM_PATH := $(EXAMPLES_PATH)/networksim
 
 arg-item = $(word $(1),$(subst -, ,$(2)))
 
@@ -53,7 +50,7 @@ arg-item = $(word $(1),$(subst -, ,$(2)))
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = $(TEST_NAME).cpp
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 
@@ -64,13 +61,12 @@ CXXFLAGS += -std=c++14 $(FLAGS)
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
 
-# Again, TEST_NAME is not required
-$(TEST_NAME).o: INCLUDES += -I$(EXAMPLES_PATH)
-$(TEST_NAME).o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
-$(TEST_NAME).o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
-$(TEST_NAME).o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
+main.o: INCLUDES += -I$(EXAMPLES_PATH)
+main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
-$(TEST_NAME).log: $(TEST_NAME)
+main.o bsg_dpi_tile.o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
+main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
+main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim/linear_inorder
 
 ###############################################################################
 # Host code link flags and flow
@@ -78,25 +74,12 @@ $(TEST_NAME).log: $(TEST_NAME)
 
 LDFLAGS +=
 
+# Sources used to implement the C/C++ tile
+netsim/simv: VCS_FLAGS += bsg_dpi_tile.o
+netsim/simv: bsg_dpi_tile.o
+
 # link.mk defines rules for linking of the final execution binary.
-include $(EXAMPLES_PATH)/link.mk
-
-router_utilization.rpt: $(TEST_NAME).netsim.log
-	python3 $(PY_ANALYTICS_PATH)/router_parser.py
-
-tile_execution.rpt: $(TEST_NAME).netsim.log
-	python3 $(PY_ANALYTICS_PATH)/tileparser.py
-
-%.png: %.rpt
-	pango-view  --font mono -qo $@ $<
-
-cache_utilization.png: $(TEST_NAME).netsim.log
-	python3 $(PY_ANALYTICS_PATH)/cacheutil.py
-
-.PHONY: router_utilization.rpt vcache_stall_detailed.png
-
-vcache_stall_detailed.png: $(TEST_NAME).netsim.log
-	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
+include $(NETSIM_PATH)/link.mk
 
 # this rule does a sweep across many options
 sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(stripe)-$(els)-$(mode).deploy))))
@@ -107,9 +90,9 @@ sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32 64 128,$(foreac
 
 %.deploy:
 	mkdir $@
-	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/$(TEST_NAME).cpp
-	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/$(TEST_NAME).cpp
-	cat $(TEST_NAME).cpp >> $@/$(TEST_NAME).cpp
+	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/main.cpp
+	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/main.cpp
+	cat main.cpp >> $@/main.cpp
 	echo "BSG_MACHINE_PATH=my_machine" > $@/Makefile
 	cat Makefile >> $@/Makefile
 	mkdir -p $@/my_machine
@@ -133,7 +116,7 @@ $(RESULTS):
 	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' >> $@
 	#find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> $@
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> $@
-	python3 $(PY_ANALYTICS_PATH)/results.py $@
+	python3 $(NETSIM_PATH)/results.py $@
 
 summarize-by-hash: $(RESULTS)
 
@@ -148,20 +131,11 @@ C_ARGS ?=
 SIM_ARGS ?=
 
 # Include platform-specific execution rules
-include $(EXAMPLES_PATH)/execution.mk
-
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean|<test_name>|<test_name>.log}"
-	@echo "      $(TEST_NAME): Build executable for this platform"
-	@echo "      $(TEST_NAME).log: Run test and generate the log file"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      clean: Remove all subdirectory-specific outputs"
-
+include $(NETSIM_PATH)/execution.mk
 
 .PHONY: clean
 
+.DEFAULT_GOAL := help
 clean:
 	rm -rf *.o $(TEST_NAME) *.rpt vcache_stall_detailed.png vcache_key_detailed.png *.csv
 

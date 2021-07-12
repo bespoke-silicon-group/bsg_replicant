@@ -25,23 +25,37 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifndef __BSG_EXECUTION_MK
-__BSG_EXECUTION_MK := 1
+ifndef __BSG_NETSIM_EXECUTION_MK
+__BSG_NETSIM_EXECUTION_MK := 1
 
-# This Makefile fragment defines all of the rules for executing
-# cosimulation binaries
-
-# BSG_PLATFORM_PATH: The path to the execution platform
-ifndef BSG_PLATFORM_PATH
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_PLATFORM_PATH is not defined$(NC)"))
+# EXAMPLES_PATH: The path to the execution platform
+ifndef EXAMPLES_PATH
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: EXAMPLES_PATH is not defined$(NC)"))
 endif
 
-include $(BSG_PLATFORM_PATH)/execution.mk
+netsim.log: netsim/simv
 
-.PHONY: execution.clean
-execution.clean: 
-	rm -rf *.log
+include $(EXAMPLES_PATH)/execution.mk
 
-clean: execution.clean
+NETSIM_PATH ?= $(EXAMPLES_PATH)/networksim
+
+router_utilization.rpt: netsim.log
+	python3 $(NETSIM_PATH)/router_parser.py
+
+tile_execution.rpt: netsim.log
+	python3 $(NETSIM_PATH)/tileparser.py
+
+%.png: %.rpt
+	pango-view  --font mono -qo $@ $<
+
+cache_utilization.png: netsim.log
+	python3 $(NETSIM_PATH)/cacheutil.py
+
+vcache_stall_detailed.png: netsim.log
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
+
+execution.clean: netsim.execution.clean
+netsim.execution.clean:
+	rm -rf dpi_stats.csv
 
 endif

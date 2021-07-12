@@ -27,13 +27,9 @@
 
 #include <bsg_manycore.h>
 #include <bsg_manycore_npa.h>
-#include <bsg_manycore_tile.h>
-#include <cinttypes>
-#include <type_traits>
 #include <bsg_manycore_dpi_tile.hpp>
-#include <bsg_manycore_packet.h>
-#include <cl_manycore_regression.h>
-
+#include <bsg_manycore_vcache.h>
+#include <bsg_manycore_regression.h>
 
 
 #ifdef VCS
@@ -44,21 +40,53 @@ int main(int argc, char ** argv) {
         bsg_pr_test_info(__FILE__ " Regression Test \n");
         bool finish = false;
         hb_mc_packet_t pkt;
-        int err = HB_MC_SUCCESS;
+        int err;
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
-        hb_mc_coordinate_t origin, dim, target, max;
+        hb_mc_coordinate_t origin, dim, max, dram, target;
         hb_mc_npa_t npa;
         uint32_t write_data = 0, read_data = 0;
         hb_mc_coordinate_t pod = {.x = 0, .y = 0};
 
+        unsigned int *data, nels, fill_factor, expected = 0;
+
+        hb_mc_eva_t dram_eva;
+        size_t sz = 0;
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_init(mc, __FILE__, 0));
 
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
-        origin = hb_mc_config_pod_vcore_origin(cfg, pod);
+        origin = hb_mc_config_get_origin_vcore(cfg);
         dim = hb_mc_config_get_dimension_vcore(cfg);
 
         max.x = origin.x + dim.x - 1;
         max.y = origin.y + dim.y - 1;
+
+        // Write enough data to fill all caches by fill_factor
+        fill_factor = 1;
+        nels = dim.x * 2 * fill_factor *
+                hb_mc_config_get_vcache_ways(cfg) *
+                hb_mc_config_get_vcache_sets(cfg) *
+                hb_mc_config_get_vcache_block_size(cfg) / sizeof(unsigned int);
+
+        data = new unsigned int[nels];
+
+        // Fill buffer with data
+        for (int i = 0 ; i < nels; ++i){
+                data[i] = i;
+                // This will overflow, but that's ok because add is
+                // commutative. Other solutions (like xor) are not.
+                expected += i;
+        }
+
+        // Construct DRAM EVA for cache at index 0.
+        dram = hb_mc_config_pod_dram_start(cfg, pod);
+        npa.x = dram.x;
+        npa.y = dram.y;
+        npa.epa = HB_MC_VCACHE_EPA_BASE;
+        BSG_MANYCORE_CALL(mc, hb_mc_npa_to_eva(mc, &default_map, &origin, &npa, &dram_eva, &sz));
+
+        // Write Buffer to DRAM
+        //BSG_MANYCORE_CALL(mc, hb_mc_manycore_eva_write(mc, &default_map, &origin, &dram_eva, data, nels * sizeof(unsigned int)));
+
 
         // Write metadata to DMEM on each tile
         bsg_pr_test_info("Writing metadata to DMEM of each tile\n");
@@ -69,25 +97,38 @@ int main(int argc, char ** argv) {
                         target.x = x_i;
                         target.y = y_i;
 
-                        // Tile group dimensions (for CUDA-Lite)
-                        // normally reside in DMEM, and are set by the
-                        // runtime. We don't have those conveniences
-                        // here, so we allocate and set them manually in DRAM
+                        // DRAM Pointer
+                        write_data = dram_eva;
+                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 4;
+                        BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
+
+                        // Number of elements in buffer
+                        write_data = nels;
+                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 8;
+                        BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
+
+                        // Iteration pointer (for the tile)
+                        write_data = dram_eva;
+                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 12;
+                        BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
 
                         // Tile Group X
                         write_data = dim.x;
-                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 0;
+                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 16;
                         BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
 
                         // Tile Group Y
                         write_data = dim.y;
-                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 4;
+                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + 20;
                         BSG_MANYCORE_CALL(mc, hb_mc_manycore_write_mem(mc, &npa, &write_data, sizeof(write_data)));
 
                         // Set the origin of the target tile
                         BSG_MANYCORE_CALL(mc, hb_mc_tile_set_origin(mc, &target, &origin));
                 }
         }
+
+        // Fence to make sure host credits return to their origin.
+        BSG_MANYCORE_CALL(mc, hb_mc_manycore_host_request_fence(mc, -1));
 
         bsg_pr_test_info("Unfreezing target(s)...\n");
         for(hb_mc_idx_t x_i = origin.x; x_i <= max.x; ++x_i){
@@ -98,65 +139,52 @@ int main(int argc, char ** argv) {
                 }
         }
 
-        // The target(s) will now barrier, and then send finish packets
+
+        // The target(s) will now add all of the numbers in the buffer together.
 
         // Wait for finish from all tiles.
         bsg_pr_test_info("Waiting for finish packet...\n");
         for(hb_mc_idx_t x_i = origin.x; x_i <= max.x; ++x_i){
                 for(hb_mc_idx_t y_i = origin.y; y_i <= max.y; ++y_i){
                         BSG_MANYCORE_CALL(mc, hb_mc_manycore_wait_finish(mc, -1));
+                        bsg_pr_info("Received finish packet\n");
                 }
         }
-        bsg_pr_info("Received finish packets\n");
+
+        bsg_pr_test_info("Reading result from DMEM\n");
+        for(hb_mc_idx_t x_i = origin.x; x_i <= max.x; ++x_i){
+                for(hb_mc_idx_t y_i = origin.y; y_i <= max.y; ++y_i){
+                        npa.x = x_i;
+                        npa.y = y_i;
+                        target.x = x_i;
+                        target.y = y_i;
+                        npa.epa = HB_MC_TILE_EPA_DMEM_BASE + hb_mc_config_get_dmem_size(cfg) - 4;
+
+                        BSG_MANYCORE_CALL(mc, hb_mc_manycore_read_mem(mc, &npa, &read_data, sizeof(read_data)));
+
+                        if(read_data != expected){
+                                bsg_pr_err("%s (X:%d, y:%d): Read data (%x) and expected (%x) do not match\n",
+                                           __func__, target.x, target.y, read_data, expected);
+                                //return HB_MC_FAIL;
+                        }
+                }
+        }
+
+        // Freeze the tile
+        bsg_pr_test_info("Freezing Tiles\n");
+        for(hb_mc_idx_t x_i = origin.x; x_i <= max.x; ++x_i){
+                for(hb_mc_idx_t y_i = origin.y; y_i <= max.y; ++y_i){
+                        target.x = x_i;
+                        target.y = y_i;
+                        BSG_MANYCORE_CALL(mc, hb_mc_tile_freeze(mc, &target));
+                }
+        }
+
         // Fence to make sure host credits return to their origin.
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_host_request_fence(mc, -1));
 
         BSG_MANYCORE_CALL(mc, hb_mc_manycore_exit(mc));
-        bsg_pr_test_pass_fail(err == HB_MC_SUCCESS);
-        return err;
+        bsg_pr_test_pass_fail(true);
+        return HB_MC_SUCCESS;
 };
-
-
-// This method executes requests to dmem, icache, and csr-space like
-// any normal tile.
-void BsgDpiTile::execute_request(const hb_mc_request_packet_t *req,
-                                 hb_mc_response_packet_t *rsp){
-        this->default_request_handler(req, rsp);
-}
-
-
-// This is the traffic generator method. This particular test sends a
-// finish packet when dmem address 4 changes from 0 to 1 (The second
-// DMEM write in the example above)
-void BsgDpiTile::send_request(bool *req_v_o, hb_mc_request_packet_t *req_o){
-        uint32_t *dmem_p = reinterpret_cast<uint32_t *>(this->dmem);
-        hb_mc_coordinate_t tg_dim = {.x = dmem_p[0], .y = dmem_p[1]};
-
-        // wait_at_barrier provides barrier functionality.
-        // wait_at_barrier takes a barrier_id as an integer. The
-        // origin tile will verify that all tiles have reached the
-        // barrier with the same barrier_id before "unblocking" or
-        // causing wait_at_barrier to return false. Subsequent calls
-        // to wait_at_barrier with the same id will return false.
-        //
-        // barrier_id must increase by 1 between call sites.
-        if(wait_at_barrier(0, tg_dim))
-                return;
-
-        if(wait_at_barrier(1, tg_dim))
-                return;
-
-        if(wait_at_barrier(2, tg_dim))
-                return;
-
-        *req_v_o = get_packet_finish(req_o);
-
-        // Setting finished to true means this method will no longer
-        // be called.
-        finished = true;
-}
-
-void BsgDpiTile::receive_response(const hb_mc_response_packet_t *rsp_i){
-        // Do nothing. Internally, BsgDpiTile will track and free IDs.
-}
 

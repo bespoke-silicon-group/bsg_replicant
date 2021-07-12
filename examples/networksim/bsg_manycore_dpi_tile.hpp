@@ -21,7 +21,7 @@
 // These two macro definitions are similar to those in
 // bsg_manycore_tile.h. The RTL tile does not define a CSR for
 // changing the EVA map, so we do it here!
-#define HB_MC_TILE_EPA_CSR_EVA_MAP_OFFSET HB_MC_TILE_EPA_CSR_DRAM_ENABLE_OFFSET + 4
+#define HB_MC_TILE_EPA_CSR_EVA_MAP_OFFSET HB_MC_TILE_EPA_CSR_PC_INIT_VALUE_OFFSET + 4
 #define HB_MC_TILE_EPA_CSR_EVA_MAP                                      \
         EPA_TILE_CSR_FROM_BYTE_OFFSET(HB_MC_TILE_EPA_CSR_EVA_MAP_OFFSET)
 
@@ -174,9 +174,7 @@ public:
 
                 snprintf(mc_name, bufsz, "Manycore Config @ Tile (X:%d,Y:%d)", me.x, me.y);
                 mc.name = mc_name;
-
-                // Technically a CSR, set by the host.
-                mc.dram_enabled = 0;
+                mc.dram_enabled = 1;
 
                 // The MOST important parts for EVA translation are here:
                 mc.config.network_bitwidth_addr = addr_width_p;
@@ -915,10 +913,6 @@ private:
                 case HB_MC_TILE_EPA_CSR_PC_INIT_VALUE:
                         pc_init = data;
                         csr_name = "CSR PC Init";
-                        break;
-                case HB_MC_TILE_EPA_CSR_DRAM_ENABLE:
-                        mc.dram_enabled = 1;
-                        csr_name = "CSR DRAM Enable";
                         break;
                 case HB_MC_TILE_EPA_CSR_EVA_MAP:
                         if(data >= BSG_DPI_TILE_EVA_MAP_ID_MAX){

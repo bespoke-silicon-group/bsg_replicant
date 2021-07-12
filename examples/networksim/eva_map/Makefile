@@ -2,7 +2,7 @@
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
-#
+#etsim
 # Redistributions of source code must retain the above copyright notice, this list
 # of conditions and the following disclaimer.
 #
@@ -37,40 +37,35 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 # CL_DIR: Path to the directory of this AWS F1 Project
+REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-REPLICANT-TOP:=$(shell git rev-parse --show-toplevel)
-PY_ANALYTICS_PATH := $(REPLICANT-TOP)/examples/networksim
+include $(REPLICANT_PATH)/environment.mk
 
-include $(REPLICANT-TOP)/environment.mk
-$(warning $(PY_ANALYTICS_PATH))
-
-TEST_NAME = main
-
-arg-item = $(word $(1),$(subst -, ,$(2)))
+NETSIM_PATH := $(EXAMPLES_PATH)/networksim
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = $(TEST_NAME).cpp
+TEST_SOURCES = main.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++14 $(FLAGS)
+CXXFLAGS += -std=c++11 $(FLAGS)
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Again, TEST_NAME is not required
-$(TEST_NAME).o: INCLUDES += -I$(EXAMPLES_PATH)
-$(TEST_NAME).o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
-$(TEST_NAME).o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
-$(TEST_NAME).o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
+main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
+main.o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
 
-$(TEST_NAME).log: $(TEST_NAME)
+main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
+main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim/eva_map
+
 
 ###############################################################################
 # Host code link flags and flow
@@ -78,63 +73,12 @@ $(TEST_NAME).log: $(TEST_NAME)
 
 LDFLAGS +=
 
+# Sources used to implement the C/C++ tile
+netsim/simv: VCS_FLAGS += bsg_dpi_tile.o
+netsim/simv: bsg_dpi_tile.o
+
 # link.mk defines rules for linking of the final execution binary.
-include $(EXAMPLES_PATH)/link.mk
-
-router_utilization.rpt: $(TEST_NAME).netsim.log
-	python3 $(PY_ANALYTICS_PATH)/router_parser.py
-
-tile_execution.rpt: $(TEST_NAME).netsim.log
-	python3 $(PY_ANALYTICS_PATH)/tileparser.py
-
-%.png: %.rpt
-	pango-view  --font mono -qo $@ $<
-
-cache_utilization.png: $(TEST_NAME).netsim.log
-	python3 $(PY_ANALYTICS_PATH)/cacheutil.py
-
-.PHONY: router_utilization.rpt vcache_stall_detailed.png
-
-vcache_stall_detailed.png: $(TEST_NAME).netsim.log
-	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser/.. python3 -m vanilla_parser --only vcache_stall_graph --trace vcache_operation_trace.csv --generate-key
-
-# this rule does a sweep across many options
-sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(stripe)-$(els)-$(mode).deploy))))
-
-# this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
-# syntax <reply fifo size>-<vcache stripe words>-<ruchy|ruchydeux|ruchytrois|zero|xstripe|ystripe>.deploy
-# make -j 10 8-1.deploy 32-1.deploy 64-1.deploy 128-1.deploy 48-1.deploy 96-1.deploy
-
-%.deploy:
-	mkdir $@
-	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/$(TEST_NAME).cpp
-	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/$(TEST_NAME).cpp
-	cat $(TEST_NAME).cpp >> $@/$(TEST_NAME).cpp
-	echo "BSG_MACHINE_PATH=my_machine" > $@/Makefile
-	cat Makefile >> $@/Makefile
-	mkdir -p $@/my_machine
-	cp -r $(BSG_MACHINE_PATH)/Makefile.machine.include $@/my_machine/.
-	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,3,$*)" >> $@/my_machine/Makefile.machine.include
-	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
-	$(MAKE) -C $@ go
-
-# this will actually indirectly do the run
-go: router_utilization.rpt vcache_stall_detailed.png router_utilization.png cache_utilization.png tile_execution.png
-
-# this will summarize the data; currently just the max time for each run
-# awk -F'[^0-9]*' '{print $1, $2, $3, $4}' will extract fields
-
-summarize:
-	find -iname "*.rpt" -exec grep -H Max '{}' ';'
-
-RESULTS = $(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,sum.$(mode))
-$(RESULTS):
-	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' >> $@
-	#find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> $@
-	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> $@
-	python3 $(PY_ANALYTICS_PATH)/results.py $@
-
-summarize-by-hash: $(RESULTS)
+include $(NETSIM_PATH)/link.mk
 
 ###############################################################################
 # C_ARGS: Use this to pass arguments that you want to appear in argc/argv
@@ -147,20 +91,9 @@ C_ARGS ?=
 SIM_ARGS ?=
 
 # Include platform-specific execution rules
-include $(EXAMPLES_PATH)/execution.mk
-
-.DEFAULT_GOAL := help
-help:
-	@echo "Usage:"
-	@echo "make {clean|<test_name>|<test_name>.log}"
-	@echo "      $(TEST_NAME): Build executable for this platform"
-	@echo "      $(TEST_NAME).log: Run test and generate the log file"
-	@echo "      $(TEST_NAME).debug: Build waveform executable (if VCS)"
-	@echo "      clean: Remove all subdirectory-specific outputs"
-
+include $(NETSIM_PATH)/execution.mk
 
 .PHONY: clean
+.PHONY: router_utilization.rpt
 
-clean:
-	rm -rf *.o $(TEST_NAME) *.rpt vcache_stall_detailed.png vcache_key_detailed.png *.csv
-
+.DEFAULT_GOAL := help
