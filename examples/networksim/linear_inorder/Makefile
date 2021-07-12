@@ -90,15 +90,15 @@ sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32 64 128,$(foreac
 
 %.deploy:
 	mkdir $@
-	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/main.cpp
-	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/main.cpp
-	cat main.cpp >> $@/main.cpp
-	echo "BSG_MACHINE_PATH=my_machine" > $@/Makefile
+	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/alloc.hpp
+	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/alloc.hpp
+	cat main.cpp >> $@/alloc.hpp
+	echo "BSG_MACHINE_PATH=machine_dir" > $@/Makefile
 	cat Makefile >> $@/Makefile
-	mkdir -p $@/my_machine
-	cp -r $(BSG_MACHINE_PATH)/Makefile.machine.include $@/my_machine/.
-	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,3,$*)" >> $@/my_machine/Makefile.machine.include
-	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,2,$*)" >> $@/my_machine/Makefile.machine.include
+	mkdir -p $@/machine_dir
+	cp -r $(BSG_MACHINE_PATH)/Makefile.machine.include $@/machine_dir/
+	echo "BSG_MACHINE_VCACHE_RSP_FIFO_ELS = $(call arg-item,3,$*)" >> $@/machine_dir/Makefile.machine.include
+	echo "BSG_MACHINE_VCACHE_STRIPE_WORDS = $(call arg-item,2,$*)" >> $@/machine_dir/Makefile.machine.include
 	$(MAKE) -C $@ go
 
 # this will actually indirectly do the run
