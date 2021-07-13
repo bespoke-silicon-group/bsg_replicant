@@ -191,5 +191,26 @@ with open("tile_execution.rpt", "w") as fd:
 fig = sns.displot(tg["Total Cycles"])
 fig.savefig("cycle_dist.png")
 
+import matplotlib.pyplot as plt # for data visualization
+
+plt.title("Total Cycles Heatmap")
 fig = sns.heatmap(tg["Total Cycles"].unstack(), vmin=3000, vmax=7000)
 fig.get_figure().savefig("cycle_heat.png")
+
+fig.get_figure().clf()
+
+plt.title("Congestion Stalls Heatmap")
+fig = sns.heatmap(tg["Stall !Ready"].unstack(), vmin=0, vmax=2000)
+fig.get_figure().savefig("congestion.png")
+
+fig.get_figure().clf()
+
+plt.title("Credit Stalls Heatmap")
+fig = sns.heatmap(tg["Stall Credit"].unstack(), vmin=0, vmax=4000)
+fig.get_figure().savefig("credits.png")
+
+fig.get_figure().clf()
+plt.title("Stalls Heatmap")
+fig = sns.heatmap(tg["Total Cycles"].unstack() - tg["Idle"].unstack(), vmin=0, vmax=6000)
+fig.get_figure().savefig("stalls.png")
+
