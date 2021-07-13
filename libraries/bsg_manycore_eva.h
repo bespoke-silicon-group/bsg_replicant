@@ -156,6 +156,7 @@ extern "C" {
         extern hb_mc_eva_map_t default_map;
         extern hb_mc_eva_map_t linear_tlrbrl_map;
         extern hb_mc_eva_map_t stride_ruche_tlrbrl_map;
+        extern hb_mc_eva_map_t stride_ruche_map;
 
         /**
          * Get the name of an eva map.
