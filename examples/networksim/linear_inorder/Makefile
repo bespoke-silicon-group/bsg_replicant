@@ -66,7 +66,7 @@ main.o: $(BSG_MACHINE_PATH)/bsg_manycore_machine.h
 
 main.o bsg_dpi_tile.o: $(BSG_F1_DIR)/examples/networksim/bsg_manycore_dpi_tile.hpp
 main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim
-main.o bsg_dpi_tile.o: INCLUDES += -I$(BSG_F1_DIR)/examples/networksim/linear_inorder
+main.o bsg_dpi_tile.o: INCLUDES += -I.
 
 ###############################################################################
 # Host code link flags and flow
@@ -92,7 +92,9 @@ sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32 64 128,$(foreac
 	mkdir $@
 	echo "#define CREDIT_ALLOCATION $(call arg-item,1,$*)" > $@/alloc.hpp
 	echo "#define CACHE_START_TYPE \"$(call arg-item,4,$*)\"" >> $@/alloc.hpp
-	cat main.cpp >> $@/alloc.hpp
+	cat alloc.hpp >> $@/alloc.hpp
+	cp main.cpp $@/main.cpp
+	cp bsg_dpi_tile.cpp $@/bsg_dpi_tile.cpp
 	echo "BSG_MACHINE_PATH=machine_dir" > $@/Makefile
 	cat Makefile >> $@/Makefile
 	mkdir -p $@/machine_dir
