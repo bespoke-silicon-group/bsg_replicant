@@ -1,5 +1,5 @@
 #include <bsg_manycore_dpi_tile.hpp>
-#include <alloc.h>
+#include <alloc.hpp>
 // This method executes requests to dmem, icache, and csr-space like
 // any normal tile.
 void BsgDpiTile::execute_request(const hb_mc_request_packet_t *req,

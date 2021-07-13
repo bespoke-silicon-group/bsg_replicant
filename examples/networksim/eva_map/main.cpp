@@ -30,7 +30,7 @@
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_regression.h>
-#include <alloc.h>
+#include <alloc.hpp>
 
 #include <random>
 #include <limits>
@@ -63,8 +63,8 @@ int main(int argc, char ** argv) {
 
         stripe = hb_mc_config_get_vcache_stripe_words(cfg);
 
-        tg.x = 1;
-        tg.y = 1;
+        tg.x = dim.x;
+        tg.y = dim.y;
 
         max.x = origin.x + tg.x - 1;
         max.y = origin.y + tg.y - 1;
