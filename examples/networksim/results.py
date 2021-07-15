@@ -26,6 +26,6 @@ df.to_csv(sys.argv[1] + ".csv")
 
 plt.figure(figsize=(14, 16))
 
-h = sns.heatmap(df, annot=True, fmt="3.0f", vmin = 5000, vmax=10000)
+h = sns.heatmap(df, annot=True, fmt="3.0f", vmin = 4250, vmax=10000)
 fig = h.get_figure()
 fig.savefig(sys.argv[1] + ".png")
