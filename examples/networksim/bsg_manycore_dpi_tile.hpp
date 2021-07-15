@@ -32,14 +32,16 @@ typedef enum __bsg_dpi_tile_eva_map_id_t {
         BSG_DPI_TILE_EVA_MAP_ID_STRIDE = 1,
         BSG_DPI_TILE_EVA_MAP_ID_LINEAR_TLRBRL = 2,
         BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL = 3,
-        BSG_DPI_TILE_EVA_MAP_ID_MAX = BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL + 1,
+        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN = 4,
+        BSG_DPI_TILE_EVA_MAP_ID_MAX = BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN + 1,
 } bsg_dpi_tile_eva_map_id_t;
 
 hb_mc_eva_map_t * bsg_dpi_tile_eva_maps[] =
         {[BSG_DPI_TILE_EVA_MAP_ID_DEFAULT] = &default_map,
          [BSG_DPI_TILE_EVA_MAP_ID_STRIDE] = &stride_ruche_map,
          [BSG_DPI_TILE_EVA_MAP_ID_LINEAR_TLRBRL] = &linear_tlrbrl_map,
-         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL] = &stride_ruche_tlrbrl_map
+         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL] = &stride_ruche_tlrbrl_map,
+         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN] = &stride_seven_map
         };
 
 typedef enum __bsg_dpi_tile_packet_op_t {
