@@ -1680,27 +1680,39 @@ hb_mc_eva_map_t linear_tlrbrl_map = {
         .npa_to_eva  = linear_tlrbrl_npa_to_eva,
 };
 
-
 // *****************************************************************************
-// stride_ruche_tlrbrl Map
+// stride_twoish Map
 //
 // This EVA Map:
-//   - Strides between caches separated by RUCHE_FACTOR
+//   - Strides between caches separated by two (ish). Ish because a
+//     true two-stride would always wrap back to its original point.
+//     Instead, when the stride wraps around it starts from 1, not 0.
+//
+//     In short, if the EVA index is N bits, this map is:
+//       cache_index = {eva_index[N-2:0], EVA[N-1]}  --> a circular left shift
+//
 //   - If an EVA Maps to the North/Top Cache, the X-coordinate moves
 //     from Left to Right with increasing EVA (TOPLR)
 //   - If an EVA Maps to the South/Bottom Cache, the X-coordinate moves
-//     from Right to Left with increasing EVA (BOTRL)
+//     from Left to Right with increasing EVA (BOTLR)
 //
 // The two main differences are:
-//   - stride_ruche_tlrbrl_eva_get_x_coord_dram
-//   - stride_ruche_tlrbrl_eva_get_y_coord_dram
-//   - stride_ruche_tlrbrl_npa_to_eva_dram
+//   - stride_twoish_eva_get_x_coord_dram
+//   - stride_twoish_eva_get_y_coord_dram
+//   - stride_twoish_npa_to_eva_dram
 //
 // All other EVA mechanics remain the same
 //
 // *****************************************************************************
+#define CIRCULAR_SHIFT_LEFT(WIDTH, SHIFT, VALUE)                 \
+        ((((VALUE) << (SHIFT)) & MAKE_MASK(WIDTH))       |       \
+         (((VALUE) & MAKE_MASK(WIDTH)) >> (WIDTH-SHIFT)))
 
-int stride_ruche_tlrbrl_eva_to_npa(hb_mc_manycore_t *mc,
+#define CIRCULAR_SHIFT_RIGHT(WIDTH, SHIFT, VALUE)                \
+        ((((VALUE) << (WIDTH-SHIFT)) & MAKE_MASK(WIDTH)) |       \
+         (((VALUE) & MAKE_MASK(WIDTH)) >> (SHIFT)))
+
+int stride_twoish_eva_to_npa(hb_mc_manycore_t *mc,
                           const void *priv,
                           const hb_mc_coordinate_t *src,
                           const hb_mc_eva_t *eva,
@@ -1716,7 +1728,7 @@ int stride_ruche_tlrbrl_eva_to_npa(hb_mc_manycore_t *mc,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int stride_ruche_tlrbrl_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
+static int stride_twoish_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
                                         const hb_mc_coordinate_t *src,
                                         const hb_mc_eva_t *eva,
@@ -1739,27 +1751,21 @@ static int stride_ruche_tlrbrl_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
-        uint32_t idx_mask = MAKE_MASK(default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-                                      + default_get_x_dimlog(cfg) // x-coordinate bits
-                                      + 1); // Extra bit for Y
-        
-        // Get the "index" from the EVA. We will multiply by the ruche
-        // factor and mod by the number of caches
+        uint32_t idx_bits = default_get_x_dimlog(cfg) // x-coordinate bits
+                + 1; // Extra bit for Y
+
+        uint32_t idx_mask = MAKE_MASK(idx_bits);
+
+        // Get the "index" from the EVA
         uint32_t idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
-        uint32_t ruche_factor = 3;
 
-        idx = (idx * ruche_factor) % (dim.x * 2);
+        uint32_t log_stride_factor = 1;
 
-        uint32_t is_south = idx >= dim.x;
+        idx = CIRCULAR_SHIFT_LEFT(idx_bits, log_stride_factor, idx);
 
         *x = idx % dim.x;
 
-        // If the EVA maps to the south side, traverse from right to
-        // left as EVA increases.
-        if(is_south)
-                *x = (dram_max_x_coord - *x);
-        else
-                *x += hb_mc_coordinate_get_x(og); // Add to origin
+        *x += hb_mc_coordinate_get_x(og); // Add to origin
 
         if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
                 bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X-coordinate "
@@ -1782,7 +1788,7 @@ static int stride_ruche_tlrbrl_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int stride_ruche_tlrbrl_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
+static int stride_twoish_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                                         const hb_mc_config_t *cfg,
                                         const hb_mc_coordinate_t *src,
                                         const hb_mc_eva_t *eva,
@@ -1806,18 +1812,19 @@ static int stride_ruche_tlrbrl_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
-        uint32_t idx_mask = MAKE_MASK(default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-                                      + default_get_x_dimlog(cfg) // x-coordinate bits
-                                      + 1); // Extra bit for Y
-        
-        // Get the "index" from the EVA. We will multiply by the ruche
-        // factor and mod by the number of caches
-        uint32_t idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
-        uint32_t ruche_factor = 3;
+        uint32_t idx_bits = default_get_x_dimlog(cfg) // x-coordinate bits
+                + 1; // Extra bit for Y
 
-        idx = (idx * ruche_factor) % (dim.x * 2); 
+        uint32_t idx_mask = MAKE_MASK(idx_bits);
 
-        uint32_t is_south = idx >= dim.x;
+        // Get the "index" from the EVA
+        uint32_t eva_idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
+
+        uint32_t log_stride_factor = 1;
+
+        uint32_t cache_idx = CIRCULAR_SHIFT_LEFT(idx_bits, log_stride_factor, eva_idx);
+
+        uint32_t is_south = cache_idx >= dim.x;
 
         *y = is_south
             ? hb_mc_config_pod_dram_south_y(cfg, pod)
@@ -1839,7 +1846,7 @@ static int stride_ruche_tlrbrl_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
  * @param[out] sz       The size in bytes of the EVA segment for the #npa
  * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
  */
-static int stride_ruche_tlrbrl_npa_to_eva_dram(hb_mc_manycore_t *mc,
+static int stride_twoish_npa_to_eva_dram(hb_mc_manycore_t *mc,
                                    const hb_mc_coordinate_t *o,
                                    const hb_mc_coordinate_t *tgt,
                                    const hb_mc_npa_t *npa,
@@ -1860,20 +1867,20 @@ static int stride_ruche_tlrbrl_npa_to_eva_dram(hb_mc_manycore_t *mc,
         uint32_t is_south = hb_mc_config_is_dram_south(cfg, hb_mc_npa_get_xy(npa));
 
         // Get X relative to pod origin
-        hb_mc_idx_t x_rel = hb_mc_npa_get_x(npa)-default_dram_min_x_coord(cfg, &origin);
+        hb_mc_idx_t x_rel = hb_mc_npa_get_x(npa) - default_dram_min_x_coord(cfg, &origin);
 
         // Get the cache index
-        uint32_t idx = is_south ? dim.x + x_rel : x_rel;
-        
-        // This is literally just hand unmapping the mod
-        uint32_t unmap[32] = {0, 11, 22, 1, 12, 23, 2, 13, 24, 3, 14, 25, 4, 15, 26, 5,
-                             16, 27, 6, 17,
-                             28, 7, 18, 29,
-                             8, 19, 30, 9,
-                             20, 31, 10, 21};
+        uint32_t cache_idx = is_south ? dim.x + x_rel : x_rel;
 
+        uint32_t idx_bits = default_get_x_dimlog(cfg) // x-coordinate bits
+                + 1; // Extra bit for Y
+
+        uint32_t log_stride_factor = 1;
+
+        uint32_t eva_idx = CIRCULAR_SHIFT_RIGHT(idx_bits, log_stride_factor, cache_idx);
+        
         addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
-        addr |= unmap[idx] << stripe_log;
+        addr |= eva_idx << stripe_log;
         addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
         addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
         *eva  = addr;
@@ -1894,7 +1901,7 @@ static int stride_ruche_tlrbrl_npa_to_eva_dram(hb_mc_manycore_t *mc,
         // an NPA and confirm that it maps correctly...
         hb_mc_npa_t test;
         size_t test_sz;
-        stride_ruche_tlrbrl_eva_to_npa(mc, o, tgt, eva, &test, &test_sz);
+        stride_twoish_eva_to_npa(mc, o, tgt, eva, &test, &test_sz);
 
         if(hb_mc_npa_get_x(npa) != hb_mc_npa_get_x(&test)){
                 bsg_pr_err("%s: X Coordinate did not match in check of NPA to EVA Translation: "
@@ -1927,7 +1934,7 @@ static int stride_ruche_tlrbrl_npa_to_eva_dram(hb_mc_manycore_t *mc,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-static int stride_ruche_tlrbrl_eva_to_npa_dram(const hb_mc_manycore_t *mc,
+static int stride_twoish_eva_to_npa_dram(const hb_mc_manycore_t *mc,
                                    const hb_mc_coordinate_t *o,
                                    const hb_mc_coordinate_t *src,
                                    const hb_mc_eva_t *eva,
@@ -1940,7 +1947,7 @@ static int stride_ruche_tlrbrl_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         hb_mc_epa_t epa;
 
         // Calculate X coordinate of NPA from EVA
-        rc = stride_ruche_tlrbrl_eva_get_x_coord_dram (mc, cfg, src, eva, &x);
+        rc = stride_twoish_eva_get_x_coord_dram (mc, cfg, src, eva, &x);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to generate x coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
@@ -1949,7 +1956,7 @@ static int stride_ruche_tlrbrl_eva_to_npa_dram(const hb_mc_manycore_t *mc,
         }
 
         // Calculate Y coordinate of NPA from EVA
-        rc = stride_ruche_tlrbrl_eva_get_y_coord_dram (mc, cfg, src, eva, &y);
+        rc = stride_twoish_eva_get_y_coord_dram (mc, cfg, src, eva, &y);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to generate y coordinate from eva 0x%08" PRIx32 ".\n",
                            __func__,
@@ -1991,7 +1998,7 @@ static int stride_ruche_tlrbrl_eva_to_npa_dram(const hb_mc_manycore_t *mc,
  * @param[out] sz     The size in bytes of the NPA segment for the #eva
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int stride_ruche_tlrbrl_eva_to_npa(hb_mc_manycore_t *mc,
+int stride_twoish_eva_to_npa(hb_mc_manycore_t *mc,
                        const void *priv,
                        const hb_mc_coordinate_t *src,
                        const hb_mc_eva_t *eva,
@@ -2002,7 +2009,7 @@ int stride_ruche_tlrbrl_eva_to_npa(hb_mc_manycore_t *mc,
         origin = (const hb_mc_coordinate_t *) priv;
 
         if(default_eva_is_dram(eva))
-                return stride_ruche_tlrbrl_eva_to_npa_dram(mc, origin, src, eva, npa, sz);
+                return stride_twoish_eva_to_npa_dram(mc, origin, src, eva, npa, sz);
         if(default_eva_is_global(eva))
                 return default_eva_to_npa_global(cfg, origin, src, eva, npa, sz);
         if(default_eva_is_group(eva))
@@ -2025,7 +2032,7 @@ int stride_ruche_tlrbrl_eva_to_npa(hb_mc_manycore_t *mc,
  * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int stride_ruche_tlrbrl_eva_size(
+int stride_twoish_eva_size(
                      hb_mc_manycore_t *mc,
                      const void *priv,
                      const hb_mc_eva_t *eva,
@@ -2038,7 +2045,7 @@ int stride_ruche_tlrbrl_eva_size(
         o = (const hb_mc_coordinate_t *) priv;
 
         if(default_eva_is_dram(eva))
-                return stride_ruche_tlrbrl_eva_to_npa_dram(mc, o, o, eva, &npa, sz);
+                return stride_twoish_eva_to_npa_dram(mc, o, o, eva, &npa, sz);
         if(default_eva_is_global(eva))
                 return default_eva_to_npa_global(cfg, o, o, eva, &npa, sz);
         if(default_eva_is_group(eva))
@@ -2063,7 +2070,7 @@ int stride_ruche_tlrbrl_eva_size(
  * @param[out] sz     The size in bytes of the EVA segment for the #npa
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int stride_ruche_tlrbrl_npa_to_eva(hb_mc_manycore_t *mc,
+int stride_twoish_npa_to_eva(hb_mc_manycore_t *mc,
                        const void *priv,
                        const hb_mc_coordinate_t *tgt,
                        const hb_mc_npa_t *npa,
@@ -2073,7 +2080,7 @@ int stride_ruche_tlrbrl_npa_to_eva(hb_mc_manycore_t *mc,
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
         if(default_npa_is_dram(mc, npa, tgt))
-                return stride_ruche_tlrbrl_npa_to_eva_dram(mc, origin, tgt, npa, eva, sz);
+                return stride_twoish_npa_to_eva_dram(mc, origin, tgt, npa, eva, sz);
 
         if(default_npa_is_host(cfg, npa, tgt))
                 return default_npa_to_eva_host(cfg, origin, tgt, npa, eva, sz);
@@ -2087,14 +2094,13 @@ int stride_ruche_tlrbrl_npa_to_eva(hb_mc_manycore_t *mc,
         return HB_MC_FAIL;
 }
 
-hb_mc_eva_map_t stride_ruche_tlrbrl_map = {
-        .eva_map_name = "Stride Ruche Top:L->R Bot:R->L EVA map",
+hb_mc_eva_map_t stride_twoish_map = {
+        .eva_map_name = "Stride Twoish Top:L->R Bot:L->R EVA map",
         .priv = (const void *)(&default_origin),
-        .eva_to_npa = stride_ruche_tlrbrl_eva_to_npa,
-        .eva_size = stride_ruche_tlrbrl_eva_size,
-        .npa_to_eva  = stride_ruche_tlrbrl_npa_to_eva,
+        .eva_to_npa = stride_twoish_eva_to_npa,
+        .eva_size = stride_twoish_eva_size,
+        .npa_to_eva  = stride_twoish_npa_to_eva,
 };
-
 
 // *****************************************************************************
 // stride_ruche Map
@@ -2104,7 +2110,7 @@ hb_mc_eva_map_t stride_ruche_tlrbrl_map = {
 //   - If an EVA Maps to the North/Top Cache, the X-coordinate moves
 //     from Left to Right with increasing EVA (TOPLR)
 //   - If an EVA Maps to the South/Bottom Cache, the X-coordinate moves
-//     from Right to Left with increasing EVA (BOTRL)
+//     from Left to Right with increasing EVA (BOTRL)
 //
 // The two main differences are:
 //   - stride_ruche_eva_get_x_coord_dram
@@ -2154,8 +2160,7 @@ static int stride_ruche_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
-        uint32_t idx_mask = MAKE_MASK(default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-                                      + default_get_x_dimlog(cfg) // x-coordinate bits
+        uint32_t idx_mask = MAKE_MASK(default_get_x_dimlog(cfg) // x-coordinate bits
                                       + 1); // Extra bit for Y
         
         // Get the "index" from the EVA. We will multiply by the ruche
@@ -2214,8 +2219,7 @@ static int stride_ruche_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
-        uint32_t idx_mask = MAKE_MASK(default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-                                      + default_get_x_dimlog(cfg) // x-coordinate bits
+        uint32_t idx_mask = MAKE_MASK(default_get_x_dimlog(cfg) // x-coordinate bits
                                       + 1); // Extra bit for Y
         
         // Get the "index" from the EVA. We will multiply by the ruche
@@ -2504,14 +2508,821 @@ hb_mc_eva_map_t stride_ruche_map = {
 };
 
 // *****************************************************************************
-// stride_seven Map
+// stride_fourish Map
 //
 // This EVA Map:
-//   - Strides between caches separated by RUCHE_FACTOR
+//   - Strides between caches separated by four (ish). Ish because a
+//     true four-stride would always wrap back to its original point.
+//     Instead, when the stride wraps around it starts from 1, not 0.
+//
+//     In short, if the EVA index is N bits, this map is:
+//       cache_index = {eva_index[N-3:0], EVA[N-1:N-2]}  --> a circular left shift
+//
 //   - If an EVA Maps to the North/Top Cache, the X-coordinate moves
 //     from Left to Right with increasing EVA (TOPLR)
 //   - If an EVA Maps to the South/Bottom Cache, the X-coordinate moves
-//     from Right to Left with increasing EVA (BOTRL)
+//     from Left to Right with increasing EVA (BOTLR)
+//
+// The two main differences are:
+//   - stride_fourish_eva_get_x_coord_dram
+//   - stride_fourish_eva_get_y_coord_dram
+//   - stride_fourish_npa_to_eva_dram
+//
+// All other EVA mechanics remain the same
+//
+// *****************************************************************************
+int stride_fourish_eva_to_npa(hb_mc_manycore_t *mc,
+                          const void *priv,
+                          const hb_mc_coordinate_t *src,
+                          const hb_mc_eva_t *eva,
+                          hb_mc_npa_t *npa, size_t *sz);
+
+/**
+ * Maps a DRAM EVA to a Network Physical Address X coordinate
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int stride_fourish_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
+                                        const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
+                                        const hb_mc_eva_t *eva,
+                                        hb_mc_idx_t *x) {
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+#ifdef DEBUG
+        char pod_str[256];
+        char src_str [256];
+        char og_str [256];
+        hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+        hb_mc_coordinate_to_string(*src, src_str,  sizeof(src_str));
+        hb_mc_coordinate_to_string(og, og_str,  sizeof(og_str));
+        bsg_pr_dbg("%s: Source = %s maps to (Logical) Pod %s with origin %s\n",
+                    __func__, src_str, pod_str, og_str);
+#endif
+        uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+
+        uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
+        uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
+
+        uint32_t idx_bits =default_get_x_dimlog(cfg) // x-coordinate bits
+                + 1; // Extra bit for Y
+
+        uint32_t idx_mask = MAKE_MASK(idx_bits);
+
+        // Get the "index" from the EVA
+        uint32_t idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
+
+        uint32_t log_stride_factor = 2;
+
+        idx = CIRCULAR_SHIFT_LEFT(idx_bits, log_stride_factor, idx);
+
+        *x = idx % dim.x;
+
+        *x += hb_mc_coordinate_get_x(og); // Add to origin
+
+        if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
+                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X-coordinate "
+                           "of the NPA of requested DRAM bank (%d) is outside of "
+                           "DRAM X-coordinate range [%d, %d]\n.",
+                           __func__, hb_mc_eva_addr(eva),
+                           *x, dram_min_x_coord, dram_max_x_coord);
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Maps a DRAM EVA to a Network Physical Address Y coordinate
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int stride_fourish_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
+                                        const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
+                                        const hb_mc_eva_t *eva,
+                                        hb_mc_idx_t *y) { 
+
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+#ifdef DEBUG
+        char pod_str[256];
+        char src_str [256];
+        char og_str [256];
+        hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+        hb_mc_coordinate_to_string(*src, src_str,  sizeof(src_str));
+        hb_mc_coordinate_to_string(og, og_str,  sizeof(og_str));
+        bsg_pr_dbg("%s: Source = %s maps to (Logical) Pod %s with origin %s\n",
+                    __func__, src_str, pod_str, og_str);
+#endif
+        uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+
+        uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
+        uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
+
+        uint32_t idx_bits = default_get_x_dimlog(cfg) // x-coordinate bits
+                + 1; // Extra bit for Y
+
+        uint32_t idx_mask = MAKE_MASK(idx_bits);
+
+        // Get the "index" from the EVA
+        uint32_t eva_idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
+
+        uint32_t log_stride_factor = 2;
+
+        uint32_t cache_idx = CIRCULAR_SHIFT_LEFT(idx_bits, log_stride_factor, eva_idx);
+
+        uint32_t is_south = cache_idx >= dim.x;
+
+        *y = is_south
+            ? hb_mc_config_pod_dram_south_y(cfg, pod)
+            : hb_mc_config_pod_dram_north_y(cfg, pod);
+
+        bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
+                   __func__, *y, *eva);
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Translate a global NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
+static int stride_fourish_npa_to_eva_dram(hb_mc_manycore_t *mc,
+                                   const hb_mc_coordinate_t *o,
+                                   const hb_mc_coordinate_t *tgt,
+                                   const hb_mc_npa_t *npa,
+                                   hb_mc_eva_t *eva,
+                                   size_t *sz)
+{
+        // build the eva
+        hb_mc_eva_t addr = 0;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        uint32_t stripe_log, xdimlog;
+        // get the pod and pod origin
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+        stripe_log = default_get_dram_stripe_size_log(mc);
+        xdimlog = default_get_x_dimlog(cfg);
+
+        uint32_t is_south = hb_mc_config_is_dram_south(cfg, hb_mc_npa_get_xy(npa));
+
+        // Get X relative to pod origin
+        hb_mc_idx_t x_rel = hb_mc_npa_get_x(npa) - default_dram_min_x_coord(cfg, &origin);
+
+        // Get the cache index
+        uint32_t cache_idx = is_south ? dim.x + x_rel : x_rel;
+
+        uint32_t idx_bits = default_get_x_dimlog(cfg) // x-coordinate bits
+                + 1; // Extra bit for Y
+
+        uint32_t log_stride_factor = 2;
+
+        uint32_t eva_idx = CIRCULAR_SHIFT_RIGHT(idx_bits, log_stride_factor, cache_idx);
+        
+        addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
+        addr |= eva_idx << stripe_log;
+        addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
+        addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
+        *eva  = addr;
+
+        // We are basically saying "you can write to this word only".
+        // Without more context, we can't tell how much more space there is.
+        *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
+#ifdef DEBUG
+        char npa_str [256];
+        char tgt_str [256];
+        hb_mc_coordinate_to_string(*tgt, tgt_str, sizeof(tgt_str));
+        hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str));
+
+        bsg_pr_info("%s: translating %s for %s to 0x%08x\n",
+                   __func__, npa_str, tgt_str, *eva);
+#endif
+        // The remainder is error checking. Translate the EVA back to
+        // an NPA and confirm that it maps correctly...
+        hb_mc_npa_t test;
+        size_t test_sz;
+        stride_fourish_eva_to_npa(mc, o, tgt, eva, &test, &test_sz);
+
+        if(hb_mc_npa_get_x(npa) != hb_mc_npa_get_x(&test)){
+                bsg_pr_err("%s: X Coordinate did not match in check of NPA to EVA Translation: "
+                           "Expected: %u, Inverted: %u\n",
+                           __func__, hb_mc_npa_get_x(npa), hb_mc_npa_get_x(&test));
+        }
+
+        if(hb_mc_npa_get_y(npa) != hb_mc_npa_get_y(&test)){
+                bsg_pr_err("%s: Y Coordinate did not match in check of NPA to EVA Translation: "
+                           "Expected: %u, Inverted: %u\n",
+                           __func__, hb_mc_npa_get_y(npa), hb_mc_npa_get_y(&test));
+        }
+
+        if(hb_mc_npa_get_epa(npa) != hb_mc_npa_get_epa(&test)){
+                bsg_pr_err("%s: EPA did not match in check of NPA to EVA Translation: "
+                           "Expected: %u, Inverted: %u\n",
+                           __func__, hb_mc_npa_get_epa(npa), hb_mc_npa_get_epa(&test));
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
+ * size (contiguous bytes following the specified EVA)
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int stride_fourish_eva_to_npa_dram(const hb_mc_manycore_t *mc,
+                                   const hb_mc_coordinate_t *o,
+                                   const hb_mc_coordinate_t *src,
+                                   const hb_mc_eva_t *eva,
+                                   hb_mc_npa_t *npa,
+                                   size_t *sz)
+{
+        int rc;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_idx_t x,y;
+        hb_mc_epa_t epa;
+
+        // Calculate X coordinate of NPA from EVA
+        rc = stride_fourish_eva_get_x_coord_dram (mc, cfg, src, eva, &x);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to generate x coordinate from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        // Calculate Y coordinate of NPA from EVA
+        rc = stride_fourish_eva_get_y_coord_dram (mc, cfg, src, eva, &y);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to generate y coordinate from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        // Calculate EPA Portion of NPA from EVA
+        rc = default_eva_get_epa_dram (mc, cfg, eva, &epa, sz);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to generate npa from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+
+        bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "} sz = %08x. \n",
+                   __func__, hb_mc_eva_addr(eva),
+                   hb_mc_coordinate_get_x(*src),
+                   hb_mc_coordinate_get_y(*src),
+                   hb_mc_npa_get_x(npa),
+                   hb_mc_npa_get_y(npa),
+                   hb_mc_npa_get_epa(npa),
+                   uint32_t(*sz));
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Translate an Endpoint Virtual Address in a source tile's address space
+ * to a Network Physical Address
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int stride_fourish_eva_to_npa(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *src,
+                       const hb_mc_eva_t *eva,
+                       hb_mc_npa_t *npa, size_t *sz)
+{
+        const hb_mc_coordinate_t *origin;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        origin = (const hb_mc_coordinate_t *) priv;
+
+        if(default_eva_is_dram(eva))
+                return stride_fourish_eva_to_npa_dram(mc, origin, src, eva, npa, sz);
+        if(default_eva_is_global(eva))
+                return default_eva_to_npa_global(cfg, origin, src, eva, npa, sz);
+        if(default_eva_is_group(eva))
+                return default_eva_to_npa_group(cfg, origin, src, eva, npa, sz);
+        if(default_eva_is_local(eva))
+                return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
+
+        bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
+                   __func__, hb_mc_eva_addr(eva));
+        return HB_MC_FAIL;
+}
+
+
+/**
+ * Returns the number of contiguous bytes following an EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  eva    An eva
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int stride_fourish_eva_size(
+                     hb_mc_manycore_t *mc,
+                     const void *priv,
+                     const hb_mc_eva_t *eva,
+                     size_t *sz)
+{
+        hb_mc_npa_t npa;
+        hb_mc_epa_t epa;
+        const hb_mc_coordinate_t *o;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        o = (const hb_mc_coordinate_t *) priv;
+
+        if(default_eva_is_dram(eva))
+                return stride_fourish_eva_to_npa_dram(mc, o, o, eva, &npa, sz);
+        if(default_eva_is_global(eva))
+                return default_eva_to_npa_global(cfg, o, o, eva, &npa, sz);
+        if(default_eva_is_group(eva))
+                return default_eva_to_npa_group(cfg, o, o, eva, &npa, sz);
+        if(default_eva_is_local(eva))
+                return default_eva_to_npa_local(cfg, o, o, eva, &npa, sz);
+
+        bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
+                   __func__, hb_mc_eva_addr(eva));
+        return HB_MC_FAIL;
+
+}
+/**
+ * Translate a Network Physical Address to an Endpoint Virtual Address in a
+ * target tile's address space
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  tgt    Coordinates of the target tile
+ * @param[in]  len    Number of tiles in the target tile's group
+ * @param[in]  npa    An npa to translate
+ * @param[out] eva    An eva to set by translating #npa
+ * @param[out] sz     The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int stride_fourish_npa_to_eva(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *tgt,
+                       const hb_mc_npa_t *npa,
+                       hb_mc_eva_t *eva, size_t *sz)
+{
+        const hb_mc_coordinate_t *origin = (const hb_mc_coordinate_t*)priv;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+        if(default_npa_is_dram(mc, npa, tgt))
+                return stride_fourish_npa_to_eva_dram(mc, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_host(cfg, npa, tgt))
+                return default_npa_to_eva_host(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_local(cfg, npa, tgt))
+                return default_npa_to_eva_local(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_global(cfg, npa, tgt))
+                return default_npa_to_eva_global(cfg, origin, tgt, npa, eva, sz);
+
+        return HB_MC_FAIL;
+}
+
+hb_mc_eva_map_t stride_fourish_map = {
+        .eva_map_name = "Stride Fourish Top:L->R Bot:L->R EVA map",
+        .priv = (const void *)(&default_origin),
+        .eva_to_npa = stride_fourish_eva_to_npa,
+        .eva_size = stride_fourish_eva_size,
+        .npa_to_eva  = stride_fourish_npa_to_eva,
+};
+
+// *****************************************************************************
+// stride_five Map
+//
+// This EVA Map:
+//   - Strides between caches separated by RUCHE_FACTOR
+//
+// The two main differences are:
+//   - stride_five_eva_get_x_coord_dram
+//   - stride_five_eva_get_y_coord_dram
+//   - stride_five_npa_to_eva_dram
+//
+// All other EVA mechanics remain the same
+//
+// *****************************************************************************
+
+int stride_five_eva_to_npa(hb_mc_manycore_t *mc,
+                          const void *priv,
+                          const hb_mc_coordinate_t *src,
+                          const hb_mc_eva_t *eva,
+                          hb_mc_npa_t *npa, size_t *sz);
+
+/**
+ * Maps a DRAM EVA to a Network Physical Address X coordinate
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int stride_five_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
+                                        const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
+                                        const hb_mc_eva_t *eva,
+                                        hb_mc_idx_t *x) {
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+#ifdef DEBUG
+        char pod_str[256];
+        char src_str [256];
+        char og_str [256];
+        hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+        hb_mc_coordinate_to_string(*src, src_str,  sizeof(src_str));
+        hb_mc_coordinate_to_string(og, og_str,  sizeof(og_str));
+        bsg_pr_dbg("%s: Source = %s maps to (Logical) Pod %s with origin %s\n",
+                    __func__, src_str, pod_str, og_str);
+#endif
+        uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+
+        uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
+        uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
+
+        uint32_t idx_mask = MAKE_MASK(default_get_x_dimlog(cfg) // x-coordinate bits
+                                      + 1); // Extra bit for Y
+        
+        // Get the "index" from the EVA. We will multiply by the ruche
+        // factor and mod by the number of caches
+        uint32_t idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
+        uint32_t stride = 5;
+
+        idx = (idx * stride) % dim.x;
+
+        *x = idx % dim.x;
+
+        *x += hb_mc_coordinate_get_x(og); // Add to origin
+
+        if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
+                bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X-coordinate "
+                           "of the NPA of requested DRAM bank (%d) is outside of "
+                           "DRAM X-coordinate range [%d, %d]\n.",
+                           __func__, hb_mc_eva_addr(eva),
+                           *x, dram_min_x_coord, dram_max_x_coord);
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Maps a DRAM EVA to a Network Physical Address Y coordinate
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int stride_five_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
+                                        const hb_mc_config_t *cfg,
+                                        const hb_mc_coordinate_t *src,
+                                        const hb_mc_eva_t *eva,
+                                        hb_mc_idx_t *y) { 
+
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+#ifdef DEBUG
+        char pod_str[256];
+        char src_str [256];
+        char og_str [256];
+        hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+        hb_mc_coordinate_to_string(*src, src_str,  sizeof(src_str));
+        hb_mc_coordinate_to_string(og, og_str,  sizeof(og_str));
+        bsg_pr_dbg("%s: Source = %s maps to (Logical) Pod %s with origin %s\n",
+                    __func__, src_str, pod_str, og_str);
+#endif
+        uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+
+        uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
+        uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
+
+        uint32_t idx_mask = MAKE_MASK(default_get_x_dimlog(cfg) // x-coordinate bits
+                                      + 1); // Extra bit for Y
+        
+        // Get the "index" from the EVA. We will multiply by stride
+        // and mod by the number of caches
+        uint32_t idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
+        uint32_t stride = 5;
+
+        idx = (idx * stride) % (dim.x * 2); 
+
+        uint32_t is_south = idx >= dim.x;
+
+        *y = is_south
+            ? hb_mc_config_pod_dram_south_y(cfg, pod)
+            : hb_mc_config_pod_dram_north_y(cfg, pod);
+
+        bsg_pr_dbg("%s: Translating Y-coordinate = %u for EVA 0x%08" PRIx32 "\n",
+                   __func__, *y, *eva);
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Translate a global NPA to an EVA.
+ * @param[in]  cfg      An initialized manycore configuration struct
+ * @param[in]  origin   Coordinate of the origin for this tile's group
+ * @param[in]  tgt      Coordinates of the target tile
+ * @param[in]  npa      An npa to translate
+ * @param[out] eva      An eva to set by translating #npa
+ * @param[out] sz       The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_SUCCESS if succesful. HB_MC_FAIL otherwise.
+ */
+static int stride_five_npa_to_eva_dram(hb_mc_manycore_t *mc,
+                                   const hb_mc_coordinate_t *o,
+                                   const hb_mc_coordinate_t *tgt,
+                                   const hb_mc_npa_t *npa,
+                                   hb_mc_eva_t *eva,
+                                   size_t *sz)
+{
+        // build the eva
+        hb_mc_eva_t addr = 0;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        uint32_t stripe_log, xdimlog;
+        // get the pod and pod origin
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+        hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
+        hb_mc_dimension_t dim = hb_mc_config_get_dimension_vcore(cfg);
+        stripe_log = default_get_dram_stripe_size_log(mc);
+        xdimlog = default_get_x_dimlog(cfg);
+
+        uint32_t is_south = hb_mc_config_is_dram_south(cfg, hb_mc_npa_get_xy(npa));
+
+        // Get X relative to pod origin
+        hb_mc_idx_t x_rel = hb_mc_npa_get_x(npa)-default_dram_min_x_coord(cfg, &origin);
+
+        // Get the cache index
+        uint32_t idx = is_south ? dim.x + x_rel : x_rel;
+        
+        // This is literally just hand unmapping the mod
+        uint32_t unmap[32] = {0, 13, 26, 7, 20, 1, 14, 27, 8, 21, 2, 15, 28, 9, 22, 3, 16, 29, 10, 23, 4, 17, 30, 11, 24, 5, 18, 31, 12, 25, 6, 19};
+
+        addr |= (hb_mc_npa_get_epa(npa) & MAKE_MASK(stripe_log)); // Set byte address and cache block offset
+        addr |= unmap[idx] << stripe_log;
+        addr |= (((hb_mc_npa_get_epa(npa) >> stripe_log)) << (stripe_log + xdimlog + 1)); // Set the EPA section
+        addr |= (1 << DEFAULT_DRAM_BITIDX); // Set the DRAM bit
+        *eva  = addr;
+
+        // We are basically saying "you can write to this word only".
+        // Without more context, we can't tell how much more space there is.
+        *sz = 4 - (hb_mc_npa_get_epa(npa) & 0x3);
+#ifdef DEBUG
+        char npa_str [256];
+        char tgt_str [256];
+        hb_mc_coordinate_to_string(*tgt, tgt_str, sizeof(tgt_str));
+        hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str));
+
+        bsg_pr_info("%s: translating %s for %s to 0x%08x\n",
+                   __func__, npa_str, tgt_str, *eva);
+#endif
+        // The remainder is error checking. Translate the EVA back to
+        // an NPA and confirm that it maps correctly...
+        hb_mc_npa_t test;
+        size_t test_sz;
+        stride_five_eva_to_npa(mc, o, tgt, eva, &test, &test_sz);
+
+        if(hb_mc_npa_get_x(npa) != hb_mc_npa_get_x(&test)){
+                bsg_pr_err("%s: X Coordinate did not match in check of NPA to EVA Translation: "
+                           "Expected: %u, Inverted: %u\n",
+                           __func__, hb_mc_npa_get_x(npa), hb_mc_npa_get_x(&test));
+        }
+
+        if(hb_mc_npa_get_y(npa) != hb_mc_npa_get_y(&test)){
+                bsg_pr_err("%s: Y Coordinate did not match in check of NPA to EVA Translation: "
+                           "Expected: %u, Inverted: %u\n",
+                           __func__, hb_mc_npa_get_y(npa), hb_mc_npa_get_y(&test));
+        }
+
+        if(hb_mc_npa_get_epa(npa) != hb_mc_npa_get_epa(&test)){
+                bsg_pr_err("%s: EPA did not match in check of NPA to EVA Translation: "
+                           "Expected: %u, Inverted: %u\n",
+                           __func__, hb_mc_npa_get_epa(npa), hb_mc_npa_get_epa(&test));
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Converts a DRAM Endpoint Virtual Address to a Network Physical Address and
+ * size (contiguous bytes following the specified EVA)
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  o      Coordinate of the origin for this tile's group
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int stride_five_eva_to_npa_dram(const hb_mc_manycore_t *mc,
+                                   const hb_mc_coordinate_t *o,
+                                   const hb_mc_coordinate_t *src,
+                                   const hb_mc_eva_t *eva,
+                                   hb_mc_npa_t *npa,
+                                   size_t *sz)
+{
+        int rc;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        hb_mc_idx_t x,y;
+        hb_mc_epa_t epa;
+
+        // Calculate X coordinate of NPA from EVA
+        rc = stride_five_eva_get_x_coord_dram (mc, cfg, src, eva, &x);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to generate x coordinate from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        // Calculate Y coordinate of NPA from EVA
+        rc = stride_five_eva_get_y_coord_dram (mc, cfg, src, eva, &y);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to generate y coordinate from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        // Calculate EPA Portion of NPA from EVA
+        rc = default_eva_get_epa_dram (mc, cfg, eva, &epa, sz);
+        if (rc != HB_MC_SUCCESS) {
+                bsg_pr_err("%s: failed to generate npa from eva 0x%08" PRIx32 ".\n",
+                           __func__,
+                           hb_mc_eva_addr(eva));
+                return rc;
+        }
+
+        *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
+
+        bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "} sz = %08x. \n",
+                   __func__, hb_mc_eva_addr(eva),
+                   hb_mc_coordinate_get_x(*src),
+                   hb_mc_coordinate_get_y(*src),
+                   hb_mc_npa_get_x(npa),
+                   hb_mc_npa_get_y(npa),
+                   hb_mc_npa_get_epa(npa),
+                   uint32_t(*sz));
+
+        return HB_MC_SUCCESS;
+}
+
+/**
+ * Translate an Endpoint Virtual Address in a source tile's address space
+ * to a Network Physical Address
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  src    Coordinate of the tile issuing this #eva
+ * @param[in]  eva    An eva to translate
+ * @param[out] npa    An npa to be set by translating #eva
+ * @param[out] sz     The size in bytes of the NPA segment for the #eva
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int stride_five_eva_to_npa(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *src,
+                       const hb_mc_eva_t *eva,
+                       hb_mc_npa_t *npa, size_t *sz)
+{
+        const hb_mc_coordinate_t *origin;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        origin = (const hb_mc_coordinate_t *) priv;
+
+        if(default_eva_is_dram(eva))
+                return stride_five_eva_to_npa_dram(mc, origin, src, eva, npa, sz);
+        if(default_eva_is_global(eva))
+                return default_eva_to_npa_global(cfg, origin, src, eva, npa, sz);
+        if(default_eva_is_group(eva))
+                return default_eva_to_npa_group(cfg, origin, src, eva, npa, sz);
+        if(default_eva_is_local(eva))
+                return default_eva_to_npa_local(cfg, origin, src, eva, npa, sz);
+
+        bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
+                   __func__, hb_mc_eva_addr(eva));
+        return HB_MC_FAIL;
+}
+
+
+/**
+ * Returns the number of contiguous bytes following an EVA, regardless of
+ * the continuity of the underlying NPA.
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  eva    An eva
+ * @param[out] sz     Number of contiguous bytes remaining in the #eva segment
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int stride_five_eva_size(
+                     hb_mc_manycore_t *mc,
+                     const void *priv,
+                     const hb_mc_eva_t *eva,
+                     size_t *sz)
+{
+        hb_mc_npa_t npa;
+        hb_mc_epa_t epa;
+        const hb_mc_coordinate_t *o;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+        o = (const hb_mc_coordinate_t *) priv;
+
+        if(default_eva_is_dram(eva))
+                return stride_five_eva_to_npa_dram(mc, o, o, eva, &npa, sz);
+        if(default_eva_is_global(eva))
+                return default_eva_to_npa_global(cfg, o, o, eva, &npa, sz);
+        if(default_eva_is_group(eva))
+                return default_eva_to_npa_group(cfg, o, o, eva, &npa, sz);
+        if(default_eva_is_local(eva))
+                return default_eva_to_npa_local(cfg, o, o, eva, &npa, sz);
+
+        bsg_pr_err("%s: EVA 0x%08" PRIx32 " did not map to a known region\n",
+                   __func__, hb_mc_eva_addr(eva));
+        return HB_MC_FAIL;
+
+}
+/**
+ * Translate a Network Physical Address to an Endpoint Virtual Address in a
+ * target tile's address space
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @param[in]  priv   Private data used for this EVA Map
+ * @param[in]  tgt    Coordinates of the target tile
+ * @param[in]  len    Number of tiles in the target tile's group
+ * @param[in]  npa    An npa to translate
+ * @param[out] eva    An eva to set by translating #npa
+ * @param[out] sz     The size in bytes of the EVA segment for the #npa
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int stride_five_npa_to_eva(hb_mc_manycore_t *mc,
+                       const void *priv,
+                       const hb_mc_coordinate_t *tgt,
+                       const hb_mc_npa_t *npa,
+                       hb_mc_eva_t *eva, size_t *sz)
+{
+        const hb_mc_coordinate_t *origin = (const hb_mc_coordinate_t*)priv;
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+        if(default_npa_is_dram(mc, npa, tgt))
+                return stride_five_npa_to_eva_dram(mc, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_host(cfg, npa, tgt))
+                return default_npa_to_eva_host(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_local(cfg, npa, tgt))
+                return default_npa_to_eva_local(cfg, origin, tgt, npa, eva, sz);
+
+        if(default_npa_is_global(cfg, npa, tgt))
+                return default_npa_to_eva_global(cfg, origin, tgt, npa, eva, sz);
+
+        return HB_MC_FAIL;
+}
+
+hb_mc_eva_map_t stride_five_map = {
+        .eva_map_name = "Stride Five Top:L->R Bot:L->R EVA map",
+        .priv = (const void *)(&default_origin),
+        .eva_to_npa = stride_five_eva_to_npa,
+        .eva_size = stride_five_eva_size,
+        .npa_to_eva  = stride_five_npa_to_eva,
+};
+
+// *****************************************************************************
+// stride_seven Map
+//
+// This EVA Map:
+//   - Strides between caches separated by 7
 //
 // The two main differences are:
 //   - stride_seven_eva_get_x_coord_dram
@@ -2561,16 +3372,15 @@ static int stride_seven_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
-        uint32_t idx_mask = MAKE_MASK(default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-                                      + default_get_x_dimlog(cfg) // x-coordinate bits
+        uint32_t idx_mask = MAKE_MASK(default_get_x_dimlog(cfg) // x-coordinate bits
                                       + 1); // Extra bit for Y
         
         // Get the "index" from the EVA. We will multiply by the ruche
         // factor and mod by the number of caches
         uint32_t idx = (hb_mc_eva_addr(eva) >> stripe_log) & idx_mask;
-        uint32_t ruche_factor = 3;
+        uint32_t stride = 7;
 
-        idx = (idx * ruche_factor) % dim.x;
+        idx = (idx * stride) % dim.x;
 
         *x = idx % dim.x;
 
@@ -2621,8 +3431,7 @@ static int stride_seven_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_max_x_coord = default_dram_max_x_coord(cfg, src);
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
-        uint32_t idx_mask = MAKE_MASK(default_get_dram_stripe_size_log(mc) // stripe byte-offset bits
-                                      + default_get_x_dimlog(cfg) // x-coordinate bits
+        uint32_t idx_mask = MAKE_MASK(default_get_x_dimlog(cfg) // x-coordinate bits
                                       + 1); // Extra bit for Y
         
         // Get the "index" from the EVA. We will multiply by stride
@@ -2899,7 +3708,7 @@ int stride_seven_npa_to_eva(hb_mc_manycore_t *mc,
 }
 
 hb_mc_eva_map_t stride_seven_map = {
-        .eva_map_name = "Stride Ruche Top:L->R Bot:L->R EVA map",
+        .eva_map_name = "Stride Seven Top:L->R Bot:L->R EVA map",
         .priv = (const void *)(&default_origin),
         .eva_to_npa = stride_seven_eva_to_npa,
         .eva_size = stride_seven_eva_size,

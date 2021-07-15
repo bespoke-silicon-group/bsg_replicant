@@ -29,18 +29,22 @@
 // Enum for EVA Map. Write this value to the EVA CSR to change EVA maps
 typedef enum __bsg_dpi_tile_eva_map_id_t {
         BSG_DPI_TILE_EVA_MAP_ID_DEFAULT = 0,
-        BSG_DPI_TILE_EVA_MAP_ID_STRIDE = 1,
-        BSG_DPI_TILE_EVA_MAP_ID_LINEAR_TLRBRL = 2,
-        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL = 3,
-        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN = 4,
+        BSG_DPI_TILE_EVA_MAP_ID_LINEAR_TLRBRL = 1,
+        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TWOISH = 2,
+        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_RUCHE = 3,
+        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_FOURISH = 4,
+        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_FIVE = 5,
+        BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN = 6,
         BSG_DPI_TILE_EVA_MAP_ID_MAX = BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN + 1,
 } bsg_dpi_tile_eva_map_id_t;
 
 hb_mc_eva_map_t * bsg_dpi_tile_eva_maps[] =
         {[BSG_DPI_TILE_EVA_MAP_ID_DEFAULT] = &default_map,
-         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE] = &stride_ruche_map,
          [BSG_DPI_TILE_EVA_MAP_ID_LINEAR_TLRBRL] = &linear_tlrbrl_map,
-         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TLRBRL] = &stride_ruche_tlrbrl_map,
+         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_TWOISH] = &stride_twoish_map,
+         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_RUCHE] = &stride_ruche_map,
+         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_FOURISH] = &stride_fourish_map,
+         [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_FIVE] = &stride_five_map,
          [BSG_DPI_TILE_EVA_MAP_ID_STRIDE_SEVEN] = &stride_seven_map
         };
 

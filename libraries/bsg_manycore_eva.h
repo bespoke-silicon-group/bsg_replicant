@@ -155,8 +155,10 @@ extern "C" {
         extern const hb_mc_coordinate_t default_origin;
         extern hb_mc_eva_map_t default_map;
         extern hb_mc_eva_map_t linear_tlrbrl_map;
-        extern hb_mc_eva_map_t stride_ruche_tlrbrl_map;
+        extern hb_mc_eva_map_t stride_twoish_map;
         extern hb_mc_eva_map_t stride_ruche_map;
+        extern hb_mc_eva_map_t stride_fourish_map;
+        extern hb_mc_eva_map_t stride_five_map;
         extern hb_mc_eva_map_t stride_seven_map;
 
         /**
