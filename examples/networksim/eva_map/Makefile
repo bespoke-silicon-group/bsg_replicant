@@ -82,7 +82,7 @@ netsim/simv: bsg_dpi_tile.o
 include $(NETSIM_PATH)/link.mk
 
 # this rule does a sweep across many options
-sweep: $(foreach alloc,normdist 8 9 10,$(foreach els,2 4 8 16 32 64 128,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(stripe)-$(els)-$(mode).deploy))))
+sweep: $(foreach alloc,6,$(foreach els,2 4 8 16 32,$(foreach stripe,1 2 4 8 16 32,$(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,$(alloc)-$(stripe)-$(els)-$(mode).deploy))))
 
 # this rule will generate a directory that can independently run a benchmark in parallel; and then it will run it
 # syntax <reply fifo size>-<vcache stripe words>-<ruchy|ruchydeux|ruchytrois|zero|xstripe|ystripe>.deploy
@@ -115,8 +115,7 @@ summarize:
 RESULTS = $(foreach mode,ruchy ruchydeux ruchytrois zero xstripe ystripe,sum.$(mode))
 $(RESULTS):
 	echo "Allocation,Stripe Size (Words),Cache Response Elements,Cycles"
-	find normdist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' >> $@
-	#find doubledist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "doubledist", $$1, $$2, $$3, $$4}' >> $@
+	find edgedist* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print "normdist", $$1, $$2, $$3, $$4}' >> $@
 	find [0-9]* -iname "*.rpt" -exec grep -H Max '{}' ';' | grep "$(suffix $@)\." |  awk -F'[^0-9]*' '{print $$1, $$2, $$3, $$4}' >> $@
 	python3 $(NETSIM_PATH)/results.py $@
 
