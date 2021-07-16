@@ -160,6 +160,7 @@ extern "C" {
         extern hb_mc_eva_map_t stride_fourish_map;
         extern hb_mc_eva_map_t stride_five_map;
         extern hb_mc_eva_map_t stride_seven_map;
+        extern hb_mc_eva_map_t stride_eightish_map;
 
         /**
          * Get the name of an eva map.
