@@ -13,12 +13,13 @@ df = df.set_index(["Stripe Size (Words)", "Cache Response Elements", "Allocation
 
 df.columns = df.columns.droplevel(0)
 
+df.columns = df.columns.values.astype(str)
+
 ints = filter(str.isnumeric, df.columns.values)
 ints = list(map(int, ints))
 ints.sort()
 ints = map(str, ints)
 strs = filter(lambda x: not str.isnumeric(x), df.columns.values)
-
 
 df = df[chain(strs, ints)]
 
