@@ -1,8 +1,8 @@
 // BlackParrot platform-specific header file
 // This file contains manycore-specific platform functions and constants
 
-#ifndef BP_HB_PLATFORM_H
-#define BP_HB_PLATFORM_H
+#ifndef HB_BP_PLATFORM_H
+#define HB_BP_PLATFORM_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,14 +37,14 @@ extern "C" {
 #endif
 
 // Memory mapped addresses to interact with the BlackParrot host (aka simulator)
-#define HB_MC_HOST_EPA_ARGS_START 0x0000
-#define HB_MC_HOST_EPA_ARGS_FINISH 0x00FF
-#define HB_MC_HOST_EPA_CONFIG_START 0x0100
-#define HB_MC_HOST_EPA_CONFIG_FINISH 0x01FF
-#define HB_MC_HOST_EPA_RESET_DONE 0x0200
-#define HB_MC_HOST_EPA_TX_VACANT 0x0300
+#define HB_BP_HOST_EPA_ARGS_START 0x0000
+#define HB_BP_HOST_EPA_ARGS_FINISH 0x00FF
+#define HB_BP_HOST_EPA_CONFIG_START 0x0100
+#define HB_BP_HOST_EPA_CONFIG_FINISH 0x01FF
+#define HB_BP_HOST_EPA_RESET_DONE 0x0200
+#define HB_BP_HOST_EPA_TX_VACANT 0x0300
 
-#define HB_MC_HOST_OP_FINISH_CODE 0xFFFFFFFF
+#define HB_BP_HOST_OP_FINISH_CODE 0xFFFFFFFF
 #define DROMAJO_RW_FAIL_CODE 0xFFFFFFFF
 
 // Memory mapped addresses to interact with the manycore bridge
@@ -66,20 +66,20 @@ extern "C" {
  * Reads the manycore bridge for number of credits used in the endpoint
  * @returns number of credits in the manycore bridge enddpoint
  */
-int bp_hb_get_credits_used(int *credits_used);
+int hb_bp_get_credits_used(int *credits_used);
 
 /*
  * Writes a 128-bit manycore packet in 32-bit chunks to the manycore bridge FIFO
  * @param[in] pkt --> Pointer to the manycore packet
  */
-int bp_hb_write_to_mc_bridge(hb_mc_packet_t *pkt);
+int hb_bp_write_to_mc_bridge(hb_mc_packet_t *pkt);
 
 /*
  * Checks if the MC to BP FIFO contains any entries
  * @param[in] type --> Type of FIFO to read from
  * @returns number of entries in the MC to BP FIFO
  */
-int bp_hb_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type);
+int hb_bp_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type);
 
 /*
  * Reads the manycore bridge FIFOs in 32-bit chunks to form the 128-bit packet
@@ -87,7 +87,7 @@ int bp_hb_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type);
  * @param[in] type --> Type of FIFO to read from
  * @returns HB_MC_SUCCESS on success, HB_MC_FAIL if FIFO type is unknown
  */
-int bp_hb_read_from_mc_bridge(hb_mc_packet_t *pkt, hb_mc_fifo_rx_t type);
+int hb_bp_read_from_mc_bridge(hb_mc_packet_t *pkt, hb_mc_fifo_rx_t type);
 
 #ifdef __cplusplus
 }

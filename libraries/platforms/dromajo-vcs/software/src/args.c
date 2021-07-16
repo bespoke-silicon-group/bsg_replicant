@@ -4,7 +4,7 @@
  * loads them into corresponding registers so that BlackParrot can access them
  */
 
-#include <bp_hb_platform.h>
+#include <hb_bp_platform.h>
 #include <bsg_manycore.h>
 #include <bsg_manycore_packet.h>
 #include <stdio.h>
@@ -30,7 +30,6 @@ void __init_args(void) {
   char *bufptr = buffer;
   
   // Create a packet for the x86 host
-  // BlackParrot FIFO interface is at POD (X, Y) = (0, 1), SUBCOORD (X, Y) = (0, 1)
   args_req_pkt.request.x_dst = HOST_X_COORD;
   args_req_pkt.request.y_dst = HOST_Y_COORD;
   args_req_pkt.request.x_src = BP_HOST_LINK_X;
@@ -43,14 +42,14 @@ void __init_args(void) {
     // The platform setup in simulation ensures that this packet will not go over the network so
     // we don't need to check for credits. Also, this code is executed before the CUDA-lite
     // program starts.
-    args_req_pkt.request.addr = HB_MC_HOST_EPA_ARGS_START + arg_index;
-    err = bp_hb_write_to_mc_bridge(&args_req_pkt);
-    err = bp_hb_read_from_mc_bridge(&args_resp_pkt, HB_MC_FIFO_RX_RSP);
+    args_req_pkt.request.addr = HB_BP_HOST_EPA_ARGS_START + arg_index;
+    err = hb_bp_write_to_mc_bridge(&args_req_pkt);
+    err = hb_bp_read_from_mc_bridge(&args_resp_pkt, HB_MC_FIFO_RX_RSP);
     if (err != HB_MC_SUCCESS)
       bp_finish(err);
 
     uint32_t data = args_resp_pkt.response.data;
-    if (data != HB_MC_HOST_OP_FINISH_CODE) {
+    if (data != HB_BP_HOST_OP_FINISH_CODE) {
       uint32_t mask = 0xFF000000;
       uint8_t byte;
       for(int i = 0; i < 4; i++) {

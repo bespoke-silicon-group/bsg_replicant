@@ -53,13 +53,19 @@
 
 #include <bsg_manycore_regression.h>
 
-#include <bp_hb_platform.h>
+#include <hb_bp_platform.h>
 
 // Define invisible library functions
 declare_hb_mc_get_bits
 declare_bsg_printing
 
+#ifndef NUM_DROMAJO_INSTR_PER_TICK
 #define NUM_DROMAJO_INSTR_PER_TICK 1000
+#endif
+
+#ifndef NUM_TX_FIFO_CHK_PER_TICK
+#define NUM_TX_FIFO_CHK_PER_TICK 100
+#endif
 
 class SimulationWrapper{
   // This is the generic pointer for implementation-specific
@@ -89,7 +95,7 @@ public:
   
   std::string getRoot();
 
-  // Causes time to proceed by 1 unit
+  // Advances to the next clock edge
   void advance_time();
 
   // DPI functions
@@ -104,8 +110,8 @@ public:
   int dromajo_receive_packet();
   int dromajo_set_credits();
 
-  // Evaluates one instruction in RISC-V
-  // and forwards packets between Dromajo and the manycore
+  // Evaluates a maximum of NUM_DROMAJO_INSTR_PER_TICK instructions
+  // in RISC-V and forwards packets between Dromajo and the manycore
   int eval();
 };
 #endif // __BSG_MANYCORE_SIMULATOR_HPP

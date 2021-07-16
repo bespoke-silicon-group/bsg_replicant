@@ -30,7 +30,7 @@
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_config.h>
 
-#include <bp_hb_platform.h>
+#include <hb_bp_platform.h>
 
 #include <set>
 
@@ -54,7 +54,7 @@
  * @param[in] credits_used --> Pointer to a location in memory that will hold the number of credits used
  * @returns HB_MC_SUCCESS
  */
-int bp_hb_get_credits_used(int *credits_used) {
+int hb_bp_get_credits_used(int *credits_used) {
   uint32_t *bp_to_mc_req_credits_addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + BP_TO_MC_REQ_CREDITS_ADDR);
   *credits_used = (int) (*bp_to_mc_req_credits_addr);
   if (*credits_used < 0) {
@@ -70,7 +70,7 @@ int bp_hb_get_credits_used(int *credits_used) {
  * @returns HB_MC_SUCCESS
  * TODO: Implement error checking (Requires some modifications in Dromajo)
  */
-int bp_hb_write_to_mc_bridge(hb_mc_packet_t *pkt) {
+int hb_bp_write_to_mc_bridge(hb_mc_packet_t *pkt) {
   uint32_t *bp_to_mc_req_fifo_addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + BP_TO_MC_REQ_FIFO_ADDR);
   for(int i = 0; i < 4; i++) {
     *bp_to_mc_req_fifo_addr = pkt->words[i];
@@ -85,7 +85,7 @@ int bp_hb_write_to_mc_bridge(hb_mc_packet_t *pkt) {
  * @param[in] type --> Type of FIFO to read from
  * @returns HB_MC_SUCCESS on success or HB_MC_FAIL on fail
  */
-int bp_hb_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
+int hb_bp_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
   uint32_t *addr;
   switch (type) {
     case HB_MC_FIFO_RX_REQ: addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + MC_TO_BP_REQ_ENTRIES_ADDR);
@@ -115,7 +115,7 @@ int bp_hb_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
  * @param[in] type --> Type of FIFO to read from
  * @returns HB_MC_SUCCESS on success, HB_MC_FAIL if FIFO type is unknown
  */
-int bp_hb_read_from_mc_bridge(hb_mc_packet_t *pkt, hb_mc_fifo_rx_t type) {
+int hb_bp_read_from_mc_bridge(hb_mc_packet_t *pkt, hb_mc_fifo_rx_t type) {
   uint32_t *addr;
   switch(type) {
     case HB_MC_FIFO_RX_REQ: addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + MC_TO_BP_REQ_FIFO_ADDR);
@@ -241,12 +241,12 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_
 
   int credits_used = 0;
   do {
-    err = bp_hb_get_credits_used(&credits_used);
+    err = hb_bp_get_credits_used(&credits_used);
   } while ((err != HB_MC_SUCCESS) || ((max_credits - credits_used) <= 0));
 
   // Don't need to check for error code since this operation should always be a success since it is not going
   // over the network
-  err = bp_hb_write_to_mc_bridge(packet);
+  err = hb_bp_write_to_mc_bridge(packet);
   if (err != HB_MC_SUCCESS) {
     bsg_pr_err("Write to the host request FIFO failed!");
     return err;
@@ -276,10 +276,10 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_f
   int err;
   int num_entries = 0;
   do {
-    err = bp_hb_get_fifo_entries(&num_entries, type);
+    err = hb_bp_get_fifo_entries(&num_entries, type);
   } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
 
-  err = bp_hb_read_from_mc_bridge(packet, type);
+  err = hb_bp_read_from_mc_bridge(packet, type);
   if (err != HB_MC_SUCCESS) {
     bsg_pr_err("Read from the %s FIFO did not succeed", typestr);
     return HB_MC_INVALID;
@@ -301,43 +301,42 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_c
   int num_entries = 0;
   int err;
 
-  if (idx < HB_MC_CONFIG_MAX)
-  {
-    config_req_pkt.request.x_dst = HOST_X_COORD;
-    config_req_pkt.request.y_dst = HOST_Y_COORD;
-    config_req_pkt.request.x_src = BP_HOST_LINK_X;
-    config_req_pkt.request.y_src = BP_HOST_LINK_Y;
-    config_req_pkt.request.op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD;
-    config_req_pkt.request.payload = 0;
-    config_req_pkt.request.reg_id = 0;
-    config_req_pkt.request.addr = HB_MC_HOST_EPA_CONFIG_START + idx;
+  config_req_pkt.request.x_dst = HOST_X_COORD;
+  config_req_pkt.request.y_dst = HOST_Y_COORD;
+  config_req_pkt.request.x_src = BP_HOST_LINK_X;
+  config_req_pkt.request.y_src = BP_HOST_LINK_Y;
+  config_req_pkt.request.op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD;
+  config_req_pkt.request.payload = 0;
+  config_req_pkt.request.reg_id = 0;
+  // Note 1: This will not translate to hardware correctly because
+  // addr is word addressable. Works in C/C++ because the C code considers
+  // the address as a byte addressable field.
+  // Note 2: The onus is on the simulator (i.e. x86 code) to check if the config
+  // index is within bounds before accessing the DPI ROM.
+  config_req_pkt.request.addr = HB_BP_HOST_EPA_CONFIG_START + idx;
 
-    // Note: Potentially dangerous to write to the FIFO without checking for credits
-    // We get back credits used and not credits remaining and without the configuration
-    // there is no way to know the credits remaining.
-    err = bp_hb_write_to_mc_bridge(&config_req_pkt);
-    if (err != HB_MC_SUCCESS) {
-      bsg_pr_err("Write to the host request FIFO failed!");
-      return err;
-    }
-
-    do {
-      err = bp_hb_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
-    } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
-
-    err = bp_hb_read_from_mc_bridge(&config_resp_pkt, HB_MC_FIFO_RX_RSP);
-    if (err != HB_MC_SUCCESS) {
-      bsg_pr_err("Config read failed\n");
-      return HB_MC_FAIL;
-    }
-
-    uint32_t data = config_resp_pkt.response.data;
-    *config = (data != HB_MC_HOST_OP_FINISH_CODE) ? data : 0;
-
-    return HB_MC_SUCCESS;
+  // Note: Potentially dangerous to write to the FIFO without checking for credits
+  // We get back credits used and not credits remaining and without the configuration
+  // there is no way to know the credits remaining.
+  err = hb_bp_write_to_mc_bridge(&config_req_pkt);
+  if (err != HB_MC_SUCCESS) {
+    bsg_pr_err("Write to the host request FIFO failed!");
+    return err;
   }
 
-  return HB_MC_INVALID;
+  do {
+    err = hb_bp_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
+  } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
+
+  err = hb_bp_read_from_mc_bridge(&config_resp_pkt, HB_MC_FIFO_RX_RSP);
+  if (err != HB_MC_SUCCESS) {
+    bsg_pr_err("Config read failed\n");
+    return HB_MC_FAIL;
+  }
+
+  *config = config_resp_pkt.response.data;
+
+  return HB_MC_SUCCESS;
 }
 
 /**
@@ -367,21 +366,21 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
   fence_req_pkt.request.op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD;
   fence_req_pkt.request.payload = 0;
   fence_req_pkt.request.reg_id = 0;
-  fence_req_pkt.request.addr = HB_MC_HOST_EPA_TX_VACANT; // x86 Host address to poll tx vacancy
+  fence_req_pkt.request.addr = HB_BP_HOST_EPA_TX_VACANT; // x86 Host address to poll tx vacancy
 
   do
   {
-    err = bp_hb_get_credits_used(&credits_used);
+    err = hb_bp_get_credits_used(&credits_used);
     // In a real system, this function call makes no sense since we will be sending packets to the
     // host on the network and are trying to check for credits to be zero and complete the fence.
     // It is fine here because of the system setup.
-    err |= bp_hb_write_to_mc_bridge(&fence_req_pkt);
+    err |= hb_bp_write_to_mc_bridge(&fence_req_pkt);
 
     do {
-      err = bp_hb_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
+      err = hb_bp_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
     } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
 
-    err |= bp_hb_read_from_mc_bridge(&fence_resp_pkt, HB_MC_FIFO_RX_RSP);
+    err |= hb_bp_read_from_mc_bridge(&fence_resp_pkt, HB_MC_FIFO_RX_RSP);
     is_vacant = fence_resp_pkt.response.data;
   } while ((err == HB_MC_SUCCESS) && !((credits_used == 0) && is_vacant));
 
@@ -480,13 +479,13 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc) {
   reset_req_pkt.request.op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD;
   reset_req_pkt.request.payload = 0;
   reset_req_pkt.request.reg_id = 0;
-  reset_req_pkt.request.addr = HB_MC_HOST_EPA_RESET_DONE;
+  reset_req_pkt.request.addr = HB_BP_HOST_EPA_RESET_DONE;
 
   do {
     // The platform setup ensures that this packet will not go over the network so
     // we don't need to check for credits.
-    err = bp_hb_write_to_mc_bridge(&reset_req_pkt);
-    err |= bp_hb_read_from_mc_bridge(&reset_resp_pkt, HB_MC_FIFO_RX_RSP);
+    err = hb_bp_write_to_mc_bridge(&reset_req_pkt);
+    err |= hb_bp_read_from_mc_bridge(&reset_resp_pkt, HB_MC_FIFO_RX_RSP);
 
     data = reset_resp_pkt.response.data;
   } while((err != HB_MC_SUCCESS) || (data == 0));

@@ -11,7 +11,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <bsg_newlib_intf.h>
-#include <bp_hb_platform.h>
+#include <hb_bp_platform.h>
 
 #define BP_CFG_BASE_ADDR 0x00200000
 

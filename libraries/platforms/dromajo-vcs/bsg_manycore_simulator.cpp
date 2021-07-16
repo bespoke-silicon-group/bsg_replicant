@@ -215,11 +215,9 @@ int SimulationWrapper::dromajo_transmit_packet() {
   int err;
   __m128i *pkt;
 
-  // Check if FIFO has an element and hence ready to transmit
   mc_fifo_type_t type = FIFO_HOST_TO_MC_REQ;
-  bool is_empty = mc_is_fifo_empty(type);
 
-  if (!is_empty) {
+  do {
     // Read the FIFO head pointer for all 32-bit FIFOs
     dromajo_to_mc_packet.words[0] = host_to_mc_req_fifo->fifo[0].front();
     dromajo_to_mc_packet.words[1] = host_to_mc_req_fifo->fifo[1].front();
@@ -241,9 +239,9 @@ int SimulationWrapper::dromajo_transmit_packet() {
           // Fixme: Is there no struct for response opcode like in the manycore hardware
           host_to_dromajo_packet.response.op = dromajo_to_mc_packet.request.op_v2;
           switch (dromajo_to_mc_packet.request.addr) {
-            case HB_MC_HOST_EPA_ARGS_START ... HB_MC_HOST_EPA_ARGS_FINISH:
+            case HB_BP_HOST_EPA_ARGS_START ... HB_BP_HOST_EPA_ARGS_FINISH:
             {
-              uint32_t idx = dromajo_to_mc_packet.request.addr - HB_MC_HOST_EPA_ARGS_START;
+              uint32_t idx = dromajo_to_mc_packet.request.addr - HB_BP_HOST_EPA_ARGS_START;
               int num_characters = 0;
               // If all arguments have been read or there are no arguments to read
               // send a finish code
@@ -262,23 +260,28 @@ int SimulationWrapper::dromajo_transmit_packet() {
                 }
               }
               else
-                data = HB_MC_HOST_OP_FINISH_CODE;
+                data = HB_BP_HOST_OP_FINISH_CODE;
             }
             break;
-            case HB_MC_HOST_EPA_CONFIG_START ... HB_MC_HOST_EPA_CONFIG_FINISH:
+            case HB_BP_HOST_EPA_CONFIG_START ... HB_BP_HOST_EPA_CONFIG_FINISH:
             {
-              uint32_t idx = dromajo_to_mc_packet.request.addr - HB_MC_HOST_EPA_CONFIG_START;
-              data = (idx <= HB_MC_CONFIG_MAX) ? dpi->config[idx] : HB_MC_HOST_OP_FINISH_CODE;
+              uint32_t idx = dromajo_to_mc_packet.request.addr - HB_BP_HOST_EPA_CONFIG_START;
+              if (idx <= HB_MC_CONFIG_MAX)
+                data = dpi->config[idx];
+              else {
+                bsg_pr_err("Configuration ROM index out of bounds\n");
+                return HB_MC_NOTFOUND;
+              }
             }
             break;
-            case HB_MC_HOST_EPA_RESET_DONE:
+            case HB_BP_HOST_EPA_RESET_DONE:
             {
               bool done;
               dpi->reset_is_done(done);
               data = done ? 1 : 0;
             }
             break;
-            case HB_MC_HOST_EPA_TX_VACANT:
+            case HB_BP_HOST_EPA_TX_VACANT:
             {
               bool is_vacant;
               dpi->tx_is_vacant(is_vacant);
@@ -373,10 +376,10 @@ int SimulationWrapper::dromajo_transmit_packet() {
         err = dpi->tx_req(*pkt, expect_response);
       } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
           (err == BSG_NONSYNTH_DPI_NO_CREDITS ||
-           err == BSG_NONSYNTH_DPI_NO_CAPACITY ||
-           err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-           err == BSG_NONSYNTH_DPI_BUSY       ||
-           err == BSG_NONSYNTH_DPI_NOT_READY));
+            err == BSG_NONSYNTH_DPI_NO_CAPACITY ||
+            err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+            err == BSG_NONSYNTH_DPI_BUSY       ||
+            err == BSG_NONSYNTH_DPI_NOT_READY));
 
       if (err == BSG_NONSYNTH_DPI_SUCCESS) {
         for (int i = 0;i < 4; i++)
@@ -392,7 +395,7 @@ int SimulationWrapper::dromajo_transmit_packet() {
       if (err != HB_MC_SUCCESS)
         return err;
     }
-  }
+  } while (!mc_is_fifo_empty(type));
 
   return HB_MC_SUCCESS;
 }
@@ -408,47 +411,43 @@ int SimulationWrapper::dromajo_receive_packet() {
   __m128i pkt;
 
   // Read from the manycore request FIFO
-  // At every time step we are polling the request FIFO to see if there
+  // At every clock edge we are polling the request FIFO to see if there
   // is a packet. If there is no packet (i.e err == BSG_NONSYNTH_NOT_VALID)
   // we must move on
   do {
-    advance_time();
-    err = dpi->rx_req(pkt);
-  } while (err != BSG_NONSYNTH_DPI_SUCCESS    &&
-          (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-           err == BSG_NONSYNTH_DPI_BUSY       ||
-           err == BSG_NONSYNTH_DPI_INVALID));
+    do {
+      advance_time();
+      err = dpi->rx_req(pkt);
+    } while (err != BSG_NONSYNTH_DPI_SUCCESS    &&
+            (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+            err == BSG_NONSYNTH_DPI_BUSY       ||
+            err == BSG_NONSYNTH_DPI_INVALID));
 
-  if (err == BSG_NONSYNTH_DPI_SUCCESS) {
-    mc_to_dromajo_req_packet = reinterpret_cast<hb_mc_packet_t *>(&pkt);
-    for (int i = 0; i < 4; i++) {
-      mc_to_host_req_fifo->fifo[i].push(mc_to_dromajo_req_packet->words[i]);
+    if (err == BSG_NONSYNTH_DPI_SUCCESS) {
+      mc_to_dromajo_req_packet = reinterpret_cast<hb_mc_packet_t *>(&pkt);
+      for (int i = 0; i < 4; i++) {
+        mc_to_host_req_fifo->fifo[i].push(mc_to_dromajo_req_packet->words[i]);
+      }
     }
-  }
-  else if (err != BSG_NONSYNTH_DPI_NOT_VALID){
-    bsg_pr_err("Failed to receive manycore request packet");
-    return HB_MC_FAIL;
-  }
+  } while (err != BSG_NONSYNTH_DPI_NOT_VALID);
 
   // Read from the manycore response FIFO
   do {
-    advance_time();
-    err = dpi->rx_rsp(pkt);
-  } while (err != BSG_NONSYNTH_DPI_SUCCESS    &&
-          (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-           err == BSG_NONSYNTH_DPI_BUSY       ||
-           err == BSG_NONSYNTH_DPI_INVALID));
+    do {
+      advance_time();
+      err = dpi->rx_rsp(pkt);
+    } while (err != BSG_NONSYNTH_DPI_SUCCESS    &&
+            (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
+            err == BSG_NONSYNTH_DPI_BUSY       ||
+            err == BSG_NONSYNTH_DPI_INVALID));
 
-  if (err == BSG_NONSYNTH_DPI_SUCCESS) {
-    mc_to_dromajo_resp_packet = reinterpret_cast<hb_mc_packet_t *>(&pkt);
-    for (int i = 0; i < 4; i++) {
-      mc_to_host_resp_fifo->fifo[i].push(mc_to_dromajo_resp_packet->words[i]);
+    if (err == BSG_NONSYNTH_DPI_SUCCESS) {
+      mc_to_dromajo_resp_packet = reinterpret_cast<hb_mc_packet_t *>(&pkt);
+      for (int i = 0; i < 4; i++) {
+        mc_to_host_resp_fifo->fifo[i].push(mc_to_dromajo_resp_packet->words[i]);
+      }
     }
-  }
-  else if (err != BSG_NONSYNTH_DPI_NOT_VALID) {
-    bsg_pr_err("Failed to receive manycore response packet");
-    return HB_MC_FAIL;
-  }
+  } while (err != BSG_NONSYNTH_DPI_NOT_VALID);
 
   return HB_MC_SUCCESS;
 }
@@ -477,7 +476,10 @@ int SimulationWrapper::dromajo_set_credits() {
 }
 
 int SimulationWrapper::eval(){
-  // Execute 100 instructions on Dromajo
+  bool transmit = false;
+  int err;
+
+  // Execute NUM_DROMAJO_INSTR_PER_TICK instructions on Dromajo
   for(int i = 0; i < NUM_DROMAJO_INSTR_PER_TICK; i++) {
     if (!dromajo_step()) {
       // Fixme: Dromajo could also terminate due to premature errors.
@@ -487,22 +489,36 @@ int SimulationWrapper::eval(){
       return HB_MC_SUCCESS;
     }
 
-    int err;
-    // Poll for packets to be transmitted
+    // Check if transmit FIFO has an element and hence ready to transmit
+    // This operation is relatively low overhead since only a single FIFO's
+    // empty status is being checked. Hence, we can afford to do it every 100
+    // iterations.
+    if (i % NUM_TX_FIFO_CHK_PER_TICK) {
+      mc_fifo_type_t type = FIFO_HOST_TO_MC_REQ;
+      bool is_empty = mc_is_fifo_empty(type);
+      if (!is_empty) {
+        transmit = true;
+        break;
+      }
+    }
+  }
+
+  if (transmit) {
+    // Poll for packets to be transmitted and transmit them
     bsg_pr_dbg("Checking for packets to transmit\n");
     err = dromajo_transmit_packet();
     if (err != HB_MC_SUCCESS)
       return err;
-
-    // Poll for packets to be received
-    bsg_pr_dbg("Checking for packets to receive\n");
-    err = dromajo_receive_packet();
-    if (err != HB_MC_SUCCESS)
-      return err;
   }
 
-  // Advance time 1 unit
-  advance_time();
+  // Poll for packets to be received and push them to Dromajo
+  // This involves a DPI call and might incur a large overhead, therefore
+  // check for packets to receive only once per tick
+  bsg_pr_dbg("Checking for packets to receive\n");
+  err = dromajo_receive_packet();
+  if (err != HB_MC_SUCCESS)
+    return err;
+
   return HB_MC_SUCCESS;
 }
 

@@ -46,8 +46,9 @@ INCLUDES   += -I$(BLACKPARROT_SDK_DIR)/perch
 
 CXXFLAGS   += $(DEFINES) -march=rv64imafd -mabi=lp64 -mcmodel=medany
 CFLAGS     += $(DEFINES) -march=rv64imafd -mabi=lp64 -mcmodel=medany
-ASFLAGS     += $(DEFINES) -march=rv64imafd -mabi=lp64 -mcmodel=medany
+ASFLAGS    += $(DEFINES) -march=rv64imafd -mabi=lp64 -mcmodel=medany
 
+# Default to RISC-V but overridden by the flow to other compilers as needed
 CC ?= $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-gcc
 CXX ?= $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-g++
 OBJDUMP ?= $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-objdump
@@ -65,7 +66,7 @@ OBJDUMP ?= $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-objdump
 	$(CC) -c -o $@ $< $(INCLUDES) $(ASFLAGS)
 
 %.dis: %.elf
-	$(OBJDUMP) -d $^ > $@
+	$(OBJDUMP) -d -t $^ > $@
 
 .PRECIOUS: %.o
 
