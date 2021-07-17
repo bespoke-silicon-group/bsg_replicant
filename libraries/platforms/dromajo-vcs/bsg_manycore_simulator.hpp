@@ -78,10 +78,17 @@ class SimulationWrapper{
   dromajo_cosim_state_t *dromajo;
   // Pointer to the manycore DPI controller
   bsg_nonsynth_dpi::dpi_manycore<HB_MC_CONFIG_MAX> *dpi;
+  // Fields to keep track of arguments
+  int argc;
+  char **argv;
+  int char_index;
 
 public:
   SimulationWrapper();
   ~SimulationWrapper();
+
+  // Set the argument fields to pass them into Dromajo
+  void set_args(int argc, char **argv);
 
   // Change the assertion state. 
 

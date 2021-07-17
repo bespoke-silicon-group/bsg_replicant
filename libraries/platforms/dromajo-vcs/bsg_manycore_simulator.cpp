@@ -39,15 +39,10 @@ extern "C" {
   void bsg_dpi_next();
 }
 
-// Global variables to store arguments
-int _argc;
-char **_argv;
-static int char_index = 0;
-
 ////////////////////////////// SimulationWrapper functions //////////////////////////////
 
 // Constructor
-SimulationWrapper::SimulationWrapper(){
+SimulationWrapper::SimulationWrapper() {
   root = new std::string("replicant_tb_top");
   std::string mc_dpi = *root + ".mc_dpi";
   top = svGetScopeFromName(mc_dpi.c_str());
@@ -64,13 +59,22 @@ SimulationWrapper::SimulationWrapper(){
   if (!dpi) {
     bsg_pr_err("Failed to initialize DPI pointer\n");
   }
+
+  // Initialize the argument character counter
+  char_index = 0;
 }
 
 // Destructor
-SimulationWrapper::~SimulationWrapper(){
+SimulationWrapper::~SimulationWrapper() {
   dpi_cleanup();
   dromajo_cosim_fini(dromajo);
   this->top = nullptr;
+}
+
+// Sets the arguments
+void SimulationWrapper::set_args(int argc, char **argv) {
+  this->argc = argc;
+  this->argv = argv;
 }
 
 // Advances time to the next clock edge
@@ -241,15 +245,16 @@ int SimulationWrapper::dromajo_transmit_packet() {
           switch (dromajo_to_mc_packet.request.addr) {
             case HB_BP_HOST_EPA_ARGS_START ... HB_BP_HOST_EPA_ARGS_FINISH:
             {
-              uint32_t idx = dromajo_to_mc_packet.request.addr - HB_BP_HOST_EPA_ARGS_START;
+              // Argument indexes for x86 should be byte addressable but the hardware uses word addresses
+              uint32_t arg_index = ((dromajo_to_mc_packet.request.addr - HB_BP_HOST_EPA_ARGS_START) >> 2);
               int num_characters = 0;
               // If all arguments have been read or there are no arguments to read
               // send a finish code
-              if ((idx != _argc) && (_argc != 0)) {
+              if ((arg_index != argc) && (argc != 0)) {
                 // Copy 4 bytes of the arguments
                 for(int i = 0; i < 4; i++) {
-                  if (_argv[idx][char_index] != '\0') {
-                    data = (data << 8) | _argv[idx][char_index];
+                  if (argv[arg_index][char_index] != '\0') {
+                    data = (data << 8) | argv[arg_index][char_index];
                     num_characters++;
                     char_index++;
                   }
@@ -265,7 +270,7 @@ int SimulationWrapper::dromajo_transmit_packet() {
             break;
             case HB_BP_HOST_EPA_CONFIG_START ... HB_BP_HOST_EPA_CONFIG_FINISH:
             {
-              uint32_t idx = dromajo_to_mc_packet.request.addr - HB_BP_HOST_EPA_CONFIG_START;
+              uint32_t idx = ((dromajo_to_mc_packet.request.addr - HB_BP_HOST_EPA_CONFIG_START) >> 2);
               if (idx <= HB_MC_CONFIG_MAX)
                 data = dpi->config[idx];
               else {
@@ -594,10 +599,6 @@ static void get_argv(char * args, int argc, char **argv){
  * @returns
  */
 int vcs_main(int argc, char **argv) {
-  // Push command-line arguments into global variables
-  _argc = argc;
-  _argv = argv;
-
   // Initialize Host
   SimulationWrapper *host = new SimulationWrapper();
   if (!host) {
@@ -605,7 +606,13 @@ int vcs_main(int argc, char **argv) {
     return HB_MC_FAIL;
   }
 
+  // Assign arguments
+  host->set_args(argc, argv);
+
   int err;
+  // TODO: Currently the simulation terminates by encoding the error code and the core
+  // ID in the 32-bit data field of a finish packet sent to the host. Need to come up
+  // with a more elegant solution for this.
   do {
     err = host->eval();
     // Codes greater than 0 can be used to terminate a program

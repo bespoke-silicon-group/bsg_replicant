@@ -239,13 +239,13 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_
     return HB_MC_NOIMPL;
   }
 
+  // Don't need to check for error code since this operation should always be a success since it is not going
+  // over the network
   int credits_used = 0;
   do {
     err = hb_bp_get_credits_used(&credits_used);
   } while ((err != HB_MC_SUCCESS) || ((max_credits - credits_used) <= 0));
 
-  // Don't need to check for error code since this operation should always be a success since it is not going
-  // over the network
   err = hb_bp_write_to_mc_bridge(packet);
   if (err != HB_MC_SUCCESS) {
     bsg_pr_err("Write to the host request FIFO failed!");
@@ -308,12 +308,9 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_c
   config_req_pkt.request.op_v2 = HB_MC_PACKET_OP_REMOTE_LOAD;
   config_req_pkt.request.payload = 0;
   config_req_pkt.request.reg_id = 0;
-  // Note 1: This will not translate to hardware correctly because
-  // addr is word addressable. Works in C/C++ because the C code considers
-  // the address as a byte addressable field.
-  // Note 2: The onus is on the simulator (i.e. x86 code) to check if the config
+  // Note: The onus is on the simulator (i.e. x86 code) to check if the config
   // index is within bounds before accessing the DPI ROM.
-  config_req_pkt.request.addr = HB_BP_HOST_EPA_CONFIG_START + idx;
+  config_req_pkt.request.addr = HB_BP_HOST_EPA_CONFIG_START + (idx << 2);
 
   // Note: Potentially dangerous to write to the FIFO without checking for credits
   // We get back credits used and not credits remaining and without the configuration
