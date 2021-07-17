@@ -919,6 +919,11 @@ __argp_parse (const struct argp *argp, int argc, char **argv, unsigned flags,
   // Forward declare the struct pointers since malloc is being used instead of alloca
   struct argp_child *child;
   struct argp *top_argp;
+
+  // Set these to NULL when not used
+  child = NULL;
+  top_argp = NULL;
+
   if (! (flags & ARGP_NO_HELP))
   /* Add our own options.  */
   {
@@ -930,7 +935,7 @@ __argp_parse (const struct argp *argp, int argc, char **argv, unsigned flags,
 
     /* TOP_ARGP has no options, it just serves to group the user & default
     argps.  */
-    memset (top_argp, 0, sizeof (*top_argp));
+    memset (top_argp, 0, sizeof (struct argp));
     top_argp->children = child;
 
     memset (child, 0, 4 * sizeof (struct argp_child));
@@ -961,7 +966,7 @@ __argp_parse (const struct argp *argp, int argc, char **argv, unsigned flags,
   // alloca automatically freed the memory when the function returned
   // but since we are using malloc, we need to explicitly free it to
   // avoid memory leaks
-  free(child);
+  free(top_argp->children);
   free(top_argp);
 
   return err;

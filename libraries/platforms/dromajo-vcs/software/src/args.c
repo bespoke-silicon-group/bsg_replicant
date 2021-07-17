@@ -42,7 +42,7 @@ void __init_args(void) {
     // The platform setup in simulation ensures that this packet will not go over the network so
     // we don't need to check for credits. Also, this code is executed before the CUDA-lite
     // program starts.
-    args_req_pkt.request.addr = HB_BP_HOST_EPA_ARGS_START + arg_index;
+    args_req_pkt.request.addr = HB_BP_HOST_EPA_ARGS_START + (arg_index << 2);
     err = hb_bp_write_to_mc_bridge(&args_req_pkt);
     err = hb_bp_read_from_mc_bridge(&args_resp_pkt, HB_MC_FIFO_RX_RSP);
     if (err != HB_MC_SUCCESS)
