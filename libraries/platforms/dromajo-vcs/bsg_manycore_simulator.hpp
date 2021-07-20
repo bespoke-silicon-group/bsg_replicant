@@ -104,6 +104,8 @@ public:
 
   // Advances to the next clock edge
   void advance_time();
+  // Advances time by N clock edges
+  void advance_time_cycles(int N);
 
   // DPI functions
   int dpi_fifo_drain(hb_mc_fifo_rx_t);

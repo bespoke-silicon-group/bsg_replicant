@@ -85,6 +85,15 @@ void SimulationWrapper::advance_time() {
   svSetScope(prev);
 }
 
+// Advances time by N clock edges
+void SimulationWrapper::advance_time_cycles(int N) {
+  svScope prev;
+  prev = svSetScope(top);
+  for (int i = 0; i < N; i++)
+    bsg_dpi_next();
+  svSetScope(prev);
+}
+
 // Does nothing. Turning on/off assertions is only supported in
 // Verilator.
 void SimulationWrapper::assertOn(bool val){
@@ -220,6 +229,7 @@ int SimulationWrapper::dromajo_transmit_packet() {
   __m128i *pkt;
 
   mc_fifo_type_t type = FIFO_HOST_TO_MC_REQ;
+  bool is_empty;
 
   do {
     // Read the FIFO head pointer for all 32-bit FIFOs
@@ -379,11 +389,11 @@ int SimulationWrapper::dromajo_transmit_packet() {
       do {
         advance_time();
         err = dpi->tx_req(*pkt, expect_response);
-      } while (err != BSG_NONSYNTH_DPI_SUCCESS &&
-          (err == BSG_NONSYNTH_DPI_NO_CREDITS ||
+      } while (err != BSG_NONSYNTH_DPI_SUCCESS  &&
+           (err == BSG_NONSYNTH_DPI_NO_CREDITS  ||
             err == BSG_NONSYNTH_DPI_NO_CAPACITY ||
-            err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-            err == BSG_NONSYNTH_DPI_BUSY       ||
+            err == BSG_NONSYNTH_DPI_NOT_WINDOW  ||
+            err == BSG_NONSYNTH_DPI_BUSY        ||
             err == BSG_NONSYNTH_DPI_NOT_READY));
 
       if (err == BSG_NONSYNTH_DPI_SUCCESS) {
@@ -400,7 +410,8 @@ int SimulationWrapper::dromajo_transmit_packet() {
       if (err != HB_MC_SUCCESS)
         return err;
     }
-  } while (!mc_is_fifo_empty(type));
+    is_empty = mc_is_fifo_empty(type);
+  } while (!is_empty);
 
   return HB_MC_SUCCESS;
 }
@@ -425,8 +436,7 @@ int SimulationWrapper::dromajo_receive_packet() {
       err = dpi->rx_req(pkt);
     } while (err != BSG_NONSYNTH_DPI_SUCCESS    &&
             (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-            err == BSG_NONSYNTH_DPI_BUSY       ||
-            err == BSG_NONSYNTH_DPI_INVALID));
+             err == BSG_NONSYNTH_DPI_BUSY));
 
     if (err == BSG_NONSYNTH_DPI_SUCCESS) {
       mc_to_dromajo_req_packet = reinterpret_cast<hb_mc_packet_t *>(&pkt);
@@ -443,8 +453,7 @@ int SimulationWrapper::dromajo_receive_packet() {
       err = dpi->rx_rsp(pkt);
     } while (err != BSG_NONSYNTH_DPI_SUCCESS    &&
             (err == BSG_NONSYNTH_DPI_NOT_WINDOW ||
-            err == BSG_NONSYNTH_DPI_BUSY       ||
-            err == BSG_NONSYNTH_DPI_INVALID));
+             err == BSG_NONSYNTH_DPI_BUSY));
 
     if (err == BSG_NONSYNTH_DPI_SUCCESS) {
       mc_to_dromajo_resp_packet = reinterpret_cast<hb_mc_packet_t *>(&pkt);
@@ -493,6 +502,12 @@ int SimulationWrapper::eval(){
       dromajo_cosim_fini(dromajo);
       return HB_MC_SUCCESS;
     }
+
+    // Advancing time is required for things to move around in hardware, however
+    // it adds a large overhead to the simulation time. Balance these values to
+    // hit that sweet spot.
+    if ((i % 10) == 0)
+      advance_time_cycles(10);
 
     // Check if transmit FIFO has an element and hence ready to transmit
     // This operation is relatively low overhead since only a single FIFO's
