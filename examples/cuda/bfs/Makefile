@@ -150,7 +150,7 @@ $(TESTS_EXEC) $(TESTS_PROFILE) $(TESTS_DEBUG) $(TESTS_SAIFGEN): $(GRAPHS_ANALYSI
 $(TESTS_EXEC) $(TESTS_PROFILE) $(TESTS_DEBUG) $(TESTS_SAIFGEN):
 	$(eval RUN_DIR=$(firstword $(subst ., ,$@)))
 	$(eval RUN_TYPE=$(lastword $(subst ., ,$@)))
-	$(MAKE) -C $(RUN_DIR) main.$(RUN_TYPE).log
+	$(MAKE) -C $(RUN_DIR) $(RUN_TYPE).log
 
 exec: $(TESTS_EXEC)
 profile: $(TESTS_PROFILE)

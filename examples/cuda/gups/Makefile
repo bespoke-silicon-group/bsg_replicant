@@ -68,7 +68,7 @@ $(TESTS):
 	$(call set-submake-args,$@)
 	mkdir -p $@/
 	cp template.mk $@/Makefile
-	$(MAKE) -C $@ $(MAKE_ARGS) main.$(RUN_TYPE).log
+	$(MAKE) -C $@ $(MAKE_ARGS) $(RUN_TYPE).log
 
 all: $(TESTS)
 profile:   $(filter %__profile_run,$(TESTS))
