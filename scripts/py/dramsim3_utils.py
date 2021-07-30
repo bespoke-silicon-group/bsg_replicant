@@ -87,26 +87,6 @@ class DRAMSim3Stats(object):
     @property
     def diffed_data(self):
         return self._diffed_data
-    
-    @property
-    def table_words(self):
-        return self._table_words
-    
-    @property
-    def updates_per_core(self):
-        return self._updates_per_core
-    
-    @property
-    def cores(self):
-        return self._cores
-    
-    @property
-    def concurrency(self):
-        return self._concurrency
-    
-    @property
-    def updates(self):
-        return self.updates_per_core * self.cores
 
     @property
     def epoch_data(self):
