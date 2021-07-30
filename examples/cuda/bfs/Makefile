@@ -180,11 +180,11 @@ support-tools: $(SUPPORT_TOOLS)
 
 dramsim3.summary.csv: $(addsuffix /dramsim3.tag.json,$(TESTS))
 	@echo Creating $@
-	@PYTHONPATH=$(BSG_F1_DIR)/scripts/py python3 $(EXAMPLES_PATH)/cuda/bfs/py/dramsim3.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/bfs/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/bfs/py/dramsim3.py $^
 
 vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
 	@echo Creating $@
-	@PYTHONPATH=$(BSG_F1_DIR)/scripts/py python3 $(EXAMPLES_PATH)/cuda/bfs/py/vcache.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/bfs/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/bfs/py/vcache.py $^
 
 purge:
 	rm -rf $(TESTS)
