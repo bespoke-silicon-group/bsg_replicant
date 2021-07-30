@@ -116,6 +116,7 @@ int Main(int argc, char *argv[])
 
     HB->push_job(Dim(cl->cores(),1), Dim(1,1), "gups", A_dev);
     HB->exec();
+    HB->close();
 
     return HB_MC_SUCCESS;
 }

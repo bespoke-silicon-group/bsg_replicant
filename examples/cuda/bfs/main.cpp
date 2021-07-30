@@ -119,7 +119,7 @@ int Main(int argc, char *argv[])
     }
 
     stats[iter].dump("bfs_stats.txt");
-
+    HB->close();
     return equals ? HB_MC_SUCCESS : HB_MC_FAIL;
 }
 
