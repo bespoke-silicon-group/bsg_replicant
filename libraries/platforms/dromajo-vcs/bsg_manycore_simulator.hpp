@@ -108,7 +108,7 @@ public:
   void advance_time_cycles(int N);
 
   // DPI functions
-  int dpi_fifo_drain(hb_mc_fifo_rx_t);
+  int dpi_fifo_drain(hb_mc_fifo_rx_t type);
   void dpi_cleanup();
   int dpi_init();
 
@@ -116,8 +116,9 @@ public:
   int dromajo_init();
   bool dromajo_step();
   int dromajo_transmit_packet();
+  int dromajo_transmit_host_packet(hb_mc_packet_t *dromajo_to_host_packet);
   int dromajo_receive_packet();
-  int dromajo_set_credits();
+  int dromajo_update_credits();
 
   // Evaluates a maximum of NUM_DROMAJO_INSTR_PER_TICK instructions
   // in RISC-V and forwards packets between Dromajo and the manycore

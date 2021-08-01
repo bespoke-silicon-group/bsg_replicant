@@ -68,10 +68,13 @@ int hb_bp_get_credits_used(int *credits_used) {
  * Writes a 128-bit manycore packet in 32-bit chunks to the manycore bridge FIFO
  * @param[in] pkt --> Pointer to the manycore packet
  * @returns HB_MC_SUCCESS
- * TODO: Implement error checking (Requires some modifications in Dromajo)
  */
 int hb_bp_write_to_mc_bridge(hb_mc_packet_t *pkt) {
   uint32_t *bp_to_mc_req_fifo_addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + BP_TO_MC_REQ_FIFO_ADDR);
+  // TODO: Currently this function maps to an operation in Dromajo that has to wait until the write succeeds.
+  //       The Dromajo function must do some error checking and return appropriate error codes to the software.
+  //       However, currently (and understandbly) Dromajo does not allow anything to be returned on writes to
+  //       the software.
   for(int i = 0; i < 4; i++) {
     *bp_to_mc_req_fifo_addr = pkt->words[i];
     bp_to_mc_req_fifo_addr++;
@@ -248,7 +251,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_
 
   err = hb_bp_write_to_mc_bridge(packet);
   if (err != HB_MC_SUCCESS) {
-    bsg_pr_err("Write to the host request FIFO failed!");
+    manycore_pr_err(mc, "%s: Write to the host request FIFO failed\n", __func__);
     return err;
   }
 
@@ -281,8 +284,8 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_f
 
   err = hb_bp_read_from_mc_bridge(packet, type);
   if (err != HB_MC_SUCCESS) {
-    bsg_pr_err("Read from the %s FIFO did not succeed", typestr);
-    return HB_MC_INVALID;
+    manycore_pr_err(mc, "%s: Read from the %s FIFO did not succeed", __func__, typestr);
+    return err;
   }
 
   return HB_MC_SUCCESS;
@@ -317,7 +320,7 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_c
   // there is no way to know the credits remaining.
   err = hb_bp_write_to_mc_bridge(&config_req_pkt);
   if (err != HB_MC_SUCCESS) {
-    bsg_pr_err("Write to the host request FIFO failed!");
+    manycore_pr_err(mc, "%s: Write to the host request FIFO failed\n", __func__);
     return err;
   }
 
@@ -327,8 +330,8 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_c
 
   err = hb_bp_read_from_mc_bridge(&config_resp_pkt, HB_MC_FIFO_RX_RSP);
   if (err != HB_MC_SUCCESS) {
-    bsg_pr_err("Config read failed\n");
-    return HB_MC_FAIL;
+    manycore_pr_err(mc, "%s: Read from the manycore response FIFO failed\n", __func__);
+    return err;
   }
 
   *config = config_resp_pkt.response.data;
@@ -368,20 +371,35 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
   do
   {
     err = hb_bp_get_credits_used(&credits_used);
-    // In a real system, this function call makes no sense since we will be sending packets to the
-    // host on the network and are trying to check for credits to be zero and complete the fence.
-    // It is fine here because of the system setup.
-    err |= hb_bp_write_to_mc_bridge(&fence_req_pkt);
+    if (err != HB_MC_SUCCESS) {
+      manycore_pr_err(mc, "%s: Credit update failed\n", __func__);
+      return err;
+    }
+
+    // In the real system (with BP), we will be performing memory-mapped reads to the bridge to grab the current
+    // status of the number of endpoint credits for the host. With Dromajo, it still makes sense to do this since
+    // host packets are not transmitted over the network. If host packets have to go over the network then it does
+    // not make sense since we are sending packets on the TX FIFO and are expecting the TX FIFO to be vacant.
+    err = hb_bp_write_to_mc_bridge(&fence_req_pkt);
+    if (err != HB_MC_SUCCESS) {
+      manycore_pr_err(mc, "%s: Write to the host request FIFO failed\n", __func__);
+      return err;
+    }
 
     do {
       err = hb_bp_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
     } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
 
-    err |= hb_bp_read_from_mc_bridge(&fence_resp_pkt, HB_MC_FIFO_RX_RSP);
-    is_vacant = fence_resp_pkt.response.data;
-  } while ((err == HB_MC_SUCCESS) && !((credits_used == 0) && is_vacant));
+    err = hb_bp_read_from_mc_bridge(&fence_resp_pkt, HB_MC_FIFO_RX_RSP);
+    if (err != HB_MC_SUCCESS) {
+      manycore_pr_err(mc, "%s: Read from the manycore response FIFO failed\n", __func__);
+      return err;
+    }
 
-  return err;
+    is_vacant = fence_resp_pkt.response.data;
+  } while ((credits_used != 0) || !is_vacant);
+
+  return HB_MC_SUCCESS;
 }
 
 /**
@@ -482,10 +500,20 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc) {
     // The platform setup ensures that this packet will not go over the network so
     // we don't need to check for credits.
     err = hb_bp_write_to_mc_bridge(&reset_req_pkt);
-    err |= hb_bp_read_from_mc_bridge(&reset_resp_pkt, HB_MC_FIFO_RX_RSP);
+    if (err != HB_MC_SUCCESS) {
+      manycore_pr_err(mc, "%s: Write to host request FIFO failed\n", __func__);
+      return err;
+    }
+
+    err = hb_bp_read_from_mc_bridge(&reset_resp_pkt, HB_MC_FIFO_RX_RSP);
+    if (err != HB_MC_SUCCESS) {
+      manycore_pr_err(mc, "%s: Read from the host response FIFO failed\n", __func__);
+      return err;
+    }
 
     data = reset_resp_pkt.response.data;
-  } while((err != HB_MC_SUCCESS) || (data == 0));
+  } while(data == 0);
 
   return HB_MC_SUCCESS;
 }
+
