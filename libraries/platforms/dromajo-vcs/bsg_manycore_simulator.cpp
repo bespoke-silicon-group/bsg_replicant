@@ -75,6 +75,15 @@ SimulationWrapper::~SimulationWrapper() {
 void SimulationWrapper::set_args(int argc, char **argv) {
   this->argc = argc;
   this->argv = argv;
+
+  // Debugging code:
+  bsg_pr_info("Received arguments\n");
+  bsg_pr_info("Number of arguments = %d\n", this->argc);
+  int debug_count = 0;
+  while (debug_count < this->argc) {
+    bsg_pr_info("Argument %d is %s\n", debug_count, this->argv[debug_count]);
+    debug_count++;
+  }
 }
 
 // Advances time to the next clock edge
@@ -247,17 +256,18 @@ int SimulationWrapper::dromajo_transmit_host_packet(hb_mc_packet_t *dromajo_to_h
           int num_characters = 0;
           // If all arguments have been read or there are no arguments to read
           // send a finish code
-          if ((arg_index != argc) && (argc != 0)) {
+          if ((arg_index != this->argc) && (this->argc != 0)) {
             // Copy 4 bytes of the arguments
             for(int i = 0; i < 4; i++) {
-              if (argv[arg_index][char_index] != '\0') {
-                data = (data << 8) | argv[arg_index][char_index];
+              if (this->argv[arg_index][char_index] != '\0') {
+                data = (data << 8) | ((uint8_t) this->argv[arg_index][char_index]);
                 num_characters++;
-                char_index++;
+                this->char_index++;
               }
               else {
                 data = (data << (4 - num_characters) * 8);
-                char_index = 0;
+                bsg_pr_info("Data packet at the ends %x\n", data);
+                this->char_index = 0;
               }
             }
           }
@@ -575,16 +585,16 @@ int SimulationWrapper::eval(){
  * @returns the number of arguments
  */
 static int get_argc(char * args){
-        char *cur = args, prev=' ';
-        int count = 1;
-        while(*cur != '\0'){
-                if((prev == ' ') && (prev != *cur)){
-                        count ++;
-                }
-                prev = *cur;
-                ++cur;
-        }
-        return count;
+  char *cur = args, prev=' ';
+  int count = 1;
+  while(*cur != '\0'){
+    if((prev == ' ') && (prev != *cur)){
+      count ++;
+    }
+    prev = *cur;
+    ++cur;
+  }
+  return count;
 }
 
 /*
@@ -596,36 +606,36 @@ static int get_argc(char * args){
  * arguments
  */
 static void get_argv(char * args, int argc, char **argv){
-        int count = 0;
-        char *cur = args, prev=' ';
+  int count = 0;
+  char *cur = args, prev=' ';
 
-        // First parse the path name. This is not in the argument string because
-        // VCS doesn't provide it to us. Instead, we "hack" around it by reading
-        // the path from 'proc/self/exe'. The maximum path-name length is 1024,
-        // with an extra null character for safety
-        static char path[1025] = {'\0'};
+  // First parse the path name. This is not in the argument string because
+  // VCS doesn't provide it to us. Instead, we "hack" around it by reading
+  // the path from 'proc/self/exe'. The maximum path-name length is 1024,
+  // with an extra null character for safety
+  static char path[1025] = {'\0'};
 
-        readlink("/proc/self/exe", path, sizeof(path) - 1);
-        argv[0] = path;
-        count ++;
+  readlink("/proc/self/exe", path, sizeof(path) - 1);
+  argv[0] = path;
+  count ++;
 
-        // Then we parse the remaining arguments. Arguments are separated by N
-        // >= 1 spaces. We only register an argument when the previous character
-        // was a space, and the current character is not (so that multiple
-        // spaces don't count as multiple arguments). We replace spaces with
-        // null characters (\0) so that each argument appears to be an
-        // individual string and can be used later, by argparse (and other
-        // libraries)
-        while(*cur != '\0'){
-                if((prev == ' ') && (prev != *cur)){
-                        argv[count] = cur;
-                        count++;
-                }
-                prev = *cur;
-                if(*cur == ' ')
-                        *cur = '\0';
-                cur++;
-        }
+  // Then we parse the remaining arguments. Arguments are separated by N
+  // >= 1 spaces. We only register an argument when the previous character
+  // was a space, and the current character is not (so that multiple
+  // spaces don't count as multiple arguments). We replace spaces with
+  // null characters (\0) so that each argument appears to be an
+  // individual string and can be used later, by argparse (and other
+  // libraries)
+  while(*cur != '\0'){
+    if((prev == ' ') && (prev != *cur)){
+      argv[count] = cur;
+      count++;
+    }
+    prev = *cur;
+    if(*cur == ' ')
+      *cur = '\0';
+    cur++;
+  }
 }
 
 /*
@@ -670,17 +680,17 @@ int vcs_main(int argc, char **argv) {
  */
 extern "C" {
   void cosim_main(uint32_t *exit_code, char *args) {
-          // We aren't passed command line arguments directly so we parse them
-          // from *args. args is a string from VCS - to pass a string of arguments
-          // to args, pass c_args to VCS as follows: +c_args="<space separated
-          // list of args>"
-          int argc = get_argc(args);
-          char *argv[argc];
-          get_argv(args, argc, argv);
+    // We aren't passed command line arguments directly so we parse them
+    // from *args. args is a string from VCS - to pass a string of arguments
+    // to args, pass c_args to VCS as follows: +c_args="<space separated
+    // list of args>"
+    int argc = get_argc(args);
+    char *argv[argc];
+    get_argv(args, argc, argv);
 
-          int rc = vcs_main(argc, argv);
-          *exit_code = rc;
-          bsg_pr_test_pass_fail(rc >= HB_MC_SUCCESS);
-          return;
+    int rc = vcs_main(argc, argv);
+    *exit_code = rc;
+    bsg_pr_test_pass_fail(rc >= HB_MC_SUCCESS);
+    return;
   }
 }

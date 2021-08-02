@@ -8,6 +8,7 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_packet.h>
 #include <stdio.h>
+#include <bsg_manycore_printing.h>
 
 // Number of arguments that can be retrieved is currently based on the size of the buffer.
 // Other ideas (TODO):
@@ -27,7 +28,6 @@ void __init_args(void) {
 
   // Flat buffer to capture all the arguments contiguously
   char buffer[3000];
-  char *bufptr = buffer;
   
   // Create a packet for the x86 host
   args_req_pkt.request.x_dst = HOST_X_COORD;
@@ -49,20 +49,25 @@ void __init_args(void) {
       bp_finish(err);
 
     uint32_t data = args_resp_pkt.response.data;
+    bsg_pr_info("Returned data: %x\n", data);
+    uint8_t null_char = (uint8_t) '\0';
     if (data != HB_BP_HOST_OP_FINISH_CODE) {
       uint32_t mask = 0xFF000000;
       uint8_t byte;
       for(int i = 0; i < 4; i++) {
-        byte = data & mask;
-        if (byte != (uint8_t)'\0')
-          buffer[char_index] = byte;
+        // Get the correct byte from the 4-byte data and then shift it
+        // to the lowest byte
+        byte = ((data & mask) >> (8 * (3 - i)));
+        bsg_pr_info("Argument %d at %x is %c\n", arg_index, char_index, (char) byte);
+        if (byte != null_char) {
+          buffer[char_index++] = (char) byte;
+          mask >>= 8;
+        }
         else {
-          buffer[char_index] = '\0';
+          buffer[char_index++] = ' ';
           arg_index++;
           break;
         }
-        char_index++;
-        mask = mask >> 8;
       }
     }
     else
@@ -72,18 +77,29 @@ void __init_args(void) {
 
   // Convert a flat buffer into a 2-D array of pointers as argparse
   // expects it to be
-  char *args[_argc];
-  char c = '\0';
+  char *curr = buffer;
+  char prev = ' ';
   int count = 0;
   if (_argc != 0) {
-    while (count != _argc) {
-      if ((c == '\0') && (c != *bufptr)) {
-        args[count] = bufptr;
+    while (*curr != '\0') {
+      if ((prev == ' ') && (prev != *curr)) {
+        _argv[count] = curr;
         count++;
       }
-      c = *bufptr;
-      bufptr++;
+      prev = *curr;
+      if (*curr == ' ')
+        *curr = '\0';
+      curr++;
     }
-  _argv = args;
+  }
+
+  // Debugging code:
+  bsg_pr_info("Received arguments\n");
+  bsg_pr_info("Number of arguments = %d\n", _argc);
+  char **check_argv = _argv;
+  int debug_count = 0;
+  while (debug_count < _argc) {
+    bsg_pr_info("Argument %d is %s\n", debug_count, check_argv[debug_count]);
+    debug_count++;
   }
 }
