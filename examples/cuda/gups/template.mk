@@ -139,7 +139,7 @@ include $(EXAMPLES_PATH)/execution.mk
 # Blood graph #
 ###############
 blood_graph: blood_graph_ch0.png blood_graph_ch1.png
-#blood_graph: blood_abstract.png blood_detailed.png
+blood_graph: blood_abstract.png blood_detailed.png
 blood_graph: vcache_stall_abstract.png vcache_stall_detailed.png
 
 blood_%.png: vanilla_stats.csv vanilla_operation_trace.csv
@@ -157,7 +157,6 @@ vcache_stall_%.png: vcache_stats.csv vcache_operation_trace.csv
 	--only vcache_stall_graph \
 	--vcache-trace vcache_operation_trace.csv \
 	--vcache-stats vcache_stats.csv \
-	--cycle $(start_cycle)@$(end_cycle) \
 	$(findstring --abstract,--$*) \
 	--generate-key
 
