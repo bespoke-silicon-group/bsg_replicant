@@ -110,12 +110,12 @@ int Main(int argc, char *argv[])
     bsg_pr_dbg("Writing A\n");
     HB->sync_write();
 
-    // enable trace
-    HB->trace(true);
-
     // run GUPS
     bsg_pr_dbg("Running %d updates with %d groups (%d per group)\n",
                cl->updates(), cl->cores(), cl->updates_per_core());
+
+    // enable trace
+    HB->trace(true);
 
     HB->push_job(Dim(cl->cores(),1), Dim(1,1), "gups", A_dev);
     HB->exec();

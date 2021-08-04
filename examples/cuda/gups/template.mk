@@ -139,22 +139,25 @@ include $(EXAMPLES_PATH)/execution.mk
 # Blood graph #
 ###############
 blood_graph: blood_graph_ch0.png blood_graph_ch1.png
-blood_graph: blood_abstract.png blood_detailed.png
+#blood_graph: blood_abstract.png blood_detailed.png
 blood_graph: vcache_stall_abstract.png vcache_stall_detailed.png
 
 blood_%.png: vanilla_stats.csv vanilla_operation_trace.csv
-	@PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vanilla_parser \
-	python3 $(BSG_MANYCORE_DIR)/software/py/blood_graph.py \
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ \
+	python3 -m vanilla_parser \
+	--only blood_graph \
 	--stats vanilla_stats.csv \
 	--trace vanilla_operation_trace.csv \
 	$(findstring --abstract,--$*) \
 	--generate-key
 
 vcache_stall_%.png: vcache_stats.csv vcache_operation_trace.csv
-	@PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/vcache_stall_graph.py \
-	python3 $(BSG_MANYCORE_DIR)/software/py/vcache_stall_graph.py \
-	--stats vcache_stats.csv \
-	--trace vcache_operation_trace.csv \
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ \
+	python3 -m vanilla_parser \
+	--only vcache_stall_graph \
+	--vcache-trace vcache_operation_trace.csv \
+	--vcache-stats vcache_stats.csv \
+	--cycle $(start_cycle)@$(end_cycle) \
 	$(findstring --abstract,--$*) \
 	--generate-key
 
