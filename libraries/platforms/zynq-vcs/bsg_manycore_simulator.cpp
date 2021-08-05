@@ -36,7 +36,7 @@ extern "C" {
 }
 
 SimulationWrapper::SimulationWrapper(){
-        root = new std::string("top");
+        root = new std::string("replicant_tb_top");
         std::string mc_dpi = *root + ".mc_dpi";
         top = svGetScopeFromName(mc_dpi.c_str());
 }

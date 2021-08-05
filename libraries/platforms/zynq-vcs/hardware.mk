@@ -132,11 +132,11 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 # Top-level files
 ################################################################################
 # Top-level module name
-BSG_DESIGN_TOP := top
+BSG_DESIGN_TOP := replicant_tb_top
 
-VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/top.sv
-VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/zynq-parrot/common/v/bsg_zynq_pl_shell.v
-VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/zynq-parrot/common/v/bsg_nonsynth_dpi_to_axil.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/dpi_top.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/zynq-parrot/common/v/bsg_nonsynth_dpi_to_axil.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/zynq-parrot/common/v/bsg_zynq_pl_shell.v
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
