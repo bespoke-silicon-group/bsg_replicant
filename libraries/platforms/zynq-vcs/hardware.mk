@@ -135,8 +135,11 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 BSG_DESIGN_TOP := replicant_tb_top
 
 VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/dpi_top.sv
-VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/zynq-parrot/common/v/bsg_nonsynth_dpi_to_axil.v
-VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/zynq-parrot/common/v/bsg_zynq_pl_shell.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/hardware/bsg_axi_manycore.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/zynq-parrot/cosim/common/v/bsg_nonsynth_dpi_to_axil.v
+VSOURCES += $(LIBRARIES_PATH)/platforms/zynq-vcs/zynq-parrot/cosim/common/v/bsg_zynq_pl_shell.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_flow_counter.v
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)

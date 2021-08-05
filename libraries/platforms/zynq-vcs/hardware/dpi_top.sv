@@ -309,35 +309,40 @@ module replicant_tb_top
    assign host_clk = core_clk;
    assign host_reset = core_reset;
 
-   bsg_nonsynth_dpi_manycore
-     #(
-       .x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
-       ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
-       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
-       ,.data_width_p(bsg_machine_noc_data_width_gp)
-       ,.ep_fifo_els_p(ep_fifo_els_lp)
-       ,.dpi_fifo_els_p(bsg_machine_dpi_fifo_els_gp)
-       ,.fifo_width_p(128) // It would be better to read this from somewhere
-       ,.rom_els_p(bsg_machine_rom_els_gp)
-       ,.rom_width_p(bsg_machine_rom_width_gp)
-       ,.rom_arr_p(bsg_machine_rom_arr_gp)
-       ,.credit_counter_width_p(`BSG_WIDTH(bsg_machine_io_credits_max_gp))
-       )
-   mc_dpi
+   bsg_axi_manycore aximc
      (
-      .clk_i(host_clk)
-      // DR: I don't particularly like this, but we'll leave it for now
-      ,.reset_i(host_reset | (~core_reset_done_r))
-      ,.reset_done_i(core_reset_done_lo)
+       .s00_axi_aclk_i    (s00_axi_aclk)
+      ,.s00_axi_aresetn_i (s00_axi_aresetn)
+      ,.s00_axi_awaddr_i  (s00_axi_awaddr)
+      ,.s00_axi_awprot_i  (s00_axi_awprot)
+      ,.s00_axi_awvalid_i (s00_axi_awvalid)
+      ,.s00_axi_awready_o (s00_axi_awready)
+      ,.s00_axi_wdata_i   (s00_axi_wdata)
+      ,.s00_axi_wstrb_i   (s00_axi_wstrb)
+      ,.s00_axi_wvalid_i  (s00_axi_wvalid)
+      ,.s00_axi_wready_o  (s00_axi_wready)
+      ,.s00_axi_bresp_o   (s00_axi_bresp)
+      ,.s00_axi_bvalid_o  (s00_axi_bvalid)
+      ,.s00_axi_bready_i  (s00_axi_bready)
+      ,.s00_axi_araddr_i  (s00_axi_araddr)
+      ,.s00_axi_arprot_i  (s00_axi_arprot)
+      ,.s00_axi_arvalid_i (s00_axi_arvalid)
+      ,.s00_axi_arready_o (s00_axi_arready)
+      ,.s00_axi_rdata_o   (s00_axi_rdata)
+      ,.s00_axi_rresp_o   (s00_axi_rresp)
+      ,.s00_axi_rvalid_o  (s00_axi_rvalid)
+      ,.s00_axi_rready_i  (s00_axi_rready)
 
-      // manycore link
-      ,.link_sif_i(host_link_sif_lo)
-      ,.link_sif_o(host_link_sif_li)
+      ,.clk_i   (host_clk)
+      ,.reset_i (host_reset)
 
-      ,.global_y_i(host_y_coord_li)
+      ,.io_link_sif_i(host_link_sif_lo)
+      ,.io_link_sif_o(host_link_sif_li)
+
       ,.global_x_i(host_x_coord_li)
+      ,.global_y_i(host_y_coord_li)
       );
-
+  
    bsg_dff_chain
      #(
        .width_p(1)
