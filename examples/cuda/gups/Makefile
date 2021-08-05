@@ -48,6 +48,7 @@ endef
 
 TESTS_DISASSEMBLY = $(addsuffix .dis,$(TESTS))
 TESTS_BLOOD_GRAPH = $(addsuffix .blood_graph,$(TESTS))
+TESTS_TRACE_DATA = $(addsuffix .trace_data,$(TESTS))
 
 $(TESTS_BLOOD_GRAPH):
 	$(eval t=$(firstword $(subst ., ,$@)))
@@ -62,6 +63,13 @@ $(TESTS_DISASSEMBLY):
 	mkdir -p $t/
 	cp template.mk $t/Makefile
 	$(MAKE) -C $t $(MAKE_ARGS) main.dis
+
+$(TESTS_TRACE_DATA):
+	$(eval t=$(firstword $(subst ., ,$@)))
+	$(call set-submake-args,$t)
+	mkdir -p $t/
+	cp template.mk $t/Makefile
+	$(MAKE) -C $t $(MAKE_ARGS) trace_data
 
 .PHONY: $(TESTS)
 $(TESTS):
@@ -78,6 +86,7 @@ saifgen:   $(filter %__saifgen_run,$(TESTS))
 
 dis: $(TESTS_DISASSEMBLY)
 blood_graph: $(TESTS_BLOOD_GRAPH)
+trace_data: $(TESTS_TRACE_DATA)
 
 dramsim3.summary.csv:  $(addsuffix /dramsim3.tag.json,$(filter %__profile_run,$(TESTS)))
 	@echo Making $@

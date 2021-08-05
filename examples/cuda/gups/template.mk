@@ -163,6 +163,13 @@ vcache_stall_%.png: vcache_stats.csv vcache_operation_trace.csv
 blood_graph_ch0.png blood_graph_ch1.png: %.png: %.log
 	python3 $(BSG_MANYCORE_DIR)/software/py/dramsim3_blood_graph.py $< $@
 
+##############
+# Trace data #
+##############
+trace_data: vcache_trace_data.csv
+vcache_trace_data.csv: vcache_operation_trace.csv
+	python3 $(EXAMPLES_PATH)/cuda/gups/hammerblade-helpers/py/vcache_trace.py $<
+
 ###############################################################################
 # Default rules, help, and clean
 ###############################################################################
