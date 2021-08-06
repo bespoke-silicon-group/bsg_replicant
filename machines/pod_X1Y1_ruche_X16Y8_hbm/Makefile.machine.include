@@ -25,6 +25,19 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+<<<<<<< HEAD
+=======
+############################################################################################
+# pod_X1Y1_ruche_X16Y8_hbm                                                                 #
+# 1 pod                                                                                    #
+# 128 RISC-V Tiles per pod, 16 tiles wide, 8 tiles tall                                    # 
+# Last level caches on the top and bottom of each column                                   #
+# Each last-level cache is mapped to a separate HBM bank                                   #
+# There are two HBM channels.                                                              #
+# There is a vanilla, 2D mesh network augmented with Ruche links                           #
+############################################################################################
+
+>>>>>>> b665274d... Update documents and machine configurations
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Chip Pod Dimensions
@@ -41,12 +54,12 @@ BSG_MACHINE_PODS_CYCLE_TIME_PS         = 1000
 BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 
 # Network Parameters
-BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
+# BSG_MACHINE_NETWORK_CFG longer has an effect, fixed at e_network_half_ruche_x
+# BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
 BSG_MACHINE_RUCHE_FACTOR_X            = 3
 BSG_MACHINE_BARRIER_RUCHE_FACTOR_X    = 3
 
 # Memory System Parameters
-BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MEM_DRAMSIM3_PKG          = bsg_dramsim3_hbm2_8gb_x128_pkg
 BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
 
