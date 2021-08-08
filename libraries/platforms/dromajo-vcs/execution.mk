@@ -1,4 +1,4 @@
-# Copyright (c) 2019, University of Washington All rights reserved.
+# Copyright (c) 2020, University of Washington All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
@@ -39,8 +39,11 @@ SIM_ARGS += +ntb_random_seed_automatic
 # them as the VCS plusarg argument +c_args. Users can specify C-style
 # arguments using the C_ARGS make variable.
 
-%.log: % $(BSG_MANYCORE_KERNELS)
-	./$< $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
+# Compile the manycore binary before building the rest of the library so that we can
+# add the entire manycore binary somewhere for Dromajo/BlackParrot to load into the
+# DRAM. This is only a patch until we can do it the right way - use a filesystem
+%.log: $(BSG_MANYCORE_KERNELS) %
+	./$(filter-out $<, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
 

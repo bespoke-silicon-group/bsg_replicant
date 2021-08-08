@@ -81,10 +81,11 @@ _start:
 #endif
 
 # Initialize the arguments
-  call __init_args
-  la a0, _argc
+  call hb_bp_init_args
+  la a0, hb_bp_argc
   ld a0, 0(a0)
-  la a1, _argv
+  la a1, hb_bp_argv
+  ld a1, 0(a1)
 
   call main
   tail bp_finish
