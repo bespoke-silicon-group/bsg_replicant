@@ -82,10 +82,11 @@ extern "C" {
 #define MC_BASE_ADDR 0x500000
 #define BP_TO_MC_REQ_FIFO_ADDR 0x1000
 #define BP_TO_MC_REQ_CREDITS_ADDR 0x2000
-#define MC_TO_BP_RESP_FIFO_ADDR 0x3000
-#define MC_TO_BP_RESP_ENTRIES_ADDR 0x4000
-#define MC_TO_BP_REQ_FIFO_ADDR 0x5000
-#define MC_TO_BP_REQ_ENTRIES_ADDR 0x6000
+#define BP_TO_MC_REQ_ENTRIES_ADDR 0x3000
+#define MC_TO_BP_RESP_FIFO_ADDR 0x4000
+#define MC_TO_BP_RESP_ENTRIES_ADDR 0x5000
+#define MC_TO_BP_REQ_FIFO_ADDR 0x6000
+#define MC_TO_BP_REQ_ENTRIES_ADDR 0x7000
 
 /**************************** Manycore Bridge helper functions ****************************/
 // Use these functions to enable Dromajo/BlackParrot to write to the bridge. These functions
@@ -105,10 +106,19 @@ int hb_bp_write_to_mc_bridge(hb_mc_packet_t *pkt);
 
 /*
  * Checks if the MC to BP FIFO contains any entries
- * @param[in] type --> Type of FIFO to read from
+ * @param[in] entries --> Pointer to a location in memory that will hold the number of entries
+ * @param[in] type --> Type of FIFO to poll for entries
  * @returns number of entries in the MC to BP FIFO
  */
-int hb_bp_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type);
+int hb_bp_get_rx_fifo_entries(int *entries, hb_mc_fifo_rx_t type);
+
+/*
+ * Checks if the BP to MC FIFO contains any entries
+ * @param[in] entries --> Pointer to a location in memory that will hold the number of entries
+ * @param[in] type --> Type of FIFO to poll for entries
+ * @returns number of entries in the BP to MC FIFO
+ */
+int hb_bp_get_tx_fifo_entries(int *entries, hb_mc_fifo_tx_t type);
 
 /*
  * Reads the manycore bridge FIFOs in 32-bit chunks to form the 128-bit packet

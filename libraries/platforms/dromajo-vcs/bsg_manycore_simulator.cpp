@@ -75,15 +75,6 @@ SimulationWrapper::~SimulationWrapper() {
 void SimulationWrapper::set_args(int argc, char **argv) {
   this->argc = argc;
   this->argv = argv;
-
-  // Debugging code:
-  bsg_pr_info("Received arguments\n");
-  bsg_pr_info("Number of arguments = %d\n", this->argc);
-  int debug_count = 0;
-  while (debug_count < this->argc) {
-    bsg_pr_info("Argument %d is %s\n", debug_count, this->argv[debug_count]);
-    debug_count++;
-  }
 }
 
 // Advances time to the next clock edge
@@ -227,7 +218,7 @@ bool SimulationWrapper::dromajo_step() {
 }
 
 /*
- * dromajo_transmit_packet
+ * dromajo_transmit_host_packet
  * Fetches data from the Dromajo->Manycore FIFO and if its a host packet, performs
  * the required host operations and pushes responses back on the response FIFO
  * @returns success on succesful transmission
@@ -266,8 +257,8 @@ int SimulationWrapper::dromajo_transmit_host_packet(hb_mc_packet_t *dromajo_to_h
               }
               else {
                 data = (data << (4 - num_characters) * 8);
-                bsg_pr_info("Data packet at the ends %x\n", data);
                 this->char_index = 0;
+                break;
               }
             }
           }
@@ -372,13 +363,59 @@ int SimulationWrapper::dromajo_transmit_host_packet(hb_mc_packet_t *dromajo_to_h
 }
 
 /*
+ * dromajo_transmit_device_packet
+ * Fetches data from the Dromajo->Manycore FIFO and if its a device packet, forwards
+ * it to the Manycore DPI TX FIFO
+ * @returns success on succesful transmission
+ */
+int SimulationWrapper::dromajo_transmit_device_packet(hb_mc_packet_t *dromajo_to_device_packet) {
+  __m128i *pkt;
+  int err;
+  pkt = reinterpret_cast<__m128i *>(dromajo_to_device_packet);
+
+  // Allows the DPI interface to track response FIFO capacity
+  bool expect_response =
+    (dromajo_to_device_packet->request.op_v2 != HB_MC_PACKET_OP_REMOTE_STORE) &&
+    (dromajo_to_device_packet->request.op_v2 != HB_MC_PACKET_OP_REMOTE_SW) &&
+    (dromajo_to_device_packet->request.op_v2 != HB_MC_PACKET_OP_CACHE_OP);
+
+  // Attempt packet transmission
+  // Since we trigger a call to the transmit FIFOs only when all the 32-bit Dromajo
+  // FIFOs are full (i.e. a single 128-bit packet is ready), we need to wait until
+  // the DPI FIFOs are ready to receive before advancing to the next operation.
+  // This can prevent filling up of the FIFOs. However, not doing this can help in
+  // identifying situations that might create backpressure in actual hardware and
+  // provision for it.
+  do {
+    advance_time();
+    err = dpi->tx_req(*pkt, expect_response);
+  } while (err != BSG_NONSYNTH_DPI_SUCCESS  &&
+        (err == BSG_NONSYNTH_DPI_NO_CREDITS  ||
+        err == BSG_NONSYNTH_DPI_NO_CAPACITY ||
+        err == BSG_NONSYNTH_DPI_NOT_WINDOW  ||
+        err == BSG_NONSYNTH_DPI_BUSY        ||
+        err == BSG_NONSYNTH_DPI_NOT_READY));
+
+  if (err == BSG_NONSYNTH_DPI_SUCCESS) {
+    for (int i = 0;i < 4; i++)
+      host_to_mc_req_fifo->fifo[i].pop();
+  }
+  else {
+    bsg_pr_err("%s: Packet transmission failed\n", __func__);
+    return HB_MC_FAIL;
+  }
+
+  return HB_MC_SUCCESS;
+}
+
+/*
  * dromajo_transmit_packet
  * Fetches data from the Dromajo->Manycore FIFO and pushes it into the DPI FIFO
  * to send packets to the manycore or the host
  * @returns success on succesful transmission
  */
 int SimulationWrapper::dromajo_transmit_packet() {
-  hb_mc_packet_t dromajo_to_mc_packet, host_to_dromajo_packet;
+  hb_mc_packet_t dromajo_to_mc_packet;
   int err;
   __m128i *pkt;
 
@@ -401,50 +438,16 @@ int SimulationWrapper::dromajo_transmit_packet() {
       // This serves to return the error from the host function
       // It is also used to communicate the success code for successful program termination but this code is
       // not HB_MC_SUCCESS (maps to 0) but a positive number
-      return err;
+      if (err != HB_MC_SUCCESS)
+        return err;
     }
     else {
-      pkt = reinterpret_cast<__m128i *>(&dromajo_to_mc_packet);
-
-      // Allows the DPI interface to track response FIFO capacity
-      bool expect_response =
-        (dromajo_to_mc_packet.request.op_v2 != HB_MC_PACKET_OP_REMOTE_STORE) &&
-        (dromajo_to_mc_packet.request.op_v2 != HB_MC_PACKET_OP_REMOTE_SW) &&
-        (dromajo_to_mc_packet.request.op_v2 != HB_MC_PACKET_OP_CACHE_OP);
-
-      // Attempt packet transmission
-      // Since we trigger a call to the transmit FIFOs only when all the 32-bit Dromajo
-      // FIFOs are full (i.e. a single 128-bit packet is ready), we need to wait until
-      // the DPI FIFOs are ready to receive before advancing to the next operation.
-      // This can prevent filling up of the FIFOs. However, not doing this can help in
-      // identifying situations that might create backpressure in actual hardware and
-      // provision for it.
-      do {
-        advance_time();
-        err = dpi->tx_req(*pkt, expect_response);
-      } while (err != BSG_NONSYNTH_DPI_SUCCESS  &&
-           (err == BSG_NONSYNTH_DPI_NO_CREDITS  ||
-            err == BSG_NONSYNTH_DPI_NO_CAPACITY ||
-            err == BSG_NONSYNTH_DPI_NOT_WINDOW  ||
-            err == BSG_NONSYNTH_DPI_BUSY        ||
-            err == BSG_NONSYNTH_DPI_NOT_READY));
-
-      if (err == BSG_NONSYNTH_DPI_SUCCESS) {
-        for (int i = 0;i < 4; i++)
-          host_to_mc_req_fifo->fifo[i].pop();
-      }
-      else {
-        bsg_pr_err("%s: Packet transmission failed\n", __func__);
-        return HB_MC_FAIL;
-      }
+      err = dromajo_transmit_device_packet(&dromajo_to_mc_packet);
+      if (err != HB_MC_SUCCESS)
+        return err;
     }
     is_empty = mc_is_fifo_empty(type);
   } while (!is_empty);
-
-  // Update the credits in dromajo
-  err = dromajo_update_credits();
-  if (err != HB_MC_SUCCESS)
-    return err;
 
   return HB_MC_SUCCESS;
 }
@@ -538,18 +541,23 @@ int SimulationWrapper::eval(){
     }
 
     // Advancing time is required for things to move around in hardware, however
-    // it adds a large overhead to the simulation time. Balance these values to
-    // hit that sweet spot.
-    if ((i % 10) == 0)
-      advance_time_cycles(10);
+    // it adds a large overhead to the simulation time.
+    advance_time();;
+
+    // Update the credits in dromajo
+    // This might be a costly operation to do on every eval call
+    // because it is a DPI call, however it is required to update the
+    // credits for cases like in fences.
+    err = dromajo_update_credits();
+    if (err != HB_MC_SUCCESS)
+      return err;
 
     // Check if transmit FIFO has an element and hence ready to transmit
-    // This operation is relatively low overhead since only a single FIFO's
-    // empty status is being checked. Hence, we can afford to do it every 100
-    // iterations.
-    if (i % NUM_TX_FIFO_CHK_PER_TICK) {
-      mc_fifo_type_t type = FIFO_HOST_TO_MC_REQ;
-      bool is_empty = mc_is_fifo_empty(type);
+    // Every NUM_TX_FIFO_CHK_PER_TICK iterations or if there is an element
+    // in the TX FIFO, drain it immediately.
+    mc_fifo_type_t type = FIFO_HOST_TO_MC_REQ;
+    bool is_empty = mc_is_fifo_empty(type);
+    if ((i % NUM_TX_FIFO_CHK_PER_TICK == 0) || !is_empty) {
       if (!is_empty) {
         transmit = true;
         break;

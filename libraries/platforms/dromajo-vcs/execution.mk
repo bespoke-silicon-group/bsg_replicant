@@ -43,7 +43,7 @@ SIM_ARGS += +ntb_random_seed_automatic
 # add the entire manycore binary somewhere for Dromajo/BlackParrot to load into the
 # DRAM. This is only a patch until we can do it the right way - use a filesystem
 %.log: $(BSG_MANYCORE_KERNELS) %
-	./$(filter-out $<, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
+	./$(filter %, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
 

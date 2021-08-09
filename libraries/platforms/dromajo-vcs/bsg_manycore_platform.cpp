@@ -58,7 +58,7 @@ int hb_bp_get_credits_used(int *credits_used) {
   uint32_t *bp_to_mc_req_credits_addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + BP_TO_MC_REQ_CREDITS_ADDR);
   *credits_used = (int) (*bp_to_mc_req_credits_addr);
   if (*credits_used < 0) {
-    bsg_pr_err("Credits used cannot be negative. Credits used = %d", *credits_used);
+    bsg_pr_err("Credits used cannot be negative. Credits used = %d\n", *credits_used);
     return HB_MC_FAIL;
   }
   return HB_MC_SUCCESS;
@@ -83,12 +83,12 @@ int hb_bp_write_to_mc_bridge(hb_mc_packet_t *pkt) {
 }
 
 /*
- * Checks if the MC to BP FIFO contains any valid elements to be read
+ * Checks if the MC to BP FIFO contains any entries
  * @param[in] entries --> Pointer to a location in memory that will hold the number of entries
- * @param[in] type --> Type of FIFO to read from
- * @returns HB_MC_SUCCESS on success or HB_MC_FAIL on fail
+ * @param[in] type --> Type of FIFO to poll for entries
+ * @returns number of entries in the MC to BP FIFO
  */
-int hb_bp_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
+int hb_bp_get_rx_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
   uint32_t *addr;
   switch (type) {
     case HB_MC_FIFO_RX_REQ: addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + MC_TO_BP_REQ_ENTRIES_ADDR);
@@ -97,7 +97,35 @@ int hb_bp_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
     break;
     default:
     {
-      bsg_pr_err("%s: Unknown packet type\n", __func__);
+      bsg_pr_err("%s: Unknown FIFO type\n", __func__);
+      return HB_MC_FAIL;
+    }
+    break;
+  }
+
+  *entries = *addr;
+  if (*entries < 0) {
+    bsg_pr_err("Entries occupied cannot be negative. Entries = %d\n", *entries);
+    return HB_MC_FAIL;
+  }
+
+  return HB_MC_SUCCESS;
+}
+
+/*
+ * Checks if the BP to MC FIFO contains any entries
+ * @param[in] entries --> Pointer to a location in memory that will hold the number of entries
+ * @param[in] type --> Type of FIFO to poll for entries
+ * @returns number of entries in the BP to MC FIFO
+ */
+int hb_bp_get_tx_fifo_entries(int *entries, hb_mc_fifo_tx_t type) {
+  uint32_t *addr;
+  switch (type) {
+    case HB_MC_FIFO_TX_REQ: addr = reinterpret_cast<uint32_t *>(MC_BASE_ADDR + BP_TO_MC_REQ_ENTRIES_ADDR);
+    break;
+    default:
+    {
+      bsg_pr_err("%s: Unknown FIFO type\n", __func__);
       return HB_MC_FAIL;
     }
     break;
@@ -105,7 +133,7 @@ int hb_bp_get_fifo_entries(int *entries, hb_mc_fifo_rx_t type) {
   
   *entries = *addr;
   if (*entries < 0) {
-    bsg_pr_err("Entries occupied cannot be negative. Entries = %d", *entries);
+    bsg_pr_err("Entries occupied cannot be negative. Entries = %d\n", *entries);
     return HB_MC_FAIL;
   }
 
@@ -277,14 +305,14 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_f
   }
 
   int err;
-  int num_entries = 0;
+  int num_rx_entries = 0;
   do {
-    err = hb_bp_get_fifo_entries(&num_entries, type);
-  } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
+    err = hb_bp_get_rx_fifo_entries(&num_rx_entries, type);
+  } while ((num_rx_entries == 0) || (err != HB_MC_SUCCESS));
 
   err = hb_bp_read_from_mc_bridge(packet, type);
   if (err != HB_MC_SUCCESS) {
-    manycore_pr_err(mc, "%s: Read from the %s FIFO did not succeed", __func__, typestr);
+    manycore_pr_err(mc, "%s: Read from the %s FIFO did not succeed\n", __func__, typestr);
     return err;
   }
 
@@ -301,7 +329,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc, hb_mc_packet_t *packet, hb_mc_f
 int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_config_raw_t *config) {
   hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
   hb_mc_packet_t config_req_pkt, config_resp_pkt;
-  int num_entries = 0;
+  int num_rx_entries = 0;
   int err;
 
   config_req_pkt.request.x_dst = HOST_X_COORD;
@@ -325,8 +353,8 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_c
   }
 
   do {
-    err = hb_bp_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
-  } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
+    err = hb_bp_get_rx_fifo_entries(&num_rx_entries, HB_MC_FIFO_RX_RSP);
+  } while ((num_rx_entries == 0) || (err != HB_MC_SUCCESS));
 
   err = hb_bp_read_from_mc_bridge(&config_resp_pkt, HB_MC_FIFO_RX_RSP);
   if (err != HB_MC_SUCCESS) {
@@ -346,9 +374,9 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, unsigned int idx, hb_mc_c
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
-  int credits_used, is_vacant, num_entries, err;
+  int credits_used, is_vacant, num_rx_entries, num_tx_entries, err;
   hb_mc_packet_t fence_req_pkt, fence_resp_pkt;
-  num_entries = 0;
+  num_rx_entries = num_tx_entries = 0;
   credits_used = 0;
 
   hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform); 
@@ -357,6 +385,12 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
     manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n", __func__);
     return HB_MC_NOIMPL;
   }
+
+  // 3 (probably 4) things need to happen during a fence -
+  // Used credits should be 0
+  // The DPI TX FIFO should be empty
+  // The Dromajo TX FIFO should be empty
+  // The receiving FIFOs should also be empty
 
   // Prepare host packet to query TX vacancy
   fence_req_pkt.request.x_dst = HOST_X_COORD;
@@ -379,7 +413,7 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
     // In the real system (with BP), we will be performing memory-mapped reads to the bridge to grab the current
     // status of the number of endpoint credits for the host. With Dromajo, it still makes sense to do this since
     // host packets are not transmitted over the network. If host packets have to go over the network then it does
-    // not make sense since we are sending packets on the TX FIFO and are expecting the TX FIFO to be vacant.
+    // not make sense since we are sending packets on the DPI TX FIFO and are expecting the TX FIFO to be vacant.
     err = hb_bp_write_to_mc_bridge(&fence_req_pkt);
     if (err != HB_MC_SUCCESS) {
       manycore_pr_err(mc, "%s: Write to the host request FIFO failed\n", __func__);
@@ -387,8 +421,8 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
     }
 
     do {
-      err = hb_bp_get_fifo_entries(&num_entries, HB_MC_FIFO_RX_RSP);
-    } while ((num_entries == 0) || (err != HB_MC_SUCCESS));
+      err = hb_bp_get_rx_fifo_entries(&num_rx_entries, HB_MC_FIFO_RX_RSP);
+    } while ((num_rx_entries == 0) || (err != HB_MC_SUCCESS));
 
     err = hb_bp_read_from_mc_bridge(&fence_resp_pkt, HB_MC_FIFO_RX_RSP);
     if (err != HB_MC_SUCCESS) {
@@ -398,6 +432,13 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout) {
 
     is_vacant = fence_resp_pkt.response.data;
   } while ((credits_used != 0) || !is_vacant);
+
+  // We made sure there are no credits being used (TX FIFO queries are host packets and don't use the network) and
+  // the DPI TX FIFO is empty. Also every time we perform a transmit, we drain the Dromajo TX FIFO. But let's just 
+  // check if this FIFO is empty as well.
+  do {
+    err = hb_bp_get_tx_fifo_entries(&num_tx_entries, HB_MC_FIFO_TX_REQ);
+  } while ((num_tx_entries != 0) || (err != HB_MC_SUCCESS));
 
   return HB_MC_SUCCESS;
 }

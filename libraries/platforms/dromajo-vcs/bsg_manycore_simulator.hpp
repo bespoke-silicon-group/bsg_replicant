@@ -117,6 +117,7 @@ public:
   bool dromajo_step();
   int dromajo_transmit_packet();
   int dromajo_transmit_host_packet(hb_mc_packet_t *dromajo_to_host_packet);
+  int dromajo_transmit_device_packet(hb_mc_packet_t *dromajo_to_device_packet);
   int dromajo_receive_packet();
   int dromajo_update_credits();
 
