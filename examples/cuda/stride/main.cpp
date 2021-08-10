@@ -43,7 +43,11 @@ int StrideMain(int argc, char *argv[])
            , hb->physical_dimension().x()
            , hb->physical_dimension().y());
     
-    hb->push_job(Dim(1,1), hb->physical_dimension(), cl.kernel_name(), A_dev, cl.tile_x(), cl.tile_y(), cl.loads_per_core());
+    hb->push_job(Dim(1,1), hb->physical_dimension(), cl.kernel_name()
+                 , A_dev
+                 , cl.tile_x()
+                 , cl.tile_y()
+                 , cl.loads_per_core());
     hb->exec();
     hb->close();
     
