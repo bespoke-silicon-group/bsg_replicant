@@ -115,6 +115,9 @@ tests:   $(TESTS)
 all: profile exec debug saifgen
 
 
+vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
+	@echo Creating $@
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/stride/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/stride/py/vcache.py $^
 
 purge:
 	rm -rf $(TESTS)
