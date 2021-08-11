@@ -37,7 +37,10 @@ int StrideMain(int argc, char *argv[])
         * 2;
 
     hb_mc_eva_t A_dev = hb->alloc(cl.table_words()*sizeof(int)
-                                  + align)
+                                  + align);
+    printf("Aligning 0x%08x to 0x%08x\n"
+           , A_dev
+           , align);
 
     hb_mc_eva_t rem = A_dev % align;
     A_dev += align;
@@ -49,12 +52,15 @@ int StrideMain(int argc, char *argv[])
 
     std::vector<hb_mc_eva_t> A_host = setup_A(cl, A_dev);
 
+    hb->push_write(A_dev, &A_host[0], cl.table_words() * sizeof(int));
+    hb->sync_write();
+
     printf("Launching stride kernel with x = %2d, y = %2d, group = (X=%2d,Y=%2d)\n"
            , cl.tile_x()
            , cl.tile_y()
            , hb->physical_dimension().x()
            , hb->physical_dimension().y());
-    
+
     hb->push_job(Dim(1,1), hb->physical_dimension(), cl.kernel_name()
                  , A_dev
                  , cl.tile_x()
@@ -62,7 +68,7 @@ int StrideMain(int argc, char *argv[])
                  , cl.loads_per_core());
     hb->exec();
     hb->close();
-    
+
     return HB_MC_SUCCESS;
 }
 
