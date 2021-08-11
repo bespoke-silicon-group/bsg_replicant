@@ -1,6 +1,6 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
-
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 # $1 = table size
 # $2 = loads per core
 # $3 = ilp
@@ -37,7 +37,27 @@ $(eval TILE_X=$(call get-tile-x,$1))
 $(eval TILE_Y=$(call get-tile-y,$1))
 endef
 
-TESTS               =$(call test-name,8192,1024,1,1,0,0)
+# 1GB
+TABLE_WORDS = $(shell echo 1024*1024*256|bc)
+# stride size is line size (8 words)
+STRIDE_WORDS = $(BSG_MACHINE_VCACHE_BLOCK_SIZE_WORDS)
+# no unrolling
+ILP = 1
+# do a sweep of loads/core
+LOADS_PER_CORE  = 100 200 300 400 500 600 700 800 1000
+LOADS_PER_CORE += 150 250 350 450 550 650 750 850 1050
+# set tile-x to two middle columns
+TILE_X  = $(shell echo $(BSG_MACHINE_GLOBAL_X)/2|bc)
+TILE_X += $(shell echo $(BSG_MACHINE_GLOBAL_X)/2-1|bc)
+# set tile-y to two middle rows
+TILE_Y  = $(shell echo $(BSG_MACHINE_GLOBAL_Y)/2|bc)
+TILE_Y += $(shell echo $(BSG_MACHINE_GLOBAL_Y)/2-1|bc)
+
+$(foreach lpc,$(LOADS_PER_CORE),\
+$(foreach tx,$(TILE_X),\
+$(foreach ty,$(TILE_Y),\
+$(eval TESTS += $(call test-name,$(TABLE_WORDS),$(lpc),$(ILP),$(STRIDE_WORDS),$(tx),$(ty))))))
+
 TESTS_MAKEFILE      =$(foreach test,$(TESTS),$(test)/Makefile)
 TESTS_PARAMETERS_MK =$(foreach test,$(TESTS),$(test)/parameters.mk)
 
@@ -54,6 +74,7 @@ $(TESTS_PARAMETERS_MK): %/parameters.mk: %/Makefile
 	@echo "Creating $@"
 	@mkdir -p $*
 	@$(eval $(call get-test-parameters,$*))
+	@rm -f $@
 	@touch $@
 	@echo "TABLE_WORDS=$(TABLE_WORDS)"		>> $@
 	@echo "LOADS_PER_CORE=$(LOADS_PER_CORE)"	>> $@
