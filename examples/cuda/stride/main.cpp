@@ -28,13 +28,25 @@ int StrideMain(int argc, char *argv[])
     printf("Resetting barrier\n");
     hb->push_job(hb->physical_dimension(), Dim(1,1), "reset_barrier");
     hb->exec();
-    
-    hb_mc_eva_t A_dev = hb->alloc(cl.table_words()*sizeof(int));
+
+    // align allocation to stripe size * number of stripes
+    hb_mc_eva_t align
+        = hb->config()->vcache_stripe_words
+        * sizeof(int)
+        * hb->config()->pod_shape.x
+        * 2;
+
+    hb_mc_eva_t A_dev = hb->alloc(cl.table_words()*sizeof(int)
+                                  + align)
+
+    hb_mc_eva_t rem = A_dev % align;
+    A_dev += align;
+    A_dev -= rem;
 
     printf("Table of %8d words allocated at 0x%08x\n"
            , cl.table_words()
            , A_dev);
-    
+
     std::vector<hb_mc_eva_t> A_host = setup_A(cl, A_dev);
 
     printf("Launching stride kernel with x = %2d, y = %2d, group = (X=%2d,Y=%2d)\n"
