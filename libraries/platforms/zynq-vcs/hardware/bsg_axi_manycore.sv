@@ -40,6 +40,7 @@ module bsg_axi_manycore
    // manycore control logic
    , input  clk_i
    , input  reset_i
+   , input  reset_done_i
 
    // manycore I/O
    , input  [link_sif_width_p-1:0]              io_link_sif_i
@@ -54,10 +55,10 @@ module bsg_axi_manycore
   // Zynq shell //
   ////////////////
   
-   localparam num_regs_ps_to_pl_lp = 4;
+   localparam num_regs_ps_to_pl_lp = 4;  
    localparam num_fifo_ps_to_pl_lp = 2;
    localparam num_fifo_pl_to_ps_lp = 2;
-   localparam num_regs_pl_to_ps_lp = 1;
+   localparam num_regs_pl_to_ps_lp = 1+bsg_machine_rom_els_gp;
 
    wire [num_fifo_pl_to_ps_lp-1:0][C_S00_AXI_DATA_WIDTH-1:0] pl_to_ps_fifo_data_li;
    wire [num_fifo_pl_to_ps_lp-1:0]                           pl_to_ps_fifo_v_li;
@@ -68,7 +69,7 @@ module bsg_axi_manycore
    wire [num_fifo_ps_to_pl_lp-1:0]                           ps_to_pl_fifo_yumi_li;
 
    wire [num_regs_ps_to_pl_lp-1:0][C_S00_AXI_DATA_WIDTH-1:0] csr_data_lo;
-   wire [num_regs_ps_to_pl_lp-1:0][C_S00_AXI_DATA_WIDTH-1:0] csr_data_li;
+   wire [num_regs_pl_to_ps_lp-1:0][C_S00_AXI_DATA_WIDTH-1:0] csr_data_li;
 
    bsg_zynq_pl_shell
      #(
@@ -113,7 +114,17 @@ module bsg_axi_manycore
         ,.S_AXI_RREADY (s00_axi_rready_i )
         );  
 
-  
+  ///////////////////////
+  // Configuration ROM //
+  ///////////////////////
+  logic [bsg_machine_rom_width_gp-1:0] rom [bsg_machine_rom_els_gp-1:0];
+  assign rom = bsg_machine_rom_arr_gp;
+  genvar k;  
+  for (k = 0; k < bsg_machine_rom_els_gp; k++) begin
+    assign csr_data_li[k+1] = rom[k];
+  end
+  assign csr_data_li[0] = {0, reset_done_i};
+
   ///////////////
   // manycore  //
   ///////////////  
@@ -138,7 +149,7 @@ module bsg_axi_manycore
   // host responses -> manycore
   logic [fifo_width_lp-1:0] endpoint_rsp_li;  
   logic endpoint_rsp_v_li;
-  logic endpoint_rsp_ready_li;  
+  logic endpoint_rsp_ready_lo;  
   
   bsg_manycore_endpoint_to_fifos
     #(
@@ -170,8 +181,8 @@ module bsg_axi_manycore
      ,.endpoint_rsp_v_i(endpoint_rsp_v_li)
      ,.endpoint_rsp_ready_o(endpoint_rsp_ready_lo)
 
-     ,.link_sif_i(link_sif_i)
-     ,.link_sif_o(link_sif_o)
+     ,.link_sif_i(io_link_sif_i)
+     ,.link_sif_o(io_link_sif_o)
 
      ,.global_x_i(global_x_i)
      ,.global_y_i(global_y_i)
@@ -195,11 +206,11 @@ module bsg_axi_manycore
         
         ,.v_i    (ps_to_pl_fifo_v_lo[k])
         ,.ready_o(ps_to_pl_fifo_par_ready_lo[k])
-        ,.data_i (ps_to_pl_fifo_data_li[k])
+        ,.data_i (ps_to_pl_fifo_data_lo[k])
 
         ,.data_o(ps_to_pl_fifo_par_data_lo[k])
-        ,.v_o   (ps_to_pl_fifo_par_data_v_lo[k])
-        ,.yumi_i(ps_to_pl_fifo_par_data_yumi_li[k]));
+        ,.v_o   (ps_to_pl_fifo_par_v_lo[k])
+        ,.yumi_i(ps_to_pl_fifo_par_yumi_li[k]));
 
     assign ps_to_pl_fifo_yumi_li[k] = ps_to_pl_fifo_v_lo[k] & ps_to_pl_fifo_par_ready_lo[k];
   end
@@ -212,6 +223,27 @@ module bsg_axi_manycore
   assign endpoint_rsp_v_li            = ps_to_pl_fifo_par_v_lo[1];
   assign ps_to_pl_fifo_par_yumi_li[1] = endpoint_rsp_v_li & endpoint_rsp_ready_lo;
 
+  for (genvar j = 0; j < 2; j++) begin
+    always @(posedge ps_to_pl_fifo_v_lo[j]) begin
+      $display("%M: ps_to_pl_fifo_v_lo[%d]=%b"
+               , j
+               , ps_to_pl_fifo_v_lo[j]);
+      $display("%M: ps_to_pl_fifo_par_ready_lo[%d]=%b"
+               , j
+               , ps_to_pl_fifo_par_ready_lo[j]);      
+    end
+
+    always @(posedge ps_to_pl_fifo_par_v_lo[j]) begin
+      $display("%M: ps_to_pl_fifo_par_v_lo[%d]=%b"
+               , j
+               , ps_to_pl_fifo_par_v_lo[j]);
+      $display("%M: endpoint_req_ready_lo=%b"
+               , j
+               , endpoint_req_ready_lo);      
+    end  
+  end
+  
+  
   //////////
   // PISO //
   //////////

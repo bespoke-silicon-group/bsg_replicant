@@ -1,3 +1,4 @@
+`default_nettype none
 module replicant_tb_top
   import bsg_manycore_pkg::*;
   import bsg_bladerunner_pkg::*;
@@ -10,7 +11,7 @@ module replicant_tb_top
 
     // Parameters of Axi Slave Bus Interface S00_AXI
     parameter integer C_S00_AXI_DATA_WIDTH = 32,
-    parameter integer C_S00_AXI_ADDR_WIDTH = 6    
+    parameter integer C_S00_AXI_ADDR_WIDTH = 9
     )
   (
    );
@@ -112,18 +113,6 @@ module replicant_tb_top
    logic host_clk;
    logic host_reset;
 
-   // bsg_nonsynth_clock_gen and bsg_nonsynth_reset_gen BOTH have bit
-   // inputs and outputs (they're non-synthesizable). Casting between
-   // logic and bit can produce unexpected edges as logic types switch
-   // from X to 0/1 at Time 0 in simulation. This means that the input
-   // and outputs of both modules must have type bit, AND the wires
-   // between them. Therefore, we use bit_clk and bit_reset for the
-   // inputs/outputs of these modules to avoid unexpected
-   // negative/positive edges and other modules can choose between bit
-   // version (for non-synthesizable modules) and the logic version
-   // (otherwise).
-   bit   bit_clk;
-   bit   bit_reset;
    logic core_clk;
    logic core_reset;
 
@@ -157,31 +146,7 @@ module replicant_tb_top
    assign trace_en = dpi_trace_en;
    assign log_en = dpi_log_en;
 
-   // -Verilator uses a clock generator that is controlled by C/C++
-   // (bsg_nonsynth_dpi_clock_gen), whereas VCS uses the normal
-   // nonsynthesizable clock generator (bsg_nonsynth_clock_gen)
-`ifdef VERILATOR
-   bsg_nonsynth_dpi_clock_gen
-`else
-   bsg_nonsynth_clock_gen
-`endif
-     #(.cycle_time_p(lc_cycle_time_ps_lp))
-   core_clk_gen
-     (.o(bit_clk));
-   assign core_clk = bit_clk;
-
-   bsg_nonsynth_reset_gen
-     #(
-       .num_clocks_p(1)
-       ,.reset_cycles_lo_p(0)
-       ,.reset_cycles_hi_p(16)
-       )
-   reset_gen
-     (
-      .clk_i(bit_clk)
-      ,.async_reset_o(bit_reset)
-      );
-   assign core_reset = bit_reset;
+  //assign core_reset = bit_reset;
 
    bsg_nonsynth_manycore_testbench
      #(
@@ -300,7 +265,9 @@ module replicant_tb_top
        ,.rready_o(s00_axi_rready)
        );
 
-
+  assign core_clk = s00_axi_aclk;
+  assign core_reset = ~s00_axi_aresetn;
+  
    // --------------------------------------------------------------------------
    // IO Complex
    // --------------------------------------------------------------------------
@@ -309,7 +276,11 @@ module replicant_tb_top
    assign host_clk = core_clk;
    assign host_reset = core_reset;
 
-   bsg_axi_manycore aximc
+   bsg_axi_manycore
+     #(.C_S00_AXI_DATA_WIDTH(C_S00_AXI_DATA_WIDTH)
+       ,.C_S00_AXI_ADDR_WIDTH(C_S00_AXI_ADDR_WIDTH)
+       )
+     aximc
      (
        .s00_axi_aclk_i    (s00_axi_aclk)
       ,.s00_axi_aresetn_i (s00_axi_aresetn)
@@ -335,6 +306,7 @@ module replicant_tb_top
 
       ,.clk_i   (host_clk)
       ,.reset_i (host_reset)
+      ,.reset_done_i(core_reset_done_lo)
 
       ,.io_link_sif_i(host_link_sif_lo)
       ,.io_link_sif_o(host_link_sif_li)
@@ -355,30 +327,30 @@ module replicant_tb_top
       ,.data_o(core_reset_done_r)
       );
 
-   bsg_nonsynth_dpi_cycle_counter
-     #(.width_p(global_counter_width_lp))
-   ctr
-     (
-      .clk_i(core_clk)
-      ,.reset_i(core_reset)
-      ,.ctr_r_o(global_ctr)
-      );
+   // bsg_nonsynth_dpi_cycle_counter
+   //   #(.width_p(global_counter_width_lp))
+   // ctr
+   //   (
+   //    .clk_i(core_clk)
+   //    ,.reset_i(core_reset)
+   //    ,.ctr_r_o(global_ctr)
+   //    );
 
-   bsg_print_stat_snoop
-     #(
-       .data_width_p(bsg_machine_noc_data_width_gp)
-       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
-       ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
-       ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
-       )
-   print_stat_snoop
-     (
-      .loader_link_sif_in_i(host_link_sif_lo) // output from manycore
-      ,.loader_link_sif_out_i(host_link_sif_li) // output from host
+   // bsg_print_stat_snoop
+   //   #(
+   //     .data_width_p(bsg_machine_noc_data_width_gp)
+   //     ,.addr_width_p(bsg_machine_noc_epa_width_gp)
+   //     ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
+   //     ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
+   //     )
+   // print_stat_snoop
+   //   (
+   //    .loader_link_sif_in_i(host_link_sif_lo) // output from manycore
+   //    ,.loader_link_sif_out_i(host_link_sif_li) // output from host
 
-      ,.print_stat_v_o(print_stat_v)
-      ,.print_stat_tag_o(print_stat_tag)
-      );
+   //    ,.print_stat_v_o(print_stat_v)
+   //    ,.print_stat_tag_o(print_stat_tag)
+   //    );
 
    // In VCS, the C/C++ testbench is controlled by the
    // simulator. Therefore, we need to "call into" the C/C++ program
@@ -396,6 +368,7 @@ module replicant_tb_top
       longint t;
       $value$plusargs("c_path=%s", path);
       $value$plusargs("c_args=%s", args);
+      #1000
       replicant_tb_top.cosim_main(exit_code, args, path);
       if(exit_code < 0) begin
         $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
