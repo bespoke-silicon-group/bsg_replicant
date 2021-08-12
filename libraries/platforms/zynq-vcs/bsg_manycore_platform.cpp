@@ -211,7 +211,7 @@ int fifo_tx(bp_zynq_pl *pl, const fifo<TX, pkt_t> &fifo, pkt_t *pkt)
 template <typename pkt_t>
 int fifo_rx(bp_zynq_pl *pl, const fifo<RX, pkt_t> &fifo, pkt_t *pkt)
 {
-    int n = sizeof(pkt)/sizeof(int32_t);
+    int n = sizeof(pkt_t)/sizeof(int32_t);
     int *data = reinterpret_cast<int*>(pkt);
     int read = 0;
 
@@ -388,7 +388,7 @@ int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long time
  */
 int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
 {
-    return HB_MC_FAIL;
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -421,7 +421,7 @@ int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc)
  */
 int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
-    return HB_MC_NOIMP;
+    return HB_MC_NOIMPL;
 }
 
 /**
