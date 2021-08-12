@@ -75,6 +75,14 @@ _BSG_MANYCORE_DIR := $(BSG_MANYCORE_DIR)
 undefine BSG_MANYCORE_DIR
 endif
 
+# If VERILATOR_DIR is set, save it to a temporary variable to check
+# against what is set by Bladrunner and undefine it
+ifdef VERILATOR_DIR
+_VERILATOR_DIR := $(VERILATOR_DIR)
+undefine VERILATOR_DIR
+endif
+
+
 # Include project.mk from Bladerunner. This will override
 # BASEJUMP_STL_DIR, and BSG_MANYCORE_DIR
 include $(CL_DIR)/../project.mk
@@ -97,6 +105,15 @@ endif # Matches: ifdef _BSG_MANYCORE_DIR
 # Undefine the temporary variable to prevent its use
 undefine _BSG_MANYCORE_DIR
 
+ifdef _VERILATOR_DIR
+ifneq ($(_VERILATOR_DIR), $(VERILATOR_DIR))
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Overriding VERILATOR_DIR environment variable with Bladerunner defaults.$(NC)"))
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: VERILATOR_DIR=$(VERILATOR_DIR)$(NC)"))
+endif # Matches: ifneq ($(_VERILATOR_DIR), $(VERILATOR_DIR))
+endif # Matches: ifdef _BSG_MANYCORE_DIR
+# Undefine the temporary variable to prevent its use
+undefine _VERILATOR_DIR
+
 endif # Matches: ifneq ("$(wildcard $(CL_DIR)/../project.mk)","")
 
 # If BASEJUMP_STL_DIR is not defined at this point, raise an error.
@@ -107,6 +124,11 @@ endif
 # If BSG_MANYCORE_DIR is not defined at this point, raise an error.
 ifndef BSG_MANYCORE_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MANYCORE_DIR environment variable undefined. Defining is not recommended. Are you running from within Bladerunner?$(NC)"))
+endif
+
+# If VERILATOR_DIR is not defined at this point, raise an error.
+ifndef VERILATOR_DIR
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: VERILATOR_DIR environment variable undefined. Defining is not recommended. Are you running from within Bladerunner?$(NC)"))
 endif
 
 # cadenv.mk defines the CAD environment (for BSG people)
