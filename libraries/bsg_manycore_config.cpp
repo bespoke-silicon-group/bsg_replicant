@@ -24,7 +24,7 @@
 // ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
+#define DEBUG
 #include <bsg_manycore_config.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_errno.h>
@@ -103,10 +103,16 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_NETWORK_DATA_WIDTH];
         CHECK_FIELD(HB_MC_CONFIG_NETWORK_DATA_WIDTH, idx <= HB_MC_CONFIG_MAX_BITWIDTH_DATA);
         config->network_bitwidth_data = idx;
+        bsg_pr_dbg("%s: network data width = %u\n"
+                   , __func__
+                   , config->network_bitwidth_data);
 
         idx = raw[HB_MC_CONFIG_NETWORK_ADDR_WIDTH];
         CHECK_FIELD(HB_MC_CONFIG_NETWORK_ADDR_WIDTH, idx <= HB_MC_CONFIG_MAX_BITWIDTH_ADDR);
         config->network_bitwidth_addr = idx;
+        bsg_pr_dbg("%s: network addr width = %u\n"
+                   , __func__
+                   , config->network_bitwidth_addr);
 
         /* The maximum X dimension of the network is limited by the network
          * address bitwidth */
@@ -116,63 +122,124 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_POD_DIM_X];
         CHECK_FIELD(HB_MC_CONFIG_POD_DIM_X, idx >= HB_MC_COORDINATE_MIN);
         config->pod_shape.x = idx;
+        bsg_pr_dbg("%s: pod num tiles x = %u\n"
+                   , __func__
+                   , config->pod_shape.x);
 
         idx = raw[HB_MC_CONFIG_POD_DIM_Y];
         CHECK_FIELD(HB_MC_CONFIG_POD_DIM_Y, idx >= HB_MC_COORDINATE_MIN && idx <= HB_MC_COORDINATE_MAX);
         config->pod_shape.y = idx;
+        bsg_pr_dbg("%s: pod num tiles y = %u\n"
+                   , __func__
+                   , config->pod_shape.y);
 
         idx = raw[HB_MC_CONFIG_DIM_PODS_X];
         CHECK_FIELD(HB_MC_CONFIG_DIM_PODS_X, idx >= 0 && idx <= 64);
         config->pods.x = idx;
+        bsg_pr_dbg("%s: num pods x = %u\n"
+                   , __func__
+                   , config->pods.x);
 
         idx = raw[HB_MC_CONFIG_DIM_PODS_Y];
         CHECK_FIELD(HB_MC_CONFIG_DIM_PODS_Y, idx >= 0 && idx <= 64);
         config->pods.y = idx;
+        bsg_pr_dbg("%s: num pods y = %u\n"
+                   , __func__
+                   , config->pods.y);
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
         config->host_interface.x = idx;
+        bsg_pr_dbg("%s: host interace x = %u\n"
+                   , __func__
+                   , config->host_interface.x);
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y];
         config->host_interface.y = idx;
-
+        bsg_pr_dbg("%s: host interace y = %u\n"
+                   , __func__
+                   , config->host_interface.y);
 
         idx = raw[HB_MC_CONFIG_NOC_COORD_X_WIDTH];
         CHECK_FIELD(HB_MC_CONFIG_NOC_COORD_X_WIDTH, idx > 0 && idx < 32);
         config->noc_coord_width.x = idx;
+        bsg_pr_dbg("%s: noc coordinate width x = %u\n"
+                   , __func__
+                   , config->noc_coord_width.x);
 
         idx = raw[HB_MC_CONFIG_NOC_COORD_Y_WIDTH];
         CHECK_FIELD(HB_MC_CONFIG_NOC_COORD_Y_WIDTH, idx > 0 && idx < 32);
         config->noc_coord_width.y = idx;
+        bsg_pr_dbg("%s: noc coordinate width y = %u\n"
+                   , __func__
+                   , config->noc_coord_width.y);
 
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
+        bsg_pr_dbg("%s: basejump_stl hash = %08x\n"
+                   , __func__
+                   , config->basejump);
+
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
+        bsg_pr_dbg("%s: bsg_manycore hash = %08x\n"
+                   , __func__
+                   , config->manycore);
+
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];
+        bsg_pr_dbg("%s: bsg_replicant hash = %08x\n"
+                   , __func__
+                   , config->f1);
+
         config->chip_id = raw[HB_MC_CONFIG_CHIP_ID];
         CHECK_FIELD(HB_MC_CONFIG_CHIP_ID, HB_MC_IS_CHIP_ID(config->chip_id));
+        bsg_pr_dbg("%s: chip id = %08x\n"
+                   , __func__
+                   , config->chip_id);
 
         /* set the victim cache parameters from the values in the ROM */
         config->vcache_ways         = raw[HB_MC_CONFIG_VCACHE_WAYS];
+        bsg_pr_dbg("%s: vcache ways = %u\n"
+                   , __func__
+                   , config->vcache_ways);
+
         config->vcache_sets         = raw[HB_MC_CONFIG_VCACHE_SETS];
+        bsg_pr_dbg("%s: vcache sets = %u\n"
+                   , __func__
+                   , config->vcache_sets);
+
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
+        bsg_pr_dbg("%s: vcache block words = %u\n"
+                   , __func__
+                   , config->vcache_block_words);
 
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
         CHECK_FIELD(HB_MC_CONFIG_VCACHE_STRIPE_WORDS, idx >= config->vcache_block_words);
         config->vcache_stripe_words = idx;
+        bsg_pr_dbg("%s: vcache stripe words = %u\n"
+                   , __func__
+                   , config->vcache_stripe_words);
 
         // Response fifo capacity
         idx = raw[HB_MC_CONFIG_IO_REMOTE_LOAD_CAP];
         CHECK_FIELD(HB_MC_CONFIG_IO_REMOTE_LOAD_CAP, idx >= HB_MC_REMOTE_LOAD_MIN && idx <= HB_MC_REMOTE_LOAD_MAX);
         config->io_remote_load_cap = idx;
+        bsg_pr_dbg("%s: IO remote load cap = %u\n"
+                   , __func__
+                   , config->io_remote_load_cap);
 
         // Field no longer used
         idx = raw[HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS];
         //CHECK_FIELD(HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS, idx >= HB_MC_EP_OUT_CREDITS_MIN && idx <= HB_MC_EP_OUT_CREDITS_MAX);
         config->io_endpoint_max_out_credits = idx;
+        bsg_pr_dbg("%s: IO endpoint max out credits = %u\n"
+                   , __func__
+                   , config->io_endpoint_max_out_credits);
 
         // Host endpoint credits
         idx = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
         CHECK_FIELD(HB_MC_CONFIG_IO_HOST_CREDITS_CAP, idx >= HB_MC_HOST_CREDITS_MIN && idx <= HB_MC_HOST_CREDITS_MAX);
         config->io_host_credits_cap = idx;
+        bsg_pr_dbg("%s: IO host credits cap = %u\n"
+                   , __func__
+                   , config->io_host_credits_cap);
 
         err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
         if (err != HB_MC_SUCCESS) {
