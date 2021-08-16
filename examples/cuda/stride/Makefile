@@ -118,6 +118,10 @@ dramsim3.summary.csv:  $(addsuffix /dramsim3.tag.json,$(TESTS))
 	@echo Making $@
 	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/stride/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/stride/py/dramsim3.py $^
 
+dramsim3.latency.summary.csv:  $(addsuffix /dramsim3.tag.json,$(TESTS))
+	@echo Making $@
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/stride/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/stride/py/dramsim3_latency.py $^
+
 vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
 	@echo Creating $@
 	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/stride/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/stride/py/vcache.py $^
