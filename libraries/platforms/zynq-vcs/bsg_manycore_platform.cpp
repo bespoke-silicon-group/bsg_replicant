@@ -219,6 +219,7 @@ int fifo_rx(bp_zynq_pl *pl, const fifo<RX, pkt_t> &fifo, pkt_t *pkt)
     while (read < n) {
         // check fifo available words
         int avail = pl->axil_read(fifo.count_addr());
+        avail = std::min(avail, n-read);
         // read available words
         for (int k = 0; k < avail; k++) {
             data[read++] = pl->axil_read(fifo.data_addr());
