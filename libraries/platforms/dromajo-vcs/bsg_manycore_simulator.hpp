@@ -59,6 +59,10 @@
 declare_hb_mc_get_bits
 declare_bsg_printing
 
+#ifndef BP_DRAM_BASE_ADDR
+#error BlackParrot DRAM base address is undefined
+#endif
+
 #ifndef NUM_DROMAJO_INSTR_PER_TICK
 #define NUM_DROMAJO_INSTR_PER_TICK 1000
 #endif

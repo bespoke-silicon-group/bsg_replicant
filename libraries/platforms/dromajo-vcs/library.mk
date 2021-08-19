@@ -80,6 +80,15 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a: AR = $(RV_AR)
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a: AR = $(RV_AR)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a: AR = $(RV_AR)
 
+# Base addresses for various segments
+# Ideally we want the manycore code at 0x80000000 and the BlackParrot code relocated elsewhere (at least > 0x81000000) since
+# we know the manycore binary is expected to occupy 16 MB. However, Dromajo currently seems to have a requirement to have the
+# start address to be 0x80000000. While, this is easly modified, there should be a better, more elegant way to achieve this.
+# Dromajo suggests we load our own bootrom for this, which I believe should be a RISC-V binary file.
+BP_DRAM_BASE_ADDR := 0x81000000
+HB_DRAM_BASE_ADDR := 0x80000000
+TOP_OF_STACK_ADDR := 0x8F000000
+
 # Make the litteFS file system
 $(BSG_PLATFORM_PATH)/lfs.cpp: MKLFS = $(BLACKPARROT_SDK_DIR)/install/bin/dramfs_mklfs 128 64
 $(BSG_PLATFORM_PATH)/lfs.cpp:
@@ -128,6 +137,7 @@ PLATFORM_DEFINES += -DBP_POD_X=0 -DBP_POD_Y=1
 PLATFORM_DEFINES += -DNUM_DROMAJO_INSTR_PER_TICK=1000
 PLATFORM_DEFINES += -DNUM_TX_FIFO_CHK_PER_TICK=100
 PLATFORM_DEFINES += -DFIFO_MAX_ELEMENTS=$(BSG_MACHINE_IO_EP_CREDITS)
+PLATFORM_DEFINES += -DBP_DRAM_BASE_ADDR=$(subst 0x,,$(BP_DRAM_BASE_ADDR))
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))

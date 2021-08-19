@@ -5,7 +5,7 @@
 
 # This assembly file mimics the BlackParrot perch library start.S
 # with minor modifications to allow arguments to be loaded into the
-# argument registers for main
+# argument registers for main as well as load the manycore binary
 
 .section ".text.init"
 .globl _start
@@ -17,10 +17,10 @@ _start:
   la gp, _gp
 .option pop
 
-# Setup stack pointers. Stacks start at 0x800F0000
+# Setup stack pointers.
 # We then subtract off 8K*coreID. The top 4K is for the core emulation stack
-# the lower 4K is for the program TODO: Maybe larger stack value?
-  li   sp, 0x800F0000
+# the lower 4K is for the program
+  la   sp, _sp
   csrr t0, mhartid
   slli t0, t0, 13
   sub  sp, sp, t0
