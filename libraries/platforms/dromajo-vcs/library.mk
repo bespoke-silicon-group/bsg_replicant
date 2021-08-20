@@ -97,6 +97,19 @@ $(BSG_PLATFORM_PATH)/lfs.cpp:
 $(BSG_PLATFORM_PATH)/lfs.o: $(BSG_PLATFORM_PATH)/lfs.cpp
 	$(CXX) $^ -c -o $@ $(CXXFLAGS) $(INCLUDES)
 
+# Include the compiled manycore binary if one exists
+# FIXME: Some caveats with this target --> You have to use it with the *.log target
+# In the future we either move away from linking the manycore binary at compile time
+# or have a better compilation strategy (requires changes in the test infrastructure)
+$(BSG_PLATFORM_PATH)/mcbin.o: $(BSG_MANYCORE_KERNELS)
+$(BSG_PLATFORM_PATH)/mcbin.o: CFLAGS := -march=rv64imafd -mabi=lp64 -mcmodel=medany
+$(BSG_PLATFORM_PATH)/mcbin.o: INCLUDES :=
+$(BSG_PLATFORM_PATH)/mcbin.o: CC := $(RV_CC)
+$(BSG_PLATFORM_PATH)/mcbin.o:
+	cp $(BSG_MANYCORE_KERNELS) manycore.riscv
+	sed "s|BSG_MANYCORE_KERNELS|\"manycore.riscv\"|g" $(BSG_PLATFORM_PATH)/mcbin.S > genmcbin.S
+	$(CC) -c -o $@ $(CFLAGS) $(DEFINES) $(INCLUDES) genmcbin.S
+
 include $(LIBRARIES_PATH)/features/dma/simulation/dramsim3.mk
 include $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.mk
 

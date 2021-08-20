@@ -79,21 +79,35 @@ void hb_bp_init_args(void) {
         // Get the correct byte from the 4-byte data and then shift it
         // to the lowest byte
         byte = ((data & mask) >> (8 * (3 - i)));
-        if (byte != null_char) {
-          buffer[hb_bp_char_index++] = (char) byte;
-          mask >>= 8;
+
+        // FIXME: Don't put the first argument (name of the program itself) in the buffer since the loader doesn't expect that
+        // Fix the loader or argp (more likely)!
+        if (hb_bp_arg_index != 0) {
+          if (byte != null_char) {
+            buffer[hb_bp_char_index++] = (char) byte;
+            mask >>= 8;
+          }
+          else {
+            buffer[hb_bp_char_index++] = ' ';
+            hb_bp_arg_index++;
+            break;
+          }
         }
         else {
-          buffer[hb_bp_char_index++] = ' ';
-          hb_bp_arg_index++;
-          break;
+          if (byte == null_char) {
+            hb_bp_arg_index++;
+            break;
+          }
         }
       }
     }
     else
       break;
   }
-  hb_bp_argc = hb_bp_arg_index;
+
+  // FIXME: Don't put the first argument (name of the program itself) in the buffer since the loader doesn't expect that
+  // Fix the loader or argp (more likely)!
+  hb_bp_argc = hb_bp_arg_index - 1;
 
   // Convert a flat buffer into a 2-D array of pointers as argparse
   // expects it to be

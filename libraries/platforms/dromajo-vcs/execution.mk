@@ -41,7 +41,7 @@ SIM_ARGS += +ntb_random_seed_automatic
 
 # Compile the manycore binary before building the rest of the library so that we can
 # add the entire manycore binary somewhere for Dromajo/BlackParrot to load into the
-# DRAM. This is only a patch until we can do it the right way - use a filesystem
+# DRAM. This is only a patch until we can do it the right way i.e. use a filesystem
 %.log: $(BSG_MANYCORE_KERNELS) %
 	./$* $(SIM_ARGS) +c_args="$(C_ARGS)" 2>&1 | tee $@
 

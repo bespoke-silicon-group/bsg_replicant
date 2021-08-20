@@ -1,2 +1,2 @@
 lfs.cpp
-software/linker
+linker/riscv.ld

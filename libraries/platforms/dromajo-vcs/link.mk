@@ -112,8 +112,7 @@ TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 # Generate the linker
 linker_gen: PYTHON := python3
 linker_gen:
-	mkdir -p $(BSG_PLATFORM_PATH)/software/linker
-	$(PYTHON) $(BSG_PLATFORM_PATH)/software/linker_gen.py $(BP_DRAM_BASE_ADDR) $(TOP_OF_STACK_ADDR) $(HB_DRAM_BASE_ADDR) > $(BSG_PLATFORM_PATH)/software/linker/riscv.ld
+	$(PYTHON) $(BSG_PLATFORM_PATH)/software/linker/linker_gen.py $(BP_DRAM_BASE_ADDR) $(TOP_OF_STACK_ADDR) $(HB_DRAM_BASE_ADDR) > $(BSG_PLATFORM_PATH)/software/linker/riscv.ld
 
 $(BSG_PLATFORM_PATH)/test.riscv: CC = $(RV_CC)
 $(BSG_PLATFORM_PATH)/test.riscv: CXX = $(RV_CXX)
@@ -122,11 +121,12 @@ $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/lfs.o
 $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a
 $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a
 $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a
+$(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/mcbin.o
 $(BSG_PLATFORM_PATH)/test.riscv: linker_gen
 $(BSG_PLATFORM_PATH)/test.riscv: LDFLAGS := -T$(BSG_PLATFORM_PATH)/software/linker/riscv.ld -L$(BSG_PLATFORM_PATH) -static -nostartfiles -lstdc++ -lbsg_manycore_regression -lbsg_manycore_runtime
 $(BSG_PLATFORM_PATH)/test.riscv: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/test.riscv:
-	$(LD) -D_DRAMFS -o $@ $(BSG_PLATFORM_PATH)/software/src/crt0.o $(BSG_PLATFORM_PATH)/lfs.o $< $(LDFLAGS)
+	$(LD) -o $@ $(BSG_PLATFORM_PATH)/mcbin.o $(BSG_PLATFORM_PATH)/lfs.o $< $(LDFLAGS)
 	cp $@ main.elf
 
 # VCS Generates an executable file by linking the TEST_OBJECTS with
@@ -176,6 +176,7 @@ platform.link.clean:
 	rm -rf *.debug *.profile *.saifgen *.exec
 	rm -rf *.elf
 	rm -rf $(BSG_PLATFORM_PATH)/*.riscv
-	rm -rf $(BSG_PLATFORM_PATH)/software/linker
+	rm -rf genmcbin.S manycore.riscv
+	rm -rf $(BSG_PLATFORM_PATH)/mcbin.o
 
 link.clean: platform.link.clean ;
