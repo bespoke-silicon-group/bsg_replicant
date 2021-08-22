@@ -42,10 +42,22 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
+
+# hammerblade helpers
+hammerblade-helpers-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers
+include $(hammerblade-helpers-dir)/libhammerblade-helpers-host.mk
+
+# graph tools
+graphtools-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/graph-tools
+include $(graphtools-dir)/libgraphtools.mk
+
+# eigen
+eigen-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen
+
 include parameters.mk
 
-vpath %.cpp $(EXAMPLES_PATH)/cuda/dwarfs/sparse_linear_algebra/spmv
-vpath %.c   $(EXAMPLES_PATH)/cuda/dwarfs/sparse_linear_algebra/spmv
+vpath %.cpp $(EXAMPLES_PATH)/cuda/dwarfs/spmv
+vpath %.c   $(EXAMPLES_PATH)/cuda/dwarfs/spmv
 
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
@@ -57,19 +69,25 @@ KERNEL_NAME = spmv
 ###############################################################################
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES  = main.cpp
+TEST_SOURCES += Random.cpp
 
-TEST_HEADERS =  $(find $(EXAMPLES_PATH)/cuda/dwarfs/sparse_linear_algebra/spmv/include/ -name *.h)
-TEST_HEADERS += $(find $(EXAMPLES_PATH)/cuda/dwarfs/sparse_linear_algebra/spmv/include/ -name *.hpp)
+TEST_HEADERS =  $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/host/ -name *.h)
+TEST_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/host/ -name *.hpp)
+TEST_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/common/ -name *.h)
+TEST_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/common/ -name *.hpp)
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
 
 FLAGS     = -O3 -g -Wall -Wno-unused-function -Wno-unused-variable
-FLAGS    += -I$(EXAMPLES_PATH)/cuda/dwarfs/sparse_linear_algebra/spmv/include/
-FLAGS    += -I$(EXAMPLES_PATH)/cuda/dwarfs/sparse_linear_algebra/spmv/include/
+FLAGS    += -I$(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/host
+FLAGS    += -I$(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/common
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS)
+CXXFLAGS += -I$(eigen-dir)
+CXXFLAGS += $(libhammerblade-helpers-host-interface-cxxflags)
+CXXFLAGS += $(libgraphtools-interface-cxxflags)
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -78,11 +96,15 @@ include $(EXAMPLES_PATH)/compilation.mk
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS  += 
+LDFLAGS += $(libhammerblade-helpers-host-interface-ldflags)
+LDFLAGS += $(libgraphtools-interface-ldflags)
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
-
+$(TEST_OBJECTS): $(libhammerblade-helpers-host-interface-libraries)
+$(TEST_OBJECTS): $(libhammerblade-helpers-host-interface-headers)
+$(TEST_OBJECTS): $(libgraphtools-interface-libraries)
+$(TEST_OBJECTS): $(libgraphtools-interface-headers)
 $(TEST_OBJECTS): $(TEST_HEADERS)
 
 ###############################################################################
@@ -96,19 +118,28 @@ $(error "BSG_MANYCORE_KERNELS not defined")
 endif
 
 #RISCV_TARGET_OBJECTS  = main.riscv.rvo
-RISCV_TARGET_OBJECTS += spmv-serial.riscv.rvo
-RISCV_INCLUDES +=
+RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/device/ -name *.h)
+RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/device/ -name *.hpp)
+RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/common/ -name *.h)
+RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/common/ -name *.hpp)
+
+RISCV_TARGET_OBJECTS += spmv.riscv.rvo
+RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/device
+RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/spmv/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_OPT_LEVEL = -O3
 
-TILE_GROUP_DIM_X=1
-TILE_GROUP_DIM_Y=1
+TILE_GROUP_DIM_X=$(TGX)
+TILE_GROUP_DIM_Y=$(TGY)
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -DROWS=$(ROWS)
 RISCV_DEFINES += -DNNZ_PER_ROW=$(NNZ_PER_ROW)
+RISCV_DEFINES += -D__KERNEL__
+RISCV_DEFINES += -DGROUPS=$(GROUPS)
+
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
@@ -125,6 +156,7 @@ RISCV_CC  = $(RISCV_CLANG)
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
 C_ARGS += $(ROWS) $(COLS) $(NNZ_PER_ROW)
+C_ARGS += $(GROUPS) $(TGX) $(TGY)
 
 SIM_ARGS ?=
 
