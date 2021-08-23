@@ -27,5 +27,16 @@
 
 # This assembly file includes the manycore binary if there is one
 
-.section ".manycore.text"
+.section .manycore.text
+.globl manycore
+.align 4
+.type manycore, @object
+
+manycore:
 .incbin BSG_MANYCORE_KERNELS
+
+.globl manycore_size
+.type manycore_size, @object
+.align 4
+manycore_size:
+.int manycore_size - manycore

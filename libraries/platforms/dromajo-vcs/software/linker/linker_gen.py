@@ -29,7 +29,6 @@
 from __future__ import print_function
 
 import argparse
-import json
 
 
 def print_linker(bp_dram_base, sp, hb_dram_base):

@@ -178,5 +178,6 @@ platform.link.clean:
 	rm -rf $(BSG_PLATFORM_PATH)/*.riscv
 	rm -rf genmcbin.S manycore.riscv
 	rm -rf $(BSG_PLATFORM_PATH)/mcbin.o
+	rm -rf $(BSG_PLATFORM_PATH)/software/linker/riscv.ld
 
 link.clean: platform.link.clean ;

@@ -81,10 +81,14 @@ $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a: AR = $(RV_AR)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a: AR = $(RV_AR)
 
 # Base addresses for various segments
-# Ideally we want the manycore code at 0x80000000 and the BlackParrot code relocated elsewhere (at least > 0x81000000) since
-# we know the manycore binary is expected to occupy 16 MB. However, Dromajo currently seems to have a requirement to have the
-# start address to be 0x80000000. While, this is easly modified, there should be a better, more elegant way to achieve this.
-# Dromajo suggests we load our own bootrom for this, which I believe should be a RISC-V binary file.
+# SM: For now let us assume the manycore code will fit into 16MB (I believe this is the requirement for the 
+# .text section of the manycore binary; but let's assume even data fits into this limit). The Dromajo codebase
+# has a hardcoded parameter that start addresses should be one of 00x80000000, 0x8000000000 or 0xC000000000.
+# Another entry for 0x81000000 has also been added. Remapping to a different start address requires the creation
+# of a custom bootrom for Dromajo. BlackParrot should not face any such issue because of the presence of a 
+# base address register in the manycore which will get set to the correct base address during the NBF load stage.
+# FIXME: Need a more elegant solution for relocating BlackParrot code to different pods or DRAM regions when
+# running on Dromajo
 BP_DRAM_BASE_ADDR := 0x81000000
 HB_DRAM_BASE_ADDR := 0x80000000
 TOP_OF_STACK_ADDR := 0x8F000000
@@ -103,7 +107,7 @@ $(BSG_PLATFORM_PATH)/lfs.o: $(BSG_PLATFORM_PATH)/lfs.cpp
 # or have a better compilation strategy (requires changes in the test infrastructure)
 $(BSG_PLATFORM_PATH)/mcbin.o: $(BSG_MANYCORE_KERNELS)
 $(BSG_PLATFORM_PATH)/mcbin.o: CFLAGS := -march=rv64imafd -mabi=lp64 -mcmodel=medany
-$(BSG_PLATFORM_PATH)/mcbin.o: INCLUDES :=
+$(BSG_PLATFORM_PATH)/mcbin.o: INCLUDES := -I$(shell pwd)
 $(BSG_PLATFORM_PATH)/mcbin.o: CC := $(RV_CC)
 $(BSG_PLATFORM_PATH)/mcbin.o:
 	cp $(BSG_MANYCORE_KERNELS) manycore.riscv
