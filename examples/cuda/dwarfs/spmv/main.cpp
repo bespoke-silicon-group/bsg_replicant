@@ -17,7 +17,6 @@ int spmv_main(int argc, char *argv[])
     // generate input
     bsg_pr_info("Generating input\n");
     CSR csr = CSR::Uniform(cl.rows(), cl.cols(), cl.nnz_per_row());
-    std::cout << csr.to_string() << "\n";
 
     // init hb
     bsg_pr_info("Initializing manycore\n");
@@ -64,11 +63,19 @@ int spmv_main(int argc, char *argv[])
     // allocate input vector
     Eigen::VectorXf v_i = Eigen::VectorXf::Random(csr.numMinors());
     Eigen::VectorXf v_o = Eigen::VectorXf::Zero(csr.numMajors());
+    Eigen::VectorXf v_lock_o = v_o;
+
     hb_mc_eva_t v_i_dev = hb->alloc(csr.numMinors() * sizeof(float));
     hb_mc_eva_t v_o_dev = hb->alloc(csr.numMajors() * sizeof(float));
+    hb_mc_eva_t v_lock_o_dev = hb->alloc(csr.numMajors() * sizeof(int));
+
     hb->push_write(v_i_dev
                    , v_i.data()
                    , csr.numMinors() * sizeof(float));
+
+    hb->push_write(v_lock_o_dev
+                   , v_lock_o.data()
+                   , csr.numMajors() * sizeof(int));
 
     // launch kernel
     bsg_pr_info("Writing input\n");
@@ -85,7 +92,8 @@ int spmv_main(int argc, char *argv[])
     hb->push_job(grid, grp, "spmv"
                  , spm_dev
                  , v_i_dev
-                 , v_o_dev);
+                 , v_o_dev
+                 , v_lock_o_dev);
     hb->exec();
 
     // read output
@@ -98,7 +106,19 @@ int spmv_main(int argc, char *argv[])
         = csr.eigenSparseMatrix()
         * v_i;
 
-    std::cout << "answer.isAprox(v_o) = " << v_o.isApprox(answer) << std::endl;
+    int correct = v_o.isApprox(answer);
+    //int correct = 0;
+    printf("v_o.isApprox(answer) = %d\n", correct);
+    if (!correct) {
+        printf("%20s %20s\n"
+               , "correct"
+               , "solution");
+        for (int i = 0; i < answer.size(); i++) {
+            printf("%20f %20f\n"
+                   , answer(i)
+                   , v_o(i));
+        }
+    }
 
     // validate result
     bsg_pr_info("Cleanup\n");
