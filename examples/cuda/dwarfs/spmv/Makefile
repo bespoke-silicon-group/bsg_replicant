@@ -10,6 +10,8 @@ get-tgx         = $(firstword $(subst _, ,$(filter %_tgx,$(subst __, ,$1))))
 get-tgy         = $(firstword $(subst _, ,$(filter %_tgy,$(subst __, ,$1))))
 
 TESTS += $(call test-name,16,8,2,1,1,1)
+TESTS += $(call test-name,1024,1024,32,4,8,4)
+TESTS += $(call test-name,1024,1024,32,32,2,2)
 
 TESTS_PARAMETERS_MK=$(addsuffix /parameters.mk,$(TESTS))
 TESTS_MAKEFILE=$(addsuffix /Makefile,$(TESTS))
