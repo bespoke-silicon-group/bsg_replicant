@@ -107,6 +107,11 @@ int spmv_main(int argc, char *argv[])
         * v_i;
 
     int correct = v_o.isApprox(answer);
+
+    // calculate the l2 norm
+    printf("norm(solution-correct) = %f\n"
+           , (v_o-answer).norm());
+
     //int correct = 0;
     printf("v_o.isApprox(answer) = %d\n", correct);
     if (!correct) {
