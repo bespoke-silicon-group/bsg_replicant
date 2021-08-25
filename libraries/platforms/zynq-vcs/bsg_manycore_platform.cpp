@@ -233,7 +233,7 @@ int fifo_rx(bp_zynq_pl *pl, const fifo<RX, pkt_t> &fifo, pkt_t *pkt)
 /* read all unread packets from a fifo (rx only) */
 int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 {
-    return HB_MC_FAIL;
+    return HB_MC_NOIMPL;
 }
 
 // These track active manycore machine IDs, and top-level
