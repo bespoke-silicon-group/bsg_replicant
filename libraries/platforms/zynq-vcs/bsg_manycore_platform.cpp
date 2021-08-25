@@ -172,16 +172,17 @@ private:
     std::string  _name;
 };
 
-
 using fifo_tx_req_t = fifo<TX,hb_mc_request_packet_t>;
 using fifo_tx_rsp_t = fifo<TX,hb_mc_response_packet_t>;
 using fifo_rx_req_t = fifo<RX,hb_mc_request_packet_t>;
 using fifo_rx_rsp_t = fifo<RX,hb_mc_response_packet_t>;
 
-typedef struct hb_mc_platform_t {
+typedef struct hb_mc_platform {
     bp_zynq_pl *zynq_pl;
     hb_mc_manycore_id_t id;
     hb_mc_tracer_t tracer;
+    int capacity;
+    int max_capacity;
     std::unique_ptr<fifo_tx_req_t>  tx_req;
     std::unique_ptr<fifo_tx_rsp_t>  tx_rsp;    
     std::unique_ptr<fifo_rx_req_t>  rx_req;
@@ -264,14 +265,27 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
     hb_mc_platform_t *plt = new hb_mc_platform_t;
     bp_zynq_pl *zynq_pl = new bp_zynq_pl(0, nullptr);
     int err = HB_MC_FAIL;
-    
     plt->zynq_pl = zynq_pl;
     mc->platform = reinterpret_cast<void*>(plt);
 
     // initialize fifos
     CALL_CATCH(platform_fifos_init(plt), err, failed);
+
+    // set the capcity
+    plt->max_capacity = 2;
+    plt->capacity = plt->max_capacity;
+
+    // set the credit limits
+    hb_mc_config_raw_t cred;
+    CALL_CATCH(hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_IO_HOST_CREDITS_CAP, &cred)
+               , err
+               , failed);
+
+    plt->credits_used = 0;
+    plt->max_credits = static_cast<int>(cred);
+
     return HB_MC_SUCCESS;
-    
+
 failed:
     delete zynq_pl;
     delete plt;
@@ -291,6 +305,36 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
     return;
 }
 
+static
+int hb_mc_platform_req_tx(hb_mc_manycore_t *mc
+                          , hb_mc_packet_t *packet)
+{
+    hb_mc_platform_t *plt = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
+    int err;
+
+    // do we have the capacity on the response fifo to issue a request?
+    hb_mc_packet_op_t op = static_cast<hb_mc_packet_op_t>(packet->request.op_v2);
+    bool expect_response =
+        !(op == HB_MC_PACKET_OP_REMOTE_STORE
+          || op == HB_MC_PACKET_OP_REMOTE_SW
+          || op == HB_MC_PACKET_OP_CACHE_OP);
+
+    if (expect_response && plt->capacity == 0) {
+        bsg_pr_dbg("%s: returning busy\n", plt->tx_req->name().c_str());
+        return HB_MC_BUSY;
+    }
+
+    err = fifo_tx(plt->zynq_pl, *plt->tx_req, &packet->request);
+    if (err != HB_MC_SUCCESS) {
+        return err;
+    }
+
+    if (expect_response)
+        plt->capacity--;
+
+    return HB_MC_SUCCESS;
+}
+
 /**
  * Transmit a packet to manycore hardware
  * @param[in] mc      A manycore instance initialized with hb_mc_manycore_init()
@@ -307,12 +351,25 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
 
     switch (type) {
     case HB_MC_FIFO_TX_REQ:
-        return fifo_tx(plt->zynq_pl, *plt->tx_req, &packet->request);
+        return hb_mc_platform_req_tx(mc, packet);
     case HB_MC_FIFO_TX_RSP:
         return fifo_tx(plt->zynq_pl, *plt->tx_rsp, &packet->response);
     default:
         return HB_MC_FAIL;
     }
+}
+
+static
+int hb_mc_platform_rsp_rx(hb_mc_manycore_t *mc
+                               , hb_mc_packet_t *packet)
+{
+    hb_mc_platform_t *plt = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
+    int err = fifo_rx(plt->zynq_pl, *plt->rx_rsp, &packet->response);
+    if (err != HB_MC_SUCCESS)
+        return err;
+
+    plt->capacity++;
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -333,7 +390,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
     case HB_MC_FIFO_RX_REQ:
         return fifo_rx(plt->zynq_pl, *plt->rx_req, &packet->request);
     case HB_MC_FIFO_RX_RSP:
-        return fifo_rx(plt->zynq_pl, *plt->rx_rsp, &packet->response);
+        return hb_mc_platform_rsp_rx(mc, packet);
     default:
         return HB_MC_FAIL;
     }
