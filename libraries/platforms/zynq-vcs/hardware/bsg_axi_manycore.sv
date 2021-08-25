@@ -270,13 +270,45 @@ module bsg_axi_manycore
         assign pl_to_ps_fifo_par_yumi_li[k] = pl_to_ps_fifo_v_li[k] & pl_to_ps_fifo_ready_lo[k];        
   end
   
-  assign pl_to_ps_fifo_par_data_li[0]  = mc_req_lo;
-  assign pl_to_ps_fifo_par_v_li[0]     = mc_req_v_lo;
-  assign mc_req_ready_li               = pl_to_ps_fifo_par_ready_lo[0];
+  // assign pl_to_ps_fifo_par_data_li[0]  = mc_req_lo;
+  // assign pl_to_ps_fifo_par_v_li[0]     = mc_req_v_lo;
+  // assign mc_req_ready_li               = pl_to_ps_fifo_par_ready_lo[0];
+  
+  // assign pl_to_ps_fifo_par_data_li[1]  = mc_rsp_lo;
+  // assign pl_to_ps_fifo_par_v_li[1]     = mc_rsp_v_lo;
+  // assign mc_rsp_ready_li               = pl_to_ps_fifo_par_ready_lo[1];
 
-  assign pl_to_ps_fifo_par_data_li[1]  = mc_rsp_lo;
-  assign pl_to_ps_fifo_par_v_li[1]     = mc_rsp_v_lo;
-  assign mc_rsp_ready_li               = pl_to_ps_fifo_par_ready_lo[1];
+  // mc request fifo
+  bsg_fifo_1r1w_small
+    #(.width_p(fifo_width_lp)
+      ,.els_p(bsg_machine_io_credits_max_gp))
+  mc_req_buf
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     
+     ,.v_i(mc_req_v_lo)
+     ,.ready_o(mc_req_ready_li)
+     ,.data_i(mc_req_lo)
+     
+     ,.v_o(pl_to_ps_fifo_par_v_li[0])
+     ,.data_o(pl_to_ps_fifo_par_data_li[0])
+     ,.yumi_i(pl_to_ps_fifo_par_ready_lo[0] & pl_to_ps_fifo_par_v_li[0]));
+
+  // mc response fifo
+  bsg_fifo_1r1w_small
+    #(.width_p(fifo_width_lp)
+      ,.els_p(bsg_machine_io_credits_max_gp))
+  mc_rsp_buf
+    (.clk_i(clk_i)
+     ,.reset_i(reset_i)
+     
+     ,.v_i(mc_rsp_v_lo)
+     ,.ready_o(mc_rsp_ready_li)
+     ,.data_i(mc_rsp_lo)
+     
+     ,.v_o(pl_to_ps_fifo_par_v_li[1])
+     ,.data_o(pl_to_ps_fifo_par_data_li[1])
+     ,.yumi_i(pl_to_ps_fifo_par_ready_lo[1] & pl_to_ps_fifo_par_v_li[1]));  
   
 endmodule
 

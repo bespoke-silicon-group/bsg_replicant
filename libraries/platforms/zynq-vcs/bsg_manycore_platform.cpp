@@ -271,18 +271,16 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
     // initialize fifos
     CALL_CATCH(platform_fifos_init(plt), err, failed);
 
-    // set the capcity
-    plt->max_capacity = 2;
-    plt->capacity = plt->max_capacity;
-
-    // set the credit limits
-    hb_mc_config_raw_t cred;
-    CALL_CATCH(hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_IO_HOST_CREDITS_CAP, &cred)
+    // set the capacity
+    hb_mc_config_raw_t cap;
+    CALL_CATCH(hb_mc_platform_get_config_at(mc, HB_MC_CONFIG_IO_HOST_CREDITS_CAP, &cap)
                , err
                , failed);
 
-    plt->credits_used = 0;
-    plt->max_credits = static_cast<int>(cred);
+    // track the capacity to prevent fifo overflow
+    plt->max_capacity = cap;
+    plt->capacity = plt->max_capacity;
+
 
     return HB_MC_SUCCESS;
 
