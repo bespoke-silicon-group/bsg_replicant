@@ -53,8 +53,11 @@
 #define GP0_RESET_DONE_ADDR                     \
     (GP0_ADDR_BASE + 0x28)
 
-#define GP0_ROM_ADDR_BASE \
+#define GP0_IO_CREDITS_USED_ADDR                \
     (GP0_ADDR_BASE + 0x2C)
+
+#define GP0_ROM_ADDR_BASE \
+    (GP0_ADDR_BASE + 0x30)
 
 #include <bsg_nonsynth_dpi_errno.hpp>
 #include <bsg_nonsynth_dpi_manycore.hpp>
@@ -183,6 +186,7 @@ typedef struct hb_mc_platform {
     hb_mc_tracer_t tracer;
     int capacity;
     int max_capacity;
+    int max_credits;
     std::unique_ptr<fifo_tx_req_t>  tx_req;
     std::unique_ptr<fifo_tx_rsp_t>  tx_rsp;    
     std::unique_ptr<fifo_rx_req_t>  rx_req;
@@ -280,7 +284,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc, hb_mc_manycore_id_t id)
     // track the capacity to prevent fifo overflow
     plt->max_capacity = cap;
     plt->capacity = plt->max_capacity;
-
+    plt->max_credits = cap;
 
     return HB_MC_SUCCESS;
 
@@ -421,7 +425,11 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
  */
 int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long timeout)
 {
-    return HB_MC_FAIL;
+    hb_mc_platform_t *plt = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
+    bp_zynq_pl *pl = plt->zynq_pl;
+    int val = pl->axil_read(GP0_IO_CREDITS_USED_ADDR);
+    *credits = val;
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -433,8 +441,9 @@ int hb_mc_platform_get_credits_used(hb_mc_manycore_t *mc, int *credits, long tim
  */
 int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long timeout)
 {
-
-    return HB_MC_FAIL;
+    hb_mc_platform_t *plt = reinterpret_cast<hb_mc_platform_t*>(mc->platform);
+    *credits = plt->max_credits;
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -445,6 +454,13 @@ int hb_mc_platform_get_credits_max(hb_mc_manycore_t *mc, int *credits, long time
  */
 int hb_mc_platform_fence(hb_mc_manycore_t *mc, long timeout)
 {
+    int credits_used;
+    manycore_pr_dbg(mc, "%s: waiting for used credits to be 0\n"
+                    , __func__);
+    do {
+        CALL(hb_mc_platform_get_credits_used(mc, &credits_used, -1));
+    } while (credits_used > 0);
+
     return HB_MC_SUCCESS;
 }
 

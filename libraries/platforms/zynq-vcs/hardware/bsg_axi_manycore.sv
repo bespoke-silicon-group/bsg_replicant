@@ -58,7 +58,7 @@ module bsg_axi_manycore
    localparam num_regs_ps_to_pl_lp = 4;  
    localparam num_fifo_ps_to_pl_lp = 2;
    localparam num_fifo_pl_to_ps_lp = 2;
-   localparam num_regs_pl_to_ps_lp = 1+bsg_machine_rom_els_gp;
+   localparam num_regs_pl_to_ps_lp = 2+bsg_machine_rom_els_gp;
 
    wire [num_fifo_pl_to_ps_lp-1:0][C_S00_AXI_DATA_WIDTH-1:0] pl_to_ps_fifo_data_li;
    wire [num_fifo_pl_to_ps_lp-1:0]                           pl_to_ps_fifo_v_li;
@@ -121,10 +121,11 @@ module bsg_axi_manycore
   assign rom = bsg_machine_rom_arr_gp;
   genvar k;  
   for (k = 0; k < bsg_machine_rom_els_gp; k++) begin
-    assign csr_data_li[k+1] = rom[k];
+    assign csr_data_li[k+2] = rom[k];
   end
   assign csr_data_li[0] = {0, reset_done_i};
-
+  assign csr_data_li[1] = {0, eptofifo.epsd.out_credits_used_o};
+  
   ///////////////
   // manycore  //
   ///////////////  
