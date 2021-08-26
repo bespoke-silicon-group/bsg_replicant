@@ -12,6 +12,8 @@ module bsg_axi_manycore
     ,bsg_machine_noc_coord_x_width_gp
     ,bsg_machine_noc_coord_y_width_gp
     )
+
+    ,parameter debug_p = 0
    )
   (
    //  AXI Slave bus interface
@@ -224,26 +226,6 @@ module bsg_axi_manycore
   assign endpoint_rsp_v_li            = ps_to_pl_fifo_par_v_lo[1];
   assign ps_to_pl_fifo_par_yumi_li[1] = endpoint_rsp_v_li & endpoint_rsp_ready_lo;
 
-  for (genvar j = 0; j < 2; j++) begin
-    always @(posedge ps_to_pl_fifo_v_lo[j]) begin
-      $display("%M: ps_to_pl_fifo_v_lo[%d]=%b"
-               , j
-               , ps_to_pl_fifo_v_lo[j]);
-      $display("%M: ps_to_pl_fifo_par_ready_lo[%d]=%b"
-               , j
-               , ps_to_pl_fifo_par_ready_lo[j]);      
-    end
-
-    always @(posedge ps_to_pl_fifo_par_v_lo[j]) begin
-      $display("%M: ps_to_pl_fifo_par_v_lo[%d]=%b"
-               , j
-               , ps_to_pl_fifo_par_v_lo[j]);
-      $display("%M: endpoint_req_ready_lo=%b"
-               , j
-               , endpoint_req_ready_lo);      
-    end  
-  end
-  
   
   //////////
   // PISO //
@@ -271,14 +253,6 @@ module bsg_axi_manycore
         assign pl_to_ps_fifo_par_yumi_li[k] = pl_to_ps_fifo_v_li[k] & pl_to_ps_fifo_ready_lo[k];        
   end
   
-  // assign pl_to_ps_fifo_par_data_li[0]  = mc_req_lo;
-  // assign pl_to_ps_fifo_par_v_li[0]     = mc_req_v_lo;
-  // assign mc_req_ready_li               = pl_to_ps_fifo_par_ready_lo[0];
-  
-  // assign pl_to_ps_fifo_par_data_li[1]  = mc_rsp_lo;
-  // assign pl_to_ps_fifo_par_v_li[1]     = mc_rsp_v_lo;
-  // assign mc_rsp_ready_li               = pl_to_ps_fifo_par_ready_lo[1];
-
   // mc request fifo
   bsg_fifo_1r1w_small
     #(.width_p(fifo_width_lp)
@@ -310,6 +284,56 @@ module bsg_axi_manycore
      ,.v_o(pl_to_ps_fifo_par_v_li[1])
      ,.data_o(pl_to_ps_fifo_par_data_li[1])
      ,.yumi_i(pl_to_ps_fifo_par_ready_lo[1] & pl_to_ps_fifo_par_v_li[1]));  
+
+  // synospsys translate_off
+  if (debug_p) begin
+    // debugging
+    for (genvar j = 0; j < 2; j++) begin
+      always @(posedge ps_to_pl_fifo_v_lo[j]) begin
+        $display("%M: ps_to_pl_fifo_v_lo[%d]=%b"
+                 , j
+                 , ps_to_pl_fifo_v_lo[j]);
+        $display("%M: ps_to_pl_fifo_par_ready_lo[%d]=%b"
+                 , j
+                 , ps_to_pl_fifo_par_ready_lo[j]);      
+      end
+
+      always @(posedge ps_to_pl_fifo_par_v_lo[j]) begin
+        $display("%M: ps_to_pl_fifo_par_v_lo[%d]=%b"
+                 , j
+                 , ps_to_pl_fifo_par_v_lo[j]);
+        $display("%M: endpoint_req_ready_lo=%b"
+                 , j
+                 , endpoint_req_ready_lo);      
+      end  
+    end
+
+    `declare_bsg_manycore_link_sif_s(bsg_machine_noc_epa_width_gp
+                                     , bsg_machine_noc_data_width_gp
+                                     , bsg_machine_noc_coord_x_width_gp
+                                     , bsg_machine_noc_coord_y_width_gp);
+    `declare_bsg_manycore_packet_s(bsg_machine_noc_epa_width_gp
+                                   , bsg_machine_noc_data_width_gp
+                                   , bsg_machine_noc_coord_x_width_gp
+                                   , bsg_machine_noc_coord_y_width_gp);
+    
+    bsg_manycore_link_sif_s mc_req_sif;
+    assign mc_req_sif = io_link_sif_i;
+
+    bsg_manycore_packet_s mc_req_packet;
+    assign mc_req_packet = mc_req_sif.fwd.data;  
+    
+    always @(posedge mc_req_sif.fwd.v) begin
+      $display("%M: mc_req_sif.fwd.v=%b"
+               , mc_req_sif.fwd.v);
+      $display("%M: mc_req_packet.src_cord=(X=%d,Y=%d)"
+               , mc_req_packet.src_x_cord
+               , mc_req_packet.src_y_cord);
+      $display("%M: mc_req_packet.addr=%h"
+               , mc_req_packet.addr);    
+    end  
+  end // if (debug_p)
+  // synopsys translate_on
   
 endmodule
 
