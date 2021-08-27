@@ -1,6 +1,5 @@
 #include "bsg_manycore_regression.h"
 #include "CommandLine.hpp"
-#include "SparseMatrix.hpp"
 #include "EigenSparseMatrix.hpp"
 #include <iostream>
 using namespace spmm;
@@ -16,16 +15,19 @@ int SpGEMM(int argc, char *argv[])
     printf("%-14s = %d\n", "is_weighted", cl.input_is_weighted());
     printf("%-14s = %d\n", "is_zero_indexed", cl.input_is_zero_indexed());    
 
-    auto csr = CSR::FromASCIIEdgeListFile(cl.input_path()
-                                          , cl.input_is_weighted()
-                                          , cl.input_is_directed()
-                                          , cl.input_is_zero_indexed());    
+    using CSR = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
-    auto A = csr.eigenSparseMatrix();
-    auto B = csr.eigenSparseMatrix();
-    auto C = CSR::EigenSparseMatrix((A*B).pruned());
-    write_nnz(A, "A.nnz.csv");
-    write_nnz(C, "AxA.nnz.csv");
+    auto A = eigen_sparse_matrix::FromAsciiNNZList<CSR>(
+        cl.input_path()
+        , cl.input_is_weighted()
+        , cl.input_is_directed()
+        , cl.input_is_zero_indexed()
+        );
+    
+    auto B = A;
+    auto AxA = CSR((A*B).pruned());
+    eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
+    eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
     return HB_MC_SUCCESS;
 }
 
