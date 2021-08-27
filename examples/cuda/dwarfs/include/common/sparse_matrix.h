@@ -3,7 +3,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+    
     typedef struct sparse_matrix {
         int is_row_major;
         int n_major;
