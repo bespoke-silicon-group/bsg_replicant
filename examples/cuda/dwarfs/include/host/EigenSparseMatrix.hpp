@@ -82,7 +82,7 @@ namespace dwarfs {
          * Builds a sparse matrix using data from a MatrixMarket formatted file
          */
         template <class SparseMatrixType>
-        SparseMatrixType FromAsciiNNZList(
+        SparseMatrixType FromAsciiNonZerosList(
             const std::string &filename
             , bool weighted
             , bool directed

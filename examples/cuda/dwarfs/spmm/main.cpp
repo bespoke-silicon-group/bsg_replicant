@@ -17,7 +17,7 @@ int SpGEMM(int argc, char *argv[])
 
     using CSR = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
-    auto A = eigen_sparse_matrix::FromAsciiNNZList<CSR>(
+    auto A = eigen_sparse_matrix::FromAsciiNonZerosList<CSR>(
         cl.input_path()
         , cl.input_is_weighted()
         , cl.input_is_directed()
