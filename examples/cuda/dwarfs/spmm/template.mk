@@ -55,6 +55,7 @@ include $(graphtools-dir)/libgraphtools.mk
 eigen-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen
 
 include parameters.mk
+include $(APPLICATION_PATH)/inputs.mk
 
 vpath %.cpp $(APPLICATION_PATH)
 vpath %.cpp $(EXAMPLES_PATH)/cuda/dwarfs/src
@@ -64,14 +65,13 @@ vpath %.c   $(EXAMPLES_PATH)/cuda/dwarfs/src
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = spmv
+KERNEL_NAME = spmm
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES  = main.cpp
-TEST_SOURCES += Random.cpp
 
 TEST_HEADERS =  $(shell find $(APPLICATION_PATH)/include/host/ -name *.h)
 TEST_HEADERS += $(shell find $(APPLICATION_PATH)/include/host/ -name *.hpp)
@@ -114,7 +114,7 @@ $(TEST_OBJECTS): $(libhammerblade-helpers-host-interface-headers)
 $(TEST_OBJECTS): $(libgraphtools-interface-libraries)
 $(TEST_OBJECTS): $(libgraphtools-interface-headers)
 $(TEST_OBJECTS): $(TEST_HEADERS)
-
+$(TEST_OBJECTS): $($(INPUT))
 ###############################################################################
 # Device code compilation flow
 ###############################################################################
@@ -135,7 +135,7 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/device/ -name
 RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name *.h)
 RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name *.hpp)
 
-RISCV_TARGET_OBJECTS += spmv.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm.riscv.rvo
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
@@ -143,17 +143,13 @@ RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_OPT_LEVEL = -O3
 
-TILE_GROUP_DIM_X=$(TGX)
-TILE_GROUP_DIM_Y=$(TGY)
+TILE_GROUP_DIM_X=1
+TILE_GROUP_DIM_Y=1
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
-RISCV_DEFINES += -DROWS=$(ROWS)
-RISCV_DEFINES += -DNNZ_PER_ROW=$(NNZ_PER_ROW)
 RISCV_DEFINES += -D__KERNEL__
-RISCV_DEFINES += -DGROUPS=$(GROUPS)
-
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
@@ -169,8 +165,7 @@ RISCV_CC  = $(RISCV_CLANG)
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
-C_ARGS += $(ROWS) $(COLS) $(NNZ_PER_ROW)
-C_ARGS += $(GROUPS) $(TGX) $(TGY)
+C_ARGS += $($(INPUT)) $($(INPUT)__directed) $($(INPUT)__weighted) $($(INPUT)__zero-indexed)
 
 SIM_ARGS ?=
 
@@ -191,3 +186,11 @@ help:
 
 
 .PHONY: clean
+
+NNZ_CDF_PLOTS =  A.nnz.cdfplot.pdf
+NNZ_CDF_PLOTS += AxA.nnz.cdfplot.pdf
+
+$(NNZ_CDF_PLOTS): %.nnz.cdfplot.pdf: %.nnz.csv
+	python3 $(APPLICATION_PATH)/py/nnz.cdfplot.py $< $@ --title "$($(INPUT)__rows) rows, $($(INPUT)__cols) cols"
+
+plots: $(NNZ_CDF_PLOTS)

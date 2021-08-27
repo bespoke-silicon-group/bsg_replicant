@@ -14,9 +14,6 @@ TESTS += $(call test-name,1024,1024,32,4,8,4)
 TESTS += $(call test-name,1024,1024,32,32,2,2)
 TESTS += $(call test-name,1024,1024,32,128,1,1)
 
-TESTS_PARAMETERS_MK=$(addsuffix /parameters.mk,$(TESTS))
-TESTS_MAKEFILE=$(addsuffix /Makefile,$(TESTS))
-
 define get-test-parameters
 $(eval ROWS=$(call get-rows,$1))
 $(eval COLS=$(call get-cols,$1))
@@ -26,45 +23,24 @@ $(eval TGX=$(call get-tgx,$1))
 $(eval TGY=$(call get-tgy,$1))
 endef
 
-$(TESTS_MAKEFILE): %/Makefile: template.mk
-	@echo "Creating $@"
-	@mkdir -p $*
-	@cp $< $@
+# dwarfs should define this function hook to add
+# app specific parameters
+# 1: test-name
+# 2: parameters.mk target
+#
+# $(2) is set to the parameters.mk of the test directory
+# typically this is $(APPLICATION_PATH)/$(test-name)/parameters.mk
+define parameters-mk-add-application-params
+$(eval $(call get-test-parameters,$1))
+@echo ROWS=$(ROWS) >> $2
+@echo COLS=$(COLS) >> $2
+@echo NNZ_PER_ROW=$(NNZ_PER_ROW) >> $2
+@echo GROUPS=$(GROUPS) >> $2
+@echo TGX=$(TGX) >> $2
+@echo TGY=$(TGY) >> $2
+endef
 
-$(TESTS_PARAMETERS_MK): %/parameters.mk:
-	@echo "Creating $@"
-	@mkdir -p $*
-	@$(call get-test-parameters,$*)
-	@echo ROWS=$(ROWS) >  $@
-	@echo COLS=$(COLS) >> $@
-	@echo NNZ_PER_ROW=$(NNZ_PER_ROW) >> $@
-	@echo GROUPS=$(GROUPS) >> $@
-	@echo TGX=$(TGX) >> $@
-	@echo TGY=$(TGY) >> $@
-	@echo BSG_MANYCORE_KERNELS=$(EXAMPLES_PATH)/cuda/dwarfs/spmv/$*/kernel.riscv >> $@
+# This function needs to be defined
+APPLICATION_PATH=$(EXAMPLES_PATH)/cuda/dwarfs/spmv
 
-$(TESTS): %: %/Makefile %/parameters.mk
-
-TESTS_EXEC    = $(addsuffix .exec,$(TESTS))
-TESTS_DEBUG   = $(addsuffix .debug,$(TESTS))
-TESTS_PROFILE = $(addsuffix .profile,$(TESTS))
-TESTS_SAIFGEN = $(addsuffix .saifgen,$(TESTS))
-
-$(TESTS_EXEC):    %.exec:    %
-$(TESTS_DEBUG):   %.debug:   %
-$(TESTS_PROFILE): %.profile: %
-$(TESTS_SAIFGEN): %.saifgen: %
-
-$(TESTS_EXEC) $(TESTS_DEBUG) $(TESTS_PROFILE) $(TESTS_SAIFGEN):
-	$(eval TEST_NAME=$(firstword $(subst ., ,$@)))
-	$(eval RUN_TYPE=$(lastword $(subst ., ,$@)))
-	$(MAKE) -C $(TEST_NAME) $(RUN_TYPE).log
-
-exec:    $(TESTS_EXEC)
-debug:   $(TEST_DEBUG)
-saifgen: $(TESTS_SAIFGEN)
-profile: $(TESTS_PROFILE)
-tests:   $(TESTS)
-
-purge:
-	rm -rf $(TESTS)
+include $(EXAMPLES_PATH)/cuda/dwarfs/dwarf.mk
