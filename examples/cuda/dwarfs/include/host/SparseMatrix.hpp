@@ -6,19 +6,82 @@
 #include <memory>
 #include <sstream>
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include "Random.hpp"
 
-namespace spmv {
+namespace dwarfs {
 
     template<Eigen::StorageOptions FMT>
     class SparseMatrix {
-    private:
+    public:
         using FLOAT = float;
         using EigenSparseMatrix = Eigen::SparseMatrix<FLOAT, FMT, int>;
         using SparseMatrixPtr = std::shared_ptr<EigenSparseMatrix>;
 
     public:
         SparseMatrix() : _spm_ptr(nullptr) {}
+
+        static SparseMatrix FromASCIIEdgeListFile(
+            const std::string & filename
+            , bool weighted            
+            , bool directed
+            , bool zero_indexed = false
+            ) {
+            using Triplet = Eigen::Triplet<FLOAT>;            
+            std::vector<Triplet> ijk;
+            std::ifstream file(filename);
+            char line[256];
+            SparseMatrix mat;
+
+            // skip comment lines starting with '%' 
+            do {
+                file.getline(line, sizeof(line));
+            } while (line[0] == '%');
+
+            // first line is: ROWS COLS NNZ
+            std::stringstream ss(line);
+            int rows, cols, nnz;
+            ss >> rows;
+            ss >> cols;
+            ss >> nnz;
+
+            // init matrix and reserve triplets
+            SparseMatrixPtr spm = SparseMatrixPtr(new EigenSparseMatrix(rows, cols));
+            ijk.reserve(nnz);
+            
+            // continue until no more nnz            
+            while (!file.eof()) {
+                int i, j;
+                FLOAT k;
+                file >> i;
+                file >> j;
+                // some of the inputs are not zero indexed
+                if (!zero_indexed) {
+                    --i;
+                    --j;
+                }
+                // read weight if applicable
+                if (weighted) {
+                    file >> k;
+                } else {
+                    k = 1.0;
+                }
+
+                ijk.push_back(Triplet(i, j, k));
+                // symmetric matrix?
+                if (!directed) {
+                    ijk.push_back(Triplet(j, i, k));
+                }
+            }
+            // use triplets to set nnz
+            spm->setFromTriplets(ijk.begin(), ijk.end());
+
+            // return sparse matrix
+            mat._spm_ptr = spm;
+            return mat;
+        }
 
         static SparseMatrix Uniform(int rows
                                     , int columns
@@ -58,6 +121,7 @@ namespace spmv {
             // allocate sparse matrix and initialize from triplets
             SparseMatrixPtr ptr = SparseMatrixPtr(new EigenSparseMatrix(rows, columns));
             ptr->setFromTriplets(ijk.begin(), ijk.end());
+            ptr->uncompress();
             mat._spm_ptr = ptr;
             mat._spm_ptr->uncompress();
             return mat;

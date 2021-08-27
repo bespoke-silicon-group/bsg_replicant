@@ -7,6 +7,7 @@
 #include "Eigen/Core"
 #include <iostream>
 using namespace spmv;
+using namespace dwarfs;
 using namespace hammerblade::host;
 
 int spmv_main(int argc, char *argv[])

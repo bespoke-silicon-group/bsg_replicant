@@ -1,4 +1,4 @@
 #include "Random.hpp"
-namespace spmv {
+namespace dwarfs {
     std::default_random_engine GLOBAL_RANDOM_ENGINE;
 }
