@@ -72,6 +72,7 @@ KERNEL_NAME = spmm
 ###############################################################################
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES  = main.cpp
+TEST_SOURCES += Random.cpp
 
 TEST_HEADERS =  $(shell find $(APPLICATION_PATH)/include/host/ -name *.h)
 TEST_HEADERS += $(shell find $(APPLICATION_PATH)/include/host/ -name *.hpp)
@@ -190,7 +191,10 @@ help:
 NNZ_CDF_PLOTS =  A.nnz.cdfplot.pdf
 NNZ_CDF_PLOTS += AxA.nnz.cdfplot.pdf
 
+A.nnz.cdfplot.pdf:   DESCRIPTION="input"
+AxA.nnz.cdfplot.pdf: DESCRIPTION="result"
 $(NNZ_CDF_PLOTS): %.nnz.cdfplot.pdf: %.nnz.csv
-	python3 $(APPLICATION_PATH)/py/nnz.cdfplot.py $< $@ --title "$($(INPUT)__rows) rows, $($(INPUT)__cols) cols"
+	$(eval TITLE="$(INPUT) $(DESCRIPTION), $($(INPUT)__rows) rows, $($(INPUT)__cols) cols")
+	python3 $(APPLICATION_PATH)/py/nnz.cdfplot.py $< $@ --title $(TITLE)
 
 plots: $(NNZ_CDF_PLOTS)

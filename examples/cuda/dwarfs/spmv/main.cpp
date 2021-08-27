@@ -2,7 +2,7 @@
 #include "bsg_manycore_cuda.h"
 #include "CommandLine.hpp"
 #include "HammerBlade.hpp"
-#include "SparseMatrix.hpp"
+#include "EigenSparseMatrix.hpp"
 #include "sparse_matrix.h"
 #include "Eigen/Core"
 #include <iostream>
@@ -17,7 +17,9 @@ int spmv_main(int argc, char *argv[])
 
     // generate input
     bsg_pr_info("Generating input\n");
-    CSR csr = CSR::Uniform(cl.rows(), cl.cols(), cl.nnz_per_row());
+
+    using CSR = Eigen::SparseMatrix<float, Eigen::RowMajor, int>;
+    CSR csr = eigen_sparse_matrix::GenerateUniform<CSR>(cl.rows(), cl.cols(), cl.nnz_per_row());
 
     // init hb
     bsg_pr_info("Initializing manycore\n");
@@ -26,31 +28,31 @@ int spmv_main(int argc, char *argv[])
 
     // init input
     sparse_matrix_t spm;
-    spm.is_row_major = csr.isRowMajor();
+    spm.is_row_major = 1;
 
     // set scalars
-    spm.n_major = csr.numMajors();
-    spm.n_minor = csr.numMinors();
+    spm.n_major = csr.rows();
+    spm.n_minor = csr.cols();
     spm.n_non_zeros = csr.nonZeros();
 
     // allocate vectors
-    spm.mjr_nnz_ptr = hb->alloc(csr.numMajors() * sizeof(int));
-    spm.mnr_off_ptr = hb->alloc(csr.numMajors() * sizeof(int));
-    spm.mnr_idx_ptr = hb->alloc(csr.nonZeros()  * sizeof(int));
-    spm.val_ptr     = hb->alloc(csr.nonZeros()  * sizeof(float));
+    spm.mjr_nnz_ptr = hb->alloc(csr.rows() * sizeof(int));
+    spm.mnr_off_ptr = hb->alloc(csr.rows() * sizeof(int));
+    spm.mnr_idx_ptr = hb->alloc(csr.cols()  * sizeof(int));
+    spm.val_ptr     = hb->alloc(csr.cols()  * sizeof(float));
     hb_mc_eva_t spm_dev = hb->alloc(sizeof(spm));
     
     // init vectors
     hb->push_write(spm.mjr_nnz_ptr
-                   , csr.majorNNZPtr()
-                   , csr.numMajors() * sizeof(int));
+                   , csr.innerNonZeroPtr()
+                   , csr.rows() * sizeof(int));
 
     hb->push_write(spm.mnr_off_ptr
-                   , csr.minorOffPtr()
-                   , csr.numMajors() * sizeof(int));
+                   , csr.outerIndexPtr()
+                   , csr.rows() * sizeof(int));
 
     hb->push_write(spm.mnr_idx_ptr
-                   , csr.minorIdxPtr()
+                   , csr.innerIndexPtr()
                    , csr.nonZeros() * sizeof(int));
 
     hb->push_write(spm.val_ptr
@@ -62,21 +64,21 @@ int spmv_main(int argc, char *argv[])
                    , sizeof(spm));
 
     // allocate input vector
-    Eigen::VectorXf v_i = Eigen::VectorXf::Random(csr.numMinors());
-    Eigen::VectorXf v_o = Eigen::VectorXf::Zero(csr.numMajors());
+    Eigen::VectorXf v_i = Eigen::VectorXf::Random(csr.cols());
+    Eigen::VectorXf v_o = Eigen::VectorXf::Zero(csr.rows());
     Eigen::VectorXf v_lock_o = v_o;
 
-    hb_mc_eva_t v_i_dev = hb->alloc(csr.numMinors() * sizeof(float));
-    hb_mc_eva_t v_o_dev = hb->alloc(csr.numMajors() * sizeof(float));
-    hb_mc_eva_t v_lock_o_dev = hb->alloc(csr.numMajors() * sizeof(int));
+    hb_mc_eva_t v_i_dev = hb->alloc(csr.cols() * sizeof(float));
+    hb_mc_eva_t v_o_dev = hb->alloc(csr.rows() * sizeof(float));
+    hb_mc_eva_t v_lock_o_dev = hb->alloc(csr.rows() * sizeof(int));
 
     hb->push_write(v_i_dev
                    , v_i.data()
-                   , csr.numMinors() * sizeof(float));
+                   , csr.cols() * sizeof(float));
 
     hb->push_write(v_lock_o_dev
                    , v_lock_o.data()
-                   , csr.numMajors() * sizeof(int));
+                   , csr.rows() * sizeof(int));
 
     // launch kernel
     bsg_pr_info("Writing input\n");
@@ -100,12 +102,10 @@ int spmv_main(int argc, char *argv[])
     // read output
     hb->push_read(v_o_dev
                   , v_o.data()
-                  , csr.numMajors() * sizeof(float));
+                  , csr.rows() * sizeof(float));
     hb->sync_read();
 
-    Eigen::VectorXf answer
-        = csr.eigenSparseMatrix()
-        * v_i;
+    Eigen::VectorXf answer = csr * v_i;
 
     int correct = v_o.isApprox(answer);
 
