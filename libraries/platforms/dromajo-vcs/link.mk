@@ -112,7 +112,7 @@ TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 # Generate the linker
 linker_gen: PYTHON := python3
 linker_gen:
-	$(PYTHON) $(BSG_PLATFORM_PATH)/software/linker/linker_gen.py $(BP_DRAM_BASE_ADDR) $(TOP_OF_STACK_ADDR) $(HB_DRAM_BASE_ADDR) > $(BSG_PLATFORM_PATH)/software/linker/riscv.ld
+	$(PYTHON) $(BSG_PLATFORM_PATH)/software/linker/linker_gen.py $(BP_DRAM_BASE_ADDR) $(TOP_OF_STACK_ADDR) > $(BSG_PLATFORM_PATH)/software/linker/riscv.ld
 
 $(BSG_PLATFORM_PATH)/test.riscv: CC = $(RV_CC)
 $(BSG_PLATFORM_PATH)/test.riscv: CXX = $(RV_CXX)

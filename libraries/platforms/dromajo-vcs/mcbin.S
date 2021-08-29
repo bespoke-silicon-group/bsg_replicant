@@ -27,11 +27,11 @@
 
 # This assembly file includes the manycore binary if there is one
 
-.section .manycore.text
+.section .rodata.manycore
+
 .globl manycore
 .align 4
 .type manycore, @object
-
 manycore:
 .incbin BSG_MANYCORE_KERNELS
 

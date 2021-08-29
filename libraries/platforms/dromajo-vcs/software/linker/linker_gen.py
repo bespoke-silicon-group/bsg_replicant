@@ -31,7 +31,7 @@ from __future__ import print_function
 import argparse
 
 
-def print_linker(bp_dram_base, sp, hb_dram_base):
+def print_linker(bp_dram_base, sp):
     print(
         """
     OUTPUT_ARCH( "riscv" )
@@ -184,20 +184,13 @@ def print_linker(bp_dram_base, sp, hb_dram_base):
     
       _sp = {_sp};
 
-      /* Manycore Binary Segment */
-      . = {hb_dram_base};
-      .manycore :
-      {{
-        *(.manycore.*)
-      }}
-    }}""".format(bp_dram_base=bp_dram_base, _sp=sp, hb_dram_base=hb_dram_base)
+    }}""".format(bp_dram_base=bp_dram_base, _sp=sp)
     )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("bp_dram_base", help="BlackParrot DRAM Base Address")
     parser.add_argument("sp", help="Top of the stack")
-    parser.add_argument("hb_dram_base", help="HammerBlade Manycore DRAM Base Address")
     args = parser.parse_args()
 
-    print_linker(args.bp_dram_base, args.sp, args.hb_dram_base)
+    print_linker(args.bp_dram_base, args.sp)

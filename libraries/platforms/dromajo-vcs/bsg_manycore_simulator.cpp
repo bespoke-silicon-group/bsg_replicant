@@ -195,7 +195,7 @@ int SimulationWrapper::dromajo_init() {
   char prog_str[50];
 
   sprintf(dromajo_str, "dromajo");
-  sprintf(dram_base_str, "--memory_addr=0x%d", BP_DRAM_BASE_ADDR);
+  sprintf(dram_base_str, "--memory_addr=0x%d", DRAM_BASE_ADDR);
   sprintf(host_str, "--host");
   sprintf(manycore_str, "--manycore");
   sprintf(prog_str, "main.elf");

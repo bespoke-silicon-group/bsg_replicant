@@ -81,17 +81,13 @@ $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a: AR = $(RV_AR)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a: AR = $(RV_AR)
 
 # Base addresses for various segments
-# SM: For now let us assume the manycore code will fit into 16MB (I believe this is the requirement for the 
-# .text section of the manycore binary; but let's assume even data fits into this limit). The Dromajo codebase
-# has a hardcoded parameter that start addresses should be one of 00x80000000, 0x8000000000 or 0xC000000000.
-# Another entry for 0x81000000 has also been added. Remapping to a different start address requires the creation
-# of a custom bootrom for Dromajo. BlackParrot should not face any such issue because of the presence of a 
-# base address register in the manycore which will get set to the correct base address during the NBF load stage.
-# FIXME: Need a more elegant solution for relocating BlackParrot code to different pods or DRAM regions when
-# running on Dromajo
-BP_DRAM_BASE_ADDR := 0x81000000
-HB_DRAM_BASE_ADDR := 0x80000000
-TOP_OF_STACK_ADDR := 0x8F000000
+DROMAJO_START_ADDR := 0x80000000
+# Dromajo requires that the entry point of the program and the Dromajo start address match
+# This is hardcoded in Dromajo (src/riscv_machine.cpp) but can be overridden by providing
+# a bootrom using the --bootrom option
+BP_DRAM_BASE_ADDR  := 0x80000000
+HB_DRAM_BASE_ADDR  := 0x88000000
+TOP_OF_STACK_ADDR  := 0x8F000000
 
 # Make the litteFS file system
 $(BSG_PLATFORM_PATH)/lfs.cpp: MKLFS = $(BLACKPARROT_SDK_DIR)/install/bin/dramfs_mklfs 128 64
@@ -154,7 +150,7 @@ PLATFORM_DEFINES += -DBP_POD_X=0 -DBP_POD_Y=1
 PLATFORM_DEFINES += -DNUM_DROMAJO_INSTR_PER_TICK=1000
 PLATFORM_DEFINES += -DNUM_TX_FIFO_CHK_PER_TICK=100
 PLATFORM_DEFINES += -DFIFO_MAX_ELEMENTS=$(BSG_MACHINE_IO_EP_CREDITS)
-PLATFORM_DEFINES += -DBP_DRAM_BASE_ADDR=$(subst 0x,,$(BP_DRAM_BASE_ADDR))
+PLATFORM_DEFINES += -DDRAM_BASE_ADDR=$(subst 0x,,$(DROMAJO_START_ADDR))
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
