@@ -44,7 +44,7 @@ endif
 # platform specific hardware.mk file.
 include $(HARDWARE_PATH)/hardware.mk
 
-# libraries.mk defines how to build libbsg_manycore_runtime.so, which is
+# libraries.mk defines how to build libbsg_manycore_runtime.a, which is
 # pre-linked against all other simulation binaries.
 include $(LIBRARIES_PATH)/libraries.mk
 
@@ -108,6 +108,8 @@ TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
 TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
 TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+TEST_OBJECTS    += $(BSG_PLATFORM_PATH)/lfs.o
+TEST_OBJECTS    += $(if $(BSG_MANYCORE_KERNELS),$(BSG_PLATFORM_PATH)/mcbin.o)
 
 # Generate the linker
 linker_gen: PYTHON := python3
@@ -116,17 +118,16 @@ linker_gen:
 
 $(BSG_PLATFORM_PATH)/test.riscv: CC = $(RV_CC)
 $(BSG_PLATFORM_PATH)/test.riscv: CXX = $(RV_CXX)
-$(BSG_PLATFORM_PATH)/test.riscv: $(TEST_OBJECTS)
-$(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/lfs.o
+$(BSG_PLATFORM_PATH)/test.riscv: LD = $(CXX)
+$(BSG_PLATFORM_PATH)/test.riscv: linker_gen
+$(BSG_PLATFORM_PATH)/test.riscv: kernel
 $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a
 $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a
 $(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a
-$(BSG_PLATFORM_PATH)/test.riscv: $(BSG_PLATFORM_PATH)/mcbin.o
-$(BSG_PLATFORM_PATH)/test.riscv: linker_gen
+$(BSG_PLATFORM_PATH)/test.riscv: $(TEST_OBJECTS)
 $(BSG_PLATFORM_PATH)/test.riscv: LDFLAGS := -T$(BSG_PLATFORM_PATH)/software/linker/riscv.ld -L$(BSG_PLATFORM_PATH) -static -nostartfiles -lstdc++ -lbsg_manycore_regression -lbsg_manycore_runtime
-$(BSG_PLATFORM_PATH)/test.riscv: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/test.riscv:
-	$(LD) -o $@ $(BSG_PLATFORM_PATH)/mcbin.o $(BSG_PLATFORM_PATH)/lfs.o $< $(LDFLAGS)
+	$(LD) -o $@ $(TEST_OBJECTS) $(LDFLAGS)
 	cp $@ main.elf
 
 # VCS Generates an executable file by linking the TEST_OBJECTS with
@@ -136,17 +137,17 @@ $(BSG_PLATFORM_PATH)/test.riscv:
 %.saifgen %.debug: VCS_VFLAGS += -debug_pp
 %.debug: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk
 
-%.debug %.profile: $(BSG_PLATFORM_PATH)/libbsg_manycore_platform.so $(BSG_PLATFORM_PATH)/test.riscv $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB $(PLATFORM_OBJECTS)
+%.debug %.profile: $(BSG_PLATFORM_PATH)/libbsg_manycore_platform.so $(BSG_PLATFORM_PATH)/test.riscv $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top/AN.DB
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.setup \
-	vcs -top replicant_tb_top $(PLATFORM_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+	vcs -top replicant_tb_top $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
-%.saifgen: $(BSG_PLATFORM_PATH)/libbsg_manycore_platform.so $(BSG_PLATFORM_PATH)/test.riscv $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB $(PLATFORM_OBJECTS)
+%.saifgen: $(BSG_PLATFORM_PATH)/libbsg_manycore_platform.so $(BSG_PLATFORM_PATH)/test.riscv $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_saifgen/AN.DB
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.saifgen \
-	vcs -top replicant_tb_top $(PLATFORM_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+	vcs -top replicant_tb_top $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
-%.exec: $(BSG_PLATFORM_PATH)/libbsg_manycore_platform.so $(BSG_PLATFORM_PATH)/test.riscv $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB $(PLATFORM_OBJECTS)
+%.exec: $(BSG_PLATFORM_PATH)/libbsg_manycore_platform.so $(BSG_PLATFORM_PATH)/test.riscv $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/vcs_simlibs/replicant_tb_top_exec/AN.DB
 	SYNOPSYS_SIM_SETUP=$(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/synopsys_sim.exec \
-	vcs -top replicant_tb_top $(PLATFORM_OBJECTS) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+	vcs -top replicant_tb_top $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
 .PRECIOUS:%.debug %.profile %.saifgen %.exec
 

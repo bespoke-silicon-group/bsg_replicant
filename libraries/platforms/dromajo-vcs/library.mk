@@ -86,7 +86,6 @@ DROMAJO_START_ADDR := 0x80000000
 # This is hardcoded in Dromajo (src/riscv_machine.cpp) but can be overridden by providing
 # a bootrom using the --bootrom option
 BP_DRAM_BASE_ADDR  := 0x80000000
-HB_DRAM_BASE_ADDR  := 0x88000000
 TOP_OF_STACK_ADDR  := 0x8F000000
 
 # Make the litteFS file system
@@ -101,7 +100,9 @@ $(BSG_PLATFORM_PATH)/lfs.o: $(BSG_PLATFORM_PATH)/lfs.cpp
 # FIXME: Some caveats with this target --> You have to use it with the *.log target
 # In the future we either move away from linking the manycore binary at compile time
 # or have a better compilation strategy (requires changes in the test infrastructure)
-$(BSG_PLATFORM_PATH)/mcbin.o: $(BSG_MANYCORE_KERNELS)
+kernel:
+	$(if $(BSG_MANYCORE_KERNELS),$(MAKE) $(BSG_PLATFORM_PATH)/mcbin.o,echo "BSG_MANYCORE_KERNELS not defined. Skipping...")
+
 $(BSG_PLATFORM_PATH)/mcbin.o: CFLAGS := -march=rv64imafd -mabi=lp64 -mcmodel=medany
 $(BSG_PLATFORM_PATH)/mcbin.o: INCLUDES := -I$(shell pwd)
 $(BSG_PLATFORM_PATH)/mcbin.o: CC := $(RV_CC)
