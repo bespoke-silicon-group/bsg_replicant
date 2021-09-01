@@ -24,3 +24,6 @@ ucli.key
 *.saifgen
 *.json
 dramsim3.txt
+*.riscv
+*.elf
+
