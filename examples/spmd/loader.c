@@ -33,12 +33,39 @@
 #include <bsg_manycore_regression.h>
 
 #include <stdio.h>
-#include <sys/ioctl.h>
+//#include <sys/ioctl.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+
+// Reads the manycore binary from the program memory. The address to read from is a
+// symbol in the program binary
+static int read_program_binary(unsigned char **program, size_t *program_size) {
+        unsigned char *address;
+        unsigned char *data;
+        uint64_t size;
+
+        // Read the address from the symbol table in the binary
+        __asm__ __volatile__ ("la %[manycore_start_addr], manycore"
+                             : [manycore_start_addr] "=r" (address));
+
+        // The program size is already stored at a predefined location in the binary
+        __asm__ __volatile__ ("la t0, manycore_size\n\t"
+                              "ld %[manycore_size], 0(t0)"
+                             : [manycore_size] "=r" (size));
+
+        if (!(data = (unsigned char *) malloc(size))) {
+                bsg_pr_err("failed to allocate space for the manycore binary\n");
+                return HB_MC_FAIL;
+        }
+
+        *program_size = size;
+        *program = data;
+
+        return HB_MC_SUCCESS;
+}
 
 static int read_program_file(const char *file_name, unsigned char **file_data, size_t *file_size)
 {
@@ -97,7 +124,8 @@ int test_loader(int argc, char **argv) {
 
 
         // read in the program data from the file system
-        err = read_program_file(bin_path, &program_data, &program_size);
+        // err = read_program_file(bin_path, &program_data, &program_size);
+        err = read_program_binary(&program_data, &program_size);
         if (err != HB_MC_SUCCESS)
                 return err;
 
