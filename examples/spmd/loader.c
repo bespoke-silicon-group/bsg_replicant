@@ -40,11 +40,14 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
-// Reads the manycore binary from the program memory. The address to read from is a
-// symbol in the program binary
-static int read_program_binary(unsigned char **program, size_t *program_size) {
+/*
+ * Reads manycore specific symbols from the program binary
+ * @param[out] program: Pointer to a memory location containing the address of the manycore binary
+ * @param[out] program_size: Pointer to the manycore binary size
+ * @returns HB_MC_SUCCESS
+ */ 
+static int read_symbols(unsigned char **program, size_t *program_size) {
         unsigned char *address;
-        unsigned char *data;
         uint64_t size;
 
         // Read the address from the symbol table in the binary
@@ -56,13 +59,8 @@ static int read_program_binary(unsigned char **program, size_t *program_size) {
                               "ld %[manycore_size], 0(t0)"
                              : [manycore_size] "=r" (size));
 
-        if (!(data = (unsigned char *) malloc(size))) {
-                bsg_pr_err("failed to allocate space for the manycore binary\n");
-                return HB_MC_FAIL;
-        }
-
         *program_size = size;
-        *program = data;
+        *program = address;
 
         return HB_MC_SUCCESS;
 }
@@ -125,7 +123,7 @@ int test_loader(int argc, char **argv) {
 
         // read in the program data from the file system
         // err = read_program_file(bin_path, &program_data, &program_size);
-        err = read_program_binary(&program_data, &program_size);
+        err = read_symbols(&program_data, &program_size);
         if (err != HB_MC_SUCCESS)
                 return err;
 
