@@ -7,6 +7,7 @@ get-input        = $(firstword $(subst _, ,$(filter %_input,$(subst __, ,$1))))
 TESTS += $(call test-name,wiki-vote)
 TESTS += $(call test-name,poisson-3D)
 TESTS += $(call test-name,ca-CondMat)
+TESTS += $(call test-name,offshore)
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
