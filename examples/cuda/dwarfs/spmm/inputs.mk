@@ -45,6 +45,20 @@ ca-CondMat__nnz 		= 186936
 $(ca-CondMat): url=https://suitesparse-collection-website.herokuapp.com/MM/SNAP/ca-CondMat.tar.gz
 $(ca-CondMat): tar=ca-CondMat.tar.gz
 
+##############
+# offshore #
+##############
+INPUTS              	       += offshore
+offshore			= $(INPUTS_DIR)/offshore/offshore.mtx
+offshore__directed		= no
+offshore__weighted		= yes
+offshore__zero-indexed	= no
+offshore__rows 		= 259789
+offshore__cols 		= 259789
+offshore__nnz 		= 4242673
+$(offshore): url=https://suitesparse-collection-website.herokuapp.com/MM/Um/offshore.tar.gz
+$(offshore): tar=offshore.tar.gz
+
 # Download and unpack
 $(foreach i,$(INPUTS),$($i)):
 	@echo "Downloading and unpacking $@"
