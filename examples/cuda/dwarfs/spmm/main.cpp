@@ -1,6 +1,7 @@
 #include "bsg_manycore_regression.h"
 #include "CommandLine.hpp"
 #include "EigenSparseMatrix.hpp"
+#include "Solver.hpp"
 #include <iostream>
 using namespace spmm;
 using namespace dwarfs;
@@ -28,6 +29,23 @@ int SpGEMM(int argc, char *argv[])
     auto AxA = CSR((A*B).pruned());
     eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
     eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
+
+    // solve on host with class solver
+    B.uncompress();
+    A.uncompress();
+    Solver<CSR> solver(A, B);
+    solver.solve();
+
+    // compare solutions
+    auto sol = solver.solution();
+    sol.uncompress();
+
+    eigen_sparse_matrix::write_nnz(sol, "sol.nnz.csv");
+
+    CSR zero = CSR((AxA-sol));
+    zero.prune(1e-10, 1e-20);
+    
+    printf("solution comparison: %ld nonzeros (should be 0)\n", zero.nonZeros());
     return HB_MC_SUCCESS;
 }
 
