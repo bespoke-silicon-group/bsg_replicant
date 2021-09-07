@@ -1,10 +1,14 @@
 #include "bsg_manycore_regression.h"
 #include "CommandLine.hpp"
 #include "EigenSparseMatrix.hpp"
+#include "SparseMatrix.hpp"
 #include "Solver.hpp"
+#include "HammerBlade.hpp"
 #include <iostream>
+#include <memory>
 using namespace spmm;
 using namespace dwarfs;
+using namespace hammerblade::host;
 
 int SpGEMM(int argc, char *argv[])
 {
@@ -27,25 +31,44 @@ int SpGEMM(int argc, char *argv[])
     
     auto B = A;
     auto AxA = CSR((A*B).pruned());
+
     eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
     eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
 
-    // solve on host with class solver
-    B.uncompress();
-    A.uncompress();
-    Solver<CSR> solver(A, B);
-    solver.solve();
+    // init application
+    HammerBlade::Ptr hb = HammerBlade::Get();
+    hb->load_application(cl.riscv_path());
 
-    // compare solutions
-    auto sol = solver.solution();
-    sol.uncompress();
+    // init inputs
+    std::shared_ptr<CSR> A_ptr = std::shared_ptr<CSR>(new CSR(A));
+    SparseMatrix<CSR> A_dev, B_dev, C_dev;
 
-    eigen_sparse_matrix::write_nnz(sol, "sol.nnz.csv");
+    A_dev.initializeFromEigenSparseMatrix(A_ptr);
+    B_dev.initializeFromEigenSparseMatrix(A_ptr);
+    C_dev.initializeEmptyProduct(A_ptr, A_ptr);
 
-    CSR zero = CSR((AxA-sol));
-    zero.prune(1e-10, 1e-20);
-    
-    printf("solution comparison: %ld nonzeros (should be 0)\n", zero.nonZeros());
+    // allocate dynamic memory pool
+    hb_mc_eva_t mem_pool = hb->alloc(sizeof(int));
+    hb_mc_eva_t mem_pool_val
+        = mem_pool // have it start after the mem pool
+        + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
+        * sizeof(int); // word size
+
+    // mem_pool = start of memory pool
+    hb->push_write(mem_pool, &mem_pool_val, sizeof(mem_pool_val));
+
+    // sync data
+    hb->sync_write();
+
+    // launch kernel
+    hb->push_job(Dim(cl.groups(),1), Dim(1,1)
+                 , cl.kernel_name()
+                 , A_dev.hdr_dev()
+                 , B_dev.hdr_dev()
+                 , C_dev.hdr_dev()
+                 , mem_pool);
+    hb->exec();
+    hb->close();
     return HB_MC_SUCCESS;
 }
 

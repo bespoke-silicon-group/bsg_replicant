@@ -59,6 +59,17 @@ offshore__nnz 		= 4242673
 $(offshore): url=https://suitesparse-collection-website.herokuapp.com/MM/Um/offshore.tar.gz
 $(offshore): tar=offshore.tar.gz
 
+INPUTS += 08blocks
+08blocks = $(INPUTS_DIR)/08blocks/08blocks.mtx
+08blocks__directed = yes
+08blocks__weighted = yes
+08blocks__zero-indexed = no
+08blocks__rows = 300
+08blocks__cols = 300
+08blocks__nnz  = 592
+$(08blocks): url=https://suitesparse-collection-website.herokuapp.com/MM/JGD_SPG/08blocks.tar.gz
+$(08blocks): tar=08blocks.tar.gz
+
 # Download and unpack
 $(foreach i,$(INPUTS),$($i)):
 	@echo "Downloading and unpacking $@"
