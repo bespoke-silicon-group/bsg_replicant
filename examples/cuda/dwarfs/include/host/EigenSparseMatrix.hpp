@@ -128,6 +128,7 @@ namespace dwarfs {
                     k = 1.0;
                 }
 
+                //std::cout << "(" << i << "," << j << "," << k << ")" << std::endl;
                 ijk.push_back(Triplet(i,j,k));
                 // symmetric matrix?
                 if (!directed) {

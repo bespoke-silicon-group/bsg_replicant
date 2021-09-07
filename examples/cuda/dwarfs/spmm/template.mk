@@ -42,6 +42,7 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 
 # hammerblade helpers
 hammerblade-helpers-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers
@@ -151,6 +152,8 @@ RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -D__KERNEL__
+RISCV_DEFINES += -DGROUPS=$(GROUPS)
+RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
@@ -167,6 +170,7 @@ RISCV_CC  = $(RISCV_CLANG)
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
 C_ARGS += $($(INPUT)) $($(INPUT)__directed) $($(INPUT)__weighted) $($(INPUT)__zero-indexed)
+C_ARGS += $(GROUPS)
 
 SIM_ARGS ?=
 
