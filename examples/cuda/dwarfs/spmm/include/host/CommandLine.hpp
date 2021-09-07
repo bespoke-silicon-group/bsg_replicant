@@ -13,6 +13,7 @@ namespace spmm {
             cl._input_is_directed = *(argv[4]) == 'y';
             cl._input_is_weighted = *(argv[5]) == 'y';
             cl._input_is_zero_indexed = *(argv[6]) == 'y';
+            cl._groups = atoi(argv[7]);
             return cl;
         }
 
@@ -22,6 +23,7 @@ namespace spmm {
         std::string kernel_name() const { return _kernel_name; }
         std::string riscv_path() const { return _riscv_path; }
         std::string input_path() const { return _input_path; }
+        int groups() const { return _groups; }
     private:
         std::string _kernel_name;
         std::string _riscv_path;
@@ -29,5 +31,6 @@ namespace spmm {
         bool _input_is_directed;
         bool _input_is_weighted;
         bool _input_is_zero_indexed;
+        int _groups;
     };
 }
