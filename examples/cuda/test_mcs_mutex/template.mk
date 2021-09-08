@@ -181,4 +181,4 @@ help:
 .PHONY: clean
 
 report: profile.log
-	python3 $(APPLICATION_PATH)/py/report.py vcache_stats.csv $(ITERS) $(THREADS) | tee $@.txt
+	python3 $(APPLICATION_PATH)/py/report.py vcache_stats.csv $(ITERS) $(shell echo $(TX)*$(TY)|bc) | tee $@.txt

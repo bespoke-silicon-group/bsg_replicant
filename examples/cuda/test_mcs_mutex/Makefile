@@ -12,7 +12,7 @@ get-non-critical-region-length = $(firstword $(subst _, ,$(filter %_non-critical
 ITERATIONS = 64
 TX	   = 1 2 4 8 16
 TY	   = 1 2 4 8
-CRL        = 1
+CRL        = 1 10 100 1000
 NCRL       = 1
 LOCK_TYPE  = mcs simple
 
@@ -54,3 +54,9 @@ endef
 APPLICATION_PATH=$(EXAMPLES_PATH)/cuda/test_mcs_mutex
 
 include $(EXAMPLES_PATH)/cuda/dwarfs/dwarf.mk
+
+vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
+vcache.summary.csv: $(APPLICATION_PATH)/py/mutex_common.py
+vcache.summary.csv: $(APPLICATION_PATH)/py/vcache.py
+	$(eval inputs=$(filter %.csv,$^))
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/vcache.py $(inputs)
