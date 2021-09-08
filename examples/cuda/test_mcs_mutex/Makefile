@@ -1,28 +1,32 @@
 REPLICANT_PATH=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 
-test-name       = $(1)_lock-type__$(2)_threads__$(3)_critical-region-length__$(4)_non-critical-region-length__$(5)_iters
+test-name       = $(1)_lock-type__$(2)_tx__$(3)_ty__$(4)_critical-region-length__$(5)_non-critical-region-length__$(6)_iters
 get-lock-type	= $(firstword $(subst _, ,$(filter %_lock-type,$(subst __, ,$1))))
-get-threads     = $(firstword $(subst _, ,$(filter %_threads,$(subst __, ,$1))))
+get-tx          = $(firstword $(subst _, ,$(filter %_tx,$(subst __, ,$1))))
+get-ty          = $(firstword $(subst _, ,$(filter %_ty,$(subst __, ,$1))))
 get-iters       = $(firstword $(subst _, ,$(filter %_iters,$(subst __, ,$1))))
 get-critical-region-length = $(firstword $(subst _, ,$(filter %_critical-region-length,$(subst __, ,$1))))
 get-non-critical-region-length = $(firstword $(subst _, ,$(filter %_non-critical-region-length,$(subst __, ,$1))))
 
-ITERATIONS = 4
-THREADS    = 1 2 4 8 16 32 64 128
+ITERATIONS = 64
+TX	   = 1 2 4 8 16
+TY	   = 1 2 4 8
 CRL        = 1
 NCRL       = 1
-LOCK_TYPE  = mcs
+LOCK_TYPE  = mcs simple
 
 $(foreach type,$(LOCK_TYPE),\
-$(foreach threads,$(THREADS),\
+$(foreach tx,$(TX),\
+$(foreach ty,$(TY),\
 $(foreach crl,$(CRL),\
 $(foreach ncrl,$(NCRL),\
 $(foreach iter,$(ITERATIONS),\
-$(eval TESTS += $(call test-name,$(type),$(threads),$(crl),$(ncrl),$(iter))))))))
+$(eval TESTS += $(call test-name,$(type),$(tx),$(ty),$(crl),$(ncrl),$(iter)))))))))
 
 define get-test-parameters
-$(eval THREADS=$(call get-threads,$1))
+$(eval TX=$(call get-tx,$1))
+$(eval TY=$(call get-ty,$1))
 $(eval CRL=$(call get-critical-region-length,$1))
 $(eval NCRL=$(call get-non-critical-region-length,$1))
 $(eval ITERS=$(call get-iters,$1))
@@ -38,7 +42,8 @@ endef
 # typically this is $(APPLICATION_PATH)/$(test-name)/parameters.mk
 define parameters-mk-add-application-params
 $(eval $(call get-test-parameters,$1))
-@echo THREADS=$(THREADS)	>> $2
+@echo TX=$(TX)			>> $2
+@echo TY=$(TY)			>> $2
 @echo CRL=$(CRL)		>> $2
 @echo NCRL=$(NCRL)		>> $2
 @echo ITERS=$(ITERS)		>> $2
