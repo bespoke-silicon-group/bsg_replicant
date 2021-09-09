@@ -55,7 +55,7 @@ KERNEL_NAME = aes
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
-TEST_SOURCES += tiny-AES-c/aes.c
+TEST_SOURCES += ../tiny-AES-c/aes.c
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DECB=0 -DCTR=0
 CDEFINES += 
@@ -89,10 +89,11 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 # the default. To view the disassembly, type `make kernel.dis`
 
 #tiny-AES-c/aes.rvo: RISCV_CXX = $(RISCV_CLANG)
-tiny-AES-c/aes.rvo: RISCV_OPT_LEVEL = -O3
-tiny-AES-c/aes.rvo: RISCV_DEFINES += -DECB=0 -DCTR=0 -DRISCV
+VPATH = aes.rvo:../tiny-AES-c
+aes.rvo: RISCV_OPT_LEVEL = -O3
+aes.rvo: RISCV_DEFINES += -DECB=0 -DCTR=0 -DRISCV
 
-kernel.riscv: tiny-AES-c/aes.rvo
+kernel.riscv: aes.rvo
 
 # Tile Group Dimensions
 TILE_GROUP_DIM_X = 1
@@ -129,5 +130,5 @@ regression: exec.log
 .PHONY: clean
 
 clean:
-	rm -rf tiny-AES-c/aes.rvo
+	rm -rf aes.rvo
 
