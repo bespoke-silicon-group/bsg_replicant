@@ -18,16 +18,17 @@
 template <int N>
 static inline void nop_loop(void)
 {
+#pragma clang loop unroll(disable)
     for (int i = 0; i < N; i++)
         asm volatile ("nop");
 }
 
-extern "C" void critical_region()
+static void critical_region()
 {
     nop_loop<CRL>();
 }
 
-extern "C" void noncritical_region()
+static void noncritical_region()
 {
     nop_loop<NCRL>();
 }
@@ -87,7 +88,9 @@ void simple_mutex_acquire()
         if (v == 0)
             break;
         // wait some time
-        for (volatile int w = 0; w < MAX_WAIT; w++); 
+        for (int w = 0; w < wait; w++)
+            asm volatile ("nop");
+
         // calculate next wait time
         wait = std::max(wait << 1, MAX_WAIT);       
     }
