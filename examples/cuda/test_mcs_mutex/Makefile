@@ -10,19 +10,20 @@ get-critical-region-length = $(firstword $(subst _, ,$(filter %_critical-region-
 get-non-critical-region-length = $(firstword $(subst _, ,$(filter %_non-critical-region-length,$(subst __, ,$1))))
 
 ITERATIONS = 64
-TX	   = 1 2 4 8 16
-TY	   = 1 2 4 8
 CRL        = 1 10 100 1000
-NCRL       = 1
+NCRL       = 1 10 100 1000
 LOCK_TYPE  = mcs simple
 
+TXY = 16_8 8_8 8_4 4_4 4_2 2_2 2_1 1_1
+tx = $(firstword $(subst _, ,$1))
+ty = $(lastword  $(subst _, ,$1))
+
 $(foreach type,$(LOCK_TYPE),\
-$(foreach tx,$(TX),\
-$(foreach ty,$(TY),\
+$(foreach txy,$(TXY),\
 $(foreach crl,$(CRL),\
 $(foreach ncrl,$(NCRL),\
 $(foreach iter,$(ITERATIONS),\
-$(eval TESTS += $(call test-name,$(type),$(tx),$(ty),$(crl),$(ncrl),$(iter)))))))))
+$(eval TESTS += $(call test-name,$(type),$(call tx,$(txy)),$(call ty,$(txy)),$(crl),$(ncrl),$(iter))))))))
 
 define get-test-parameters
 $(eval TX=$(call get-tx,$1))
