@@ -62,7 +62,19 @@ extern "C" void test_spin_lock_asm(int *lockptr);
 __attribute__((section(".dram")))
 int locked = 0;
 
-#define MAX_WAIT 256
+// MAX_WAIT - what should this be? 256 cycles might be too low if you have 128 threads with a
+// critical section time of 1000 cycles
+// QOLB does write_miss_cycles * nodes_in_system
+// we know that a read_miss takes ~83 cycles on hammerblade under no load
+// this is roughly the time to service an amoswap miss
+// round this up to 128
+
+#define AMOSWAP_MISS_CYCLES                     \
+    (128)
+
+//#define MAX_WAIT 256
+#define MAX_WAIT \
+    (bsg_global_X * bsg_global_Y * AMOSWAP_MISS_CYCLES)
 
 static
 void simple_mutex_acquire()
