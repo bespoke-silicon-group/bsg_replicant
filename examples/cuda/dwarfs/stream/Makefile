@@ -11,8 +11,10 @@ get-tgy         = $(firstword $(subst _, ,$(filter %_tgy,$(subst __, ,$1))))
 64K=$(shell echo 64*1024|bc)
 
 #TESTS += $(call test-name,1024,8,1,1,1)
-TESTS += $(call test-name,$(64K),8,32,1,4)
-TESTS += $(call test-name,1024,8,32,1,4)
+#TESTS += $(call test-name,$(64K),8,32,1,4)
+#TESTS += $(call test-name,1024,8,32,1,4)
+#TESTS += $(call test-name,$(64K),8,1,16,8)
+TESTS += $(call test-name,$(64K),8,1,16,8)
 
 define get-test-parameters
 $(eval TABLE_WORDS=$(call get-table-words,$1))

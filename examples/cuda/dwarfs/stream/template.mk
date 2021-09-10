@@ -42,6 +42,7 @@
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
+include $(BSG_MACHINE_PATH)/Makefile.machine.include
 
 # hammerblade helpers
 hammerblade-helpers-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers
@@ -153,6 +154,8 @@ RISCV_DEFINES += -D__KERNEL__
 RISCV_DEFINES += -DGROUPS=$(GROUPS)
 RISCV_DEFINES += -DTABLE_WORDS=$(TABLE_WORDS)
 RISCV_DEFINES += -DBLOCK_WORDS=$(BLOCK_WORDS)
+RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
+
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
 RISCV_CXX = $(RISCV_CLANGXX)
@@ -194,3 +197,24 @@ dramsim3.csv: $(APPLICATION_PATH)/py/bandwidth.py profile.log
 
 debug_mapping.txt: $(APPLICATION_PATH)/py/debug.py exec.log
 	python3 $< $(filter %.log,$^) $(GROUPS) $(TGX) $(TGY) | tee $@
+
+
+vcache_blood_graph: vcache_stats.csv vcache_operation_trace.csv
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser \
+	--only vcache_stall_graph \
+	--vcache-trace vcache_operation_trace.csv \
+	--vcache-stats vcache_stats.csv
+
+vcore_blood_graph: vanilla_stats.csv vanilla_operation_trace.csv
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser \
+	--only blood_graph
+
+DRAMSIM3_BLOOD_GRAPHS =  blood_graph_ch0.png
+DRAMSIM3_BLOOD_GRAPHS += blood_graph_ch1.png
+$(DRAMSIM3_BLOOD_GRAPHS): %.png: %.log
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 $(BSG_MANYCORE_DIR)/software/py/dramsim3_blood_graph.py \
+	$< $@
+
+dramsim3_blood_graph: $(DRAMSIM3_BLOOD_GRAPHS)
+
+blood_graph: vcache_blood_graph dramsim3_blood_graph vcore_blood_graph
