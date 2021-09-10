@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+from tag import Tag
 
 parser = argparse.ArgumentParser()
 parser.add_argument('dramsim_tag_json')
@@ -7,9 +8,20 @@ parser.add_argument('output')
 
 args = parser.parse_args()
 data = pd.read_json(args.dramsim_tag_json)
+data['tag_type']=data['tag'].map(lambda tag : Tag(tag).type)
 
-min_cycle=data['num_cycles'].min()
-max_cycle=data['num_cycles'].max()
+# lop off the tail data
+# this discounts cycles where < 25% of tiles are still running
+lbound=data[data['tag_type'].str.match('kernel_start')]['num_cycles'].quantile(0.25)
+ubound=data[data['tag_type'].str.match('kernel_end')]['num_cycles'].quantile(0.75)
+
+# take our min and max cycle
+min_cycle=data[data['num_cycles']>=lbound]['num_cycles'].min()
+max_cycle=data[data['num_cycles']<=ubound]['num_cycles'].max()
+
+print("start_cycle    = {:9d}".format(min_cycle))
+print("end_cycle      = {:9d}".format(max_cycle))
+print("elapsed_cycles = {:9d}".format((max_cycle - min_cycle)))
 
 # just keep the min/max cycle
 data = data[(data['num_cycles']==min_cycle)|(data['num_cycles']==max_cycle)]

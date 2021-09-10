@@ -144,14 +144,13 @@ RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_OPT_LEVEL = -O3
 
-TILE_GROUP_DIM_X=$(TGX)
-TILE_GROUP_DIM_Y=$(TGY)
+TILE_GROUP_DIM_X=$(BSG_MACHINE_GLOBAL_X)
+TILE_GROUP_DIM_Y=$(BSG_MACHINE_GLOBAL_Y)
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -D__KERNEL__
-RISCV_DEFINES += -DGROUPS=$(GROUPS)
 RISCV_DEFINES += -DTABLE_WORDS=$(TABLE_WORDS)
 RISCV_DEFINES += -DBLOCK_WORDS=$(BLOCK_WORDS)
 RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
@@ -170,7 +169,7 @@ RISCV_CC  = $(RISCV_CLANG)
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
-C_ARGS += $(TABLE_WORDS) $(BLOCK_WORDS) $(GROUPS) $(TGX) $(TGY)
+C_ARGS += $(TABLE_WORDS) $(BLOCK_WORDS)
 
 SIM_ARGS ?=
 
@@ -193,7 +192,7 @@ help:
 .PHONY: clean
 
 dramsim3.csv: $(APPLICATION_PATH)/py/bandwidth.py profile.log 
-	python3 $< dramsim3.tag.json $@ > dram_bandwidth.txt
+	python3 $< dramsim3.tag.json $@ | tee dram_bandwidth.txt
 
 debug_mapping.txt: $(APPLICATION_PATH)/py/debug.py exec.log
 	python3 $< $(filter %.log,$^) $(GROUPS) $(TGX) $(TGY) | tee $@
