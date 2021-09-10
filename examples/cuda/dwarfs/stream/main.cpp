@@ -49,12 +49,15 @@ int Stream(int argc, char *argv[])
 
     // launch kernels
     bsg_pr_info("Launching kernel\n");
-    hb->push_job(Dim(cl.groups(),1), Dim(cl.tgx(), cl.tgy())
+    hb->push_job(Dim(1,1), Dim(cl.tgx(), cl.tgy())
                  , "read"
                  , A_dev
                  , done_dev);
+
+    hb->trace(true);    
     hb->exec();
-    
+    hb->trace(false);
+
     // close
     bsg_pr_info("Done, cleaning up\n");
     hb->close();

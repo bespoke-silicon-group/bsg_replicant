@@ -69,6 +69,9 @@ for y in range(TILES_Y):
         tile_str = "(group: {}, ({},{}))".format(d['tg-id'],d['tg-x'],d['tg-y'])
         row.append(tile_str)
         # print target caches
+        if 'vcaches' not in d:
+            continue
+        
         for vc in d['vcaches']:
             print('({},{}) targets {}'.format(x,y,vc))
             
