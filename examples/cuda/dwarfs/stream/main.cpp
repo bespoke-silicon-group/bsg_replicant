@@ -28,16 +28,16 @@ static hb_mc_eva_t alloc_align(hb_mc_eva_t size)
 int Stream(int argc, char *argv[])
 {
     CommandLine cl = CommandLine::Parse(argc, argv);
+
+    HammerBlade::Ptr hb = HammerBlade::Get();
     bsg_pr_info("RISCV path = %s\n", cl.riscv_path().c_str());
     bsg_pr_info("Kernel name = %s\n", cl.kernel_name().c_str());
     bsg_pr_info("Table words = %d\n", cl.table_words());
     bsg_pr_info("Block words = %d\n", cl.block_words());
-    bsg_pr_info("Groups = %d\n", cl.groups());
     bsg_pr_info("Tile-group Dim = (%2d,%2d)\n"
-                , cl.tgx()
-                , cl.tgy());
-
-    HammerBlade::Ptr hb = HammerBlade::Get();
+                , hb->physical_dimension().x()
+                , hb->physical_dimension().y());
+    
     hb->load_application(cl.riscv_path());
 
     // prep vectors
@@ -45,14 +45,12 @@ int Stream(int argc, char *argv[])
     hb_mc_eva_t A_dev = alloc_align(sizeof(int) * cl.table_words());
     hb_mc_eva_t B_dev = alloc_align(sizeof(int) * cl.table_words());
     hb_mc_eva_t C_dev = alloc_align(sizeof(int) * cl.table_words());
-    hb_mc_eva_t done_dev = alloc_align(sizeof(done_t) * cl.groups());
 
     // launch kernels
     bsg_pr_info("Launching kernel\n");
-    hb->push_job(Dim(1,1), Dim(cl.tgx(), cl.tgy())
-                 , "read"
-                 , A_dev
-                 , done_dev);
+    hb->push_job(Dim(1,1), hb->physical_dimension()
+                 , "read_no_hits"
+                 , A_dev);
 
     hb->trace(true);    
     hb->exec();
