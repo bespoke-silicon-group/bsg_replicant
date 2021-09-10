@@ -4,9 +4,6 @@ import pandas as pd
 parser = argparse.ArgumentParser()
 parser.add_argument('dramsim_tag_json')
 parser.add_argument('output')
-parser.add_argument('groups', type=int)
-parser.add_argument('tgx', type=int)
-parser.add_argument('tgy', type=int)
 
 args = parser.parse_args()
 data = pd.read_json(args.dramsim_tag_json)
@@ -19,7 +16,7 @@ data = data[(data['num_cycles']==min_cycle)|(data['num_cycles']==max_cycle)]
 
 num_channels=data['channel'].nunique()
 
-data=data.groupby(['tag','num_cycles','channel']).sum().diff(num_channels).dropna()
+data=data.groupby(['tag','channel']).sum().diff(num_channels).dropna()
 data=data.reset_index()
 data['read_bw:bytes/cycle']  = data['num_reads_done']*32/data['num_cycles']
 data['write_bw:bytes/cycle'] = data['num_writes_done']*32/data['num_cycles']

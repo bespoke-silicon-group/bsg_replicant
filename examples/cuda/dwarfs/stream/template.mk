@@ -193,7 +193,7 @@ help:
 .PHONY: clean
 
 dramsim3.csv: $(APPLICATION_PATH)/py/bandwidth.py profile.log 
-	python3 $< dramsim3.tag.json $@ $(GROUPS) $(TGX) $(TGY) > dram_bandwidth.txt
+	python3 $< dramsim3.tag.json $@ > dram_bandwidth.txt
 
 debug_mapping.txt: $(APPLICATION_PATH)/py/debug.py exec.log
 	python3 $< $(filter %.log,$^) $(GROUPS) $(TGX) $(TGY) | tee $@
