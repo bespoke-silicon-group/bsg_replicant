@@ -7,31 +7,50 @@
 #include "bsg_tile_group_barrier.h"
 #include "bsg_mcs_mutex.hpp"
 
-#define GROUPS ((bsg_global_X * bsg_global_Y)/(bsg_global_Y/2))
+#define GROUPS \
+    ((bsg_global_X * bsg_global_Y)/(bsg_global_Y/2))
 
-//#define DEBUG
-#ifndef BLOCK_WORDS
-#error  "Define BLOCK_WORDS"
+#define GROUP_BLOCK_WORDS \
+    (VCACHE_STRIPE_WORDS)
+
+#define GROUP_STRIDE_WORDS \
+    (GROUP_BLOCK_WORDS * GROUPS)
+
+#define GROUP_THREADS                           \
+    (bsg_global_Y/2) // four on a 16x8 pod
+
+#define THREAD_BLOCK_WORDS                      \
+    ((GROUP_BLOCK_WORDS)/(GROUP_THREADS))
+
+
+// this is the number of threads per group that should
+// actually participate in the stream
+// non-particpant threads have their data skipped
+#ifndef THREADS_PER_GROUP
+#error "Define THREAD_PER_GROUP"
 #endif
+
+// this is the number of words each thread should stream
+// per block (per array)
+// when WORDS_PER_THREAD < THREAD_BLOCK_WORDS, some
+// data words are skipped
+#ifndef BLOCK_WORDS_PER_THREAD
+#error "Define BLOCK_WORDS_PER_THREAD"
+#endif
+
+// size of the tables to stream from
 #ifndef TABLE_WORDS
 #error  "Define TABLE_WORDS"
 #endif
 
-#define GROUP_STRIDE_WORDS                      \
-    (BLOCK_WORDS * (bsg_global_Y/2))
-
+//#define DEBUG
 #ifdef DEBUG
 static __attribute__((section(".dram"))) bsg_mcs_mutex_t mtx;
 #endif
 
 INIT_TILE_GROUP_BARRIER(rbar, cbar, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 
-typedef struct done {
-    std::atomic<int> done;
-    int padding [VCACHE_STRIPE_WORDS-1];
-} done_t;
-
-extern "C" int read(int *A, done_t *done)
+extern "C" int read(int *A)
 {
 #ifdef DEBUG    
     int global_x = __bsg_grp_org_x + __bsg_x - 16;
@@ -55,60 +74,68 @@ extern "C" int read(int *A, done_t *done)
     int group = __bsg_x + south_not_north * bsg_global_X;    
 
     // offset in group
-    int off = BLOCK_WORDS * group_y;
-    
-    bsg_tile_group_barrier(&rbar, &cbar);
-    bsg_cuda_print_stat_kernel_start();
-    for (int grp_block_off = group * GROUP_STRIDE_WORDS;
-         grp_block_off < TABLE_WORDS;
-         grp_block_off += GROUP_STRIDE_WORDS * GROUPS) {
-        int base = grp_block_off + off;
-        for (int i = base; i < base + BLOCK_WORDS; i++) {
-#ifdef DEBUG
-            bsg_mcs_mutex_acquire(&mtx, &lcl, lcl_as_glbl);
-            bsg_print_hexadecimal(reinterpret_cast<unsigned>(&A[i]));
-            bsg_fence();            
-            bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);
-#endif
-            asm volatile ("lw x0, %[addr]" :: [addr] "m" (A[i]));
-        }
-    }
-    asm volatile ("fence" ::: "memory");    
-    bsg_tile_group_barrier(&rbar, &cbar);    
-    bsg_cuda_print_stat_kernel_end();
-    return 0;
-}
+    int off = THREAD_BLOCK_WORDS * group_y;
 
-
-extern "C" int read_no_hits(int *A, done_t *done)
-{
-    // calculate
-    // (1) which vcache your group streams from
-    // (2) which words from your groups block you stream from
-    int south_not_north = __bsg_y >= (bsg_global_Y/2);
-    int group_y = __bsg_y % (bsg_global_Y/2);
-    int group = __bsg_x + south_not_north * bsg_global_X;    
-
-    // offset in group
-    int off = BLOCK_WORDS * group_y;
-
-    int do_reads
+    // check if we should participate in stream
+    int participate
         = south_not_north
-        ? (group_y == (bsg_global_Y/2)-1)
-        : (group_y == 0);
-    
+        ? group_y >= (GROUP_THREADS-THREADS_PER_GROUP)
+        : group_y < THREADS_PER_GROUP;
+
     bsg_tile_group_barrier(&rbar, &cbar);
     bsg_cuda_print_stat_kernel_start();
-    if (do_reads) {
-        for (int grp_block_off = group * GROUP_STRIDE_WORDS;
+    if (participate) {
+        for (int grp_block_off = group * GROUP_BLOCK_WORDS;
              grp_block_off < TABLE_WORDS;
-             grp_block_off += GROUP_STRIDE_WORDS * GROUPS) {
+             grp_block_off += GROUP_STRIDE_WORDS) {
             int base = grp_block_off + off;
-            asm volatile ("lw x0, %[addr]" :: [addr] "m" (A[base]));
+            for (int i = base; i < base + BLOCK_WORDS_PER_THREAD; i++) {
+#ifdef DEBUG
+                bsg_mcs_mutex_acquire(&mtx, &lcl, lcl_as_glbl);
+                bsg_print_hexadecimal(reinterpret_cast<unsigned>(&A[i]));
+                bsg_fence();            
+                bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);
+#endif
+                asm volatile ("lw x0, %[addr]" :: [addr] "m" (A[i]));
+            }
         }
-        asm volatile ("fence" ::: "memory");        
+        asm volatile ("fence" ::: "memory");
     }
     bsg_tile_group_barrier(&rbar, &cbar);    
     bsg_cuda_print_stat_kernel_end();
     return 0;
 }
+
+
+// extern "C" int read_no_hits(int *A)
+// {
+//     // calculate
+//     // (1) which vcache your group streams from
+//     // (2) which words from your groups block you stream from
+//     int south_not_north = __bsg_y >= (bsg_global_Y/2);
+//     int group_y = __bsg_y % (bsg_global_Y/2);
+//     int group = __bsg_x + south_not_north * bsg_global_X;    
+
+//     // offset in group
+//     int off = THREAD_BLOCK_WORDS * group_y;
+
+//     int do_reads
+//         = south_not_north
+//         ? (group_y == (bsg_global_Y/2)-1)
+//         : (group_y == 0);
+    
+//     bsg_tile_group_barrier(&rbar, &cbar);
+//     bsg_cuda_print_stat_kernel_start();
+//     if (do_reads) {
+//         for (int grp_block_off = group * GROUP_BLOCK_WORDS;
+//              grp_block_off < TABLE_WORDS;
+//              grp_block_off += GROUP_STRIDE_WORDS) {
+//             int base = grp_block_off + off;
+//             asm volatile ("lw x0, %[addr]" :: [addr] "m" (A[base]));
+//         }
+//         asm volatile ("fence" ::: "memory");        
+//     }
+//     bsg_tile_group_barrier(&rbar, &cbar);    
+//     bsg_cuda_print_stat_kernel_end();
+//     return 0;
+// }

@@ -152,8 +152,9 @@ RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -D__KERNEL__
 RISCV_DEFINES += -DTABLE_WORDS=$(TABLE_WORDS)
-RISCV_DEFINES += -DBLOCK_WORDS=$(BLOCK_WORDS)
 RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
+RISCV_DEFINES += -DBLOCK_WORDS_PER_THREAD=$(BLOCK_WORDS_PER_THREAD)
+RISCV_DEFINES += -DTHREADS_PER_GROUP=$(THREADS_PER_GROUP)
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
@@ -169,7 +170,7 @@ RISCV_CC  = $(RISCV_CLANG)
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
-C_ARGS += $(TABLE_WORDS) $(BLOCK_WORDS)
+C_ARGS += $(TABLE_WORDS) $(THREADS_PER_GROUP) $(BLOCK_WORDS_PER_THREAD)
 
 SIM_ARGS ?=
 
@@ -191,28 +192,28 @@ help:
 
 .PHONY: clean
 
-dramsim3.csv: $(APPLICATION_PATH)/py/bandwidth.py profile.log 
+dramsim3.csv: $(APPLICATION_PATH)/py/bandwidth.py
 	python3 $< dramsim3.tag.json $@ | tee dram_bandwidth.txt
 
-debug_mapping.txt: $(APPLICATION_PATH)/py/debug.py exec.log
+debug_mapping.txt: $(APPLICATION_PATH)/py/debug.py
 	python3 $< $(filter %.log,$^) $(GROUPS) $(TGX) $(TGY) | tee $@
 
 
-vcache_blood_graph: vcache_stats.csv vcache_operation_trace.csv
+vcache_blood_graph:
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser \
 	--only vcache_stall_graph \
 	--vcache-trace vcache_operation_trace.csv \
 	--vcache-stats vcache_stats.csv
 
-vcore_blood_graph: vanilla_stats.csv vanilla_operation_trace.csv
+vcore_blood_graph:
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser \
 	--only blood_graph
 
 DRAMSIM3_BLOOD_GRAPHS =  blood_graph_ch0.png
 DRAMSIM3_BLOOD_GRAPHS += blood_graph_ch1.png
-$(DRAMSIM3_BLOOD_GRAPHS): %.png: %.log
+$(DRAMSIM3_BLOOD_GRAPHS): %.png:
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 $(BSG_MANYCORE_DIR)/software/py/dramsim3_blood_graph.py \
-	$< $@
+	$*.log $*.png
 
 dramsim3_blood_graph: $(DRAMSIM3_BLOOD_GRAPHS)
 
