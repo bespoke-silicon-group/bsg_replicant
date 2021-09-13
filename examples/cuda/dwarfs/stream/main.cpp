@@ -33,7 +33,8 @@ int Stream(int argc, char *argv[])
     bsg_pr_info("RISCV path = %s\n", cl.riscv_path().c_str());
     bsg_pr_info("Kernel name = %s\n", cl.kernel_name().c_str());
     bsg_pr_info("Table words = %d\n", cl.table_words());
-    bsg_pr_info("Block words = %d\n", cl.block_words());
+    bsg_pr_info("Threads per group = %d\n", cl.threads_per_group());
+    bsg_pr_info("Block words per thread = %d\n", cl.block_words_per_thread());
     bsg_pr_info("Tile-group Dim = (%2d,%2d)\n"
                 , hb->physical_dimension().x()
                 , hb->physical_dimension().y());
@@ -49,7 +50,7 @@ int Stream(int argc, char *argv[])
     // launch kernels
     bsg_pr_info("Launching kernel\n");
     hb->push_job(Dim(1,1), hb->physical_dimension()
-                 , "read_no_hits"
+                 , "read"
                  , A_dev);
 
     hb->trace(true);    

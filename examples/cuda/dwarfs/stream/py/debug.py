@@ -13,9 +13,6 @@ print("CACHE_X_SHIFT = %d" % CACHE_X_SHIFT)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("profile_log")
-parser.add_argument("groups")
-parser.add_argument("tgx")
-parser.add_argument("tgy")
 
 args = parser.parse_args()
 

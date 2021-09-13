@@ -86,7 +86,7 @@ BSG_MACHINE_ORIGIN_COORD_X            = 16
 BSG_MACHINE_ORIGIN_COORD_Y            = 8
 
 # Cache-DRAM Interface Width (Rarely Changed)
-BSG_MACHINE_VCACHE_DMA_DATA_WIDTH     = 32
+BSG_MACHINE_VCACHE_DMA_DATA_WIDTH     = 64
 
 # IO flow control parameters. (Rarely Changed)
 BSG_MACHINE_IO_EP_CREDITS             = 256
