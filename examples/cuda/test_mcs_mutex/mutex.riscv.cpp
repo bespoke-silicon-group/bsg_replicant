@@ -55,6 +55,7 @@ extern "C" int test_mcs_mutex()
         bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);
     }
     bsg_cuda_print_stat_kernel_end();
+    bsg_tile_group_barrier(&rbar, &cbar);
     return 0;
 }
 
@@ -77,10 +78,21 @@ int locked = 0;
 #define MAX_WAIT \
     (bsg_global_X * bsg_global_Y * AMOSWAP_MISS_CYCLES)
 
+static int rng_state;
+static int rng()
+{
+    int n = rng_state;
+    n ^= (n << 13);
+    n ^= (n >> 17);
+    n ^= (n << 5);
+    rng_state = n;
+    return n;
+}
+
 static
 void simple_mutex_acquire()
 {
-    int v;
+    int v, rn;
     int wait = 1;
     while (1) {
         // acquire lock on (v = 0)
@@ -91,8 +103,11 @@ void simple_mutex_acquire()
         for (int w = 0; w < wait; w++)
             asm volatile ("nop");
 
+        rn = rng() & (wait-1);
+        wait = (wait << 1) + rn;
+
         // calculate next wait time
-        wait = std::max(wait << 1, MAX_WAIT);       
+        wait = std::max(wait, MAX_WAIT);
     }
 }
 
@@ -105,6 +120,7 @@ void simple_mutex_release()
 
 extern "C" int test_simple_mutex()
 {
+    rng_state = __bsg_id;
     bsg_tile_group_barrier(&rbar, &cbar);
     bsg_cuda_print_stat_kernel_start();
     for (int i = 0; i < ITERS; i++) {
@@ -114,5 +130,6 @@ extern "C" int test_simple_mutex()
         simple_mutex_release();
     }
     bsg_cuda_print_stat_kernel_end();
+    bsg_tile_group_barrier(&rbar, &cbar);
     return 0;
 }
