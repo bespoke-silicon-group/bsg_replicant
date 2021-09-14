@@ -267,19 +267,26 @@ crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
 # We compile these locally so that we don't interfere with the files in
 # $(BSG_MANYCORE_LIB_PATH).
 # BSG Manycore Library Objects
-LIBBSG_MANYCORE_OBJECTS  += bsg_set_tile_x_y.rvo
-LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.rvo
-LIBBSG_MANYCORE_OBJECTS  += bsg_printf.rvo
+LIBBSG_MANYCORE_OBJECTS  += bsg_set_tile_x_y.c.rvo
+LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.c.rvo
+#LIBBSG_MANYCORE_OBJECTS  += bsg_printf.c.rvo
+LIBBSG_MANYCORE_OBJECTS  += bsg_mcs_mutex.S.rvo
 
 # See comment above about _RISCV_GCC and _RISCV_GXX for explanation of
 # the preceding underscore.
 $(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(_RISCV_GCC)
 
-$(LIBBSG_MANYCORE_OBJECTS): %.rvo:$(BSG_MANYCORE_LIB_PATH)/%.c
+$(filter %.c.rvo,$(LIBBSG_MANYCORE_OBJECTS)): %.c.rvo: $(BSG_MANYCORE_LIB_PATH)/%.c
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
+
+$(filter %.S.rvo,$(LIBBSG_MANYCORE_OBJECTS)): %.S.rvo: $(BSG_MANYCORE_LIB_PATH)/%.S
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) -D__ASSEMBLY__=1 $(RISCV_INCLUDES) -c $< -o $@
 
 main.rvo: $(BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
+
+%.rvo: %.S
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) -D__ASSEMBLY__=1 $(RISCV_INCLUDES) -c $< -o $@
 
 %.rvo: %.c
 	$(call RISCV_CC)
@@ -386,7 +393,7 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 # This builds a .riscv binary for the current machine type and tile
 # group size. RISCV_TARGET_OBJECTS are .rvo files that will be linked
 # in the final binary.
-%.riscv: crt.rvo bsg_set_tile_x_y.rvo bsg_tile_config_vars.rvo main.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT) 
+%.riscv: crt.rvo  main.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT) $(LIBBSG_MANYCORE_OBJECTS)
 	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(RISCV_LDFLAGS) $(filter %.rvo,$^) -o $@
 
 %.dis: %.riscv
