@@ -91,7 +91,7 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 
 #tiny-AES-c/aes.rvo: RISCV_CXX = $(RISCV_CLANG)
 aes.rvo: RISCV_OPT_LEVEL = -O3
-aes.rvo: RISCV_DEFINES += -DECB=0 -DCTR=0 -DRISCV
+aes.rvo: RISCV_DEFINES += -DECB=0 -DCTR=0 -DRISCV -DNODECRYPT
 kernel.rvo: RISCV_INCLUDES += -I../tiny-AES-c
 
 kernel.riscv: kernel.rvo aes.rvo
