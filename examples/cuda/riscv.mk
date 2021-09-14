@@ -272,22 +272,25 @@ LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.c.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_printf.c.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_barrier_amoadd.S.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_cuda_lite_barrier.c.rvo
-
+LIBBSG_MANYCORE_OBJECTS  += bsg_mcs_mutex.S.rvo
 libbsg_manycore_riscv.a: $(LIBBSG_MANYCORE_OBJECTS)
 	$(RISCV_AR) rcs $@ $^
+
 
 # See comment above about _RISCV_GCC and _RISCV_GXX for explanation of
 # the preceding underscore.
 $(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(_RISCV_GCC)
-
-$(filter %.c.rvo,$(LIBBSG_MANYCORE_OBJECTS)): %.c.rvo:$(BSG_MANYCORE_LIB_PATH)/%.c
+$(filter %.c.rvo,$(LIBBSG_MANYCORE_OBJECTS)): %.c.rvo: $(BSG_MANYCORE_LIB_PATH)/%.c
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
 
-$(filter %.S.rvo,$(LIBBSG_MANYCORE_OBJECTS)): %.S.rvo:$(BSG_MANYCORE_LIB_PATH)/%.S
+$(filter %.S.rvo,$(LIBBSG_MANYCORE_OBJECTS)): %.S.rvo: $(BSG_MANYCORE_LIB_PATH)/%.S
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) -D__ASSEMBLY__=1 $(RISCV_INCLUDES) -c $< -o $@
 
 main.rvo: $(BSG_MANYCORE_CUDALITE_MAIN_PATH)/main.c
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@
+
+%.rvo: %.S
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) -D__ASSEMBLY__=1 $(RISCV_INCLUDES) -c $< -o $@
 
 %.rvo: %.c
 	$(call RISCV_CC)
