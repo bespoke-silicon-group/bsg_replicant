@@ -34,6 +34,7 @@ int SpGEMM(int argc, char *argv[])
 
     eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
     eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
+    eigen_sparse_matrix::write_matrix(AxA, "AxA.txt");
 
     // init application
     HammerBlade::Ptr hb = HammerBlade::Get();
@@ -60,14 +61,24 @@ int SpGEMM(int argc, char *argv[])
     // sync data
     hb->sync_write();
 
+    std::cout << "Launching kernel on "
+              << cl.tgx() << " x "
+              << cl.tgy() << " grid" << std::endl;
+
     // launch kernel
-    hb->push_job(Dim(cl.groups(),1), Dim(1,1)
+    hb->push_job(Dim(1,1), Dim(cl.tgx(),cl.tgy())
                  , cl.kernel_name()
                  , A_dev.hdr_dev()
                  , B_dev.hdr_dev()
                  , C_dev.hdr_dev()
                  , mem_pool);
     hb->exec();
+
+    std::shared_ptr<CSR> C_ptr = C_dev.updateEmptyProduct();
+    eigen_sparse_matrix::write_nnz(*C_ptr, "C.nnz.csv");
+    eigen_sparse_matrix::write_matrix(*C_ptr, "C.txt");
+
+    std::cout << "C_ptr->isApprox(AxA) = " << C_ptr->isApprox(AxA) << std::endl;
     hb->close();
     return HB_MC_SUCCESS;
 }

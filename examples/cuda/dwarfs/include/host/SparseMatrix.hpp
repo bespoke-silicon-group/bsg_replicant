@@ -29,7 +29,7 @@ namespace dwarfs {
             _hdr_h.is_row_major = EigenSparseMatrix::Options == Eigen::RowMajor;
             _hdr_h.n_major = _espm->outerSize();
             _hdr_h.n_minor = _espm->innerSize();
-            _hdr_h.n_non_zeros = espm->innerSize();            
+            _hdr_h.n_non_zeros = espm->nonZeros();
 
             // allocate row nnz vector
             alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mjr_nnz_ptr, &_mjr_nnz_allocd_ptr);
@@ -59,6 +59,7 @@ namespace dwarfs {
             _hdr_h.is_row_major = EigenSparseMatrix::Options == Eigen::RowMajor;
             _hdr_h.n_major = A_espm->outerSize();
             _hdr_h.n_minor = B_espm->innerSize();
+            _hdr_h.n_non_zeros = 0;
 
             // allocate row nnz vector
             alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mjr_nnz_ptr, &_mjr_nnz_allocd_ptr);
@@ -78,6 +79,57 @@ namespace dwarfs {
             // allocate the header
             _hdr_dev = _hb->alloc(sizeof(sparse_matrix_t));
             _hb->push_write(_hdr_dev, &_hdr_h, sizeof(sparse_matrix_t));
+        }
+
+        std::vector<std::vector<std::pair<idx_t, real_t>>> updatePartialEmptyProduct() {
+            // re-read the header
+            _hb->read(_hdr_dev, &_hdr_h, sizeof(sparse_matrix_t));
+
+            std::cout << "updateEmptyProduct(): output has " << _hdr_h.n_non_zeros << " nonzeros" << std::endl;
+            
+            std::vector<hb_mc_eva_t> alg_priv_data (_hdr_h.n_major);
+            _hb->push_read(_hdr_h.alg_priv_data, &alg_priv_data[0], _hdr_h.n_major * sizeof(hb_mc_eva_t));
+
+            std::vector<idx_t> mjr_nnz(_hdr_h.n_major);
+            _hb->push_read(_hdr_h.mjr_nnz_ptr, &mjr_nnz[0], _hdr_h.n_major * sizeof(idx_t));
+
+            // sync
+            _hb->sync_read();
+
+            std::vector<std::vector<std::pair<idx_t,real_t>>> results;
+            for (idx_t mjr = 0; mjr < _hdr_h.n_major; mjr++) {
+                std::vector<std::pair<idx_t, real_t>> partials(mjr_nnz[mjr]);
+                results.push_back(partials);
+            }
+            for (idx_t mjr = 0; mjr < _hdr_h.n_major; mjr++) {
+                std::cout << "row " << std::dec << mjr << ": " << std::hex << alg_priv_data[mjr] << std::endl;
+                _hb->push_read(alg_priv_data[mjr], results[mjr].data(), mjr_nnz[mjr] * sizeof(std::pair<idx_t,real_t>));                
+            }
+            std::cout << std::dec;
+            _hb->sync_read();
+            return results;
+        }
+
+        std::shared_ptr<EigenSparseMatrix> updateEmptyProduct() {
+            // re-read the header
+            _hb->read(_hdr_dev, &_hdr_h, sizeof(sparse_matrix_t));
+
+            // make new matrix
+            int rows = _hdr_h.is_row_major ? _hdr_h.n_major : _hdr_h.n_minor;
+            int cols = _hdr_h.is_row_major ? _hdr_h.n_minor : _hdr_h.n_major;
+            _espm = std::shared_ptr<EigenSparseMatrix>(new EigenSparseMatrix(rows, cols));
+
+            // read directly into sparse matrix object
+            _espm->reserve(_hdr_h.n_non_zeros);
+            _espm->uncompress();
+            _hb->push_read(_hdr_h.mnr_off_ptr, _espm->outerIndexPtr(),   _hdr_h.n_major * sizeof(idx_t));
+            _hb->push_read(_hdr_h.mjr_nnz_ptr, _espm->innerNonZeroPtr(), _hdr_h.n_major * sizeof(idx_t));
+            _hb->push_read(_hdr_h.mnr_idx_ptr, _espm->innerIndexPtr(),   _hdr_h.n_non_zeros * sizeof(idx_t));
+            _hb->push_read(_hdr_h.val_ptr,     _espm->valuePtr(),        _hdr_h.n_non_zeros * sizeof(real_t));
+
+            // sync
+            _hb->sync_read();
+            return _espm;
         }
 
         hb_mc_eva_t hdr_dev() const { return _hdr_dev; }
