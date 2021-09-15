@@ -145,8 +145,8 @@ RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_OPT_LEVEL = -O3
 
-TILE_GROUP_DIM_X=1
-TILE_GROUP_DIM_Y=1
+TILE_GROUP_DIM_X=$(TX)
+TILE_GROUP_DIM_Y=$(TY)
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
@@ -170,7 +170,7 @@ RISCV_CC  = $(RISCV_CLANG)
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
 C_ARGS += $($(INPUT)) $($(INPUT)__directed) $($(INPUT)__weighted) $($(INPUT)__zero-indexed)
-C_ARGS += $(GROUPS)
+C_ARGS += $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y)
 
 SIM_ARGS ?=
 

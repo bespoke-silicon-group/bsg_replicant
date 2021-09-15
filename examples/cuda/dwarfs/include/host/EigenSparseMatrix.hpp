@@ -31,6 +31,35 @@ namespace dwarfs {
                 ofs << i << "," << nnz << std::endl;
             }
         }
+        /* dump non-zeros data to a file */
+        template <class SparseMatrixType>
+        void write_matrix(SparseMatrixType &mat, const std::string &fname) {
+            if (mat.isCompressed())
+                mat.uncompress();
+            std::ofstream ofs(fname);
+            using Index = typename SparseMatrixType::StorageIndex;
+            using Scalar = typename SparseMatrixType::Scalar;
+            const Index *nnz_ptr = mat.innerNonZeroPtr();
+            const Index *off_ptr = mat.outerIndexPtr();
+            const Index *idx_ptr = mat.innerIndexPtr();
+            const Scalar *val_ptr = mat.valuePtr();
+            
+            std::cout << "# nnz    = " << mat.nonZeros() << std::endl;
+            std::cout << "# majors = " << mat.outerSize() << std::endl;
+            std::cout << "# minors = " << mat.innerSize() << std::endl;
+
+            for (Index i = 0; i < mat.outerSize(); i++) {
+                Index nnz = nnz_ptr[i];
+                Index off = off_ptr[i];
+                const Index  *idxp = &idx_ptr[off];
+                const Scalar *valp = &val_ptr[off];
+                ofs << i << ":";
+                for (Index nonzero = 0; nonzero < nnz; nonzero++) {
+                    ofs << " (" << idxp[nonzero] << "," << valp[nonzero] << ")";
+                }
+                ofs << std::endl;
+            }
+        }
     
         /**
          * Generates a sparse matrix with uniform number of non-zeros per row.
@@ -141,4 +170,5 @@ namespace dwarfs {
             return mat;
         }
     }
+
 }

@@ -269,7 +269,7 @@ crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
 # BSG Manycore Library Objects
 LIBBSG_MANYCORE_OBJECTS  += bsg_set_tile_x_y.c.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_tile_config_vars.c.rvo
-#LIBBSG_MANYCORE_OBJECTS  += bsg_printf.c.rvo
+LIBBSG_MANYCORE_OBJECTS  += bsg_printf.c.rvo
 LIBBSG_MANYCORE_OBJECTS  += bsg_mcs_mutex.S.rvo
 
 # See comment above about _RISCV_GCC and _RISCV_GXX for explanation of
@@ -379,7 +379,7 @@ RISCV_LDFLAGS += -Wl,--defsym,_bsg_elf_dram_size=$(BSG_ELF_DRAM_SIZE)
 RISCV_LDFLAGS += -Wl,--defsym,_bsg_elf_vcache_size=$(BSG_ELF_VCACHE_MANYCORE_SIZE)
 RISCV_LDFLAGS += -Wl,--defsym,_bsg_elf_stack_ptr=$(BSG_ELF_STACK_PTR)
 
-RISCV_LDFLAGS += -nostdlib
+#RISCV_LDFLAGS += -nostdlib
 RISCV_LDFLAGS += -march=$(RISCV_ARCH_OP)
 RISCV_LDFLAGS += -nostartfiles
 RISCV_LDFLAGS += -ffast-math

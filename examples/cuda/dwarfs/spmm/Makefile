@@ -1,20 +1,17 @@
 REPLICANT_PATH=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 
-test-name       = $(1)_input__$(2)_groups
+test-name       = $(1)_input__$(2)_tx__$(3)_ty
 get-input       = $(firstword $(subst _, ,$(filter %_input,$(subst __, ,$1))))
-get-groups	= $(firstword $(subst _, ,$(filter %_groups,$(subst __, ,$1))))
+get-tx		= $(firstword $(subst _, ,$(filter %_tx,$(subst __, ,$1))))
+get-ty		= $(firstword $(subst _, ,$(filter %_ty,$(subst __, ,$1))))
 
-TESTS += $(call test-name,wiki-vote,1)
-TESTS += $(call test-name,wiki-vote,2)
-TESTS += $(call test-name,wiki-vote,128)
-TESTS += $(call test-name,08blocks,1)
-TESTS += $(call test-name,08blocks,2)
-TESTS += $(call test-name,08blocks,128)
+TESTS += $(call test-name,08blocks,1,1)
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
-$(eval GROUPS=$(call get-groups,$1))
+$(eval TX=$(call get-tx,$1))
+$(eval TY=$(call get-ty,$1))
 endef
 
 # dwarfs should define this function hook to add
@@ -27,7 +24,8 @@ endef
 define parameters-mk-add-application-params
 $(eval $(call get-test-parameters,$1))
 @echo INPUT=$(INPUT) >> $2
-@echo GROUPS=$(GROUPS) >> $2
+@echo TX=$(TX) >> $2
+@echo TY=$(TY) >> $2
 endef
 
 # This function needs to be defined
