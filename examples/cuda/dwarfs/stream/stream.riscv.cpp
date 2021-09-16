@@ -50,7 +50,16 @@ static __attribute__((section(".dram"))) bsg_mcs_mutex_t mtx;
 
 INIT_TILE_GROUP_BARRIER(rbar, cbar, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 
-extern "C" int read(int *A)
+template <int WORDS>
+int read_block(bsg_attr_remote int *__restrict A)
+{
+    int sum = 0;
+    for (int i = 0; i < WORDS; i++)
+        sum += A[i];
+    return sum;
+}
+
+extern "C" int read(bsg_attr_remote int *__restrict A)
 {
 #ifdef DEBUG    
     int global_x = __bsg_grp_org_x + __bsg_x - 16;
@@ -84,26 +93,20 @@ extern "C" int read(int *A)
 
     bsg_tile_group_barrier(&rbar, &cbar);
     bsg_cuda_print_stat_kernel_start();
+    int sum = 0;            
     if (participate) {
+        bsg_unroll(16/BLOCK_WORDS_PER_THREAD)
         for (int grp_block_off = group * GROUP_BLOCK_WORDS;
              grp_block_off < TABLE_WORDS;
              grp_block_off += GROUP_STRIDE_WORDS) {
             int base = grp_block_off + off;
-            for (int i = base; i < base + BLOCK_WORDS_PER_THREAD; i++) {
-#ifdef DEBUG
-                bsg_mcs_mutex_acquire(&mtx, &lcl, lcl_as_glbl);
-                bsg_print_hexadecimal(reinterpret_cast<unsigned>(&A[i]));
-                bsg_fence();            
-                bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);
-#endif
-                asm volatile ("lw x0, %[addr]" :: [addr] "m" (A[i]));
-            }
+            sum += read_block<BLOCK_WORDS_PER_THREAD>(&A[base]);
         }
-        asm volatile ("fence" ::: "memory");
+        //asm volatile ("fence" ::: "memory");
     }
     bsg_tile_group_barrier(&rbar, &cbar);    
     bsg_cuda_print_stat_kernel_end();
-    return 0;
+    return sum;
 }
 
 

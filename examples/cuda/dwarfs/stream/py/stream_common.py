@@ -48,4 +48,4 @@ class StreamParameters(object):
             'block_words_per_thread',
         ]
 
-TAIL = 0.25
+TAIL = 1.0
