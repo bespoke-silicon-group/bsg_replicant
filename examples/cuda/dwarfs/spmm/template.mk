@@ -154,6 +154,9 @@ RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -D__KERNEL__
 RISCV_DEFINES += -DGROUPS=$(GROUPS)
 RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
+RISCV_DEFINES += -DTAG_ROW_SOLVE=0x1
+RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
+RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
@@ -202,3 +205,6 @@ $(NNZ_CDF_PLOTS): %.nnz.cdfplot.pdf: %.nnz.csv
 	python3 $(APPLICATION_PATH)/py/nnz.cdfplot.py $< $@ --title $(TITLE)
 
 plots: $(NNZ_CDF_PLOTS)
+
+analyze:
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/analyze.py vanilla_stats.csv
