@@ -7,6 +7,10 @@ get-tx		= $(firstword $(subst _, ,$(filter %_tx,$(subst __, ,$1))))
 get-ty		= $(firstword $(subst _, ,$(filter %_ty,$(subst __, ,$1))))
 
 TESTS += $(call test-name,08blocks,1,1)
+TESTS += $(call test-name,08blocks,2,1)
+TESTS += $(call test-name,08blocks,4,1)
+TESTS += $(call test-name,08blocks,8,1)
+TESTS += $(call test-name,08blocks,16,1)
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
@@ -37,5 +41,11 @@ include $(APPLICATION_PATH)/inputs.mk
 plots: $(addsuffix .plots,$(TESTS))
 $(addsuffix .plots,$(TESTS)): %.plots: %
 	$(MAKE) -C $* plots
+
+vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/vcache.py $^
+
+dramsim3.summary.csv: $(addsuffix /dramsim3.tag.json,$(TESTS))
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/dramsim3.py $^
 
 purge: clean.inputs
