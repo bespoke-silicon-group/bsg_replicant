@@ -277,6 +277,9 @@ libbsg_manycore_riscv.a: $(LIBBSG_MANYCORE_OBJECTS)
 	$(RISCV_AR) rcs $@ $^
 
 
+libbsg_manycore_objects.a: $(LIBBSG_MANYCORE_OBJECTS)
+	$(RISCV_AR) rcs $@ $(LIBBSG_MANYCORE_OBJECTS)
+
 # See comment above about _RISCV_GCC and _RISCV_GXX for explanation of
 # the preceding underscore.
 $(LIBBSG_MANYCORE_OBJECTS) main.rvo: RISCV_CXX = $(_RISCV_GCC)
@@ -391,7 +394,7 @@ RISCV_LDFLAGS += -lc
 RISCV_LDFLAGS += -lm
 RISCV_LDFLAGS += -lgcc
 RISCV_LDFLAGS += -L.
-RISCV_LDFLAGS += -lbsg_manycore_riscv
+RISCV_LDFLAGS += -lbsg_manycore_objects
 
 # TODO: temporary fix to solve this problem: https://stackoverflow.com/questions/56518056/risc-v-linker-throwing-sections-lma-overlap-error-despite-lmas-belonging-to-dif
 RISCV_LDFLAGS += -Wl,--no-check-sections 

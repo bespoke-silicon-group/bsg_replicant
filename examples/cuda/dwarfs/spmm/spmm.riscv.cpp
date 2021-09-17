@@ -138,7 +138,7 @@ void spmm_update_nonzeros(int Ci
         }
         nonzero += UNROLL;
     }
-    
+   
     for (; nonzero < nnz; nonzero++) {
         int idx_tmp   = par_ptr[nonzero].col;
         float val_tmp = par_ptr[nonzero].data;
@@ -157,8 +157,9 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
     B = *B_ptr;
     C = *C_ptr;
     mem_pool = mem_pool_arg;
-
+    
     bsg_tile_group_barrier(&rbar, &cbar);
+    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);    
     // foreach row
     for (int Ai = __bsg_id; Ai < A.n_major; Ai += THREADS) {
         // clear partials
@@ -193,10 +194,11 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
         bsg_amoadd(&C_ptr->n_non_zeros, n_partials);
     }
     pr_dbg("%d Nonzeros Computed\n", C_ptr->n_non_zeros);
-    bsg_print_hexadecimal(0x11111111);
 
     // sync
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
     bsg_tile_group_barrier(&rbar, &cbar);
+    bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
     C = *C_ptr;
 
     // compute offsets for each row
@@ -215,9 +217,9 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
         C_ptr->val_ptr_vanilla = (kernel_float_ptr_t)(new_slab(sizeof(float) * C_ptr->n_non_zeros));
     }
 
-    bsg_print_hexadecimal(0x22222222);
+    bsg_cuda_print_stat_end(TAG_OFFSET_COMPUTE);    
     bsg_tile_group_barrier(&rbar, &cbar);
-
+    bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
 
     for (int Ci = __bsg_id; Ci < C.n_major; Ci += THREADS) {
         int nnz = C_ptr->mjr_nnz_ptr[Ci];
@@ -235,7 +237,7 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
         spmm_update_nonzeros<8>(Ci, nnz, idx_ptr, val_ptr, pu.remote);
     }
 
-    bsg_print_hexadecimal(0x33333333);
+    bsg_cuda_print_stat_end(TAG_RESULTS_COPY);    
     bsg_tile_group_barrier(&rbar, &cbar);
 
     return 0;
