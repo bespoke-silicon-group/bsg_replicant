@@ -1,4 +1,5 @@
 #pragma once
+#include "bsg_manycore.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
