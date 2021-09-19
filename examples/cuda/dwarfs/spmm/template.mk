@@ -136,8 +136,13 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/device/ -name
 RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/device/ -name *.hpp)
 RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name *.h)
 RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name *.hpp)
+RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_solve_row.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
+
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device

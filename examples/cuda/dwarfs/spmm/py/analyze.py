@@ -27,7 +27,7 @@ for region in regions:
     filtered_data = filtered_data.append(filtered)
     
 region_data = filtered_data.groupby(['time','tag','tag_type','tag_id']).sum().diff()
-region_data['global_ctr']=region_data['global_ctr']/data['vcache'].nunique()
+region_data['global_ctr']=region_data['global_ctr']/data.groupby(['x','y']).ngroups
 region_data = region_data.reset_index()
 region_data = region_data[region_data['tag_type'].str.match('end')]
 region_data.to_csv('vcache.analyze.csv')

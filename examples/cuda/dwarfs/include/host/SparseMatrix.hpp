@@ -68,7 +68,7 @@ namespace dwarfs {
             alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
 
             // allocate private data
-            alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.alg_priv_data, &_alg_priv_data_allocd_ptr);
+            alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.alg_priv_ptr, &_alg_priv_data_allocd_ptr);
             
             // set col idx vector to nullptr
             _hdr_h.mnr_idx_ptr = 0;
@@ -88,7 +88,7 @@ namespace dwarfs {
             std::cout << "updateEmptyProduct(): output has " << _hdr_h.n_non_zeros << " nonzeros" << std::endl;
             
             std::vector<hb_mc_eva_t> alg_priv_data (_hdr_h.n_major);
-            _hb->push_read(_hdr_h.alg_priv_data, &alg_priv_data[0], _hdr_h.n_major * sizeof(hb_mc_eva_t));
+            _hb->push_read(_hdr_h.alg_priv_ptr, &alg_priv_data[0], _hdr_h.n_major * sizeof(hb_mc_eva_t));
 
             std::vector<idx_t> mjr_nnz(_hdr_h.n_major);
             _hb->push_read(_hdr_h.mjr_nnz_ptr, &mjr_nnz[0], _hdr_h.n_major * sizeof(idx_t));
