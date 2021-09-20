@@ -49,7 +49,7 @@ int SpGEMM(int argc, char *argv[])
     C_dev.initializeEmptyProduct(A_ptr, A_ptr);
 
     // allocate dynamic memory pool
-    hb_mc_eva_t mem_pool = hb->alloc(sizeof(int));
+    hb_mc_eva_t mem_pool = hb->alloc(sizeof(int) * 1024 * 1024);
     hb_mc_eva_t mem_pool_val
         = mem_pool // have it start after the mem pool
         + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
@@ -64,7 +64,12 @@ int SpGEMM(int argc, char *argv[])
     std::cout << "Launching kernel on "
               << cl.tgx() << " x "
               << cl.tgy() << " grid" << std::endl;
-
+    std::cout << cl.kernel_name() << std::hex
+              << "(" << A_dev.hdr_dev()
+              << "," << B_dev.hdr_dev()
+              << "," << C_dev.hdr_dev()
+              << "," << mem_pool
+              << ")" << std::dec << std::endl;
     // launch kernel
     hb->push_job(Dim(1,1), Dim(cl.tgx(),cl.tgy())
                  , cl.kernel_name()
