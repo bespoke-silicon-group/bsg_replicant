@@ -50,6 +50,26 @@ void spmm_scalar_row_product(float Aij, int Bi)
     }
 }
 
+#ifdef __KERNEL_SCALAR_ROW_PRODUCT__
+extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict A_ptr, // csr
+                                          sparse_matrix_t *__restrict B_ptr, // csr
+                                          sparse_matrix_t *__restrict C_ptr, // csr
+                                          std::atomic<intptr_t> *mem_pool_arg, // mem pool
+                                          float Aij,
+                                          int Bi)
+{
+    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
+    spmm_scalar_row_product(Aij, Bi);
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
+}
+#endif
+
+void spmm_solve_row_init()
+{
+    return;
+}
+
 void spmm_solve_row(int Ai)
 {
     pr_dbg("Solving for row %d\n", Ai);
@@ -87,3 +107,17 @@ void spmm_solve_row(int Ai)
     std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));
     nnzp->fetch_add(num_parts);
 }
+
+#ifdef __KERNEL_SOLVE_ROW__
+extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
+                                sparse_matrix_t *__restrict B_ptr, // csr
+                                sparse_matrix_t *__restrict C_ptr, // csr
+                                std::atomic<intptr_t> *mem_pool_arg, // mem pool
+                                int Ai)
+{
+    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
+    spmm_solve_row(Ai);
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
+}
+#endif

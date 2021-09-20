@@ -27,7 +27,7 @@ void spmm_barrier()
 #define THREADS                                 \
     (bsg_tiles_X*bsg_tiles_Y)
 
-std::atomic<intptr_t> *spmm_mem_pool = nullptr;
+thread std::atomic<intptr_t> *spmm_mem_pool = nullptr;
 thread sparse_matrix_t A_lcl;
 thread sparse_matrix_t B_lcl;
 thread sparse_matrix_t C_lcl;
@@ -36,10 +36,10 @@ thread sparse_matrix_t *A_glbl_p;
 thread sparse_matrix_t *B_glbl_p;
 thread sparse_matrix_t *C_glbl_p;
 
-extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
-                    sparse_matrix_t *__restrict B_ptr, // csr
-                    sparse_matrix_t *__restrict C_ptr, // csr
-                    std::atomic<intptr_t> *mem_pool_arg) // mem pool
+void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
+               sparse_matrix_t *__restrict B_ptr, // csr
+               sparse_matrix_t *__restrict C_ptr, // csr
+               std::atomic<intptr_t> *mem_pool_arg) // mem pool
 {
     A_lcl = *A_ptr;
     B_lcl = *B_ptr;
@@ -51,14 +51,24 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
     
     spmm_mem_pool = mem_pool_arg;
 
-    spmm_barrier();
+    
+}
 
+#ifdef __KERNEL_SPMM__
+extern "C" int kernel_spmm(sparse_matrix_t *__restrict A_ptr, // csr
+                           sparse_matrix_t *__restrict B_ptr, // csr
+                           sparse_matrix_t *__restrict C_ptr, // csr
+                           std::atomic<intptr_t> *mem_pool_arg) // mem pool
+{
+    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+    spmm_solve_row_init();
+
+    spmm_barrier();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);    
 
     // foreach row
-    for (int Ai = __bsg_id; Ai < A_lcl.n_major; Ai += THREADS) {
-        spmm_solve_row(Ai);
-    }
+    for (int Ai = __bsg_id; Ai < A_lcl.n_major; Ai += THREADS)
+        spmm_solve_row(Ai);    
     
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
@@ -66,8 +76,6 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
     bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
 
     C_lcl = *C_glbl_p;
-    spmm_barrier();
-
     for (int Ci = __bsg_id; Ci < C_lcl.n_major; Ci += THREADS)
         spmm_compute_offsets(Ci);
     
@@ -90,4 +98,4 @@ extern "C" int spmm(sparse_matrix_t *__restrict A_ptr, // csr
 
     return 0;
 }
-
+#endif

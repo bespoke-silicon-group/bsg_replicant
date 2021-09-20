@@ -13,7 +13,7 @@
 #include "bsg_manycore.h"
 #endif
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #ifdef __BUILD_FOR_HOST__
 #define pr_dbg(fmt, ...)
@@ -70,5 +70,20 @@ static inline void *spmm_malloc(std::size_t size)
     return reinterpret_cast<void*>(spmm_mem_pool->fetch_add(size, std::memory_order_acquire));
 }
 
+/**
+ * Allocate some memory
+ */
 void *spmm_malloc(std::size_t size);
+
+/**
+ * Thread barrier
+ */
 void  spmm_barrier();
+
+/**
+ * Initialize global state
+ */
+void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
+               sparse_matrix_t *__restrict B_ptr, // csr
+               sparse_matrix_t *__restrict C_ptr, // csr
+               std::atomic<intptr_t> *mem_pool_arg); // mem pool

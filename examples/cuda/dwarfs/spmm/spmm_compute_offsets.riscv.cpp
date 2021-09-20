@@ -15,6 +15,7 @@ void spmm_compute_offsets(int Ci)
 {
     int nnz = C_glbl_p->mjr_nnz_remote_ptr[Ci];
     pr_dbg("Computing offsets from %d\n", Ci);
+    bsg_print_int(Ci);    
     // Max: this can and should be unrolled
     for (int Cip = Ci+1; Cip < C_lcl.n_major; Cip++) {
         std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int>*>(&C_lcl.mnr_off_ptr[Cip]);
