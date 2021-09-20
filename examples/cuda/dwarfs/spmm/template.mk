@@ -66,7 +66,7 @@ vpath %.c   $(EXAMPLES_PATH)/cuda/dwarfs/src
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = spmm
+KERNEL_NAME = kernel_spmm
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -139,7 +139,7 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_solve_row.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_solve_row2.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 
@@ -162,6 +162,7 @@ RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
 RISCV_DEFINES += -DTAG_ROW_SOLVE=0x1
 RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
 RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
+RISCV_DEFINES += -D__KERNEL_SPMM__
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
