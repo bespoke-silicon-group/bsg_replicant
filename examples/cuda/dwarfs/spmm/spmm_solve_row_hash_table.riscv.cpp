@@ -74,7 +74,7 @@ static spmm_elt_t* alloc_elt()
 static void free_elt(spmm_elt_t *elt)
 {
     intptr_t eltaddr = reinterpret_cast<intptr_t>(elt);
-    elt->bkt_next = nullptr;    
+    elt->bkt_next = nullptr;
     if (!(eltaddr & 0x80000000)) {
         // local
         elt->tbl_next = free_local_head;
@@ -109,15 +109,12 @@ void spmm_scalar_row_product(float Aij, int Bi)
                , Bj
                , reinterpret_cast<unsigned>(p));
         // fetch entry
-        spmm_elt_t *e;        
+        spmm_elt_t *e;
         if (p == nullptr) {
             // allocate an elt
             e = alloc_elt();
-            pr_dbg("  not found: inserting %d with 0x%08x\n"
-                   , Bj
-                   , reinterpret_cast<unsigned>(e));            
             e->part.idx = Bj;
-            e->part.val = Cij;                    
+            e->part.val = Cij;
             // zero out bucket
             e->bkt_next = nullptr;
             // push e on to the table list
@@ -128,7 +125,6 @@ void spmm_scalar_row_product(float Aij, int Bi)
             // increment number of entries
             tbl_num_entries++;
         } else if (p->part.idx == Bj) {
-            pr_dbg("  found: updating %d\n", Bj);
             // matches
             p->part.val += Cij;
         } else {
@@ -136,20 +132,17 @@ void spmm_scalar_row_product(float Aij, int Bi)
             while (p->bkt_next != nullptr) {
                 p = p->bkt_next;
                 if (p->part.idx == Bj) {
-                    pr_dbg("  found: updating %d\n", Bj);
                     p->part.val += Cij;
                     break;
                 }
             }
             // add to list
             if (p->part.idx != Bj) {
-                // allocate an elt                
+                // allocate an elt
                 e = alloc_elt();
-                pr_dbg("  colision found: inserting %d with 0x%08x\n"
-                       , Bj
-                       , reinterpret_cast<unsigned>(e));                
+
                 e->part.idx = Bj;
-                e->part.val = Cij;                
+                e->part.val = Cij;
                 // insert into buckets list
                 e->bkt_next = nullptr;
                 p->bkt_next = e;
@@ -158,7 +151,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
                 e->tbl_next = p->tbl_next;
                 p->tbl_next = e;
                 // increment number of entries
-                tbl_num_entries++;                
+                tbl_num_entries++;
             }
         }
     }
@@ -175,7 +168,7 @@ extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict A_ptr, // 
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
     spmm_scalar_row_product(Aij, Bi);
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
 }
 #endif
 
@@ -205,14 +198,14 @@ void spmm_solve_row(int Ai)
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &A_lcl.val_remote_ptr[off];
-    
+
     // for each nonzero entry in row A[i:]
     for (int nonzero = 0; nonzero < nnz; nonzero++) {
         int Bi = cols[nonzero];
         float Aij = vals[nonzero];
         spmm_scalar_row_product(Aij, Bi);
     }
-    
+
     // insert partials into C
     C_lcl.mjr_nnz_remote_ptr[Ai] = tbl_num_entries;
     spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(sizeof(spmm_partial_t)*tbl_num_entries);
@@ -221,7 +214,7 @@ void spmm_solve_row(int Ai)
            , Ai
            , tbl_num_entries
            , parts_glbl);
-    
+
     // for each entry in the table
     int j = 0; // tracks nonzero number
     for (spmm_elt_t *e = tbl_head; e != nullptr; ) {
@@ -232,7 +225,7 @@ void spmm_solve_row(int Ai)
         // copy to partitions
         pr_dbg("  copying from 0x%08x to 0x%08x\n"
                , reinterpret_cast<unsigned>(e)
-               , reinterpret_cast<unsigned>(&parts_glbl[j]));        
+               , reinterpret_cast<unsigned>(&parts_glbl[j]));
         parts_glbl[j++] = e->part;
         // free entry
         free_elt(e);
@@ -243,10 +236,10 @@ void spmm_solve_row(int Ai)
     std::sort(parts_glbl, parts_glbl+tbl_num_entries, [](const spmm_partial_t &l, const spmm_partial_t &r) {
             return l.idx < r.idx;
         });
-    
+
     tbl_head = nullptr;
-        
-    // store as array of partials in the alg_priv_ptr field    
+
+    // store as array of partials in the alg_priv_ptr field
     C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(parts_glbl);
 
     // update the global number of nonzeros
@@ -262,8 +255,9 @@ extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
                                 int Ai)
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+    spmm_solve_row_init();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
     spmm_solve_row(Ai);
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
 }
 #endif

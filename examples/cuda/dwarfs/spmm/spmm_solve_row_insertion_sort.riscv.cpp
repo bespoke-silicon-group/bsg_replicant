@@ -116,6 +116,7 @@ extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
                                 int Ai)
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+    spmm_solve_row_init();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
     spmm_solve_row(Ai);
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    

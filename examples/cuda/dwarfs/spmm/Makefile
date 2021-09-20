@@ -36,7 +36,6 @@ endef
 APPLICATION_PATH=$(EXAMPLES_PATH)/cuda/dwarfs/spmm
 
 include $(EXAMPLES_PATH)/cuda/dwarfs/dwarf.mk
-include $(APPLICATION_PATH)/inputs.mk
 
 plots: $(addsuffix .plots,$(TESTS))
 $(addsuffix .plots,$(TESTS)): %.plots: %
@@ -49,3 +48,19 @@ dramsim3.summary.csv: $(addsuffix /dramsim3.tag.json,$(TESTS))
 	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/dramsim3.py $^
 
 purge: clean.inputs
+
+solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/Random.hpp
+solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/EigenSparseMatrix.hpp
+solver: $(APPLICATION_PATH)/include/host/Solver.hpp
+solver: $(EXAMPLES_PATH)/cuda/dwarfs/src/Random.cpp
+solver: solver.cpp
+	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/include/host)
+	$(eval INCLUDES+=-I$(APPLICATION_PATH)/include/host)
+	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen)
+	$(CXX) -std=c++11 $(INCLUDES) -o $@ $(filter %.cpp,$^)
+
+
+include $(APPLICATION_PATH)/inputs.mk
+
+$(foreach input,$(INPUTS),$(input).stats): %.stats: inputs solver
+	./solver $($*) $($*__directed) $($*__weighted) $($*__zero-indexed) $@.solve_row.csv

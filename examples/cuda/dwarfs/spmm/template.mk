@@ -139,7 +139,7 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_solve_row2.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 
