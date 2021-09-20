@@ -2,16 +2,46 @@
 #include "EigenSparseMatrix.hpp"
 #include <unordered_map>
 #include <vector>
+#include <array>
+#include <sstream>
 namespace spmm {
     template <class SparseMatrixType>
     class Solver {
     public:
+        typedef enum {
+            ROW_C,
+            NNZ_A,
+            NNZ_B,
+            NNZ_C,
+            FLOPS,
+            FMUL,
+            FADD,
+            LOOKUPS,
+            INSERTIONS,
+            UPDATES,
+            N_FIELDS,
+        } SolverSolveRowStatsID;
+
+
         using real_t = typename SparseMatrixType::Scalar;
         using idx_t  = typename SparseMatrixType::StorageIndex;
         Solver(const SparseMatrixType &A,
                const SparseMatrixType &B):
             _A(A)
             ,_B(B) {
+            _solve_row_stats_header = {
+                "C_row"
+                , "A_nonzeros"
+                , "B_nonzeros"
+                , "C_nonzeros"
+                , "ops_fp"
+                , "ops_fmul"
+                , "ops_fadd"
+                , "lookups"
+                , "insertions"
+                , "updates"
+            };
+            _solve_row_stats.resize(A.rows());
         }
 
         void solve() {
@@ -63,12 +93,17 @@ namespace spmm {
             const real_t *vals = &_A.valuePtr()[off];
             std::unordered_map<idx_t, real_t> partials;
 
+            // zero out stats
+            memset(&_solve_row_stats[Ai], 0, SolverSolveRowStatsID::N_FIELDS * sizeof(int));
+            _solve_row_stats[Ai][SolverSolveRowStatsID::ROW_C] = Ai;
+            _solve_row_stats[Ai][SolverSolveRowStatsID::NNZ_A] = nnz;
+
             // for each nonzero entry in row A[i:]
             for (idx_t nonzero = 0; nonzero < nnz; ++nonzero) {
                 idx_t  Bi  = cols[nonzero];
                 real_t Aij = vals[nonzero];
                 // calculate Aij * Bi
-                add_scalar_row_product(Bi, Aij, partials);
+                add_scalar_row_product(Ai, Bi, Aij, partials);
             }
             // insert partials into C
             // this will need to be done atomically in a multithreaded environment
@@ -83,16 +118,19 @@ namespace spmm {
                 _C_cols.push_back(it->first);
                 _C_vals.push_back(it->second);
             }
+
+            _solve_row_stats[Ai][SolverSolveRowStatsID::NNZ_C] = Ci_nnz;
         }
 
         template <class map_type>
-        void add_scalar_row_product(idx_t Bi, real_t Aij, map_type &partials) {
+        void add_scalar_row_product(idx_t Ai, idx_t Bi, real_t Aij, map_type &partials) {
             // compute A[i,j] * B[j:]
             idx_t off = _B.outerIndexPtr()[Bi];
             idx_t nnz = _B.innerNonZeroPtr()[Bi];
             // wait on off
             const idx_t *cols = &_B.innerIndexPtr()[off];
             const real_t *vals = &_B.valuePtr()[off];
+            _solve_row_stats[Ai][SolverSolveRowStatsID::NNZ_B] += nnz;
 
             // for each non-zero entry in row B[i:]
             for (idx_t nonzero = 0; nonzero < nnz; ++nonzero) {
@@ -100,16 +138,40 @@ namespace spmm {
                 real_t Bij = vals[nonzero];
                 // compute partial
                 real_t Cij_partial = Aij*Bij;
+                _solve_row_stats[Ai][SolverSolveRowStatsID::FLOPS]++;
+                _solve_row_stats[Ai][SolverSolveRowStatsID::FMUL]++;
+                _solve_row_stats[Ai][SolverSolveRowStatsID::LOOKUPS]++;
                 // search if entry is in partials
                 auto it = partials.find(Bj);
                 if (it == partials.end()) {
                     // insert new partial
                     partials[Bj]  = Cij_partial;
-                } else {                    
+                    _solve_row_stats[Ai][SolverSolveRowStatsID::INSERTIONS]++;
+                } else {
                     // add partial to existing entry
                     partials[Bj] += Cij_partial;
+                    _solve_row_stats[Ai][SolverSolveRowStatsID::FLOPS]++;
+                    _solve_row_stats[Ai][SolverSolveRowStatsID::FADD]++;
+                    _solve_row_stats[Ai][SolverSolveRowStatsID::UPDATES]++;
                 }
             }
+        }
+
+    public:
+        std::string solve_row_stats() const {
+            std::stringstream ss;
+            // header line
+            for (const std::string & hdr : _solve_row_stats_header)
+                ss << hdr << ",";
+            ss << "\n";
+            // stats for each row
+            for (auto & row_stats : _solve_row_stats) {
+                for (int stat : row_stats) {
+                    ss << stat << ",";
+                }
+                ss << "\n";
+            }
+            return ss.str();
         }
 
     private:
@@ -120,5 +182,12 @@ namespace spmm {
         std::vector<idx_t>  _C_row_off;
         std::vector<idx_t>  _C_cols;
         std::vector<real_t> _C_vals;
+
+        // statistics
+        std::array<std::string, SolverSolveRowStatsID::N_FIELDS>
+        _solve_row_stats_header;
+
+        std::vector<std::array<int, SolverSolveRowStatsID::N_FIELDS>>
+        _solve_row_stats;
     };
 }
