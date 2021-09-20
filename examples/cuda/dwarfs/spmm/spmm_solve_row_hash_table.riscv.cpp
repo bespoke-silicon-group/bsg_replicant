@@ -20,17 +20,15 @@ static thread spmm_elt_t local_elt_pool[LOCAL_DATA_WORDS/sizeof(spmm_elt_t)];
 
 // linked list of all entries in the table
 static thread spmm_elt_t *tbl_head  = nullptr;
-static thread spmm_elt_t *tbl_tail  = nullptr;
 static thread int tbl_num_entries = 0;
 
 // linked list of available free frames in local memory
 static thread spmm_elt_t *free_local_head = nullptr;
-static thread spmm_elt_t *free_local_tail = nullptr;
 
 // linked list of available free frames in local memory
 static thread spmm_elt_t *free_global_head = nullptr;
-static thread spmm_elt_t *free_global_tail = nullptr;
 
+// this is the hash table that lives in global memory
 static thread spmm_elt_t **nonzeros_table = nullptr;
 
 
