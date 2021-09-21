@@ -32,6 +32,15 @@ $(eval $(call get-test-parameters,$1))
 @echo TY=$(TY) >> $2
 endef
 
+
+# This can be overriden to set a custom simulation directory for a test.
+# Defaults to $(APPLICATION_PATH)/$(test-name)
+#
+# See spmm for examples of overriding
+define get-sim-dir-from-test
+$(eval SIMULATION_DIR=$(APPLICATION_PATH)/spmm/$1)
+endef
+
 # This function needs to be defined
 APPLICATION_PATH=$(EXAMPLES_PATH)/cuda/dwarfs/spmm
 
@@ -53,7 +62,7 @@ solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/Random.hpp
 solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/EigenSparseMatrix.hpp
 solver: $(APPLICATION_PATH)/include/host/Solver.hpp
 solver: $(EXAMPLES_PATH)/cuda/dwarfs/src/Random.cpp
-solver: solver.cpp
+solver: $(APPLICATION_PATH)/src/host/solver.cpp
 	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/include/host)
 	$(eval INCLUDES+=-I$(APPLICATION_PATH)/include/host)
 	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen)
@@ -64,3 +73,8 @@ include $(APPLICATION_PATH)/inputs.mk
 
 $(foreach input,$(INPUTS),$(input).stats): %.stats: inputs solver
 	./solver $($*) $($*__directed) $($*__weighted) $($*__zero-indexed) $@.solve_row.csv
+
+clean.inputs.stats:
+	rm -rf solver *.solve_row.csv
+
+purge: clean.inputs.stats

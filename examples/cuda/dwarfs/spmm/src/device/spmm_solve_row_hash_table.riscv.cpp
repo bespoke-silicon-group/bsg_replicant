@@ -1,3 +1,5 @@
+#include "bsg_manycore.h"
+#include "bsg_tile_config_vars.h"
 #include "sparse_matrix.h"
 #include "spmm_solve_row.hpp"
 #include <algorithm>
@@ -13,7 +15,7 @@ typedef struct spmm_elt {
 } spmm_elt_t;
 
 // first we source from our local pool of available items
-static thread spmm_elt_t local_elt_pool[LOCAL_DATA_WORDS/sizeof(spmm_elt_t)];
+static thread spmm_elt_t local_elt_pool[LOCAL_DATA_WORDS*sizeof(int)/sizeof(spmm_elt_t)];
 
 #define array_size(x)                           \
     (sizeof(x)/sizeof(x[0]))
@@ -52,20 +54,24 @@ static spmm_elt_t* alloc_elt()
     if (free_local_head != nullptr) {
         elt = free_local_head;
         free_local_head = elt->tbl_next;
+        elt->tbl_next = nullptr;
+        //bsg_print_hexadecimal(reinterpret_cast<unsigned>(elt));
         return elt;
     } else if (free_global_head != nullptr) {
         elt = free_global_head;
         free_global_head = elt->tbl_next;
+        elt->tbl_next = nullptr;
+        //bsg_print_hexadecimal(reinterpret_cast<unsigned>(elt));                
         return elt;
     } else {
         spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(sizeof(spmm_elt_t) * ELTS_REALLOC_SIZE);
         int i;
-        for (i = 1; i < ELTS_REALLOC_SIZE-1; i++) {
+        for (i = 0; i < ELTS_REALLOC_SIZE-1; i++) {
             newelts[i].tbl_next = &newelts[i+1];
         }
-        newelts[i].tbl_next = nullptr;
-        free_global_head = newelts;
-        return &newelts[0];
+        newelts[ELTS_REALLOC_SIZE-1].tbl_next = nullptr;
+        free_global_head = &newelts[0];
+        return alloc_elt();
     }
 }
 
@@ -108,7 +114,9 @@ void spmm_scalar_row_product(float Aij, int Bi)
                , reinterpret_cast<unsigned>(p));
         // fetch entry
         spmm_elt_t *e;
+
         if (p == nullptr) {
+            pr_dbg("  not found: inserting with 0x%08x\n", reinterpret_cast<unsigned>(e));
             // allocate an elt
             e = alloc_elt();
             e->part.idx = Bj;
@@ -123,6 +131,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
             // increment number of entries
             tbl_num_entries++;
         } else if (p->part.idx == Bj) {
+            pr_dbg("  found: updating\n");
             // matches
             p->part.val += Cij;
         } else {
@@ -130,6 +139,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
             while (p->bkt_next != nullptr) {
                 p = p->bkt_next;
                 if (p->part.idx == Bj) {
+                    pr_dbg("  colision: found: updating\n");                    
                     p->part.val += Cij;
                     break;
                 }
@@ -138,7 +148,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
             if (p->part.idx != Bj) {
                 // allocate an elt
                 e = alloc_elt();
-
+                pr_dbg("  colision: not found: inserting with 0x%08x\n", reinterpret_cast<unsigned>(e));
                 e->part.idx = Bj;
                 e->part.val = Cij;
                 // insert into buckets list
@@ -173,18 +183,25 @@ extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict A_ptr, // 
 void spmm_solve_row_init()
 {
     pr_dbg(__FILE__ ": Calling spmm_solve_row_init\n");
+    // initialize nonzeros table in dram
     nonzeros_table = (spmm_elt_t**)spmm_malloc(sizeof(spmm_elt_t*) * NONZEROS_TABLE_SIZE);
+
+    // initialize list of local nodes
     int i;
+    free_local_head = &local_elt_pool[0];            
     for (i = 0; i < array_size(local_elt_pool)-1; i++) {
         local_elt_pool[i].tbl_next = &local_elt_pool[i+1];
     }
-    local_elt_pool[i].tbl_next = nullptr;
-    free_local_head = &local_elt_pool[0];
+    local_elt_pool[array_size(local_elt_pool)-1].tbl_next = nullptr;
+
+    pr_dbg("init: free_local_head = 0x%08x, local_elt_pool[N-1]=0x%08x\n"
+           , free_local_head
+           , &local_elt_pool[array_size(local_elt_pool)-1]);
 }
 
 void spmm_solve_row(int Ai)
 {
-    bsg_print_int(Ai);
+    //bsg_print_int(Ai);
     pr_dbg("Solving for row %d\n", Ai);
     // set the number of partials to zero
     tbl_num_entries = 0;
@@ -208,6 +225,7 @@ void spmm_solve_row(int Ai)
     C_lcl.mjr_nnz_remote_ptr[Ai] = tbl_num_entries;
     spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(sizeof(spmm_partial_t)*tbl_num_entries);
 
+    //bsg_print_int(tbl_num_entries);
     pr_dbg("Solved row %d, saving %d nonzeros to address 0x%08x\n"
            , Ai
            , tbl_num_entries
@@ -252,10 +270,15 @@ extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
                                 std::atomic<intptr_t> *mem_pool_arg, // mem pool
                                 int Ai)
 {
+    for (int i = 0; i < A_ptr->n_major; i++) {
+        bsg_print_int(A_ptr->mjr_nnz_ptr[i]);
+        bsg_print_int(B_ptr->mjr_nnz_ptr[i]);
+    }
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     spmm_solve_row_init();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
     spmm_solve_row(Ai);
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
+    return 0;
 }
 #endif

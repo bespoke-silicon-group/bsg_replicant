@@ -1,3 +1,5 @@
+#include "bsg_manycore.h"
+#include "bsg_tile_config_vars.h"
 #include "sparse_matrix.h"
 #include "spmm_solve_row.hpp"
 #include <algorithm>
@@ -67,6 +69,7 @@ extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict A_ptr, // 
 
 void spmm_solve_row_init()
 {
+    pr_dbg(__FILE__ ": spmm_solve_row_init\n");
     return;
 }
 
@@ -119,6 +122,7 @@ extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
     spmm_solve_row_init();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
     spmm_solve_row(Ai);
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
+    return 0;
 }
 #endif
