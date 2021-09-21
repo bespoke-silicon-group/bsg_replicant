@@ -5,10 +5,7 @@
 #include <algorithm>
 #include <cstring>
 
-#define LOCAL_DATA_WORDS                                                \
-    (3*256)
-
-static thread spmm_partial_t parts [LOCAL_DATA_WORDS/sizeof(spmm_partial_t)];
+static thread spmm_partial_t parts [SPMM_SOLVE_ROW_LOCAL_DATA_WORDS/sizeof(spmm_partial_t)];
 static thread int            num_parts = 0;
 
 

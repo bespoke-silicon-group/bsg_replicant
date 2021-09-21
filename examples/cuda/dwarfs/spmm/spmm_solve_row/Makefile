@@ -13,13 +13,22 @@ $(eval TESTS += $(call test-name,08blocks,$(row),insertion-sort)))
 
 # select rows with known number of nonzeros in the output
 # sorted by nnz, nnz increments of 50
-# 0-500
-wiki-vote-rows := 0 1573 1197 1605 2411 533 12 2104 656 4140 1211
-# 550-750
-wiki-vote-rows += 6074 200 110 5149 6487
+# 0-450
+wiki-vote-rows := 0 387 42 830 497 478 3315 192 2158 5117
+
+# insertion-sort breaks after 450
 $(foreach row,$(wiki-vote-rows),\
-$(eval TESTS += $(call test-name,wiki-vote,$(row),hash-table))\
 $(eval TESTS += $(call test-name,wiki-vote,$(row),insertion-sort)))
+
+# hash-table can handle any number of nonzeros
+# sorted by nnz, imcrements of 100
+# 500-900
+wiki-vote-rows += 1570 262 3621 3226 2434
+# sorted by nnz, imcrements of 250
+# 1000-2000
+wiki-vote-rows += 2273 1584 2706 1469 1373
+$(foreach row,$(wiki-vote-rows),\
+$(eval TESTS += $(call test-name,wiki-vote,$(row),hash-table)))
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
@@ -59,10 +68,10 @@ $(addsuffix .plots,$(TESTS)): %.plots: %
 	$(MAKE) -C $* plots
 
 vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/vcache.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/vcache_solve_row.py $^
 
 dramsim3.summary.csv: $(addsuffix /dramsim3.tag.json,$(TESTS))
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/dramsim3.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/dramsim3_solve_row.py $^
 
 purge: clean.inputs
 
