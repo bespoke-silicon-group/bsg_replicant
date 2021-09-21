@@ -41,10 +41,6 @@
 #define ALLOC_NAME "default_allocator"
 
 
-#define PAD 256
-// Is linesize words? Cache?
-#define LINESIZE 32
-
 int kernel_bs (int argc, char **argv) {
         int rc;
         char *bin_path, *test_name;
@@ -58,7 +54,7 @@ int kernel_bs (int argc, char **argv) {
         bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of 1x1 tile groups.\n\n");
 
         // TODO: Set values
-        char *inputFile = "inputs/in_4.txt";
+        char *inputFile = "inputs/in_4K.txt";
 
         FILE *file;
         int i;
@@ -113,15 +109,15 @@ int kernel_bs (int argc, char **argv) {
         }
 
         // Allocate inputs
-        ibuffer = (float *) malloc(5 * numOptions * sizeof(float) + PAD);
-        sptprice = (float *) (((unsigned long long)ibuffer + PAD) & ~(LINESIZE - 1));
+        ibuffer = (float *) malloc(5 * numOptions * sizeof(float));
+        sptprice = (float *) ibuffer;
         strike = sptprice + numOptions;
         rate = strike + numOptions;
         volatility = rate + numOptions;
         otime = volatility + numOptions;
 
-        ibuffer2 = (int *) malloc(numOptions * sizeof(int) + PAD);
-        otype = (int *) (((unsigned long long)ibuffer2 + PAD) & ~(LINESIZE - 1));
+        ibuffer2 = (int *) malloc(numOptions * sizeof(int));
+        otype = (int *) ibuffer2;
 
         // Allocate outputs
         prices_gold = (float*)malloc(numOptions*sizeof(float));
@@ -164,32 +160,32 @@ int kernel_bs (int argc, char **argv) {
                 eva_t float_buf_dev;
                 eva_t int_buf_dev;
                 eva_t price_buf_dev;
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, 5 * numOptions * sizeof(float) + PAD, &float_buf_dev));
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(int) + PAD, &int_buf_dev));
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions*sizeof(float) + PAD, &price_buf_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, 5 * numOptions * sizeof(float), &float_buf_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(int), &int_buf_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions*sizeof(float), &price_buf_dev));
 
                 void *src, *dst;
                 // Copy data host onto device DRAM.
                 dst = (void *) ((intptr_t) float_buf_dev);
                 src = (void *) ibuffer;
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, 5 * numOptions * sizeof(float) + PAD, HB_MC_MEMCPY_TO_DEVICE));
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, 5 * numOptions * sizeof(float), HB_MC_MEMCPY_TO_DEVICE));
 
                 dst = (void *) ((intptr_t) int_buf_dev);
                 src = (void *) ibuffer2;
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions * sizeof(int) + PAD, HB_MC_MEMCPY_TO_DEVICE));
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions * sizeof(int), HB_MC_MEMCPY_TO_DEVICE));
 
                 eva_t sptprice_dev, strike_dev, rate_dev, volatility_dev, otime_dev, otype_dev;
-                sptprice_dev = ((float_buf_dev + PAD) & ~(LINESIZE - 1));
+                sptprice_dev = float_buf_dev;
                 strike_dev = sptprice_dev + numOptions*sizeof(*sptprice);
                 rate_dev = strike_dev + numOptions*sizeof(*rate);
                 volatility_dev = rate_dev + numOptions*sizeof(*volatility);
                 otime_dev = volatility_dev + numOptions*sizeof(*otime);
-                otype_dev = ((int_buf_dev + PAD) & ~(LINESIZE - 1));
+                otype_dev = int_buf_dev;
 
                 // Define tg_dim_x/y: number of tiles in each tile group
                 // Calculate grid_dim_x/y: number of tile groups needed
                 hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 };
-                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+                hb_mc_dimension_t grid_dim = { .x = 16, .y = 8};
                 uint32_t opts_tile = numOptions / (grid_dim.x * grid_dim.y);
                 if(numOptions % (grid_dim.x * grid_dim.y)){
                         bsg_pr_test_err("Number of Options does not divide evenly between tiles\n");
