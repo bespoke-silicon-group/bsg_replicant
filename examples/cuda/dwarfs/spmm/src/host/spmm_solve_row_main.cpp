@@ -12,14 +12,14 @@ using namespace hammerblade::host;
 
 int SpGEMM(int argc, char *argv[])
 {
-    auto cl = CommandLine::Parse(argc, argv);
+    auto cl = SolveRowCommandLine::Parse(argc, argv);
     printf("%-14s = %s\n", "riscv_path",  cl.riscv_path().c_str());
     printf("%-14s = %s\n", "kernel_name", cl.kernel_name().c_str());
     printf("%-14s = %s\n", "input_path", cl.input_path().c_str());
     printf("%-14s = %d\n", "is_directed", cl.input_is_directed());
     printf("%-14s = %d\n", "is_weighted", cl.input_is_weighted());
     printf("%-14s = %d\n", "is_zero_indexed", cl.input_is_zero_indexed());    
-
+    printf("%-14s = %d\n", "row", cl.row());
     using CSR = Eigen::SparseMatrix<float, Eigen::RowMajor>;
 
     auto A = eigen_sparse_matrix::FromAsciiNonZerosList<CSR>(
@@ -33,6 +33,7 @@ int SpGEMM(int argc, char *argv[])
     auto AxA = CSR((A*B).pruned());
 
     eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
+    eigen_sparse_matrix::write_matrix(A, "A.txt");
     eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
     eigen_sparse_matrix::write_matrix(AxA, "AxA.txt");
 
@@ -43,7 +44,7 @@ int SpGEMM(int argc, char *argv[])
     // init inputs
     std::shared_ptr<CSR> A_ptr = std::shared_ptr<CSR>(new CSR(A));
     SparseMatrix<CSR> A_dev, B_dev, C_dev;
-
+    
     A_dev.initializeFromEigenSparseMatrix(A_ptr);
     B_dev.initializeFromEigenSparseMatrix(A_ptr);
     C_dev.initializeEmptyProduct(A_ptr, A_ptr);
@@ -62,28 +63,25 @@ int SpGEMM(int argc, char *argv[])
     hb->sync_write();
 
     std::cout << "Launching kernel on "
-              << cl.tgx() << " x "
-              << cl.tgy() << " grid" << std::endl;
+              << 1 << " x "
+              << 1 << " grid" << std::endl;
     std::cout << cl.kernel_name() << std::hex
               << "(" << A_dev.hdr_dev()
               << "," << B_dev.hdr_dev()
               << "," << C_dev.hdr_dev()
               << "," << mem_pool
+              << "," << cl.row()
               << ")" << std::dec << std::endl;
     // launch kernel
-    hb->push_job(Dim(1,1), Dim(cl.tgx(),cl.tgy())
+    hb->push_job(Dim(1,1), Dim(1,1)
                  , cl.kernel_name()
                  , A_dev.hdr_dev()
                  , B_dev.hdr_dev()
                  , C_dev.hdr_dev()
-                 , mem_pool);
+                 , mem_pool
+                 , cl.row());
     hb->exec();
 
-    std::shared_ptr<CSR> C_ptr = C_dev.updateEmptyProduct();
-    eigen_sparse_matrix::write_nnz(*C_ptr, "C.nnz.csv");
-    eigen_sparse_matrix::write_matrix(*C_ptr, "C.txt");
-
-    std::cout << "C_ptr->isApprox(AxA) = " << C_ptr->isApprox(AxA) << std::endl;
     hb->close();
     return HB_MC_SUCCESS;
 }

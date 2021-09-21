@@ -9,7 +9,7 @@ namespace spmm {
     class Solver {
     public:
         typedef enum {
-            ROW_C,
+            ROW_C = 0,
             NNZ_A,
             NNZ_B,
             NNZ_C,
@@ -94,7 +94,7 @@ namespace spmm {
             std::unordered_map<idx_t, real_t> partials;
 
             // zero out stats
-            memset(&_solve_row_stats[Ai], 0, SolverSolveRowStatsID::N_FIELDS * sizeof(int));
+            _solve_row_stats[Ai].fill(0);
             _solve_row_stats[Ai][SolverSolveRowStatsID::ROW_C] = Ai;
             _solve_row_stats[Ai][SolverSolveRowStatsID::NNZ_A] = nnz;
 
@@ -166,8 +166,10 @@ namespace spmm {
             ss << "\n";
             // stats for each row
             for (auto & row_stats : _solve_row_stats) {
-                for (int stat : row_stats) {
-                    ss << stat << ",";
+                for (int i = SolverSolveRowStatsID::ROW_C;
+                     i < SolverSolveRowStatsID::N_FIELDS;
+                     i++) {                    
+                    ss << row_stats[i] << ",";
                 }
                 ss << "\n";
             }

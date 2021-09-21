@@ -44,6 +44,16 @@ ifndef TESTS
 $(warning "'TESTS' variable is empty. Populate this variable with a list of tests to run. Running with no tests...")
 endif
 
+# This can be overriden to set a custom simulation directory for a test.
+# Defaults to $(APPLICATION_PATH)/$(test-name)
+#
+# See spmm for examples of overriding
+ifndef get-sim-dir-from-test
+define get-sim-dir-from-test
+$(eval SIMULATION_DIR=$(APPLICATION_PATH)/$1)
+endef
+endif
+
 TESTS_PARAMETERS_MK=$(addsuffix /parameters.mk,$(TESTS))
 TESTS_MAKEFILE=$(addsuffix /Makefile,$(TESTS))
 
@@ -60,8 +70,10 @@ $(TESTS_MAKEFILE): %/Makefile: template.mk
 $(TESTS_PARAMETERS_MK): %/parameters.mk:
 	@echo "Creating $@"
 	@mkdir -p $*
+	@$(call get-sim-dir-from-test,$*)
 	@echo APPLICATION_PATH=$(APPLICATION_PATH) > $@
-	@echo BSG_MANYCORE_KERNELS=$(APPLICATION_PATH)/$*/kernel.riscv >> $@
+	@echo SIMULATION_DIR=$(SIMULATION_DIR) >> $@
+	@echo BSG_MANYCORE_KERNELS=$(SIMULATION_DIR)/kernel.riscv >> $@
 	@$(call parameters-mk-add-application-params,$*,$@)
 
 $(TESTS): %: %/Makefile %/parameters.mk
