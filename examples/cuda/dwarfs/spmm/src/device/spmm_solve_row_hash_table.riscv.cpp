@@ -5,9 +5,6 @@
 #include <algorithm>
 #include <cstring>
 
-#define LOCAL_DATA_WORDS                                                \
-    (3*256)
-
 typedef struct spmm_elt {
     spmm_partial_t part; // data
     spmm_elt    *bkt_next; // list for this table bucket
@@ -15,7 +12,7 @@ typedef struct spmm_elt {
 } spmm_elt_t;
 
 // first we source from our local pool of available items
-static thread spmm_elt_t local_elt_pool[LOCAL_DATA_WORDS*sizeof(int)/sizeof(spmm_elt_t)];
+static thread spmm_elt_t local_elt_pool[SPMM_SOLVE_ROW_LOCAL_DATA_WORDS*sizeof(int)/sizeof(spmm_elt_t)];
 
 #define array_size(x)                           \
     (sizeof(x)/sizeof(x[0]))
@@ -270,10 +267,6 @@ extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
                                 std::atomic<intptr_t> *mem_pool_arg, // mem pool
                                 int Ai)
 {
-    for (int i = 0; i < A_ptr->n_major; i++) {
-        bsg_print_int(A_ptr->mjr_nnz_ptr[i]);
-        bsg_print_int(B_ptr->mjr_nnz_ptr[i]);
-    }
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     spmm_solve_row_init();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
