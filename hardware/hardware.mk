@@ -250,6 +250,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter bsg_manycore_network_cfg_e bsg_machine_noc_cfg_gp = $(BSG_MACHINE_NETWORK_CFG);" >> $@
 	@echo "parameter int bsg_machine_noc_ruche_factor_X_gp = $(BSG_MACHINE_RUCHE_FACTOR_X);" >> $@
+	@echo "parameter int bsg_machine_barrier_ruche_factor_X_gp = $(BSG_MACHINE_BARRIER_RUCHE_FACTOR_X);" >> $@
 	@echo "parameter int bsg_machine_noc_epa_width_gp = $(BSG_MACHINE_MAX_EPA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_noc_data_width_gp = $(BSG_MACHINE_DATA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_noc_coord_x_width_gp = $(BSG_MACHINE_NOC_COORD_X_WIDTH);" >> $@

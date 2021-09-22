@@ -27,6 +27,7 @@ module replicant_tb_top
 
       $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
       $display("[INFO][TESTBENCH] bsg_machine_noc_ruche_factor_X_gp     = %d", bsg_machine_noc_ruche_factor_X_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_barrier_ruche_factor_X_gp = %d", bsg_machine_barrier_ruche_factor_X_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_noc_epa_width_gp          = %d", bsg_machine_noc_epa_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_noc_data_width_gp         = %d", bsg_machine_noc_data_width_gp);
@@ -192,6 +193,7 @@ module replicant_tb_top
        ,.icache_tag_width_p(bsg_machine_core_icache_tag_width_gp)
 
        ,.ruche_factor_X_p(bsg_machine_noc_ruche_factor_X_gp)
+       ,.barrier_ruche_factor_X_p(bsg_machine_barrier_ruche_factor_X_gp)
 
        ,.num_vcache_rows_p(bsg_machine_pod_llcache_rows_gp)
        ,.num_vcaches_per_channel_p(bsg_machine_llcache_dram_channel_ratio_gp)
