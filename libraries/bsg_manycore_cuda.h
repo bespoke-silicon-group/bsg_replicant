@@ -93,6 +93,7 @@ extern "C" {
                 hb_mc_eva_map_t          *map;
                 hb_mc_kernel_t           *kernel;
                 hb_mc_eva_t               argv_eva;
+                hb_mc_eva_t               barcfg_eva;
                 hb_mc_npa_t               finish_signal_npa;
         } hb_mc_tile_group_t;
 
