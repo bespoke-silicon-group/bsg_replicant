@@ -87,13 +87,11 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 # To switch between g++ and clang, uncomment the line below. g++ is
 # the default. To view the disassembly, type `make kernel.dis`
 
-bsg_link.ld: LINK_GEN_OPTS += --put-sym-in-dmem=".rodata.__clz_tab"
-RISCV_LDFLAGS += -lm -data-sections
-bs.rvo: RISCV_CXX = $(RISCV_CLANGXX)
-bs.rvo: RISCV_OPT_LEVEL = -Os
+RISCV_LDFLAGS += -lm
+bs.rvo: RISCV_OPT_LEVEL = -O3
 bs.rvo: RISCV_CXXFLAGS += -lm 
 
-kernel.riscv: kernel.rvo bs.rvo
+RISCV_TARGET_OBJECTS += kernel.rvo bs.rvo
 
 # Tile Group Dimensions
 TILE_GROUP_DIM_X = 1
@@ -101,6 +99,8 @@ TILE_GROUP_DIM_Y = 1
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
+# We put all rodata in scratchpad because otherwise the CLZ lookup
+# tables end up in DRAM. Booo!
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
 ###############################################################################
@@ -131,4 +131,4 @@ regression: exec.log
 
 clean:
 	rm -rf aes.rvo
-
+	rm -rf bsg_link.ld

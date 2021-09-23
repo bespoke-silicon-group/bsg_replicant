@@ -53,7 +53,6 @@ int kernel_bs (int argc, char **argv) {
 
         bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of 1x1 tile groups.\n\n");
 
-        // TODO: Set values
         char *inputFile = "inputs/in_4K.txt";
 
         FILE *file;

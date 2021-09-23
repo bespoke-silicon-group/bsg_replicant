@@ -1,4 +1,4 @@
-# CoO3pyright (c) 2021, University of Washington All rights reserved.
+# Copyright (c) 2021, University of Washington All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without modification,
 # are permitted provided that the following conditions are met:
@@ -84,11 +84,12 @@ include $(EXAMPLES_PATH)/link.mk
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
 
+# To switch between g++ and clang, uncomment the line below. g++ is
+# the default. To view the disassembly, type `make kernel.dis`
+
 RISCV_LDFLAGS += -lm
-# For some reason clang works much better for Black Scholes
-bs.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 bs.rvo: RISCV_OPT_LEVEL = -O3
-bs.rvo: RISCV_CXXFLAGS += -lm
+bs.rvo: RISCV_CXXFLAGS += -lm 
 
 RISCV_TARGET_OBJECTS += kernel.rvo bs.rvo
 
@@ -100,7 +101,6 @@ RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
 # We put all rodata in scratchpad because otherwise the CLZ lookup
 # tables end up in DRAM. Booo!
-RISCV_LINK_SCRIPT:=bs_link.ld
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
 ###############################################################################
@@ -131,4 +131,4 @@ regression: exec.log
 
 clean:
 	rm -rf aes.rvo
-
+	rm -rf bsg_link.ld
