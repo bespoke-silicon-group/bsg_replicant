@@ -402,6 +402,9 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 %.dis: %.riscv
 	$(RISCV_OBJDUMP) -dS $<
 
+stats: profile.log
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ python3 -m vanilla_parser --only stats_parser --stats vanilla_stats.csv --vcache-stats vcache_stats.csv --tile-group --tile
+
 kernel.link.clean:
 	rm -rf *.riscv *.rvo.S *.rvo.ll $(RISCV_LINK_SCRIPT) libbsg_manycore_riscv.a
 
