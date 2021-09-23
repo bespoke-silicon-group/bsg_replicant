@@ -1614,7 +1614,7 @@ static int hb_mc_device_pod_tile_group_barrier_init(hb_mc_device_t *device
                 int val = 0;
 
                 // compute for id
-                barcfg[1+id] = hb_mc_hw_barrier_csr_val(cord.x, cord.y, tg->dim.x, tg->dim.y);
+                barcfg[1+id] = hb_mc_hw_barrier_csr_val(&device->mc->config, cord.x, cord.y, tg->dim.x, tg->dim.y);
         }
         // word[0] holds the amoadd barrier lock
         barcfg[0] = 0;

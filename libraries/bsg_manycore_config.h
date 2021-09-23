@@ -93,6 +93,7 @@ extern "C" {
                 hb_mc_dimension_t pods;      // how many vcore pods?
                 hb_mc_dimension_t pod_shape; // what is the shape of a pod?
                 hb_mc_dimension_t noc_coord_width;
+                hb_mc_dimension_t noc_ruche_factor;
                 hb_mc_dimension_t pod_coord_width;
                 hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;
@@ -124,7 +125,7 @@ extern "C" {
                 HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y = 9,
                 HB_MC_CONFIG_NOC_COORD_X_WIDTH = 10,
                 HB_MC_CONFIG_NOC_COORD_Y_WIDTH = 11,
-                HB_MC_CONFIG_NOT_IMPLEMENTED = 12,
+                HB_MC_CONFIG_RUCHE_FACTOR_X = 12,
                 HB_MC_CONFIG_REPO_BASEJUMP_HASH = 13,
                 HB_MC_CONFIG_REPO_MANYCORE_HASH = 14,
                 HB_MC_CONFIG_REPO_F1_HASH = 15,
