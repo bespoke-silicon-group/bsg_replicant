@@ -156,6 +156,14 @@ endif
 ifeq ($(ALGORITHM),insertion-sort)
 RISCV_TARGET_OBJECTS += spmm_solve_row_insertion_sort.riscv.rvo
 endif
+# do floating point multiplications only
+ifeq ($(ALGORITHM),fmult-only)
+RISCV_TARGET_OBJECTS += spmm_solve_row_fmult_only.riscv.rvo
+endif
+# do hash table but omit sort
+ifeq ($(ALGORITHM),hash-table-no-sort)
+RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table_no_sort.riscv.rvo
+endif
 
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common

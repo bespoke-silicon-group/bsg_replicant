@@ -28,7 +28,9 @@ wiki-vote-rows += 1570 262 3621 3226 2434
 # 1000-2000
 wiki-vote-rows += 2273 1584 2706 1469 1373
 $(foreach row,$(wiki-vote-rows),\
-$(eval TESTS += $(call test-name,wiki-vote,$(row),hash-table)))
+$(eval TESTS += $(call test-name,wiki-vote,$(row),hash-table))\
+$(eval TESTS += $(call test-name,wiki-vote,$(row),fmult-only))\
+$(eval TESTS += $(call test-name,wiki-vote,$(row),hash-table-no-sort)))
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
