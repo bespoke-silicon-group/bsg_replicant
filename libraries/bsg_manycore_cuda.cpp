@@ -1576,14 +1576,14 @@ static int hb_mc_device_pod_tile_group_barrier_init(hb_mc_device_t *device
                                                     , hb_mc_tile_group_t *tg)
 {
         hb_mc_kernel_t *kernel = tg->kernel;
-        bsg_pr_dbg("%s: device<%s>: program<%s>: Initializing hardware barrier arrayfor kernel '%s'\n"
+        bsg_pr_dbg("%s: device<%s>: program<%s>: Initializing hardware barrier array for kernel '%s'\n"
                    , __func__
                    , device->name
                    , pod->program->bin_name
                    , kernel->name);
 
         // check that the barrier is used
-        // to do this, look for a symbol "__bsg_barrier_csr_vals_ptr"
+        // to do this, look for a symbol "__cuda_barrier_cfg"
         int err;
         hb_mc_eva_t barr_config_ptr;
         err = hb_mc_loader_symbol_to_eva(pod->program->bin
