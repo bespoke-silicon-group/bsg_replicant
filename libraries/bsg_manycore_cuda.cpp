@@ -1317,6 +1317,7 @@ static int hb_mc_device_pod_tile_group_exit(hb_mc_device_t *device, hb_mc_pod_t 
         // arguments of tile group's kernel
         hb_mc_pod_id_t pod_id = hb_mc_device_pod_to_pod_id(device, pod);
         BSG_CUDA_CALL(hb_mc_device_pod_free(device, pod_id, tg->argv_eva));
+        BSG_CUDA_CALL(hb_mc_device_pod_free(device, pod_id, tg->barcfg_eva));
 
         // release tile gorup resources
         tg->dim = HB_MC_DIMENSION(0,0);
