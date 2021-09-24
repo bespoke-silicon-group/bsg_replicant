@@ -1611,12 +1611,11 @@ static int hb_mc_device_pod_tile_group_barrier_init(hb_mc_device_t *device
         hb_mc_coordinate_t cord, og = hb_mc_coordinate(0,0);
         foreach_coordinate(cord, og, tg->dim) {
                 int id = cord.y * tg->dim.x + cord.x;
-                int val = 0;
 
                 // compute for id
                 barcfg[1+id] = hb_mc_hw_barrier_csr_val(&device->mc->config, cord.x, cord.y, tg->dim.x, tg->dim.y);
         }
-        // word[0] holds the amoadd barrier lock
+        // word zero holds the amoadd barrier lock
         barcfg[0] = 0;
 
         // copy csr val vector to device
