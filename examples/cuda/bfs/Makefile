@@ -28,6 +28,21 @@
 
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
+repos := hammerblade-helpers graph-tools
+
+hammerblade-helpers.url    = git@github.com:mrutt92/hammerblade-helpers
+hammerblade-helpers.commit = master
+
+graph-tools.url    = git@github.com:mrutt92/graph-tools
+graph-tools.commit = master
+
+$(repos): %:
+	git clone $($*.url)
+	cd $* && git checkout $($*.commit)
+	cd $* && git submodule update --init
+
+checkout_repos: $(repos)
+
 include $(REPLICANT_PATH)/environment.mk
 
 include $(EXAMPLES_PATH)/cuda/bfs/config.mk
@@ -134,6 +149,7 @@ tests_makefile: $(TESTS_MAKEFILE)
 tests_parameters_mk: $(TESTS_PARAMETERS_MK)
 tests_dir: tests_makefile tests_parameters_mk
 
+$(TESTS): checkout_repos
 $(TESTS): %: %/Makefile %/parameters.mk
 
 TESTS_EXEC	= $(addsuffix .exec,$(TESTS))
@@ -165,9 +181,10 @@ blood: $(TESTS_BLOOD)
 
 # some support executables
 graphtools-dir = $(EXAMPLES_PATH)/cuda/bfs/graph-tools
-include $(graphtools-dir)/libgraphtools.mk
+-include $(graphtools-dir)/libgraphtools.mk
 
 SUPPORT_TOOLS = input-gen input-analyze input-degree-list
+$(SUPPORT_TOOLS): checkout_repos
 $(SUPPORT_TOOLS): $(libgraphtools-interface-headers)
 $(SUPPORT_TOOLS): $(libgraphtools-interface-libraries)
 $(SUPPORT_TOOLS): CXXFLAGS+=$(libgraphtools-interface-cxxflags)
