@@ -1,4 +1,3 @@
-#define DEBUG
 #include "bsg_manycore.h"
 #include "bsg_tile_config_vars.h"
 #include "sparse_matrix.h"
@@ -52,7 +51,7 @@ static spmm_elt_t* alloc_elt()
     if (free_local_head != nullptr) {
         elt = free_local_head;
         free_local_head = elt->tbl_next;
-        elt->tbl_next = nullptr;        
+        elt->tbl_next = nullptr;
         return elt;
     } else if (free_global_head != nullptr) {
         elt = free_global_head;
@@ -70,7 +69,7 @@ static spmm_elt_t* alloc_elt()
         pr_dbg("  %s: free_global_head = 0x%08x\n"
                , __func__
                , free_global_head);
-        
+
         return alloc_elt();
     }
 }
@@ -104,8 +103,11 @@ void spmm_scalar_row_product(float Aij, int Bi)
     for (int nonzero = 0; nonzero < nnz; nonzero++) {
         float Bij = vals[nonzero];
         int Bj = cols[nonzero];
+#if defined(SPMM_HASH_TABLE_ONLY)
+        float Cij = Aij;
+#else
         float Cij = Aij * Bij;
-
+#endif
         // compute hash
         int idx = hash(Bj);
         spmm_elt_t *p = nonzeros_table[idx];
@@ -117,7 +119,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
         if (p == nullptr) {
             // allocate an elt
             e = alloc_elt();
-            pr_dbg("  not found: inserting with 0x%08x\n", e);            
+            pr_dbg("  not found: inserting with 0x%08x\n", e);
             e->part.idx = Bj;
             e->part.val = Cij;
             // zero out bucket
@@ -132,14 +134,22 @@ void spmm_scalar_row_product(float Aij, int Bi)
         } else if (p->part.idx == Bj) {
             pr_dbg("  found: updating\n");
             // matches
+#if defined(SPMM_HASH_TABLE_ONLY)
+            p->par.val = Cij;
+#else
             p->part.val += Cij;
+#endif
         } else {
             // collision, go through bucket
             while (p->bkt_next != nullptr) {
                 p = p->bkt_next;
                 if (p->part.idx == Bj) {
-                    pr_dbg("  colision: found: updating\n");                    
+                    pr_dbg("  colision: found: updating\n");
+#if defined(SPMM_HASH_TABLE_ONLY)
+                    p->part.val = Cij;
+#else
                     p->part.val += Cij;
+#endif
                     break;
                 }
             }
@@ -190,13 +200,13 @@ void spmm_solve_row_init()
     // initialize list of local nodes
     int i;
     if (array_size(local_elt_pool) > 0) {
-        free_local_head = &local_elt_pool[0];            
+        free_local_head = &local_elt_pool[0];
         for (i = 0; i < array_size(local_elt_pool)-1; i++) {
             local_elt_pool[i].tbl_next = &local_elt_pool[i+1];
-        }        
-        local_elt_pool[array_size(local_elt_pool)-1].tbl_next = nullptr;        
+        }
+        local_elt_pool[array_size(local_elt_pool)-1].tbl_next = nullptr;
         pr_dbg("init: local_elt_pool[N-1]=0x%08x\n"
-               , &local_elt_pool[array_size(local_elt_pool)-1]);        
+               , &local_elt_pool[array_size(local_elt_pool)-1]);
     }
     pr_dbg("init: free_local_head  = 0x%08x\n", free_local_head);
     pr_dbg("init: free_global_head = 0x%08x\n", free_global_head);
@@ -252,10 +262,11 @@ void spmm_solve_row(int Ai)
         e = next;
     }
 
+#if !defined(SPMM_NO_SORTING)
     std::sort(parts_glbl, parts_glbl+tbl_num_entries, [](const spmm_partial_t &l, const spmm_partial_t &r) {
             return l.idx < r.idx;
         });
-
+#endif
     tbl_head = nullptr;
 
     // store as array of partials in the alg_priv_ptr field
