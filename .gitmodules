@@ -1,3 +1,0 @@
-[submodule "examples/cuda/gups/hammerblade-helpers"]
-	path = examples/cuda/gups/hammerblade-helpers
-	url = git@github.com:mrutt92/hammerblade-helpers
