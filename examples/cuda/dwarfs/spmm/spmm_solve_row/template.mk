@@ -162,7 +162,13 @@ RISCV_TARGET_OBJECTS += spmm_solve_row_fmult_only.riscv.rvo
 endif
 # do hash table but omit sort
 ifeq ($(ALGORITHM),hash-table-no-sort)
-RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table_no_sort.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_DEFINES += -DSPMM_NO_SORTING
+endif
+# do hash table only, with no flops
+ifeq ($(ALGORITHM),hash-table-no-flops)
+RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_DEFINES += -DSPMM_HASH_TABLE_ONLY
 endif
 
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
