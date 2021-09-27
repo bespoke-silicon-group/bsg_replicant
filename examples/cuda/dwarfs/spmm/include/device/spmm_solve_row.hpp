@@ -5,7 +5,7 @@
 
 #ifndef SPMM_SOLVE_ROW_LOCAL_DATA_WORDS
 #define SPMM_SOLVE_ROW_LOCAL_DATA_WORDS         \
-    (7*128)
+    (0)
 #endif
 
 void spmm_solve_row_init();
