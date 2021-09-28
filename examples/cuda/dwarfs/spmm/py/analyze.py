@@ -30,13 +30,21 @@ region_data = filtered_data.groupby(['time','tag','tag_type','tag_id']).sum().di
 region_data['global_ctr']=region_data['global_ctr']/data.groupby(['x','y']).ngroups
 region_data = region_data.reset_index()
 region_data = region_data[region_data['tag_type'].str.match('end')]
-region_data.to_csv('vcache.analyze.csv')
+region_data.to_csv('vcore.analyze.csv')
 
 region_data['global_ctr_%'] = 100*region_data['global_ctr']/region_data['global_ctr'].sum()
+region_data['instr_per_cycle']=region_data['instr_total']/region_data['global_ctr']
+
 summary = region_data[['tag_id','global_ctr','global_ctr_%']]
-print(summary)
+print("{}\n".format(summary))
 
-# solve_row_data = data[data['tag_id']=='solve_row']
-# print(solve_row_data)
-# print(solve_row_data.groupby(['time','global_ctr','tag','tag_type','tag_id']).sum().diff())
 
+summary = region_data[['tag_id','global_ctr','instr_per_cycle']]
+print("{}\n".format(summary))
+
+stall_fields = [f for f in region_data.columns.to_list() if 'stall_' in f]
+
+stall_data = region_data[['tag_id']+stall_fields]
+stall_data['stall_total']=stall_data.iloc[:,1:-1].sum(axis=1)
+
+print("{}\n".format(stall_data))
