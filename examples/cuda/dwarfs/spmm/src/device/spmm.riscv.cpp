@@ -66,38 +66,61 @@ extern "C" int kernel_spmm(sparse_matrix_t *__restrict A_ptr, // csr
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     spmm_solve_row_init();
 
+#ifdef CHECK_BARRIER
+    bsg_print_int(0);
+#endif
     spmm_barrier();
-    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);    
+#ifdef CHECK_BARRIER
+    bsg_print_int(1);
+#endif
+    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 
     // foreach row
     for (int Ai = __bsg_id; Ai < A_lcl.n_major; Ai += THREADS)
-        spmm_solve_row(Ai);    
-    
+        spmm_solve_row(Ai);
+
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
+#ifdef CHECK_BARRIER
+    bsg_print_int(2);
+#endif
     spmm_barrier();
+#ifdef CHECK_BARRIER
+    bsg_print_int(3);
+#endif
     bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
 
     C_lcl = *C_glbl_p;
     spmm_compute_offsets();
-    
+
     // sync
     if (__bsg_id == 0) {
-        pr_dbg("%d nonzeros found\n", C_glbl_p->n_non_zeros);        
+        pr_dbg("%d nonzeros found\n", C_glbl_p->n_non_zeros);
         C_glbl_p->mnr_idx_ptr = (kernel_int_ptr_t)(spmm_malloc(sizeof(int) * C_glbl_p->n_non_zeros));
         C_glbl_p->val_ptr = (kernel_float_ptr_t)(spmm_malloc(sizeof(float) * C_glbl_p->n_non_zeros));
     }
 
     bsg_cuda_print_stat_end(TAG_OFFSET_COMPUTE);
+#ifdef CHECK_BARRIER
+    bsg_print_int(4);
+#endif
     spmm_barrier();
+#ifdef CHECK_BARRIER
+    bsg_print_int(5);
+#endif
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
 
     for (int Ci = __bsg_id; Ci < C_lcl.n_major; Ci += THREADS)
         spmm_copy_results(Ci);
 
-    bsg_cuda_print_stat_end(TAG_RESULTS_COPY);    
+    bsg_cuda_print_stat_end(TAG_RESULTS_COPY);
+#ifdef CHECK_BARRIER
+    bsg_print_int(6);
+#endif
     spmm_barrier();
-
+#ifdef CHECK_BARRIER
+    bsg_print_int(7);
+#endif
     return 0;
 }
 #endif
