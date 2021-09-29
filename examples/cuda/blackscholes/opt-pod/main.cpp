@@ -65,7 +65,8 @@ int kernel_bs (int argc, char **argv) {
         // Global Data in PARSEC
         int numOptions;
         OptionData *data;
-        float * prices, * prices_gold;
+        float * puts, *calls;
+        float * _puts, *_calls;
         int numError = 0;
 
         //Read input data from file
@@ -75,7 +76,7 @@ int kernel_bs (int argc, char **argv) {
                 exit(1);
         }
 
-        // File format: 
+        // File format:
         rv = fscanf(file, "%i", &numOptions);
         if(rv != 1) {
                 printf("ERROR: Unable to read from file `%s'.\n", inputFile);
@@ -104,8 +105,10 @@ int kernel_bs (int argc, char **argv) {
 
 
         // Allocate outputs
-        prices_gold = (float*)malloc(numOptions*sizeof(float));
-        prices = (float*)malloc(numOptions*sizeof(float));
+        _puts = (float*)malloc(numOptions*sizeof(float));
+        _calls = (float*)malloc(numOptions*sizeof(float));
+        puts = (float*)malloc(numOptions*sizeof(float));
+        calls = (float*)malloc(numOptions*sizeof(float));
 
         // Copy in data
         for (i=0; i<numOptions; i++) {
@@ -114,9 +117,9 @@ int kernel_bs (int argc, char **argv) {
 
         // At this point the data is ready to launch.
         for (i=0; i<numOptions; i++) {
-                prices_gold[i] = BlkSchlsEqEuroNoDiv(data[i].s, data[i].strike,
-                                                     data[i].r, data[i].v, data[i].t,
-                                                     data[i].OptionType, 0);
+                BlkSchlsEqEuroNoDiv(data[i].s, data[i].strike,
+                                    data[i].r, data[i].v, data[i].t,
+                                    _puts[i], _calls[i], 0);
         }
 
         /*********************/
@@ -137,9 +140,11 @@ int kernel_bs (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
                 eva_t option_buf_dev;
-                eva_t price_buf_dev;
+                eva_t put_buf_dev;
+                eva_t call_buf_dev;
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(OptionData), &option_buf_dev));
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(float), &price_buf_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(float), &put_buf_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(float), &call_buf_dev));
 
                 void *src, *dst;
                 // Copy data host onto device DRAM.
@@ -157,10 +162,10 @@ int kernel_bs (int argc, char **argv) {
                         return HB_MC_FAIL;
                 }
 
-                uint32_t cuda_argv[3] = {option_buf_dev, price_buf_dev, opts_tile};
+                uint32_t cuda_argv[4] = {option_buf_dev, put_buf_dev, call_buf_dev, opts_tile};
 
 
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_black_scholes", 3, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_black_scholes", 4, cuda_argv));
 
                 rc = hb_mc_manycore_get_cycle((device.mc), &cycle_start);
                 if(rc != HB_MC_SUCCESS){
@@ -181,20 +186,33 @@ int kernel_bs (int argc, char **argv) {
                 bsg_pr_test_info("Current cycle is: %lu. Difference: %lu \n", cycle_end, cycle_end-cycle_start);
 
                 // Copy result back from device DRAM into host memory.
-                src = (void *) ((intptr_t) price_buf_dev);
-                dst = (void *) prices;
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST));
+                src = (void *) ((intptr_t) put_buf_dev);
+                dst = (void *) puts;
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST)
+);
+
+                src = (void *) ((intptr_t) call_buf_dev);
+                dst = (void *) calls;
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST)
+);
 
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
                 float err = 0.0;
                 for(int i = 0 ; i < numOptions; ++i){
-                        bsg_pr_info("x86: %f, RISC-V: %f\n", prices_gold[i], prices[i]);
-                        auto diff = (prices_gold[i] - prices[i]);
+                        bsg_pr_info("PUT: x86: %f, RISC-V: %f\n", _puts[i], puts[i]);
+                        auto diff = (_puts[i] - puts[i]);
                         err += diff * diff;
                 }
+
+                for(int i = 0 ; i < numOptions; ++i){
+                        bsg_pr_info("CALL: x86: %f, RISC-V: %f\n", _calls[i], calls[i]);
+                        auto diff = (_calls[i] - calls[i]);
+                        err += diff * diff;
+                }
+
                 bsg_pr_info("SSE: %f\n", err);
-                if(err > .01){                        
+                if(err > .01){
                         return HB_MC_FAIL;
                 }
         }

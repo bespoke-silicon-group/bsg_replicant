@@ -12,6 +12,6 @@ typedef struct OptionData_ {
         float DGrefval;   // DerivaGem Reference Value
 } OptionData;
 
-float BlkSchlsEqEuroNoDiv( float sptprice,
+void BlkSchlsEqEuroNoDiv( float sptprice,
                            float strike, float rate, float volatility,
-                           float time, int otype, float timet );
+                           float time, float &putPrice, float &callPrice, float timet );
