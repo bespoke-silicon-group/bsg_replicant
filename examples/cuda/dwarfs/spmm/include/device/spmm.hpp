@@ -28,6 +28,9 @@
 #include <atomic>
 #include <cstdint>
 
+#define THREADS                                 \
+    (bsg_tiles_X*bsg_tiles_Y)
+
 extern thread sparse_matrix_t A_lcl;
 extern thread sparse_matrix_t B_lcl;
 extern thread sparse_matrix_t C_lcl;

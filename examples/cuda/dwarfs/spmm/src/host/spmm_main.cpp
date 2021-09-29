@@ -34,6 +34,7 @@ int SpGEMM(int argc, char *argv[])
 
     eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
     eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
+    eigen_sparse_matrix::write_offset(AxA, "AxA.offset.csv");
     eigen_sparse_matrix::write_matrix(AxA, "AxA.txt");
 
     // init application
@@ -81,6 +82,7 @@ int SpGEMM(int argc, char *argv[])
 
     std::shared_ptr<CSR> C_ptr = C_dev.updateEmptyProduct();
     eigen_sparse_matrix::write_nnz(*C_ptr, "C.nnz.csv");
+    eigen_sparse_matrix::write_offset(*C_ptr, "C.offset.csv");
     eigen_sparse_matrix::write_matrix(*C_ptr, "C.txt");
 
     std::cout << "C_ptr->isApprox(AxA) = " << C_ptr->isApprox(AxA) << std::endl;

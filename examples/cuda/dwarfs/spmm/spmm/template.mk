@@ -146,7 +146,7 @@ RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
@@ -154,6 +154,7 @@ RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
+RISCV_CCPPFLAGS += -DLOG2_THREADS=$(shell echo 'l($(TX)*$(TY))/l(2)' | bc -l | xargs printf '%.f\n')
 RISCV_OPT_LEVEL = -O3
 
 TILE_GROUP_DIM_X=$(TX)

@@ -31,6 +31,25 @@ namespace dwarfs {
                 ofs << i << "," << nnz << std::endl;
             }
         }
+
+        /* dump offsets data to a file */
+        template <class SparseMatrixType>
+        void write_offset(SparseMatrixType &mat, const std::string &fname) {
+            if (mat.isCompressed())
+                mat.uncompress();
+            std::ofstream ofs(fname);
+            using Index = typename SparseMatrixType::StorageIndex;
+            const Index *offs = mat.outerIndexPtr();
+            std::cout << "# nnz    = " << mat.nonZeros() << std::endl;
+            std::cout << "# majors = " << mat.outerSize() << std::endl;
+            std::cout << "# minors = " << mat.innerSize() << std::endl;
+            ofs << "major,offset" << std::endl;
+            for (Index i = 0; i < mat.outerSize(); i++) {
+                Index off = offs[i];
+                ofs << i << "," << off << std::endl;
+            }
+        }
+
         /* dump non-zeros data to a file */
         template <class SparseMatrixType>
         void write_matrix(SparseMatrixType &mat, const std::string &fname) {
