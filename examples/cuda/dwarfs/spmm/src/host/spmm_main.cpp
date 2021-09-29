@@ -50,7 +50,7 @@ int SpGEMM(int argc, char *argv[])
     C_dev.initializeEmptyProduct(A_ptr, A_ptr);
 
     // allocate dynamic memory pool
-    hb_mc_eva_t mem_pool = hb->alloc(sizeof(int) * 1024 * 1024);
+    hb_mc_eva_t mem_pool = hb->alloc(128 * sizeof(int) * 1024 * 1024);
     hb_mc_eva_t mem_pool_val
         = mem_pool // have it start after the mem pool
         + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
