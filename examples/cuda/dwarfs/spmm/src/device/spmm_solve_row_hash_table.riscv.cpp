@@ -106,7 +106,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
     for (int nonzero = 0; nonzero < nnz; nonzero++) {
         float Bij = vals[nonzero];
         int Bj = cols[nonzero];
-#if defined(SPMM_HASH_TABLE_ONLY)
+#if defined(SPMM_NO_FLOPS)
         float Cij = Aij;
 #else
         float Cij = Aij * Bij;
@@ -140,7 +140,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
             solve_row_dbg("  %3d found: updating\n"
                           , Bj);
             // matches
-#if defined(SPMM_HASH_TABLE_ONLY)
+#if defined(SPMM_NO_FLOPS)
             p->par.val = Cij;
 #else
             p->part.val += Cij;
@@ -150,9 +150,9 @@ void spmm_scalar_row_product(float Aij, int Bi)
             while (p->bkt_next != nullptr) {
                 p = p->bkt_next;
                 if (p->part.idx == Bj) {
-#if defined(SPMM_HASH_TABLE_ONLY)
                     solve_row_dbg("  %3d: colision: found: updating\n"
                                   , Bj);
+#if defined(SPMM_NO_FLOPS)
                     p->part.val = Cij;
 #else
                     p->part.val += Cij;
