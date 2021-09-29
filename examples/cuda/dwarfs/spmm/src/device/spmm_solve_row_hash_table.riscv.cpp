@@ -92,6 +92,56 @@ static void free_elt(spmm_elt_t *elt)
     }
 }
 
+/**
+ * Update the non-zeros table
+ * v    - floating point value to add/insert
+ * idx  - the hash table key
+ * hidx - the hash(idx)
+ */
+static
+void spmm_update_table(float v, int idx, int hidx)
+{
+    spmm_elt_t **u = &nonzeros_table[hidx];    
+    spmm_elt_t  *p = nonzeros_table[hidx];
+    solve_row_dbg("  table[%3d] = 0x%08x\n"
+                  , idx
+                  , p);
+    while (p != nullptr) {
+        // match?
+        if (p->part.idx == idx) {
+            solve_row_dbg("  %3d found at 0x%08x\n"
+                          , idx
+                          , p);
+#if !defined(SPMM_NO_FLOPS)
+            p->part.val += v; // flw; fadd; fsw
+#else 
+            p->part.val  = v; // fsw
+#endif
+            return;
+        }
+        u = &p->bkt_next;
+        p = p->bkt_next;
+    }
+    // allocate a hash item
+    p = alloc_elt();
+    solve_row_dbg("  %3d not found, inserting at 0x%08x\n"
+                  , idx
+                  , p);
+    // set item parameters
+    p->part.idx = idx;
+    p->part.val = v;
+    p->bkt_next = nullptr;
+    p->tbl_next = tbl_head;
+    tbl_head = p;
+    // update last
+    *u = p;
+    tbl_num_entries++;
+    return;
+}
+
+/**
+ * Solve A[i;j] * B[j;]
+ */
 __attribute__((noinline))
 void spmm_scalar_row_product(float Aij, int Bi)
 {
@@ -113,73 +163,9 @@ void spmm_scalar_row_product(float Aij, int Bi)
 #endif
         // compute hash
         int idx = hash(Bj);
-        spmm_elt_t *p = nonzeros_table[idx];
-        solve_row_dbg("  lookup[%3d] = 0x%08x\n"
-               , Bj
-               , p);
-        // fetch entry
-        spmm_elt_t *e;
-        if (p == nullptr) {
-            // allocate an elt
-            e = alloc_elt();
-            solve_row_dbg("  %3d not found: inserting with 0x%08x\n"
-                          , Bj
-                          , e);
-            e->part.idx = Bj;
-            e->part.val = Cij;
-            // zero out bucket
-            e->bkt_next = nullptr;
-            // push e on to the table list
-            e->tbl_next = tbl_head;
-            tbl_head = e;
-            // insert into table
-            nonzeros_table[idx] = e;
-            // increment number of entries
-            tbl_num_entries++;
-        } else if (p->part.idx == Bj) {
-            solve_row_dbg("  %3d found: updating\n"
-                          , Bj);
-            // matches
-#if defined(SPMM_NO_FLOPS)
-            p->par.val = Cij;
-#else
-            p->part.val += Cij;
-#endif
-        } else {
-            // collision, go through bucket
-            while (p->bkt_next != nullptr) {
-                p = p->bkt_next;
-                if (p->part.idx == Bj) {
-                    solve_row_dbg("  %3d: colision: found: updating\n"
-                                  , Bj);
-#if defined(SPMM_NO_FLOPS)
-                    p->part.val = Cij;
-#else
-                    p->part.val += Cij;
-#endif
-                    break;
-                }
-            }
-            // add to list
-            if (p->part.idx != Bj) {
-                // allocate an elt
-                e = alloc_elt();
-                solve_row_dbg("  %3d: colision: not found: inserting with 0x%08x\n"
-                              , Bj
-                              , e);
-                e->part.idx = Bj;
-                e->part.val = Cij;
-                // insert into buckets list
-                e->bkt_next = nullptr;
-                p->bkt_next = e;
-                // insert into table list
-                // Max: could use an amoswap here for more efficient swapping
-                e->tbl_next = p->tbl_next;
-                p->tbl_next = e;
-                // increment number of entries
-                tbl_num_entries++;
-            }
-        }
+
+        // perform symbol table lookup/update
+        spmm_update_table(Cij,Bj, idx);
     }
 }
 
