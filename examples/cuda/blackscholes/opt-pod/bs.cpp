@@ -60,11 +60,10 @@ float CNDF (float InputX)
     return OutputX;
 } 
 
-float BlkSchlsEqEuroNoDiv( float sptprice,
-                            float strike, float rate, float volatility,
-                            float time, int otype, float timet )
+void BlkSchlsEqEuroNoDiv( float sptprice,
+                           float strike, float rate, float volatility,
+                           float time, float &putPrice, float &callPrice, float timet )
 {
-    float OptionPrice;
 
     // local private working variables for the calculation
     float xStockPrice;
@@ -119,13 +118,9 @@ float BlkSchlsEqEuroNoDiv( float sptprice,
     NofXd2 = CNDF( d2 );
 
     FutureValueX = strike * ( expf( -(rate)*(time) ) );        
-    if (otype == 0) {            
-        OptionPrice = (sptprice * NofXd1) - (FutureValueX * NofXd2);
-    } else { 
-        NegNofXd1 = (1.0f - NofXd1);
-        NegNofXd2 = (1.0f - NofXd2);
-        OptionPrice = (FutureValueX * NegNofXd2) - (sptprice * NegNofXd1);
-    }
+    callPrice = (sptprice * NofXd1) - (FutureValueX * NofXd2);
+    NegNofXd1 = (1.0f - NofXd1);
+    NegNofXd2 = (1.0f - NofXd2);
+    putPrice = (FutureValueX * NegNofXd2) - (sptprice * NegNofXd1);
     
-    return OptionPrice;
 }
