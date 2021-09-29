@@ -14,6 +14,9 @@ typedef struct spmm_elt {
 // first we source from our local pool of available items
 static thread spmm_elt_t local_elt_pool[SPMM_SOLVE_ROW_LOCAL_DATA_WORDS*sizeof(int)/sizeof(spmm_elt_t)];
 
+#define solve_row_dbg(fmt, ...)                 \
+    pr_dbg("%d: " fmt, __bsg_id, ##__VA_ARGS__)
+
 #define array_size(x)                           \
     (sizeof(x)/sizeof(x[0]))
 
@@ -66,7 +69,7 @@ static spmm_elt_t* alloc_elt()
         }
         newelts[ELTS_REALLOC_SIZE-1].tbl_next = nullptr;
         free_global_head = &newelts[0];
-        pr_dbg("  %s: free_global_head = 0x%08x\n"
+        solve_row_dbg("  %s: free_global_head = 0x%08x\n"
                , __func__
                , free_global_head);
 
@@ -111,7 +114,7 @@ void spmm_scalar_row_product(float Aij, int Bi)
         // compute hash
         int idx = hash(Bj);
         spmm_elt_t *p = nonzeros_table[idx];
-        pr_dbg("  lookup[%d] = 0x%08x\n"
+        solve_row_dbg("  lookup[%3d] = 0x%08x\n"
                , Bj
                , p);
         // fetch entry
@@ -119,7 +122,9 @@ void spmm_scalar_row_product(float Aij, int Bi)
         if (p == nullptr) {
             // allocate an elt
             e = alloc_elt();
-            pr_dbg("  not found: inserting with 0x%08x\n", e);
+            solve_row_dbg("  %3d not found: inserting with 0x%08x\n"
+                          , Bj
+                          , e);
             e->part.idx = Bj;
             e->part.val = Cij;
             // zero out bucket
@@ -132,7 +137,8 @@ void spmm_scalar_row_product(float Aij, int Bi)
             // increment number of entries
             tbl_num_entries++;
         } else if (p->part.idx == Bj) {
-            pr_dbg("  found: updating\n");
+            solve_row_dbg("  %3d found: updating\n"
+                          , Bj);
             // matches
 #if defined(SPMM_HASH_TABLE_ONLY)
             p->par.val = Cij;
@@ -144,8 +150,9 @@ void spmm_scalar_row_product(float Aij, int Bi)
             while (p->bkt_next != nullptr) {
                 p = p->bkt_next;
                 if (p->part.idx == Bj) {
-                    pr_dbg("  colision: found: updating\n");
 #if defined(SPMM_HASH_TABLE_ONLY)
+                    solve_row_dbg("  %3d: colision: found: updating\n"
+                                  , Bj);
                     p->part.val = Cij;
 #else
                     p->part.val += Cij;
@@ -157,7 +164,9 @@ void spmm_scalar_row_product(float Aij, int Bi)
             if (p->part.idx != Bj) {
                 // allocate an elt
                 e = alloc_elt();
-                pr_dbg("  colision: not found: inserting with 0x%08x\n", e);
+                solve_row_dbg("  %3d: colision: not found: inserting with 0x%08x\n"
+                              , Bj
+                              , e);
                 e->part.idx = Bj;
                 e->part.val = Cij;
                 // insert into buckets list
@@ -191,10 +200,10 @@ extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict A_ptr, // 
 
 void spmm_solve_row_init()
 {
-    pr_dbg("init: calling from " __FILE__ "\n");
+    solve_row_dbg("init: calling from " __FILE__ "\n");
     // initialize nonzeros table in dram
     nonzeros_table = (spmm_elt_t**)spmm_malloc(sizeof(spmm_elt_t*) * NONZEROS_TABLE_SIZE);
-    pr_dbg("init: nonzeros_table   = 0x%08x\n"
+    solve_row_dbg("init: nonzeros_table   = 0x%08x\n"
            , reinterpret_cast<unsigned>(nonzeros_table));
 
     // initialize list of local nodes
@@ -205,17 +214,17 @@ void spmm_solve_row_init()
             local_elt_pool[i].tbl_next = &local_elt_pool[i+1];
         }
         local_elt_pool[array_size(local_elt_pool)-1].tbl_next = nullptr;
-        pr_dbg("init: local_elt_pool[N-1]=0x%08x\n"
+        solve_row_dbg("init: local_elt_pool[N-1]=0x%08x\n"
                , &local_elt_pool[array_size(local_elt_pool)-1]);
     }
-    pr_dbg("init: free_local_head  = 0x%08x\n", free_local_head);
-    pr_dbg("init: free_global_head = 0x%08x\n", free_global_head);
+    solve_row_dbg("init: free_local_head  = 0x%08x\n", free_local_head);
+    solve_row_dbg("init: free_global_head = 0x%08x\n", free_global_head);
 }
 
 void spmm_solve_row(int Ai)
 {
     //bsg_print_int(Ai);
-    pr_dbg("Solving for row %d\n", Ai);
+    solve_row_dbg("solving for row %3d\n", Ai);
     // set the number of partials to zero
     tbl_num_entries = 0;
 
@@ -239,10 +248,10 @@ void spmm_solve_row(int Ai)
     spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(sizeof(spmm_partial_t)*tbl_num_entries);
 
     //bsg_print_int(tbl_num_entries);
-    pr_dbg("Solved row %d, saving %d nonzeros to address 0x%08x\n"
-           , Ai
-           , tbl_num_entries
-           , parts_glbl);
+    solve_row_dbg("solved row %3d, saving %3d nonzeros to address 0x%08x\n"
+                  , Ai
+                  , tbl_num_entries
+                  , parts_glbl);
 
     // for each entry in the table
     int j = 0; // tracks nonzero number
@@ -252,9 +261,9 @@ void spmm_solve_row(int Ai)
         // clear table entry
         nonzeros_table[hash(e->part.idx)] = nullptr;
         // copy to partitions
-        pr_dbg("  copying from 0x%08x to 0x%08x\n"
-               , reinterpret_cast<unsigned>(e)
-               , reinterpret_cast<unsigned>(&parts_glbl[j]));
+        solve_row_dbg("  copying from 0x%08x to 0x%08x\n"
+                      , reinterpret_cast<unsigned>(e)
+                      , reinterpret_cast<unsigned>(&parts_glbl[j]));
         parts_glbl[j++] = e->part;
         // free entry
         free_elt(e);

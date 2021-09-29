@@ -8,7 +8,8 @@ void spmm_update_nonzeros(int Ci
                           , bsg_attr_remote float     *__restrict val_ptr
                           , bsg_attr_remote spmm_partial_t *__restrict par_ptr)
 {
-    pr_dbg("Copying results for row %d to 0x%08x and 0x%08x\n"
+    pr_dbg("%d: copying results for row %d to 0x%08x and 0x%08x\n"
+           , __bsg_id
            , Ci
            , reinterpret_cast<unsigned>(idx_ptr)
            , reinterpret_cast<unsigned>(val_ptr));
@@ -40,7 +41,7 @@ void spmm_update_nonzeros(int Ci
 
 void spmm_copy_results(int Ci)
 {
-    pr_dbg("copying results for row %d\n", Ci);
+    pr_dbg("%d: copying results for row %d\n", __bsg_id, Ci);
     int nnz = C_glbl_p->mjr_nnz_ptr[Ci];
     int off = C_glbl_p->mnr_off_ptr[Ci];
     kernel_remote_int_ptr_t idx_ptr = &C_glbl_p->mnr_idx_remote_ptr[off];

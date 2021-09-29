@@ -1,6 +1,12 @@
 #pragma once
+#ifndef BSG_TILE_GROUP_X_DIM
+#define BSG_TILE_GROUP_X_DIM bsg_tiles_X
+#endif
+#ifndef BSG_TILE_GROUP_Y_DIM
+#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y
+#endif
+#include "bsg_mcs_mutex.hpp"
 #include "sparse_matrix.h"
-
 #ifdef __BUILD_FOR_HOST__
 #define thread thread_local
 #else
@@ -18,8 +24,16 @@
 #ifdef __BUILD_FOR_HOST__
 #define pr_dbg(fmt, ...)
 #else
-#define pr_dbg(fmt, ...)                        \
-    do { bsg_printf(fmt, ##__VA_ARGS__); } while (0)
+extern bsg_mcs_mutex_t mtx;
+#define pr_dbg(fmt, ...)                                                \
+    do {                                                                \
+        bsg_mcs_mutex_node_t lcl;                                       \
+        bsg_mcs_mutex_node_t *lcl_as_glbl = (bsg_mcs_mutex_node_t*)bsg_tile_group_remote_ptr(int, __bsg_x, __bsg_y, &lcl); \
+        bsg_mcs_mutex_acquire(&mtx, &lcl, lcl_as_glbl);                 \
+        bsg_printf(fmt, ##__VA_ARGS__);                                 \
+        bsg_fence();                                                    \
+        bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);                 \
+    } while (0)
 #endif
 #else
 #define pr_dbg(fmt, ...)
@@ -90,3 +104,4 @@ void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
                sparse_matrix_t *__restrict B_ptr, // csr
                sparse_matrix_t *__restrict C_ptr, // csr
                std::atomic<intptr_t> *mem_pool_arg); // mem pool
+
