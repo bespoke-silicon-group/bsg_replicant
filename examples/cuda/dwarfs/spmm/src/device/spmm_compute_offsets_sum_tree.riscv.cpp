@@ -108,3 +108,15 @@ void spmm_compute_offsets()
                , nnzp->load(std::memory_order_relaxed));
     }
 }
+
+
+#if defined(__KERNEL_COMPUTE_OFFSETS__)
+extern "C" int kernel_spmm_compute_offsets(sparse_matrix_t *__restrict A_ptr, // csr
+                                           sparse_matrix_t *__restrict B_ptr, // csr
+                                           sparse_matrix_t *__restrict C_ptr, // csr
+                                           std::atomic<intptr_t> *mem_pool_arg)
+{
+    spmm_init();
+    spmm_compute_offsets();
+}
+#endif

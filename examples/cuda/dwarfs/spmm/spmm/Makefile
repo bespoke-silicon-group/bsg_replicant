@@ -1,21 +1,28 @@
 REPLICANT_PATH=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 
-test-name       = $(1)_input__$(2)_tx__$(3)_ty
-get-input       = $(firstword $(subst _, ,$(filter %_input,$(subst __, ,$1))))
-get-tx		= $(firstword $(subst _, ,$(filter %_tx,$(subst __, ,$1))))
-get-ty		= $(firstword $(subst _, ,$(filter %_ty,$(subst __, ,$1))))
+test-name               = $(1)_input__$(2)_tx__$(3)_ty__$(4)_solve-row-alg__$(5)_comp-offs-alg__$(6)_slv-row-dmem-words
+get-input		= $(firstword $(subst _, ,$(filter %_input,$(subst __, ,$1))))
+get-tx			= $(firstword $(subst _, ,$(filter %_tx,$(subst __, ,$1))))
+get-ty			= $(firstword $(subst _, ,$(filter %_ty,$(subst __, ,$1))))
+get-solve-row-alg	= $(firstword $(subst _, ,$(filter %_solve-row-alg,$(subst __, ,$1))))
+get-comp-offs-alg	= $(firstword $(subst _, ,$(filter %_comp-offs-alg,$(subst __, ,$1))))
+get-slv-row-dmem-words	= $(firstword $(subst _, ,$(filter %_slv-row-dmem-words,$(subst __, ,$1))))
 
-TESTS += $(call test-name,08blocks,1,1)
-TESTS += $(call test-name,08blocks,2,1)
-TESTS += $(call test-name,08blocks,4,1)
-TESTS += $(call test-name,08blocks,8,1)
-TESTS += $(call test-name,08blocks,16,1)
+DMEM_WORDS=$(shell echo 7*128|bc)
+
+TESTS += $(call test-name,08blocks,1,1,hash-table,naive,$(DMEM_WORDS))
+TESTS += $(call test-name,08blocks,16,8,hash-table,naive,$(DMEM_WORDS))
+TESTS += $(call test-name,08blocks,1,1,hash-table,sum-tree,$(DMEM_WORDS))
+TESTS += $(call test-name,08blocks,16,8,hash-table,sum-tree,$(DMEM_WORDS))
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
 $(eval TX=$(call get-tx,$1))
 $(eval TY=$(call get-ty,$1))
+$(eval SOLVE_ROW_ALG=$(call get-solve-row-alg,$1))
+$(eval COMP_OFFS_ALG=$(call get-comp-offs-alg,$1))
+$(eval SOLVE_ROW_DMEM_WORDS=$(call get-slv-row-dmem-words,$1))
 endef
 
 # dwarfs should define this function hook to add
@@ -27,9 +34,12 @@ endef
 # typically this is $(APPLICATION_PATH)/$(test-name)/parameters.mk
 define parameters-mk-add-application-params
 $(eval $(call get-test-parameters,$1))
-@echo INPUT=$(INPUT) >> $2
-@echo TX=$(TX) >> $2
-@echo TY=$(TY) >> $2
+@echo INPUT=$(INPUT)					>> $2
+@echo TX=$(TX)						>> $2
+@echo TY=$(TY)						>> $2
+@echo SOLVE_ROW_ALG=$(SOLVE_ROW_ALG)			>> $2
+@echo COMP_OFFS_ALG=$(COMP_OFFS_ALG)			>> $2
+@echo SOLVE_ROW_DMEM_WORDS=$(SOLVE_ROW_DMEM_WORDS)	>> $2
 endef
 
 
