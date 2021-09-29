@@ -17,12 +17,17 @@ void spmm_compute_offsets()
 }
 
 #if defined(__KERNEL_COMPUTE_OFFSETS__)
-extern "C" int kernel_spmm_compute_offsets(sparse_matrix_t *__restrict A_ptr, // csr
-                                           sparse_matrix_t *__restrict B_ptr, // csr
-                                           sparse_matrix_t *__restrict C_ptr, // csr
-                                           std::atomic<intptr_t> *mem_pool_arg)
+extern "C" int kernel_compute_offsets(sparse_matrix_t *__restrict A_ptr, // csr
+                                      sparse_matrix_t *__restrict B_ptr, // csr
+                                      sparse_matrix_t *__restrict C_ptr, // csr
+                                      std::atomic<intptr_t> *mem_pool_arg)
 {
-    spmm_init();
+    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+    spmm_barrier();
+    bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
     spmm_compute_offsets();
+    bsg_cuda_print_stat_end(TAG_OFFSET_COMPUTE);
+    spmm_barrier();
+    return 0;
 }
 #endif
