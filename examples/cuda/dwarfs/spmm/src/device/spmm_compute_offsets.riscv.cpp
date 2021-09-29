@@ -1,4 +1,5 @@
 #include "sparse_matrix.h"
+#include "spmm.hpp"
 #include "spmm_compute_offsets.hpp"
 #include "bsg_tile_config_vars.h"
 
@@ -14,3 +15,14 @@ void spmm_compute_offsets()
         }
     }
 }
+
+#if defined(__KERNEL_COMPUTE_OFFSETS__)
+extern "C" int kernel_spmm_compute_offsets(sparse_matrix_t *__restrict A_ptr, // csr
+                                           sparse_matrix_t *__restrict B_ptr, // csr
+                                           sparse_matrix_t *__restrict C_ptr, // csr
+                                           std::atomic<intptr_t> *mem_pool_arg)
+{
+    spmm_init();
+    spmm_compute_offsets();
+}
+#endif

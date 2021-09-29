@@ -145,8 +145,34 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
+# select solve row algorithm
+# use insertion sort
+ifneq ($(findstring insertion-sort,$(SOLVE_ROW_ALG)),)
+RISCV_TARGET_OBJECTS += spmm_solve_row_insertion_sort.riscv.rvo
+endif
+# use a hash table
+ifneq ($(findstring hash-table,$(SOLVE_ROW_ALG)),)
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+# skip sorting
+ifneq ($(findstring no-sort,$(SOLVE_ROW_ALG)),)
+RISCV_CCPPFLAGS += -DSPMM_NO_SORTING=1
+endif
+# skip flops
+ifneq ($(findstring no-flops,$(SOLVE_ROW_ALG)),)
+RISCV_CCPPFLAGS += -DSPMM_NO_FLOPS=1
+endif
+endif
+
+# select compute offsets algorithm
+# use a sum tree
+ifeq ($(COMP_OFFS_ALG),sum-tree)
 RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
+endif
+# use basic implementation
+ifeq ($(COMP_OFFS_ALG),naive)
+RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
+endif
+# select copy results algorithm
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
@@ -155,6 +181,7 @@ RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_CCPPFLAGS += -DLOG2_THREADS=$(shell echo 'l($(TX)*$(TY))/l(2)' | bc -l | xargs printf '%.f\n')
+RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(SOLVE_ROW_DMEM_WORDS)
 RISCV_OPT_LEVEL = -O3
 
 TILE_GROUP_DIM_X=$(TX)
