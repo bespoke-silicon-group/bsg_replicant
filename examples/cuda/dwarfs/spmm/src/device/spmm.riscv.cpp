@@ -1,7 +1,6 @@
 #include "bsg_manycore.h"
 #include "bsg_tile_config_vars.h"
 #include "sparse_matrix.h"
-#include "bsg_mcs_mutex.h"
 #include "bsg_manycore_atomic.h"
 #include <cstdint>
 #include <atomic>
@@ -12,16 +11,23 @@
 #include "spmm_solve_row.hpp"
 #include "spmm_compute_offsets.hpp"
 #include "spmm_copy_results.hpp"
+//#include "bsg_tile_group_barrier.h"
 
-#define BSG_TILE_GROUP_X_DIM bsg_tiles_X
-#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y
-#include "bsg_tile_group_barrier.h"
+extern "C" void bsg_barrier_amoadd(int *lock, int *sense);    
 
-INIT_TILE_GROUP_BARRIER(rbar, cbar, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
+//INIT_TILE_GROUP_BARRIER(rbar, cbar, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
+
+__attribute__((section(".dram")))
+bsg_mcs_mutex_t mtx;
+
+__attribute__((section(".dram")))
+static int lock  = 0;
+static int sense = 1;
 
 void spmm_barrier()
 {    
-    bsg_tile_group_barrier(&rbar, &cbar);
+    //bsg_tile_group_barrier(&rbar, &cbar);
+    bsg_barrier_amoadd(&lock, &sense);
 }
 
 thread std::atomic<intptr_t> *spmm_mem_pool = nullptr;
