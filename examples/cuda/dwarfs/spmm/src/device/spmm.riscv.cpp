@@ -24,9 +24,6 @@ void spmm_barrier()
     bsg_tile_group_barrier(&rbar, &cbar);
 }
 
-#define THREADS                                 \
-    (bsg_tiles_X*bsg_tiles_Y)
-
 thread std::atomic<intptr_t> *spmm_mem_pool = nullptr;
 thread sparse_matrix_t A_lcl;
 thread sparse_matrix_t B_lcl;
@@ -76,8 +73,7 @@ extern "C" int kernel_spmm(sparse_matrix_t *__restrict A_ptr, // csr
     bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
 
     C_lcl = *C_glbl_p;
-    for (int Ci = __bsg_id; Ci < C_lcl.n_major; Ci += THREADS)
-        spmm_compute_offsets(Ci);
+    spmm_compute_offsets();
     
     // sync
     if (__bsg_id == 0) {
