@@ -72,3 +72,21 @@ class SPMMSolveRowParameters(SPMMParametersBase):
     @property
     def parameters(self):
         return super().parameters + ['row','algorithm']
+
+class HashTableParameters(SPMMParametersBase):
+    def __init__(self, filename):
+        super().__init__(filename)
+        m = re.search(r'(\d+)_row__(\d+)_dmem-words', self.filename)
+        self.row = int(m.group(1))
+        self.dmem = int(m.group(2))
+
+    def updateDataFrame(self, df):
+        df = super().updateDataFrame(df)
+        df['row'] = self.row
+        df['dmem-words'] = self.dmem
+        return df
+
+    @property
+    def parameters(self):
+        return super().parameters + ['row','dmem-words']
+    
