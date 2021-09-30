@@ -18,6 +18,8 @@ int main(int argc, char *argv[])
     std::string A_name = argv[6];
     std::string sol_name = argv[7];
     std::string ans_name = argv[8];
+    std::string a_stats  = argv[9];
+    std::string b_stats  = argv[10];
     
     auto A = eigen_sparse_matrix::FromAsciiNonZerosList<CSR>(
         input
@@ -38,6 +40,12 @@ int main(int argc, char *argv[])
 
     std::ofstream of(solve_row_stats);
     of << slvr.solve_row_stats();
+
+    std::ofstream af(a_stats);
+    af << slvr.A_stats();
+
+    std::ofstream bf(b_stats);
+    bf << slvr.B_stats();
     
     return 0;
 }

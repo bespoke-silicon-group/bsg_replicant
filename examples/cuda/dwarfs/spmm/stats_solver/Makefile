@@ -17,7 +17,8 @@ include $(APPLICATION_PATH)/inputs.mk
 
 $(foreach input,$(INPUTS),$(input).stats): %.stats: inputs solver
 	./solver $($*) $($*__directed) $($*__weighted) $($*__zero-indexed) $@.solve_row.csv \
-	$*.input.csv $*.solution.csv $*.answer.csv
+	$*.input.csv $*.solution.csv $*.answer.csv \
+	$*.A_stats.csv $*.B_stats.csv
 
 clean:
 	rm -rf solver *.input.csv *.solve_row.csv *.solution.csv *.answer.csv
