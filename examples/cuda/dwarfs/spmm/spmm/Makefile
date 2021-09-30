@@ -9,12 +9,21 @@ get-solve-row-alg	= $(firstword $(subst _, ,$(filter %_solve-row-alg,$(subst __,
 get-comp-offs-alg	= $(firstword $(subst _, ,$(filter %_comp-offs-alg,$(subst __, ,$1))))
 get-slv-row-dmem-words	= $(firstword $(subst _, ,$(filter %_slv-row-dmem-words,$(subst __, ,$1))))
 
-DMEM_WORDS=$(shell echo 7*128|bc)
+RUN-INPUTS = 08blocks wiki-vote
+DMEM_WORDS = 0 $(shell echo 7*128|bc)
+COMP_OFFS_ALG  = sum-tree
+SOLVE_ROW_ALG  = hash-table
 
-TESTS += $(call test-name,08blocks,1,1,hash-table,naive,$(DMEM_WORDS))
-TESTS += $(call test-name,08blocks,16,8,hash-table,naive,$(DMEM_WORDS))
-TESTS += $(call test-name,08blocks,1,1,hash-table,sum-tree,$(DMEM_WORDS))
-TESTS += $(call test-name,08blocks,16,8,hash-table,sum-tree,$(DMEM_WORDS))
+TX-TY = 1-1 16-8
+tx = $(firstword $(subst -, ,$1))
+ty = $(lastword  $(subst -, ,$1))
+
+$(foreach input,$(RUN-INPUTS),\
+$(foreach solve-row,$(SOLVE_ROW_ALG),\
+$(foreach comp-offs,$(COMP_OFFS_ALG),\
+$(foreach tx-ty,$(TX-TY),\
+$(foreach dmem,$(DMEM_WORDS),\
+$(eval TESTS += $(call test-name,$(input),$(call tx,$(tx-ty)),$(call ty,$(tx-ty)),$(solve-row),$(comp-offs),$(dmem))))))))
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
