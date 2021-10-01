@@ -36,8 +36,7 @@ static thread spmm_elt_t **nonzeros_table = nullptr;
 
 
 #ifndef NONZEROS_TABLE_SIZE
-#define NONZEROS_TABLE_SIZE                     \
-    (1024)
+#error "define NONZEROS_TABLE_SIZE"
 #endif
 
 static int hash(int x)
