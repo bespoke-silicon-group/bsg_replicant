@@ -39,8 +39,11 @@ static thread spmm_elt_t **nonzeros_table = nullptr;
 #error "define NONZEROS_TABLE_SIZE"
 #endif
 
-static int hash(int x)
+typedef unsigned hidx_t;
+
+static int hash(int sx)
 {
+    hidx_t x = static_cast<hidx_t>(sx);
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x);
