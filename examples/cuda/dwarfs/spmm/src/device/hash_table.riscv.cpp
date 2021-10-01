@@ -187,7 +187,7 @@ extern "C" int kernel_update_stream(sparse_matrix_t *__restrict A_ptr, // csr
         for (int j = 0; j < array_size(updates); j++) {
             int idx = updates[j];
             int hsh = hash(idx);
-            spmm_update_table(0.0f, idx, hsh);
+            spmm_update_table(1, idx, hsh);
         }
         i += VCACHE_STRIPE_WORDS;        
     }
