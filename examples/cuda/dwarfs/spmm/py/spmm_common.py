@@ -76,17 +76,19 @@ class SPMMSolveRowParameters(SPMMParametersBase):
 class HashTableParameters(SPMMParametersBase):
     def __init__(self, filename):
         super().__init__(filename)
-        m = re.search(r'(\d+)_row__(\d+)_dmem-words', self.filename)
+        m = re.search(r'(\d+)_row__(\d+)_dmem-words__(\d+)_hash-table-words', self.filename)
         self.row = int(m.group(1))
         self.dmem = int(m.group(2))
+        self.tblsz = int(m.group(3))
 
     def updateDataFrame(self, df):
         df = super().updateDataFrame(df)
         df['row'] = self.row
         df['dmem-words'] = self.dmem
+        df['table-words'] = self.tblsz
         return df
 
     @property
     def parameters(self):
-        return super().parameters + ['row','dmem-words']
+        return super().parameters + ['row','dmem-words', 'table-words']
     
