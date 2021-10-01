@@ -8,7 +8,7 @@ get-dmem-words  = $(firstword $(subst _, ,$(filter %_dmem-words,$(subst __, ,$1)
 get-hash-table-words = $(firstword $(subst _, ,$(filter %_hash-table-words,$(subst __, ,$1))))
 
 DMEMS = 0 $(shell echo 128*7|bc)
-NONZERO_TABLE_WORDSS = $(shell echo 32*1024|bc) 1024
+NONZEROS_TABLE_WORDSS = $(shell echo 32*1024|bc) 1024
 
 wiki-vote-rows +=   0   #    0 updates
 wiki-vote-rows +=  31   #   32 updates
@@ -25,7 +25,7 @@ wiki-vote-rows += 4446  #  770 updates
 wiki-vote-rows += 4122  # 1026 updates
 
 $(foreach dmem,$(DMEMS),\
-$(foreach tblw,$(NONZERO_TABLE_WORDSS),\
+$(foreach tblw,$(NONZEROS_TABLE_WORDSS),\
 $(foreach row,$(wiki-vote-rows),\
 $(eval TESTS+=$(call test-name,wiki-vote,$(row),$(dmem),$(tblw))))))
 
@@ -33,7 +33,7 @@ define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
 $(eval ROW=$(call get-row,$1))
 $(eval DMEM=$(call get-dmem-words,$1))
-$(eval NONZERO_TABLE_WORDS=$(call get-hash-table-words,$1))
+$(eval NONZEROS_TABLE_WORDS=$(call get-hash-table-words,$1))
 endef
 
 # dwarfs should define this function hook to add
@@ -48,7 +48,7 @@ $(eval $(call get-test-parameters,$1))
 @echo INPUT=$(INPUT)		>> $2
 @echo ROW=$(ROW)		>> $2
 @echo DMEM=$(DMEM)              >> $2
-@echo NONZERO_TABLE_WORDS=$(NONZERO_TABLE_WORDS) >> $2
+@echo NONZEROS_TABLE_WORDS=$(NONZEROS_TABLE_WORDS) >> $2
 endef
 
 # This can be overriden to set a custom simulation directory for a test.
