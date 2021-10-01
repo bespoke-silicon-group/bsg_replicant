@@ -12,7 +12,7 @@ module replicant_tb_top
    end
     */
    initial begin
-      `BSG_HIDE_FROM_VERILATOR(#0);
+      #0;
       
       $display("==================== BSG MACHINE SETTINGS: ====================");
 
@@ -262,7 +262,7 @@ module replicant_tb_top
        ,.rom_els_p(bsg_machine_rom_els_gp)
        ,.rom_width_p(bsg_machine_rom_width_gp)
        ,.rom_arr_p(bsg_machine_rom_arr_gp)
-       ,.max_out_credits_p(bsg_machine_io_credits_max_gp)
+       ,.credit_counter_width_p(`BSG_WIDTH(bsg_machine_io_credits_max_gp))
        )
    mc_dpi
      (
@@ -274,10 +274,9 @@ module replicant_tb_top
       // manycore link
       ,.link_sif_i(host_link_sif_lo)
       ,.link_sif_o(host_link_sif_li)
-      ,.my_x_i(host_x_coord_li)
-      ,.my_y_i(host_y_coord_li)
 
-      ,.debug_o()
+      ,.global_y_i(host_y_coord_li)
+      ,.global_x_i(host_x_coord_li)
       );
 
    bsg_dff_chain
@@ -299,8 +298,6 @@ module replicant_tb_top
       .clk_i(core_clk)
       ,.reset_i(core_reset)
       ,.ctr_r_o(global_ctr)
-
-      ,.debug_o()
       );
 
    bsg_print_stat_snoop
@@ -327,13 +324,15 @@ module replicant_tb_top
    //
    // This mirrors the DPI functions in aws simulation
 `ifndef VERILATOR
-   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args);
+   import "DPI-C" context task cosim_main(output int unsigned exit_code, input string args, input string path);
    initial begin
       int exit_code;
       string args;
+      string path;
       longint t;
+      $value$plusargs("c_path=%s", path);
       $value$plusargs("c_args=%s", args);
-      replicant_tb_top.cosim_main(exit_code, args);
+      replicant_tb_top.cosim_main(exit_code, args, path);
       if(exit_code < 0) begin
         $display("BSG COSIM FAIL: Test failed with exit code: %d", exit_code);
         $fatal;
@@ -342,7 +341,6 @@ module replicant_tb_top
         $finish;
       end
    end
-
 `endif
 
 `ifdef BSG_MACHINE_ENABLE_SAIF

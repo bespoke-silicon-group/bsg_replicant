@@ -26,23 +26,42 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+# All simulations should run with +ntb_random_seed_automatic.
+# 
+# From the VCS MX User-Guide: +ntb_random_seed_automatic Picks a unique value to
+# supply as the first seed used by a testbench. The value is determined by
+# combining the time of day, host name and process id. This ensures that no two
+# simulations have the same starting seed.
+SIM_ARGS += +ntb_random_seed_automatic
+
+# These are the execution rules for the binaries. We can't pass
+# C-style arguments through the command line, so instead we specify
+# them as the VCS plusarg argument +c_args. Users can specify C-style
+# arguments using the C_ARGS make variable.
+
+.PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd
+.PHONY: platform.execution.clean dve
+
+saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/simsc
+debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simsc
+exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
+profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
+
 %.log: % $(BSG_MANYCORE_KERNELS)
 	./$< $(SIM_ARGS) $(C_ARGS) 2>&1 | tee $@
 
-vanilla_stats.csv vcache_stats.csv router_stat.csv: % : %.profile.log
+vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 
-%.saif: %.saifgen.log ;
+saifgen.saif: saifgen.log ;
 
-%.vpd: SIM_ARGS += +vpdfile+$(@:.debug.log=.vpd)
-%.vpd: %.debug.log ;
+debug.vpd: SIM_ARGS += +vpdfile+debug.vpd
+debug.vpd: debug.log ;
 
-%.dve: %.vpd
+dve: debug.vpd
 	$(DVE) -full64 -vpd $< &
 
-.PRECIOUS: %.log
-
-.PHONY: platform.execution.clean %.log %.vpd
 platform.execution.clean:
+	rm -rf saifgen.log exec.log profile.log exec.log debug.vpd
 	rm -rf vanilla_stats.csv
 	rm -rf infinite_mem_stats.csv
 	rm -rf vcache_stats.csv
@@ -52,7 +71,17 @@ platform.execution.clean:
 	rm -rf router_stat.csv
 	rm -rf remote_load_trace.csv
 	rm -rf vanilla.log
-	rm -rf *.vpd
+	rm -rf debug.vpd 
+	rm -rf ucli.key
 	rm -rf dramsim3.json dramsim3.tag.json dramsim3.txt dramsim3epoch.json
 
 execution.clean: platform.execution.clean
+
+help:
+	@echo "Usage:"
+	@echo "make {clean | exec.log | profile.log | debug.log | debug.vpd | saifgen.log | saifgen.saif }"
+	@echo "      exec.log: Run program with SAIF, profilers, and waveform generation disabled (Fastest)"
+	@echo "      profile.log: Run program with profilers enabled, SAIF and waveform generation disabled"
+	@echo "      saifgen.log saifgen.saif: Run program with SAIF generation enabled, profilers and waveform generation disabled"
+	@echo "      debug.log debug.vpd: Run program with waveform and profiles enabled, SAIF generation disabled"
+	@echo "      clean: Remove all subdirectory-specific outputs"

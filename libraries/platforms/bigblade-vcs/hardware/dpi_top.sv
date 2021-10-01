@@ -12,7 +12,9 @@ module replicant_tb_top
    end
     */
    initial begin
+`ifndef VERILATOR
       #0;
+`endif
       
       $display("==================== BSG MACHINE SETTINGS: ====================");
 

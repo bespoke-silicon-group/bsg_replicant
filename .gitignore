@@ -10,4 +10,4 @@ __pycache__
 *.dot
 *.tree
 machines/*/V*
-
+machines/*/obj_dir/

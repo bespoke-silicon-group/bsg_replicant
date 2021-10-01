@@ -58,7 +58,7 @@ $(LIBMACHINE_OBJECTS): DEFINES += -DVM_SC=0
 $(LIBMACHINE_OBJECTS): DEFINES += -DVM_TRACE=0
 $(LIBMACHINE_OBJECTS): INCLUDES := -I$(VERILATOR_ROOT)/include
 $(LIBMACHINE_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
-$(LIBMACHINE_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)
+$(LIBMACHINE_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/obj_dir
 
 $(LIBMACHINE_OBJECTS): CFLAGS    += -std=c11 -fPIC $(INCLUDES) $(DEFINES)
 $(LIBMACHINE_OBJECTS): CXXFLAGS  += -std=c++11 -fPIC $(INCLUDES) $(DEFINES)
@@ -72,12 +72,12 @@ $(LIBMACHINE_OBJECTS): $(MACHINES_PATH)/%.o: $(VERILATOR_ROOT)/include/%.cpp
 # machine.
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES := -I$(BSG_PLATFORM_PATH)
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(BSG_MACHINE_PATH)/notrace
-$(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(BSG_MACHINE_PATH)
+$(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(BSG_MACHINE_PATH)/obj_dir
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(VERILATOR_ROOT)/include
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: CXXFLAGS := -std=c++11 -fPIC $(INCLUDES)
-$(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
+$(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o: $(BSG_MACHINE_PATH)/obj_dir/V$(BSG_DESIGN_TOP)__ALL.a
 
 # VHEADERS must be compiled before VSOURCES.
 VDEFINES += BSG_MACHINE_ORIGIN_X_CORD=$(BSG_MACHINE_ORIGIN_COORD_X)
@@ -90,12 +90,11 @@ VERILATOR_VINCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VERILATOR_VDEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VERILATOR_VFLAGS = $(VERILATOR_VINCLUDES) $(VERILATOR_VDEFINES)
 VERILATOR_VFLAGS += -Wno-widthconcat -Wno-unoptflat -Wno-lint
+VERILATOR_VFLAGS += -Wno-MULTIDRIVEN # verilator no-lint doesn't work with this warning
 VERILATOR_VFLAGS += --assert
+#VERILATOR_VFLAGS += --debug --gdbbt
 # These enable verilator tracing
 # VERILATOR_VFLAGS += --trace --trace-structs
-
-$(BSG_MACHINE_PATH)/$(BSG_PLATFORM):
-	mkdir -p $@
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
 LDFLAGS += -lbsg_manycore_runtime -lm
@@ -107,7 +106,7 @@ TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
 TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
-$(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a: $(VHEADERS) $(VSOURCES)
+$(BSG_MACHINE_PATH)/obj_dir/V$(BSG_DESIGN_TOP)__ALL.a: $(VHEADERS) $(VSOURCES)
 	$(info BSG_INFO: Running verilator)
 	@$(VERILATOR) -Mdir $(dir $@) --build --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $^ --top-module $(BSG_DESIGN_TOP)
 
@@ -119,22 +118,32 @@ $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a: $(VHEADERS) $(VSOURCES)
 $(BSG_MACHINE_PATH)/libmachine.so: LD = $(CXX)
 $(BSG_MACHINE_PATH)/libmachine.so: $(LIBMACHINE_OBJECTS)
 $(BSG_MACHINE_PATH)/libmachine.so: $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o
-$(BSG_MACHINE_PATH)/libmachine.so: $(BSG_MACHINE_PATH)/V$(BSG_DESIGN_TOP)__ALL.a
+$(BSG_MACHINE_PATH)/libmachine.so: $(BSG_MACHINE_PATH)/obj_dir/V$(BSG_DESIGN_TOP)__ALL.a
 	$(LD) -shared -Wl,--whole-archive,-soname,$@ -o $@ $^ -Wl,--no-whole-archive
 
-%.exec: $(TEST_OBJECTS) $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+$(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHINExPLATFORM_PATH)/debug $(BSG_MACHINExPLATFORM_PATH)/saifgen $(BSG_MACHINExPLATFORM_PATH)/profile:
+	mkdir -p $@
+
+%/simsc: $(TEST_OBJECTS) $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so  %
 	g++ -std=c++11 -o $@ $(LDFLAGS) $(TEST_OBJECTS)
 
-.PRECIOUS:%.debug %.profile %.saifgen %.exec
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/exec/simsc
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/debug/simsc
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/proile/simsc
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/saifgen/simsc
 
 # When running recursive regression, make is launched in independent,
 # non-communicating parallel processes that try to build these objects
 # in parallel. That is no-bueno. We define REGRESSION_PREBUILD so that
 # regression tests can build them before launching parallel
 # compilation and execution
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/exec/simsc
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/debug/simsc
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/profile/simsc
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/saifgen/simsc
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
-REGRESSION_PREBUILD += $(BSG_MACHINE_PATH)/libmachine.so
+REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 
 .PHONY: platform.link.clean
 platform.link.clean:

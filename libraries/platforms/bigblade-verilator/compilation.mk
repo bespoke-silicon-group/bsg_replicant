@@ -38,9 +38,13 @@ NC=\033[0m
 
 DEFINES    += -DVERILATOR
 INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)
+INCLUDES   += -I$(VERILATOR_ROOT)/include
+INCLUDES   += -I$(VERILATOR_ROOT)/include/vltstd
 
-CXXFLAGS   += -lstdc++ $(DEFINES)
-CFLAGS     += $(DEFINES)
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
+CXXFLAGS   += $(DEFINES) -fPIC
+CFLAGS     += $(DEFINES) -fPIC
 
 # each regression target needs to build its .o from a .c and .h of the
 # same name
@@ -51,10 +55,19 @@ CFLAGS     += $(DEFINES)
 %.o: %.cpp
 	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
 
-.PRECIOUS: %.o
+# Compile all of the sources into a shared object file for dynamic loading.
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+
+main.so: $(TEST_OBJECTS)
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
+
+.PRECIOUS: %.o %.so
 
 .PHONY: platform.compilation.clean
 platform.compilation.clean:
-	rm -rf *.o
+	rm -rf *.o *.so
 
 compilation.clean: platform.compilation.clean

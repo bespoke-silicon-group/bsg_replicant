@@ -40,18 +40,19 @@ ifndef BSG_MACHINE_NAME
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_NAME is not defined$(NC)"))
 endif
 
-# The following variables are set by $(BSG_F1_DIR)/hdk.mk, which will fail if
-# hdk_setup.sh has not been run, or environment.mk is not included
-#
-# HDK_SHELL_DESIGN_DIR: Path to the directory containing all the AWS "shell" IP
-# AWS_FPGA_REPO_DIR: Path to the clone of the aws-fpga repo
-# HDK_COMMON_DIR: Path to HDK 'common' directory w/ libraries for cosimluation.
-# SDK_DIR: Path to the SDK directory in the aws-fpga repo
-include $(BSG_F1_DIR)/hdk.mk
+# If we're inside bladerunner, check for verilator and define variables
+ifneq ("$(wildcard $(BLADERUNNER_ROOT)/verilator/bin/verilator)","")
+VERILATOR_ROOT = $(BLADERUNNER_ROOT)/verilator
+VERILATOR = $(BLADERUNNER_ROOT)/verilator/bin/verilator
+else
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Bladerunner is cloned, but verilator not found.$(NC)"))
+$(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Compile verilator in bsg_bladerunner to remove this warning$(NC)"))
+endif
 
 ################################################################################
 # Simulation Sources
 ################################################################################
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_reset_gen.v
 
 POD_TRACE_GEN_PY = $(BSG_MANYCORE_DIR)/testbenches/py/pod_trace_gen.py
@@ -119,8 +120,8 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_serial_in_parallel_out_full.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_round_robin_1_to_n.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_dataflow/bsg_one_fifo.v
 
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos_pkg.v
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/hardware/bsg_manycore_endpoint_to_fifos.v
+VSOURCES += $(HARDWARE_PATH)/bsg_manycore_endpoint_to_fifos_pkg.v
+VSOURCES += $(HARDWARE_PATH)/bsg_manycore_endpoint_to_fifos.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_saif_dumper.v
 
@@ -128,7 +129,6 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_saif_dumper.v
 # DPI-Specific Sources
 ################################################################################
 
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
 VSOURCES += $(BSG_MANYCORE_DIR)/v/bsg_manycore_link_sif_async_buffer.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_from_fifo.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_to_fifo.v
@@ -143,7 +143,7 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_cycle_counter.v
 # Top-level module name
 BSG_DESIGN_TOP := replicant_tb_top
 
-VSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-verilator/hardware/dpi_top.sv
+VSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/hardware/dpi_top.sv
 
 VINCLUDES += $(BSG_PLATFORM_PATH)/hardware
 VINCLUDES += $(BSG_PLATFORM_PATH)
