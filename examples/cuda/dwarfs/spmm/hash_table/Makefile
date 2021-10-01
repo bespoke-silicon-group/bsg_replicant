@@ -19,9 +19,11 @@ wiki-vote-rows += 265   #  160 updates
 wiki-vote-rows += 295   #  192 updates
 wiki-vote-rows += 1057  #  224 updates
 wiki-vote-rows += 97    #  256 updates
-wiki-vote-rows += 97    #  256 updates
+wiki-vote-rows += 3016  #  384 updates
 wiki-vote-rows += 5514  #  512 updates
+wiki-vote-rows += 3742  #  641 updates
 wiki-vote-rows += 4446  #  770 updates
+wiki-vote-rows += 5177  #  898 updates
 wiki-vote-rows += 4122  # 1026 updates
 
 $(foreach dmem,$(DMEMS),\
