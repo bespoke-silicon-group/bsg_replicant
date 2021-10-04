@@ -12,9 +12,6 @@ typedef struct spmm_elt {
     spmm_elt    *tbl_next; // list for all elements in the table, used in available list
 } spmm_elt_t;
 
-// first we source from our local pool of available items
-static thread spmm_elt_t local_elt_pool[SPMM_SOLVE_ROW_LOCAL_DATA_WORDS*sizeof(int)/sizeof(spmm_elt_t)];
-
 #define solve_row_dbg(fmt, ...)                 \
     pr_dbg("%d: " fmt, __bsg_id, ##__VA_ARGS__)
 
@@ -26,26 +23,22 @@ static thread spmm_elt_t *tbl_head  = nullptr;
 static thread int tbl_num_entries = 0;
 
 // linked list of available free frames in local memory
-static thread spmm_elt_t *free_local_head = nullptr;
-
-// linked list of available free frames in local memory
 static thread spmm_elt_t *free_global_head = nullptr;
 
 // this is the hash table that lives in global memory
-static thread spmm_elt_t **nonzeros_table = nullptr;
+static thread spmm_elt_t  *nonzeros_table [SPMM_SOLVE_ROW_LOCAL_DATA_WORDS];
 
-
-#ifndef NONZEROS_TABLE_SIZE
-#error "define NONZEROS_TABLE_SIZE"
+#ifdef  NONZEROS_TABLE_SIZE
+#warning "Redefining NONZEROS_TABLE_SIZE to SPMM_SOLVE_ROW_LOCAL_DATA_WORDS"
+#undef  NONZEROS_TABLE_SIZE
 #endif
+#define NONZEROS_TABLE_SIZE SPMM_SOLVE_ROW_LOCAL_DATA_WORDS
 
 typedef unsigned hidx_t;
 
 static int hash(int sx)
 {
     hidx_t x = static_cast<hidx_t>(sx);
-    // maybe do an xor shift
-    // maybe just the low bits
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x);
@@ -58,12 +51,7 @@ static int hash(int sx)
 static spmm_elt_t* alloc_elt()
 {
     spmm_elt_t *elt;
-    if (free_local_head != nullptr) {
-        elt = free_local_head;
-        free_local_head = elt->tbl_next;
-        elt->tbl_next = nullptr;
-        return elt;
-    } else if (free_global_head != nullptr) {
+    if (free_global_head != nullptr) {
         elt = free_global_head;
         free_global_head = elt->tbl_next;
         elt->tbl_next = nullptr;
@@ -86,17 +74,9 @@ static spmm_elt_t* alloc_elt()
 
 static void free_elt(spmm_elt_t *elt)
 {
-    intptr_t eltaddr = reinterpret_cast<intptr_t>(elt);
     elt->bkt_next = nullptr;
-    if (!(eltaddr & 0x80000000)) {
-        // local
-        elt->tbl_next = free_local_head;
-        free_local_head = elt;
-    } else {
-        // global
-        elt->tbl_next = free_global_head;
-        free_global_head = elt;
-    }
+    elt->tbl_next = free_global_head;
+    free_global_head = elt;
 }
 
 /**
@@ -151,22 +131,9 @@ void spmm_solve_row_init()
 {
     solve_row_dbg("init: calling from " __FILE__ "\n");
     // initialize nonzeros table in dram
-    nonzeros_table = (spmm_elt_t**)spmm_malloc(sizeof(spmm_elt_t*) * NONZEROS_TABLE_SIZE);
     solve_row_dbg("init: nonzeros_table   = 0x%08x\n"
            , reinterpret_cast<unsigned>(nonzeros_table));
 
-    // initialize list of local nodes
-    int i;
-    if (array_size(local_elt_pool) > 0) {
-        free_local_head = &local_elt_pool[0];
-        for (i = 0; i < array_size(local_elt_pool)-1; i++) {
-            local_elt_pool[i].tbl_next = &local_elt_pool[i+1];
-        }
-        local_elt_pool[array_size(local_elt_pool)-1].tbl_next = nullptr;
-        solve_row_dbg("init: local_elt_pool[N-1]=0x%08x\n"
-               , &local_elt_pool[array_size(local_elt_pool)-1]);
-    }
-    solve_row_dbg("init: free_local_head  = 0x%08x\n", free_local_head);
     solve_row_dbg("init: free_global_head = 0x%08x\n", free_global_head);
 }
 

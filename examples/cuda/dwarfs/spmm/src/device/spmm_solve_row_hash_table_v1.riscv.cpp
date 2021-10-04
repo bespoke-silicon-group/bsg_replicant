@@ -6,9 +6,11 @@
 #include <cstring>
 
 typedef struct spmm_elt {
-    spmm_partial_t part; // data
-    spmm_elt    *bkt_next; // list for this table bucket
-    spmm_elt    *tbl_next; // list for all elements in the table, used in available list
+    int            occ;       // how many are occupied
+    spmm_elt      *bkt_next;  // list for this table bucket
+    spmm_elt      *tbl_next;  // list for all elements in the table, used in available list
+    spmm_partial_t part[4];   // data
+    int            padding;
 } spmm_elt_t;
 
 // first we source from our local pool of available items

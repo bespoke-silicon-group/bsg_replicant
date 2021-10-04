@@ -72,13 +72,13 @@ vpath %.c   $(EXAMPLES_PATH)/cuda/dwarfs/src
 # TEST_NAME is the basename of the executable
 TEST_NAME = main
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = kernel_update_stream
+KERNEL_NAME = kernel_spmm
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES  = spmm_hash_table_main.cpp
+TEST_SOURCES  = spmm_main_abrev.cpp
 TEST_SOURCES += Random.cpp
 
 TEST_HEADERS =  $(shell find $(APPLICATION_PATH)/include/host/ -name *.h)
@@ -144,18 +144,40 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name *.hpp)
 RISCV_HEADERS += $(EXAMPLES_PATH
 
+ifeq ($(OPT),yes)
+RISCV_TARGET_OBJECTS += spmm_dynamic.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
+RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(shell echo 128*6 | bc)
+else
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
-RISCV_TARGET_OBJECTS += hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
+RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=0
+endif
 
-RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
-RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
-RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
-RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
+# use 1 thread or 128 threads
+ifeq ($(PARALLEL),yes)
+TX=$(BSG_MACHINE_GLOBAL_X)
+TY=$(BSG_MACHINE_GLOBAL_Y)
+else
+TX=1
+TY=1
+endif
+
+RISCV_INCLUDES  += -I$(APPLICATION_PATH)/include/device
+RISCV_INCLUDES  += -I$(APPLICATION_PATH)/include/common
+RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
+RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
-RISCV_OPT_LEVEL = -O3
+RISCV_CCPPFLAGS += -DLOG2_THREADS=$(shell echo 'l($(TX)*$(TY))/l(2)' | bc -l | xargs printf '%.f\n')
 
-TILE_GROUP_DIM_X=1
-TILE_GROUP_DIM_Y=1
+RISCV_OPT_LEVEL  = -O3
+
+TILE_GROUP_DIM_X=$(TX)
+TILE_GROUP_DIM_Y=$(TY)
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
@@ -166,11 +188,8 @@ RISCV_DEFINES += -DVCACHE_STRIPE_WORDS=$(BSG_MACHINE_VCACHE_STRIPE_WORDS)
 RISCV_DEFINES += -DTAG_ROW_SOLVE=0x1
 RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
 RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
-RISCV_DEFINES += -D__KERNEL_SOLVE_ROW__
-RISCV_DEFINES += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(DMEM)
-RISCV_DEFINES += -DNONZEROS_TABLE_SIZE=$(NONZEROS_TABLE_WORDS)
-
-#RISCV_DEFINES += -DDEBUG
+RISCV_DEFINES += -D__KERNEL_SPMM__
+RISCV_DEFINES += -D__ABREV__
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
@@ -187,7 +206,8 @@ RISCV_CC  = $(RISCV_GCC)
 ###############################################################################
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
 C_ARGS += $($(INPUT)) $($(INPUT)__directed) $($(INPUT)__weighted) $($(INPUT)__zero-indexed)
-C_ARGS += $(ROW)
+C_ARGS += $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y)
+C_ARGS += $(ROW_BASE) $(ROWS)
 
 SIM_ARGS ?=
 

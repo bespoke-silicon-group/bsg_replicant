@@ -35,18 +35,22 @@ static thread spmm_elt_t **nonzeros_table = nullptr;
 
 
 #define NONZEROS_TABLE_SIZE                     \
-    (32 * 1024)
+    (1024)
 
-static int hash(int x)
+static int hash(int sx)
 {
+    unsigned x = static_cast<unsigned>(sx);
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x);
     return x % NONZEROS_TABLE_SIZE;
 }
 
+// never allocate fewer than a cache line
 #define ELTS_REALLOC_SIZE                       \
     ((VCACHE_STRIPE_WORDS*sizeof(int))/sizeof(spmm_elt_t))
+
+static int elts_realloc_size = ELTS_REALLOC_SIZE;
 
 static spmm_elt_t* alloc_elt()
 {
@@ -62,13 +66,17 @@ static spmm_elt_t* alloc_elt()
         elt->tbl_next = nullptr;
         return elt;
     } else {
-        spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(sizeof(spmm_elt_t) * ELTS_REALLOC_SIZE);
+        int n_newelts = elts_realloc_size;
+        spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(sizeof(spmm_elt_t) * n_newelts);
         int i;
-        for (i = 0; i < ELTS_REALLOC_SIZE-1; i++) {
+        for (i = 0; i < n_newelts-1; i++) {
             newelts[i].tbl_next = &newelts[i+1];
         }
-        newelts[ELTS_REALLOC_SIZE-1].tbl_next = nullptr;
+        newelts[n_newelts-1].tbl_next = nullptr;
         free_global_head = &newelts[0];
+        // next time allocate twice as many
+        elts_realloc_size <<= 1;
+
         solve_row_dbg("  %s: free_global_head = 0x%08x\n"
                , __func__
                , free_global_head);
