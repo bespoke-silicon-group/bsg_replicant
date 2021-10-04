@@ -8,8 +8,14 @@ get-rows		= $(firstword $(subst _, ,$(filter %_rows,$(subst __, ,$1))))
 get-opt			= $(firstword $(subst _, ,$(filter %_opt,$(subst __, ,$1))))
 get-parallel		= $(firstword $(subst _, ,$(filter %_parallel,$(subst __, ,$1))))
 
-#TESTS += $(call test-name,wiki-vote,0,1024,yes,yes)
+
 TESTS += $(call test-name,wiki-vote,5802,1024,yes,yes)
+TESTS += $(call test-name,wiki-vote,5802,1024,no,yes)
+TESTS += $(call test-name,wiki-vote,6314,1024,yes,yes)
+TESTS += $(call test-name,wiki-vote,6314,1024,no,yes)
+TESTS += $(call test-name,wiki-vote,6826,1024,yes,yes)
+TESTS += $(call test-name,wiki-vote,6826,1024,no,yes)
+
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))

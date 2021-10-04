@@ -173,7 +173,7 @@ RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
 RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_CCPPFLAGS += -DLOG2_THREADS=$(shell echo 'l($(TX)*$(TY))/l(2)' | bc -l | xargs printf '%.f\n')
-
+#RISCV_CCPPFLAGS += -DCOMPLEX_HASH
 RISCV_OPT_LEVEL  = -O3
 
 TILE_GROUP_DIM_X=$(TX)
