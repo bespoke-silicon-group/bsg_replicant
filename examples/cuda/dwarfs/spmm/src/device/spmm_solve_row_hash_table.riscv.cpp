@@ -40,9 +40,11 @@ static thread spmm_elt_t **nonzeros_table = nullptr;
 static int hash(int sx)
 {
     unsigned x = static_cast<unsigned>(sx);
+#ifdef COMPLEX_HASH
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x);
+#endif
     return x % NONZEROS_TABLE_SIZE;
 }
 
