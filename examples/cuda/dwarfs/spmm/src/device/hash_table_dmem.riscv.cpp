@@ -50,6 +50,7 @@ static int hash(int sx)
 #define ELTS_REALLOC_SIZE                       \
     ((VCACHE_STRIPE_WORDS*sizeof(int))/sizeof(spmm_elt_t))
 
+int elts_realloc_size =  ELTS_REALLOC_SIZE;
 static spmm_elt_t* alloc_elt()
 {
     spmm_elt_t *elt;
@@ -59,17 +60,17 @@ static spmm_elt_t* alloc_elt()
         elt->tbl_next = nullptr;
         return elt;
     } else {
-        spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(sizeof(spmm_elt_t) * ELTS_REALLOC_SIZE);
+        spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(elts_realloc_size*sizeof(spmm_elt_t));
         int i;
-        for (i = 0; i < ELTS_REALLOC_SIZE-1; i++) {
+        for (i = 0; i < elts_realloc_size-1; i++) {
             newelts[i].tbl_next = &newelts[i+1];
         }
-        newelts[ELTS_REALLOC_SIZE-1].tbl_next = nullptr;
+        newelts[elts_realloc_size-1].tbl_next = nullptr;
         free_global_head = &newelts[0];
         solve_row_dbg("  %s: free_global_head = 0x%08x\n"
                , __func__
                , free_global_head);
-
+        elts_realloc_size <<= 1;
         return alloc_elt();
     }
 }
