@@ -53,7 +53,7 @@ KERNEL_NAME = vec_add_parallel
 ###############################################################################
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = pagrank_hb.cpp
+TEST_SOURCES = pagerank_hb.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
@@ -84,8 +84,8 @@ include $(EXAMPLES_PATH)/link.mk
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
 
-pagrank_hb_device.rvo: RISCV_CXX = $(RISCV_CLANGXX)
-pagrank_hb_device.riscv: pagrank_hb_device.rvo
+pageank_hb_device.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+pagerank_hb_device.riscv: pagerank_hb_device.rvo
 
 # Tile Group Dimensions
 TILE_GROUP_DIM_X = 16
