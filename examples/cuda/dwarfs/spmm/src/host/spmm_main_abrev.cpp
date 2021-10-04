@@ -6,6 +6,7 @@
 #include "HammerBlade.hpp"
 #include <iostream>
 #include <memory>
+
 using namespace spmm;
 using namespace dwarfs;
 using namespace hammerblade::host;
@@ -90,7 +91,13 @@ int SpGEMM(int argc, char *argv[])
     eigen_sparse_matrix::write_offset(*C_ptr, "C.offset.csv");
     eigen_sparse_matrix::write_matrix(*C_ptr, "C.txt");
 
-    std::cout << "C_ptr->isApprox(AxA) = " << C_ptr->isApprox(AxA) << std::endl;
+    // check equality for computed rows
+    bool eq = eigen_sparse_matrix::mjr_range_equal(AxA, *C_ptr, cl.row_base(), cl.row_base()+cl.rows());
+    std::cout << "mjr_range_equal(AxA, *C_ptr, "
+              << cl.row_base() << ", "
+              << cl.row_base() + cl.rows()
+              << ") = " << eq << std::endl;
+    
     hb->close();
     return HB_MC_SUCCESS;
 }
