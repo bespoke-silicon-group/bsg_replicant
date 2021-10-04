@@ -39,9 +39,11 @@ typedef unsigned hidx_t;
 static int hash(int sx)
 {
     hidx_t x = static_cast<hidx_t>(sx);
+#if defined(COMPLEX_HASH)
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x) * 0x45d9f3bU;
     x = ((x >> 16) ^ x);
+#endif
     return x % NONZEROS_TABLE_SIZE;
 }
 
