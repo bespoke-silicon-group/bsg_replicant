@@ -1,7 +1,7 @@
 #include "pr.hpp"
 
-#define X 16 
-#define Y 8
+#define X TILE_GROUP_DIM_X
+#define Y TILE_GROUP_DIM_Y
 
 GraphHB edges;
 Vector<float> old_rank_dev;

@@ -53,10 +53,16 @@ checkout_graphit:
 # Host code compilation flags and flow
 ###############################################################################
 
+# Tile Group Dimensions
+TILE_GROUP_DIM_X = $(BSG_MACHINE_GLOBAL_X)
+TILE_GROUP_DIM_Y = $(BSG_MACHINE_GLOBAL_Y)
+
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = pr.cpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
+DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
+DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 CDEFINES += 
 CXXDEFINES += 
 
@@ -88,11 +94,9 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 
 vpath %.cpp $(EXAMPLES_PATH)/cuda/pagerank/kernel/edge
 
+kernel.rvo: RISCV_CXX=$(RISCV_CLANGXX)
 kernel.riscv: kernel.rvo
 
-# Tile Group Dimensions
-TILE_GROUP_DIM_X = $(BSG_MACHINE_GLOBAL_X)
-TILE_GROUP_DIM_Y = $(BSG_MACHINE_GLOBAL_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_CCPPFLAGS += -O2
