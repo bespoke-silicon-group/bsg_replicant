@@ -5,6 +5,7 @@
 #include <random>
 #include <cstdlib>
 #include <algorithm>
+#include <limits>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -14,6 +15,60 @@
 namespace dwarfs {
 
     namespace eigen_sparse_matrix {
+        /* Compare non-zeros along major axis and return true if they are approximately equal */
+        template <class SparseMatrixType>
+        bool mjr_equal(SparseMatrixType &A, SparseMatrixType &B, typename SparseMatrixType::StorageIndex mjr) {
+            using Index = typename SparseMatrixType::StorageIndex;
+            using Scalar = typename SparseMatrixType::Scalar;
+            Index nnz_A = A.innerNonZeroPtr()[mjr];
+            Index nnz_B = B.innerNonZeroPtr()[mjr];
+            if (nnz_A != nnz_B) {
+                return false;
+            }
+
+            Index nnz = nnz_A;
+            // offsets
+            Index off_A = A.outerIndexPtr()[mjr];
+            Index off_B = B.outerIndexPtr()[mjr];
+            // indices
+            Index *idx_A = &A.innerIndexPtr()[off_A];
+            Index *idx_B = &B.innerIndexPtr()[off_B];
+            // values
+            Scalar *val_A = &A.valuePtr()[off_A];
+            Scalar *val_B = &B.valuePtr()[off_B];
+            // for each non-zero
+            for (Index nz = 0; nz < nnz; nz++) {
+                // fetch indices
+                Index iA = idx_A[nz];
+                Index iB = idx_B[nz];
+                // fetch scalar
+                Scalar vA = val_A[nz];
+                Scalar vB = val_B[nz];
+                if (iA != iB)
+                    return false;
+
+                if ((vA-vB) > std::numeric_limits<float>::epsilon())
+                    return false;
+            }
+            return true;
+        }
+
+        /* Compare non-zeros along major axis for range of major indices */
+        template <class SparseMatrixType>
+        bool mjr_range_equal(SparseMatrixType &A
+                             , SparseMatrixType &B
+                             , typename SparseMatrixType::StorageIndex mjr_lo
+                             , typename SparseMatrixType::StorageIndex mjr_hi)
+        {
+            using Index = typename SparseMatrixType::StorageIndex;
+            using Scalar = typename SparseMatrixType::Scalar;
+
+            for (Index mjr = mjr_lo; mjr < mjr_hi; mjr++)
+                if (!mjr_equal(A, B, mjr))
+                    return false;
+            return true;
+        }
+
         /* dump non-zeros data to a file */
         template <class SparseMatrixType>
         void write_nnz(SparseMatrixType &mat, const std::string &fname) {
