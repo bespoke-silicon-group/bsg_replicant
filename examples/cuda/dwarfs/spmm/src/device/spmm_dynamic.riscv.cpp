@@ -57,6 +57,11 @@ void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
     
 }
 
+#define WORK_GRANULARITY 4
+
+__attribute__((section(".dram")))
+std::atomic<int> rowq;
+
 #ifdef __KERNEL_SPMM__
 extern "C" int kernel_spmm(
     sparse_matrix_t *__restrict A_ptr // csr
@@ -64,12 +69,17 @@ extern "C" int kernel_spmm(
     ,sparse_matrix_t *__restrict C_ptr // csr
     ,std::atomic<intptr_t> *mem_pool_arg // mem pool
 #ifdef __ABREV__
-    , int row_start
-    , int row_stop
+    ,int row_start
+    ,int row_stop
 #endif
     )
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
+#ifdef __ABREV__
+    if (__bsg_id == 0) {
+        rowq.store(row_start, std::memory_order_relaxed);
+    }
+#endif
     spmm_solve_row_init();
 
 #ifdef CHECK_BARRIER
@@ -82,12 +92,23 @@ extern "C" int kernel_spmm(
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 
     // foreach row
+    for (int Ai_base = rowq.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
 #ifdef __ABREV__
-    for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS)
-#else
-    for (int Ai = __bsg_id; Ai < A_lcl.n_major; Ai += THREADS)
+         Ai_base < row_stop;
+#else         
+         Ai_base < A_lcl.n_major;
 #endif
-        spmm_solve_row(Ai);
+         Ai_base = rowq.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
+#ifdef __ABREV__
+        int Ai_stop = std::min(Ai_base+WORK_GRANULARITY, row_stop);
+#else
+        int Ai_stop = std::min(Ai_base+WORK_GRANULARITY, A_lcl.n_major);
+#endif
+        for (int Ai = Ai_base; Ai < Ai_stop; Ai++) {            
+            spmm_solve_row(Ai);
+            bsg_print_int(Ai);
+        }
+    }
 
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
@@ -108,6 +129,8 @@ extern "C" int kernel_spmm(
         pr_dbg("%d nonzeros found\n", C_glbl_p->n_non_zeros);
         C_glbl_p->mnr_idx_ptr = (kernel_int_ptr_t)(spmm_malloc(sizeof(int) * C_glbl_p->n_non_zeros));
         C_glbl_p->val_ptr = (kernel_float_ptr_t)(spmm_malloc(sizeof(float) * C_glbl_p->n_non_zeros));
+        // reset queue
+        rowq.store(0, std::memory_order_relaxed);
     }
 
     bsg_cuda_print_stat_end(TAG_OFFSET_COMPUTE);
@@ -120,8 +143,15 @@ extern "C" int kernel_spmm(
 #endif
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
 
-    for (int Ci = __bsg_id; Ci < C_lcl.n_major; Ci += THREADS)
-        spmm_copy_results(Ci);
+    // foreach row
+    for (int Ai_base = rowq.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+         Ai_base < A_lcl.n_major;
+         Ai_base = rowq.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ai_stop = std::min(Ai_base+WORK_GRANULARITY, A_lcl.n_major);
+        for (int Ai = Ai_base; Ai < Ai_stop; Ai++) {
+            spmm_copy_results(Ai);
+        }
+    }
 
     bsg_cuda_print_stat_end(TAG_RESULTS_COPY);
 #ifdef CHECK_BARRIER

@@ -47,6 +47,7 @@ namespace spmm {
         enum {
             TGX = CommandLineBase::NARGS,
             TGY,
+            SPMM_NARGS,
         };
         // constructor
         SpMMCommandLine(const CommandLineBase &base) : CommandLineBase(base) {}        
@@ -63,6 +64,29 @@ namespace spmm {
     private:
         int _tgx;
         int _tgy;
+    };
+
+    class SpMMAbrevCommandLine : public SpMMCommandLine {
+    public:
+        enum {
+            ROW_BASE = SpMMCommandLine::SPMM_NARGS,
+            ROWS,            
+        };
+        // constructor
+        SpMMAbrevCommandLine(const SpMMCommandLine &base) : SpMMCommandLine(base) {}        
+        static SpMMAbrevCommandLine Parse(int argc, char *argv[]) {
+            SpMMAbrevCommandLine cl = SpMMCommandLine::Parse(argc, argv);
+            cl._row_base = atoi(argv[ROW_BASE]);
+            cl._rows     = atoi(argv[ROWS]);
+            return cl;
+        }
+        // getters
+        int row_base() const { return _row_base; }
+        int rows() const { return _rows; }
+
+    private:
+        int _row_base;
+        int _rows;
     };
 
     class SolveRowCommandLine : public CommandLineBase {
