@@ -110,7 +110,9 @@ int launch(int argc, char * argv[]){
       }
       break;
   }
-        
+
+  delete device;
+  device = nullptr;
   std::cerr << "finished while loop" << std::endl;
   bool verify = true;
 
