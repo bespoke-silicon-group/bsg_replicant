@@ -18,6 +18,7 @@
 #else
 #include "bsg_manycore.h"
 #endif
+#include <math.h>
 
 //#define DEBUG
 #ifdef DEBUG
@@ -44,6 +45,9 @@ extern bsg_mcs_mutex_t mtx;
 
 #define THREADS                                 \
     (bsg_tiles_X*bsg_tiles_Y)
+
+#define LOG2F(x)                                \
+    (logf(x)/log(2))
 
 extern thread sparse_matrix_t A_lcl;
 extern thread sparse_matrix_t B_lcl;

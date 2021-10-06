@@ -38,7 +38,6 @@
 # BASEJUMP_STL_DIR: Path to a clone of BaseJump STL
 # BSG_MANYCORE_DIR: Path to a clone of BSG Manycore
 ###############################################################################
-
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
@@ -145,7 +144,7 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
-RISCV_TARGET_OBJECTS += hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += hash_table_align.riscv.rvo
 
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
@@ -169,7 +168,13 @@ RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
 RISCV_DEFINES += -D__KERNEL_SOLVE_ROW__
 RISCV_DEFINES += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(DMEM)
 RISCV_DEFINES += -DNONZEROS_TABLE_SIZE=$(NONZEROS_TABLE_WORDS)
+RISCV_DEFINES += -DALIGNED_TABLE
+# statically computed values
+log2 = $(shell echo 'l($(1))/l(2)' | bc -l | xargs printf "%.f\n")
 
+RISCV_DEFINES += -DLOG2_VCACHE_STRIPE_WORDS=$(call log2,$(BSG_MACHINE_VCACHE_STRIPE_WORDS))
+RISCV_DEFINES += -DLOG2_GLOBAL_X=$(call log2,$(BSG_MACHINE_GLOBAL_X))
+RISCV_DEFINES += -DLOG2_GLOBAL_Y=$(call log2,$(BSG_MACHINE_GLOBAL_Y))
 #RISCV_DEFINES += -DDEBUG
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
@@ -219,6 +224,9 @@ $(NNZ_CDF_PLOTS): %.nnz.cdfplot.pdf: %.nnz.csv
 	python3 $(APPLICATION_PATH)/py/nnz.cdfplot.py $< $@ --title $(TITLE)
 
 plots: $(NNZ_CDF_PLOTS)
+
+stats:
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser --only stats_parser
 
 analyze:
 	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/analyze.py vanilla_stats.csv

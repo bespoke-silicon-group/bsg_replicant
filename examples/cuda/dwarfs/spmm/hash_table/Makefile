@@ -8,7 +8,8 @@ get-dmem-words  = $(firstword $(subst _, ,$(filter %_dmem-words,$(subst __, ,$1)
 get-hash-table-words = $(firstword $(subst _, ,$(filter %_hash-table-words,$(subst __, ,$1))))
 
 DMEMS = 0 $(shell echo 128*7|bc)
-NONZEROS_TABLE_WORDSS = $(shell echo 32*1024|bc) 1024
+#NONZEROS_TABLE_WORDSS = $(shell echo 32*1024|bc) 1024
+NONZEROS_TABLE_WORDSS = 1024
 
 wiki-vote-rows +=   0   #    0 updates
 wiki-vote-rows +=  31   #   32 updates
