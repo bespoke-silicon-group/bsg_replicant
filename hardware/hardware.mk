@@ -158,6 +158,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_X_WIDTH)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_Y_WIDTH)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_RUCHE_FACTOR_X))    >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_BARRIER_RUCHE_FACTOR_X)) >> $@.temp
 	@echo $(call hex2bin,$(BASEJUMP_STL_COMMIT_ID))        >> $@.temp
 	@echo $(call hex2bin,$(BSG_MANYCORE_COMMIT_ID))        >> $@.temp
 	@echo $(call hex2bin,$(BSG_F1_COMMIT_ID))              >> $@.temp

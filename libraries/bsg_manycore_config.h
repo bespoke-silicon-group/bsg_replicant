@@ -94,6 +94,7 @@ extern "C" {
                 hb_mc_dimension_t pod_shape; // what is the shape of a pod?
                 hb_mc_dimension_t noc_coord_width;
                 hb_mc_dimension_t noc_ruche_factor;
+                hb_mc_dimension_t bar_ruche_factor;
                 hb_mc_dimension_t pod_coord_width;
                 hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;
@@ -126,19 +127,20 @@ extern "C" {
                 HB_MC_CONFIG_NOC_COORD_X_WIDTH = 10,
                 HB_MC_CONFIG_NOC_COORD_Y_WIDTH = 11,
                 HB_MC_CONFIG_RUCHE_FACTOR_X = 12,
-                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 13,
-                HB_MC_CONFIG_REPO_MANYCORE_HASH = 14,
-                HB_MC_CONFIG_REPO_F1_HASH = 15,
-                HB_MC_CONFIG_VCACHE_WAYS = 16,
-                HB_MC_CONFIG_VCACHE_SETS = 17,
-                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 18,
-                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 19,
-                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 20,
-                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 21,
-                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 22,
-                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 23,
-                HB_MC_CONFIG_CHIP_ID = 24,
-                HB_MC_CONFIG_MEMSYS = 25,
+                HB_MC_CONFIG_BARRIER_RUCHE_FACTOR_X = 13,
+                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 14,
+                HB_MC_CONFIG_REPO_MANYCORE_HASH = 15,
+                HB_MC_CONFIG_REPO_F1_HASH = 16,
+                HB_MC_CONFIG_VCACHE_WAYS = 17,
+                HB_MC_CONFIG_VCACHE_SETS = 18,
+                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 19,
+                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 20,
+                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 21,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 22,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 23,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 24,
+                HB_MC_CONFIG_CHIP_ID = 25,
+                HB_MC_CONFIG_MEMSYS = 26,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 

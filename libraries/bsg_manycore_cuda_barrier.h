@@ -35,7 +35,7 @@ extern "C" {
 
 static inline int hb_mc_hw_barrier_csr_val(const hb_mc_config_t *cfg, int x, int y, int tx, int ty)
 {
-    const int RUCHE_FACTOR_X = cfg->noc_ruche_factor.x;
+    const int RUCHE_FACTOR_X = cfg->bar_ruche_factor.x;
     const int OUTDIR_OFFSET = 16;
 
     // center tile coordinate

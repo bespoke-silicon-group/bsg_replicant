@@ -149,6 +149,11 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->noc_ruche_factor.x = idx;
         config->noc_ruche_factor.y = 0;
 
+        idx = raw[HB_MC_CONFIG_BARRIER_RUCHE_FACTOR_X];
+        CHECK_FIELD(HB_MC_CONFIG_RUCHE_FACTOR_X, idx >= 0 && idx <= 3);
+        config->bar_ruche_factor.x = idx;
+        config->bar_ruche_factor.y = 0;
+
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];
