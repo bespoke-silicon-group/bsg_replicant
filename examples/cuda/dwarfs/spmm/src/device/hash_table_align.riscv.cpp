@@ -37,7 +37,7 @@ static thread spmm_elt_t *free_global_head = nullptr;
 #endif
 
 // this is the hash table that lives in global memory
-__attribute__((section(".dram"), align(bsg_global_X*VCACHE_STRIPE_WORDS)))
+__attribute__((section(".dram"), aligned(2 * bsg_global_X * VCACHE_STRIPE_WORDS * sizeof(int))))
 static spmm_elt_t *nonzeros_table[bsg_global_X * bsg_global_Y * NONZEROS_TABLE_SIZE];
 
 typedef unsigned hidx_t;
@@ -120,7 +120,12 @@ int elts_realloc_size =  ELTS_REALLOC_SIZE;
 static spmm_elt_t* alloc_elt()
 {
     spmm_elt_t *elt;
-    if (free_global_head != nullptr) {
+    if (free_local_head != nullptr) {
+        elt = free_local_head;
+        free_local_head = elt->tbl_next;
+        elt->tbl_next = nullptr;
+        return elt;
+    } else if (free_global_head != nullptr) {
         elt = free_global_head;
         free_global_head = elt->tbl_next;
         elt->tbl_next = nullptr;

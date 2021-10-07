@@ -242,3 +242,5 @@ plots: $(NNZ_CDF_PLOTS)
 
 analyze:
 	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/analyze.py vanilla_stats.csv
+stats:
+	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser --only stats_parser
