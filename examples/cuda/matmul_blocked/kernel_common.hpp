@@ -14,7 +14,7 @@
 #include "bsg_set_tile_x_y.h"
 #include "bsg_tile_group_barrier.hpp"
 #include "hb_tensor.hpp"
-#include <hb_assert.hpp>
+//#include <hb_assert.hpp>
 #include <hb_common.hpp>
 
 bsg_attr_remote void* hb_memcpy(bsg_attr_remote void* bsg_attr_noalias dest,

@@ -55,8 +55,8 @@ KERNEL_NAME = vec_add_parallel
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
-
-DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
+BLOCK_DIM = 16
+DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DBLOCK_DIM=$(BLOCK_DIM)
 CDEFINES += 
 CXXDEFINES += 
 
@@ -89,7 +89,6 @@ RISCV_INCLUDES += -I.
 # the default. To view the disassembly, type `make kernel.dis`
 
 # kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
-kernel.riscv: bsg_printf.rvo
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions
@@ -97,6 +96,7 @@ TILE_GROUP_DIM_X = 1
 TILE_GROUP_DIM_Y = 1
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
+RISCV_DEFINES += -DBLOCK_DIM=$(BLOCK_DIM)
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
