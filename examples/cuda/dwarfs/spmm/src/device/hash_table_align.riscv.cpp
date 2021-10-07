@@ -89,6 +89,18 @@ static void hash_init()
                   , south_not_north);
 #endif
 }
+
+static hidx_t aligned_idx(hidx_t x)
+{
+    hidx_t hi = x / VCACHE_STRIPE_WORDS;
+    hidx_t lo = x % VCACHE_STRIPE_WORDS;
+    return (hi << HI_SHIFT)
+        |  (tbl_y << Y_SHIFT)
+        |  (south_not_north << SOUTH_NOT_NORTH_SHIFT)
+        |  (tbl_x << X_SHIFT)
+        |  lo;
+}
+
 static int hash(int sx)
 {
     hidx_t x = static_cast<hidx_t>(sx);
@@ -103,13 +115,7 @@ static int hash(int sx)
 #if !defined(ALIGNED_TABLE)
     return x;
 #else
-    hidx_t hi = x / VCACHE_STRIPE_WORDS;
-    hidx_t lo = x % VCACHE_STRIPE_WORDS;
-    return (hi << HI_SHIFT)
-        |  (tbl_y << Y_SHIFT)
-        |  (south_not_north << SOUTH_NOT_NORTH_SHIFT)
-        |  (tbl_x << X_SHIFT)
-        |  lo;
+    return aligned_idx(x);
 #endif
 }
 
@@ -236,6 +242,31 @@ void spmm_solve_row_init()
     solve_row_dbg("init: free_global_head = 0x%08x\n", free_global_head);
 }
 
+int prefetch(sparse_matrix_t *__restrict A_ptr, // csr
+                        sparse_matrix_t *__restrict B_ptr, // csr
+                        sparse_matrix_t *__restrict C_ptr, // csr
+                        std::atomic<intptr_t> *mem_pool_arg, // mem pool
+                        bsg_attr_remote int *__restrict glbl_updates, // list of hash table updates
+                        int n_updates) // number of updates
+{
+    // prefetch glbl_updates
+    for (int i = 0; i < n_updates; i += VCACHE_STRIPE_WORDS) {
+        asm volatile ("lw zero,0(%0)" : : "r" (&glbl_updates[i]));
+    }
+    // prefetch nonzeros
+    for (int i = 0; i < NONZEROS_TABLE_SIZE; i += VCACHE_STRIPE_WORDS) {
+        asm volatile ("lw zero,0(%0)"
+                      :
+#ifdef ALIGNED_TABLE
+                      : "r" (&nonzeros_table[aligned_idx(i)]));
+#else // ALIGNED_TABLE
+                      : "r" (&nonzeros_table[i]));
+#endif // ALIGNED_TABLE
+    }
+    bsg_fence();
+    return 0;
+}
+
 extern "C" int kernel_update_stream(sparse_matrix_t *__restrict A_ptr, // csr
                                     sparse_matrix_t *__restrict B_ptr, // csr
                                     sparse_matrix_t *__restrict C_ptr, // csr
@@ -245,6 +276,7 @@ extern "C" int kernel_update_stream(sparse_matrix_t *__restrict A_ptr, // csr
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     spmm_solve_row_init();
+    prefetch(A_ptr, B_ptr, C_ptr, mem_pool_arg, glbl_updates, n_updates);
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
     int i = 0;
     while (i + VCACHE_STRIPE_WORDS <= n_updates) {
@@ -265,3 +297,4 @@ extern "C" int kernel_update_stream(sparse_matrix_t *__restrict A_ptr, // csr
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
     return 0;
 }
+
