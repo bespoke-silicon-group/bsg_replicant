@@ -37,7 +37,7 @@
 #include <bsg_manycore_regression.h>
 #include <bsg_manycore_eva.h>
 
-#define BLOCK_DIM 16 // this block dim needs to match the same marco in the riscv binary
+//#define BLOCK_DIM 16 // this block dim needs to match the same marco in the riscv binary
 #define ALLOC_NAME "default_allocator"
 
 typedef struct {
@@ -117,10 +117,17 @@ int kernel_matrix_mul (int argc, char **argv) {
         //************************************************************
         hb_mc_host_tensor_t<float> Hmat1, Hmat2, Hout, Hresult;
 
+        // 256 x 256 x 256
+        uint32_t M = BLOCK_DIM * dev_dim.y * 2;
+        uint32_t N = BLOCK_DIM * 16;
+        uint32_t P = BLOCK_DIM * dev_dim.x;
+
+        /*
         // 768 x 768 x 768
         uint32_t M = BLOCK_DIM * dev_dim.y * 6;
         uint32_t N = BLOCK_DIM * 48;
         uint32_t P = BLOCK_DIM * dev_dim.x * 3;
+        */
 
         /*
         // 64 x 32 x 512
