@@ -8,13 +8,13 @@
 // BSG_TILE_GROUP_X_DIM and BSG_TILE_GROUP_Y_DIM must be defined
 // before bsg_manycore.h and bsg_tile_group_barrier.h are
 // included.
-#define BSG_TILE_GROUP_X_DIM bsg_global_X
-#define BSG_TILE_GROUP_Y_DIM (bsg_global_Y - 1)
+#define BSG_TILE_GROUP_X_DIM bsg_tiles_X
+#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y
 #include "bsg_manycore.h"
 #include "bsg_set_tile_x_y.h"
 #include "bsg_tile_group_barrier.hpp"
 #include "hb_tensor.hpp"
-//#include <hb_assert.hpp>
+#include <hb_assert.hpp>
 #include <hb_common.hpp>
 
 bsg_attr_remote void* hb_memcpy(bsg_attr_remote void* bsg_attr_noalias dest,

@@ -174,7 +174,8 @@ inline void accum_block(float* bsg_attr_noalias dest,
                                 for(int sby_i = 0; sby_i < SBY; ++sby_i){
                                         bsg_unroll(16)
                                         for(int sbx_i = 0; sbx_i < SBX; ++sbx_i){
-                                                psum[sby_i][sbx_i] += col[sby_i] * row[sbx_i];
+                                                psum[sby_i][sbx_i] = fmaf(col[sby_i], row[sbx_i], psum[sby_i][sbx_i]);
+                                                // psum[sby_i][sbx_i] += col[sby_i] * row[sbx_i];
                                         }
                                 }
                         }

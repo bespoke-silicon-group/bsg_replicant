@@ -88,12 +88,13 @@ RISCV_INCLUDES += -I.
 # To switch between g++ and clang, uncomment the line below. g++ is
 # the default. To view the disassembly, type `make kernel.dis`
 
-# kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+#kernel.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+kernel.riscv: kernel_common.rvo
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 1
-TILE_GROUP_DIM_Y = 1
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -DBLOCK_DIM=$(BLOCK_DIM)
