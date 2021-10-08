@@ -87,8 +87,8 @@ class HBTensorImpl {
         HB_FIX_WAW_HAZARD(sizes);
       }
 
-    bsg_attr_remote char* data_ptr() {
-      return (bsg_attr_remote char*)data;
+    char* bsg_attr_remote data_ptr() {
+      return (char* bsg_attr_remote )data;
     }
 
     IT* get_strides() {
