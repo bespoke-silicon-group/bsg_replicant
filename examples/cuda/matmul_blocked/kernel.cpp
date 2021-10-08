@@ -15,8 +15,12 @@
 template <unsigned int BY, unsigned int BX, bool TRANSPOSE>
 inline void load_block(float * bsg_attr_noalias dest,
                 float bsg_attr_remote * bsg_attr_noalias src,
-                uint32_t  bsg_attr_remote * bsg_attr_noalias src_strides,
-                int by_i, int bx_i) {
+                uint32_t * src_strides,
+                int by_i, int bx_i)
+#ifdef __clang__
+__attribute__((no_builtin("memcpy", "memset")))
+#endif
+{
 
         // Move the raw pointer to the row/column start.
         src = src +
@@ -50,8 +54,12 @@ inline void load_block(float * bsg_attr_noalias dest,
 template <unsigned int BY, unsigned int BX>
 inline void store_block_and_reset(float * bsg_attr_noalias src,
                            float bsg_attr_remote * bsg_attr_noalias dest,
-                           uint32_t  bsg_attr_remote * bsg_attr_noalias dest_strides,
-                           int by_i, int bx_i) {
+                           uint32_t * dest_strides,
+                           int by_i, int bx_i)
+#ifdef __clang__
+__attribute__((no_builtin("memcpy", "memset")))
+#endif
+{
 
        // Move the raw pointer to the row/column start.
         dest = dest +
@@ -203,8 +211,7 @@ inline void accum_block(float* bsg_attr_noalias dest,
 // Asserts use bsg_printf, which can pollute the icache
 //#define USE_ASSERT
 template<unsigned int BX, unsigned int BY, bool LOAD_M1_TRANSPOSED, bool PROFILE>
-__attribute__ ((noinline))
-int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
+inline int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
                   uint32_t *bsg_attr_noalias result_strides,
                   float bsg_attr_remote * bsg_attr_noalias mat1,
                   uint32_t * bsg_attr_noalias mat1_strides,
@@ -212,7 +219,11 @@ int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
                   float bsg_attr_remote * bsg_attr_noalias mat2,
                   uint32_t * bsg_attr_noalias mat2_strides,
                   int r2, int c2
-                  ) {
+                  )
+#ifdef __clang__
+__attribute__((no_builtin("memcpy", "memset")))
+#endif
+{
 #ifdef USE_ASSERT
 
         // M1 columns must equal M2 Rows
@@ -358,12 +369,12 @@ int kernel_mm_opt_16x16(
         auto mat2 = HBTensor<float, 2>(_mat2);
         auto result = HBTensor<float, 2>(_result);
         
-        kernel_mm_opt<16,16,false, false>((float* bsg_attr_noalias) result.data_ptr(),
+        kernel_mm_opt<16,16,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
                                         result.get_strides(),
-                                        (float* bsg_attr_noalias) mat1.data_ptr(),
+                                        (float bsg_attr_remote * bsg_attr_noalias) mat1.data_ptr(),
                                         mat1.get_strides(),
                                         mat1.dim(0), mat1.dim(1),
-                                        (float* bsg_attr_noalias) mat2.data_ptr(),
+                                        (float bsg_attr_remote * bsg_attr_noalias) mat2.data_ptr(),
                                         mat2.get_strides(),
                                         mat2.dim(0), mat2.dim(1));
         g_barrier.sync();
