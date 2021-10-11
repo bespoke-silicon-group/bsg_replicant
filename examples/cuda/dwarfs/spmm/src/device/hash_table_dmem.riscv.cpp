@@ -140,11 +140,11 @@ void spmm_solve_row_init()
     solve_row_dbg("init: free_global_head = 0x%08x\n", free_global_head);
 }
 
-extern "C" int kernel_update_stream(sparse_matrix_t *__restrict A_ptr, // csr
-                                    sparse_matrix_t *__restrict B_ptr, // csr
-                                    sparse_matrix_t *__restrict C_ptr, // csr
+extern "C" int kernel_update_stream(sparse_matrix_t *__restrict__ A_ptr, // csr
+                                    sparse_matrix_t *__restrict__ B_ptr, // csr
+                                    sparse_matrix_t *__restrict__ C_ptr, // csr
                                     std::atomic<intptr_t> *mem_pool_arg, // mem pool
-                                    bsg_attr_remote int *__restrict glbl_updates, // list of hash table updates
+                                    bsg_attr_remote int *__restrict__ glbl_updates, // list of hash table updates
                                     int n_updates) // number of updates
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);

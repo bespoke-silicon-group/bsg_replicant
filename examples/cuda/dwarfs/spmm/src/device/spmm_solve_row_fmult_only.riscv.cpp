@@ -59,9 +59,9 @@ void spmm_solve_row(int Ai)
 }
 
 #ifdef __KERNEL_SOLVE_ROW__
-extern "C" int kernel_solve_row(sparse_matrix_t *__restrict A_ptr, // csr
-                                sparse_matrix_t *__restrict B_ptr, // csr
-                                sparse_matrix_t *__restrict C_ptr, // csr
+extern "C" int kernel_solve_row(sparse_matrix_t *__restrict__ A_ptr, // csr
+                                sparse_matrix_t *__restrict__ B_ptr, // csr
+                                sparse_matrix_t *__restrict__ C_ptr, // csr
                                 std::atomic<intptr_t> *mem_pool_arg, // mem pool
                                 int Ai)
 {

@@ -4,9 +4,9 @@ template <int UNROLL>
 __attribute__((noinline))
 void spmm_update_nonzeros(int Ci
                           , int nnz
-                          , bsg_attr_remote int       *__restrict idx_ptr
-                          , bsg_attr_remote float     *__restrict val_ptr
-                          , bsg_attr_remote spmm_partial_t *__restrict par_ptr)
+                          , bsg_attr_remote int       *__restrict__ idx_ptr
+                          , bsg_attr_remote float     *__restrict__ val_ptr
+                          , bsg_attr_remote spmm_partial_t *__restrict__ par_ptr)
 {
     pr_dbg("%d: copying results for row %d to 0x%08x and 0x%08x\n"
            , __bsg_id

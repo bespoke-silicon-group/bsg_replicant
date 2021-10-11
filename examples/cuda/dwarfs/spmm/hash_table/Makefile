@@ -7,7 +7,7 @@ get-row		= $(firstword $(subst _, ,$(filter %_row,$(subst __, ,$1))))
 get-dmem-words  = $(firstword $(subst _, ,$(filter %_dmem-words,$(subst __, ,$1))))
 get-hash-table-words = $(firstword $(subst _, ,$(filter %_hash-table-words,$(subst __, ,$1))))
 
-DMEMS = 0 $(shell echo 128*7|bc)
+DMEMS = 0 $(shell echo 128*6|bc)
 #NONZEROS_TABLE_WORDSS = $(shell echo 32*1024|bc) 1024
 NONZEROS_TABLE_WORDSS = 1024
 
