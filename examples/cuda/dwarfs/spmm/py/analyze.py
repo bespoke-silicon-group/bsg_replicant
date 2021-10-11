@@ -25,9 +25,12 @@ for region in regions:
                       |(rdata['tag_type'].str.match('end')) & (rdata['global_ctr']==max_cycle))]
     # append
     filtered_data = filtered_data.append(filtered)
+    print(filtered_data)
+    print(filtered_data['miss_ld'])
     
 region_data = filtered_data.groupby(['time','tag','tag_type','tag_id']).sum().diff()
-region_data['global_ctr']=region_data['global_ctr']/data.groupby(['x','y']).ngroups
+print(region_data)
+#region_data['global_ctr']=region_data['global_ctr']/data.groupby(['x','y']).ngroups
 region_data = region_data.reset_index()
 region_data = region_data[region_data['tag_type'].str.match('end')]
 region_data.to_csv('vcore.analyze.csv')
