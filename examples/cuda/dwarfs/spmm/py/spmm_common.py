@@ -92,3 +92,31 @@ class HashTableParameters(SPMMParametersBase):
     def parameters(self):
         return super().parameters + ['row','dmem-words', 'table-words']
     
+
+
+class SPMMAbrevParameters(SPMMParametersBase):
+    def __init__(self, filename):
+        super().__init__(filename)
+        m = re.search(r'(\d+)_row-base__(\d+)_rows__(yes|no)_opt__(yes|no)_parallel'
+                      , self.filename)
+        self.row = int(m.group(1))
+        self.row_base = int(m.group(2))
+        self.opt = m.group(3)
+        self.parallel = m.group(4)
+
+    def updateDataFrame(self, df):
+        df = super().updateDataFrame(df)
+        df['row'] = self.row
+        df['row-base'] = self.row_base
+        df['opt'] = self.opt
+        df['parallel'] = self.parallel
+        return df
+
+    @property
+    def parameters(self):
+        return super().parameters + ['row'
+                                     ,'row-base'
+                                     , 'opt'
+                                     , 'parallel']
+    
+    

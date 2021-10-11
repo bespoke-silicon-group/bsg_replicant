@@ -8,14 +8,13 @@ get-rows		= $(firstword $(subst _, ,$(filter %_rows,$(subst __, ,$1))))
 get-opt			= $(firstword $(subst _, ,$(filter %_opt,$(subst __, ,$1))))
 get-parallel		= $(firstword $(subst _, ,$(filter %_parallel,$(subst __, ,$1))))
 
-
-TESTS += $(call test-name,wiki-vote,5802,1024,yes,yes)
 TESTS += $(call test-name,wiki-vote,5802,1024,no,yes)
-TESTS += $(call test-name,wiki-vote,6314,1024,yes,yes)
 TESTS += $(call test-name,wiki-vote,6314,1024,no,yes)
-TESTS += $(call test-name,wiki-vote,6826,1024,yes,yes)
 TESTS += $(call test-name,wiki-vote,6826,1024,no,yes)
-
+TESTS += $(call test-name,wiki-vote,4145,1024,no,yes)
+TESTS += $(call test-name,wiki-vote,4647,1024,no,yes)
+TESTS += $(call test-name,wiki-vote,5169,1024,no,yes)
+TESTS += $(call test-name,wiki-vote,5681,1024,no,yes)
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
@@ -59,7 +58,7 @@ $(addsuffix .plots,$(TESTS)): %.plots: %
 	$(MAKE) -C $* plots
 
 vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/vcache.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/vcache_abrev.py $^
 
 dramsim3.summary.csv: $(addsuffix /dramsim3.tag.json,$(TESTS))
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/dramsim3.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/dramsim3_abrev.py $^
