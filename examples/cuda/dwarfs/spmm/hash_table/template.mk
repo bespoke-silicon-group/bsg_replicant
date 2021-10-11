@@ -151,6 +151,7 @@ RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
+RISCV_CCPPFLAGS += -D__KERNEL__ -nostdlib
 RISCV_OPT_LEVEL = -O3
 
 TILE_GROUP_DIM_X=1
@@ -179,8 +180,8 @@ RISCV_DEFINES += -DLOG2_GLOBAL_Y=$(call log2,$(BSG_MACHINE_GLOBAL_Y))
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
-RISCV_CXX = $(RISCV_GXX)
-RISCV_CC  = $(RISCV_GCC)
+# RISCV_CXX = $(RISCV_CLANGXX)
+# RISCV_CC  = $(RISCV_CLANGCC)
 
 ###############################################################################
 # Execution flow

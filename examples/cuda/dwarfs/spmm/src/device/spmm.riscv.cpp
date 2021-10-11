@@ -39,9 +39,9 @@ thread sparse_matrix_t *A_glbl_p;
 thread sparse_matrix_t *B_glbl_p;
 thread sparse_matrix_t *C_glbl_p;
 
-void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
-               sparse_matrix_t *__restrict B_ptr, // csr
-               sparse_matrix_t *__restrict C_ptr, // csr
+void spmm_init(sparse_matrix_t *__restrict__ A_ptr, // csr
+               sparse_matrix_t *__restrict__ B_ptr, // csr
+               sparse_matrix_t *__restrict__ C_ptr, // csr
                std::atomic<intptr_t> *mem_pool_arg) // mem pool
 {
     A_lcl = *A_ptr;
@@ -59,9 +59,9 @@ void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
 
 #ifdef __KERNEL_SPMM__
 extern "C" int kernel_spmm(
-    sparse_matrix_t *__restrict A_ptr // csr
-    ,sparse_matrix_t *__restrict B_ptr // csr
-    ,sparse_matrix_t *__restrict C_ptr // csr
+    sparse_matrix_t *__restrict__ A_ptr // csr
+    ,sparse_matrix_t *__restrict__ B_ptr // csr
+    ,sparse_matrix_t *__restrict__ C_ptr // csr
     ,std::atomic<intptr_t> *mem_pool_arg // mem pool
 #ifdef __ABREV__
     , int row_start

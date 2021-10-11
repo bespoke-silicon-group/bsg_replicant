@@ -1116,7 +1116,10 @@ int hb_mc_device_pod_malloc(hb_mc_device_t *device,
                            __func__, size);
                 return HB_MC_NOMEM;
         }
-
+        bsg_pr_info("%s: allocating range [0x%08x , 0x%08x)\n"
+                   , __func__
+                   , result
+                   , result + size);
         *eva = result;
         return HB_MC_SUCCESS;
 }
