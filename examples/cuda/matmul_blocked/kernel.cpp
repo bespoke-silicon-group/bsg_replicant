@@ -27,11 +27,6 @@ __attribute__((no_builtin("memcpy", "memset")))
                 (by_i * BY * src_strides[0]) +
                 (bx_i * BX * src_strides[1]);
 
-        //        bsg_unroll(16)
-        //        for (int i = 0; i < BY; i++) {
-        //                asm("lw x0, %0": : "m" (src[i * src_strides[0]]));
-        //        }
-
         //bsg_unroll(2)
         for (int i = 0; i < BY; i++) {
                 // If the unroll factor > B, it will unroll by factor B
@@ -44,6 +39,20 @@ __attribute__((no_builtin("memcpy", "memset")))
                                 dest[i + BY * j] = src[i * src_strides[0] + j];
                 }
         }
+}
+
+template <unsigned int BY, unsigned int BX>
+inline void prefetch(float bsg_attr_remote * bsg_attr_noalias p,
+                     uint32_t * strides, int by_i, int bx_i){
+        // Move the raw pointer to the row/column start.
+        p = p +
+                (by_i * BY * strides[0]) +
+                (bx_i * BX * strides[1]);
+
+        for (int i = 0; i < BY; i++) {
+                asm("lw x0, %0": : "m" (p[i * strides[0]]));
+        }
+        bsg_fence();
 }
 
 // Store the result (psum) to remote memory and reset the psum array
@@ -61,7 +70,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 #endif
 {
 
-       // Move the raw pointer to the row/column start.
+        // Move the raw pointer to the row/column start.
         dest = dest +
                 (by_i * BY * dest_strides[0]) +
                 (bx_i * BX * dest_strides[1]);
@@ -97,7 +106,6 @@ inline void accum_block(float* bsg_attr_noalias dest,
 
         static_assert((BX % SBX) == 0, "X Block-Dimension must be a multiple of the X Sub-Block Dimension");
         static_assert((BY % SBY) == 0, "Y Block-Dimension must be a multiple of the Y Sub-Block Dimension");
-
         // Iterate through the SBY-by-SBX sub-blocks in the BY-by-BX block.
         for (int by_i = 0; by_i < BY/SBY; ++by_i) {
                 for (int bx_i = 0; bx_i < BX/SBX; ++bx_i) {
@@ -322,8 +330,8 @@ __attribute__((no_builtin("memcpy", "memset")))
                         // Store the result, AND zero the psum array
                         // to leverage parallel remote and local
                         // stores.
+                        prefetch<BY, BX>(result, result_strides, by_i, bx_i);
                         store_block_and_reset<BY, BX>(psum, result, result_strides, by_i, bx_i);
-
                         if(PROFILE){
                                 bsg_cuda_print_stat_end(4);
                                 bsg_cuda_print_stat_end(0);
