@@ -57,6 +57,7 @@ eigen-dir = $(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen
 
 include parameters.mk
 include $(APPLICATION_PATH)/inputs.mk
+include $(APPLICATION_PATH)/utils.mk
 
 vpath %.cpp $(APPLICATION_PATH)
 vpath %.cpp $(APPLICATION_PATH)/src/device
@@ -151,23 +152,18 @@ endif
 # use a hash table for the merge operation 
 ifeq ($(ALGORITHM),hash-table)
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
-endif
-# use an insertion sort
-ifeq ($(ALGORITHM),insertion-sort)
-RISCV_TARGET_OBJECTS += spmm_solve_row_insertion_sort.riscv.rvo
-endif
-# do floating point multiplications only
-ifeq ($(ALGORITHM),fmult-only)
-RISCV_TARGET_OBJECTS += spmm_solve_row_fmult_only.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
 endif
 # do hash table but omit sort
 ifeq ($(ALGORITHM),hash-table-no-sort)
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
 RISCV_DEFINES += -DSPMM_NO_SORTING=1
 endif
 # do hash table only, with no flops
 ifeq ($(ALGORITHM),hash-table-no-flops)
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
 RISCV_DEFINES += -DSPMM_NO_FLOPS=1
 endif
 
@@ -192,6 +188,12 @@ RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
 RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
 RISCV_DEFINES += -D__KERNEL_SOLVE_ROW__
 RISCV_DEFINES += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(DMEM)
+RISCV_DEFINES += -DNONZEROS_TABLE_SIZE=1024
+RISCV_DEFINES += -DALIGNED_TABLE
+RISCV_DEFINES += -DLOG2_VCACHE_STRIPE_WORDS=$(call log2,$(BSG_MACHINE_VCACHE_STRIPE_WORDS))
+RISCV_DEFINES += -DLOG2_GLOBAL_X=$(call log2,$(BSG_MACHINE_GLOBAL_X))
+RISCV_DEFINES += -DLOG2_GLOBAL_Y=$(call log2,$(BSG_MACHINE_GLOBAL_Y))
+
 #RISCV_DEFINES += -DDEBUG
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk

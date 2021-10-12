@@ -9,53 +9,10 @@
 #include <functional>
 #include "spmm.hpp"
 #include "spmm_solve_row.hpp"
+#include "spmm_sort_row.hpp"
 #include "spmm_compute_offsets.hpp"
 #include "spmm_copy_results.hpp"
-//#include "bsg_tile_group_barrier.h"
-
-extern "C" void bsg_barrier_amoadd(int *lock, int *sense);    
-
-//INIT_TILE_GROUP_BARRIER(rbar, cbar, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
-
-__attribute__((section(".dram")))
-bsg_mcs_mutex_t mtx;
-
-__attribute__((section(".dram")))
-static int lock  = 0;
-static int sense = 1;
-
-void spmm_barrier()
-{    
-    //bsg_tile_group_barrier(&rbar, &cbar);
-    bsg_barrier_amoadd(&lock, &sense);
-}
-
-thread std::atomic<intptr_t> *spmm_mem_pool = nullptr;
-thread sparse_matrix_t A_lcl;
-thread sparse_matrix_t B_lcl;
-thread sparse_matrix_t C_lcl;
-
-thread sparse_matrix_t *A_glbl_p;
-thread sparse_matrix_t *B_glbl_p;
-thread sparse_matrix_t *C_glbl_p;
-
-void spmm_init(sparse_matrix_t *__restrict__ A_ptr, // csr
-               sparse_matrix_t *__restrict__ B_ptr, // csr
-               sparse_matrix_t *__restrict__ C_ptr, // csr
-               std::atomic<intptr_t> *mem_pool_arg) // mem pool
-{
-    A_lcl = *A_ptr;
-    B_lcl = *B_ptr;
-    C_lcl = *C_ptr;
-
-    A_glbl_p = A_ptr;
-    B_glbl_p = B_ptr;
-    C_glbl_p = C_ptr;
-    
-    spmm_mem_pool = mem_pool_arg;
-
-    
-}
+#include "spmm_barrier.hpp"
 
 #ifdef __KERNEL_SPMM__
 extern "C" int kernel_spmm(
@@ -72,32 +29,38 @@ extern "C" int kernel_spmm(
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     spmm_solve_row_init();
 
-#ifdef CHECK_BARRIER
-    bsg_print_int(0);
+#if !defined(__ABREV__)
+    int row_start = 0;
+    int row_stop = A_lcl.n_major;
 #endif
-    spmm_barrier();
-#ifdef CHECK_BARRIER
-    bsg_print_int(1);
-#endif
+        
+    // sync
+    barrier::spmm_barrier();
+    
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 
     // foreach row
-#ifdef __ABREV__
-    for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS)
-#else
-    for (int Ai = __bsg_id; Ai < A_lcl.n_major; Ai += THREADS)
-#endif
+    for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS) {
+        bsg_print_int(Ai);
         spmm_solve_row(Ai);
+    }
+
+    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
 
     // sync
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
-#ifdef CHECK_BARRIER
-    bsg_print_int(2);
-#endif
-    spmm_barrier();
-#ifdef CHECK_BARRIER
-    bsg_print_int(3);
-#endif
+    barrier::spmm_barrier();
+
+    bsg_cuda_print_stat_start(TAG_ROW_SORT);
+    
+    // foreach row
+    for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS)
+        spmm_sort_row(Ai);
+    
+    // sync
+    bsg_cuda_print_stat_end(TAG_ROW_SORT);
+
+    barrier::spmm_barrier();
+    
     bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
 
     C_lcl = *C_glbl_p;
@@ -111,26 +74,18 @@ extern "C" int kernel_spmm(
     }
 
     bsg_cuda_print_stat_end(TAG_OFFSET_COMPUTE);
-#ifdef CHECK_BARRIER
-    bsg_print_int(4);
-#endif
-    spmm_barrier();
-#ifdef CHECK_BARRIER
-    bsg_print_int(5);
-#endif
+    // sync
+    barrier::spmm_barrier();
+    
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
 
-    for (int Ci = __bsg_id; Ci < C_lcl.n_major; Ci += THREADS)
+    for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS)
         spmm_copy_results(Ci);
 
     bsg_cuda_print_stat_end(TAG_RESULTS_COPY);
-#ifdef CHECK_BARRIER
-    bsg_print_int(6);
-#endif
-    spmm_barrier();
-#ifdef CHECK_BARRIER
-    bsg_print_int(7);
-#endif
+    // sync
+    barrier::spmm_barrier();
+    
     return 0;
 }
 #endif
