@@ -91,21 +91,28 @@ static inline void *spmm_malloc(std::size_t size)
     return reinterpret_cast<void*>(spmm_mem_pool->fetch_add(size, std::memory_order_acquire));
 }
 
-/**
- * Allocate some memory
- */
-void *spmm_malloc(std::size_t size);
-
-/**
- * Thread barrier
- */
-void  spmm_barrier();
-
-/**
- * Initialize global state
- */
-void spmm_init(sparse_matrix_t *__restrict A_ptr, // csr
-               sparse_matrix_t *__restrict B_ptr, // csr
-               sparse_matrix_t *__restrict C_ptr, // csr
+void spmm_init(sparse_matrix_t *__restrict__ A_ptr, // csr
+               sparse_matrix_t *__restrict__ B_ptr, // csr
+               sparse_matrix_t *__restrict__ C_ptr, // csr
                std::atomic<intptr_t> *mem_pool_arg); // mem pool
 
+
+#ifdef TAG_ROW_SOLVE
+#undef TAG_ROW_SOLVE
+#endif
+#define TAG_ROW_SOLVE 0x1
+
+#ifdef TAG_OFFSET_COMPUTE
+#undef TAG_OFFSET_COMPUTE
+#endif
+#define TAG_OFFSET_COMPUTE 0x2
+
+#ifdef TAG_RESULTS_COPY
+#undef TAG_RESULTS_COPY
+#endif
+#define TAG_RESULTS_COPY 0x3
+
+#ifdef TAG_ROW_SORT
+#undef TAG_ROW_SORT
+#endif
+#define TAG_ROW_SORT 0x4

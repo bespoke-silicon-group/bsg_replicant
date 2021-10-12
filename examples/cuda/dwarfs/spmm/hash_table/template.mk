@@ -144,7 +144,9 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
-RISCV_TARGET_OBJECTS += hash_table_align.riscv.rvo
+RISCV_TARGET_OBJECTS += hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_init.riscv.rvo
 
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/device
 RISCV_INCLUDES += -I$(APPLICATION_PATH)/include/common
@@ -171,8 +173,7 @@ RISCV_DEFINES += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(DMEM)
 RISCV_DEFINES += -DNONZEROS_TABLE_SIZE=$(NONZEROS_TABLE_WORDS)
 RISCV_DEFINES += -DALIGNED_TABLE
 # statically computed values
-log2 = $(shell echo 'l($(1))/l(2)' | bc -l | xargs printf "%.f\n")
-
+include $(APPLICATION_PATH)/utils.mk
 RISCV_DEFINES += -DLOG2_VCACHE_STRIPE_WORDS=$(call log2,$(BSG_MACHINE_VCACHE_STRIPE_WORDS))
 RISCV_DEFINES += -DLOG2_GLOBAL_X=$(call log2,$(BSG_MACHINE_GLOBAL_X))
 RISCV_DEFINES += -DLOG2_GLOBAL_Y=$(call log2,$(BSG_MACHINE_GLOBAL_Y))

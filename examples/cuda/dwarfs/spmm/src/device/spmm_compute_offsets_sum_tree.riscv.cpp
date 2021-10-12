@@ -6,6 +6,7 @@
 #include "bsg_mcs_mutex.hpp"
 #include "bsg_manycore_arch.h"
 #include "bsg_manycore.h"
+#include "spmm_barrier.hpp"
 
 __attribute__((section(".dram")))
 static std::atomic<int> nnz_sum_tree[2*THREADS];
@@ -95,7 +96,7 @@ void spmm_compute_offsets()
 
     // 2. update the sum tree
     sum_tree_update(sum);
-    spmm_barrier();
+    barrier::spmm_barrier();
 
     // 3. propogate updates from the sum tree to your work region
     int offset = sum_tree_accumulate();
@@ -117,11 +118,11 @@ extern "C" int kernel_compute_offsets(sparse_matrix_t *__restrict__ A_ptr, // cs
                                       std::atomic<intptr_t> *mem_pool_arg)
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
-    spmm_barrier();
+    barrier::spmm_barrier();
     bsg_cuda_print_stat_start(TAG_OFFSET_COMPUTE);
     spmm_compute_offsets();
     bsg_cuda_print_stat_end(TAG_OFFSET_COMPUTE);
-    spmm_barrier();
+    barrier::spmm_barrier();
     return 0;
 }
 #endif

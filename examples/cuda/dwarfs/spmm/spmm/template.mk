@@ -145,6 +145,8 @@ RISCV_HEADERS += $(shell find $(EXAMPLES_PATH)/cuda/dwarfs/include/common/ -name
 RISCV_HEADERS += $(EXAMPLES_PATH
 
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_init.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_barrier.riscv.rvo
 # select solve row algorithm
 # use insertion sort
 ifneq ($(findstring insertion-sort,$(SOLVE_ROW_ALG)),)
@@ -153,6 +155,8 @@ endif
 # use a hash table
 ifneq ($(findstring hash-table,$(SOLVE_ROW_ALG)),)
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
+RISCV_DEFINES += -DALIGNED_TABLE
 # skip sorting
 ifneq ($(findstring no-sort,$(SOLVE_ROW_ALG)),)
 RISCV_CCPPFLAGS += -DSPMM_NO_SORTING=1
@@ -197,6 +201,11 @@ RISCV_DEFINES += -DTAG_ROW_SOLVE=0x1
 RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
 RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
 RISCV_DEFINES += -D__KERNEL_SPMM__
+include $(APPLICATION_PATH)/utils.mk
+RISCV_DEFINES += -DLOG2_VCACHE_STRIPE_WORDS=$(call log2,$(BSG_MACHINE_VCACHE_STRIPE_WORDS))
+RISCV_DEFINES += -DLOG2_GLOBAL_X=$(call log2,$(BSG_MACHINE_GLOBAL_X))
+RISCV_DEFINES += -DLOG2_GLOBAL_Y=$(call log2,$(BSG_MACHINE_GLOBAL_Y))
+RISCV_DEFINES += -DNONZEROS_TABLE_SIZE=1024
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
