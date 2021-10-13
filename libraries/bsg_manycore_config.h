@@ -63,10 +63,10 @@ extern "C" {
 
         // normal limit for the flow-control parameters
         #define HB_MC_REMOTE_LOAD_MIN 1
-        #define HB_MC_REMOTE_LOAD_MAX 32
+        #define HB_MC_REMOTE_LOAD_MAX 1024
 
         #define HB_MC_HOST_CREDITS_MIN 1
-        #define HB_MC_HOST_CREDITS_MAX 32
+        #define HB_MC_HOST_CREDITS_MAX 1024
 
         typedef hb_mc_rom_word_t hb_mc_config_raw_t;
 
