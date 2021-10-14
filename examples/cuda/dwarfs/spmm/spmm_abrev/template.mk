@@ -150,6 +150,8 @@ RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(shell echo 128*6 | bc)
+#RISCV_CCPPFLAGS += -DCOMPLEX_HASH
+RISCV_CCPPFLAGS += -DALIGNED_TABLE
 else
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
@@ -157,7 +159,9 @@ RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=0
 endif
-
+RISCV_TARGET_OBJECTS += spmm_init.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_barrier.riscv.rvo
 # use 1 thread or 128 threads
 ifeq ($(PARALLEL),yes)
 TX=$(BSG_MACHINE_GLOBAL_X)
@@ -173,7 +177,7 @@ RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/device
 RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_CCPPFLAGS += -DLOG2_THREADS=$(shell echo 'l($(TX)*$(TY))/l(2)' | bc -l | xargs printf '%.f\n')
-#RISCV_CCPPFLAGS += -DCOMPLEX_HASH
+RISCV_CCPPFLAGS += -DNONZEROS_TABLE_SIZE=1024
 RISCV_OPT_LEVEL  = -O3
 
 TILE_GROUP_DIM_X=$(TX)
@@ -190,6 +194,10 @@ RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
 RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
 RISCV_DEFINES += -D__KERNEL_SPMM__
 RISCV_DEFINES += -D__ABREV__
+include $(APPLICATION_PATH)/utils.mk
+RISCV_DEFINES += -DLOG2_VCACHE_STRIPE_WORDS=$(call log2,$(BSG_MACHINE_VCACHE_STRIPE_WORDS))
+RISCV_DEFINES += -DLOG2_GLOBAL_X=$(call log2,$(BSG_MACHINE_GLOBAL_X))
+RISCV_DEFINES += -DLOG2_GLOBAL_Y=$(call log2,$(BSG_MACHINE_GLOBAL_Y))
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 

@@ -10,5 +10,5 @@
 
 void spmm_solve_row_init();
 void spmm_solve_row(int Ai);
-void spmm_scalar_row_product(float Aij, int Bi);
+//void spmm_scalar_row_product(float Aij, int Bi);
 

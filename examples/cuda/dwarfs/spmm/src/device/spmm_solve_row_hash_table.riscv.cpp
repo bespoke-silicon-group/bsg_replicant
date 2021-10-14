@@ -11,8 +11,7 @@
 /**
  * Solve A[i;j] * B[j;]
  */
-__attribute__((noinline))
-void spmm_scalar_row_product(float Aij, int Bi)
+static void spmm_scalar_row_product(float Aij, int Bi)
 {
     int off = B_lcl.mnr_off_ptr[Bi];
     int nnz = B_lcl.mjr_nnz_ptr[Bi];

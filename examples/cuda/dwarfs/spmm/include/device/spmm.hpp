@@ -21,11 +21,8 @@
 #include <math.h>
 
 //#define DEBUG
-#ifdef DEBUG
-#ifdef __BUILD_FOR_HOST__
-#define pr_dbg(fmt, ...)
-#else
 extern bsg_mcs_mutex_t mtx;
+#ifdef DEBUG
 #define pr_dbg(fmt, ...)                                                \
     do {                                                                \
         bsg_mcs_mutex_node_t lcl;                                       \
@@ -35,9 +32,22 @@ extern bsg_mcs_mutex_t mtx;
         bsg_fence();                                                    \
         bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);                 \
     } while (0)
-#endif
 #else
 #define pr_dbg(fmt, ...)
+#endif
+
+#ifdef PRINT_INT_DBG
+#define spmm_print_int(i)                       \
+    do {                                        \
+        bsg_mcs_mutex_node_t lcl;                                       \
+        bsg_mcs_mutex_node_t *lcl_as_glbl = (bsg_mcs_mutex_node_t*)bsg_tile_group_remote_ptr(int, __bsg_x, __bsg_y, &lcl); \
+        bsg_mcs_mutex_acquire(&mtx, &lcl, lcl_as_glbl);                 \
+        bsg_print_int(i);                                               \
+        bsg_fence();                                                    \
+        bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);                 \
+    }while (0)
+#else
+#define spmm_print_int(i)
 #endif
 
 #include <atomic>
@@ -45,9 +55,6 @@ extern bsg_mcs_mutex_t mtx;
 
 #define THREADS                                 \
     (bsg_tiles_X*bsg_tiles_Y)
-
-#define LOG2F(x)                                \
-    (logf(x)/log(2))
 
 extern thread sparse_matrix_t A_lcl;
 extern thread sparse_matrix_t B_lcl;
