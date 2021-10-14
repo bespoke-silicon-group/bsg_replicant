@@ -6,6 +6,7 @@ namespace barrier {
 
     extern int lock;
     extern int sense;
+    extern int locksel;
 #ifdef CHECK_BARRIER
     extern int checkpoint;
 #endif
@@ -14,7 +15,9 @@ namespace barrier {
 #ifdef CHECK_BARRIER
         bsg_print_int(checkpoint++);
 #endif
+        bsg_fence();
         bsg_barrier_amoadd(&lock, &sense);
+        bsg_fence();
 #ifdef CHECK_BARRIER
         bsg_print_int(checkpoint++);
 #endif        

@@ -214,7 +214,6 @@ namespace hash_table {
                     pr_dbg("  %3d found at 0x%08x\n"
                                   , idx
                                   , p);
-#define      SPMM_NO_FLOPS
 #if !defined(SPMM_NO_FLOPS)
                     p->part.val += v; // flw; fadd; fsw
 #else
@@ -242,6 +241,116 @@ namespace hash_table {
             return;
     }
 
+#if 0
+    /**
+     * Update with v, idx, and the compute hash index hidx
+     */
+    static void update2(float   v0
+                        , int   idx0
+                        , int   hidx0
+                        , float v1
+                        , int   idx1
+                        , int   hidx1)
+    {
+        // assumption: hidx0 != hidx1
+        // lookups can overlap
+        spmm_elt_t **u0 = &nonzeros_table[hidx0];
+        spmm_elt_t **u1 = &nonzeros_table[hidx1];
+        spmm_elt_t  *p0 = nonzeros_table[hidx];
+        spmm_elt_t  *p1 = nonzeros_table[hidx];
+        int pidx0 = -1, pidx1 = -1;
+        if (p0 != nullptr)
+            pidx0 = p->idx;
+        if (p1 != nullptr)
+            pidx1 = p->idx;
+
+        bsg_compiler_memory_barrier();
+
+        int d0 = 0, d1 = 0;
+        while (!(d0 && d1)) {
+            // done scanning p0?
+            if (pidx0 != idx0
+                && p0 != nullptr) {
+                u0 = &p0->bkt_next;
+                p0 =  p0->bkt_next;
+            } else {
+                d0 = 1;
+            }
+
+            // done scanning p1?
+            if (pidx0 != idx1
+                && p1 != nullptr) {
+                u1 = &p1->bkt_next;
+                p1 =  p1->bkt_next;
+            } else {
+                d1 = 1;
+            }
+            // memory barrier
+            bsg_compiler_memory_barrier();
+            // fetch idx0?
+            if (pidx0 != idx0
+                && p0 != nullptr) {
+                idx0 = p0->idx;
+            }
+
+            // fetch idx0?
+            if (pidx1 != idx1
+                && p1 != nullptr) {
+                idx1 = p1->idx;
+            }
+        }
+        // fetch floating point values
+        float uv0, uv1;            
+        if (p0 != nullptr)
+            uv0 = p0->val;
+
+        if (p1 != nullptr)
+            uv1 = p1->val;
+        
+        bsg_compiler_memory_barrier();
+
+        // update floating point values
+        if (p0 != nullptr) {
+#if !defined(SPMM_NO_FLOPS)
+            uv0 += v0;
+#else
+            uv0 = v0;
+#endif
+            p0->val = uv0;
+        }
+        if (p1 != nullptr) {
+#if !defined(SPMM_NO_FLOPS)
+            uv1 += v1;
+#else
+            uv1 = v1;
+#endif
+            p1->val = uv1;
+        }
+
+        // insert
+        if (p0 == nullptr) {
+            p0 = alloc_elt();
+            p0->part.idx = idx0;
+            p0->part.val = v0;
+            p0->bkt_next = nullptr;
+            p0->tbl_next = tbl_head;
+            tbl_head = p0;
+            *u0 = p0;
+            tbl_num_entries++;
+        }
+        if (p1 == nullptr) {
+            p1 = alloc_elt();
+            p1->part.idx = idx1;
+            p1->part.val = v1;
+            p1->bkt_next = nullptr;
+            p1->tbl_next = tbl_head;
+            tbl_head = p1;
+            *u1 = p1;
+            tbl_num_entries++;
+        }
+    }
+#endif
+    
     /**
      * Hash table init
      */
