@@ -294,8 +294,10 @@ __attribute__((no_builtin("memcpy", "memset")))
         // Start profiling
         bsg_cuda_print_stat_kernel_start();
 
-        // Note: This only works for N x N tile groups. Let's stick
-        // with that for now.
+        // Note: This only works for N x N tile groups where N is a
+        // power of two. To put it in the symbols below:
+
+        // log2(TDX) == log2(TDY) == 0.
 
         // Scale-up, matrix multiply: using groups of size TDX x TDY
         // tiles, compute matrix multiply of matrices m1 (r1 x c1),
@@ -421,15 +423,14 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         // for(ty_i = 0 ; ty_i < TDY; ty_i ++){
         //    for(tx_i = 0 ; tx_i < TDX; tx_i ++){
-        //
         //       for(y_i = 0; y_i < BY; y_i ++){
         //          for(x_i = 0; x_i < BX; x_i ++){
         //             for(z_i = 0; z_i < TBX; z_i ++){
         //                psum[ty_i * BY + y_i][tx_i * BX + x_i] += tM1[ty_i * BY + y_i][z_i] + tM2[z_i][tx_i * BX + x_i];
 
         // If we assign each iteration of the outer two loops to tiles
-        // we can ty_i and tx_i with the tile group variables __bsg_x
-        // and __bsg_y and start to simplify this code:
+        // we can replace ty_i and tx_i with the tile group variables
+        // __bsg_x and __bsg_y and start to simplify this code:
 
         // for(y_i = 0; y_i < BY; y_i ++){
         //    for(x_i = 0; x_i < BX; x_i ++){
@@ -468,28 +469,66 @@ __attribute__((no_builtin("memcpy", "memset")))
         // Instead, we have to handle jumping to BX x BY blocks in
         // neighboring scratchpads in software. We will abstract this
         // using pointers, where pM1 and pM2 are pointers to blocks of
-        // data in individual scratchpads of tile group memory.
+        // data in individual scratchpads of tile group memory, and
+        // lM1/lM2 are the arrays local to the current tile
         
-        // Set pM1 to point to ??? (depends on __bsg_x)
-        // Set pM2 to point to ??? (depends on __bsg_y)
+        // pM1 = bsg_remote_ptr(lM1, __bsg_x, 0)
+        // pM2 = bsg_remote_ptr(lM1, 0, __bsg_y)
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
         //    for(y_i = 0; y_i < BY; y_i ++){
         //       for(x_i = 0; x_i < BX; x_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
         //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
-        //    Update pM1 to point to lM1 of block of next tile in X direction, modulo TDX (row major)
-        //    Update pM1 to point to lM1 of block of next tile in Y direction, modulo TDY (column major)
+        //    pM1 = bsg_remote_ptr(lM1, __bsg_x + b_i, 0) -- row major
+        //    pM2 = bsg_remote_ptr(lM1, 0, __bsg_y + b_i) -- column major
 
         // This is the computation that each tile in the group
-        // performs. It can probably (?) be re-written as:
+        // performs. It can be re-written with the existing
+        // accum_block function:
 
-        // Set pM1 to point to ???
-        // Set pM2 to point to ???
+        // pM1 = bsg_remote_ptr(lM1, __bsg_x, 0)
+        // pM2 = bsg_remote_ptr(lM1, 0, __bsg_y)
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
         //    accum_block(psum, pM1, pM2)
-        //    Update pM1 to point to lM1 of block of next tile in X direction, modulo TDX (row major)
-        //    Update pM1 to point to lM1 of block of next tile in Y direction, modulo TDY (column major)
+        //    pM1 = bsg_remote_ptr(lM1, __bsg_x + b_i, 0) -- row major
+        //    pM2 = bsg_remote_ptr(lM1, 0, __bsg_y + b_i) -- column major
+
+        // There are two optimizations that can be made. First,
+        // calling bsg_remote_ptr is expensive since the compiler does
+        // shifts and or's to compute the pointer. Moving between
+        // tiles in the x direction is simply adding 0x40000 to a
+        // pointer, and moving in the y direction is simply adding
+        // 0x800000. With this update:
+
+        // pM1 = bsg_remote_ptr(lM1, 0, __bsg_y)
+        // pM2 = bsg_remote_ptr(lM2, __bsg_x, 0)
+        // for(b_i = 0; b_i < TBX/BX; b_i ++){
+        //    accum_block(psum, pM1, pM2)
+        //    pM1 = (char *) pM1 + 0x40000;
+        //    pM2 = (char *) pM2 + 0x800000;
         
+        // The second optimization is more tricky. When all tiles in a
+        // group start at the same x offset (namely 0) they all access
+        // the same tile to get data for M1. Likewise, all tiles in a
+        // column will access the same tile to get data for M2.
+
+        // If we offset the start location of each tile by __bsg_x so
+        // that the accesses are split between tiles in a row and
+        // column this (should) address the problem. Note: If TGX >
+        // TGY this will be an issue. But as stated before TGX == TGY
+
+        // However, one final thing. If we blindly increment the
+        // address we will access an invalid EVA. Therefore it is
+        // critical for us to wrap around when we reach the edge of
+        // the tile group. If the tile group size is a power of 2,
+        // this can be done with binary and:
+
+        // pM1 = bsg_remote_ptr(lM1, __bsg_x, __bsg_y)
+        // pM2 = bsg_remote_ptr(lM2, __bsg_x, __bsg_x)
+        // for(b_i = 0; b_i < TBX/BX; b_i ++){
+        //    accum_block(psum, pM1, pM2)
+        //    pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
+        //    pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
         for (int by_i = __bsg_y; by_i < r1/BY; by_i += BSG_TILE_GROUP_Y_DIM) {
                 for (int bx_i = __bsg_x; bx_i < c2/BX; bx_i += BSG_TILE_GROUP_X_DIM) {
 
