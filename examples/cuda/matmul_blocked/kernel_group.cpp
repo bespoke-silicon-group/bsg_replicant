@@ -294,100 +294,118 @@ __attribute__((no_builtin("memcpy", "memset")))
         // Start profiling
         bsg_cuda_print_stat_kernel_start();
 
-        // TODO: I know this only works for N x N tile groups. Let's stick with that for now. 
+        // Note: This only works for N x N tile groups. Let's stick
+        // with that for now.
 
-        // Scale-up Tile group matrix multiply Using tile groups of
-        // size TDX x TDY, compute matrix multiply of matrices m1 (r1
-        // x c1), and m2 (r2 x c2)
+        // Scale-up, matrix multiply: using groups of size TDX x TDY
+        // tiles, compute matrix multiply of matrices m1 (r1 x c1),
+        // and m2 (r2 x c2)
 
         // Logically, split the output matrix into hierarchical blocks:
 
-        // - TBX x TBY group blocks that a tile group computes composed of:
+        // BX/Y -> TBX/TBY?
+        // TBX/Y -> GBX/Y
+
+        // - TBX x TBY group blocks that a group computes, composed of:
         // -  BX x  BY tile blocks that a single tile computes
 
         // Where TBX = TDX * BX and TBY = TDY * BY
 
-        // This means that there are r1 / TIY "row" blocks, and c2 /
-        // TBX "column" blocks. Each tile group computes one of these
-        // blocks.
+        // This means that there are r1 / TBY "row" blocks, and c2 /
+        // TBX "column" blocks.
         
         // The number of tile groups launched is defined by the grid
         // dimension: __bsg_grid_dim_x/y (Shorthand: GDX/GDY)
 
-        // Each tile group is uniquely defined by its tile group X/Y
-        // index, __bsg_tile_group_id_x/y (TIX/TIY).
+        // Each group is uniquely defined by its tile group X/Y
+        // index, __bsg_tile_group_id_x/y (Shorthand: TIX/TIY).
 
         // 0 < TIX < GDX
         // 0 < TIY < GDY
         
-        // Each tile group will iterate through unprocessed output
-        // group blocks in the X and Y dimension, computing the block
-        // at coordinate tx_i, ty_i. 
+        // Each group will iterate through unprocessed output group
+        // blocks in the X and Y dimension, computing the group block
+        // at coordinate tx_i, ty_i.
         //
-        // X-stride: GDX * TBX
-        // Y-stride: GDY * TBY
+        // The initial value for tx_i is TIX, and ty_i is TIY. After
+        // computing an output block, tx_i moves to the next output
+        // block that is GDX, and then GDY blocks away.
 
-        // From the tile group perspective, the MM algorithm looks like this:
+        // From the group perspective, the row-major MM algorithm with
+        // striding looks like this:
 
-        // for(ty_i = TIY; ty_i < r1 / TBY; gby_i += (GDY * TBY))
-        //     for(tx_i = TIX; tx_i < c2 / TBX; gbx_i += (GDX * TBX))
-        //         Set local TBX x TBY block to 0
+        // for(ty_i = TIY; ty_i < r1 / TBY; ty_i += GDY)
+        //     for(tx_i = TIX; tx_i < c2 / TBX; tx_i += GDX)
+        //         Initialize psum to 0, a TBX x TBY block
         //         for(tz_i = 0; c1 / TBX; tz_i++)
-        //             Load TBX x TBY block from m1 and m2
-        //             Perform multiply-accumulate
-        //         Store TBX x TBY block
+        //             Load TBX x TBY block from m1 and TBY x TBX block from m2
+        //             Perform multiply-accumulate into psum
+        //         Store psum into output
 
         // This is the end of the high-level algorithm. It is critical
         // to understand the lines above before proceeding.
 
+        // (Note it is possible to do a stride of 1, in which case,
+        // the iteration limits are r1/(GDY * TBY) and c2/(GDX * TBX).
+        // We believe that striding by the grid dimension produces
+        // more cache locality)
+
         // ******************** ********************
-        
-        // Each tile group computes a TBX x TBY block composed of
-        // individual BX x BY blocks. The tile's x,y location within
-        // it's group is defined by the variables __bsg_X and __bsg_Y.
 
-        // Each tile group computes its output group block output
-        // relative to it's group "anchor", the coordinate of the
-        // upper-left corner of the TBX x TBY output block in the
-        // output matrix, tile_group_anchor_x/y (TAX/TAY):
+        // The following is a description of inner loop of the group.
 
-        // TAX = GBX * TIX
-        // TAY = GBY * TIY
-        
-        // In the "z" loop above, each tile collaborates with it's
-        // group to load a TBX x TBY block from each of m1 and m2 into
-        // their scratchpads.
+        // In the "z" loop above, each tile collaborates with its
+        // group to load a TBX x TBY from m1 and a TBY x TBX block
+        // from m2 into their scratchpads. A multiply accumulation is
+        // performed until there are no blocks in the row of m1 and
+        // column of m2 remaining.
 
-        // The group block anchor coordinates for M1 and M2 is:
+        // Each group computes a TBX x TBY block composed of
+        // individual BX x BY blocks that are computed by individual
+        // tiles.
 
-        // GM1AX = tz_i * TBX
-        // GM1AY = ty_i * TBY
+        // A tile's x,y location within its group is defined by the
+        // variables __bsg_X and __bsg_Y.
 
-        // GM2AX = tx_i * TBX
-        // GM2AY = tz_i * TBY
+        // Each group compute computes an output group block. The
+        // output group block location is defined by its "anchor", the
+        // coordinate of the upper-left corner of the TBX x TBY block
+        // in the output matrix. This will be the variable
+        // tile_group_output_anchor_x/y (Shorthand: OTAX/OTAY):
+
+        // OTAX = GDX * TBX * tx_i
+        // OTAY = GBY * TBY * ty_i
+
+        // The group block anchor coordinates for M1 and M2 are:
+
+        // TM1AX = TBX * tz_i
+        // TM1AY = GDY * TBY * ty_i
+
+        // TM2AX = GDX * TBY * tx_i
+        // TM2AY = TBX * tz_i
 
         // Each tile is responsible for loading a BX x BY block from
         // each of m1 and m2. Their tile block anchor coordinates are:
 
-        // TM1AX = GM1AX + __bsg_x * BX
-        // TM1AY = GM1AY + __bsg_y * BY
+        // M1AX = TM1AX + __bsg_x * BX
+        // M1AY = TM1AY + __bsg_y * BY
         // (Row-major order for M1)
 
-        // TM2AX = GM2AX + __bsg_y * BX
-        // TM2AY = GM2AY + __bsg_x * BY
+        // M2AX = TM2AX + __bsg_y * BX
+        // M2AY = TM2AY + __bsg_x * BY
         // (Column-major order for M2)
 
         // (The reason we do row major order for m1, and column major
         // order for m2 is so that tiles within a group only access
-        // data within their row/column when reading m1/m2)
+        // data from tiles within their row/column)
 
-        // Using these anchor we can load the GBX x GBY blocks into
+        // Using these anchors we can load the TBX x TBY block into
         // the group.
 
         // At this point all data is loaded into the scratchpads of
         // the tile group, so we can ignore global indexing for the
-        // moment and just us gM1 and gM2, where gM* is block for each
-        // matrix in group memory. Each group now needs to update it's
+        // moment and just use tm1 and tM2, where tM* is the group block
+        // in group memory. Each group now needs to update it's
         // partial sum using its own blocks and blocks from its group.
         // This is effectively the computation that is done in the
         // inner loop of the group:
@@ -395,7 +413,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         // for(y_i = 0; y_i < TBY; y_i ++){
         //    for(x_i = 0; x_i < TBX; x_i ++){
         ///      for(z_i = 0; z_i < TBX; z_i ++){
-        //          psum[y_i][x_i] += lM1[y_i][z_i] + lM2[z_i][x_i];
+        //          psum[y_i][x_i] += tM1[y_i][z_i] + tM2[z_i][x_i];
 
         // However, the computation and data is split across tiles
         // into TDX x TDY pieces, where each tile computes a BX x BY
@@ -407,7 +425,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //       for(y_i = 0; y_i < BY; y_i ++){
         //          for(x_i = 0; x_i < BX; x_i ++){
         //             for(z_i = 0; z_i < TBX; z_i ++){
-        //                psum[ty_i * BY + y_i][tx_i * BX + x_i] += gM1[ty_i * BY + y_i][z_i] + gM2[z_i][tx_i * BX + x_i];
+        //                psum[ty_i * BY + y_i][tx_i * BX + x_i] += tM1[ty_i * BY + y_i][z_i] + tM2[z_i][tx_i * BX + x_i];
 
         // If we assign each iteration of the outer two loops to tiles
         // we can ty_i and tx_i with the tile group variables __bsg_x
@@ -416,7 +434,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         // for(y_i = 0; y_i < BY; y_i ++){
         //    for(x_i = 0; x_i < BX; x_i ++){
         //       for(z_i = 0; z_i < TBX; z_i ++){
-        //          psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += gM1[__bsg_y * BY + y_i][z_i] + gM2[z_i][__bsg_y * BX + x_i];
+        //          psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][z_i] + tM2[z_i][__bsg_y * BX + x_i];
 
         // This code does not account for the distribution of BX x BY
         // blocks across tiles. z_i will eventually access data on
@@ -431,21 +449,26 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    for(x_i = 0; x_i < BX; x_i ++){
         //       for(b_i = 0; b_i < TBX/BX; b_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += gM1[__bsg_y * BY + y_i][b_i * BX + z_i] + pM2[b_i * BX + z_i][__bsg_y * BX + x_i];
+        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
 
-
-        // Then let's reorder the loops:
+        // Let's reorder the loops so that the block access is the
+        // outer most loop, and the inner loops do not cross between
+        // blocks in tile scratchpads:
 
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
         //    for(y_i = 0; y_i < BY; y_i ++){
         //       for(x_i = 0; x_i < BX; x_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += gM1[__bsg_y * BY + y_i][b_i * BX + z_i] + pM2[b_i * BX + z_i][__bsg_y * BX + x_i];
+        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
         
-        // gM* is a group memory block, but we know we don't have that
-        // abstraction. Instead, we have to handle blocking in
-        // software with pointers. lM1 and lM2 are pointers to blocks
-        // of data in individual scratchpads of tile group memory.
+        // As alluded to above, tM* is a group memory block in a
+        // contiguous address space, but we don't have that
+        // abstraction.
+
+        // Instead, we have to handle jumping to BX x BY blocks in
+        // neighboring scratchpads in software. We will abstract this
+        // using pointers, where pM1 and pM2 are pointers to blocks of
+        // data in individual scratchpads of tile group memory.
         
         // Set pM1 to point to ??? (depends on __bsg_x)
         // Set pM2 to point to ??? (depends on __bsg_y)
@@ -457,11 +480,11 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    Update pM1 to point to lM1 of block of next tile in X direction, modulo TDX (row major)
         //    Update pM1 to point to lM1 of block of next tile in Y direction, modulo TDY (column major)
 
-        // This is the computation that each tile in the tile group
-        // performs. It can probably (?) be re-written as: 
+        // This is the computation that each tile in the group
+        // performs. It can probably (?) be re-written as:
 
-        // Set pM1 to point to local block of lM1
-        // Set pM2 to point to local block of lM2
+        // Set pM1 to point to ???
+        // Set pM2 to point to ???
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
         //    accum_block(psum, pM1, pM2)
         //    Update pM1 to point to lM1 of block of next tile in X direction, modulo TDX (row major)
