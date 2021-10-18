@@ -16,7 +16,8 @@ TESTS += $(call test-name,wiki-vote,4145,1024,yes,yes)
 TESTS += $(call test-name,wiki-vote,4647,1024,yes,yes)
 TESTS += $(call test-name,wiki-vote,5169,1024,yes,yes)
 TESTS += $(call test-name,wiki-vote,5681,1024,yes,yes)
-
+# full thing
+TESTS += $(call test-name,wiki-vote,0,8297,yes,yes)
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
 $(eval ROW_BASE=$(call get-row-base,$1))
