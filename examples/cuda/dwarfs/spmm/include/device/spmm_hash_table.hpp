@@ -48,9 +48,7 @@ namespace hash_table {
     /* type of for hash index */
     typedef unsigned hidx_t;
 
-#if defined(ALIGNED_TABLE)
     extern thread hidx_t block_select;
-#endif
 
 #ifndef LOG2_VCACHE_STRIPE_WORDS
 #error "Define LOG2_VCACHE_STRIPE_WORDS"
@@ -110,6 +108,8 @@ namespace hash_table {
             = (tbl_y << Y_SHIFT)
             | (south_not_north << SOUTH_NOT_NORTH_SHIFT)
             | (tbl_x << X_SHIFT);
+#else
+        block_select = __bsg_id * NONZEROS_TABLE_SIZE;
 #endif
     }
 
@@ -128,7 +128,7 @@ namespace hash_table {
 #endif
         x = x % NONZEROS_TABLE_SIZE;
 #if !defined(ALIGNED_TABLE)
-        return x;
+        return block_select + x;
 #else
         hidx_t hi = x / VCACHE_STRIPE_WORDS;
         hidx_t lo = x % VCACHE_STRIPE_WORDS;

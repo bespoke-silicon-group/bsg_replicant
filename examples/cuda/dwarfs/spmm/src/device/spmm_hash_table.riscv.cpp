@@ -37,7 +37,5 @@ namespace hash_table {
     */
     int elts_realloc_size = (VCACHE_STRIPE_WORDS*sizeof(int))/sizeof(spmm_elt_t);
 
-#ifdef ALIGNED_TABLE
     thread hidx_t block_select;
-#endif
 }
