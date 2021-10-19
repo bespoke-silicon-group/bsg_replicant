@@ -85,9 +85,9 @@ void spmm_solve_row(int Ai)
 
     //bsg_print_int(tbl_num_entries);
     pr_dbg("solved row %3d, saving %3d nonzeros to address 0x%08x\n"
-                  , Ai
-                  , tbl_num_entries
-                  , parts_glbl);
+           , Ai
+           , hash_table::tbl_num_entries
+           , parts_glbl);
 
     // for each entry in the table
     int j = 0; // tracks nonzero number
