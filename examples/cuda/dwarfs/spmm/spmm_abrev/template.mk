@@ -155,7 +155,7 @@ RISCV_CCPPFLAGS += -DALIGNED_TABLE
 else
 RISCV_TARGET_OBJECTS += spmm.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_compute_offsets.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
 RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=0
 endif
