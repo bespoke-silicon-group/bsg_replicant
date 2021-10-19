@@ -33,7 +33,7 @@ static void spmm_scalar_row_product(float Aij, int Bi)
         int idx = hash_table::hash(Bj);
 
         // perform symbol table lookup
-        hash_table::update(Cij,Bj, idx);
+        hash_table::update(Cij, Bj, idx);
     }
 }
 
