@@ -41,7 +41,6 @@ extern "C" int kernel_spmm(
 
     // foreach row
     for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS) {
-        bsg_print_int(Ai);
         spmm_solve_row(Ai);
     }
 
