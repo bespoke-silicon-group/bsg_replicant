@@ -55,7 +55,7 @@ CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX := 0
 # set which DRAMSim3 chip we're modeling
 DRAMSIM3_MEMORY := hbm2_16gb_x64
 endif
-ifeq ($(BSG_MACHINE_MEM_DRAMSIM3_PKG),bsg_dramsim3_hbm2_8gb_x128_ps_32ba_pkg)
+ifeq ($(BSG_MACHINE_MEM_DRAMSIM3_PKG),bsg_dramsim3_hbm2_8gb_x64_32ba_pkg)
 # memory hierarchy bits
 CL_MANYCORE_MEMSYS_DRAM_RO_BITS := 14
 CL_MANYCORE_MEMSYS_DRAM_BG_BITS := 2
@@ -71,7 +71,7 @@ CL_MANYCORE_MEMSYS_DRAM_CO_BITIDX := 5
 CL_MANYCORE_MEMSYS_DRAM_BYTE_OFF_BITIDX := 0
 
 # set which DRAMSim3 chip we're modeling
-DRAMSIM3_MEMORY := hbm2_8gb_x128_ps_32ba
+DRAMSIM3_MEMORY := hbm2_8gb_x64_32ba
 endif
 ifeq ($(BSG_MACHINE_MEM_DRAMSIM3_PKG),bsg_dramsim3_hbm2_8gb_x128_pkg)
 # memory hierarchy bits
