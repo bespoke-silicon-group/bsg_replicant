@@ -305,9 +305,6 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         // Logically, split the output matrix into hierarchical blocks:
 
-        // BX/Y -> TBX/TBY?
-        // TBX/Y -> GBX/Y
-
         // - TBX x TBY group blocks that a group computes, composed of:
         // -  BX x  BY tile blocks that a single tile computes
 
@@ -493,7 +490,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    pM1 = bsg_remote_ptr(lM1, __bsg_x + b_i, 0) -- row major
         //    pM2 = bsg_remote_ptr(lM1, 0, __bsg_y + b_i) -- column major
 
-        // There are two optimizations that can be made. First,
+        // There are three optimizations that can be made. First,
         // calling bsg_remote_ptr is expensive since the compiler does
         // shifts and or's to compute the pointer. Moving between
         // tiles in the x direction is simply adding 0x40000 to a
@@ -529,6 +526,61 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    accum_block(psum, pM1, pM2)
         //    pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
         //    pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
+
+        // There is one further optmization, but it requires slight
+        // restructuring of the code above. accum_block loads psum
+        // into registers, and stores it back to scratchpad every time
+        // it is called. This can be optimized out by refactoring the
+        // code so that b loop is back inside, next to the z loop:
+        
+        // for(y_i = 0; y_i < BY; y_i ++){
+        //    for(x_i = 0; x_i < BX; x_i ++){
+        //       for(b_i = 0; b_i < TBX/BX; b_i ++){
+        //          for(z_i = 0; z_i < BX; z_i ++){
+        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
+
+        // Applying the pointer transformation from above:
+
+        // for(y_i = 0; y_i < BY; y_i ++){
+        //    for(x_i = 0; x_i < BX; x_i ++){
+        //       pM1 = bsg_remote_ptr(lM1, __bsg_x, __bsg_y)
+        //       pM2 = bsg_remote_ptr(lM2, __bsg_x, __bsg_x)
+        //       for(b_i = 0; b_i < TBX/BX; b_i ++){
+        //          for(z_i = 0; z_i < BX; z_i ++){
+        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
+        //          pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
+        //          pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
+
+        // This code cannot reuse accum block, but it does remove an
+        // unnecessary load and store that is inside of accum_block.
+
+
+        // Theoretical FLOP rates:
+        //
+        // Assuming TDX = TDY, and BX = BY = 4 (to maximize register use)
+        //
+        // For the first tile-group based approach without the psum
+        // optimization, the instructions for the inner loop are:
+        //     instr_fma: TDX * (16^3)
+        //     instr_load (remote): 2 * (16^2)
+        //     instr_load (local/group): G*(8 * (16^2) + (16^2))
+        //     instr_store (local): TDX * (16^2)
+        //
+        // Thus, the flop/instr rate is: TDX * 2 * (16^3) / (TDX * 9 * (16^2) + 2 * (16^2) + TDX * (16^3)) --> TDX * 32 / (TDX * 25  + 2)
+        //
+        // As TDX approaches infinity the ratio becomes 32/25, or 1.28 flops/instr
+
+        // For the second approach with the psum optimization the
+        // instructions for the inner loop are:
+        //     instr_fma: TDX * (16^3)
+        //     instr_load (remote): 2 * (16^2)
+        //     instr_load (local/group): G*(8 * (16^2))
+        //     instr_store (local): (16^2)
+        //
+        // Thus, the flop/instr rate is: TDX * 2 * (16^3) / (TDX * 8 * (16^2) + (16^2) + TDX * (16^3)) --> TDX * 32 / (TDX * 24  + 1)
+        //
+        // As TDX approaches infinity the ratio becomes 32/25, or 1.33 flops/instr
+
         for (int by_i = __bsg_y; by_i < r1/BY; by_i += BSG_TILE_GROUP_Y_DIM) {
                 for (int bx_i = __bsg_x; bx_i < c2/BX; bx_i += BSG_TILE_GROUP_X_DIM) {
 
