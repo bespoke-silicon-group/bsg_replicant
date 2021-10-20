@@ -75,7 +75,7 @@ FPGA_IMAGE_VERSION     ?= 0.0.0
 ifdef BSG_MACHINE_CHIP_ID
 CHIP_ID = $(BSG_MACHINE_CHIP_ID)
 else
-CHIP_ID = 0x00000000
+CHIP_ID = 00000000
 endif
 
 # The manycore architecture sources are defined in arch_filelist.mk. The

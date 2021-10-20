@@ -3,6 +3,8 @@
 #include <bsg_manycore_vcache.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_config_pod.h>
+#include <bsg_manycore_chip_id.h>
+
 /* these are convenience macros that are only good for one line prints */
 #define dma_pr_dbg(mc, fmt, ...)                   \
         bsg_pr_dbg("%s: " fmt, mc->name, ##__VA_ARGS__)
@@ -166,6 +168,9 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
 {
         cache_id_to_memory_id = new parameter_t [hb_mc_vcache_num_caches(mc)];
         cache_id_to_bank_id   = new parameter_t [hb_mc_vcache_num_caches(mc)];
+        if (mc->config.chip_id == HB_MC_CHIP_ID_ISCA2022) {
+                return hb_mc_dma_init_default(mc);
+        }
 
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2
             && mc->config.pod_shape.x == 16
