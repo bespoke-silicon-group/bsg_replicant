@@ -114,7 +114,7 @@ int hb_mc_memsys_check_dram_address_map_info_dramsim3(const hb_mc_memsys_t *mems
                    __func__);
 
         CHECK(memsys->dram_co.bits,
-              memsys->dram_co.bits == 6);
+              memsys->dram_co.bits >= 5 && memsys->dram_co.bits <= 6);
 
         bsg_pr_dbg("%s: checking bank bits\n",
                    __func__);

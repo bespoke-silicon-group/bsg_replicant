@@ -105,7 +105,7 @@ BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 # Aliases required for memsys.mk, and others.
 # Specific to the HBM2E chip we're modeling (8GB, 4-stack/8-channel)
 __BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^31 | bc) # 4GB
-__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/8 | bc)
+__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/16 | bc)
 
 BSG_MACHINE_POD_TILES                := $(shell echo $(BSG_MACHINE_POD_TILES_X)*$(BSG_MACHINE_POD_TILES_Y) | bc)
 BSG_MACHINE_NUM_PODS                 := $(shell echo $(BSG_MACHINE_PODS_X)*$(BSG_MACHINE_PODS_Y) | bc)
