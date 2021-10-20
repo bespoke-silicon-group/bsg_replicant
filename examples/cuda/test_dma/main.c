@@ -62,7 +62,7 @@ int test_dma (int argc, char **argv) {
         /* Calculate grid_dim_x/y: number of                                  */
         /* tile groups needed based on block_size_x/y                         */
         /**********************************************************************/
-        hb_mc_dimension_t tg_dim = { .x = 2, .y = 2 };
+        hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 };
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1 };
 
         /**********************************************************************/
@@ -71,6 +71,12 @@ int test_dma (int argc, char **argv) {
         /**********************************************************************/
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
+        const hb_mc_config_t *cfg = &device.mc->config;
+        hb_mc_eva_t alignment
+            = cfg->pod_shape.x
+            * 2
+            * cfg->vcache_block_words
+            * 4;
 
         hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(&device, pod)
@@ -86,13 +92,21 @@ int test_dma (int argc, char **argv) {
                 /* Read A */
                 /**********/
                 hb_mc_eva_t A_dev, B_dev;
-                int N = 32 * 2;
+                int N = alignment/4; // array should span all caches
                 int A_host[N], B_host[N];
 
                 for (int i = 0; i < N; i++) A_host[i] = i;
 
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N, &A_dev));
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N, &B_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N + alignment, &A_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N + alignment, &B_dev));
+
+                hb_mc_eva_t rem;
+                // align A_dev + B_dev to cache 0
+                rem = A_dev % alignment;
+                A_dev += (alignment - rem);
+
+                rem = B_dev % alignment;
+                B_dev += (alignment - rem);
 
                 hb_mc_dma_htod_t htod = {
                         .d_addr = A_dev,
