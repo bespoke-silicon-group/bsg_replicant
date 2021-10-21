@@ -114,19 +114,19 @@ int hb_mc_memsys_check_dram_address_map_info_dramsim3(const hb_mc_memsys_t *mems
                    __func__);
 
         CHECK(memsys->dram_co.bits,
-              memsys->dram_co.bits == 6);
+              memsys->dram_co.bits >= 5 && memsys->dram_co.bits <= 6);
 
         bsg_pr_dbg("%s: checking bank bits\n",
                    __func__);
 
         CHECK(memsys->dram_ba.bits,
-              memsys->dram_ba.bits == 2);
+              memsys->dram_ba.bits >= 1 && memsys->dram_ba.bits <= 4);
 
         bsg_pr_dbg("%s: checking bank group bits\n",
                    __func__);
 
         CHECK(memsys->dram_bg.bits,
-              memsys->dram_bg.bits == 2);
+              memsys->dram_bg.bits >= 0 && memsys->dram_bg.bits <= 3);
 
         bsg_pr_dbg("%s: checking byte offset bits\n",
                    __func__);
