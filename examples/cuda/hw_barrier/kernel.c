@@ -1,5 +1,5 @@
 #include "bsg_manycore.h"
-#include "bsg_cuda_lite_hw_barrier.h"
+#include "bsg_cuda_lite_barrier.h"
 #include "bsg_barrier_amoadd.h"
 
 int barrier_test()
