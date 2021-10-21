@@ -169,8 +169,8 @@ int kernel_group_stride (int argc, char **argv) {
         }
 
         bsg_pr_info("Copying result back\n");
-        src = (void *) ((intptr_t) _nx);
-        dst = (void *) nx;
+        src = (void *) ((intptr_t) _ny);
+        dst = (void *) ny;
         rc = hb_mc_device_memcpy (&device, dst, src, sizeof(ny), HB_MC_MEMCPY_TO_HOST);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("failed to copy memory from device.\n");
@@ -197,7 +197,7 @@ int kernel_group_stride (int argc, char **argv) {
                                 bsg_pr_err(BSG_RED("Incorrect east neighbor for tile X: %d, Y: %d. Expected: %d, Got: %d\n"), ix, iy, ((ix + 1) % tg_dim.x), nx[tg_dim.x * iy + ix]);
                                 return HB_MC_FAIL;
                         }
-                        if(nx[tg_dim.x * iy + ix] != ((ix + 1) % tg_dim.x)){
+                        if(ny[tg_dim.x * iy + ix] != ((iy + 1) % tg_dim.y)){
                                 bsg_pr_err(BSG_RED("Incorrect south neighbor for tile X: %d, Y: %d. Expected: %d, Got: %d\n"), ix, iy, ((iy + 1) % tg_dim.y), ny[tg_dim.x * iy + ix]);
                                 return HB_MC_FAIL;
                         }
