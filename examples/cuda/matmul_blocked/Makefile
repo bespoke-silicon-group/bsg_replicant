@@ -47,7 +47,7 @@ CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
 
 
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = vec_add_parallel
+KERNEL_NAME = matmul_blocked
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -55,7 +55,7 @@ KERNEL_NAME = vec_add_parallel
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
-BLOCK_DIM = 16
+BLOCK_DIM = 4
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DBLOCK_DIM=$(BLOCK_DIM)
 CDEFINES += 
 CXXDEFINES += 

@@ -335,6 +335,7 @@ int kernel_mm_opt(
         auto mat1 = HBTensor<float, 2>(_mat1);
         auto mat2 = HBTensor<float, 2>(_mat2);
         auto result = HBTensor<float, 2>(_result);
+        bsg_barrier_hw_tile_group_init();
         
         kernel_mm_opt<BLOCK_DIM,BLOCK_DIM,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
                                         result.get_strides(),
@@ -344,7 +345,8 @@ int kernel_mm_opt(
                                         (float bsg_attr_remote * bsg_attr_noalias) mat2.data_ptr(),
                                         mat2.get_strides(),
                                         mat2.dim(0), mat2.dim(1));
-        g_barrier.sync();
+        bsg_barrier_hw_tile_group_sync();
+
         return 0;
 }
 
