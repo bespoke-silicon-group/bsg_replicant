@@ -37,7 +37,6 @@
 #include <bsg_manycore_regression.h>
 #include <bsg_manycore_eva.h>
 
-//#define BLOCK_DIM 16 // this block dim needs to match the same marco in the riscv binary
 #define ALLOC_NAME "default_allocator"
 
 typedef struct {

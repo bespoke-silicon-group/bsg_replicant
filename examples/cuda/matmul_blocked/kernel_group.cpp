@@ -229,6 +229,8 @@ inline int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
                   uint32_t * bsg_attr_noalias mat2_strides,
                   int r2, int c2
                   )
+// clang doesn't like using memcpy/memset on bsg_attr_remote, so
+// disable them.
 #ifdef __clang__
 __attribute__((no_builtin("memcpy", "memset")))
 #endif
@@ -256,40 +258,47 @@ __attribute__((no_builtin("memcpy", "memset")))
         // should always be) nonzero. This adds an extra BNE
         // instruction in the inner-loop. There should be some way to
         // signal to the compiler, perhaps with hb_assert?
-        int blocks = c1 / BX; // r2 / BX
 
-        // Local Storage for input blocks
+        // Algorithm: To maximize locality, each tile should compute a
+        // number of BX-by-BY output blocks by computing on blocks of
+        // input data. In this implementation, the tile cooperates
+        // with a group of nearby tiles to increase data locality and
+        // reuse.
+
+        // A single tile strides between output blocks in row-major
+        // order. For this implementation, the stride between output
+        // blocks is the grid dimension, times the tile group dimension.
+
+        // TODO: Allocate tile groups in row-major order.
+
+        int bx_blocks = c2 / BX;
+        int by_blocks = r1 / BY;
+        int bz_blocks = c1 / BX; // r2 / BX
+
+        int by_stride = BSG_TILE_GROUP_Y_DIM * __bsg_grid_dim_y;
+        int bx_stride = BSG_TILE_GROUP_X_DIM * __bsg_grid_dim_x;
+        int bz_stride = ;// TODO
+                
+        // Local Storage for input/output blocks. Output blocks are
+        // sometimes called partial sums, too.
         // Locations:
         //    block_row is in Local Scratchpad
         //    block_col is in Local Scratchpad
+        //    block_out is in Local Scratchpad
         float block_row[BY * BX];
         float block_col[BX * BY];
+        float block_out[BY * BX];
 
-        // Local storage for partial sums (output)
-        // Location: Local Scratchpad
-        float psum[BY * BX];
-
+        // Initialize local output to 0.0f
         for (int i = 0; i < BY; i++) {
-                bsg_unroll(16)
+                // Unroll by 16 because it is the maximum block size a
+                // tile can handle. Any smaller value will be
+                // completely unrolled
+                bsg_unroll(16) 
                 for (int j = 0 ; j < BX; j ++){
-                        psum[i * BX + j] = 0.0f;
+                        block_out[i * BX + j] = 0.0f;
                 }
         }
-
-        // To maximize locality, each tile should compute a number of
-        // output blocks with spatially local data.
-        //
-        // This works best when the size (bytes) of the mat2 matrix
-        // row is a multiple of the number of bytes in a row of
-        // caches.
-        
-        // Split the work up into contiguous chunks, where each tile
-        // will compute on one chunk.
-        int bx_blocks = c2/BX;
-        int bx_each = bx_blocks / BSG_TILE_GROUP_X_DIM;
-        int bx_start = __bsg_x * (bx_each);
-        int bx_end = bx_start + bx_each;
-        // hb_assert(bx_each == 0);
 
         // Start profiling
         bsg_cuda_print_stat_kernel_start();
@@ -335,11 +344,11 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         // for(ty_i = TIY; ty_i < r1 / TBY; ty_i += GDY)
         //     for(tx_i = TIX; tx_i < c2 / TBX; tx_i += GDX)
-        //         Initialize psum to 0, a TBX x TBY block
+        //         Initialize block_out to 0, a TBX x TBY block
         //         for(tz_i = 0; c1 / TBX; tz_i++)
         //             Load TBX x TBY block from m1 and TBY x TBX block from m2
-        //             Perform multiply-accumulate into psum
-        //         Store psum into output
+        //             Perform multiply-accumulate into block_out
+        //         Store block_out into output
 
         // This is the end of the high-level algorithm. It is critical
         // to understand the lines above before proceeding.
@@ -412,7 +421,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         // for(y_i = 0; y_i < TBY; y_i ++){
         //    for(x_i = 0; x_i < TBX; x_i ++){
         ///      for(z_i = 0; z_i < TBX; z_i ++){
-        //          psum[y_i][x_i] += tM1[y_i][z_i] + tM2[z_i][x_i];
+        //          block_out[y_i][x_i] += tM1[y_i][z_i] + tM2[z_i][x_i];
 
         // However, the computation and data is split across tiles
         // into TDX x TDY pieces, where each tile computes a BX x BY
@@ -423,7 +432,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //       for(y_i = 0; y_i < BY; y_i ++){
         //          for(x_i = 0; x_i < BX; x_i ++){
         //             for(z_i = 0; z_i < TBX; z_i ++){
-        //                psum[ty_i * BY + y_i][tx_i * BX + x_i] += tM1[ty_i * BY + y_i][z_i] + tM2[z_i][tx_i * BX + x_i];
+        //                block_out[ty_i * BY + y_i][tx_i * BX + x_i] += tM1[ty_i * BY + y_i][z_i] + tM2[z_i][tx_i * BX + x_i];
 
         // If we assign each iteration of the outer two loops to tiles
         // we can replace ty_i and tx_i with the tile group variables
@@ -432,7 +441,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         // for(y_i = 0; y_i < BY; y_i ++){
         //    for(x_i = 0; x_i < BX; x_i ++){
         //       for(z_i = 0; z_i < TBX; z_i ++){
-        //          psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][z_i] + tM2[z_i][__bsg_y * BX + x_i];
+        //          block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][z_i] + tM2[z_i][__bsg_y * BX + x_i];
 
         // This code does not account for the distribution of BX x BY
         // blocks across tiles. z_i will eventually access data on
@@ -447,7 +456,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    for(x_i = 0; x_i < BX; x_i ++){
         //       for(b_i = 0; b_i < TBX/BX; b_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
+        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
 
         // Let's reorder the loops so that the block access is the
         // outer most loop, and the inner loops do not cross between
@@ -457,7 +466,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    for(y_i = 0; y_i < BY; y_i ++){
         //       for(x_i = 0; x_i < BX; x_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
+        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
         
         // As alluded to above, tM* is a group memory block in a
         // contiguous address space, but we don't have that
@@ -475,7 +484,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    for(y_i = 0; y_i < BY; y_i ++){
         //       for(x_i = 0; x_i < BX; x_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
+        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
         //    pM1 = bsg_remote_ptr(lM1, __bsg_x + b_i, 0) -- row major
         //    pM2 = bsg_remote_ptr(lM1, 0, __bsg_y + b_i) -- column major
 
@@ -486,7 +495,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         // pM1 = bsg_remote_ptr(lM1, __bsg_x, 0)
         // pM2 = bsg_remote_ptr(lM1, 0, __bsg_y)
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
-        //    accum_block(psum, pM1, pM2)
+        //    accum_block(block_out, pM1, pM2)
         //    pM1 = bsg_remote_ptr(lM1, __bsg_x + b_i, 0) -- row major
         //    pM2 = bsg_remote_ptr(lM1, 0, __bsg_y + b_i) -- column major
 
@@ -500,7 +509,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         // pM1 = bsg_remote_ptr(lM1, 0, __bsg_y)
         // pM2 = bsg_remote_ptr(lM2, __bsg_x, 0)
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
-        //    accum_block(psum, pM1, pM2)
+        //    accum_block(block_out, pM1, pM2)
         //    pM1 = (char *) pM1 + 0x40000;
         //    pM2 = (char *) pM2 + 0x800000;
         
@@ -523,12 +532,12 @@ __attribute__((no_builtin("memcpy", "memset")))
         // pM1 = bsg_remote_ptr(lM1, __bsg_x, __bsg_y)
         // pM2 = bsg_remote_ptr(lM2, __bsg_x, __bsg_x)
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
-        //    accum_block(psum, pM1, pM2)
+        //    accum_block(block_out, pM1, pM2)
         //    pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
         //    pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
 
         // There is one further optmization, but it requires slight
-        // restructuring of the code above. accum_block loads psum
+        // restructuring of the code above. accum_block loads block_out
         // into registers, and stores it back to scratchpad every time
         // it is called. This can be optimized out by refactoring the
         // code so that b loop is back inside, next to the z loop:
@@ -537,7 +546,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    for(x_i = 0; x_i < BX; x_i ++){
         //       for(b_i = 0; b_i < TBX/BX; b_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
+        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += tM1[__bsg_y * BY + y_i][b_i * BX + z_i] + tM2[b_i * BX + z_i][__bsg_y * BX + x_i];
 
         // Applying the pointer transformation from above:
 
@@ -547,7 +556,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //       pM2 = bsg_remote_ptr(lM2, __bsg_x, __bsg_x)
         //       for(b_i = 0; b_i < TBX/BX; b_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             psum[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
+        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
         //          pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
         //          pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
 
@@ -559,7 +568,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //
         // Assuming TDX = TDY, and BX = BY = 4 (to maximize register use)
         //
-        // For the first tile-group based approach without the psum
+        // For the first tile-group based approach without the block_out
         // optimization, the instructions for the inner loop are:
         //     instr_fma: TDX * (16^3)
         //     instr_load (remote): 2 * (16^2)
@@ -570,7 +579,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //
         // As TDX approaches infinity the ratio becomes 32/25, or 1.28 flops/instr
 
-        // For the second approach with the psum optimization the
+        // For the second approach with the block_out optimization the
         // instructions for the inner loop are:
         //     instr_fma: TDX * (16^3)
         //     instr_load (remote): 2 * (16^2)
@@ -581,14 +590,14 @@ __attribute__((no_builtin("memcpy", "memset")))
         //
         // As TDX approaches infinity the ratio becomes 32/25, or 1.33 flops/instr
 
-        for (int by_i = __bsg_y; by_i < r1/BY; by_i += BSG_TILE_GROUP_Y_DIM) {
-                for (int bx_i = __bsg_x; bx_i < c2/BX; bx_i += BSG_TILE_GROUP_X_DIM) {
+        for (int by_i = __bsg_y; by_i < by_blocks; by_i += BSG_TILE_GROUP_Y_DIM) {
+                for (int bx_i = __bsg_x; bx_i < bx_blocks; bx_i += BSG_TILE_GROUP_X_DIM) {
 
                         // Multiply the blocks, and accumulate into the result
                         if(PROFILE)
                                 bsg_cuda_print_stat_start(0);
                         // TODO: divide bz by X_GROUP
-                        for (int bz_i = 0; bz_i < blocks; bz_i++) {
+                        for (int bz_i = 0; bz_i < bz_blocks; bz_i++) {
                                 if(PROFILE)
                                         bsg_cuda_print_stat_start(1);
                                 load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i, bz_i);
@@ -605,7 +614,7 @@ __attribute__((no_builtin("memcpy", "memset")))
                                         bsg_cuda_print_stat_start(3);
                                 }
                                 // TODO: always do an accumulate
-                                accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(psum, block_row, block_col);
+                                accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, block_row, block_col);
                                 if(PROFILE){
                                         bsg_cuda_print_stat_end(3);
                                 }
@@ -614,11 +623,11 @@ __attribute__((no_builtin("memcpy", "memset")))
                         if(PROFILE)
                                 bsg_cuda_print_stat_start(4);
 
-                        // Store the result, AND zero the psum array
+                        // Store the result, AND zero the block_out array
                         // to leverage parallel remote and local
                         // stores.
                         prefetch<BY, BX>(result, result_strides, by_i, bx_i);
-                        store_block_and_reset<BY, BX>(psum, result, result_strides, by_i, bx_i);
+                        store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i, bx_i);
                         if(PROFILE){
                                 bsg_cuda_print_stat_end(4);
                                 bsg_cuda_print_stat_end(0);
@@ -631,29 +640,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         return 0;
 }
-/*
-extern "C"
-int kernel_mm_opt_8x8(
-                  hb_tensor_t* _result,
-                  hb_tensor_t* _mat1,
-                  hb_tensor_t* _mat2) {
 
-        auto mat1 = HBTensor<float, 2>(_mat1);
-        auto mat2 = HBTensor<float, 2>(_mat2);
-        auto result = HBTensor<float, 2>(_result);
-        
-        kernel_mm_opt<8,8,false, false>((float* bsg_attr_noalias) result.data_ptr(),
-                                        result.get_strides(),
-                                        (float* bsg_attr_noalias) mat1.data_ptr(),
-                                        mat1.get_strides(),
-                                        mat1.dim(0), mat1.dim(1),
-                                        (float* bsg_attr_noalias) mat2.data_ptr(),
-                                        mat2.get_strides(),
-                                        mat2.dim(0), mat2.dim(1));
-        g_barrier.sync();
-        return 0;
-}
-*/
 extern "C"
 int kernel_mm_opt_16x16(
                   hb_tensor_t* _result,
