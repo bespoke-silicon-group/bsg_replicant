@@ -3,7 +3,7 @@
 // 03/09/2020 Kexin Zheng, Lin Cheng (kz73@cornell.edu, lc873@cornell.edu)
 //====================================================================
 #include <kernel_common.hpp>
-
+#include <bsg_group_strider.hpp>
 // NB: This is an interesting opportunity for optimization. Dual-loop
 // unrolling could allow loads to be spread across caches. Ideally the
 // inner loop is unrolled completely first (?), then the outer loop is
@@ -271,13 +271,13 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         // TODO: Allocate tile groups in row-major order.
 
-        int bx_blocks = c2 / BX;
-        int by_blocks = r1 / BY;
-        int bz_blocks = c1 / BX; // r2 / BX
+        int bx_blocks = c2 / (BSG_TILE_GROUP_X_DIM * BX);
+        int by_blocks = r1 / (BSG_TILE_GROUP_Y_DIM * BY);
+        int bz_blocks = c1 / (BSG_TILE_GROUP_X_DIM * BX); // r2 / BX
 
-        int by_stride = BSG_TILE_GROUP_Y_DIM * __bsg_grid_dim_y;
-        int bx_stride = BSG_TILE_GROUP_X_DIM * __bsg_grid_dim_x;
-        int bz_stride = ;// TODO
+        int by_stride = __bsg_grid_dim_y;
+        int bx_stride = __bsg_grid_dim_x;
+        int bz_stride = 1;
                 
         // Local Storage for input/output blocks. Output blocks are
         // sometimes called partial sums, too.
@@ -299,9 +299,6 @@ __attribute__((no_builtin("memcpy", "memset")))
                         block_out[i * BX + j] = 0.0f;
                 }
         }
-
-        // Start profiling
-        bsg_cuda_print_stat_kernel_start();
 
         // Note: This only works for N x N tile groups where N is a
         // power of two. To put it in the symbols below:
@@ -590,48 +587,39 @@ __attribute__((no_builtin("memcpy", "memset")))
         //
         // As TDX approaches infinity the ratio becomes 32/25, or 1.33 flops/instr
 
-        for (int by_i = __bsg_y; by_i < by_blocks; by_i += BSG_TILE_GROUP_Y_DIM) {
-                for (int bx_i = __bsg_x; bx_i < bx_blocks; bx_i += BSG_TILE_GROUP_X_DIM) {
+        bsg_barrier_hw_tile_group_init();
+        // Start profiling
+        bsg_cuda_print_stat_kernel_start();
 
-                        // Multiply the blocks, and accumulate into the result
-                        if(PROFILE)
-                                bsg_cuda_print_stat_start(0);
-                        // TODO: divide bz by X_GROUP
-                        for (int bz_i = 0; bz_i < bz_blocks; bz_i++) {
-                                if(PROFILE)
-                                        bsg_cuda_print_stat_start(1);
-                                load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i, bz_i);
-                                if(PROFILE){
-                                        bsg_cuda_print_stat_end(1);
-                                        bsg_cuda_print_stat_start(2);
-                                }
+        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row);
+        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col);
+ block_y_loop:
+        // TODO: Double check __bsg_y, __bsg_x
+        for (int by_i = __bsg_tile_group_id_y; by_i < by_blocks; by_i += by_stride) {
+        block_x_loop:
+                for (int bx_i = __bsg_tile_group_id_x; bx_i < bx_blocks; bx_i += bx_stride) {
+                        // Multiply each pair of input blocks from a
+                        // given m1 row, and m2 column. 
+                block_z_loop:
+                        for (int bz_i = 0; bz_i < bz_blocks; bz_i += bz_stride) {
+                                load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bz_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
+                                load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i * BSG_TILE_GROUP_X_DIM + __bsg_x, by_i * BSG_TILE_GROUP_Y_DIM * __bsg_y);
+                                bsg_barrier_hw_tile_group_sync();
 
-                                //TODO: mat2 depends on Y_GROUP, must load in m2 bz/Y_GROUP times
-                                load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i, bx_i);
-                                // TODO: Run accum_block X_GROUP * Y_GROUP times, changing the
-                                if(PROFILE){
-                                        bsg_cuda_print_stat_end(2);
-                                        bsg_cuda_print_stat_start(3);
+                                for(int b_i = 0; b_i < BSG_TILE_GROUP_X_DIM; b_i ++){
+                                        // Multiply the blocks, and accumulate into the result
+                                        accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, prow.ptr, pcol.ptr);
+                                        prow.stride();
+                                        pcol.stride();
                                 }
-                                // TODO: always do an accumulate
-                                accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, block_row, block_col);
-                                if(PROFILE){
-                                        bsg_cuda_print_stat_end(3);
-                                }
+                                bsg_barrier_hw_tile_group_sync();                                
                         }
-
-                        if(PROFILE)
-                                bsg_cuda_print_stat_start(4);
 
                         // Store the result, AND zero the block_out array
                         // to leverage parallel remote and local
                         // stores.
                         prefetch<BY, BX>(result, result_strides, by_i, bx_i);
                         store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i, bx_i);
-                        if(PROFILE){
-                                bsg_cuda_print_stat_end(4);
-                                bsg_cuda_print_stat_end(0);
-                        }
                 }
         }
 
@@ -642,7 +630,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 }
 
 extern "C"
-int kernel_mm_opt_16x16(
+int kernel_mm_opt(
                   hb_tensor_t* _result,
                   hb_tensor_t* _mat1,
                   hb_tensor_t* _mat2) {
@@ -651,7 +639,7 @@ int kernel_mm_opt_16x16(
         auto mat2 = HBTensor<float, 2>(_mat2);
         auto result = HBTensor<float, 2>(_result);
         
-        kernel_mm_opt<16,16,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
+        kernel_mm_opt<BLOCK_DIM,BLOCK_DIM,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
                                         result.get_strides(),
                                         (float bsg_attr_remote * bsg_attr_noalias) mat1.data_ptr(),
                                         mat1.get_strides(),
@@ -659,7 +647,6 @@ int kernel_mm_opt_16x16(
                                         (float bsg_attr_remote * bsg_attr_noalias) mat2.data_ptr(),
                                         mat2.get_strides(),
                                         mat2.dim(0), mat2.dim(1));
-        g_barrier.sync();
         return 0;
 }
 

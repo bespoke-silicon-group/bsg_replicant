@@ -1,18 +1,8 @@
-// BSG_TILE_GROUP_X_DIM and BSG_TILE_GROUP_Y_DIM must be defined
-// before bsg_manycore.h and bsg_tile_group_barrier.h are
-// included.
-#define BSG_TILE_GROUP_X_DIM bsg_tiles_X
-#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y
+#ifndef __BSG_GROUP_STRIDER
+#define __BSG_GROUP_STRIDER
 #define BSG_TILE_GROUP_LOG_Y_DIM ((int)(log2(BSG_TILE_GROUP_Y_DIM)))
 #define BSG_TILE_GROUP_LOG_X_DIM ((int)(log2(BSG_TILE_GROUP_X_DIM)))
 #define MAKE_MASK(WIDTH) ((1UL << (WIDTH)) - 1UL)
-#include <bsg_manycore.h>
-#include <bsg_set_tile_x_y.h>
-#include <bsg_tile_group_barrier.hpp>
-#include <math.h>
-bsg_barrier<bsg_tiles_X, bsg_tiles_Y> g_barrier;
-
-
 template<unsigned int TG_X, unsigned int S_X, unsigned int TG_Y, unsigned int S_Y, typename T>
 class bsg_tile_group_strider{
         static const unsigned int GROUP_EPA_WIDTH = 18;
@@ -30,11 +20,11 @@ class bsg_tile_group_strider{
 protected:
 public:
         T *ptr;
-        bsg_tile_group_strider(T &p){
+        bsg_tile_group_strider(T *p){
                 ptr =(T*)( ((1 << GROUP_PREFIX_SHIFT)
                             | (__bsg_y << GROUP_Y_CORD_SHIFT)
                             | (__bsg_x << GROUP_X_CORD_SHIFT)
-                            | ((unsigned int) &p)));
+                            | ((unsigned int) p)));
         }
 
         T* stride(){
@@ -49,14 +39,4 @@ public:
 
 };
 
-extern "C" int kernel_group_stride(int *nx, int *ny){
-
-        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, int> stride_x(__bsg_x);
-        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, int> stride_y(__bsg_y);
-        nx[__bsg_y * BSG_TILE_GROUP_X_DIM + __bsg_x] = *stride_x.stride();
-        ny[__bsg_y * BSG_TILE_GROUP_X_DIM + __bsg_x] = *stride_y.stride();
-
-        g_barrier.sync();        
-        return 0;
-}
-
+#endif

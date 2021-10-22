@@ -56,7 +56,12 @@ KERNEL_NAME = matmul_blocked
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
 BLOCK_DIM = 4
+# Tile Group Dimensions
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DBLOCK_DIM=$(BLOCK_DIM)
+DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
+DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 CDEFINES += 
 CXXDEFINES += 
 
@@ -91,11 +96,8 @@ RISCV_INCLUDES += -I.
 # Clang does not work as well as GCC in this instance. It seems to refuse to inline...
 #RISCV_CXX = $(RISCV_CLANGXX)
 kernel.riscv: kernel_common.rvo
-kernel.riscv: kernel.rvo
+kernel.riscv: kernel_group.rvo
 
-# Tile Group Dimensions
-TILE_GROUP_DIM_X = 16
-TILE_GROUP_DIM_Y = 8
 RISCV_CCPPFLAGS += -O3
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)

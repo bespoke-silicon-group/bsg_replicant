@@ -272,6 +272,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         int by_stride = BSG_TILE_GROUP_Y_DIM;
         int bx_stride = BSG_TILE_GROUP_X_DIM;
+        int bz_stride = 1;
 
         // Local Storage for input/output blocks. Output blocks are
         // sometimes called partial sums, too.
@@ -305,7 +306,7 @@ __attribute__((no_builtin("memcpy", "memset")))
                         // Multiply each pair of input blocks from a
                         // given m1 row, and m2 column. 
                 block_z_loop:
-                        for (int bz_i = 0; bz_i < bz_blocks; bz_i++) {
+                        for (int bz_i = 0; bz_i < bz_blocks; bz_i += bz_stride) {
                                 load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i, bz_i);
                                 load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i, bx_i);
                                 // Multiply the blocks, and accumulate into the result
