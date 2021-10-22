@@ -255,87 +255,61 @@ __attribute__((no_builtin("memcpy", "memset")))
         // should always be) nonzero. This adds an extra BNE
         // instruction in the inner-loop. There should be some way to
         // signal to the compiler, perhaps with hb_assert?
-        int blocks = c1 / BX; // r2 / BX
 
-        // Local Storage for input blocks
+        // Algorithm: To maximize locality, each tile should compute a
+        // number of BX-by-BY output blocks by computing on blocks of
+        // input data.
+
+        // A single tile strides between output blocks in row-major
+        // order. For this implementation, the stride between output
+        // blocks is the tile group dimension. This maximizes cache
+        // locality for this particular setup.
+        int bx_blocks = c2 / BX;
+        int by_blocks = r1 / BY;
+        int bz_blocks = c1 / BX; // r2 / BX
+
+        int by_stride = BSG_TILE_GROUP_Y_DIM;
+        int bx_stride = BSG_TILE_GROUP_X_DIM;
+
+        // Local Storage for input/output blocks. Output blocks are
+        // sometimes called partial sums, too.
         // Locations:
         //    block_row is in Local Scratchpad
         //    block_col is in Local Scratchpad
         float block_row[BY * BX];
         float block_col[BX * BY];
+        float block_out[BY * BX];
 
-        // Local storage for partial sums (output)
-        // Location: Local Scratchpad
-        float psum[BY * BX];
-
+        // Initialize local output to 0.0f
         for (int i = 0; i < BY; i++) {
                 bsg_unroll(16)
                 for (int j = 0 ; j < BX; j ++){
-                        psum[i * BX + j] = 0.0f;
+                        block_out[i * BX + j] = 0.0f;
                 }
         }
-
-        // To maximize locality, each tile should compute a number of
-        // output blocks with spatially local data.
-        //
-        // This works best when the size (bytes) of the mat2 matrix
-        // row is a multiple of the number of bytes in a row of
-        // caches.
-        
-        // Split the work up into contiguous chunks, where each tile
-        // will compute on one chunk.
-        int bx_blocks = c2/BX;
-        int bx_each = bx_blocks / BSG_TILE_GROUP_X_DIM;
-        int bx_start = __bsg_x * (bx_each);
-        int bx_end = bx_start + bx_each;
-        // hb_assert(bx_each == 0);
 
         // Start profiling
         bsg_cuda_print_stat_kernel_start();
 
-        // Iterate through available output blocks in the X and Y
-        // dimensions. Jump by the tile group size between iterations
-        // to assign unique work.
-        // Yes, this should be TGID
-        for (int by_i = __bsg_y; by_i < r1/BY; by_i += BSG_TILE_GROUP_Y_DIM) {
-                for (int bx_i = __bsg_x; bx_i < c2/BX; bx_i += BSG_TILE_GROUP_X_DIM) {
-                        //for (int bx_i = bx_start; bx_i < bx_end ; bx_i ++) {
-
-                        // Multiply the blocks, and accumulate into the result
-
-                        if(PROFILE)
-                                bsg_cuda_print_stat_start(0);
-                        for (int bz_i = 0; bz_i < blocks; bz_i++) {
-                                if(PROFILE)
-                                        bsg_cuda_print_stat_start(1);
+        // Iterate through available output blocks in row-major order
+ block_y_loop:
+        for (int by_i = __bsg_y; by_i < by_blocks; by_i += by_stride) {
+        block_x_loop:
+                for (int bx_i = __bsg_x; bx_i < bx_blocks; bx_i += bx_stride) {
+                        // Multiply each pair of input blocks from a
+                        // given m1 row, and m2 column. 
+                block_z_loop:
+                        for (int bz_i = 0; bz_i < bz_blocks; bz_i++) {
                                 load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i, bz_i);
-                                if(PROFILE){
-                                        bsg_cuda_print_stat_end(1);
-                                        bsg_cuda_print_stat_start(2);
-                                }
                                 load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i, bx_i);
-                                if(PROFILE){
-                                        bsg_cuda_print_stat_end(2);
-                                        bsg_cuda_print_stat_start(3);
-                                }
-                                accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(psum, block_row, block_col);
-                                if(PROFILE){
-                                        bsg_cuda_print_stat_end(3);
-                                }
+                                // Multiply the blocks, and accumulate into the result
+                                accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, block_row, block_col);
                         }
-
-                        if(PROFILE)
-                                bsg_cuda_print_stat_start(4);
-
-                        // Store the result, AND zero the psum array
+                        // Store the result, AND zero the block_out array
                         // to leverage parallel remote and local
                         // stores.
                         prefetch<BY, BX>(result, result_strides, by_i, bx_i);
-                        store_block_and_reset<BY, BX>(psum, result, result_strides, by_i, bx_i);
-                        if(PROFILE){
-                                bsg_cuda_print_stat_end(4);
-                                bsg_cuda_print_stat_end(0);
-                        }
+                        store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i, bx_i);
                 }
         }
 
@@ -344,29 +318,8 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         return 0;
 }
-/*
-extern "C"
-int kernel_mm_opt_8x8(
-                  hb_tensor_t* _result,
-                  hb_tensor_t* _mat1,
-                  hb_tensor_t* _mat2) {
 
-        auto mat1 = HBTensor<float, 2>(_mat1);
-        auto mat2 = HBTensor<float, 2>(_mat2);
-        auto result = HBTensor<float, 2>(_result);
-        
-        kernel_mm_opt<8,8,false, false>((float* bsg_attr_noalias) result.data_ptr(),
-                                        result.get_strides(),
-                                        (float* bsg_attr_noalias) mat1.data_ptr(),
-                                        mat1.get_strides(),
-                                        mat1.dim(0), mat1.dim(1),
-                                        (float* bsg_attr_noalias) mat2.data_ptr(),
-                                        mat2.get_strides(),
-                                        mat2.dim(0), mat2.dim(1));
-        g_barrier.sync();
-        return 0;
-}
-*/
+// 16 by 16 is the biggest size that fits in local scratchpad
 extern "C"
 int kernel_mm_opt_16x16(
                   hb_tensor_t* _result,
