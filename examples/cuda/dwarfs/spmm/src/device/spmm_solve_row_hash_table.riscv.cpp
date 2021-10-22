@@ -20,10 +20,47 @@ static void spmm_scalar_row_product(float Aij, int Bi)
     kernel_remote_int_ptr_t cols = &B_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &B_lcl.val_remote_ptr[off];
 
-    // Max: unroll part of this loop to improve ILP
-    for (int nonzero = 0; nonzero < nnz; nonzero++) {
-        float Bij = vals[nonzero];
-        int Bj = cols[nonzero];
+    int nz = 0;
+#if defined(SPMM_PREFETCH)
+#define PREFETCH 4
+    for (; nz + PREFETCH < nnz; nz += PREFETCH) {
+        float Bij [PREFETCH];
+        int   Bj  [PREFETCH];
+        // prefetch data
+        bsg_unroll(8)
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            Bij[pre] = vals[nz+pre];
+            Bj [pre] = cols[nz+pre];
+        }
+        float Cij  [PREFETCH];
+        int   hash [PREFETCH];
+        // ilp fmul and hash function comp.
+        bsg_unroll(8)
+        for (int pre = 0; pre < PREFETCH; pre++) {
+#if defined(SPMM_NO_FLOPS)
+            Cij[pre] = Bij[pre];
+#else
+            Cij[pre]   = Aij * Bij[pre];
+#endif
+            hash[pre]  = hash_table::hash(Bj[pre]);
+        }
+        // update hash table
+        // serialized
+        // possible optimization is to unroll this loop
+        // by hand to extract more mlp
+        //
+        // this is not as straightforward as we'd expect
+        // given that collisions may occur and linked
+        // list traversal may occur
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            hash_table::update(Cij[pre], Bj[pre], hash[pre]);
+        }
+    }
+#endif
+
+    for (; nz < nnz; nz++) {
+        float Bij = vals[nz];
+        int Bj    = cols[nz];
 #if defined(SPMM_NO_FLOPS)
         float Cij = Aij;
 #else
