@@ -369,7 +369,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         // dimensions, kernel name, number and list of mat1 arguments
         //************************************************************
         bsg_pr_info("Enqueue Kernel\n");
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_mm_opt_16x16", sizeof(cuda_argv)/sizeof(cuda_argv[0]), cuda_argv);
+        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_mm_opt", sizeof(cuda_argv)/sizeof(cuda_argv[0]), cuda_argv);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize grid.\n");
                 return rc;

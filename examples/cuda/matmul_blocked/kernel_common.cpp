@@ -9,7 +9,7 @@ void* g_reduction_buffer;
 #ifdef HB_EMUL
 bsg_barrier g_barrier;
 #else
-bsg_barrier<bsg_tiles_X, bsg_tiles_Y> g_barrier;
+//bsg_barrier<bsg_tiles_X, bsg_tiles_Y> g_barrier;
 #endif // HB_EMUL
 
 // This is just Newlib's memcpy with bsg_attr_remote annotations
