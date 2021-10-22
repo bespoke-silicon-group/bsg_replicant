@@ -228,6 +228,8 @@ inline int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
                   uint32_t * bsg_attr_noalias mat2_strides,
                   int r2, int c2
                   )
+// clang doesn't like using memcpy/memset on bsg_attr_remote, so
+// disable them.
 #ifdef __clang__
 __attribute__((no_builtin("memcpy", "memset")))
 #endif
@@ -276,12 +278,16 @@ __attribute__((no_builtin("memcpy", "memset")))
         // Locations:
         //    block_row is in Local Scratchpad
         //    block_col is in Local Scratchpad
+        //    block_out is in Local Scratchpad
         float block_row[BY * BX];
         float block_col[BX * BY];
         float block_out[BY * BX];
 
         // Initialize local output to 0.0f
         for (int i = 0; i < BY; i++) {
+                // Unroll by 16 because it is the maximum block size a
+                // tile can handle. Any smaller value will be
+                // completely unrolled
                 bsg_unroll(16)
                 for (int j = 0 ; j < BX; j ++){
                         block_out[i * BX + j] = 0.0f;
@@ -321,7 +327,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 
 // 16 by 16 is the biggest size that fits in local scratchpad
 extern "C"
-int kernel_mm_opt_16x16(
+int kernel_mm_opt(
                   hb_tensor_t* _result,
                   hb_tensor_t* _mat1,
                   hb_tensor_t* _mat2) {
@@ -330,7 +336,7 @@ int kernel_mm_opt_16x16(
         auto mat2 = HBTensor<float, 2>(_mat2);
         auto result = HBTensor<float, 2>(_result);
         
-        kernel_mm_opt<16,16,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
+        kernel_mm_opt<BLOCK_DIM,BLOCK_DIM,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
                                         result.get_strides(),
                                         (float bsg_attr_remote * bsg_attr_noalias) mat1.data_ptr(),
                                         mat1.get_strides(),
