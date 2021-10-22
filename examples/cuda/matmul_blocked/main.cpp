@@ -106,9 +106,9 @@ int kernel_matrix_mul (int argc, char **argv) {
         //************************************************************
         hb_mc_dimension_t dev_dim = hb_mc_config_get_dimension_vcore(hb_mc_manycore_get_config(device.mc));
 
-        hb_mc_dimension_t tg_dim = { .x = dev_dim.x, .y = dev_dim.y };
+        hb_mc_dimension_t tg_dim = { .x = bsg_tiles_X, .y = bsg_tiles_Y };
 
-        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+        hb_mc_dimension_t grid_dim = { .x = dev_dim.x/tg_dim.x, .y = dev_dim.y/tg_dim.y};
 
 
         //************************************************************
