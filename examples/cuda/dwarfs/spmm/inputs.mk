@@ -59,6 +59,9 @@ offshore__nnz 		= 4242673
 $(offshore): url=https://suitesparse-collection-website.herokuapp.com/MM/Um/offshore.tar.gz
 $(offshore): tar=offshore.tar.gz
 
+############
+# 08blocks #
+############
 INPUTS += 08blocks
 08blocks = $(INPUTS_DIR)/08blocks/08blocks.mtx
 08blocks__directed = yes
@@ -69,6 +72,49 @@ INPUTS += 08blocks
 08blocks__nnz  = 592
 $(08blocks): url=https://suitesparse-collection-website.herokuapp.com/MM/JGD_SPG/08blocks.tar.gz
 $(08blocks): tar=08blocks.tar.gz
+
+##############
+# roadNet-CA #
+##############
+INPUTS += roadNet-CA
+roadNet-CA = $(INPUTS_DIR)/roadNet-CA/roadNet-CA.mtx
+roadNet-CA__directed = no
+roadNet-CA__weighted = no
+roadNet-CA__zero-indexed = no
+roadNet-CA__rows = 1971281
+roadNet-CA__cols = 1971281
+roadNet-CA__nnz  = 5533214
+$(roadNet-CA): url=https://suitesparse-collection-website.herokuapp.com/MM/SNAP/roadNet-CA.tar.gz
+$(roadNet-CA): tar=roadNet-CA.tar.gz
+
+################
+# road_central #
+################
+INPUTS += road_central
+road_central = $(INPUTS_DIR)/road_central/road_central.mtx
+road_central__directed = no
+road_central__weighted = no
+road_central__zero-indexed = no
+road_central__rows = 14081816
+road_central__cols = 14081816
+road_central__nnz  = 33866826
+$(road_central): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_central.tar.gz
+$(road_central): tar=road_central.tar.gz
+
+############
+# road_usa #
+############
+INPUTS += road_usa
+road_usa = $(INPUTS_DIR)/road_usa/road_usa.mtx
+road_usa__directed = no
+road_usa__weighted = no
+road_usa__zero-indexed = no
+road_usa__rows = 23947347
+road_usa__cols = 23947347
+road_usa__nnz  = 57708624
+$(road_usa): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_usa.tar.gz
+$(road_usa): tar=road_usa.tar.gz
+
 
 # Download and unpack
 $(foreach i,$(INPUTS),$($i)):
