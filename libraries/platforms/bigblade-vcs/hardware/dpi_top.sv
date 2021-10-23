@@ -261,6 +261,7 @@ module replicant_tb_top
        ,.ep_fifo_els_p(ep_fifo_els_lp)
        ,.dpi_fifo_els_p(bsg_machine_dpi_fifo_els_gp)
        ,.fifo_width_p(128) // It would be better to read this from somewhere
+       ,.rev_fifo_els_p(3) // Necessary for manycore correctness.
        ,.rom_els_p(bsg_machine_rom_els_gp)
        ,.rom_width_p(bsg_machine_rom_width_gp)
        ,.rom_arr_p(bsg_machine_rom_arr_gp)
