@@ -14,16 +14,16 @@ class bsg_tile_group_strider{
 
         static const unsigned int Y_STRIDE = (1 << GROUP_Y_CORD_SHIFT);
         static const unsigned int X_STRIDE = (1 << GROUP_X_CORD_SHIFT);
-        static const unsigned int X_MASK = ~(MAKE_MASK(GROUP_Y_CORD_WIDTH - (unsigned int)(log2(TG_Y))) << ((unsigned int)(log2(TG_Y)) + GROUP_Y_CORD_SHIFT));
-        static const unsigned int Y_MASK = ~(MAKE_MASK(GROUP_X_CORD_WIDTH - (unsigned int)(log2(TG_X))) << ((unsigned int)(log2(TG_X)) + GROUP_X_CORD_SHIFT));
+        static const unsigned int Y_MASK = ~(MAKE_MASK(GROUP_Y_CORD_WIDTH - (unsigned int)(log2(TG_Y))) << ((unsigned int)(log2(TG_Y)) + GROUP_Y_CORD_SHIFT));
+        static const unsigned int X_MASK = ~(MAKE_MASK(GROUP_X_CORD_WIDTH - (unsigned int)(log2(TG_X))) << ((unsigned int)(log2(TG_X)) + GROUP_X_CORD_SHIFT));
 
 protected:
 public:
         T *ptr;
-        bsg_tile_group_strider(T *p){
+        bsg_tile_group_strider(T *p, int x, int y){
                 ptr =(T*)( ((1 << GROUP_PREFIX_SHIFT)
-                            | (__bsg_y << GROUP_Y_CORD_SHIFT)
-                            | (__bsg_x << GROUP_X_CORD_SHIFT)
+                            | (y << GROUP_Y_CORD_SHIFT)
+                            | (x << GROUP_X_CORD_SHIFT)
                             | ((unsigned int) p)));
         }
 

@@ -378,15 +378,15 @@ __attribute__((no_builtin("memcpy", "memset")))
         // in the output matrix. This will be the variable
         // tile_group_output_anchor_x/y (Shorthand: OTAX/OTAY):
 
-        // OTAX = GDX * TBX * tx_i
-        // OTAY = GBY * TBY * ty_i
+        // OTAX = TBX * tx_i
+        // OTAY = TBY * ty_i
 
         // The group block anchor coordinates for M1 and M2 are:
 
         // TM1AX = TBX * tz_i
-        // TM1AY = GDY * TBY * ty_i
+        // TM1AY = TBY * ty_i
 
-        // TM2AX = GDX * TBY * tx_i
+        // TM2AX = TBY * tx_i
         // TM2AY = TBX * tz_i
 
         // Each tile is responsible for loading a BX x BY block from
@@ -481,7 +481,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         //    for(y_i = 0; y_i < BY; y_i ++){
         //       for(x_i = 0; x_i < BX; x_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
-        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
+        //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] * pM2[z_i][__bsg_y * BX + x_i];
         //    pM1 = bsg_remote_ptr(lM1, __bsg_x + b_i, 0) -- row major
         //    pM2 = bsg_remote_ptr(lM1, 0, __bsg_y + b_i) -- column major
 
@@ -591,10 +591,9 @@ __attribute__((no_builtin("memcpy", "memset")))
         // Start profiling
         bsg_cuda_print_stat_kernel_start();
 
-        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row);
-        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col);
+        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row, 0, __bsg_y);
+        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col, __bsg_x, 0);
  block_y_loop:
-        // TODO: Double check __bsg_y, __bsg_x
         for (int by_i = __bsg_tile_group_id_y; by_i < by_blocks; by_i += by_stride) {
         block_x_loop:
                 for (int bx_i = __bsg_tile_group_id_x; bx_i < bx_blocks; bx_i += bx_stride) {
@@ -603,7 +602,8 @@ __attribute__((no_builtin("memcpy", "memset")))
                 block_z_loop:
                         for (int bz_i = 0; bz_i < bz_blocks; bz_i += bz_stride) {
                                 load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bz_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-                                load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i * BSG_TILE_GROUP_X_DIM + __bsg_x, by_i * BSG_TILE_GROUP_Y_DIM * __bsg_y);
+                                load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
+                                bsg_fence();
                                 bsg_barrier_hw_tile_group_sync();
 
                                 for(int b_i = 0; b_i < BSG_TILE_GROUP_X_DIM; b_i ++){
@@ -612,14 +612,13 @@ __attribute__((no_builtin("memcpy", "memset")))
                                         prow.stride();
                                         pcol.stride();
                                 }
-                                bsg_barrier_hw_tile_group_sync();                                
+                                bsg_barrier_hw_tile_group_sync();
                         }
-
                         // Store the result, AND zero the block_out array
                         // to leverage parallel remote and local
                         // stores.
                         prefetch<BY, BX>(result, result_strides, by_i, bx_i);
-                        store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i, bx_i);
+                        store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                 }
         }
 
