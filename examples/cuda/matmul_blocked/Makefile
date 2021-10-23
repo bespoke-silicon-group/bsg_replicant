@@ -55,7 +55,7 @@ KERNEL_NAME = matmul_blocked
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
-BLOCK_DIM = 4
+BLOCK_DIM = 16
 # Tile Group Dimensions
 TILE_GROUP_DIM_X = 2
 TILE_GROUP_DIM_Y = 2

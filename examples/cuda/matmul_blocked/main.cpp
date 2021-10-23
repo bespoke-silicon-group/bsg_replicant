@@ -429,6 +429,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         for(int i = 0; i < Hresult.N; ++i){
                 sse += (Hresult.data[i] - Hout.data[i]) * (Hresult.data[i] - Hout.data[i]);
         }
+        /*
         for (int y = 0; y < Hresult.sizes[0]; ++y) {
                 for (int x = 0; x < Hresult.sizes[1]; ++x) {
                         printf("%4.0f ", Hout.data[y * Hout.strides[0] + x]);
@@ -442,7 +443,7 @@ int kernel_matrix_mul (int argc, char **argv) {
                         printf("%4.0f ", Hresult.data[y * Hresult.strides[0] + x]);
                 }
                 printf("\n");
-        }
+                }*/
 
         if (sse >= .01) {
                 bsg_pr_err(BSG_RED("Matrix Mismatch.(SSE: %f)\n"), sse);
