@@ -117,7 +117,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         hb_mc_host_tensor_t<float> Hmat1, Hmat2, Hout, Hresult;
 
         // 256 x 256 x 256
-        uint32_t M = BLOCK_DIM * dev_dim.y;
+        uint32_t M = BLOCK_DIM * dev_dim.y * 2;
         uint32_t N = BLOCK_DIM * 16;
         uint32_t P = BLOCK_DIM * dev_dim.x;
 
@@ -216,8 +216,11 @@ int kernel_matrix_mul (int argc, char **argv) {
         Hmat1.strides = new uint32_t[Hmat1.dims];
         Hmat1.strides[0] = Hmat1.sizes[1];
         Hmat1.strides[1] = 1;
-        for (uint64_t i = 0; i < Hmat1.N; ++i) {
-                Hmat1.data[i] = distribution(generator);
+        for (int y = 0; y < Hmat1.sizes[0]; ++y) {
+                for (int x = 0; x < Hmat1.sizes[1]; ++x) {
+                        if(x == y)
+                                Hmat1.data[y * Hmat1.strides[0] + x] = 1;
+                }
         }
 
         Hmat2.data = new float[Hmat2.N];
@@ -228,7 +231,8 @@ int kernel_matrix_mul (int argc, char **argv) {
         Hmat2.strides[0] = Hmat2.sizes[1];
         Hmat2.strides[1] = 1;
         for (uint64_t i = 0; i < Hmat2.N; ++i) {
-                Hmat2.data[i] = distribution(generator);
+                Hmat2.data[i] = i;
+                //Hmat2.data[i] = distribution(generator);
         }
 
         Hout.data = new float[Hout.N];
@@ -424,6 +428,20 @@ int kernel_matrix_mul (int argc, char **argv) {
         double sse = 0;
         for(int i = 0; i < Hresult.N; ++i){
                 sse += (Hresult.data[i] - Hout.data[i]) * (Hresult.data[i] - Hout.data[i]);
+        }
+        for (int y = 0; y < Hresult.sizes[0]; ++y) {
+                for (int x = 0; x < Hresult.sizes[1]; ++x) {
+                        printf("%4.0f ", Hout.data[y * Hout.strides[0] + x]);
+                }
+                printf("\n");
+        }
+
+                bsg_pr_info("\n");
+        for (int y = 0; y < Hresult.sizes[0]; ++y) {
+                for (int x = 0; x < Hresult.sizes[1]; ++x) {
+                        printf("%4.0f ", Hresult.data[y * Hresult.strides[0] + x]);
+                }
+                printf("\n");
         }
 
         if (sse >= .01) {
