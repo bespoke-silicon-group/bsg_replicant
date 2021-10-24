@@ -149,6 +149,7 @@ RISCV_TARGET_OBJECTS += spmm_dynamic.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_sort_row.riscv.rvo
 RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=$(shell echo 128*6 | bc)
 #RISCV_CCPPFLAGS += -DCOMPLEX_HASH
 RISCV_CCPPFLAGS += -DALIGNED_TABLE
@@ -158,6 +159,7 @@ RISCV_TARGET_OBJECTS += spmm.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_solve_row_hash_table.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_compute_offsets_sum_tree.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_copy_results.riscv.rvo
+RISCV_TARGET_OBJECTS += spmm_sort_row.riscv.rvo
 RISCV_CCPPFLAGS += -DSPMM_SOLVE_ROW_LOCAL_DATA_WORDS=0
 endif
 RISCV_TARGET_OBJECTS += spmm_init.riscv.rvo
