@@ -1,4 +1,5 @@
 #include "spmm.hpp"
+#include "spmm_barrier.hpp"
 
 thread std::atomic<intptr_t> *spmm_mem_pool = nullptr;
 thread sparse_matrix_t A_lcl;
@@ -26,6 +27,6 @@ void spmm_init(sparse_matrix_t *__restrict__ A_ptr, // csr
     C_glbl_p = C_ptr;
     
     spmm_mem_pool = mem_pool_arg;
-
+    barrier::spmm_barrier_init();
     
 }
