@@ -407,7 +407,7 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 	$(RISCV_OBJDUMP) -dS $<
 
 kernel.link.clean:
-	rm -rf *.riscv *.rvo.S *.rvo.ll $(RISCV_LINK_SCRIPT) libbsg_manycore_riscv.a
+	rm -rf *.riscv *.rvo.S *.rvo.ll $(RISCV_LINK_SCRIPT) libbsg_manycore_objects.a
 
 
 .PRECIOUS: %.riscv
