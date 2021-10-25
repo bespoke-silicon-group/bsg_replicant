@@ -88,6 +88,12 @@ int test_dma (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
+                hb_mc_eva_t alignment
+                    = device.mc->config.pod_shape.x
+                    * 2
+                    * device.mc->config.vcache_block_words
+                    * sizeof(int);
+
                 /**********/
                 /* Read A */
                 /**********/
