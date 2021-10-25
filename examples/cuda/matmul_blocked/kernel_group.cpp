@@ -146,8 +146,9 @@ inline void accum_block(float* bsg_attr_noalias dest,
                                 //     row should be in registers (for SBX == 4)
                                 float col[SBY];
                                 float row[SBX];
-
+                                /*
                                 // Load an SBY-by-1 sub-column of mat1,
+                                // TODO: These are not being reordered/interleaved
                                 if (!M1_TRANSPOSE) {
                                         // Location: (pointer to) Scratchpad
                                         float * bsg_attr_noalias col_anchor = &(mat1[sb_anchor_y * BX + sbx_i]);
@@ -162,14 +163,30 @@ inline void accum_block(float* bsg_attr_noalias dest,
                                         for(int i = 0; i < SBY; ++i){
                                                 col[i] = col_anchor[i];
                                         }
+                                        }*/
+
+                                float * bsg_attr_noalias col_anchor;
+                                if (!M1_TRANSPOSE) {
+                                        // Location: (pointer to) Scratchpad
+                                        col_anchor = &(mat1[sb_anchor_y * BX + sbx_i]);
+                                } else {
+                                        // Location: (pointer to) Scratchpad
+                                        col_anchor = &(mat1[sb_anchor_y + sbx_i * BY]);
                                 }
 
+                                
                                 // Load an SBX-by-1 sub-column of mat2
                                 // Location: (pointer to) Scratchpad
                                 float * bsg_attr_noalias row_anchor = &(mat2[sbx_i * BY + sb_anchor_x]);
                                 bsg_unroll(16)
                                 for(int i = 0; i < SBX; ++i){
                                     row[i] = row_anchor[i];
+                                    if (!M1_TRANSPOSE) {
+                                            col[i] = col_anchor[i * BX];
+                                    } else {
+                                            col[i] = col_anchor[i];
+                                    }
+                                        
                                 }
 
                                 // Perform a SBY-by-1 x 1-by-SBX
@@ -589,10 +606,12 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         bsg_barrier_hw_tile_group_init();
         // Start profiling
+        bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
+        bsg_cuda_print_stat_start(1);
 
-        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row, 0, __bsg_y);
-        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col, __bsg_x, 0);
+        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row, __bsg_x, __bsg_y);
+        bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col, __bsg_x, __bsg_x);
  block_y_loop:
         for (int by_i = __bsg_tile_group_id_y; by_i < by_blocks; by_i += by_stride) {
         block_x_loop:
@@ -617,12 +636,14 @@ __attribute__((no_builtin("memcpy", "memset")))
                         // Store the result, AND zero the block_out array
                         // to leverage parallel remote and local
                         // stores.
-                        prefetch<BY, BX>(result, result_strides, by_i, bx_i);
+                        prefetch<BY, BX>(result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                         store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                 }
         }
 
+        bsg_cuda_print_stat_end(1);
         // End profiling
+        bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_end();
 
         return 0;

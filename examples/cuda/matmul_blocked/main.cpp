@@ -117,7 +117,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         hb_mc_host_tensor_t<float> Hmat1, Hmat2, Hout, Hresult;
 
         // 256 x 256 x 256
-        uint32_t M = BLOCK_DIM * dev_dim.y * 2;
+        uint32_t M = BLOCK_DIM * dev_dim.y;
         uint32_t N = BLOCK_DIM * 16;
         uint32_t P = BLOCK_DIM * dev_dim.x;
 
