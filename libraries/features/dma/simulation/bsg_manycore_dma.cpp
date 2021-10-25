@@ -103,6 +103,37 @@ int hb_mc_dma_init_pod_X1Y1_X16_hbm(hb_mc_manycore_t *mc)
 
         return HB_MC_SUCCESS;
 }
+/**
+ * Initializes a specialized DRAM bank to channel map 1x1 pod model  */
+static
+int hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(hb_mc_manycore_t *mc)
+{
+        const hb_mc_config_t *cfg = &mc->config;
+        hb_mc_coordinate_t pod = {0,0};
+
+        hb_mc_idx_t bx = hb_mc_config_pod_vcore_origin(cfg, pod).x;
+        hb_mc_coordinate_t dram;
+        hb_mc_config_pod_foreach_dram(dram, pod, cfg)
+        {
+                hb_mc_idx_t id = hb_mc_config_dram_id(cfg, dram);
+                hb_mc_idx_t pid = hb_mc_config_pod_dram_id(cfg, dram);
+
+                int east_not_west = (dram.x - bx) >= cfg->pod_shape.x/2;
+                cache_id_to_memory_id[id] = 0;
+
+                int idx = (dram.x-bx) % (cfg->pod_shape.x/2);
+                cache_id_to_bank_id[id] =
+                    east_not_west
+                    ? (hb_mc_config_is_dram_north(cfg, dram))
+                    ? (idx + 2*cfg->pod_shape.x/2)
+                    : (idx + 3*cfg->pod_shape.x/2)
+                    : (hb_mc_config_is_dram_north(cfg, dram))
+                    ? (idx + 0*cfg->pod_shape.x/2)
+                    : (idx + 1*cfg->pod_shape.x/2);
+        }
+
+        return HB_MC_SUCCESS;
+}
 
 /**
  * Initializes a specialized DRAM bank to channel map for the BigBlade Chip with wormhole test memory
@@ -169,7 +200,7 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
         cache_id_to_memory_id = new parameter_t [hb_mc_vcache_num_caches(mc)];
         cache_id_to_bank_id   = new parameter_t [hb_mc_vcache_num_caches(mc)];
         if (mc->config.chip_id == HB_MC_CHIP_ID_PAPER) {
-                return hb_mc_dma_init_default(mc);
+                return hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(mc);
         }
 
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2
