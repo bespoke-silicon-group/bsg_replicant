@@ -82,7 +82,7 @@ int kernel_latency (int argc, char **argv) {
                 opts.mesh_dim.y = 1;
                 BSG_CUDA_CALL(hb_mc_device_pod_program_init_opts(&device, device.default_pod_id, bin_path, &opts));
 
-                uint32_t N = 16384;
+                uint32_t N = 16384 * 16;
                 eva_t _A;
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, N * sizeof(uint32_t), &_A));
 
