@@ -43,19 +43,20 @@
 // matches the mapping defined in the hardware.                              //
 //                                                                           //
 // To do this, we iterate over each address bit, for each bank and each pod. //
-// We write the NPA to the address using DMA and then read it bank           //
+// We write the NPA to the address using DMA and then read it back           //
 // using the on-chip network.                                                //
 ///////////////////////////////////////////////////////////////////////////////
 
 
-#define bitidx_lo 7
-#define bitidx_hi 24
-
 int test_dma (int argc, char **argv) {
-    hb_mc_manycore_t mc;
+    hb_mc_manycore_t mc = {};
     BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_dma", 0));
 
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(&mc);
+    // sweep from at least the cache line granularity
+    unsigned bitidx_lo = __builtin_ctz(cfg->vcache_block_words * sizeof(int));
+    // sweep upto the number of addressable bits for a vcache
+    unsigned bitidx_hi = __builtin_ctz(hb_mc_config_get_dram_bank_size(cfg));
 
     // do this foreach pod
     hb_mc_coordinate_t pod;
@@ -84,6 +85,7 @@ int test_dma (int argc, char **argv) {
             }
         }
 
+        int err = HB_MC_SUCCESS;
         hb_mc_config_pod_foreach_dram(bank, pod, cfg)
         {
             unsigned bitidx;
@@ -120,7 +122,7 @@ int test_dma (int argc, char **argv) {
                     data_i.y   != data_o.y ||
                     data_i.epa != data_o.epa) {
                     bsg_pr_err(BSG_RED("Mismatch") "\n");
-                    return HB_MC_FAIL;
+                    err = HB_MC_FAIL;
                 }
             }
         }
@@ -128,7 +130,7 @@ int test_dma (int argc, char **argv) {
     }
 
     BSG_CUDA_CALL(hb_mc_manycore_exit(&mc));
-    return HB_MC_SUCCESS;
+    return err;
 }
 
-declare_program_main("test_rom", test_dma);
+declare_program_main("test_dma", test_dma);

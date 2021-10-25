@@ -67,8 +67,6 @@ include $(EXAMPLES_PATH)/compilation.mk
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
-
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
 
