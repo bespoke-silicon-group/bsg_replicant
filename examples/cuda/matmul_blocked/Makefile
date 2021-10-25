@@ -94,11 +94,11 @@ RISCV_INCLUDES += -I.
 # the default. To view the disassembly, type `make kernel.dis`
 
 # Clang does not work as well as GCC in this instance. It seems to refuse to inline...
-#RISCV_CXX = $(RISCV_CLANGXX)
+# RISCV_CXX = $(RISCV_CLANGXX)
 kernel.riscv: kernel_common.rvo
 kernel.riscv: kernel_group.rvo
 
-RISCV_CCPPFLAGS += -O3
+RISCV_CCPPFLAGS += -O3 -std=c++14
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -DBLOCK_DIM=$(BLOCK_DIM)
