@@ -87,6 +87,7 @@ int test_dma (int argc, char **argv) {
             }
         }
 
+        int err = HB_MC_SUCCESS;
         hb_mc_config_pod_foreach_dram(bank, pod, cfg)
         {
             unsigned bitidx;
