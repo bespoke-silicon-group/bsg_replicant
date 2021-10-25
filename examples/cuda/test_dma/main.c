@@ -103,8 +103,8 @@ int test_dma (int argc, char **argv) {
 
                 for (int i = 0; i < N; i++) A_host[i] = i;
 
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N + alignment, &A_dev));
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N + alignment, &B_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N + alignment, &A_dev));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t) * N + alignment, &B_dev));
 
                 hb_mc_eva_t rem;
                 // align A_dev + B_dev to cache 0
@@ -114,10 +114,6 @@ int test_dma (int argc, char **argv) {
                 rem = B_dev % alignment;
                 B_dev += (alignment - rem);
 
-                //A_dev = 0x81083cc0;
-                A_dev = 0x81083cc0;
-                B_dev = A_dev + alignment;
-                
                 hb_mc_dma_htod_t htod = {
                         .d_addr = A_dev,
                         .h_addr = &A_host[0],
