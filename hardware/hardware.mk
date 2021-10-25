@@ -241,6 +241,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter bit [bsg_machine_rom_width_gp-1:0] bsg_machine_rom_arr_gp [bsg_machine_rom_els_gp-1:0] = '{$(ROM_STR)};" >> $@
 	@echo "parameter int bsg_machine_pods_x_gp = $(BSG_MACHINE_PODS_X);" >> $@
 	@echo "parameter int bsg_machine_pods_y_gp = $(BSG_MACHINE_PODS_Y);" >> $@
+	@echo "parameter int bsg_machine_pods_cycle_time_ps_gp = $(BSG_MACHINE_PODS_CYCLE_TIME_PS);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_pod_tiles_y_gp = $(BSG_MACHINE_POD_TILES_Y);" >> $@
 	@echo "parameter int bsg_machine_pod_tiles_x_gp = $(BSG_MACHINE_POD_TILES_X);" >> $@
@@ -267,6 +268,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter int bsg_machine_llcache_channel_width_gp = $(BSG_MACHINE_VCACHE_DMA_DATA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_llcache_dram_channel_ratio_gp = $(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL);" >> $@
 	@echo >> $@
+	@echo "parameter int bsg_machine_dram_cycle_time_ps_gp = $(BSG_MACHINE_DRAM_CYCLE_TIME_PS);" >> $@
 	@echo "parameter int bsg_machine_dram_bank_words_gp = $(BSG_MACHINE_DRAM_BANK_WORDS);" >> $@
 	@echo "parameter int bsg_machine_dram_channels_gp = $(BSG_MACHINE_DRAM_CHANNELS);" >> $@
 	@echo "parameter int bsg_machine_dram_words_gp = $(BSG_MACHINE_DRAM_WORDS);" >> $@
