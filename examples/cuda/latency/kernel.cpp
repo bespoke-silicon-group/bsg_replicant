@@ -10,8 +10,10 @@ int kernel_latency(int bsg_attr_remote * bsg_attr_noalias A, unsigned int stride
         int sum = 0;
         bsg_cuda_print_stat_kernel_start();
 
+        bsg_unroll(1)
         for (int i = 0; i < limit; i += stride){
                 sum += A[i];
+                bsg_compiler_memory_barrier();
         }
         bsg_cuda_print_stat_kernel_end();
         A[0] = sum;

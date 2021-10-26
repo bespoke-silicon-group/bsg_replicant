@@ -268,7 +268,6 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter int bsg_machine_llcache_channel_width_gp = $(BSG_MACHINE_VCACHE_DMA_DATA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_llcache_dram_channel_ratio_gp = $(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL);" >> $@
 	@echo >> $@
-	@echo "parameter int bsg_machine_dram_cycle_time_ps_gp = $(BSG_MACHINE_DRAM_CYCLE_TIME_PS);" >> $@
 	@echo "parameter int bsg_machine_dram_bank_words_gp = $(BSG_MACHINE_DRAM_BANK_WORDS);" >> $@
 	@echo "parameter int bsg_machine_dram_channels_gp = $(BSG_MACHINE_DRAM_CHANNELS);" >> $@
 	@echo "parameter int bsg_machine_dram_words_gp = $(BSG_MACHINE_DRAM_WORDS);" >> $@

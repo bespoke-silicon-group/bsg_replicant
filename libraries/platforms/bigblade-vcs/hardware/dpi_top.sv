@@ -45,7 +45,6 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_dram_channel_ratio_gp = %d", bsg_machine_llcache_dram_channel_ratio_gp);
 
-      $display("[INFO][TESTBENCH] bsg_machine_dram_cycle_time_ps_gp     = %d", bsg_machine_dram_cycle_time_ps_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_channels_gp          = %d", bsg_machine_dram_channels_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_words_gp             = %d", bsg_machine_dram_words_gp);
@@ -153,7 +152,12 @@ module replicant_tb_top
    assign core_clk = core_bit_clk;
 
    bsg_nonsynth_clock_gen
-     #(.cycle_time_p(bsg_machine_dram_cycle_time_ps_gp))
+`ifdef BSG_MACHINE_DRAMSIM3_PKG
+  `define dram_pkg `BSG_MACHINE_DRAMSIM3_PKG
+     #(.cycle_time_p(`dram_pkg::tck_ps))
+ `else
+     #(.cycle_time_p(bsg_machine_pods_cycle_time_ps_gp))
+ `endif
    dram_clk_gen
      (.o(dram_bit_clk));
    assign dram_clk = dram_bit_clk;
