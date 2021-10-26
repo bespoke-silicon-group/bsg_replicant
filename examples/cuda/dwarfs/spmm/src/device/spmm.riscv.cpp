@@ -57,9 +57,10 @@ extern "C" int kernel_spmm(
     bsg_cuda_print_stat_start(TAG_ROW_SORT);
     
     // foreach row
+#ifndef SPMM_SKIP_SORTING
     for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS)
         spmm_sort_row(Ci);
-    
+#endif
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SORT);
 
