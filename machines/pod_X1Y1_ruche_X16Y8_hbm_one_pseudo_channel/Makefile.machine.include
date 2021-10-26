@@ -34,6 +34,9 @@ BSG_MACHINE_CHIP_ID		      = 15ca2022
 BSG_MACHINE_PODS_X                    = 1
 BSG_MACHINE_PODS_Y                    = 1
 
+# 1.5 GHz Core Clock
+BSG_MACHINE_PODS_CYCLE_TIME_PS         = 667
+
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
 # 0 is for Vanilla Core (RV32).

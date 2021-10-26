@@ -25,20 +25,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-############################################################################################
-# TIMING_MESH_8_4: this is a 8x4 array with v-caches on top and bottom (a “8x4 pod”).      #
-# Each v-cache is mapped to a separate HBM bank.                                           #
-# There is one HBM channel.                                                                #
-# There is a vanilla, 2D mesh network (no ruche links)                                     #
-# This is probably not a sensible configuration, as the tile to channel ratio is very low. #
-# But for memory bound benchmarks, it may be reasonable to use for iteration.              #
-############################################################################################
-
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Chip Pod Dimensions
 BSG_MACHINE_PODS_X                    = 4
 BSG_MACHINE_PODS_Y                    = 4
+
+# 1 GHz Core Clock
+BSG_MACHINE_PODS_CYCLE_TIME_PS         = 1000
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)

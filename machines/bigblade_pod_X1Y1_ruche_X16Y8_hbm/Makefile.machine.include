@@ -40,6 +40,11 @@
 BSG_MACHINE_PODS_X                    = 1
 BSG_MACHINE_PODS_Y                    = 1
 
+# 1 GHz Core Clock
+BSG_MACHINE_PODS_CYCLE_TIME_PS         = 1000
+# 1 GHz DRAM Clock
+BSG_MACHINE_DRAM_CYCLE_TIME_PS         = 1000
+
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
 # 0 is for Vanilla Core (RV32).

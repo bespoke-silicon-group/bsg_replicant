@@ -241,6 +241,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter bit [bsg_machine_rom_width_gp-1:0] bsg_machine_rom_arr_gp [bsg_machine_rom_els_gp-1:0] = '{$(ROM_STR)};" >> $@
 	@echo "parameter int bsg_machine_pods_x_gp = $(BSG_MACHINE_PODS_X);" >> $@
 	@echo "parameter int bsg_machine_pods_y_gp = $(BSG_MACHINE_PODS_Y);" >> $@
+	@echo "parameter int bsg_machine_pods_cycle_time_ps_gp = $(BSG_MACHINE_PODS_CYCLE_TIME_PS);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_pod_tiles_y_gp = $(BSG_MACHINE_POD_TILES_Y);" >> $@
 	@echo "parameter int bsg_machine_pod_tiles_x_gp = $(BSG_MACHINE_POD_TILES_X);" >> $@

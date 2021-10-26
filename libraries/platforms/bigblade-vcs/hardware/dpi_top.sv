@@ -16,6 +16,7 @@ module replicant_tb_top
       
       $display("==================== BSG MACHINE SETTINGS: ====================");
 
+      $display("[INFO][TESTBENCH] bsg_machine_pods_cycle_time_ps_gp     = %d", bsg_machine_pods_cycle_time_ps_gp);
       $display("[INFO][TESTBENCH] bsg_machine_pods_x_gp                 = %d", bsg_machine_pods_x_gp);
       $display("[INFO][TESTBENCH] bsg_machine_pods_y_gp                 = %d", bsg_machine_pods_y_gp);
 
@@ -87,8 +88,6 @@ module replicant_tb_top
    localparam bsg_machine_enable_cache_profiling_lp = 0;
 `endif
 
-   // Clock generator period
-   localparam lc_cycle_time_ps_lp = 1000;
 
    // Reset generator depth
    localparam reset_depth_lp = 3;
@@ -110,8 +109,8 @@ module replicant_tb_top
    // negative/positive edges and other modules can choose between bit
    // version (for non-synthesizable modules) and the logic version
    // (otherwise).
-   bit   bit_clk;
-   bit   bit_reset;
+   bit   core_bit_clk;
+   bit   core_bit_reset;
    logic core_clk;
    logic core_reset;
 
@@ -120,6 +119,7 @@ module replicant_tb_top
 
    logic mem_clk;
    logic mem_reset;
+   bit   mem_bit_clk;
 
    logic cache_clk;
    logic cache_reset;
@@ -145,18 +145,22 @@ module replicant_tb_top
    assign trace_en = dpi_trace_en;
    assign log_en = dpi_log_en;
 
-   // -Verilator uses a clock generator that is controlled by C/C++
-   // (bsg_nonsynth_dpi_clock_gen), whereas VCS uses the normal
-   // nonsynthesizable clock generator (bsg_nonsynth_clock_gen)
-`ifdef VERILATOR
-   bsg_nonsynth_dpi_clock_gen
-`else
    bsg_nonsynth_clock_gen
-`endif
-     #(.cycle_time_p(lc_cycle_time_ps_lp))
+     #(.cycle_time_p(bsg_machine_pods_cycle_time_ps_gp))
    core_clk_gen
-     (.o(bit_clk));
-   assign core_clk = bit_clk;
+     (.o(core_bit_clk));
+   assign core_clk = core_bit_clk;
+
+   bsg_nonsynth_clock_gen
+`ifdef BSG_MACHINE_DRAMSIM3_PKG
+  `define dram_pkg `BSG_MACHINE_DRAMSIM3_PKG
+     #(.cycle_time_p(`dram_pkg::tck_ps))
+ `else
+     #(.cycle_time_p(bsg_machine_pods_cycle_time_ps_gp))
+ `endif
+   dram_clk_gen
+     (.o(dram_bit_clk));
+   assign dram_clk = dram_bit_clk;
 
    bsg_nonsynth_reset_gen
      #(
@@ -166,10 +170,10 @@ module replicant_tb_top
        )
    reset_gen
      (
-      .clk_i(bit_clk)
-      ,.async_reset_o(bit_reset)
+      .clk_i(core_bit_clk)
+      ,.async_reset_o(core_bit_reset)
       );
-   assign core_reset = bit_reset;
+   assign core_reset = core_bit_reset;
 
    bsg_nonsynth_manycore_testbench
      #(
@@ -224,6 +228,7 @@ module replicant_tb_top
    testbench
      (
       .clk_i(core_clk)
+      ,.dram_clk_i(dram_clk)
       ,.reset_i(core_reset)
 
       ,.io_link_sif_i(host_link_sif_li)
