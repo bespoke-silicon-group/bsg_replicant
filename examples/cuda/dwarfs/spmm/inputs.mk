@@ -90,30 +90,30 @@ $(roadNet-CA): tar=roadNet-CA.tar.gz
 ################
 # road_central #
 ################
-INPUTS += road_central
-road_central = $(INPUTS_DIR)/road_central/road_central.mtx
-road_central__directed = no
-road_central__weighted = no
-road_central__zero-indexed = no
-road_central__rows = 14081816
-road_central__cols = 14081816
-road_central__nnz  = 33866826
-$(road_central): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_central.tar.gz
-$(road_central): tar=road_central.tar.gz
+INPUTS += road-central
+road-central = $(INPUTS_DIR)/road_central/road_central.mtx
+road-central__directed = no
+road-central__weighted = no
+road-central__zero-indexed = no
+road-central__rows = 14081816
+road-central__cols = 14081816
+road-central__nnz  = 33866826
+$(road-central): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_central.tar.gz
+$(road-central): tar=road_central.tar.gz
 
 ############
 # road_usa #
 ############
 INPUTS += road_usa
-road_usa = $(INPUTS_DIR)/road_usa/road_usa.mtx
-road_usa__directed = no
-road_usa__weighted = no
-road_usa__zero-indexed = no
-road_usa__rows = 23947347
-road_usa__cols = 23947347
-road_usa__nnz  = 57708624
-$(road_usa): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_usa.tar.gz
-$(road_usa): tar=road_usa.tar.gz
+road-usa = $(INPUTS_DIR)/road_usa/road_usa.mtx
+road-usa__directed = no
+road-usa__weighted = no
+road-usa__zero-indexed = no
+road-usa__rows = 23947347
+road-usa__cols = 23947347
+road-usa__nnz  = 57708624
+$(road-usa): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_usa.tar.gz
+$(road-usa): tar=road_usa.tar.gz
 
 
 # Download and unpack
