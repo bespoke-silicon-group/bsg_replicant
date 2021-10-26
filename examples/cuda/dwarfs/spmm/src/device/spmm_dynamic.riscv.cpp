@@ -14,7 +14,9 @@
 #include "spmm_copy_results.hpp"
 #include "spmm_barrier.hpp"
 
-#define WORK_GRANULARITY 4
+#ifndef SPMM_WORK_GRANULARITY
+#error "define SPMM_WORK_GRANULARITY"
+#endif
 
 __attribute__((section(".dram")))
 std::atomic<int> rowq_solve;
@@ -56,12 +58,12 @@ extern "C" int kernel_spmm(
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 //#if 0
     // foreach row
-    for (int Ci_base = rowq_solve.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+    for (int Ci_base = rowq_solve.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed);
          Ci_base < row_stop;
-         Ci_base = rowq_solve.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
-        int Ci_stop = std::min(Ci_base+WORK_GRANULARITY, row_stop);
+         Ci_base = rowq_solve.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
         for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
-            spmm_solve_row(Ci);
+            spmm_solve_row(Ci);t
         }
     }
 //#endif
@@ -72,11 +74,11 @@ extern "C" int kernel_spmm(
 
     bsg_cuda_print_stat_start(TAG_ROW_SORT);
     // foreach row
-    for (int Ci_base = rowq_sort.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+    for (int Ci_base = rowq_sort.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed);
          Ci_base < row_stop;
-         Ci_base = rowq_sort.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
-        int Ci_stop = std::min(Ci_base+WORK_GRANULARITY, row_stop);
-        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {            
+         Ci_base = rowq_sort.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
+        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
             spmm_sort_row(Ci);
         }
     }
@@ -105,10 +107,10 @@ extern "C" int kernel_spmm(
 
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
     // foreach row
-    for (int Ci_base = rowq_cpy.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+    for (int Ci_base = rowq_cpy.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed);
          Ci_base < row_stop;
-         Ci_base = rowq_cpy.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
-        int Ci_stop = std::min(Ci_base+WORK_GRANULARITY, row_stop);
+         Ci_base = rowq_cpy.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
         for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
             spmm_copy_results(Ci);
         }

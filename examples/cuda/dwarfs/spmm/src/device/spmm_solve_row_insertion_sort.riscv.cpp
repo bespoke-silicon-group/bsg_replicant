@@ -8,9 +8,33 @@
 static thread spmm_partial_t parts [SPMM_SOLVE_ROW_LOCAL_DATA_WORDS/sizeof(spmm_partial_t)];
 static thread int            num_parts = 0;
 
+static void insert(int Cj, float Cij)
+{
+    spmm_partial_t newp;
+    newp.idx = Cj;
+    newp.val = Cij;
+    spmm_partial_t *p = std::lower_bound(
+        parts,
+        parts+num_parts,
+        newp,
+        [](const spmm_partial_t &l, const spmm_partial_t &r) {
+            return l.idx < r.idx;
+        });
 
-__attribute__((noinline))
-void spmm_scalar_row_product(float Aij, int Bi)
+    // insert or update?
+    if (p == parts+num_parts) {
+        *p = newp;
+        num_parts++;
+    } else if (p->idx == Cj) {
+        p->val += Cij;
+    } else {
+        std::memmove(p+1, p, sizeof(spmm_partial_t)*(num_parts-(p-&parts[0])));
+        *p = newp;
+        num_parts++;
+    }
+}
+
+static void spmm_scalar_row_product(float Aij, int Bi)
 {
     int off = B_lcl.mnr_off_ptr[Bi];
     int nnz = B_lcl.mjr_nnz_ptr[Bi];
@@ -19,33 +43,38 @@ void spmm_scalar_row_product(float Aij, int Bi)
     kernel_remote_int_ptr_t cols = &B_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &B_lcl.val_remote_ptr[off];
 
-    // Max: unroll part of this loop to improve ILP
-    for (int nonzero = 0; nonzero < nnz; nonzero++) {
-        float Bij = vals[nonzero];
-        int Bj = cols[nonzero];
+    int nz = 0;
+#if defined(SPMM_PREFETCH)
+#ifndef PREFETCH
+#define PREFETCH 4
+#endif
+    for (; nz + PREFETCH; nz += PREFETCH) {
+        float Bij [PREFETCH];
+        int   Bj  [PREFETCH];
+        bsg_unroll(8)
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            Bij[pre] = vals[nz+pre];
+            Bj [pre] = cols[nz+pre];
+        }
+
+        float Cij [PREFETCH];
+        bsg_unroll(8)
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            Cij[pre] = Bij[pre] * Aij;
+        }
+
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            insert(Bj[pre], Cij[pre]);
+        }
+    }
+#endif
+    for (; nz + PREFETCH; nz += PREFETCH) {
+        float Bij = vals[nz];
+        int Bj = cols[nz];
 
         float Cij = Aij * Bij;
 
-        spmm_partial_t newp;
-        newp.idx = Bj;
-        newp.val = Cij;
-        
-        spmm_partial_t *p = std::lower_bound(
-            parts,
-            parts+num_parts,
-            newp,
-            [](const spmm_partial_t&l, const spmm_partial_t&r) {return l.idx < r.idx;});
-
-        if (p == parts+num_parts) {
-            *p = newp;
-            num_parts++;
-        } else if (p->idx == Bj) {
-            p->val += Cij;
-        } else {
-            std::memmove(p+1, p, sizeof(spmm_partial_t)*(num_parts-(p-&parts[0])));
-            *p = newp;
-            num_parts++;
-        }
+        insert(Bj, Cij);
     }
 }
 
