@@ -73,6 +73,7 @@ extern "C" int kernel_spmm(
     barrier::spmm_barrier();
 
     bsg_cuda_print_stat_start(TAG_ROW_SORT);
+#ifndef SPMM_SKIP_SORTING
     // foreach row
     for (int Ci_base = rowq_sort.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed);
          Ci_base < row_stop;
@@ -82,6 +83,7 @@ extern "C" int kernel_spmm(
             spmm_sort_row(Ci);
         }
     }
+#endif
     bsg_cuda_print_stat_end(TAG_ROW_SORT);
 
     spmm_print_int(__bsg_id);
