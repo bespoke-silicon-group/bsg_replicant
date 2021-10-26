@@ -48,7 +48,7 @@ static void spmm_scalar_row_product(float Aij, int Bi)
 #ifndef PREFETCH
 #define PREFETCH 4
 #endif
-    for (; nz + PREFETCH; nz += PREFETCH) {
+    for (; nz + PREFETCH < nnz; nz += PREFETCH) {
         float Bij [PREFETCH];
         int   Bj  [PREFETCH];
         bsg_unroll(8)
@@ -68,7 +68,7 @@ static void spmm_scalar_row_product(float Aij, int Bi)
         }
     }
 #endif
-    for (; nz + PREFETCH; nz += PREFETCH) {
+    for (; nz < nnz; nz++) {
         float Bij = vals[nz];
         int Bj = cols[nz];
 

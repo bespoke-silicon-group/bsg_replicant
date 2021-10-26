@@ -9,7 +9,7 @@ SPMM_COPY_RESULTS_RV		= spmm_copy_results.riscv.rvo
 # don't use sort
 SPMM_SORT_ROW_RV		= 
 # use local memory
-SPMM_SOLVE_ROW_LOCAL_DATA_WORDS	= $(shell echo 256*3|bc)
+SPMM_SOLVE_ROW_LOCAL_DATA_WORDS	= 256
 # use prefetch
 SPMM_PREFETCH                   = yes
 # prefetch factor of 4
