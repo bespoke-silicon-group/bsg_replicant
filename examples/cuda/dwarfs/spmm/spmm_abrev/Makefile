@@ -8,9 +8,18 @@ get-rows		= $(firstword $(subst _, ,$(filter %_rows,$(subst __, ,$1))))
 get-opt			= $(firstword $(subst _, ,$(filter %_opt,$(subst __, ,$1))))
 get-parallel		= $(firstword $(subst _, ,$(filter %_parallel,$(subst __, ,$1))))
 
-# # full thing
+# optimized
 TESTS += $(call test-name,08blocks,0,300,yes,yes)
+TESTS += $(call test-name,wiki-vote,0,8297,yes,yes)
+TESTS += $(call test-name,roadNet-CA,0,1971281,yes,yes)
+#TESTS += $(call test-name,road-central,0,14081816,yes,yes)
+#TESTS += $(call test-name,road-usa,0,1024,yes,yes)
+# unoptimized
 TESTS += $(call test-name,08blocks,0,300,no,yes)
+TESTS += $(call test-name,wiki-vote,0,8297,no,yes)
+TESTS += $(call test-name,roadNet-CA,0,1971281,no,yes)
+#TESTS += $(call test-name,road-central,0,14081816,no,yes)
+#TESTS += $(call test-name,road-usa,0,23947347,no,yes)
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))

@@ -1,5 +1,6 @@
 #include "spmm_sort_row.hpp"
 #include <algorithm>
+#ifndef SPMM_SKIP_SORTING
 void spmm_sort_row(int Ci)
 {
     spmm_partial_t *partials = reinterpret_cast<spmm_partial_t*>(C_lcl.alg_priv_ptr[Ci]);
@@ -8,3 +9,4 @@ void spmm_sort_row(int Ci)
             return l.idx < r.idx;
         });
 }
+#endif
