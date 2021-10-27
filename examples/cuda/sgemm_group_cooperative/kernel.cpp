@@ -306,45 +306,51 @@ __attribute__((no_builtin("memcpy", "memset")))
         // Note: This only works for N x N tile groups where N is a
         // power of two. To put it in the symbols below:
 
-        // log2(TDX) == log2(TDY) == 0.
+        // log2(BSG_TILE_GROUP_X_DIM) == log2(BSG_TILE_GROUP_Y_DIM) == 0.
 
-        // Scale-up, matrix multiply: using groups of size TDX x TDY
-        // tiles, compute matrix multiply of matrices m1 (r1 x c1),
-        // and m2 (r2 x c2)
+        // Scale-up, cooperative, matrix multiply: using groups of
+        // size BSG_TILE_GROUP_X_DIM x BSG_TILE_GROUP_Y_DIM tiles,
+        // compute matrix multiply of matrices m1 (r1 x c1), and m2
+        // (r2 x c2)
+
+        // The number of tile groups launched is defined by the grid
+        // dimension: __bsg_grid_dim_x/y
+        
+        // Each group is uniquely defined by its tile group X/Y
+        // index, __bsg_tile_group_id_x/y
+
+        // 0 < __bsg_tile_group_id_x < __bsg_grid_dim_x
+        // 0 < __bsg_tile_group_id_x < __bsg_grid_dim_Y
 
         // Logically, split the output matrix into hierarchical blocks:
 
         // - TBX x TBY group blocks that a group computes, composed of:
         // -  BX x  BY tile blocks that a single tile computes
 
-        // Where TBX = TDX * BX and TBY = TDY * BY
+        // Where TBX = BSG_TILE_GROUP_X_DIM * BX and TBY = BSG_TILE_GROUP_Y_DIM * BY
 
-        // This means that there are r1 / TBY "row" blocks, and c2 /
-        // TBX "column" blocks.
-        
-        // The number of tile groups launched is defined by the grid
-        // dimension: __bsg_grid_dim_x/y (Shorthand: GDX/GDY)
-
-        // Each group is uniquely defined by its tile group X/Y
-        // index, __bsg_tile_group_id_x/y (Shorthand: TIX/TIY).
-
-        // 0 < TIX < GDX
-        // 0 < TIY < GDY
+        // This means that there are r1 / TBY "row" blocks in the
+        // output, and c2 / TBX "column" blocks in the output
         
         // Each group will iterate through unprocessed output group
         // blocks in the X and Y dimension, computing the group block
         // at coordinate tx_i, ty_i.
         //
-        // The initial value for tx_i is TIX, and ty_i is TIY. After
-        // computing an output block, tx_i moves to the next output
-        // block that is GDX, and then GDY blocks away.
+        // The initial value for tx_i i __bsg_tile_group_id_x, and
+        // ty_i is __bsg_tile_group_id_y. After computing a TBX x TBY
+        // output block, the tile group moves to the next output block
+        // that is __bsg_grid_dim_x, and then __bsg_grid_dim_y blocks
+        // away.
 
         // From the group perspective, the row-major MM algorithm with
         // striding looks like this:
 
-        // for(ty_i = TIY; ty_i < r1 / TBY; ty_i += GDY)
-        //     for(tx_i = TIX; tx_i < c2 / TBX; tx_i += GDX)
+        // block_y_loop:
+        // for(ty_i = __bsg_tile_group_id_x; ty_i < r1 / TBY; ty_i += __bsg_grid_dim_y)
+        //     block_x_loop:
+        //     for(tx_i = __bsg_tile_group_id_x; tx_i < c2 / TBX; tx_i += __bsg_grid_dim_x)
         //         Initialize block_out to 0, a TBX x TBY block
+        //         block_z_loop:
         //         for(tz_i = 0; c1 / TBX; tz_i++)
         //             Load TBX x TBY block from m1 and TBY x TBX block from m2
         //             Perform multiply-accumulate into block_out
@@ -354,9 +360,9 @@ __attribute__((no_builtin("memcpy", "memset")))
         // to understand the lines above before proceeding.
 
         // (Note it is possible to do a stride of 1, in which case,
-        // the iteration limits are r1/(GDY * TBY) and c2/(GDX * TBX).
-        // We believe that striding by the grid dimension produces
-        // more cache locality)
+        // the iteration limits are r1/(__bsg_grid_dim_y * TBY) and
+        // c2/(__bsg_grid_dim_x * TBX).  We believe that striding by
+        // the grid dimension produces more cache locality)
 
         // ******************** ********************
 
@@ -424,11 +430,11 @@ __attribute__((no_builtin("memcpy", "memset")))
         //          block_out[y_i][x_i] += tM1[y_i][z_i] + tM2[z_i][x_i];
 
         // However, the computation and data is split across tiles
-        // into TDX x TDY pieces, where each tile computes a BX x BY
+        // into BSG_TILE_GROUP_X_DIM x BSG_TILE_GROUP_Y_DIM pieces, where each tile computes a BX x BY
         // output block. We can rewrite the for loops like this: 
 
-        // for(ty_i = 0 ; ty_i < TDY; ty_i ++){
-        //    for(tx_i = 0 ; tx_i < TDX; tx_i ++){
+        // for(ty_i = 0 ; ty_i < BSG_TILE_GROUP_Y_DIM; ty_i ++){
+        //    for(tx_i = 0 ; tx_i < BSG_TILE_GROUP_X_DIM; tx_i ++){
         //       for(y_i = 0; y_i < BY; y_i ++){
         //          for(x_i = 0; x_i < BX; x_i ++){
         //             for(z_i = 0; z_i < TBX; z_i ++){
@@ -533,8 +539,8 @@ __attribute__((no_builtin("memcpy", "memset")))
         // pM2 = bsg_remote_ptr(lM2, __bsg_x, __bsg_x)
         // for(b_i = 0; b_i < TBX/BX; b_i ++){
         //    accum_block(block_out, pM1, pM2)
-        //    pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
-        //    pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
+        //    pM1 = ((char *) pM1 + 0x40000) & (MASK(BSG_TILE_GROUP_X_DIM + 18));
+        //    pM2 = ((char *) pM2 + 0x800000) & (MASK(BSG_TILE_GROUP_Y_DIM + 23));
 
         // There is one further optmization, but it requires slight
         // restructuring of the code above. accum_block loads block_out
@@ -557,8 +563,8 @@ __attribute__((no_builtin("memcpy", "memset")))
         //       for(b_i = 0; b_i < TBX/BX; b_i ++){
         //          for(z_i = 0; z_i < BX; z_i ++){
         //             block_out[__bsg_y * BY + y_i][__bsg_x * BX + x_i] += pM1[__bsg_y * BY + y_i][z_i] + pM2[z_i][__bsg_y * BX + x_i];
-        //          pM1 = ((char *) pM1 + 0x40000) & (MASK(TDX + 18));
-        //          pM2 = ((char *) pM2 + 0x800000) & (MASK(TDY + 23));
+        //          pM1 = ((char *) pM1 + 0x40000) & (MASK(BSG_TILE_GROUP_X_DIM + 18));
+        //          pM2 = ((char *) pM2 + 0x800000) & (MASK(BSG_TILE_GROUP_Y_DIM + 23));
 
         // This code cannot reuse accum block, but it does remove an
         // unnecessary load and store that is inside of accum_block.
@@ -566,29 +572,29 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         // Theoretical FLOP rates:
         //
-        // Assuming TDX = TDY, and BX = BY = 4 (to maximize register use)
+        // Assuming BSG_TILE_GROUP_X_DIM = BSG_TILE_GROUP_Y_DIM, and BX = BY = 4 (to maximize register use)
         //
         // For the first tile-group based approach without the block_out
         // optimization, the instructions for the inner loop are:
-        //     instr_fma: TDX * (16^3)
+        //     instr_fma: BSG_TILE_GROUP_X_DIM * (16^3)
         //     instr_load (remote): 2 * (16^2)
         //     instr_load (local/group): G*(8 * (16^2) + (16^2))
-        //     instr_store (local): TDX * (16^2)
+        //     instr_store (local): BSG_TILE_GROUP_X_DIM * (16^2)
         //
-        // Thus, the flop/instr rate is: TDX * 2 * (16^3) / (TDX * 9 * (16^2) + 2 * (16^2) + TDX * (16^3)) --> TDX * 32 / (TDX * 25  + 2)
+        // Thus, the flop/instr rate is: BSG_TILE_GROUP_X_DIM * 2 * (16^3) / (BSG_TILE_GROUP_X_DIM * 9 * (16^2) + 2 * (16^2) + BSG_TILE_GROUP_X_DIM * (16^3)) --> BSG_TILE_GROUP_X_DIM * 32 / (BSG_TILE_GROUP_X_DIM * 25  + 2)
         //
-        // As TDX approaches infinity the ratio becomes 32/25, or 1.28 flops/instr
+        // As BSG_TILE_GROUP_X_DIM approaches infinity the ratio becomes 32/25, or 1.28 flops/instr
 
         // For the second approach with the block_out optimization the
         // instructions for the inner loop are:
-        //     instr_fma: TDX * (16^3)
+        //     instr_fma: BSG_TILE_GROUP_X_DIM * (16^3)
         //     instr_load (remote): 2 * (16^2)
         //     instr_load (local/group): G*(8 * (16^2))
         //     instr_store (local): (16^2)
         //
-        // Thus, the flop/instr rate is: TDX * 2 * (16^3) / (TDX * 8 * (16^2) + (16^2) + TDX * (16^3)) --> TDX * 32 / (TDX * 24  + 1)
+        // Thus, the flop/instr rate is: BSG_TILE_GROUP_X_DIM * 2 * (16^3) / (BSG_TILE_GROUP_X_DIM * 8 * (16^2) + (16^2) + BSG_TILE_GROUP_X_DIM * (16^3)) --> BSG_TILE_GROUP_X_DIM * 32 / (BSG_TILE_GROUP_X_DIM * 24  + 1)
         //
-        // As TDX approaches infinity the ratio becomes 32/25, or 1.33 flops/instr
+        // As BSG_TILE_GROUP_X_DIM approaches infinity the ratio becomes 32/25, or 1.33 flops/instr
 
         bsg_barrier_hw_tile_group_init();
         // Start profiling
