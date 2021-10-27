@@ -1,9 +1,16 @@
-//====================================================================
-// addmml kernel
-// 03/09/2020 Kexin Zheng, Lin Cheng (kz73@cornell.edu, lc873@cornell.edu)
-//====================================================================
-#include <kernel_common.hpp>
+// BSG_TILE_GROUP_X_DIM and BSG_TILE_GROUP_Y_DIM must be defined
+// before bsg_manycore.h and bsg_cuda_lite_barrier.h are
+// included.
+#define BSG_TILE_GROUP_X_DIM bsg_tiles_X
+#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y
+#include <bsg_manycore.h>
+#include <bsg_cuda_lite_barrier.h>
+#include <hb_tensor.hpp>
+#include <cstring>
+#include <cstdint>
+#include <math.h>
 #include <bsg_group_strider.hpp>
+
 // NB: This is an interesting opportunity for optimization. Dual-loop
 // unrolling could allow loads to be spread across caches. Ideally the
 // inner loop is unrolled completely first (?), then the outer loop is
@@ -233,9 +240,6 @@ inline void accum_block(float* bsg_attr_noalias dest,
 // c1 == r2
 // c1 % BX == 0, r2 % BX == 0
 // c2 % BY == 0, r1 % BY == 0
-// Asserts use bsg_printf, which can pollute the icache
-//#define USE_ASSERT
-// TODO: X_GROUP, Y_GROUP parameters
 template<unsigned int BX, unsigned int BY, bool LOAD_M1_TRANSPOSED, bool PROFILE>
 inline int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
                   uint32_t *bsg_attr_noalias result_strides,
@@ -252,24 +256,6 @@ inline int kernel_mm_opt(float bsg_attr_remote * bsg_attr_noalias result,
 __attribute__((no_builtin("memcpy", "memset")))
 #endif
 {
-#ifdef USE_ASSERT
-
-        // M1 columns must equal M2 Rows
-        hb_assert(c1 == r2);
-
-        // This MM implementation is blocked into BY-by-BX output
-        // blocks. This implies the following dimension constraints:
-
-        // M1 columns must be divisible by the Block X-dimension
-        hb_assert(c1 % BX == 0);
-        // M2 rows must be divisible by the Block X-dimension
-        hb_assert(r2 % BX == 0);
-
-        // M1 rows must be divisible by the Block Y-dimension
-        hb_assert(r1 % BY == 0);
-        // M2 columns must be divisible by the Block Y-dimension
-        hb_assert(c2 % BY == 0);
-#endif
 
         // TODO: The compiler doesn't know that c1 is always (or
         // should always be) nonzero. This adds an extra BNE
