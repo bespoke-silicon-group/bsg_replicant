@@ -95,7 +95,6 @@ RISCV_INCLUDES += -I.
 
 # Clang does not work as well as GCC in this instance. It seems to refuse to inline...
 # RISCV_CXX = $(RISCV_CLANGXX)
-kernel.riscv: kernel_common.rvo
 kernel.riscv: kernel_group.rvo
 
 RISCV_CCPPFLAGS += -O3 -std=c++14

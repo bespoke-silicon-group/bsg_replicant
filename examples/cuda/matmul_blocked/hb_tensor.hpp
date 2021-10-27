@@ -10,8 +10,6 @@
 #include <initializer_list>
 #include <cstdint>
 #include <bsg_manycore.h>
-#include <hb_assert.hpp>
-#include <hb_common.hpp>
 
 #define DEFAULT_STRIDES 5
 
@@ -81,10 +79,6 @@ class HBTensorImpl {
       strides(strides),
       sizes(sizes),
       data(data) {
-        // WAW HW bug seems to be triggered on a non-bloacking load to
-        // the register holding `sizes` in various kernels. This fix
-        // adds a RAW dependedncy on that register, blocking the load.
-        HB_FIX_WAW_HAZARD(sizes);
       }
 
     char* bsg_attr_remote data_ptr() {
