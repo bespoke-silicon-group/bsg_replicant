@@ -59,7 +59,7 @@ inline void prefetch(float bsg_attr_remote * bsg_attr_noalias p,
         for (int i = 0; i < BY; i++) {
                 asm("lw x0, %0": : "m" (p[i * strides[0]]));
         }
-        bsg_fence();
+        //        bsg_fence();
 }
 
 // Store the result (psum) to remote memory and reset the psum array
@@ -176,16 +176,19 @@ inline void accum_row(float* bsg_attr_noalias dest,
                                         // by using using immediates instead
                                         // of a register offset.
                                         float * bsg_attr_noalias row_anchor = &(mat2[sbx_i * BY + sb_anchor_x]);
+                                        col[0] = col_anchor[0];
                                         bsg_unroll(16)
-                                                for(int i = 0; i < SBX; ++i){
-                                                        row[i] = row_anchor[i];
-                                                        if (!M1_TRANSPOSE) {
-                                                                col[i] = col_anchor[i * BX];
-                                                        } else {
-                                                                col[i] = col_anchor[i];
-                                                        }
-                                        
+                                        for(int i = 0; i < SBX; ++i){
+                                                row[i] = row_anchor[i];
+                                        }
+
+                                        for(int i = 1; i < SBX; ++i){
+                                                if (!M1_TRANSPOSE) {
+                                                        col[i] = col_anchor[i * BX];
+                                                } else {
+                                                        col[i] = col_anchor[i];
                                                 }
+                                        }
 
                                         // Perform a SBY-by-1 x 1-by-SBX
                                         // vector-vector multiply to produce
@@ -608,7 +611,6 @@ __attribute__((no_builtin("memcpy", "memset")))
                         for (int bz_i = 0; bz_i < bz_blocks; bz_i += bz_stride) {
                                 load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bz_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                                 load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-                                bsg_fence();
                                 bsg_barrier_hw_tile_group_sync();
 
                                 // Multiply the blocks, and accumulate into the result
