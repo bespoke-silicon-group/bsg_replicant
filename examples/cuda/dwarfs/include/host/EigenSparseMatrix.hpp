@@ -1,6 +1,7 @@
 #include <Eigen/Sparse>
 #include <sstream>
 #include <fstream>
+#include <utility>
 #include <vector>
 #include <random>
 #include <cstdlib>
@@ -243,6 +244,93 @@ namespace dwarfs {
             mat.uncompress();
             return mat;
         }
-    }
 
+        /**
+         * Partition a SparseMatrixType into n partitions.
+         * Return a vector SparseMatrixType pointers.
+         */
+        template <typename SparseMatrixType, typename SparseMatrixPtrType>
+        struct __new_helper {
+            static SparseMatrixPtrType make_ptr(
+                typename SparseMatrixType::StorageIndex rows
+                , typename SparseMatrixType::StorageIndex cols
+                ) {
+                return SparseMatrixPtrType(new SparseMatrixType(rows, cols));
+            }
+        };
+        template <typename SparseMatrixType>
+        struct __new_helper <SparseMatrixType, SparseMatrixType*> {
+            static SparseMatrixType* make_ptr(
+                typename SparseMatrixType::StorageIndex rows
+                , typename SparseMatrixType::StorageIndex cols
+                ) {
+                return new SparseMatrixType(rows, cols);
+            }
+        };
+
+        template <typename SparseMatrixPtrType>
+        auto PartitionMjrStartPtr(SparseMatrixPtrType mat, int partitions) {
+            // define types
+            using SparseMatrixType = typename std::remove_reference<decltype(*mat)>::type;
+            using idx_t  = typename SparseMatrixType::StorageIndex;
+
+            // determine size of each partition
+            int rows_per_part = mat->rows()/(partitions-1);
+            int rem = mat->rows()%(partitions-1);
+            int i;
+
+            // determine starting row of each partition
+            std::vector<idx_t> partition_start(partitions+1);
+            partition_start[0] = 0;
+            for (i = 0; i < partitions-1; i++) {
+                partition_start[i+1] = partition_start[i] + rows_per_part;
+            }
+            partition_start[partitions] = partitions_start[partitions-1] + rem;
+
+            return partition_start;
+        }
+
+        template <typename SparseMatrixPtrType>
+        std::vector<SparseMatrixPtrType> PartitionPtr(SparseMatrixPtrType mat, int partitions) {
+            // define types
+            using SparseMatrixType = typename std::remove_reference<decltype(*mat)>::type;
+            using idx_t  = typename SparseMatrixType::StorageIndex;
+            using real_t = typename SparseMatrixType::Scalar;
+
+            // always uncompress
+            mat->uncompress();
+
+            // determine size of each partition
+            std::vector<idx_t> partition_start = PartitionMjrStartPtr<SparseMatrixPtrType>(mat, partitions);
+
+            // create each partition
+            int i;
+            std::vector<SparseMatrixPtrType> partition_pointers(partitions);
+            for (i = 0; i < partitions; i++) {
+                // allocate partition
+                SparseMatrixPtrType part = __new_helper<SparseMatrixType,SparseMatrixPtrType>::make_ptr(mat->rows(), mat->cols());
+                // calculate row range
+                idx_t row_start = partition_start[i];
+                idx_t row_stop  = partition_start[i+1];
+                idx_t rows = row_stop - row_start;
+                // calculate nonzero range
+                idx_t nz_start = mat->outerIndexPtr()[row_start];
+                idx_t nz_stop  = mat->outerIndexPtr()[row_stop];
+                idx_t nnz = nz_stop - nz_start;
+                part->reserve(nnz);
+                part->uncompress();
+                // set offsets and copy nonzeros
+                for (idx_t row = row_start; row < row_stop; row++) {
+                    part->outerIndexPtr()  [row]  = mat->outerIndexPtr()[row]-nz_start;
+                    part->innerNonZeroPtr()[row]  = mat->innerNonZeroPtr()[row];
+                }
+                memcpy(part->innerIndexPtr(), mat->innerIndexPtr() + nz_start, nnz * sizeof(idx_t));
+                memcpy(part->valuePtr(), mat->valuePtr() + nz_start, nnz * sizeof(real_t));
+                // add to output
+                partition_pointers[i] = part;
+            }
+
+            return partition_pointers;
+        }
+    }
 }

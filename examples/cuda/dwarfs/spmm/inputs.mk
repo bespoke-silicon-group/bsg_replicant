@@ -115,6 +115,47 @@ road-usa__nnz  = 57708624
 $(road-usa): url=https://suitesparse-collection-website.herokuapp.com/MM/DIMACS10/road_usa.tar.gz
 $(road-usa): tar=road_usa.tar.gz
 
+#########
+# Pokec #
+#########
+INPUTS += soc-Pokec
+soc-Pokec = $(INPUTS_DIR)/soc-Pokec/soc-Pokec.mtx
+soc-Pokec__directed = yes
+soc-Pokec__weighted = no
+soc-Pokec__zero-indexed = no
+soc-Pokec__rows =  1632803
+soc-Pokec__cols =  1632803
+soc-Pokec__nnz  = 30622564
+$(soc-Pokec): url=https://suitesparse-collection-website.herokuapp.com/MM/SNAP/soc-Pokec.tar.gz
+$(soc-Pokec): tar=soc-Pokec.tar.gz
+
+##############
+# Hollywood  #
+##############
+INPUTS += hollywood
+hollywood = $(INPUTS_DIR)/hollywood-2009/hollywood-2009.mtx
+hollywood__directed = yes
+hollywood__weighted = no
+hollywood__zero-indexed = no
+hollywood__rows =   1139905
+hollywood__cols =   1139905
+hollywood__nnz  = 113891327
+$(hollywood): url=https://suitesparse-collection-website.herokuapp.com/MM/LAW/hollywood-2009.tar.gz
+$(hollywood): tar=hollywood-2009.tar.gz
+
+###############
+# LiveJournal #
+###############
+INPUTS += LiveJournal
+LiveJournal = $(INPUTS_DIR)/ljournal-2008/ljournal-2008.mtx
+LiveJournal__directed = yes
+LiveJournal__weighted = no
+LiveJournal__zero-indexed = no
+LiveJournal__rows =  5363260
+LiveJournal__cols =  5363260
+LiveJournal__nnz  = 79023142
+$(LiveJournal): url=https://suitesparse-collection-website.herokuapp.com/MM/LAW/ljournal-2008.tar.gz
+$(LiveJournal): tar=ljournal-2008.tar.gz
 
 # Download and unpack
 $(foreach i,$(INPUTS),$($i)):
