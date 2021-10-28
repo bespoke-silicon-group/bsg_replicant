@@ -104,12 +104,13 @@ __attribute__((no_builtin("memcpy", "memset")))
 // matrix.
 // Locations:
 //     dest should be in local scratchpad
-//     mat1 should be in local scratchpad
-//     mat2 should be in local scratchpad
+//     mat1 should be in group scratchpad
+//     mat2 should be in group scratchpad
 template<unsigned int BY, unsigned int SBY, unsigned int BX, unsigned int SBX, bool M1_TRANSPOSE>
-inline void accum_block(float* bsg_attr_noalias dest,
-                 float* bsg_attr_noalias mat1,
-                 float* bsg_attr_noalias mat2) {
+inline void accum_row(float* bsg_attr_noalias dest,
+                      bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> &prow,
+                      bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> &pcol
+                      ) {
 
         static_assert((BX % SBX) == 0, "X Block-Dimension must be a multiple of the X Sub-Block Dimension");
         static_assert((BY % SBY) == 0, "Y Block-Dimension must be a multiple of the Y Sub-Block Dimension");
@@ -139,72 +140,78 @@ inline void accum_block(float* bsg_attr_noalias dest,
                                 }
                         }
 
-                        // Compute an SBY-by-SBX output sub-block by
-                        // performing BX, SBY-by-1 x 1-by-SBX
-                        // vector-vector multiplies, and accumulate
-                        // with the result
-                        for(int sbx_i = 0; sbx_i < BX; ++sbx_i) {
-                                // Load an SBY-by-1 sub-column of mat1,
-                                // 1-by-SBX sub-row of mat2, and perform a
-                                // SBY-by-1 x 1-by-SBX vector-vector multiply
-                                // that produces an SBY-by-SBX output matrix.
-                                // Locations:
-                                //     col should be in registers (for SBY == 4)
-                                //     row should be in registers (for SBX == 4)
-                                float col[SBY];
-                                float row[SBX];
+                        for(int b_i = 0; b_i < BSG_TILE_GROUP_X_DIM; b_i ++){
+                                // Compute an SBY-by-SBX output sub-block by
+                                // performing BX, SBY-by-1 x 1-by-SBX
+                                // vector-vector multiplies, and accumulate
+                                // with the result
+                                float *mat1 = prow.ptr;
+                                float *mat2 = pcol.ptr;
+                                for(int sbx_i = 0; sbx_i < BX; ++sbx_i) {
+                                        // Load an SBY-by-1 sub-column of mat1,
+                                        // 1-by-SBX sub-row of mat2, and perform a
+                                        // SBY-by-1 x 1-by-SBX vector-vector multiply
+                                        // that produces an SBY-by-SBX output matrix.
+                                        // Locations:
+                                        //     col should be in registers (for SBY == 4)
+                                        //     row should be in registers (for SBX == 4)
+                                        float col[SBY];
+                                        float row[SBX];
 
-                                // Load a column of m1, and a row of m2.
-                                float * bsg_attr_noalias col_anchor;
-                                if (!M1_TRANSPOSE) {
-                                        // Location: (pointer to) Scratchpad
-                                        col_anchor = &(mat1[sb_anchor_y * BX + sbx_i]);
-                                } else {
-                                        // Location: (pointer to) Scratchpad
-                                        col_anchor = &(mat1[sb_anchor_y + sbx_i * BY]);
-                                }
+                                        // Load a column of m1, and a row of m2.
+                                        float * bsg_attr_noalias col_anchor;
+                                        if (!M1_TRANSPOSE) {
+                                                // Location: (pointer to) Scratchpad
+                                                col_anchor = &(mat1[sb_anchor_y * BX + sbx_i]);
+                                        } else {
+                                                // Location: (pointer to) Scratchpad
+                                                col_anchor = &(mat1[sb_anchor_y + sbx_i * BY]);
+                                        }
 
                                 
-                                // Load an SBX-by-1 sub-column of mat2
-                                // If M1 is transposed, then adjust
-                                // the indexing to row major.
-                                // Transposing can improve performance
-                                // by using using immediates instead
-                                // of a register offset.
-                                float * bsg_attr_noalias row_anchor = &(mat2[sbx_i * BY + sb_anchor_x]);
-                                bsg_unroll(16)
-                                for(int i = 0; i < SBX; ++i){
-                                    row[i] = row_anchor[i];
-                                    if (!M1_TRANSPOSE) {
-                                            col[i] = col_anchor[i * BX];
-                                    } else {
-                                            col[i] = col_anchor[i];
-                                    }
-                                        
-                                }
-
-                                // Perform a SBY-by-1 x 1-by-SBX
-                                // vector-vector multiply to produce
-                                // an SBY-by-SBX output matrix
-
-                                // Add the result to the partial sum
-                                // This could be done in two steps,
-                                // but we do it in one to use FMA
-                                // instructions
-
-                                // The code expects that psum, col,
-                                // and row are all allocated in
-                                // registers so that there are SBY *
-                                // SBX fused-multiply-add instructions
-                                // in a row.
-                                bsg_unroll(16)
-                                for(int sby_i = 0; sby_i < SBY; ++sby_i){
+                                        // Load an SBX-by-1 sub-column of mat2
+                                        // If M1 is transposed, then adjust
+                                        // the indexing to row major.
+                                        // Transposing can improve performance
+                                        // by using using immediates instead
+                                        // of a register offset.
+                                        float * bsg_attr_noalias row_anchor = &(mat2[sbx_i * BY + sb_anchor_x]);
                                         bsg_unroll(16)
-                                        for(int sbx_i = 0; sbx_i < SBX; ++sbx_i){
-                                                psum[sby_i][sbx_i] = fmaf(col[sby_i], row[sbx_i], psum[sby_i][sbx_i]);
-                                                // psum[sby_i][sbx_i] += col[sby_i] * row[sbx_i];
-                                        }
+                                                for(int i = 0; i < SBX; ++i){
+                                                        row[i] = row_anchor[i];
+                                                        if (!M1_TRANSPOSE) {
+                                                                col[i] = col_anchor[i * BX];
+                                                        } else {
+                                                                col[i] = col_anchor[i];
+                                                        }
+                                        
+                                                }
+
+                                        // Perform a SBY-by-1 x 1-by-SBX
+                                        // vector-vector multiply to produce
+                                        // an SBY-by-SBX output matrix
+
+                                        // Add the result to the partial sum
+                                        // This could be done in two steps,
+                                        // but we do it in one to use FMA
+                                        // instructions
+
+                                        // The code expects that psum, col,
+                                        // and row are all allocated in
+                                        // registers so that there are SBY *
+                                        // SBX fused-multiply-add instructions
+                                        // in a row.
+                                        bsg_unroll(16)
+                                                for(int sby_i = 0; sby_i < SBY; ++sby_i){
+                                                        bsg_unroll(16)
+                                                                for(int sbx_i = 0; sbx_i < SBX; ++sbx_i){
+                                                                        psum[sby_i][sbx_i] = fmaf(col[sby_i], row[sbx_i], psum[sby_i][sbx_i]);
+                                                                        // psum[sby_i][sbx_i] += col[sby_i] * row[sbx_i];
+                                                                }
+                                                }
                                 }
+                                pcol.stride();
+                                prow.stride();
                         }
 
                         // Write the partial sum sub-block back into
@@ -604,12 +611,9 @@ __attribute__((no_builtin("memcpy", "memset")))
                                 bsg_fence();
                                 bsg_barrier_hw_tile_group_sync();
 
-                                for(int b_i = 0; b_i < BSG_TILE_GROUP_X_DIM; b_i ++){
-                                        // Multiply the blocks, and accumulate into the result
-                                        accum_block<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, prow.ptr, pcol.ptr);
-                                        prow.stride();
-                                        pcol.stride();
-                                }
+                                // Multiply the blocks, and accumulate into the result
+                                accum_row<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, prow, pcol);
+                                
                                 bsg_barrier_hw_tile_group_sync();
                         }
                         // Store the result, AND zero the block_out array
