@@ -279,8 +279,11 @@ __attribute__((no_builtin("memcpy", "memset")))
                 }
         }
 
+        bsg_barrier_hw_tile_group_init();
         // Start profiling
+        bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
+        bsg_cuda_print_stat_start(1);
 
         // Iterate through available output blocks in row-major order
  block_y_loop:
@@ -304,8 +307,12 @@ __attribute__((no_builtin("memcpy", "memset")))
                 }
         }
 
+        bsg_cuda_print_stat_end(1);
         // End profiling
+        bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_end();
+        bsg_fence();
+        bsg_barrier_hw_tile_group_sync();
 
         return 0;
 }
@@ -320,7 +327,6 @@ int kernel_mm_opt(
         auto mat1 = HBTensor<float, 2>(_mat1);
         auto mat2 = HBTensor<float, 2>(_mat2);
         auto result = HBTensor<float, 2>(_result);
-        bsg_barrier_hw_tile_group_init();
         
         kernel_mm_opt<BLOCK_DIM,BLOCK_DIM,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
                                         result.get_strides(),
@@ -330,7 +336,6 @@ int kernel_mm_opt(
                                         (float bsg_attr_remote * bsg_attr_noalias) mat2.data_ptr(),
                                         mat2.get_strides(),
                                         mat2.dim(0), mat2.dim(1));
-        bsg_barrier_hw_tile_group_sync();
 
         return 0;
 }
