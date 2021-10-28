@@ -153,25 +153,8 @@ inline void accum_block(float* bsg_attr_noalias dest,
                                 //     row should be in registers (for SBX == 4)
                                 float col[SBY];
                                 float row[SBX];
-                                /*
-                                // Load an SBY-by-1 sub-column of mat1,
-                                // TODO: These are not being reordered/interleaved
-                                if (!M1_TRANSPOSE) {
-                                        // Location: (pointer to) Scratchpad
-                                        float * bsg_attr_noalias col_anchor = &(mat1[sb_anchor_y * BX + sbx_i]);
-                                        bsg_unroll(16)
-                                        for(int i = 0; i < SBY; ++i){
-                                                col[i] = col_anchor[i * BX];
-                                        }
-                                } else {
-                                        // Location: (pointer to) Scratchpad
-                                        float * bsg_attr_noalias col_anchor = &(mat1[sb_anchor_y + sbx_i * BY]);
-                                        bsg_unroll(16)
-                                        for(int i = 0; i < SBY; ++i){
-                                                col[i] = col_anchor[i];
-                                        }
-                                        }*/
 
+                                // Load a column of m1, and a row of m2.
                                 float * bsg_attr_noalias col_anchor;
                                 if (!M1_TRANSPOSE) {
                                         // Location: (pointer to) Scratchpad
@@ -183,7 +166,11 @@ inline void accum_block(float* bsg_attr_noalias dest,
 
                                 
                                 // Load an SBX-by-1 sub-column of mat2
-                                // Location: (pointer to) Scratchpad
+                                // If M1 is transposed, then adjust
+                                // the indexing to row major.
+                                // Transposing can improve performance
+                                // by using using immediates instead
+                                // of a register offset.
                                 float * bsg_attr_noalias row_anchor = &(mat2[sbx_i * BY + sb_anchor_x]);
                                 bsg_unroll(16)
                                 for(int i = 0; i < SBX; ++i){
@@ -651,7 +638,7 @@ int kernel_mm_opt(
         auto mat2 = HBTensor<float, 2>(_mat2);
         auto result = HBTensor<float, 2>(_result);
         
-        kernel_mm_opt<BLOCK_DIM,BLOCK_DIM,false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
+        kernel_mm_opt<BLOCK_DIM,BLOCK_DIM, false, false>((float bsg_attr_remote * bsg_attr_noalias) result.data_ptr(),
                                         result.get_strides(),
                                         (float bsg_attr_remote * bsg_attr_noalias) mat1.data_ptr(),
                                         mat1.get_strides(),
