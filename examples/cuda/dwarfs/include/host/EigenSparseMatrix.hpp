@@ -258,6 +258,9 @@ namespace dwarfs {
                 return SparseMatrixPtrType(new SparseMatrixType(rows, cols));
             }
         };
+        /**
+         * Partially specialize for raw pointers.
+         */
         template <typename SparseMatrixType>
         struct __new_helper <SparseMatrixType, SparseMatrixType*> {
             static SparseMatrixType* make_ptr(
@@ -269,29 +272,33 @@ namespace dwarfs {
         };
 
         template <typename SparseMatrixPtrType>
-        auto PartitionMjrStartPtr(SparseMatrixPtrType mat, int partitions) {
+        auto PartitionStartPtr(SparseMatrixPtrType mat, int partitions, bool by_mnr = false) {
             // define types
             using SparseMatrixType = typename std::remove_reference<decltype(*mat)>::type;
             using idx_t  = typename SparseMatrixType::StorageIndex;
 
             // determine size of each partition
-            int rows_per_part = mat->rows()/(partitions-1);
-            int rem = mat->rows()%(partitions-1);
-            int i;
+            int per_part, rem;
+            if (by_mnr) {
+                per_part = mat->innerSize()/partitions;
+                rem = mat->outerSize()%partitions;
+            } else {
+                per_part = mat->outerSize()/partitions;
+                rem = mat->outerSize()%partitions;
+            }
 
             // determine starting row of each partition
             std::vector<idx_t> partition_start(partitions+1);
             partition_start[0] = 0;
-            for (i = 0; i < partitions-1; i++) {
-                partition_start[i+1] = partition_start[i] + rows_per_part;
+            for (int i = 0; i < partitions; i++) {
+                partition_start[i+1] = partition_start[i] + per_part + (i < rem);
             }
-            partition_start[partitions] = partitions_start[partitions-1] + rem;
 
             return partition_start;
         }
 
         template <typename SparseMatrixPtrType>
-        std::vector<SparseMatrixPtrType> PartitionPtr(SparseMatrixPtrType mat, int partitions) {
+        std::vector<SparseMatrixPtrType> PartitionMjrPtr(SparseMatrixPtrType mat, int partitions) {
             // define types
             using SparseMatrixType = typename std::remove_reference<decltype(*mat)>::type;
             using idx_t  = typename SparseMatrixType::StorageIndex;
@@ -301,7 +308,7 @@ namespace dwarfs {
             mat->uncompress();
 
             // determine size of each partition
-            std::vector<idx_t> partition_start = PartitionMjrStartPtr<SparseMatrixPtrType>(mat, partitions);
+            std::vector<idx_t> partition_start = PartitionStartPtr<SparseMatrixPtrType>(mat, partitions);
 
             // create each partition
             int i;
@@ -332,5 +339,119 @@ namespace dwarfs {
 
             return partition_pointers;
         }
+
+        template <typename SparseMatrixPtrType>
+        std::vector<SparseMatrixPtrType> PartitionMnrPtr(SparseMatrixPtrType mat, int partitions) {
+            // define types
+            using SparseMatrixType = typename std::remove_reference<decltype(*mat)>::type;
+            using idx_t  = typename SparseMatrixType::StorageIndex;
+            using real_t = typename SparseMatrixType::Scalar;
+
+            // always uncompress
+            mat->uncompress();
+
+            // determine size of each partition
+            std::vector<idx_t> partition_start = PartitionStartPtr<SparseMatrixPtrType>(mat, partitions, true);
+
+            // create each partition
+            int i;
+            std::vector<SparseMatrixPtrType> partition_pointers(partitions);
+            for (idx_t p = 0; p < partitions; p++)
+                partition_pointers[p] = __new_helper<SparseMatrixType, SparseMatrixPtrType>::make_ptr(mat->rows(), mat->cols());
+            
+            std::vector<std::vector<idx_t*>>  part_cols(
+                partitions
+                , std::vector<idx_t*>(mat->outerSize())
+                );
+            std::vector<std::vector<idx_t>>   part_nnz (                
+                partitions
+                , std::vector<idx_t>(mat->outerSize(), 0)
+                );                
+            std::vector<std::vector<real_t*>> part_vals(
+                partitions
+                , std::vector<real_t*>(mat->outerSize())
+                );
+            std::vector<std::vector<idx_t>>   part_off (
+                partitions+1
+                , std::vector<idx_t>(mat->outerSize())
+                );
+
+            for (idx_t row = 0; row < mat->outerSize(); row++) {
+                part_cols[0][row] = mat->innerIndexPtr() + mat->outerIndexPtr()[row];
+                part_vals[0][row] = mat->valuePtr() + mat->outerIndexPtr()[row];                    
+            }
+
+            // sort out pointers/nnz
+            for (idx_t row = 0; row < mat->outerSize(); row++) {
+                idx_t nnz = mat->innerNonZeroPtr()[row];
+                idx_t off = mat->outerIndexPtr()[row];
+                idx_t col_i = 0;
+                idx_t p = 0;
+                for (idx_t col_i = 0; col_i < nnz;) {
+                    // save the partition base
+                    idx_t p_base = col_i;
+                    part_cols[p][row] = mat->innerIndexPtr() + off + col_i;
+                    part_vals[p][row] = mat->valuePtr() + off + col_i;
+                    // scan column indicies they fall into next partition
+                    idx_t col = mat->innerIndexPtr()[off + col_i];
+                    while (col_i < nnz && col < partition_start[p+1]) {
+                        col_i++;
+                        col = mat->innerIndexPtr()[off + col_i];
+                    }
+                    part_nnz[p][row] = col_i-p_base;
+                    p++;
+                }
+
+                // std::cout << "Row " << row << ": ";
+                // for (idx_t p = 0; p < partitions; p++) {
+                //     std::cout << "Partition " << p << ": ";
+                //     std::cout << "cols(" << part_cols[p][row] << ") ";
+                //     std::cout << "vals(" << part_vals[p][row] << ") ";
+                //     std::cout << "nnz(" << part_nnz[p][row] << "), ";
+                // }
+                // std::cout << std::endl;
+            }
+            // calculate row offsets in each partition
+            for (idx_t p = 0; p < partitions; p++) {
+                for (idx_t row = 0; row < mat->outerSize(); row++) {
+                    part_off[p][row+1] = part_off[p][row] + part_nnz[p][row];
+                }
+            }
+            // setup each partitions sparse matrix
+            for (idx_t p = 0; p < partitions; p++) {
+                SparseMatrixPtrType partp = partition_pointers[p];
+                idx_t nnz = part_off[p][mat->outerSize()];                
+                if (partp->isCompressed()) {
+                    partp->reserve(nnz);                   
+                    partp->uncompress();
+                }
+                // std::cout << p << " of " << partitions << " partitions" << std::endl;
+
+                // std::cout << "here: nnz = " << nnz << std::endl;
+                // std::cout << "here: partp = " << partp << std::endl;
+                // std::cout << "here: partp->nonZeros() = " << partp->nonZeros() << std::endl;
+                // std::cout << "here: partp->outerSize() = " << partp->outerSize() << std::endl;
+                
+                for (idx_t row = 0; row < mat->outerSize(); row++) {
+                    partp->innerNonZeroPtr()[row] = part_nnz[p][row];
+                    partp->outerIndexPtr()[row] = part_off[p][row];
+
+                    memcpy(partp->innerIndexPtr() + part_off[p][row]
+                           , part_cols[p][row]
+                           , part_nnz[p][row] * sizeof(idx_t));
+                    
+                    memcpy(partp->valuePtr() + part_off[p][row]
+                           , part_vals[p][row]
+                           , part_nnz[p][row] * sizeof(real_t));
+                }
+                // std::cout << "here: nnz = " << nnz << std::endl;
+                // std::cout << "here: partp = " << partp << std::endl;
+                // std::cout << "here: partp->nonZeros() = " << partp->nonZeros() << std::endl;
+                // std::cout << "here: partp->outerSize() = " << partp->outerSize() << std::endl;
+                // std::cout << "here: partp->innerIndexPtr() = " << partp->innerIndexPtr() << std::endl;
+            }
+            // std::cout << "partition_pointers.size() = " << partition_pointers.size() << std::endl;
+            return partition_pointers;
+        }        
     }
 }
