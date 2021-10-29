@@ -401,15 +401,6 @@ namespace dwarfs {
                     part_nnz[p][row] = col_i-p_base;
                     p++;
                 }
-
-                // std::cout << "Row " << row << ": ";
-                // for (idx_t p = 0; p < partitions; p++) {
-                //     std::cout << "Partition " << p << ": ";
-                //     std::cout << "cols(" << part_cols[p][row] << ") ";
-                //     std::cout << "vals(" << part_vals[p][row] << ") ";
-                //     std::cout << "nnz(" << part_nnz[p][row] << "), ";
-                // }
-                // std::cout << std::endl;
             }
             // calculate row offsets in each partition
             for (idx_t p = 0; p < partitions; p++) {
@@ -425,13 +416,7 @@ namespace dwarfs {
                     partp->reserve(nnz);                   
                     partp->uncompress();
                 }
-                // std::cout << p << " of " << partitions << " partitions" << std::endl;
 
-                // std::cout << "here: nnz = " << nnz << std::endl;
-                // std::cout << "here: partp = " << partp << std::endl;
-                // std::cout << "here: partp->nonZeros() = " << partp->nonZeros() << std::endl;
-                // std::cout << "here: partp->outerSize() = " << partp->outerSize() << std::endl;
-                
                 for (idx_t row = 0; row < mat->outerSize(); row++) {
                     partp->innerNonZeroPtr()[row] = part_nnz[p][row];
                     partp->outerIndexPtr()[row] = part_off[p][row];
@@ -444,13 +429,7 @@ namespace dwarfs {
                            , part_vals[p][row]
                            , part_nnz[p][row] * sizeof(real_t));
                 }
-                // std::cout << "here: nnz = " << nnz << std::endl;
-                // std::cout << "here: partp = " << partp << std::endl;
-                // std::cout << "here: partp->nonZeros() = " << partp->nonZeros() << std::endl;
-                // std::cout << "here: partp->outerSize() = " << partp->outerSize() << std::endl;
-                // std::cout << "here: partp->innerIndexPtr() = " << partp->innerIndexPtr() << std::endl;
             }
-            // std::cout << "partition_pointers.size() = " << partition_pointers.size() << std::endl;
             return partition_pointers;
         }        
     }
