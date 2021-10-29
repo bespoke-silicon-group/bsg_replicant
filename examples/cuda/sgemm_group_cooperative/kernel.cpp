@@ -493,7 +493,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         // This is the computation that each tile in the group
         // performs. It can be re-written with the existing
-        // accum_block function:
+        // accum_block function (see tile parallel version):
 
         // pM1 = bsg_remote_ptr(lM1, __bsg_x, 0)
         // pM2 = bsg_remote_ptr(lM1, 0, __bsg_y)
@@ -564,8 +564,14 @@ __attribute__((no_builtin("memcpy", "memset")))
         //          pM2 = ((char *) pM2 + 0x800000) & (MASK(BSG_TILE_GROUP_Y_DIM + 23));
 
         // This code cannot reuse accum block, but it does remove an
-        // unnecessary load and store that is inside of accum_block.
+        // unnecessary load and store of block_out that is inside of accum_block.
 
+        // This can be re-written as:
+        // for(y_i = 0; y_i < BY; y_i ++){
+        //    for(x_i = 0; x_i < BX; x_i ++){
+        //       pM1 = bsg_remote_ptr(lM1, __bsg_x, __bsg_y)
+        //       pM2 = bsg_remote_ptr(lM2, __bsg_x, __bsg_x)
+        //       accum_row(block_out, pm1, pm2)
 
         // Theoretical FLOP rates:
         //
@@ -595,9 +601,10 @@ __attribute__((no_builtin("memcpy", "memset")))
 
         bsg_barrier_hw_tile_group_init();
         // Start profiling
+        bsg_fence();
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
-        bsg_cuda_print_stat_start(1);
+        //        bsg_cuda_print_stat_start(1);
 
         bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row, __bsg_x, __bsg_y);
         bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col, __bsg_x, __bsg_x);
@@ -626,7 +633,7 @@ __attribute__((no_builtin("memcpy", "memset")))
                 }
         }
 
-        bsg_cuda_print_stat_end(1);
+        //bsg_cuda_print_stat_end(1);
         // End profiling
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_end();
