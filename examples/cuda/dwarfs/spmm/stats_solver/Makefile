@@ -12,6 +12,17 @@ solver: $(APPLICATION_PATH)/src/host/solver.cpp
 	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen)
 	$(CXX) -std=c++11 $(INCLUDES) -o $@ $(filter %.cpp,$^)
 
+partition_solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/Random.hpp
+partition_solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/EigenSparseMatrix.hpp
+partition_solver: $(APPLICATION_PATH)/include/host/Solver.hpp
+partition_solver: $(EXAMPLES_PATH)/cuda/dwarfs/src/Random.cpp
+partition_solver: $(APPLICATION_PATH)/src/host/partition_solver.cpp
+	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/include/host)
+	$(eval INCLUDES+=-I$(APPLICATION_PATH)/include/host)
+	$(eval INCLUDES+=-I$(EXAMPLES_PATH)/cuda/dwarfs/imports/eigen)
+	$(CXX) -std=c++11 $(INCLUDES) -o $@ $(filter %.cpp,$^)
+
+
 
 include $(APPLICATION_PATH)/inputs.mk
 
@@ -19,6 +30,14 @@ $(foreach input,$(INPUTS),$(input).stats): %.stats: inputs solver
 	./solver $($*) $($*__directed) $($*__weighted) $($*__zero-indexed) $@.solve_row.csv \
 	$*.input.csv $*.solution.csv $*.answer.csv \
 	$*.A_stats.csv $*.B_stats.csv
+
+PARTITION_FACTOR = 8
+
+$(foreach input,$(INPUTS),$(input).partition.stats): %.partition.stats: inputs partition_solver
+	./partition_solver $($*) $($*__directed) $($*__weighted) $($*__zero-indexed) $@.solve_row.csv \
+	$*.input.csv $*.solution.csv $*.answer.csv \
+	$*.A_stats.csv $*.B_stats.csv \
+	$(PARTITION_FACTOR)
 
 clean:
 	rm -rf solver *.input.csv *.solve_row.csv *.solution.csv *.answer.csv
