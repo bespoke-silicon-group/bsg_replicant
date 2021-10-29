@@ -106,7 +106,7 @@ __attribute__((no_builtin("memcpy", "memset")))
 //     dest should be in local scratchpad
 //     mat1 should be in group scratchpad
 //     mat2 should be in group scratchpad
-template<unsigned int BY, unsigned int SBY, unsigned int BX, unsigned int SBX, bool M1_TRANSPOSE>
+template<unsigned int BY, unsigned int SBY, unsigned int BX, unsigned int SBX, unsigned int SBZ,bool M1_TRANSPOSE>
 inline void accum_row(float* bsg_attr_noalias dest,
                       bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> &prow,
                       bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> &pcol
@@ -147,48 +147,53 @@ inline void accum_row(float* bsg_attr_noalias dest,
                                 // with the result
                                 float *mat1 = prow.ptr;
                                 float *mat2 = pcol.ptr;
-                                for(int sbx_i = 0; sbx_i < BX; ++sbx_i) {
-                                        // Load an SBY-by-1 sub-column of mat1,
-                                        // 1-by-SBX sub-row of mat2, and perform a
-                                        // SBY-by-1 x 1-by-SBX vector-vector multiply
+                                for(int sbx_i = 0; sbx_i < BX; sbx_i += SBZ) {
+                                        // Load an SBY-by-SBZ sub-column of mat1,
+                                        // SBZ-by-SBX sub-row of mat2, and perform a
+                                        // SBY-by-SBZ x SBZ-by-SBX vector-vector multiply
                                         // that produces an SBY-by-SBX output matrix.
+
+                                        // *** SBX = 4, SBY = 4, SBZ = 2 USES 32 REGISTERS ***
+
                                         // Locations:
                                         //     col should be in registers (for SBY == 4)
                                         //     row should be in registers (for SBX == 4)
-                                        float col[SBY];
-                                        float row[SBX];
-
-                                        // Load a column of m1, and a row of m2.
-                                        float * bsg_attr_noalias col_anchor;
-                                        if (!M1_TRANSPOSE) {
-                                                // Location: (pointer to) Scratchpad
-                                                col_anchor = &(mat1[sb_anchor_y * BX + sbx_i]);
-                                        } else {
-                                                // Location: (pointer to) Scratchpad
-                                                col_anchor = &(mat1[sb_anchor_y + sbx_i * BY]);
-                                        }
+                                        float col[SBZ][SBY];
+                                        float row[SBZ][SBX];
+                                        bsg_unroll(2)
+                                        for(int j = 0; j < SBZ; ++j){
+                                                // Load a column of m1, and a row of m2.
+                                                float * bsg_attr_noalias col_anchor;
+                                                if (!M1_TRANSPOSE) {
+                                                        // Location: (pointer to) Scratchpad
+                                                        col_anchor = &(mat1[sb_anchor_y * BX + sbx_i + j]);
+                                                } else {
+                                                        // Location: (pointer to) Scratchpad
+                                                        col_anchor = &(mat1[sb_anchor_y + (sbx_i + j) * BY]);
+                                                }
 
                                 
-                                        // Load an SBX-by-1 sub-column of mat2
-                                        // If M1 is transposed, then adjust
-                                        // the indexing to row major.
-                                        // Transposing can improve performance
-                                        // by using using immediates instead
-                                        // of a register offset.
-                                        float * bsg_attr_noalias row_anchor = &(mat2[sbx_i * BY + sb_anchor_x]);
-                                        col[0] = col_anchor[0];
-                                        bsg_unroll(16)
-                                        for(int i = 0; i < SBX; ++i){
-                                                row[i] = row_anchor[i];
-                                        }
-
-                                        for(int i = 1; i < SBX; ++i){
-                                                if (!M1_TRANSPOSE) {
-                                                        col[i] = col_anchor[i * BX];
-                                                } else {
-                                                        col[i] = col_anchor[i];
+                                                // Load an SBX-by-1 sub-column of mat2
+                                                // If M1 is transposed, then adjust
+                                                // the indexing to row major.
+                                                // Transposing can improve performance
+                                                // by using using immediates instead
+                                                // of a register offset.
+                                                float * bsg_attr_noalias row_anchor = &(mat2[(sbx_i + j) * BY + sb_anchor_x]);
+                                                bsg_unroll(16)
+                                                for(int i = 0; i < SBX; ++i){
+                                                        if (!M1_TRANSPOSE) {
+                                                                col[j][i] = col_anchor[i * BX];
+                                                        } else {
+                                                                col[j][i] = col_anchor[i];
+                                                        }
+                                                }
+                                                bsg_unroll(16)
+                                                for(int i = 0; i < SBX; ++i){
+                                                        row[j][i] = row_anchor[i];
                                                 }
                                         }
+
 
                                         // Perform a SBY-by-1 x 1-by-SBX
                                         // vector-vector multiply to produce
@@ -204,14 +209,16 @@ inline void accum_row(float* bsg_attr_noalias dest,
                                         // registers so that there are SBY *
                                         // SBX fused-multiply-add instructions
                                         // in a row.
-                                        bsg_unroll(16)
+                                        bsg_unroll(2)
+                                        for(int j = 0; j< SBZ; ++j){
+                                                bsg_unroll(16)
                                                 for(int sby_i = 0; sby_i < SBY; ++sby_i){
                                                         bsg_unroll(16)
-                                                                for(int sbx_i = 0; sbx_i < SBX; ++sbx_i){
-                                                                        psum[sby_i][sbx_i] = fmaf(col[sby_i], row[sbx_i], psum[sby_i][sbx_i]);
-                                                                        // psum[sby_i][sbx_i] += col[sby_i] * row[sbx_i];
-                                                                }
+                                                        for(int sbx_i = 0; sbx_i < SBX; ++sbx_i){
+                                                                psum[sby_i][sbx_i] = fmaf(col[j][sby_i], row[j][sbx_i], psum[sby_i][sbx_i]);
+                                                        }
                                                 }
+                                        }
                                 }
                                 pcol.stride();
                                 prow.stride();
@@ -621,7 +628,7 @@ __attribute__((no_builtin("memcpy", "memset")))
                                 bsg_barrier_hw_tile_group_sync();
 
                                 // Multiply the blocks, and accumulate into the result
-                                accum_row<BY, 4, BX, 4, LOAD_M1_TRANSPOSED>(block_out, prow, pcol);
+                                accum_row<BY, 4, BX, 4, 2, LOAD_M1_TRANSPOSED>(block_out, prow, pcol);
                                 
                                 bsg_barrier_hw_tile_group_sync();
                         }
