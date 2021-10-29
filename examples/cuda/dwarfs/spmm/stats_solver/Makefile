@@ -1,6 +1,7 @@
 REPLICANT_PATH=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 APPLICATION_PATH=$(EXAMPLES_PATH)/cuda/dwarfs/spmm
+include $(APPLICATION_PATH)/utils.mk
 
 solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/Random.hpp
 solver: $(EXAMPLES_PATH)/cuda/dwarfs/include/host/EigenSparseMatrix.hpp
@@ -38,6 +39,13 @@ $(foreach input,$(INPUTS),$(input).partition.stats): %.partition.stats: inputs p
 	$*.input.csv $*.solution.csv $*.answer.csv \
 	$*.A_stats.csv $*.B_stats.csv \
 	$(PARTITION_FACTOR)
+	$(eval parts\
+	= $(call cartesian\
+	,$(call range,0,$(PARTITION_FACTOR))\
+	,$(call range,0,$(PARTITION_FACTOR))\
+	,_))
+	$(eval part_stats = $(foreach part,$(parts),$(part).$@.solve_row.csv))
+	python3 $(APPLICATION_PATH)/py/summarize_partitions.py $*.solve_row.partitions.summary.csv $(part_stats)
 
 clean:
-	rm -rf solver *.input.csv *.solve_row.csv *.solution.csv *.answer.csv
+	rm -rf solver *.csv partition_solver

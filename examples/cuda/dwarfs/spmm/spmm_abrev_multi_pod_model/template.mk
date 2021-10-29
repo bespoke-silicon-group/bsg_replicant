@@ -78,7 +78,7 @@ KERNEL_NAME = kernel_spmm
 # Host code compilation flags and flow
 ###############################################################################
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES  = spmm_main_abrev.cpp
+TEST_SOURCES  = spmm_main_abrev_multipod_model.cpp
 TEST_SOURCES += Random.cpp
 
 TEST_HEADERS =  $(shell find $(APPLICATION_PATH)/include/host/ -name *.h)
@@ -196,7 +196,7 @@ RISCV_DEFINES += -DTAG_ROW_SOLVE=0x1
 RISCV_DEFINES += -DTAG_OFFSET_COMPUTE=0x2
 RISCV_DEFINES += -DTAG_RESULTS_COPY=0x3
 RISCV_DEFINES += -D__KERNEL_SPMM__
-RISCV_DEFINES += -D__ABREV__
+RISCV_DEFINES += -D__PART__
 include $(APPLICATION_PATH)/utils.mk
 RISCV_DEFINES += -DLOG2_VCACHE_STRIPE_WORDS=$(call log2,$(BSG_MACHINE_VCACHE_STRIPE_WORDS))
 RISCV_DEFINES += -DLOG2_GLOBAL_X=$(call log2,$(BSG_MACHINE_GLOBAL_X))
@@ -218,7 +218,7 @@ RISCV_CC  = $(RISCV_GCC)
 C_ARGS  = $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
 C_ARGS += $($(INPUT)) $($(INPUT)__directed) $($(INPUT)__weighted) $($(INPUT)__zero-indexed)
 C_ARGS += $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y)
-C_ARGS += $(ROW_BASE) $(ROWS)
+C_ARGS += $(PARTFACTOR) $(PARTITION)
 
 SIM_ARGS ?=
 
@@ -240,18 +240,5 @@ help:
 
 .PHONY: clean
 
-NNZ_CDF_PLOTS =  A.nnz.cdfplot.pdf
-NNZ_CDF_PLOTS += AxA.nnz.cdfplot.pdf
-
-A.nnz.cdfplot.pdf:   DESCRIPTION="input"
-AxA.nnz.cdfplot.pdf: DESCRIPTION="result"
-$(NNZ_CDF_PLOTS): %.nnz.cdfplot.pdf: %.nnz.csv
-	$(eval TITLE="$(INPUT) $(DESCRIPTION), $($(INPUT)__rows) rows, $($(INPUT)__cols) cols")
-	python3 $(APPLICATION_PATH)/py/nnz.cdfplot.py $< $@ --title $(TITLE)
-
-plots: $(NNZ_CDF_PLOTS)
-
-analyze:
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/dwarfs/imports/hammerblade-helpers/py python3 $(APPLICATION_PATH)/py/analyze.py vanilla_stats.csv
 stats:
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py python3 -m vanilla_parser --only stats_parser --vcache-stats vcache_stats.csv
