@@ -60,10 +60,10 @@ void host_mm_opt(hb_mc_host_tensor_t<float> *result,
                 hb_mc_host_tensor_t<float> *mat1,
                 hb_mc_host_tensor_t<float> *mat2) {
 
-        for (int y = 0; y < result->sizes[0]; ++y) {
-                for (int x = 0; x < result->sizes[1]; ++x) {
+        for (unsigned int y = 0; y < result->sizes[0]; ++y) {
+                for (unsigned int x = 0; x < result->sizes[1]; ++x) {
                         float res = 0;
-                        for (int k = 0; k < mat1->sizes[1]; ++k) {
+                        for (unsigned int k = 0; k < mat1->sizes[1]; ++k) {
                                 res += mat1->data[mat1->strides[0] * y + k] * mat2->data[mat2->strides[0] * k + x];
                         }
 
@@ -216,8 +216,8 @@ int kernel_matrix_mul (int argc, char **argv) {
         Hmat1.strides = new uint32_t[Hmat1.dims];
         Hmat1.strides[0] = Hmat1.sizes[1];
         Hmat1.strides[1] = 1;
-        for (int y = 0; y < Hmat1.sizes[0]; ++y) {
-                for (int x = 0; x < Hmat1.sizes[1]; ++x) {
+        for (unsigned int y = 0; y < Hmat1.sizes[0]; ++y) {
+                for (unsigned int x = 0; x < Hmat1.sizes[1]; ++x) {
                         if(x == y)
                                 Hmat1.data[y * Hmat1.strides[0] + x] = 1;
                 }
@@ -255,6 +255,8 @@ int kernel_matrix_mul (int argc, char **argv) {
         // Copy mat1 and mat2, from host onto device
         //************************************************************
         void *dst, *src;
+        hb_mc_dma_htod_t htod;
+        hb_mc_dma_dtoh_t dtoh;
 
         // Copy mat1
         bsg_pr_info("Copying mat1\n");
@@ -284,12 +286,19 @@ int kernel_matrix_mul (int argc, char **argv) {
 
         dst = (void *) ((intptr_t) mat1.data);
         src = (void *) Hmat1.data;
+
+        /*
         rc = hb_mc_device_memcpy (&device, dst, src, Hmat1.N * sizeof(*Hmat1.data), HB_MC_MEMCPY_TO_DEVICE);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("Failed to copy mat1.data to device.\n");
                 return rc;
-        }
+        }*/
 
+        htod.d_addr = mat1.data;
+        htod.h_addr = src;
+        htod.size   = Hmat1.N * sizeof(*Hmat1.data);
+
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
         // Copy mat2
         bsg_pr_info("Copying mat2\n");
@@ -319,11 +328,18 @@ int kernel_matrix_mul (int argc, char **argv) {
 
         dst = (void *) ((intptr_t) mat2.data);
         src = (void *) Hmat2.data;
+        /*
         rc = hb_mc_device_memcpy (&device, dst, src, Hmat2.N * sizeof(*Hmat2.data), HB_MC_MEMCPY_TO_DEVICE);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("Failed to copy mat2.data to device.\n");
                 return rc;
-        }
+        }*/
+
+        htod.d_addr = mat2.data;
+        htod.h_addr = src;
+        htod.size   = Hmat2.N * sizeof(*Hmat2.data);
+
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
 
         // Copy out
@@ -402,11 +418,19 @@ int kernel_matrix_mul (int argc, char **argv) {
         bsg_pr_info("Copying result back\n");
         src = (void *) ((intptr_t) out.data);
         dst = (void *) Hout.data;
+        /*
         rc = hb_mc_device_memcpy (&device, dst, src, Hout.N * sizeof(*Hout.data), HB_MC_MEMCPY_TO_HOST);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("failed to copy memory from device.\n");
                 return rc;
-        }
+        }*/
+
+        
+        dtoh.d_addr = out.data;
+        dtoh.h_addr = dst;
+        dtoh.size   = Hout.N * sizeof(*Hout.data);
+
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh, 1));
 
 
         //************************************************************
@@ -426,7 +450,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         host_mm_opt(&Hresult, &Hmat1, &Hmat2);
 
         double sse = 0;
-        for(int i = 0; i < Hresult.N; ++i){
+        for(unsigned int i = 0; i < Hresult.N; ++i){
                 sse += (Hresult.data[i] - Hout.data[i]) * (Hresult.data[i] - Hout.data[i]);
         }
         /*
@@ -452,7 +476,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         bsg_pr_test_info(BSG_GREEN("Matrix Match. (SSE: %f)\n"), sse);
 
         bsg_pr_info("\n\n====== EXECUTION STATISTICS ====== \n");
-        bsg_pr_info("Cycles: %d\n", cycle_end-cycle_start);
+        bsg_pr_info("Cycles: %lu\n", cycle_end-cycle_start);
         bsg_pr_info("====== END EXECUTION STATISTICS ====== \n\n\n");
 
         return HB_MC_SUCCESS;
