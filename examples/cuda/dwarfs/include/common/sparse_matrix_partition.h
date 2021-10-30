@@ -5,14 +5,13 @@ extern "C" {
 #endif
     typedef struct sparse_matrix_partition_info {
         int major_start;
-        int partid_hash; // to find the partition of row i, lookup partid_hash[i/partitions];
+        int major_stop;
+        int minor_id;
     } sparse_matrix_partition_info_t;
 
     typedef struct sparse_matrix_partition {
         sparse_matrix_t              matrix;
-        int                          partitions;
-        int                          partid;
-        sparse_matrix_partition_info partinfo[1];
+        sparse_matrix_partition_info partinfo;
     } sparse_matrix_partition_t;
 #ifdef __cplusplus
 }

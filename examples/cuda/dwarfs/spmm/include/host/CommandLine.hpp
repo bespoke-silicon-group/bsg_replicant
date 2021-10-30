@@ -89,6 +89,37 @@ namespace spmm {
         int _rows;
     };
 
+    class SpMMPartitionCommandLine : public SpMMCommandLine {
+    public:
+        enum {
+            PARTFACTOR = SpMMCommandLine::SPMM_NARGS,
+            PARTITION,            
+        };
+        // constructor
+        SpMMPartitionCommandLine(const SpMMCommandLine &base) : SpMMCommandLine(base) {}        
+        static SpMMPartitionCommandLine Parse(int argc, char *argv[]) {
+            SpMMPartitionCommandLine cl = SpMMCommandLine::Parse(argc, argv);
+            cl._partfactor = atoi(argv[PARTFACTOR]);
+
+            std::string partition = argv[PARTITION];
+            sscanf(partition.c_str()
+                   , "%dx%d"
+                   , &cl._partition_i
+                   , &cl._partition_j);
+            
+            return cl;
+        }
+        // getters
+        int partfactor() const  { return _partfactor; }
+        int partition_i() const { return _partition_i; }
+        int partition_j() const { return _partition_j; }
+
+    private:
+        int _partfactor;
+        int _partition_i;
+        int _partition_j;
+    };
+    
     class SolveRowCommandLine : public CommandLineBase {
     public:
         enum {

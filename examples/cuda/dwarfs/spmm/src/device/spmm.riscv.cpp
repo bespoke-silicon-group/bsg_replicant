@@ -16,9 +16,9 @@
 
 #ifdef __KERNEL_SPMM__
 extern "C" int kernel_spmm(
-    sparse_matrix_t *__restrict__ A_ptr // csr
-    ,sparse_matrix_t *__restrict__ B_ptr // csr
-    ,sparse_matrix_t *__restrict__ C_ptr // csr
+    sparse_matrix_partition_t *__restrict__ A_ptr // csr
+    ,sparse_matrix_partition_t *__restrict__ B_ptr // csr
+    ,sparse_matrix_partition_t *__restrict__ C_ptr // csr
     ,std::atomic<intptr_t> *mem_pool_arg // mem pool
 #ifdef __ABREV__
     , int row_start
@@ -30,8 +30,13 @@ extern "C" int kernel_spmm(
     spmm_solve_row_init();
 
 #if !defined(__ABREV__)
+#if !defined(__PART__)
     int row_start = 0;
     int row_stop = A_lcl.n_major;
+#else
+    int row_start = C_part_lcl.partinfo.major_start;
+    int row_stop  = C_part_lcl.partinfo.major_stop;
+#endif
 #endif
         
     // sync
@@ -40,8 +45,8 @@ extern "C" int kernel_spmm(
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 
     // foreach row
-    for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS) {
-        spmm_solve_row(Ai);
+    for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS) {
+        spmm_solve_row(Ci);
     }
 
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
@@ -52,8 +57,8 @@ extern "C" int kernel_spmm(
     bsg_cuda_print_stat_start(TAG_ROW_SORT);
     
     // foreach row
-    for (int Ai = row_start + __bsg_id; Ai < row_stop; Ai += THREADS)
-        spmm_sort_row(Ai);
+    for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS)
+        spmm_sort_row(Ci);
     
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SORT);

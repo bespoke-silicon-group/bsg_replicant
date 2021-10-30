@@ -80,8 +80,13 @@ namespace spmm {
         }
 
         void solve() {
-            // for each row in A...
-            for (idx_t Ai = 0; Ai < _A.rows(); ++Ai) {
+            solve_range(0, _A.rows());
+        }
+
+        void solve_range(idx_t start, idx_t stop) {
+            _start = start;
+            _stop = stop;
+            for (idx_t Ai = start; Ai < stop; Ai++) {
                 solve_row(Ai);
             }
         }
@@ -208,7 +213,8 @@ namespace spmm {
             }
             ss << "\n";
             // stats for each line
-            for (const auto & sline : stats) {
+            for (idx_t i = _start; i < _stop; i++) {
+                const auto &sline = stats[i];
                 for (auto st : sline) {
                     ss << st << ",";
                 }
@@ -237,6 +243,8 @@ namespace spmm {
     private:
         const SparseMatrixType & _A;
         const SparseMatrixType & _B;
+        idx_t _start;
+        idx_t _stop;
         // output data
         std::vector<idx_t>  _C_row_nnz;
         std::vector<idx_t>  _C_row_off;
