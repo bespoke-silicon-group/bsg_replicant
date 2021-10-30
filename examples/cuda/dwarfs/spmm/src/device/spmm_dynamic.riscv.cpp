@@ -25,9 +25,9 @@ std::atomic<int> rowq_cpy;
 
 #ifdef __KERNEL_SPMM__
 extern "C" int kernel_spmm(
-    sparse_matrix_t *__restrict__ A_ptr // csr
-    ,sparse_matrix_t *__restrict__ B_ptr // csr
-    ,sparse_matrix_t *__restrict__ C_ptr // csr
+    sparse_matrix_partition_t *__restrict__ A_ptr // csr
+    ,sparse_matrix_partition_t *__restrict__ B_ptr // csr
+    ,sparse_matrix_partition_t *__restrict__ C_ptr // csr
     ,std::atomic<intptr_t> *mem_pool_arg // mem pool
 #ifdef __ABREV__
     ,int row_start
@@ -39,6 +39,10 @@ extern "C" int kernel_spmm(
 #if !defined(__ABREV__)
     int row_start = 0;
     int row_stop  = A_lcl.n_major;
+#endif
+#if defined(__PART__)
+    int row_start = C_part_lcl.major_start;
+    int row_stop  = C_part_lcl.major_stop;
 #endif
 
     if (__bsg_id == 0) {
@@ -53,12 +57,12 @@ extern "C" int kernel_spmm(
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 //#if 0
     // foreach row
-    for (int Ai_base = rowq_solve.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
-         Ai_base < row_stop;
-         Ai_base = rowq_solve.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
-        int Ai_stop = std::min(Ai_base+WORK_GRANULARITY, row_stop);
-        for (int Ai = Ai_base; Ai < Ai_stop; Ai++) {
-            spmm_solve_row(Ai);
+    for (int Ci_base = rowq_solve.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+         Ci_base < row_stop;
+         Ci_base = rowq_solve.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci_stop = std::min(Ci_base+WORK_GRANULARITY, row_stop);
+        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
+            spmm_solve_row(Ci);
         }
     }
 //#endif
@@ -69,12 +73,12 @@ extern "C" int kernel_spmm(
 
     bsg_cuda_print_stat_start(TAG_ROW_SORT);
     // foreach row
-    for (int Ai_base = rowq_sort.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
-         Ai_base < row_stop;
-         Ai_base = rowq_sort.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
-        int Ai_stop = std::min(Ai_base+WORK_GRANULARITY, row_stop);
-        for (int Ai = Ai_base; Ai < Ai_stop; Ai++) {            
-            spmm_sort_row(Ai);
+    for (int Ci_base = rowq_sort.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+         Ci_base < row_stop;
+         Ci_base = rowq_sort.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci_stop = std::min(Ci_base+WORK_GRANULARITY, row_stop);
+        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {            
+            spmm_sort_row(Ci);
         }
     }
     bsg_cuda_print_stat_end(TAG_ROW_SORT);
@@ -102,12 +106,12 @@ extern "C" int kernel_spmm(
 
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
     // foreach row
-    for (int Ai_base = rowq_cpy.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
-         Ai_base < row_stop;
-         Ai_base = rowq_cpy.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
-        int Ai_stop = std::min(Ai_base+WORK_GRANULARITY, row_stop);
-        for (int Ai = Ai_base; Ai < Ai_stop; Ai++) {
-            spmm_copy_results(Ai);
+    for (int Ci_base = rowq_cpy.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed);
+         Ci_base < row_stop;
+         Ci_base = rowq_cpy.fetch_add(WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci_stop = std::min(Ci_base+WORK_GRANULARITY, row_stop);
+        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
+            spmm_copy_results(Ci);
         }
     }
 

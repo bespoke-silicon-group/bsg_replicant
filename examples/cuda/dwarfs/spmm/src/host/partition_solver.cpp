@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
 
 
     std::vector<CSR*> mjr_partitions = eigen_sparse_matrix::PartitionMjrPtr<CSR*>(&A, partition_factor);
+    std::vector<int>  mjr_part_base  = eigen_sparse_matrix::PartitionStartPtr<CSR*>(&A, partition_factor);
     std::vector<CSR*> mnr_partitions = eigen_sparse_matrix::PartitionMnrPtr<CSR*>(&A, partition_factor);
 
     for (int i = 0; i < mjr_partitions.size(); i++) {
@@ -39,7 +40,7 @@ int main(int argc, char *argv[])
             CSR *A_i = mjr_partitions[i];
             CSR *A_j = mjr_partitions[j];
             Solver<CSR> slvr(*A_i, *A_j);
-            slvr.solve();
+            slvr.solve_range(mjr_part_base[i],mjr_part_base[i+1]);
             //auto sol = slvr.solutions();
             //auto ans = CSR(((*A_i)*(*A_j)).pruned());
             std::string prefix = std::to_string(i) + "_" + std::to_string(j);

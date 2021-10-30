@@ -8,33 +8,33 @@
 #include "sparse_matrix_partition.h"
 
 namespace dwarfs {
+
     template <typename EigenSparseMatrix>
-    class PartitionedSparseMatrix {
+    class SparseMatrixPartition {
     public:
         using idx_t = typename EigenSparseMatrix::StorageIndex;
         using real_t = typename EigenSparseMatrix::Scalar;
 
         struct Partition {
-            struct {
-                sparse_matrix_partition_t      header;
-                sparse_matrix_partition_info_t partinfo_h [64];
-            } header_h;
+            sparse_matrix_partition_t header_h;
             hb_mc_eva_t header_d;
-            int &is_row_major() { return header_h.header.matrix.is_row_major; }
-            int &n_major() { return header_h.header.matrix.n_major; }
-            int &n_minor() { return header_h.header.matrix.n_minor; }
-            int &n_non_zeros() { return header_h.header.matrix.n_non_zeros; }
-            kernel_int_ptr_t   &mjr_nnz_ptr  () { return header_h.header.matrix.mjr_nnz_ptr; }
-            kernel_int_ptr_t   &mnr_off_ptr  () { return header_h.header.matrix.mnr_off_ptr; }
-            kernel_int_ptr_t   &mnr_idx_ptr  () { return header_h.header.matrix.mnr_idx_ptr; }
-            kernel_float_ptr_t &val_ptr      () { return header_h.header.matrix.val_ptr; }
-            kernel_int_ptr_t   &alg_priv_ptr () { return header_h.header.matrix.alg_priv_ptr; }
-            int &partitions() { return header_h.partitions; }
-            int &partid()     { return header_h.partid; }
-            sparse_matrix_partition_info_t & partinfo(idx_t idx) { return header_h.partinfo[idx]; }
+            // getters/setters
+            int &is_row_major() { return header_h.matrix.is_row_major; }
+            int &n_major() { return header_h.matrix.n_major; }
+            int &n_minor() { return header_h.matrix.n_minor; }
+            int &n_non_zeros() { return header_h.matrix.n_non_zeros; }
+            kernel_int_ptr_t   &mjr_nnz_ptr  () { return header_h.matrix.mjr_nnz_ptr; }
+            kernel_int_ptr_t   &mnr_off_ptr  () { return header_h.matrix.mnr_off_ptr; }
+            kernel_int_ptr_t   &mnr_idx_ptr  () { return header_h.matrix.mnr_idx_ptr; }
+            kernel_float_ptr_t &val_ptr      () { return header_h.matrix.val_ptr; }
+            kernel_int_ptr_t   &alg_priv_ptr () { return header_h.matrix.alg_priv_ptr; }
+            sparse_matrix_partition_info_t & partinfo() { return header_h.partinfo; }
+            int & major_start () { return header_h.major_start; }
+            int & major_stop  () { return header_h.major_stop; }
+            int & minor_id    () { return header_h.minor_id; }                        
         };
         
-        PartitionedSparseMatrix()
+        SparseMatrixPartition()
             : _hb(HammerBlade::Get())
             , _espm(nullptr) {
         }

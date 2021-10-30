@@ -2,7 +2,7 @@
 #include "CommandLine.hpp"
 #include "EigenSparseMatrix.hpp"
 #include "SparseMatrix.hpp"
-#include "PartitionedSparseMatrix.hpp"
+#include "SparseMatrixProductPartitioner.hpp"
 #include "Solver.hpp"
 #include "HammerBlade.hpp"
 #include <iostream>
@@ -14,7 +14,7 @@ using namespace hammerblade::host;
 
 int SpGEMM(int argc, char *argv[])
 {
-    auto cl = SpMMAbrevCommandLine::Parse(argc, argv);
+    auto cl = SpMMPartitionCommandLine::Parse(argc, argv);
     printf("%-14s = %s\n", "riscv_path",  cl.riscv_path().c_str());
     printf("%-14s = %s\n", "kernel_name", cl.kernel_name().c_str());
     printf("%-14s = %s\n", "input_path", cl.input_path().c_str());
@@ -31,41 +31,51 @@ int SpGEMM(int argc, char *argv[])
         , cl.input_is_zero_indexed()
         );
     
-    auto B = A;
-    auto AxA = CSR((A*B).pruned());
+    // auto AxA = CSR((A*B).pruned());
 
-    eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
-    eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
-    eigen_sparse_matrix::write_offset(AxA, "AxA.offset.csv");
-    eigen_sparse_matrix::write_matrix(AxA, "AxA.txt");
-
-    // init application
-    HammerBlade::Ptr hb = HammerBlade::Get();
-    hb->load_application(cl.riscv_path());
+    // eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
+    // eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
+    // eigen_sparse_matrix::write_offset(AxA, "AxA.offset.csv");
+    // eigen_sparse_matrix::write_matrix(AxA, "AxA.txt");
 
     // init inputs
     std::shared_ptr<CSR> A_ptr = std::shared_ptr<CSR>(new CSR(A));
-    PartitionedSparseMatrix<CSR> A_dev, B_dev, C_dev;
-    
-    SparseMatrix<CSR> A_dev, B_dev, C_dev;
 
-    A_dev.initializePartitionFromEigenSparseMatrix(A_ptr, 64, 0);
-    B_dev.initializePartitionFromEigenSparseMatrix(A_ptr, 64, 0);
+    printf("calculating partition (%3d,%3d) of (%3d,%3d)\n"
+           , cl.partition_i()
+           , cl.partition_j()
+           , cl.partfactor()
+           , cl.partfactor()
+        );
+
+    SparseMatrixProductPartitioner<std::shared_ptr<CSR>> partitioner(A_ptr, A_ptr, cl.partfactor());
+    //// divide input matrix by partition factor
+    //std::vector<std::shared_ptr<CSR>> row_partitions = eigen_sparse_matrix::PartitionMjrPtr(A_ptr, cl.partfactor());
+    //std::vector<std::shared_ptr<CSR>> col_partitions = eigen_sparse_matrix::PartitionMnrPtr(A_ptr, cl.partfactor());    
+    
+    // init application
+    // HammerBlade::Ptr hb = HammerBlade::Get();
+    // hb->load_application(cl.riscv_path());
+
+    // SparseMatrix<CSR> A_dev, B_dev, C_dev;
+
+    // A_dev.initializePartitionFromEigenSparseMatrix(A_ptr, 64, 0);
+    // B_dev.initializePartitionFromEigenSparseMatrix(A_ptr, 64, 0);
     // B_dev.initializeFromEigenSparseMatrix(A_ptr);
     // C_dev.initializeEmptyProduct(A_ptr, A_ptr);
 
-    // allocate dynamic memory pool
-    hb_mc_eva_t mem_pool = hb->alloc(128 * sizeof(int) * 1024 * 1024);
-    hb_mc_eva_t mem_pool_val
-        = mem_pool // have it start after the mem pool
-        + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
-        * sizeof(int); // word size
+    // // allocate dynamic memory pool
+    // hb_mc_eva_t mem_pool = hb->alloc(128 * sizeof(int) * 1024 * 1024);
+    // hb_mc_eva_t mem_pool_val
+    //     = mem_pool // have it start after the mem pool
+    //     + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
+    //     * sizeof(int); // word size
 
-    // mem_pool = start of memory pool
-    hb->push_write(mem_pool, &mem_pool_val, sizeof(mem_pool_val));
+    // // mem_pool = start of memory pool
+    // hb->push_write(mem_pool, &mem_pool_val, sizeof(mem_pool_val));
 
-    // sync data
-    hb->sync_write();
+    // // sync data
+    // hb->sync_write();
 
     // std::cout << "Launching kernel on "
     //           << cl.tgx() << " x "

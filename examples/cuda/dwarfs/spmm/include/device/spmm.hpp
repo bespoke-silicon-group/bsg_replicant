@@ -7,6 +7,7 @@
 #endif
 #include "bsg_mcs_mutex.hpp"
 #include "sparse_matrix.h"
+#include "sparse_matrix_partition.h"
 #ifdef __BUILD_FOR_HOST__
 #define thread thread_local
 #else
@@ -56,13 +57,27 @@ extern bsg_mcs_mutex_t mtx;
 #define THREADS                                 \
     (bsg_tiles_X*bsg_tiles_Y)
 
-extern thread sparse_matrix_t A_lcl;
-extern thread sparse_matrix_t B_lcl;
-extern thread sparse_matrix_t C_lcl;
+extern thread sparse_matrix_partition_t A_part_lcl;
+extern thread sparse_matrix_partition_t B_part_lcl;
+extern thread sparse_matrix_partition_t C_part_lcl;
 
-extern thread sparse_matrix_t *A_glbl_p;
-extern thread sparse_matrix_t *B_glbl_p;
-extern thread sparse_matrix_t *C_glbl_p;
+#define A_lcl                                   \
+    (A_part_lcl.matrix)
+#define B_lcl                                   \
+    (B_part_lcl.matrix)
+#define C_lcl                                   \
+    (C_part_lcl.matrix)
+
+extern thread sparse_matrix_partition_t *A_part_glbl_p;
+extern thread sparse_matrix_partition_t *B_part_glbl_p;
+extern thread sparse_matrix_partition_t *C_part_glbl_p;
+
+#define A_glbl_p                                \
+    (&A_part_glbl_p->matrix)
+#define B_glbl_p                                \
+    (&B_part_glbl_p->matrix)
+#define C_glbl_p                                \
+    (&C_part_glbl_p->matrix)
 
 typedef struct spmm_partial {
     int   idx; // column index
@@ -98,9 +113,9 @@ static inline void *spmm_malloc(std::size_t size)
     return reinterpret_cast<void*>(spmm_mem_pool->fetch_add(size, std::memory_order_acquire));
 }
 
-void spmm_init(sparse_matrix_t *__restrict__ A_ptr, // csr
-               sparse_matrix_t *__restrict__ B_ptr, // csr
-               sparse_matrix_t *__restrict__ C_ptr, // csr
+void spmm_init(sparse_matrix_partition_t *__restrict__ A_ptr, // csr
+               sparse_matrix_partition_t *__restrict__ B_ptr, // csr
+               sparse_matrix_partition_t *__restrict__ C_ptr, // csr
                std::atomic<intptr_t> *mem_pool_arg); // mem pool
 
 
