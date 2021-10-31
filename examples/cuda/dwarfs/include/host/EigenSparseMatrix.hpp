@@ -23,6 +23,10 @@ namespace dwarfs {
             using Scalar = typename SparseMatrixType::Scalar;
             Index nnz_A = A.innerNonZeroPtr()[mjr];
             Index nnz_B = B.innerNonZeroPtr()[mjr];
+#ifdef DEBUG_EIGEN_SPARSE_MATRIX
+            std::cout << "nnz(A," << mjr << ")=" << nnz_A << std::endl;
+            std::cout << "nnz(B," << mjr << ")=" << nnz_B << std::endl;
+#endif
             if (nnz_A != nnz_B) {
                 return false;
             }
@@ -42,9 +46,17 @@ namespace dwarfs {
                 // fetch indices
                 Index iA = idx_A[nz];
                 Index iB = idx_B[nz];
+#ifdef DEBUG_EIGEN_SPARSE_MATRIX
+                std::cout << "idx(A, " << nz << ")=" << iA << std::endl;
+                std::cout << "idx(B, " << nz << ")=" << iB << std::endl;
+#endif
                 // fetch scalar
                 Scalar vA = val_A[nz];
                 Scalar vB = val_B[nz];
+#ifdef DEBUG_EIGEN_SPARSE_MATRIX
+                std::cout << "val(A, " << nz << ")=" << vA << std::endl;
+                std::cout << "val(B, " << nz << ")=" << vB << std::endl;
+#endif
                 if (iA != iB)
                     return false;
 
@@ -62,11 +74,18 @@ namespace dwarfs {
                              , typename SparseMatrixType::StorageIndex mjr_hi)
         {
             using Index = typename SparseMatrixType::StorageIndex;
-            using Scalar = typename SparseMatrixType::Scalar;
-
-            for (Index mjr = mjr_lo; mjr < mjr_hi; mjr++)
+            //using Scalar = typename SparseMatrixType::Scalar;
+            if (A.isCompressed())
+                A.uncompress();
+            if (B.isCompressed())
+                B.uncompress();
+            for (Index mjr = mjr_lo; mjr < mjr_hi; mjr++) {
+#ifdef DEBUG_EIGEN_SPARSE_MATRIX
+                std::cout << "comparing row " << mjr << std::endl;
+#endif
                 if (!mjr_equal(A, B, mjr))
                     return false;
+            }
             return true;
         }
 
@@ -327,9 +346,17 @@ namespace dwarfs {
                 part->reserve(nnz);
                 part->uncompress();
                 // set offsets and copy nonzeros
+                for (idx_t row = 0; row < row_start; row++) {
+                    part->outerIndexPtr()  [row] = 0;
+                    part->innerNonZeroPtr()[row] = 0;
+                }
                 for (idx_t row = row_start; row < row_stop; row++) {
                     part->outerIndexPtr()  [row]  = mat->outerIndexPtr()[row]-nz_start;
                     part->innerNonZeroPtr()[row]  = mat->innerNonZeroPtr()[row];
+                }
+                for (idx_t row = row_stop; row < mat->outerSize(); row++) {
+                    part->outerIndexPtr()  [row] = nnz;
+                    part->innerNonZeroPtr()[row] = 0;
                 }
                 memcpy(part->innerIndexPtr(), mat->innerIndexPtr() + nz_start, nnz * sizeof(idx_t));
                 memcpy(part->valuePtr(), mat->valuePtr() + nz_start, nnz * sizeof(real_t));

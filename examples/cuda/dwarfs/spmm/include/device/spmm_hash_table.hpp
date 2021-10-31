@@ -211,7 +211,7 @@ namespace hash_table {
             while (p != nullptr) {
                 // match?
                 if (p->part.idx == idx) {
-                    pr_dbg("  %3d found at 0x%08x\n"
+                    pr_dbg("  col %3d found at 0x%08x\n"
                                   , idx
                                   , p);
 #if !defined(SPMM_NO_FLOPS)
@@ -226,7 +226,7 @@ namespace hash_table {
             }
             // allocate a hash item
             p = alloc_elt();
-            pr_dbg("  %3d not found, inserting at 0x%08x\n"
+            pr_dbg("  col %3d not found, inserting at 0x%08x\n"
                           , idx
                           , p);
             // set item parameters

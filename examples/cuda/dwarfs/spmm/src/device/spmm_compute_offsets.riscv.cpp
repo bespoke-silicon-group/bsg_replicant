@@ -5,7 +5,14 @@
 
 void spmm_compute_offsets()
 {
-    for (int Ci = __bsg_id; Ci < C_lcl.n_major; Ci += THREADS) {
+#ifdef __PART__
+    int start = C_part_lcl.partinfo.major_start;
+    int stop  = C_part_lcl.partinfo.major_stop;
+#else
+    int start = 0;
+    int stop = C_lcl.n_major;
+#endif
+    for (int Ci = start + __bsg_id; Ci < stop; Ci += THREADS) {
         int nnz = C_glbl_p->mjr_nnz_remote_ptr[Ci];
         pr_dbg("Computing offsets from %d\n", Ci);
         // Max: this can and should be unrolled
