@@ -1,6 +1,6 @@
+#include "EigenSparseMatrix.hpp"
 #include "bsg_manycore_regression.h"
 #include "CommandLine.hpp"
-#include "EigenSparseMatrix.hpp"
 #include "SparseMatrix.hpp"
 #include "SparseMatrixProductPartitioner.hpp"
 #include "Solver.hpp"
