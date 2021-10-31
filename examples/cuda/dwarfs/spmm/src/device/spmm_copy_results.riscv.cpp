@@ -8,8 +8,7 @@ void spmm_update_nonzeros(int Ci
                           , bsg_attr_remote float     *__restrict__ val_ptr
                           , bsg_attr_remote spmm_partial_t *__restrict__ par_ptr)
 {
-    pr_dbg("%d: copying results for row %d to 0x%08x and 0x%08x\n"
-           , __bsg_id
+    pr_dbg("copying results for row %d to 0x%08x and 0x%08x\n"
            , Ci
            , reinterpret_cast<unsigned>(idx_ptr)
            , reinterpret_cast<unsigned>(val_ptr));

@@ -18,8 +18,7 @@ PFACTOR=8
 PARTITIONS=$(call cartesian,$(call range,0,$(PFACTOR)),$(call range,0,$(PFACTOR)),x)
 
 $(foreach part,$(PARTITIONS),\
-$(eval TESTS += $(call test-name,wiki-vote,$(PFACTOR),$(part),yes,yes))\
-$(eval TESTS += $(call test-name,wiki-vote,$(PFACTOR),$(part),,no,yes)))
+$(eval TESTS += $(call test-name,08blocks,$(PFACTOR),$(part),yes,no)))
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))

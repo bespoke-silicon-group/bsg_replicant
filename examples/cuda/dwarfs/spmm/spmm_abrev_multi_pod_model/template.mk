@@ -181,6 +181,7 @@ RISCV_INCLUDES  += -I$(EXAMPLES_PATH)/cuda/dwarfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__ -ffreestanding $(EXTRA_RISCV_CCPPFLAGS)
 RISCV_CCPPFLAGS += -DLOG2_THREADS=$(shell echo 'l($(TX)*$(TY))/l(2)' | bc -l | xargs printf '%.f\n')
 RISCV_CCPPFLAGS += -DNONZEROS_TABLE_SIZE=1024
+RISCV_CCPPFLAGS += -DDEBUG
 RISCV_OPT_LEVEL  = -O3
 
 TILE_GROUP_DIM_X=$(TX)

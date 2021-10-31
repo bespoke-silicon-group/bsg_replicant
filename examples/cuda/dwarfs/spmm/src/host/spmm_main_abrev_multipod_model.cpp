@@ -48,71 +48,74 @@ int SpGEMM(int argc, char *argv[])
            , cl.partfactor()
         );
 
-    SparseMatrixProductPartitioner<std::shared_ptr<CSR>> partitioner(A_ptr, A_ptr, cl.partfactor());
-    //// divide input matrix by partition factor
-    //std::vector<std::shared_ptr<CSR>> row_partitions = eigen_sparse_matrix::PartitionMjrPtr(A_ptr, cl.partfactor());
-    //std::vector<std::shared_ptr<CSR>> col_partitions = eigen_sparse_matrix::PartitionMnrPtr(A_ptr, cl.partfactor());    
-    
+
     // init application
-    // HammerBlade::Ptr hb = HammerBlade::Get();
-    // hb->load_application(cl.riscv_path());
+    HammerBlade::Ptr hb = HammerBlade::Get();
+    hb->load_application(cl.riscv_path());
 
-    // SparseMatrix<CSR> A_dev, B_dev, C_dev;
+    // partition matrix
+    SparseMatrixProductPartitioner<std::shared_ptr<CSR>> partitioner(A_ptr, A_ptr, cl.partfactor());
+    auto A_dev = partitioner.A(cl.partition_i(), cl.partition_j());
+    auto B_dev = partitioner.B(cl.partition_i(), cl.partition_j());
+    auto C_dev = partitioner.C(cl.partition_i(), cl.partition_j());
 
-    // A_dev.initializePartitionFromEigenSparseMatrix(A_ptr, 64, 0);
-    // B_dev.initializePartitionFromEigenSparseMatrix(A_ptr, 64, 0);
-    // B_dev.initializeFromEigenSparseMatrix(A_ptr);
-    // C_dev.initializeEmptyProduct(A_ptr, A_ptr);
+    // allocate dynamic memory pool
+    hb_mc_eva_t mem_pool = hb->alloc(128 * sizeof(int) * 1024 * 1024);
+    hb_mc_eva_t mem_pool_val
+        = mem_pool // have it start after the mem pool
+        + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
+        * sizeof(int); // word size
 
-    // // allocate dynamic memory pool
-    // hb_mc_eva_t mem_pool = hb->alloc(128 * sizeof(int) * 1024 * 1024);
-    // hb_mc_eva_t mem_pool_val
-    //     = mem_pool // have it start after the mem pool
-    //     + hb->config()->vcache_stripe_words // a cache line away, to avoid false sharing
-    //     * sizeof(int); // word size
+    // mem_pool = start of memory pool
+    hb->push_write(mem_pool, &mem_pool_val, sizeof(mem_pool_val));
 
-    // // mem_pool = start of memory pool
-    // hb->push_write(mem_pool, &mem_pool_val, sizeof(mem_pool_val));
+    // sync data
+    hb->sync_write();
 
-    // // sync data
-    // hb->sync_write();
+    std::cout << "Launching kernel on "
+              << cl.tgx() << " x "
+              << cl.tgy() << " grid" << std::endl;
+    std::cout << cl.kernel_name() << std::hex
+              << "(" << A_dev->hdr_dev()
+              << "," << B_dev->hdr_dev()
+              << "," << C_dev->hdr_dev()
+              << "," << mem_pool
+              << ")" << std::dec << std::endl;
+    // launch kernel
+    hb->push_job(
+        Dim(1,1)
+        , Dim(cl.tgx(),cl.tgy())
+        , cl.kernel_name()
+        , A_dev->hdr_dev()
+        , B_dev->hdr_dev()
+        , C_dev->hdr_dev()
+        , mem_pool
+        );
 
-    // std::cout << "Launching kernel on "
-    //           << cl.tgx() << " x "
-    //           << cl.tgy() << " grid" << std::endl;
-    // std::cout << cl.kernel_name() << std::hex
-    //           << "(" << A_dev.hdr_dev()
-    //           << "," << B_dev.hdr_dev()
-    //           << "," << C_dev.hdr_dev()
-    //           << "," << mem_pool
-    //           << std::dec
-    //           << "," << cl.row_base()
-    //           << "," << cl.row_base()+cl.rows()
-    //           << ")" << std::dec << std::endl;
-    // // launch kernel
-    // hb->push_job(Dim(1,1), Dim(cl.tgx(),cl.tgy())
-    //              , cl.kernel_name()
-    //              , A_dev.hdr_dev()
-    //              , B_dev.hdr_dev()
-    //              , C_dev.hdr_dev()
-    //              , mem_pool
-    //              , cl.row_base()
-    //              , cl.row_base()+cl.rows());
-    // hb->exec();
+    hb->exec();
 
-    // std::shared_ptr<CSR> C_ptr = C_dev.updateEmptyProduct();
-    // eigen_sparse_matrix::write_nnz(*C_ptr, "C.nnz.csv");
-    // eigen_sparse_matrix::write_offset(*C_ptr, "C.offset.csv");
-    // eigen_sparse_matrix::write_matrix(*C_ptr, "C.txt");
+    std::shared_ptr<CSR> C_ptr = C_dev->updateEmptyProduct();
+    auto & Ap = *partitioner.EigenA(cl.partition_i(), cl.partition_j());
+    auto & Bp = *partitioner.EigenB(cl.partition_i(), cl.partition_j());
+    eigen_sparse_matrix::write_matrix(Ap, "Ap.txt");
+    eigen_sparse_matrix::write_matrix(Bp, "Bp.txt");
+    auto AxA   = CSR((Ap * Bp).pruned());
+    eigen_sparse_matrix::write_matrix(AxA, "AxAp.txt");
+    std::cout << "checking result" << std::endl;
+    // check equality for computed rows
+    bool eq = eigen_sparse_matrix::mjr_range_equal(
+        AxA
+        , *C_ptr
+        , partitioner.C_major_start(cl.partition_i(), cl.partition_j())
+        , partitioner.C_major_stop (cl.partition_i(), cl.partition_j())
+        );
 
-    // // check equality for computed rows
-    // bool eq = eigen_sparse_matrix::mjr_range_equal(AxA, *C_ptr, cl.row_base(), cl.row_base()+cl.rows());
-    // std::cout << "mjr_range_equal(AxA, *C_ptr, "
-    //           << cl.row_base() << ", "
-    //           << cl.row_base() + cl.rows()
-    //           << ") = " << eq << std::endl;
+    std::cout << "mjr_range_equal(AxA, *C_ptr, "
+              << partitioner.C_major_start(cl.partition_i(),cl.partition_j()) << ","
+              << partitioner.C_major_stop(cl.partition_i(),cl.partition_j()) << ","
+              << ") = " << eq << std::endl;
     
-    // hb->close();
+    hb->close();
     return HB_MC_SUCCESS;
 }
 

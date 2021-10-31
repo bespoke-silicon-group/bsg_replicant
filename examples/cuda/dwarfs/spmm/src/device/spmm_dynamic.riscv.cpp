@@ -36,13 +36,12 @@ extern "C" int kernel_spmm(
     )
 {        
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
-#if !defined(__ABREV__)
+#if defined(__PART__)
+    int row_start = C_part_lcl.partinfo.major_start;
+    int row_stop  = C_part_lcl.partinfo.major_stop;
+#else
     int row_start = 0;
     int row_stop  = A_lcl.n_major;
-#endif
-#if defined(__PART__)
-    int row_start = C_part_lcl.major_start;
-    int row_stop  = C_part_lcl.major_stop;
 #endif
 
     if (__bsg_id == 0) {

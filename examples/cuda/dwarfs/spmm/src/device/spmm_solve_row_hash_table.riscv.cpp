@@ -113,6 +113,7 @@ void spmm_solve_row(int Ai)
     for (int nonzero = 0; nonzero < nnz; nonzero++) {
         int Bi = cols[nonzero];
         float Aij = vals[nonzero];
+        pr_dbg("+ A[%d,%d] * B[%d;]\n", Ai, Bi, Bi);
         spmm_scalar_row_product(Aij, Bi);
     }
 
