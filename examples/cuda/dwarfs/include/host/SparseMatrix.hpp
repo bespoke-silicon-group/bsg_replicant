@@ -36,7 +36,7 @@ namespace dwarfs {
             _hb->push_write(_hdr_h.mjr_nnz_ptr, _espm->innerNonZeroPtr(), _hdr_h.n_major * sizeof(idx_t));
             
             // allocate row offset vector
-            alloc_aligned(_hdr_h.n_minor * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
+            alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
             _hb->push_write(_hdr_h.mnr_off_ptr, _espm->outerIndexPtr(), _hdr_h.n_major * sizeof(idx_t));
 
             // allocate col idx vector

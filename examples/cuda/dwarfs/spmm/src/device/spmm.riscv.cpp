@@ -38,15 +38,21 @@ extern "C" int kernel_spmm(
     int row_stop  = C_part_lcl.partinfo.major_stop;
 #endif
 #endif
-        
+    int row_range = row_stop-row_start;
     // sync
     barrier::spmm_barrier();
     
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 
     // foreach row
-    for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS) {
-        spmm_solve_row(Ci);
+    for (int Ci_base =  __bsg_id * VCACHE_STRIPE_WORDS;
+         Ci_base < row_range;
+         Ci_base += THREADS * VCACHE_STRIPE_WORDS) {
+        int Ci_start = row_start + Ci_base;
+        int Ci_stop  = std::min(row_stop, Ci_start + VCACHE_STRIPE_WORDS);
+        for (int Ci = Ci_start; Ci < Ci_stop; Ci++) {
+            spmm_solve_row(Ci);
+        }
     }
 
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
@@ -58,8 +64,16 @@ extern "C" int kernel_spmm(
     
     // foreach row
 #ifndef SPMM_SKIP_SORTING
-    for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS)
-        spmm_sort_row(Ci);
+    // foreach row
+    for (int Ci_base =  __bsg_id * VCACHE_STRIPE_WORDS;
+         Ci_base < row_range;
+         Ci_base += THREADS * VCACHE_STRIPE_WORDS) {
+        int Ci_start = row_start + Ci_base;
+        int Ci_stop  = std::min(row_stop, Ci_start + VCACHE_STRIPE_WORDS);
+        for (int Ci = Ci_start; Ci < Ci_stop; Ci++) {
+            spmm_sort_row(Ci);
+        }
+    }
 #endif
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SORT);
@@ -84,8 +98,16 @@ extern "C" int kernel_spmm(
     
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
 
-    for (int Ci = row_start + __bsg_id; Ci < row_stop; Ci += THREADS)
-        spmm_copy_results(Ci);
+    // foreach row
+    for (int Ci_base =  __bsg_id * VCACHE_STRIPE_WORDS;
+         Ci_base < row_range;
+         Ci_base += THREADS * VCACHE_STRIPE_WORDS) {
+        int Ci_start = row_start + Ci_base;
+        int Ci_stop  = std::min(row_stop, Ci_start + VCACHE_STRIPE_WORDS);
+        for (int Ci = Ci_start; Ci < Ci_stop; Ci++) {
+            spmm_copy_results(Ci);
+        }
+    }
 
     bsg_cuda_print_stat_end(TAG_RESULTS_COPY);
     // sync
