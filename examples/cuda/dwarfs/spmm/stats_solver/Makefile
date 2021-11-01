@@ -47,5 +47,21 @@ $(foreach input,$(INPUTS),$(input).partition.stats): %.partition.stats: inputs p
 	$(eval part_stats = $(foreach part,$(parts),$(part).$@.solve_row.csv))
 	python3 $(APPLICATION_PATH)/py/summarize_partitions.py $*.solve_row.partitions.summary.csv $(part_stats)
 
+$(foreach input,$(INPUTS),$(input).memcount): %.memcount:
+	@echo $*:
+	@printf "%e rows\n" $($*__rows)
+	@printf "%e columns\n" $($*__cols)
+	@printf "%e nonzeros\n" $($*__nnz)
+	@printf "%e solution nonzeros\n" $($*__solnnz)
+	@$(eval matrices=3)
+	@$(eval omatrices=2)
+	@$(eval imatrices=2)
+	@$(eval wordbytes=4)
+	$(eval rbytes=$(shell echo $($*__rows)*2*$(wordbytes)*$(matrices)+$($*__rows)*$(wordbytes)|bc))
+	$(eval nzbytes=$(shell echo $($*__nnz)*2*$(wordbytes)*$(omatrices)|bc))
+	$(eval solnzbytes=$(shell echo $($*__solnnz)*4*$(wordbytes)*$(imatrices)|bc))
+	$(eval total=$(shell echo $(rbytes)+$(nzbytes)+$(solnzbytes)|bc))
+	@printf "%e bytes\n" $(total)
+
 clean:
 	rm -rf solver *.csv partition_solver
