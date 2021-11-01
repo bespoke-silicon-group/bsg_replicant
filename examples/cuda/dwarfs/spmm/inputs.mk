@@ -78,6 +78,21 @@ INPUTS += 08blocks
 $(08blocks): url=https://suitesparse-collection-website.herokuapp.com/MM/JGD_SPG/08blocks.tar.gz
 $(08blocks): tar=08blocks.tar.gz
 
+############
+# bcsstk20 #
+############
+INPUTS += bcsstk20
+bcsstk20 = $(INPUTS_DIR)/bcsstk20/bcsstk20.mtx
+bcsstk20__directed = no
+bcsstk20__weighted = yes
+bcsstk20__zero-indexed = no
+bcsstk20__rows =  485
+bcsstk20__cols =  485
+bcsstk20__nnz  = 3135
+bcsstk20__solnnz  = 5527
+$(bcsstk20): url=https://suitesparse-collection-website.herokuapp.com/MM/HB/bcsstk20.tar.gz
+$(bcsstk20): tar=bcsstk20.tar.gz
+
 ##############
 # roadNet-CA #
 ##############
