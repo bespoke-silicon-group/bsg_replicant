@@ -635,6 +635,16 @@ __attribute__((no_builtin("memcpy", "memset")))
                         // Store the result, AND zero the block_out array
                         // to leverage parallel remote and local
                         // stores.
+
+                        // This prefetching seems to help by
+                        // distributing misses a bit better that the
+                        // store. Two questions remain
+                        // unanswered. 1. Can we move the prefetch
+                        // farther from the store? (yes, probably, but
+                        // where) 2. Can we do it in a way that is low
+                        // cost? Putting it in the inner-loop (above)
+                        // adds an if-check and (likely) a branch
+                        // miss.
                         prefetch<BY, BX>(result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                         store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                 }
