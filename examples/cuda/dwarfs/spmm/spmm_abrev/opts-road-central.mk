@@ -19,4 +19,4 @@ SPMM_ALIGNED_TABLE		= no
 # do sort results
 SPMM_SKIP_SORTING		= yes
 # tiles grab four work items at once
-SPMM_WORK_GRANULARITY		= 32
+SPMM_WORK_GRANULARITY		= 128
