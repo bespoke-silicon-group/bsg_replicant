@@ -89,6 +89,15 @@ namespace dwarfs {
             return true;
         }
 
+        template <class SparseMatrixType>
+        void show_metadata(SparseMatrixType &mat) {
+            if (mat.isCompressed())
+                mat.uncompress();
+            std::cout << "# nnz    = " << mat.nonZeros() << std::endl;
+            std::cout << "# majors = " << mat.outerSize() << std::endl;
+            std::cout << "# minors = " << mat.innerSize() << std::endl;
+        }
+
         /* dump non-zeros data to a file */
         template <class SparseMatrixType>
         void write_nnz(SparseMatrixType &mat, const std::string &fname) {
