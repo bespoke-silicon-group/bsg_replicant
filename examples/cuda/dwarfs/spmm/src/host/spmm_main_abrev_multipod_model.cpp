@@ -30,11 +30,12 @@ int SpGEMM(int argc, char *argv[])
         , cl.input_is_directed()
         , cl.input_is_zero_indexed()
         );
-    
-    // auto AxA = CSR((A*B).pruned());
+    {
+        auto AxA = CSR((A*A).pruned());
 
-    // eigen_sparse_matrix::write_nnz(A, "A.nnz.csv");
-    // eigen_sparse_matrix::write_nnz(AxA, "AxA.nnz.csv");
+        eigen_sparse_matrix::show_metadata(A);
+        eigen_sparse_matrix::show_metadata(AxA);
+    }
     // eigen_sparse_matrix::write_offset(AxA, "AxA.offset.csv");
     // eigen_sparse_matrix::write_matrix(AxA, "AxA.txt");
 
