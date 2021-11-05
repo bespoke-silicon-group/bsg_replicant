@@ -78,14 +78,14 @@ void spmm_compute_offsets()
 {
     // 1. compute offsets of your work region
 #ifdef __PART__
-    int mjr_range = C_part_lcl.partinfo.major_stop - C_part_lcl.partinfo.major_start;
+    int mjr_range = C_part_lcl.partinfo.major_stop+1 - C_part_lcl.partinfo.major_start;
     int region_size = (mjr_range + THREADS - 1)/THREADS;
     int start = C_part_lcl.partinfo.major_start + __bsg_id * region_size;
     int end = std::min(start + region_size, C_part_lcl.partinfo.major_stop);
 #else
     int region_size = (C_lcl.n_major + THREADS - 1)/THREADS;
     int start = __bsg_id * region_size;
-    int end   = std::min(start + region_size, C_lcl.n_major);
+    int end   = std::min(start + region_size, C_lcl.n_major+1);
 #endif
     pr_dbg("%s: %d: start = %d, end = %d\n"
                 , __func__
