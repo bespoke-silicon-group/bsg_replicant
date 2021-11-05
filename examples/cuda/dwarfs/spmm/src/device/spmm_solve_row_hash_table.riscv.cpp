@@ -134,14 +134,22 @@ void spmm_solve_row(int Ai)
         int j = 0; // tracks nonzero number
         for (hash_table::spmm_elt_t *e = hash_table::tbl_head; e != nullptr; ) {
             // save the next poix1nter
-            hash_table::spmm_elt_t *next = e->tbl_next;
+            spmm_partial_t part;
+            hash_table::spmm_elt_t *next;
+            // we are hand scheduling this...
+            part.idx = e->part.idx;
+            bsg_compiler_memory_barrier();
+            part.val = e->part.val;
+            bsg_compiler_memory_barrier();
+            next = e->tbl_next;
+            bsg_compiler_memory_barrier();
             // clear table entry
-            hash_table::nonzeros_table[hash_table::hash(e->part.idx)] = nullptr;
+            hash_table::nonzeros_table[hash_table::hash(part.idx)] = nullptr;
             // copy to partitions
             pr_dbg("  copying from 0x%08x to 0x%08x\n"
                    , reinterpret_cast<unsigned>(e)
                    , reinterpret_cast<unsigned>(&parts_glbl[j]));
-            parts_glbl[j++] = e->part;
+            parts_glbl[j++] = part;
             // free entry
             hash_table::free_elt(e);
             // continue
