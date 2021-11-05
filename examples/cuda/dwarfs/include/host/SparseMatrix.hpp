@@ -36,8 +36,8 @@ namespace dwarfs {
             _hb->push_write(_hdr_h.mjr_nnz_ptr, _espm->innerNonZeroPtr(), _hdr_h.n_major * sizeof(idx_t));
             
             // allocate row offset vector
-            alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
-            _hb->push_write(_hdr_h.mnr_off_ptr, _espm->outerIndexPtr(), _hdr_h.n_major * sizeof(idx_t));
+            alloc_aligned((1+_hdr_h.n_major) * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
+            _hb->push_write(_hdr_h.mnr_off_ptr, _espm->outerIndexPtr(), (1+_hdr_h.n_major) * sizeof(idx_t));
 
             // allocate col idx vector
             _hdr_h.mnr_idx_ptr = _hb->alloc(_hdr_h.n_non_zeros * sizeof(idx_t));
@@ -65,7 +65,7 @@ namespace dwarfs {
             alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mjr_nnz_ptr, &_mjr_nnz_allocd_ptr);
             
             // allocate row offset vector
-            alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
+            alloc_aligned((1+_hdr_h.n_major) * sizeof(idx_t), &_hdr_h.mnr_off_ptr, &_mnr_off_allocd_ptr);
 
             // allocate private data
             alloc_aligned(_hdr_h.n_major * sizeof(idx_t), &_hdr_h.alg_priv_ptr, &_alg_priv_data_allocd_ptr);
