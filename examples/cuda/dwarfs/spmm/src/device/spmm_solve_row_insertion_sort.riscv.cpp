@@ -96,13 +96,13 @@ extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict__ A_ptr, /
 
 void spmm_solve_row_init()
 {
-    pr_dbg(__FILE__ ": spmm_solve_row_init\n");
+    // pr_dbg(__FILE__ ": spmm_solve_row_init\n");
     return;
 }
 
 void spmm_solve_row(int Ai)
 {
-    pr_dbg("Solving for row %d\n", Ai);
+    // pr_dbg("Solving for row %d\n", Ai);
     // set the number of partials to zero
     num_parts = 0;
 
