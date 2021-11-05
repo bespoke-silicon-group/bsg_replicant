@@ -37,7 +37,7 @@ static void insert(int Cj, float Cij)
 static void spmm_scalar_row_product(float Aij, int Bi)
 {
     int off = B_lcl.mnr_off_remote_ptr[Bi];
-    //int nnz = B_lcl.nnz_off_ptr[Bi];
+    //int nnz = B_lcl.mjr_nnz_remote_ptr[Bi];
     int nnz = B_lcl.mnr_off_remote_ptr[Bi+1] - off;
 
     // stall on off
@@ -124,19 +124,21 @@ void spmm_solve_row(int Ai)
 
     // insert partials into C
     C_lcl.mjr_nnz_remote_ptr[Ai] = num_parts;
-    spmm_partial_t *parts_glbl = reinterpret_cast<spmm_partial_t*>(spmm_malloc(sizeof(spmm_partial_t)*num_parts));
-    std::memcpy(parts_glbl, parts, sizeof(spmm_partial_t)*num_parts);
+    if (num_parts > 0) {
+        spmm_partial_t *parts_glbl = reinterpret_cast<spmm_partial_t*>(spmm_malloc(sizeof(spmm_partial_t)*num_parts));
+        std::memcpy(parts_glbl, parts, sizeof(spmm_partial_t)*num_parts);
 
-    // store as array of partials in the alg_priv_ptr field    
-    C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(parts_glbl);
-    pr_dbg("Solved row %d, saving %d nonzeros to address 0x%08x\n"
-           , Ai
-           , num_parts
-           , parts_glbl);
+        // store as array of partials in the alg_priv_ptr field
+        C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(parts_glbl);
+        pr_dbg("solved row %d, saving %d nonzeros to address 0x%08x\n"
+               , Ai
+               , num_parts
+               , parts_glbl);
 
-    // update the global number of nonzeros
-    std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));
-    nnzp->fetch_add(num_parts);
+        // update the global number of nonzeros
+        std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));
+        nnzp->fetch_add(num_parts);
+    }
 }
 
 #ifdef __KERNEL_SOLVE_ROW__

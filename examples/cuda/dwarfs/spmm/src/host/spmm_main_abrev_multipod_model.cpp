@@ -102,6 +102,7 @@ int SpGEMM(int argc, char *argv[])
     eigen_sparse_matrix::write_matrix(Bp, "Bp.txt");
     auto AxA   = CSR((Ap * Bp).pruned());
     eigen_sparse_matrix::write_matrix(AxA, "AxAp.txt");
+    eigen_sparse_matrix::write_matrix(*C_ptr, "Cp.txt");
     std::cout << "checking result" << std::endl;
     // check equality for computed rows
     bool eq = eigen_sparse_matrix::mjr_range_equal(
@@ -117,7 +118,7 @@ int SpGEMM(int argc, char *argv[])
               << ") = " << eq << std::endl;
     
     hb->close();
-    return HB_MC_SUCCESS;
+    return eq ? HB_MC_SUCCESS : HB_MC_FAIL;
 }
 
 declare_program_main("SpGEMM", SpGEMM);
