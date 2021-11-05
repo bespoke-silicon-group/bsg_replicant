@@ -41,8 +41,9 @@ void spmm_update_nonzeros(int Ci
 void spmm_copy_results(int Ci)
 {
     pr_dbg("%d: copying results for row %d\n", __bsg_id, Ci);
-    int nnz = C_glbl_p->mjr_nnz_ptr[Ci];
+    //int nnz = C_glbl_p->mjr_nnz_ptr[Ci];
     int off = C_glbl_p->mnr_off_ptr[Ci];
+    int nnz = C_glbl_p->mnr_off_ptr[Ci+1] - off;
     kernel_remote_int_ptr_t idx_ptr = &C_glbl_p->mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t val_ptr = &C_glbl_p->val_remote_ptr[off];
 

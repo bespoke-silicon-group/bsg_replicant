@@ -36,8 +36,9 @@ static void insert(int Cj, float Cij)
 
 static void spmm_scalar_row_product(float Aij, int Bi)
 {
-    int off = B_lcl.mnr_off_ptr[Bi];
-    int nnz = B_lcl.mjr_nnz_ptr[Bi];
+    int off = B_lcl.mnr_off_remote_ptr[Bi];
+    //int nnz = B_lcl.nnz_off_ptr[Bi];
+    int nnz = B_lcl.mnr_off_remote_ptr[Bi+1] - off;
 
     // stall on off
     kernel_remote_int_ptr_t cols = &B_lcl.mnr_idx_remote_ptr[off];
@@ -107,7 +108,8 @@ void spmm_solve_row(int Ai)
 
     // fetch row meta data
     int off = A_lcl.mnr_off_remote_ptr[Ai];
-    int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
+    //int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
+    int nnz = A_lcl.mnr_off_remote_ptr[Ai+1]-off;
 
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
