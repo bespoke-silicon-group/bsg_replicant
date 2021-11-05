@@ -98,7 +98,7 @@ void spmm_solve_row_init()
 void spmm_solve_row(int Ai)
 {
     //bsg_print_int(Ai);
-    pr_dbg("solving for row %3d\n", Ai);
+    // pr_dbg("solving for row %3d\n", Ai);
     // set the number of partials to zero
     hash_table::tbl_num_entries = 0;
 
