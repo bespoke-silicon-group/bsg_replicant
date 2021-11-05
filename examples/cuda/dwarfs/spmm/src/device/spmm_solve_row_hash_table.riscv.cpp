@@ -122,7 +122,16 @@ void spmm_solve_row(int Ai)
     if (hash_table::tbl_num_entries > 0) {
         // insert partials into C
         C_lcl.mjr_nnz_remote_ptr[Ai] = hash_table::tbl_num_entries;
-        spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(sizeof(spmm_partial_t)*hash_table::tbl_num_entries);
+
+        // allocate temporary storage for non zeros
+        std::size_t size = sizeof(spmm_partial_t)*hash_table::tbl_num_entries;
+
+        // pad up to a cache line
+        std::size_t rem = size & (VCACHE_STRIPE_WORDS*sizeof(int)-1);
+        if (rem != 0)
+            size += (VCACHE_STRIPE_WORDS*sizeof(int) - rem);
+
+        spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(size);
 
         //bsg_print_int(tbl_num_entries);
         pr_dbg("solved row %3d, saving %3d nonzeros to address 0x%08x\n"
