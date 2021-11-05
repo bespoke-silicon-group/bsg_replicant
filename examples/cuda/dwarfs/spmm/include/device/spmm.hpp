@@ -29,7 +29,7 @@ extern bsg_mcs_mutex_t mtx;
         bsg_mcs_mutex_node_t lcl;                                       \
         bsg_mcs_mutex_node_t *lcl_as_glbl = (bsg_mcs_mutex_node_t*)bsg_tile_group_remote_ptr(int, __bsg_x, __bsg_y, &lcl); \
         bsg_mcs_mutex_acquire(&mtx, &lcl, lcl_as_glbl);                 \
-        bsg_printf("thread %d: " fmt, __bsg_id, ##__VA_ARGS__);                \
+        bsg_printf("thread %3d: " fmt, __bsg_id, ##__VA_ARGS__);                \
         bsg_fence();                                                    \
         bsg_mcs_mutex_release(&mtx, &lcl, lcl_as_glbl);                 \
     } while (0)

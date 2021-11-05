@@ -29,10 +29,10 @@ static void sum_tree_update(int sum)
     int r = 0;
     int m = THREADS;
     for (int l = 0; l < LEVELS; l++) {
-        pr_dbg("%d: updating tree[%d] += %d\n"
-                    , __bsg_id
-                    , r
-                    , sum);
+        // pr_dbg("%d: updating tree[%d] += %d\n"
+        //             , __bsg_id
+        //             , r
+        //             , sum);
         nnz_sum_tree[r].fetch_add(sum, std::memory_order_relaxed);
         m >>= 1;
         if (m & __bsg_id) {
@@ -41,10 +41,10 @@ static void sum_tree_update(int sum)
             r = sum_tree_lchild(r);
         }
     }
-    pr_dbg("%d: updating tree[%d] += %d\n"
-                , __bsg_id
-                , r
-                , sum);
+    // pr_dbg("%d: updating tree[%d] += %d\n"
+    //             , __bsg_id
+    //             , r
+    //             , sum);
     nnz_sum_tree[r].fetch_add(sum, std::memory_order_relaxed);
 }
 
@@ -55,16 +55,16 @@ static int sum_tree_accumulate()
     int m = THREADS;
     for (int l = 0; l < LEVELS; l++) {
         m >>= 1;
-        pr_dbg("%d: __bsg_id & 0x%08x = %d\n"
-                   , __bsg_id
-                   , m
-                   , __bsg_id & m);
+        // pr_dbg("%d: __bsg_id & 0x%08x = %d\n"
+        //            , __bsg_id
+        //            , m
+        //            , __bsg_id & m);
         if (__bsg_id & m) {
             s += nnz_sum_tree[sum_tree_lchild(r)].load(std::memory_order_relaxed);
-            pr_dbg("%d: accumulating tree[%d], sum = %d\n"
-                        , __bsg_id
-                        , sum_tree_lchild(r)
-                        , s);
+            // pr_dbg("%d: accumulating tree[%d], sum = %d\n"
+            //             , __bsg_id
+            //             , sum_tree_lchild(r)
+            //             , s);
             r = sum_tree_rchild(r);
         } else {
             r = sum_tree_lchild(r);
@@ -87,15 +87,26 @@ void spmm_compute_offsets()
     int start = __bsg_id * region_size;
     int end   = std::min(start + region_size, C_lcl.n_major+1);
 #endif
-    pr_dbg("%s: %d: start = %d, end = %d\n"
-                , __func__
-                , __bsg_id
-                , start
-                , end);
+    if (start < end) {
+        pr_dbg("%s: start = %3d, end = %3d\n"
+               , __func__
+               , start
+               , end);
+    }
+
+    // pr_dbg("%s: %d: start = %d, end = %d\n"
+    //             , __func__
+    //             , __bsg_id
+    //             , start
+    //             , end);
 
     int sum = 0;
     for (int Ci = start; Ci < end; Ci++) {
         // update offsets
+        pr_dbg("%s: preoff[%3d]=%3d\n"
+               , __func__
+               , Ci
+               , sum);
         C_lcl.mnr_off_remote_ptr[Ci] = sum;
         sum += C_lcl.mjr_nnz_remote_ptr[Ci];
     }
