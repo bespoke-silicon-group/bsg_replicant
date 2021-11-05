@@ -465,6 +465,7 @@ namespace dwarfs {
                            , part_vals[p][row]
                            , part_nnz[p][row] * sizeof(real_t));
                 }
+                partp->innerNonZeroPtr()[mat->outerSize()] = nnz;
             }
             return partition_pointers;
         }        

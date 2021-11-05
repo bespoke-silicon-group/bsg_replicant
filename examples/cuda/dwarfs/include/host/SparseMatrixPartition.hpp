@@ -56,7 +56,7 @@ namespace dwarfs {
         void initializeMjr() {
             // allocate memory
             mjr_nnz_ptr()  = alloc(part_n_major() * sizeof(idx_t)) - major_start() * sizeof(idx_t);
-            mnr_off_ptr()  = alloc(part_n_major() * sizeof(idx_t)) - major_start() * sizeof(idx_t);
+            mnr_off_ptr()  = alloc((1+part_n_major()) * sizeof(idx_t)) - major_start() * sizeof(idx_t);
             // write nnz
             push_write(
                 mjr_nnz_ptr() + major_start() * sizeof(idx_t)
@@ -68,6 +68,10 @@ namespace dwarfs {
                 mnr_off_ptr() + major_start() * sizeof(idx_t)
                 , _eigen_spmm->outerIndexPtr() + major_start()
                 , part_n_major() * sizeof(idx_t)
+                );
+            write (mnr_off_ptr() + (major_start() + part_n_major()) * sizeof(idx_t)
+                   ,&n_non_zeros()
+                   ,sizeof(idx_t)
                 );
         }
 
@@ -198,7 +202,10 @@ namespace dwarfs {
         void push_write(hb_mc_eva_t dst, const void *src, size_t size) {
             _hammerblade->push_write(dst, src, size);
         }
-
+        // write
+        void write(hb_mc_eva_t dst, const void *src, size_t size) {
+            _hammerblade->write(dst, src, size);
+        }
         // push read
         void push_read(void *dst, hb_mc_eva_t src, size_t size) {
             _hammerblade->push_read(src, dst, size);

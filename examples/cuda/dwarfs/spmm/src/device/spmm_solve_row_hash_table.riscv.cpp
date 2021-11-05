@@ -119,42 +119,44 @@ void spmm_solve_row(int Ai)
         spmm_scalar_row_product(Aij, Bi);
     }
 
-    // insert partials into C
-    C_lcl.mjr_nnz_remote_ptr[Ai] = hash_table::tbl_num_entries;
-    spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(sizeof(spmm_partial_t)*hash_table::tbl_num_entries);
+    if (hash_table::tbl_num_entries > 0) {
+        // insert partials into C
+        C_lcl.mjr_nnz_remote_ptr[Ai] = hash_table::tbl_num_entries;
+        spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(sizeof(spmm_partial_t)*hash_table::tbl_num_entries);
 
-    //bsg_print_int(tbl_num_entries);
-    pr_dbg("solved row %3d, saving %3d nonzeros to address 0x%08x\n"
-           , Ai
-           , hash_table::tbl_num_entries
-           , parts_glbl);
+        //bsg_print_int(tbl_num_entries);
+        pr_dbg("solved row %3d, saving %3d nonzeros to address 0x%08x\n"
+               , Ai
+               , hash_table::tbl_num_entries
+               , parts_glbl);
 
-    // for each entry in the table
-    int j = 0; // tracks nonzero number
-    for (hash_table::spmm_elt_t *e = hash_table::tbl_head; e != nullptr; ) {
-        // save the next poix1nter
-        hash_table::spmm_elt_t *next = e->tbl_next;
-        // clear table entry
-        hash_table::nonzeros_table[hash_table::hash(e->part.idx)] = nullptr;
-        // copy to partitions
-        pr_dbg("  copying from 0x%08x to 0x%08x\n"
-                      , reinterpret_cast<unsigned>(e)
-                      , reinterpret_cast<unsigned>(&parts_glbl[j]));
-        parts_glbl[j++] = e->part;
-        // free entry
-        hash_table::free_elt(e);
-        // continue
-        e = next;
+        // for each entry in the table
+        int j = 0; // tracks nonzero number
+        for (hash_table::spmm_elt_t *e = hash_table::tbl_head; e != nullptr; ) {
+            // save the next poix1nter
+            hash_table::spmm_elt_t *next = e->tbl_next;
+            // clear table entry
+            hash_table::nonzeros_table[hash_table::hash(e->part.idx)] = nullptr;
+            // copy to partitions
+            pr_dbg("  copying from 0x%08x to 0x%08x\n"
+                   , reinterpret_cast<unsigned>(e)
+                   , reinterpret_cast<unsigned>(&parts_glbl[j]));
+            parts_glbl[j++] = e->part;
+            // free entry
+            hash_table::free_elt(e);
+            // continue
+            e = next;
+        }
+
+        hash_table::tbl_head = nullptr;
+
+        // store as array of partials in the alg_priv_ptr field
+        C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(parts_glbl);
+
+        // update the global number of nonzeros
+        std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));
+        nnzp->fetch_add(hash_table::tbl_num_entries);
     }
-
-    hash_table::tbl_head = nullptr;
-
-    // store as array of partials in the alg_priv_ptr field
-    C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(parts_glbl);
-
-    // update the global number of nonzeros
-    std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));
-    nnzp->fetch_add(hash_table::tbl_num_entries);
 }
 
 #ifdef __KERNEL_SOLVE_ROW__
