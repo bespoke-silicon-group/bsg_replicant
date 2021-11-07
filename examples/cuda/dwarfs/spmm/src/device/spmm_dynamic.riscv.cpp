@@ -53,8 +53,8 @@ extern "C" int kernel_spmm(
     }
 
 
+    barrier::spmm_barrier();
     spmm_solve_row_init();
-    barrier::spmm_barrier();   
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
 //#if 0
     // foreach row
@@ -70,6 +70,7 @@ extern "C" int kernel_spmm(
     // sync
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
     spmm_print_int(__bsg_id);
+    spmm_solve_row_exit();
     barrier::spmm_barrier();
 
     bsg_cuda_print_stat_start(TAG_ROW_SORT);
