@@ -95,6 +95,10 @@ void spmm_solve_row_init()
     hash_table::init();
 }
 
+void spmm_solve_row_exit()
+{
+}
+
 void spmm_solve_row(int Ai)
 {
     //bsg_print_int(Ai);
