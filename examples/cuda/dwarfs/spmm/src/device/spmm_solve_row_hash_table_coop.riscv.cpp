@@ -287,7 +287,6 @@ static void spmm_scalar_row_product(float Aij, int Bi)
     kernel_remote_float_ptr_t vals = &B_lcl.val_remote_ptr[off];
 
     int nz = 0;
-#undef SPMM_PREFETCH
 #if defined(SPMM_PREFETCH)
 #define PREFETCH 4
     for (; nz + PREFETCH < nnz; nz += PREFETCH) {
