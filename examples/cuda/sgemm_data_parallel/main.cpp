@@ -255,6 +255,8 @@ int kernel_matrix_mul (int argc, char **argv) {
         // Copy mat1 and mat2, from host onto device
         //************************************************************
         void *dst, *src;
+        hb_mc_dma_htod_t htod;
+        hb_mc_dma_dtoh_t dtoh;
 
         // Copy mat1
         bsg_pr_info("Copying mat1\n");
@@ -284,11 +286,19 @@ int kernel_matrix_mul (int argc, char **argv) {
 
         dst = (void *) ((intptr_t) mat1.data);
         src = (void *) Hmat1.data;
+
+        /*
         rc = hb_mc_device_memcpy (&device, dst, src, Hmat1.N * sizeof(*Hmat1.data), HB_MC_MEMCPY_TO_DEVICE);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("Failed to copy mat1.data to device.\n");
                 return rc;
-        }
+        }*/
+
+        htod.d_addr = mat1.data;
+        htod.h_addr = src;
+        htod.size   = Hmat1.N * sizeof(*Hmat1.data);
+
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
 
         // Copy mat2
@@ -319,11 +329,18 @@ int kernel_matrix_mul (int argc, char **argv) {
 
         dst = (void *) ((intptr_t) mat2.data);
         src = (void *) Hmat2.data;
+        /*
         rc = hb_mc_device_memcpy (&device, dst, src, Hmat2.N * sizeof(*Hmat2.data), HB_MC_MEMCPY_TO_DEVICE);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("Failed to copy mat2.data to device.\n");
                 return rc;
-        }
+        }*/
+
+        htod.d_addr = mat2.data;
+        htod.h_addr = src;
+        htod.size   = Hmat2.N * sizeof(*Hmat2.data);
+
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
 
         // Copy out
@@ -402,11 +419,18 @@ int kernel_matrix_mul (int argc, char **argv) {
         bsg_pr_info("Copying result back\n");
         src = (void *) ((intptr_t) out.data);
         dst = (void *) Hout.data;
+        /*
         rc = hb_mc_device_memcpy (&device, dst, src, Hout.N * sizeof(*Hout.data), HB_MC_MEMCPY_TO_HOST);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("failed to copy memory from device.\n");
                 return rc;
-        }
+        }*/
+
+        dtoh.d_addr = out.data;
+        dtoh.h_addr = dst;
+        dtoh.size   = Hout.N * sizeof(*Hout.data);
+
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh, 1));
 
 
         //************************************************************
