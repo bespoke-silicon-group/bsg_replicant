@@ -62,7 +62,7 @@ void host_mm_opt(hb_mc_host_tensor_t<float> *result,
 
         for (unsigned int y = 0; y < result->sizes[0]; ++y) {
                 for (unsigned int x = 0; x < result->sizes[1]; ++x) {
-                        float res = 0;
+                        float res = 0.0f;
                         for (unsigned int k = 0; k < mat1->sizes[1]; ++k) {
                                 res += mat1->data[mat1->strides[0] * y + k] * mat2->data[mat2->strides[0] * k + x];
                         }
@@ -217,10 +217,15 @@ int kernel_matrix_mul (int argc, char **argv) {
         Hmat1.strides[0] = Hmat1.sizes[1];
         Hmat1.strides[1] = 1;
         for (unsigned int y = 0; y < Hmat1.sizes[0]; ++y) {
-                for (unsigned int x = 0; x < Hmat1.sizes[1]; ++x) {
-                        if(x == y)
-                                Hmat1.data[y * Hmat1.strides[0] + x] = 1;
-                }
+          for (unsigned int x = 0; x < Hmat1.sizes[1]; ++x) {
+            int i = (y * Hmat1.strides[0]) + x;
+            /*
+            Hmat1.data[i] = (float) i;
+            */
+            Hmat1.data[i] = (float) 1.0f;
+
+            //printf("%4.0f\n", Hmat1.data[i]);
+          }
         }
 
         Hmat2.data = new float[Hmat2.N];
@@ -230,9 +235,19 @@ int kernel_matrix_mul (int argc, char **argv) {
         Hmat2.strides = new uint32_t[Hmat2.dims];
         Hmat2.strides[0] = Hmat2.sizes[1];
         Hmat2.strides[1] = 1;
-        for (uint64_t i = 0; i < Hmat2.N; ++i) {
-                Hmat2.data[i] = i;
-                //Hmat2.data[i] = distribution(generator);
+        for (unsigned int y = 0; y < Hmat2.sizes[0]; ++y) {
+          for (unsigned int x = 0; x < Hmat2.sizes[1]; ++x) {
+            int i = (y * Hmat2.strides[0]) + x;
+            Hmat2.data[i] = (float) i;
+            /*
+            if (x == y) {
+              Hmat2.data[i] = (float)x+(float)y;
+            } else {
+              Hmat2.data[i] = (float)x- (float)y;
+            }
+            */
+            //printf("%4.0f\n", Hmat2.data[i]);
+          }
         }
 
         Hout.data = new float[Hout.N];
@@ -400,6 +415,7 @@ int kernel_matrix_mul (int argc, char **argv) {
         // Launch and execute all tile groups on device and wait for all to finish.
         //************************************************************
         bsg_pr_info("Execute Kernel\n");
+        hb_mc_manycore_trace_enable((&device)->mc);
 
         uint64_t cycle_start, cycle_end;
         hb_mc_manycore_get_cycle((&device)->mc, &cycle_start);
@@ -410,6 +426,7 @@ int kernel_matrix_mul (int argc, char **argv) {
                 return rc;
         }
 
+        hb_mc_manycore_trace_disable((&device)->mc);
         hb_mc_manycore_get_cycle((&device)->mc, &cycle_end);
 
         //************************************************************
@@ -453,6 +470,18 @@ int kernel_matrix_mul (int argc, char **argv) {
         for(unsigned int i = 0; i < Hresult.N; ++i){
                 sse += (Hresult.data[i] - Hout.data[i]) * (Hresult.data[i] - Hout.data[i]);
         }
+        for (int y = 0; y < Hresult.sizes[0]; ++y) {
+          for (int x = 0; x < Hresult.sizes[1]; ++x) {
+            int i = y*Hresult.strides[0] + x;
+            if (Hresult.data[i] != Hout.data[i]) {
+              printf("not matched: (%d,%d) , %4.0f, %4.0f\n", x, y, Hresult.data[i], Hout.data[i]);
+            } else {
+              printf("matched: (%d,%d) , %4.0f, %4.0f\n", x, y, Hresult.data[i], Hout.data[i]);
+            }
+          }
+        }
+        
+
         /*
         for (int y = 0; y < Hresult.sizes[0]; ++y) {
                 for (int x = 0; x < Hresult.sizes[1]; ++x) {

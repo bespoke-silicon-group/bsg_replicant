@@ -262,7 +262,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
 
-        bsg_print_int(__bsg_id);
+        //bsg_print_int(__bsg_id);
 
         block_y_loop:
         for (int by_i = 0; by_i < by_blocks; by_i++) {
@@ -274,30 +274,30 @@ __attribute__((no_builtin("memcpy", "memset")))
               // load mat1
               load_block<BY,BX,false>(block_row, mat1, mat1_strides,
                 (by_i*BSG_TILE_GROUP_Y_DIM)+__bsg_y,
-                (bz_i*BSG_TILE_GROUP_X_DIM) + __bsg_x
+                (bz_i*BSG_TILE_GROUP_X_DIM)+__bsg_x
               );
 
               block_w_loop:
               for (int bw_i = 0; bw_i < bw_blocks; bw_i++) {
-                if (__bsg_id == 0) bsg_print_int(bw_i);
+                //if (__bsg_id == 0) bsg_print_int(bw_i);
                 // load mat2
                 load_block<BY,BX,false>(block_col, mat2, mat2_strides,
                   (bz_i*bw_blocks*BSG_TILE_GROUP_Y_DIM) + (bw_i*BSG_TILE_GROUP_Y_DIM) +__bsg_y, 
                   (bx_i*BSG_TILE_GROUP_X_DIM) + __bsg_x
                 ); 
                 bsg_barrier_hw_tile_group_sync();
-                if (__bsg_id == 0) bsg_print_int(bw_i);
+                //if (__bsg_id == 0) bsg_print_int(bw_i);
                 // compute
                 accum_row<BY,4,BX,4,2,false>(block_out, block_row, block_col, bw_i);
-                if (__bsg_id == 0) bsg_print_int(bw_i);
+                //if (__bsg_id == 0) bsg_print_int(bw_i);
                 bsg_barrier_hw_tile_group_sync();
-                if (__bsg_id == 0) bsg_print_int(bw_i);
+                //if (__bsg_id == 0) bsg_print_int(bw_i);
               }
-              // prefetch
-              prefetch<BY, BX>(result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-              // store_block_and_reset
-              store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
             }
+            // prefetch
+            prefetch<BY, BX>(result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
+            // store_block_and_reset
+            store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
           }
         }
 
@@ -308,47 +308,6 @@ __attribute__((no_builtin("memcpy", "memset")))
         bsg_barrier_hw_tile_group_sync();
 
         return 0;
-
-
-        //bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 1, BSG_TILE_GROUP_Y_DIM, 0, float> prow(block_row, __bsg_x, __bsg_y);
-        //bsg_tile_group_strider<BSG_TILE_GROUP_X_DIM, 0, BSG_TILE_GROUP_Y_DIM, 1, float> pcol(block_col, __bsg_x, __bsg_x);
-/*
- block_y_loop:
-        for (int by_i = __bsg_tile_group_id_y; by_i < by_blocks; by_i += by_stride) {
-        block_x_loop:
-                for (int bx_i = __bsg_tile_group_id_x; bx_i < bx_blocks; bx_i += bx_stride) {
-                        // Multiply each pair of input blocks from a
-                        // given m1 row, and m2 column. 
-                block_z_loop:
-                        for (int bz_i = 0; bz_i < bz_blocks; bz_i += bz_stride) {
-                                load_block<BY, BX, LOAD_M1_TRANSPOSED>(block_row, mat1, mat1_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bz_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-                                load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-                                bsg_barrier_hw_tile_group_sync();
-
-                                // Multiply the blocks, and accumulate into the result
-                                accum_row<BY, 4, BX, 4, 2, LOAD_M1_TRANSPOSED>(block_out, prow, pcol);
-                                
-                                bsg_barrier_hw_tile_group_sync();
-                        }
-                        // Store the result, AND zero the block_out array
-                        // to leverage parallel remote and local
-                        // stores.
-
-                        // This prefetching seems to help by
-                        // distributing misses a bit better that the
-                        // store. Two questions remain
-                        // unanswered. 1. Can we move the prefetch
-                        // farther from the store? (yes, probably, but
-                        // where) 2. Can we do it in a way that is low
-                        // cost? Putting it in the inner-loop (above)
-                        // adds an if-check and (likely) a branch
-                        // miss.
-                        prefetch<BY, BX>(result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-                        store_block_and_reset<BY, BX>(block_out, result, result_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
-                }
-        }
-*/
-
 }
 
 extern "C"
