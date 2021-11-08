@@ -315,8 +315,7 @@ static void spmm_scalar_row_product(float Aij, int Bi)
         // given that collisions may occur and linked
         // list traversal may occur
         for (int pre = 0; pre < PREFETCH; pre++) {
-            hash_table
-                hash_table_coop::update(Cij[pre], Bj[pre], u[pre]);
+            hash_table_coop::update(Cij[pre], Bj[pre], u[pre]);
         }
     }
 #endif
