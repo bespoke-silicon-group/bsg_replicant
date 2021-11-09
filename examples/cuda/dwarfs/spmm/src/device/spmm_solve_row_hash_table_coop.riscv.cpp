@@ -163,7 +163,7 @@ static void update(float v, int idx, spmm_elt_t **u)
 }
 
     
-static void insertion_sort_table()
+static void sort_table()
 {
     if (tbl_size  == 0)
         return;
@@ -402,6 +402,9 @@ void spmm_solve_row(int Ai)
         spmm_scalar_row_product(Aij, Bi);
     }
 
+    // sort table entries
+    hash_table_coop::sort_table();
+    
     if (hash_table_coop::tbl_size > 0) {
         // insert partials into C
         C_lcl.mjr_nnz_remote_ptr[Ai] = hash_table_coop::tbl_size;
@@ -421,7 +424,7 @@ void spmm_solve_row(int Ai)
                , Ai
                , hash_table_coop::tbl_size
                , parts_glbl);
-
+        
         // for each entry in the table
         int j = 0; // tracks nonzero number
         for (hash_table_coop::spmm_elt_t *e = hash_table_coop::tbl_head; e != nullptr; ) {
