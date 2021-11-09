@@ -59,56 +59,6 @@ static thread spmm_elt_t *free_global_head;
  */
 static int elts_realloc_size;
 
-
-/**
- * Returns a pointer to a hash bucket
- */
-static spmm_elt_t ** hash(int sx)
-{
-    hidx_t x = static_cast<hidx_t>(sx);
-#if defined(COMPLEX_HASH)
-    // maybe do an xor shift
-    // maybe just the low bits
-    x = ((x >> 16) ^ x) * 0x45d9f3bU;
-    x = ((x >> 16) ^ x) * 0x45d9f3bU;
-    x = ((x >> 16) ^ x);
-#endif
-    x = x % NZ_TBL_SIZE;
-
-    hidx_t block_off = x % NZ_BLOCK_SIZE;
-    hidx_t block     = (x / NZ_BLOCK_SIZE) % (bsg_global_Y/2);
-    spmm_elt_t ** bptr = nonzeros_table_blocks[block];
-    return &bptr[block_off];
-}
-/**
- * Update with v, idx, and the compute hash index hidx
- */
-static void update(float v, int idx, spmm_elt_t **u)
-{
-    spmm_elt_t  *p = *u;
-    while (p != nullptr) {
-        // match?
-        if (p->part.idx == idx) {
-            p->part.val += v; // flw; fadd; fsw
-            return;
-        }
-        u = &p->bkt_next;
-        p = p->bkt_next;
-    }
-    // allocate a hash item
-    p = alloc_elt();
-    // set item parameters
-    p->part.idx = idx;
-    p->part.val = v;
-    p->bkt_next = nullptr;
-    p->tbl_next = tbl_head;
-    tbl_head = p;
-    // update last
-    *u = p;
-    tbl_size++;
-    return;
-}
-
 /**
  * Allocate a hash element.
  */
@@ -159,6 +109,102 @@ static void free_elt(spmm_elt_t *elt)
     } else {
         elt->tbl_next = free_global_head;
         free_global_head = elt;
+    }
+}
+
+
+/**
+ * Returns a pointer to a hash bucket
+ */
+static spmm_elt_t ** hash(int sx)
+{
+    hidx_t x = static_cast<hidx_t>(sx);
+#if defined(COMPLEX_HASH)
+    // maybe do an xor shift
+    // maybe just the low bits
+    x = ((x >> 16) ^ x) * 0x45d9f3bU;
+    x = ((x >> 16) ^ x) * 0x45d9f3bU;
+    x = ((x >> 16) ^ x);
+#endif
+    x = x % NZ_TBL_SIZE;
+
+    hidx_t block_off = x % NZ_BLOCK_SIZE;
+    hidx_t block     = (x / NZ_BLOCK_SIZE) % (bsg_global_Y/2);
+    spmm_elt_t ** bptr = nonzeros_table_blocks[block];
+    return &bptr[block_off];
+}
+/**
+ * Update with v, idx, and the compute hash index hidx
+ */
+static void update(float v, int idx, spmm_elt_t **u)
+{
+    spmm_elt_t  *p = *u;
+    while (p != nullptr) {
+        // match?
+        if (p->part.idx == idx) {
+            p->part.val += v; // flw; fadd; fsw
+            return;
+        }
+        u = &p->bkt_next;
+        p = p->bkt_next;
+    }
+    // allocate a hash item
+    p = alloc_elt();
+    // set item parameters
+    p->part.idx = idx;
+    p->part.val = v;
+    p->bkt_next = nullptr;
+    p->tbl_next = tbl_head;
+    tbl_head = p;
+    // update last
+    *u = p;
+    tbl_size++;
+    return;
+}
+
+    
+static void insertion_sort_table()
+{
+    if (tbl_size  == 0)
+        return;
+    
+    spmm_elt_t *sorted_head = tbl_head;
+    spmm_elt_t *sorted_tail = tbl_head;
+    spmm_elt_t *to_sort = sorted_tail->tbl_next;
+
+    while (to_sort != nullptr) {
+        // remove to_sort from list
+        sorted_tail->tbl_next = to_sort->tbl_next;
+        to_sort->tbl_next = nullptr;
+        // insert into sorted list
+        if (to_sort->part.idx < sorted_head->part.idx) {
+            // special case if goes at start            
+            to_sort->tbl_next = sorted_head;
+            sorted_head = to_sort;
+        } else if (to_sort->part.idx > sorted_tail->part.idx) {
+            // special case if goes at end
+            to_sort->tbl_next = sorted_tail->tbl_next;
+            sorted_tail->tbl_next = to_sort;
+            sorted_tail = to_sort;
+        } else {
+            spmm_elt_t *last, *next;
+            last = sorted_head;
+            cand = sorted_head->tbl_next;
+            
+            while (last != sorted_tail) {
+                // find first where to_sort < cand
+                if (to_sort->part.idx < cand->part.idx) {
+                    // insert to_sort between last and cand
+                    last->tbl_next = to_sort;
+                    to_sort->tbl_next = cand;
+                    break;
+                }
+                last = cand;
+                cand = cand->tbl_next;
+            }
+        }
+        // next to sort
+        to_sort = sorted_tail->tbl_next;
     }
 }
 
