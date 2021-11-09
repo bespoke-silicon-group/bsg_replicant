@@ -18,7 +18,7 @@ static thread int * solve_row_done_ptr[bsg_global_Y/2];
 using spmm_elt_t = hash_table::spmm_elt_t;
 using hidx_t = hash_table::hidx_t;
 
-#define NZ_BLOCK_SIZE 256
+#define NZ_BLOCK_SIZE 64
 static constexpr hidx_t NZ_TBL_SIZE = NZ_BLOCK_SIZE*(bsg_global_Y/2);
 
 static thread spmm_elt_t *  nonzeros_table[NZ_BLOCK_SIZE];
