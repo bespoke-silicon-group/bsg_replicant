@@ -31,7 +31,7 @@ int SpGEMM(int argc, char *argv[])
         , cl.input_is_zero_indexed()
         );
     {
-        auto AxA = CSR((A*A).pruned());
+        auto AxA = CSR((A*A));
 
         eigen_sparse_matrix::show_metadata(A);
         eigen_sparse_matrix::show_metadata(AxA);
