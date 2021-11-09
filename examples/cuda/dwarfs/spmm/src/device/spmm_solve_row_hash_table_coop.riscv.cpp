@@ -167,7 +167,7 @@ static void sort_table()
 {
     if (tbl_size  == 0)
         return;
-    
+
     spmm_elt_t *sorted_head = tbl_head;
     spmm_elt_t *sorted_tail = tbl_head;
     spmm_elt_t *to_sort = sorted_tail->tbl_next;
@@ -178,10 +178,18 @@ static void sort_table()
         to_sort->tbl_next = nullptr;
         // insert into sorted list
         if (to_sort->part.idx < sorted_head->part.idx) {
-            // special case if goes at start            
+            pr_dbg("%s: inserting at head before %3d: %3d\n"
+                   , __func__
+                   , sorted_head->part.idx
+                   , to_sort->part.idx);
+            // special case if goes at start
             to_sort->tbl_next = sorted_head;
             sorted_head = to_sort;
         } else if (to_sort->part.idx > sorted_tail->part.idx) {
+            pr_dbg("%s: inserting at tail after %3d: %3d\n"
+                   , __func__
+                   , sorted_tail->part.idx
+                   , to_sort->part.idx);
             // special case if goes at end
             to_sort->tbl_next = sorted_tail->tbl_next;
             sorted_tail->tbl_next = to_sort;
@@ -190,13 +198,17 @@ static void sort_table()
             spmm_elt_t *last, *cand;
             last = sorted_head;
             cand = sorted_head->tbl_next;
-            
+
             while (last != sorted_tail) {
                 // find first where to_sort < cand
                 if (to_sort->part.idx < cand->part.idx) {
                     // insert to_sort between last and cand
                     last->tbl_next = to_sort;
                     to_sort->tbl_next = cand;
+                    pr_dbg("%s: inserting before %d: %d\n"
+                           , __func__
+                           , cand->part.idx
+                           , to_sort->part.idx);
                     break;
                 }
                 last = cand;
@@ -206,6 +218,7 @@ static void sort_table()
         // next to sort
         to_sort = sorted_tail->tbl_next;
     }
+    tbl_head = sorted_head;
 }
 
 static void init()
