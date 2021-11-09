@@ -28,21 +28,6 @@
 
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
-repos := hammerblade-helpers graph-tools
-
-hammerblade-helpers.url    = git@github.com:mrutt92/hammerblade-helpers
-hammerblade-helpers.commit = master
-
-graph-tools.url    = git@github.com:mrutt92/graph-tools
-graph-tools.commit = master
-
-$(repos): %:
-	git clone $($*.url)
-	cd $* && git checkout $($*.commit)
-	cd $* && git submodule update --init
-
-checkout_repos: $(repos)
-
 include $(REPLICANT_PATH)/environment.mk
 
 include $(EXAMPLES_PATH)/cuda/bfs/config.mk
@@ -67,19 +52,19 @@ endef
 
 GRAPHS += $(call graph-name,$(TEST_GRAPH_TYPE),$(TEST_VERTICES),$(TEST_EDGES))
 GRAPHS := $(addprefix inputs/,$(GRAPHS))
-GRAPHS_ANALYSIS := $(addsuffix .analysis.txt,$(GRAPHS))
+#GRAPHS_ANALYSIS := $(addsuffix .analysis.txt,$(GRAPHS))
 
 $(GRAPHS): inputs/%: input-gen
 	$(call set-graph-parameters,$*)
 	@mkdir -p $(dir $@)
 	./$< $(GRAPH_TYPE) $(VERTICES) $(EDGES) $@
 
-$(GRAPHS_ANALYSIS): inputs/%.analysis.txt: inputs/% input-analyze
-	./input-analyze $< avg 10 $@
+#$(GRAPHS_ANALYSIS): inputs/%.analysis.txt: inputs/% input-analyze
+#	./input-analyze $< avg 10 $@
 
 .PHONY: inputs
 inputs: $(GRAPHS)
-inputs-analysis: $(GRAPHS_ANALYSIS)
+#inputs-analysis: $(GRAPHS_ANALYSIS)
 
 # $1 = graph-type
 # $2 = graph-vertices
@@ -89,8 +74,9 @@ inputs-analysis: $(GRAPHS_ANALYSIS)
 # $6 = tile-groups
 # $7 = tgx
 # $8 = tgy
+# $9 = pod
 
-test-name = $(1)_graph-type__$(2)_vertices__$(3)_edges__$(4)_root__$(5)_iter__$(6)_tile-groups__$(7)_tgx__$(8)_tgy
+test-name = $(1)_graph-type__$(2)_vertices__$(3)_edges__$(4)_root__$(5)_iter__$(6)_tile-groups__$(7)_tgx__$(8)_tgy__$(9)_pod
 
 # $1 = test name
 get-graph-type	= $(firstword $(subst _, ,$(filter %_graph-type,$(subst __, ,$1))))
@@ -101,6 +87,7 @@ get-iter	= $(firstword $(subst _, ,$(filter %_iter,$(subst __, ,$1))))
 get-tile-groups = $(firstword $(subst _, ,$(filter %_tile-groups,$(subst __, ,$1))))
 get-tgx		= $(firstword $(subst _, ,$(filter %_tgx,$(subst __, ,$1))))
 get-tgy		= $(firstword $(subst _, ,$(filter %_tgy,$(subst __, ,$1))))
+get-pod		= $(firstword $(subst _, ,$(filter %_pod,$(subst __, ,$1))))
 
 define get-test-parameters
 $(eval GRAPH_TYPE=$(call get-graph-type,$1))
@@ -111,12 +98,16 @@ $(eval ITER=$(call get-iter,$1))
 $(eval TILE_GROUPS=$(call get-tile-groups,$1))
 $(eval TGX=$(call get-tgx,$1))
 $(eval TGY=$(call get-tgy,$1))
+$(eval POD=$(call get-pod,$1))
 endef
 
-TEST_THREADS = 32 64 128
+TEST_THREADS = 128
+TEST_ITERS := $(shell seq $(ITE_START) 1 $(ITE_END)) 
+TEST_PODS := $(shell seq 0 1 $(MAX_POD))
 $(foreach threads,$(TEST_THREADS),\
 $(foreach iter,$(TEST_ITERS),\
-$(eval TESTS += $(call test-name,$(TEST_GRAPH_TYPE),$(TEST_VERTICES),$(TEST_EDGES),$(TEST_ROOT_NODE),$(iter),$(threads),1,1))))
+$(foreach pods,$(TEST_PODS),\
+$(eval TESTS += $(call test-name,$(TEST_GRAPH_TYPE),$(TEST_VERTICES),$(TEST_EDGES),$(TEST_ROOT_NODE),$(iter),$(threads),1,1,$(pods))))))
 
 # simulation directory generation
 TESTS_MAKEFILE  = $(addsuffix /Makefile,$(TESTS))
@@ -136,6 +127,7 @@ $(TESTS_PARAMETERS_MK): %/parameters.mk:
 	@echo TILE_GROUPS = $(TILE_GROUPS) >> $@
 	@echo TILE_GROUP_DIM_X = $(TGX) >> $@
 	@echo TILE_GROUP_DIM_Y = $(TGY) >> $@
+	@echo POD = $(POD) >> $@
 	@echo INPUT_GRAPH_PATH = $(EXAMPLES_PATH)/cuda/bfs/inputs/$(call graph-name,$(GRAPH_TYPE),$(VERTICES),$(EDGES)) >> $@
 
 # copy the template to the the target directory
@@ -149,7 +141,6 @@ tests_makefile: $(TESTS_MAKEFILE)
 tests_parameters_mk: $(TESTS_PARAMETERS_MK)
 tests_dir: tests_makefile tests_parameters_mk
 
-$(TESTS): checkout_repos
 $(TESTS): %: %/Makefile %/parameters.mk
 
 TESTS_EXEC	= $(addsuffix .exec,$(TESTS))
@@ -181,10 +172,9 @@ blood: $(TESTS_BLOOD)
 
 # some support executables
 graphtools-dir = $(EXAMPLES_PATH)/cuda/bfs/graph-tools
--include $(graphtools-dir)/libgraphtools.mk
+include $(graphtools-dir)/libgraphtools.mk
 
 SUPPORT_TOOLS = input-gen input-analyze input-degree-list
-$(SUPPORT_TOOLS): checkout_repos
 $(SUPPORT_TOOLS): $(libgraphtools-interface-headers)
 $(SUPPORT_TOOLS): $(libgraphtools-interface-libraries)
 $(SUPPORT_TOOLS): CXXFLAGS+=$(libgraphtools-interface-cxxflags)
