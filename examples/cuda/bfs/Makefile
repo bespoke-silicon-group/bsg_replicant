@@ -28,6 +28,21 @@
 
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
+repos := hammerblade-helpers graph-tools
+
+hammerblade-helpers.url    = git@github.com:mrutt92/hammerblade-helpers
+hammerblade-helpers.commit = master
+
+graph-tools.url    = git@github.com:mrutt92/graph-tools
+graph-tools.commit = bfs_20211108
+
+$(repos): %:
+	git clone $($*.url)
+	cd $* && git checkout $($*.commit)
+	cd $* && git submodule update --init
+
+checkout_repos: $(repos)
+
 include $(REPLICANT_PATH)/environment.mk
 
 include $(EXAMPLES_PATH)/cuda/bfs/config.mk
