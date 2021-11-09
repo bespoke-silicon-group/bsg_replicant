@@ -187,7 +187,7 @@ static void sort_table()
             sorted_tail->tbl_next = to_sort;
             sorted_tail = to_sort;
         } else {
-            spmm_elt_t *last, *next;
+            spmm_elt_t *last, *cand;
             last = sorted_head;
             cand = sorted_head->tbl_next;
             
