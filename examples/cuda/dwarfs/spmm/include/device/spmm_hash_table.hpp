@@ -6,7 +6,10 @@ namespace hash_table {
 /* hash table entry */
     typedef struct spmm_elt {
         spmm_partial_t part; //!< partial
-        spmm_elt    *bkt_next; //!< next in bucket
+        union {            
+            spmm_elt    *bkt_next; //!< next in bucket
+            spmm_elt    *tbl_prev; //!< next in bucket            
+        };
         spmm_elt    *tbl_next; //!< next in table
     } spmm_elt_t;
 
