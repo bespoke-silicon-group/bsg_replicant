@@ -81,6 +81,8 @@ static spmm_elt_t* alloc_elt()
     } else {
         spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(elts_realloc_size*sizeof(spmm_elt_t));
         int i;
+        // just in case this ever happens
+        bsg_print_hexadecimal(0xdeadbeef);
         for (i = 0; i < elts_realloc_size-1; i++) {
             newelts[i].tbl_next = &newelts[i+1];
         }
@@ -170,12 +172,21 @@ static void sort_table()
 
     spmm_elt_t *sorted_head = tbl_head;
     spmm_elt_t *sorted_tail = tbl_head;
+
+    // we ruse bkt_next as a prev pointer for this part
+    // since we are done with the hashing
+    sorted_head->tbl_prev = nullptr;
+
     spmm_elt_t *to_sort = sorted_tail->tbl_next;
+
+    spmm_elt_t *median  = sorted_head;
+    int ltm = 0, gtm = 0;
 
     while (to_sort != nullptr) {
         // remove to_sort from list
         sorted_tail->tbl_next = to_sort->tbl_next;
         to_sort->tbl_next = nullptr;
+        to_sort->tbl_prev = nullptr;
         // insert into sorted list
         if (to_sort->part.idx < sorted_head->part.idx) {
             pr_dbg("%s: inserting at head before %3d: %3d\n"
@@ -184,6 +195,7 @@ static void sort_table()
                    , to_sort->part.idx);
             // special case if goes at start
             to_sort->tbl_next = sorted_head;
+            sorted_head->tbl_prev = to_sort;
             sorted_head = to_sort;
         } else if (to_sort->part.idx > sorted_tail->part.idx) {
             pr_dbg("%s: inserting at tail after %3d: %3d\n"
@@ -192,6 +204,7 @@ static void sort_table()
                    , to_sort->part.idx);
             // special case if goes at end
             to_sort->tbl_next = sorted_tail->tbl_next;
+            to_sort->tbl_prev = sorted_tail;
             sorted_tail->tbl_next = to_sort;
             sorted_tail = to_sort;
         } else {
@@ -204,7 +217,9 @@ static void sort_table()
                 if (to_sort->part.idx < cand->part.idx) {
                     // insert to_sort between last and cand
                     last->tbl_next = to_sort;
+                    to_sort->tbl_prev = last;
                     to_sort->tbl_next = cand;
+                    cand->tbl_prev = to_sort;
                     pr_dbg("%s: inserting before %d: %d\n"
                            , __func__
                            , cand->part.idx
