@@ -111,7 +111,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) -g /home/zz546/gapbs/suitsparse_roadnetca.el
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) -g /home/zz546/gapbs/suitesparse_roadcentral.el
 
 SIM_ARGS ?=
 
