@@ -54,7 +54,7 @@ int kernel_bs (int argc, char **argv) {
         bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of 1x1 tile groups.\n\n");
 
         // TODO: Set values
-        char *inputFile = "inputs/in_4K.txt";
+        char *inputFile = "inputs/in_10M.txt";
 
         FILE *file;
         int i;
@@ -97,8 +97,9 @@ int kernel_bs (int argc, char **argv) {
         }
 
         rv = fclose(file);
-        // Only do 1/64th of the dataset.
-        //        numOptions = numOptions/64;
+        // Only do 1/64th of the dataset, but make sure it divides evenly
+        numOptions = numOptions/64;
+        numOptions += (128 - (numOptions % 128));
 
         if(rv != 0) {
                 printf("ERROR: Unable to close file `%s'.\n", inputFile);
