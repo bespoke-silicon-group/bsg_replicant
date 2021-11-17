@@ -58,7 +58,7 @@ VDEFINES += BSG_MACHINE_DRAMSIM3_PKG=$(BSG_MACHINE_MEM_DRAMSIM3_PKG)
 VLDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
 VLDFLAGS += -lbsg_manycore_regression -lbsg_manycore_runtime -lm
 VCS_LDFLAGS += $(foreach def,$(VLDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS  += -M -L -ntb_opts tb_timescale=1ps/1ps -lca
+VCS_VFLAGS  += -M -L -override_timescale=1ps/1ps -ntb_opts tb_timescale=1ps/1ps -lca
 VCS_VFLAGS  += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
 VCS_VFLAGS  += -assert svaext -undef_vcs_macro
 VCS_VFLAGS  += +warn=noLCA_FEATURES_ENABLED
