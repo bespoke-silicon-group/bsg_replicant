@@ -261,15 +261,15 @@ int launch(int argc, char * argv[]){
       break;
   }
  
-//  old_rank_dev.copyToHost(old_rank_hb, edges.num_nodes());
-//  device->read_dma();
-//  for(int i=0; i < edges.num_nodes(); i++) {
-//    std::cout << "old_rank_hb[" << i << "] is " << old_rank_hb[i] << " and old_rank_cpu[" << i << "] is " << old_rank_cpu[i] << std::endl;
-//    if (old_rank[i] != old_rank_cpu[i]) {
-//      std::cerr << "Result dose not equal, do not PASS the test !" << std::endl;
-//      break;
-//    }
-//  }
+  old_rank_dev.copyToHost(old_rank_hb, edges.num_nodes());
+  device->read_dma();
+  for(int i=0; i < edges.num_nodes(); i++) {
+    std::cout << "old_rank_hb[" << i << "] is " << old_rank_hb[i] << " and old_rank_cpu[" << i << "] is " << old_rank_cpu[i] << std::endl;
+    if (old_rank[i] != old_rank_cpu[i]) {
+      std::cerr << "Result dose not equal, do not PASS the test !" << std::endl;
+      break;
+    }
+  }
   std::cerr << "finished while loop" << std::endl;
   bool verify = true;
 

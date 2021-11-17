@@ -1,6 +1,6 @@
 
-#define BSG_TILE_GROUP_X_DIM 16
-#define BSG_TILE_GROUP_Y_DIM 8
+#define BSG_TILE_GROUP_X_DIM 1
+#define BSG_TILE_GROUP_Y_DIM 1
 #define bsg_tiles_X BSG_TILE_GROUP_X_DIM
 #define bsg_tiles_Y BSG_TILE_GROUP_Y_DIM
 #include <bsg_manycore.h>
@@ -14,7 +14,7 @@ bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;
 
 #ifdef DEBUG
 #define pr_dbg(fmt, ...)                        \
-    bsg_printf(fmt, ##__VA_ARGS__)
+    do{ if (__bsg_id == 0) bsg_printf(fmt, ##__VA_ARGS__); } while (0)
 #else
 #define pr_dbg(fmt, ...)
 #endif
@@ -25,11 +25,12 @@ __attribute__((section(".dram"))) float beta_score;
 
 template <typename APPLY_FUNC > int edgeset_apply_pull_serial(int *in_indices , int *in_neighbors, float * new_rank, float * contrib, APPLY_FUNC apply_func, int V, int E)
 {
-  int start, end;
-  edge_aware_local_range(V,E, &start, &end, in_indices);
+//  int start, end;
+//  edge_aware_local_range(V,E, &start, &end, in_indices);
   bsg_cuda_print_stat_start(4);
-  pr_dbg("serial func %i start: %i end %i \n", bsg_id, start, end);
-  for ( int d=start; d < end; d++) {
+//  pr_dbg("serial func %i start: %i end %i \n", bsg_id, start, end);
+  for ( int d=bsg_id; d < V; d=d + bsg_tiles_X * bsg_tiles_Y) {
+//    pr_dbg("d is %d, start and end is %d and %d\n", d, in_indices[d], in_indices[d+1]);
     for(int s = in_indices[d]; s < in_indices[d+1]; s++) {
       apply_func( in_neighbors[s], d , new_rank, contrib);
     } //end of loop on in neighbors
