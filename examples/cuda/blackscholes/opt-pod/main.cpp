@@ -54,7 +54,7 @@ int kernel_bs (int argc, char **argv) {
         bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of 1x1 tile groups.\n\n");
 
         // TODO: Set values
-        char *inputFile = "inputs/in_64K.txt";
+        char *inputFile = "inputs/in_4K.txt";
 
         FILE *file;
         int i;
@@ -97,6 +97,8 @@ int kernel_bs (int argc, char **argv) {
         }
 
         rv = fclose(file);
+        // Only do 1/64th of the dataset.
+        //        numOptions = numOptions/64;
 
         if(rv != 0) {
                 printf("ERROR: Unable to close file `%s'.\n", inputFile);
@@ -147,10 +149,19 @@ int kernel_bs (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, numOptions * sizeof(float), &call_buf_dev));
 
                 void *src, *dst;
+                hb_mc_dma_htod_t htod;
+                hb_mc_dma_dtoh_t dtoh;
+
                 // Copy data host onto device DRAM.
                 dst = (void *) ((intptr_t) option_buf_dev);
                 src = (void *) data;
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src,  numOptions * sizeof(OptionData), HB_MC_MEMCPY_TO_DEVICE));
+                //BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src,  numOptions * sizeof(OptionData), HB_MC_MEMCPY_TO_DEVICE));
+
+                htod.d_addr = option_buf_dev;
+                htod.h_addr = src;
+                htod.size   = numOptions * sizeof(OptionData);
+
+                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
                 // Define tg_dim_x/y: number of tiles in each tile group
                 // Calculate grid_dim_x/y: number of tile groups needed
@@ -188,13 +199,22 @@ int kernel_bs (int argc, char **argv) {
                 // Copy result back from device DRAM into host memory.
                 src = (void *) ((intptr_t) put_buf_dev);
                 dst = (void *) puts;
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST)
-);
+                // BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST));
+                dtoh.d_addr = put_buf_dev;
+                dtoh.h_addr = dst;
+                dtoh.size   = numOptions*sizeof(float);
+
+                BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh, 1));
 
                 src = (void *) ((intptr_t) call_buf_dev);
                 dst = (void *) calls;
-                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST)
-);
+                // BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, numOptions*sizeof(float), HB_MC_MEMCPY_TO_HOST));
+
+                dtoh.d_addr = call_buf_dev;
+                dtoh.h_addr = dst;
+                dtoh.size   = numOptions*sizeof(float);
+
+                BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh, 1));
 
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 

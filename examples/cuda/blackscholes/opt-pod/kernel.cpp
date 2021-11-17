@@ -13,7 +13,8 @@ extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalia
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
         //bsg_fence();
-#define CHUNK_SIZE 4
+        // Use chunk size to load a cache line
+#define CHUNK_SIZE 2
         OptionData _data[CHUNK_SIZE];
         float _puts[CHUNK_SIZE];
         float _calls[CHUNK_SIZE];
