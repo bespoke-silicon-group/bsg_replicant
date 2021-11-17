@@ -47,7 +47,7 @@ CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
 
 
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = aes
+KERNEL_NAME = bs
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -93,8 +93,8 @@ bs.rvo: RISCV_CXXFLAGS += -lm
 RISCV_TARGET_OBJECTS += kernel.rvo bs.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 1
-TILE_GROUP_DIM_Y = 1
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 

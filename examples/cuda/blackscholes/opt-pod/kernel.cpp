@@ -1,14 +1,16 @@
 #include <bsg_manycore.h>
 #include <bsg_set_tile_x_y.h>
-#include <bsg_tile_group_barrier.hpp>
+#include <bsg_cuda_lite_barrier.h>
 #include "bs.hpp"
 
 extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalias data,
                                     float bsg_attr_remote * bsg_attr_noalias puts,
                                     float bsg_attr_remote * bsg_attr_noalias calls,
                                     int elems){
-	int grid_idx = (__bsg_tile_group_id_y * __bsg_grid_dim_x + __bsg_tile_group_id_x);
+	int grid_idx = (bsg_tiles_X * __bsg_y + __bsg_x);
         int start = grid_idx * elems;
+        bsg_barrier_hw_tile_group_init();
+        bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
         //bsg_fence();
 #define CHUNK_SIZE 4
@@ -32,7 +34,8 @@ extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalia
                         calls[i + ci] = _calls[ci];
                 }
         }
-
         bsg_cuda_print_stat_kernel_end();
+        bsg_fence();
+        bsg_barrier_hw_tile_group_sync();
         return 0;
 }

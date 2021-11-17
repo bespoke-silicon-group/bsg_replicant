@@ -54,7 +54,7 @@ int kernel_bs (int argc, char **argv) {
         bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of 1x1 tile groups.\n\n");
 
         // TODO: Set values
-        char *inputFile = "inputs/in_16K.txt";
+        char *inputFile = "inputs/in_64K.txt";
 
         FILE *file;
         int i;
@@ -154,10 +154,10 @@ int kernel_bs (int argc, char **argv) {
 
                 // Define tg_dim_x/y: number of tiles in each tile group
                 // Calculate grid_dim_x/y: number of tile groups needed
-                hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 };
-                hb_mc_dimension_t grid_dim = { .x = 16, .y = 8};
-                uint32_t opts_tile = numOptions / (grid_dim.x * grid_dim.y);
-                if(numOptions % (grid_dim.x * grid_dim.y)){
+                hb_mc_dimension_t tg_dim = { .x = 16, .y = 8 };
+                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+                uint32_t opts_tile = numOptions / (tg_dim.x * tg_dim.y);
+                if(numOptions % (tg_dim.x * tg_dim.y)){
                         bsg_pr_test_err("Number of Options does not divide evenly between tiles\n");
                         return HB_MC_FAIL;
                 }
