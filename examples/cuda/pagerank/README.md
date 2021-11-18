@@ -8,7 +8,7 @@ Simulation
 
 2. Using the ./converter to convert the .mtx dataset to .el. For example: `./convert -f xxx.mtx -e xxx.el`
 
-3. Replace the bsg_replicant with graphit_pagerank branch which can be found [here](https://github.com/bespoke-silicon-group/bsg_replicant/tree/pagerank-new-machine)
+3. Replace the bsg_replicant with pagerank-new-machine branch which can be found [here](https://github.com/bespoke-silicon-group/bsg_replicant/tree/pagerank-new-machine)
 
 4. `cd bsg_bladerunner/bsg_replicant/examples/cuda/pagerank`
 
