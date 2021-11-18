@@ -16,7 +16,9 @@ Simulation
 
 6. `cd ljournal-scale-up`
 
-7. Change the `C_ARGS ?= $(BSG_MANYCORE_KERNELS) -g /home/zz546/gapbs/suitesparse_roadcentral.el` to the path of your dataset.
+7. Change the `C_ARGS ?= $(BSG_MANYCORE_KERNELS) -g /home/zz546/gapbs/suitesparse_roadcentral.el` inside Makefile to the path of your dataset.
+
+8. `python run-all-hb.py`
 
 Collect the data
 ----------------
