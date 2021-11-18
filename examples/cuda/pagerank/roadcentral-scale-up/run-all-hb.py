@@ -25,55 +25,64 @@ def fancy_print(route):
 
 #print("total number of jobs: " + str(len(route)))
 
+parallel_num = 2
+seq_num = int(64 / parallel_num)
 
-for i in range(64):
-    for j in range(5):
-        sub_b = j * 13
-        # create kernel folder
-        name = "block_%d_%d" % (i, j)
-        sh_cmd = "mkdir -p " + name
-        print(sh_cmd)
-        os.system(sh_cmd)
+for s in range(seq_num):
+    cosim_run = {}
+    for i in range(parallel_num):
+        for j in range(5):
+            sub_b = j * 13
+            # create kernel folder
+            pod_num = s * parallel_num + i
+            name = "block_%d_%d" % (pod_num, j)
+            sh_cmd = "mkdir -p " + name
+            print(sh_cmd)
+            os.system(sh_cmd)
 
-        sh_cmd = "(cd " + name + "; cp ../Makefile .; cp ../pr_scaleup_kernelbc.cpp .)"
-        print(sh_cmd)
-        os.system(sh_cmd)
+            sh_cmd = "(cd " + name + "; cp ../Makefile .; cp ../pr_scaleup_kernelbc.cpp .)"
+            print(sh_cmd)
+            os.system(sh_cmd)
 
-        current_path = str(pathlib.Path(__file__).parent.absolute())
-        openfile = current_path + "/" + name + "/Makefile"
-        print(openfile)
+            current_path = str(pathlib.Path(__file__).parent.absolute())
+            openfile = current_path + "/" + name + "/Makefile"
+            print(openfile)
 
-        # Modify the macros in Makefile
-        f = open(openfile, 'r')
-        alllines = f.readlines()
-        f.close()
-        f = open(openfile, 'w+')
-        host_pod = "CXXDEFINES += -DSIM_CURRENT_POD=" + str(i)
-        kernel_pod = "RISCV_DEFINES += -DSIM_KERNEL_CURRENT_POD=" + str(i)
-        kerenl_block = "RISCV_DEFINES += -DSIM_KERNEL_CURRENT_BLOCK=" + str(sub_b)
-        for eachline in alllines:
-            if eachline.__contains__("CXXDEFINES += -DSIM_CURRENT_POD=1"):
-                newline = eachline.replace("CXXDEFINES += -DSIM_CURRENT_POD=1", host_pod)
-                f.write(newline)
-            elif eachline.__contains__("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_POD=1"):
-                newline = eachline.replace("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_POD=1", kernel_pod)
-                f.write(newline)
-            elif eachline.__contains__("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_BLOCK=1"):
-                newline = eachline.replace("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_BLOCK=1", kerenl_block)
-                f.write(newline)
-            else:
-                f.write(eachline)
-        f.close()
+            # Modify the macros in Makefile
+            f = open(openfile, 'r')
+            alllines = f.readlines()
+            f.close()
+            f = open(openfile, 'w+')
+            host_pod = "CXXDEFINES += -DSIM_CURRENT_POD=" + str(i)
+            kernel_pod = "RISCV_DEFINES += -DSIM_KERNEL_CURRENT_POD=" + str(i)
+            kerenl_block = "RISCV_DEFINES += -DSIM_KERNEL_CURRENT_BLOCK=" + str(sub_b)
+            for eachline in alllines:
+                if eachline.__contains__("CXXDEFINES += -DSIM_CURRENT_POD=1"):
+                    newline = eachline.replace("CXXDEFINES += -DSIM_CURRENT_POD=1", host_pod)
+                    f.write(newline)
+                elif eachline.__contains__("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_POD=1"):
+                    newline = eachline.replace("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_POD=1", kernel_pod)
+                    f.write(newline)
+                elif eachline.__contains__("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_BLOCK=1"):
+                    newline = eachline.replace("RISCV_DEFINES += -DSIM_KERNEL_CURRENT_BLOCK=1", kerenl_block)
+                    f.write(newline)
+                else:
+                    f.write(eachline)
+            f.close()
 
-        # get current path 
-        path = str(os.path.abspath(os.getcwd())) + "/" + name
-        print(path)
+            # get current path 
+            path = str(os.path.abspath(os.getcwd())) + "/" + name
+            print(path)
         
-        # generate qsub script
-        sbatch_starter = sbatch_template.format(job_name=name, path=path)
-        print(sbatch_starter)
-        with open(name + "/run.sh", 'w') as outfile:
-            outfile.write(sbatch_starter)
+            # generate qsub script
+            sbatch_starter = sbatch_template.format(job_name=name, path=path)
+            print(sbatch_starter)
+            with open(name + "/run.sh", 'w') as outfile:
+                outfile.write(sbatch_starter)
 
-        print("starting cosim job ...")
-        cosim_run = subprocess.Popen(["sh", name + "/run.sh"], env=os.environ)
+            print("starting cosim job ...")
+            thread = i * 5 + j
+            cosim_run[thread] = subprocess.Popen(["sh", name + "/run.sh"], env=os.environ)
+    for k in range(parallel_num * 5):
+        cosim_run[k].wait()
+
