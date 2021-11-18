@@ -28,6 +28,10 @@ def fancy_print(route):
 parallel_num = 2
 seq_num = int(64 / parallel_num)
 
+mod = 64 % parallel_num
+
+assert mod == 0, "parallel_num should be divisible by 64 !!"
+
 for s in range(seq_num):
     cosim_run = {}
     for i in range(parallel_num):

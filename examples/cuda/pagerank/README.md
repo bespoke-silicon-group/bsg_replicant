@@ -18,7 +18,9 @@ Simulation
 
 7. Change the `C_ARGS ?= $(BSG_MANYCORE_KERNELS) -g /home/zz546/gapbs/suitesparse_roadcentral.el` inside Makefile to the path of your dataset.
 
-8. `python run-all-hb.py`
+8. Change the parallel_num in line 28 of run-all-hb.py to control the parallel simulaton, the number of parallel simulation equals to 5 * parallel_num. 
+
+9. `python run-all-hb.py`
 
 Collect the data
 ----------------
