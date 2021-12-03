@@ -103,8 +103,8 @@ kernel.rvo: RISCV_INCLUDES += -I../tiny-AES-c
 kernel.riscv: kernel.rvo aes.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 1
-TILE_GROUP_DIM_Y = 1
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
