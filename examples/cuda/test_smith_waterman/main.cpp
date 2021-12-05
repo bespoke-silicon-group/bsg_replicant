@@ -53,9 +53,9 @@
 /*!
  * Runs the vector addition a one 2x2 tile groups. A[N] + B[N] --> C[N]
  * Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/vec_add/ Manycore binary in the BSG Manycore bitbucket repository.
+ * This tests uses the software/spmd/bsg_cuda_lite_runtime/smith_waterman/ Manycore binary in the BSG Manycore bitbucket repository.
 */
-void host_vec_add (int32_t *A, int32_t *B, int32_t *C, int N) {
+void host_smith_waterman (int32_t *A, int32_t *B, int32_t *C, int N) {
         for (int i = 0; i < N; i ++) {
                 C[i] = A[i] + B[i];
         }
@@ -63,7 +63,7 @@ void host_vec_add (int32_t *A, int32_t *B, int32_t *C, int N) {
 }
 
 
-int kernel_vec_add (int argc, char **argv) {
+int kernel_smith_waterman (int argc, char **argv) {
         char *bin_path, *test_name;
         struct arguments_path args = {NULL, NULL};
 
@@ -149,7 +149,7 @@ int kernel_vec_add (int argc, char **argv) {
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_vec_add", 5, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 5, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
@@ -169,7 +169,7 @@ int kernel_vec_add (int argc, char **argv) {
 
                 /* Calculate the expected result using host code and compare the results.  */
                 int32_t *C_expected = new int32_t [N];
-                host_vec_add (A_host, B_host, C_expected, N);
+                host_smith_waterman (A_host, B_host, C_expected, N);
 
 
                 int mismatch = 0;
@@ -206,4 +206,4 @@ int kernel_vec_add (int argc, char **argv) {
         return HB_MC_SUCCESS;
 }
 
-declare_program_main("test_vec_add", kernel_vec_add);
+declare_program_main("test_smith_waterman", kernel_smith_waterman);

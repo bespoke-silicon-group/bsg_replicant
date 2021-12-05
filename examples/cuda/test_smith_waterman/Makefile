@@ -46,7 +46,7 @@ SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
 
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = vec_add_dma
+KERNEL_NAME = smith_waterman
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -56,8 +56,8 @@ KERNEL_NAME = vec_add_dma
 TEST_SOURCES = main.c
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
-CDEFINES += 
-CXXDEFINES += 
+CDEFINES +=
+CXXDEFINES +=
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
