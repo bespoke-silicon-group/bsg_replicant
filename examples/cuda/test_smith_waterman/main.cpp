@@ -38,6 +38,12 @@
 #include <stdio.h>
 #include <bsg_manycore_regression.h>
 #include <math.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <map>
+
+using namespace std;
 
 #define PRINT_SCORE
 //#define PRINT_MATRIX
@@ -84,36 +90,59 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
+                // Read data
+                ifstream f_ref, f_query;
+                string ref_str, query_str, num;
+                map<char, int> dna_map = {
+                  {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}
+                };
+
+                // read sequences from file
+                f_ref.open("data/dna-reference.fasta", ios::in);
+                f_query.open("data/dna-query.fasta", ios::in);
+
+                f_ref >> num >> ref_str;
+                f_query >> num >> query_str;
+
+                f_ref.close();
+                f_query.close();
+
+                int N1 = ref_str.length();
+                int N2 = query_str.length();
+                int32_t ref_host[N1], query_host[N2];
+
+                for (int i = 0; i < N1; i++) {
+                  ref_host[i] = dna_map[ref_str[i]];
+                }
+
+                for (int i = 0; i < N2; i++) {
+                  query_host[i] = dna_map[query_str[i]];
+                }
+
                 /* Allocate memory on the device for A, B and C. */
-                constexpr int N = 4;
-                constexpr size_t vsize = N * sizeof(int);
-                constexpr size_t vsize2 = (N + 1) * (N + 1) * sizeof(int);
-                bsg_pr_test_info("Using DMA to write vectors of %d integers\n", N);
+                size_t vsize0 = N1 * sizeof(int);
+                size_t vsize1 = N2 * sizeof(int);
+                size_t vsize2 = (N1 + 1) * (N2 + 1) * sizeof(int);
 
                 eva_t ref_device, query_device, score_matrix_device;
                 /* allocate A[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &ref_device));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize0, &ref_device));
                  /* allocate B[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &query_device));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize1, &query_device));
                  /* allocate C[N] on the device */
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize2, &score_matrix_device));
-
-
-                /* Allocate memory on the host for A & B and initialize with random values. */
-                int32_t ref_host[N] = {0, 1, 2, 3}; /* allocate A[N] on the host */
-                int32_t query_host[N] = {0, 1, 2, 3}; /* allocate B[N] on the host */
 
                 /* Copy A & B from host onto device DRAM. */
                 hb_mc_dma_htod_t htod_jobs [] = {
                         {
                                 .d_addr = ref_device,
                                 .h_addr = ref_host,
-                                .size   = vsize
+                                .size   = vsize0
                         },
                         {
                                 .d_addr = query_device,
                                 .h_addr = query_host,
-                                .size   = vsize
+                                .size   = vsize1
                         }
                 };
 
@@ -124,12 +153,11 @@ int kernel_smith_waterman (int argc, char **argv) {
                 /* Define block_size_x/y: amount of work for each tile group */
                 /* Define tg_dim_x/y: number of tiles in each tile group */
                 /* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y */
-                uint32_t block_size_x = N;
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[5] = {ref_device, query_device, score_matrix_device, N, N};
+                uint32_t cuda_argv[5] = {ref_device, query_device, score_matrix_device, N1, N2};
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
@@ -159,9 +187,9 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
 #ifdef PRINT_MATRIX
-                for (int i = 0; i < N + 1; i++) {
-                  for (int j = 0; j < N + 1; j++) {
-                    printf("%d\t", score_matrix_host[(N+1)*i+j]);
+                for (int i = 0; i < N1 + 1; i++) {
+                  for (int j = 0; j < N2 + 1; j++) {
+                    printf("%d\t", score_matrix_host[(N2+1)*i+j]);
                   }
                   printf("\n");
                 }
@@ -169,10 +197,10 @@ int kernel_smith_waterman (int argc, char **argv) {
 
 #ifdef PRINT_SCORE
                 int score = -1;
-                for (int i = 0; i < N + 1; i++) {
-                  for (int j = 0; j < N + 1; j++) {
-                    if (score_matrix_host[(N+1)*i+j] > score)
-                      score = score_matrix_host[(N+1)*i+j];
+                for (int i = 0; i < N1 + 1; i++) {
+                  for (int j = 0; j < N2 + 1; j++) {
+                    if (score_matrix_host[(N2+1)*i+j] > score)
+                      score = score_matrix_host[(N2+1)*i+j];
                   }
                 }
                 printf("Score = %d\n", score);
