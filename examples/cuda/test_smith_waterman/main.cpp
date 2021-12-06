@@ -39,6 +39,8 @@
 #include <bsg_manycore_regression.h>
 #include <math.h>
 
+#define PRINT_SCORE
+//#define PRINT_MATRIX
 #define ALLOC_NAME "default_allocator"
 #define CUDA_CALL(expr)                                                 \
         {                                                               \
@@ -49,19 +51,6 @@
                         return __err;                                   \
                 }                                                       \
         }
-
-/*!
- * Runs the vector addition a one 2x2 tile groups. A[N] + B[N] --> C[N]
- * Grid dimensions are prefixed at 1x1. --> block_size_x is set to N.
- * This tests uses the software/spmd/bsg_cuda_lite_runtime/smith_waterman/ Manycore binary in the BSG Manycore bitbucket repository.
-*/
-void host_smith_waterman (int32_t *A, int32_t *B, int32_t *C, int N) {
-        for (int i = 0; i < N; i ++) {
-                C[i] = A[i] + B[i];
-        }
-        return;
-}
-
 
 int kernel_smith_waterman (int argc, char **argv) {
         char *bin_path, *test_name;
@@ -96,39 +85,34 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
                 /* Allocate memory on the device for A, B and C. */
-                constexpr int N = (1 << 16);
-                constexpr size_t vsize = N * sizeof(uint32_t);
+                constexpr int N = 4;
+                constexpr size_t vsize = N * sizeof(int);
+                constexpr size_t vsize2 = (N + 1) * (N + 1) * sizeof(int);
                 bsg_pr_test_info("Using DMA to write vectors of %d integers\n", N);
 
-                eva_t A_device, B_device, C_device;
+                eva_t ref_device, query_device, score_matrix_device;
                 /* allocate A[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &A_device));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &ref_device));
                  /* allocate B[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &B_device));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &query_device));
                  /* allocate C[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize, &C_device));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize2, &score_matrix_device));
 
 
                 /* Allocate memory on the host for A & B and initialize with random values. */
-                int32_t *A_host = new int32_t [N]; /* allocate A[N] on the host */
-                int32_t *B_host = new int32_t [N]; /* allocate B[N] on the host */
-
-                /* fill A with arbitrary data */
-                for (int i = 0; i < N; i++) {
-                        A_host[i] = rand() & 0xFFFF;
-                        B_host[i] = rand() & 0xFFFF;
-                }
+                int32_t ref_host[N] = {0, 1, 2, 3}; /* allocate A[N] on the host */
+                int32_t query_host[N] = {0, 1, 2, 3}; /* allocate B[N] on the host */
 
                 /* Copy A & B from host onto device DRAM. */
                 hb_mc_dma_htod_t htod_jobs [] = {
                         {
-                                .d_addr = A_device,
-                                .h_addr = A_host,
+                                .d_addr = ref_device,
+                                .h_addr = ref_host,
                                 .size   = vsize
                         },
                         {
-                                .d_addr = B_device,
-                                .h_addr = B_host,
+                                .d_addr = query_device,
+                                .h_addr = query_host,
                                 .size   = vsize
                         }
                 };
@@ -145,7 +129,7 @@ int kernel_smith_waterman (int argc, char **argv) {
 
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[5] = {A_device, B_device, C_device, N, block_size_x};
+                uint32_t cuda_argv[5] = {ref_device, query_device, score_matrix_device, N, N};
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
@@ -155,12 +139,12 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 /* Copy result matrix back from device DRAM into host memory.  */
-                int32_t *C_host = new int32_t [N];
+                int32_t *score_matrix_host = new int32_t [vsize2];
 
                 hb_mc_dma_dtoh_t dtoh_job = {
-                        .d_addr = C_device,
-                        .h_addr = C_host,
-                        .size   = vsize
+                        .d_addr = score_matrix_device,
+                        .h_addr = score_matrix_host,
+                        .size   = vsize2
                 };
 
                 bsg_pr_test_info("Reading C to host\n");
@@ -168,37 +152,33 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
 
                 /* Calculate the expected result using host code and compare the results.  */
-                int32_t *C_expected = new int32_t [N];
-                host_smith_waterman (A_host, B_host, C_expected, N);
-
-
-                int mismatch = 0;
-                for (int i = 0; i < N; i++) {
-                        if (A_host[i] + B_host[i] != C_host[i]) {
-                                bsg_pr_err(BSG_RED("Mismatch: ")
-                                           "C[%d]:  0x%08" PRIx32
-                                           " + 0x%08" PRIx32
-                                           " = 0x%08" PRIx32
-                                           "\t Expected: 0x%08" PRIx32 "\n",
-                                           i ,
-                                           A_host[i],
-                                           B_host[i],
-                                           C_host[i],
-                                           C_expected[i]);
-                                mismatch = 1;
-                        }
-                }
-
-                if (mismatch)
-                        return HB_MC_FAIL;
+                //if (mismatch)
+                        //return HB_MC_FAIL;
 
                 /* Freeze the tiles and memory manager cleanup.  */
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
-                delete [] A_host;
-                delete [] B_host;
-                delete [] C_host;
-                delete [] C_expected;
+#ifdef PRINT_MATRIX
+                for (int i = 0; i < N + 1; i++) {
+                  for (int j = 0; j < N + 1; j++) {
+                    printf("%d\t", score_matrix_host[(N+1)*i+j]);
+                  }
+                  printf("\n");
+                }
+#endif
+
+#ifdef PRINT_SCORE
+                int score = -1;
+                for (int i = 0; i < N + 1; i++) {
+                  for (int j = 0; j < N + 1; j++) {
+                    if (score_matrix_host[(N+1)*i+j] > score)
+                      score = score_matrix_host[(N+1)*i+j];
+                  }
+                }
+                printf("Score = %d\n", score);
+#endif
+
+                delete [] score_matrix_host;
         }
 
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
@@ -207,3 +187,4 @@ int kernel_smith_waterman (int argc, char **argv) {
 }
 
 declare_program_main("test_smith_waterman", kernel_smith_waterman);
+
