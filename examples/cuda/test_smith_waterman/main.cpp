@@ -42,6 +42,7 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <vector>
 
 using namespace std;
 
@@ -96,41 +97,64 @@ int kernel_smith_waterman (int argc, char **argv) {
                 map<char, int> dna_map = {
                   {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}
                 };
+                int sm_size = 0;
+                const int N = 32;
+                int *n1 = new int[N];
+                int *n2 = new int[N];
+                vector<int> ref_vec, query_vec;
 
                 // read sequences from file
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
-                f_ref >> num >> ref_str;
-                f_query >> num >> query_str;
+                for (int n = 0; n < N; n++) {
+                  f_ref >> num >> ref_str;
+                  f_query >> num >> query_str;
+
+                  n1[n] = ref_str.length();
+                  n2[n] = query_str.length();
+
+                  for (int i = 0; i < n1[n]; i++) {
+                    ref_vec.push_back(dna_map[ref_str[i]]);
+                  }
+
+                  for (int i = 0; i < n2[n]; i++) {
+                    query_vec.push_back(dna_map[query_str[i]]);
+                  }
+
+                  sm_size += (n1[n] + 1) * (n2[n] + 1);
+                }
 
                 f_ref.close();
                 f_query.close();
 
-                int N1 = ref_str.length();
-                int N2 = query_str.length();
-                int32_t ref_host[N1], query_host[N2];
+                int *ref = new int[ref_vec.size()];
+                int *query = new int[query_vec.size()];
+                copy(ref_vec.begin(), ref_vec.end(), ref);
+                copy(query_vec.begin(), query_vec.end(), query);
 
-                for (int i = 0; i < N1; i++) {
-                  ref_host[i] = dna_map[ref_str[i]];
-                }
-
-                for (int i = 0; i < N2; i++) {
-                  query_host[i] = dna_map[query_str[i]];
-                }
+                int *n1_host = n1;
+                int *n2_host = n2;
+                int *ref_host = ref;
+                int *query_host = query;
 
                 /* Allocate memory on the device for A, B and C. */
-                size_t vsize0 = N1 * sizeof(int);
-                size_t vsize1 = N2 * sizeof(int);
-                size_t vsize2 = (N1 + 1) * (N2 + 1) * sizeof(int);
+                size_t vsize0 = ref_vec.size() * sizeof(int);
+                size_t vsize1 = query_vec.size() * sizeof(int);
+                size_t vsize2 = sm_size * sizeof(int);
+                size_t vsize3 = N * sizeof(int);
 
-                eva_t ref_device, query_device, score_matrix_device;
+                eva_t ref_device, query_device, score_matrix_device, n1_device, n2_device;
                 /* allocate A[N] on the device */
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize0, &ref_device));
                  /* allocate B[N] on the device */
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize1, &query_device));
                  /* allocate C[N] on the device */
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize2, &score_matrix_device));
+
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n1_device));
+
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n2_device));
 
                 /* Copy A & B from host onto device DRAM. */
                 hb_mc_dma_htod_t htod_jobs [] = {
@@ -143,12 +167,22 @@ int kernel_smith_waterman (int argc, char **argv) {
                                 .d_addr = query_device,
                                 .h_addr = query_host,
                                 .size   = vsize1
+                        },
+                        {
+                                .d_addr = n1_device,
+                                .h_addr = n1_host,
+                                .size   = vsize3
+                        },
+                        {
+                                .d_addr = n2_device,
+                                .h_addr = n2_host,
+                                .size   =  vsize3
                         }
                 };
 
                 bsg_pr_test_info("Writing A and B to device\n");
 
-                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 2));
+                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
 
                 /* Define block_size_x/y: amount of work for each tile group */
                 /* Define tg_dim_x/y: number of tiles in each tile group */
@@ -157,11 +191,11 @@ int kernel_smith_waterman (int argc, char **argv) {
 
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[5] = {ref_device, query_device, score_matrix_device, N1, N2};
+                uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N};
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 5, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
@@ -187,24 +221,44 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
 #ifdef PRINT_MATRIX
-                for (int i = 0; i < N1 + 1; i++) {
-                  for (int j = 0; j < N2 + 1; j++) {
-                    printf("%d\t", score_matrix_host[(N2+1)*i+j]);
+                for (int i = 0; i < *n1_host + 1; i++) {
+                  for (int j = 0; j < *n2_host + 1; j++) {
+                    printf("%d\t", score_matrix_host[(*n2_host+1)*i+j]);
                   }
                   printf("\n");
                 }
 #endif
 
 #ifdef PRINT_SCORE
-                int score = -1;
-                for (int i = 0; i < N1 + 1; i++) {
-                  for (int j = 0; j < N2 + 1; j++) {
-                    if (score_matrix_host[(N2+1)*i+j] > score)
-                      score = score_matrix_host[(N2+1)*i+j];
-                  }
-                }
-                printf("Score = %d\n", score);
+  int score[N];
+  ofstream fout;
+  fout.open("output", ios::out);
+  sm_size = 0;
+  for (int n = 0; n < N; n++) {
+    score[n] = -1;
+    for (int i = 0; i < n1[n] + 1; i++) {
+      for (int j = 0; j < n2[n] + 1; j++) {
+        if (score_matrix_host[sm_size+(n2[n]+1)*i+j] > score[n])
+          score[n] = score_matrix_host[sm_size+(n2[n]+1)*i+j];
+      }
+    }
+    sm_size += (n1[n] + 1) * (n2[n] + 1);
+    fout << score[n] << endl;
+    //printf("score[%d] = %d\n", n, score[n]);
+  }
+  fout.close();
 #endif
+
+//#ifdef PRINT_SCORE
+                //int score = -1;
+                //for (int i = 0; i < *n1_host + 1; i++) {
+                  //for (int j = 0; j < *n2_host + 1; j++) {
+                    //if (score_matrix_host[(*n2_host+1)*i+j] > score)
+                      //score = score_matrix_host[(*n2_host+1)*i+j];
+                  //}
+                //}
+                //printf("Score = %d\n", score);
+//#endif
 
                 delete [] score_matrix_host;
         }
