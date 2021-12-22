@@ -47,6 +47,9 @@ debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simv
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simv
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simv
 
+stats: profile.log
+	PYTHONPATH=/home/drichmond/Research/repositories/git/bsg_bladerunner/bsg_manycore/software/py/ python3 -m vanilla_parser --only stats_parser --stats vanilla_stats.csv  --vcache-stats vcache_stats.csv  --tile-group --tile --cache-line-words $(BSG_MACHINE_VCACHE_LINE_WORDS)
+
 %.log: main.so $(BSG_MANYCORE_KERNELS) 
 	$(filter %/simv, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
