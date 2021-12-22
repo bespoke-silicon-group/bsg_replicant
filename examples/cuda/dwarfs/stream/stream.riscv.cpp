@@ -4,7 +4,7 @@
 
 #define BSG_TILE_GROUP_X_DIM TILE_GROUP_DIM_X
 #define BSG_TILE_GROUP_Y_DIM TILE_GROUP_DIM_Y
-#include "bsg_tile_group_barrier.h"
+#include "bsg_cuda_lite_barrier.h"
 #include "bsg_mcs_mutex.hpp"
 
 #define GROUPS \
@@ -48,7 +48,6 @@
 static __attribute__((section(".dram"))) bsg_mcs_mutex_t mtx;
 #endif
 
-INIT_TILE_GROUP_BARRIER(rbar, cbar, 0, bsg_tiles_X-1, 0, bsg_tiles_Y-1);
 
 template <int WORDS>
 int read_block(bsg_attr_remote int *__restrict A)
@@ -61,7 +60,8 @@ int read_block(bsg_attr_remote int *__restrict A)
 
 extern "C" int read(bsg_attr_remote int *__restrict A)
 {
-#ifdef DEBUG    
+    bsg_barrier_hw_tile_group_init();
+#ifdef DEBUG
     int global_x = __bsg_grp_org_x + __bsg_x - 16;
     int global_y = __bsg_grp_org_y + __bsg_y - 8;    
     bsg_mcs_mutex_node_t lcl, *lcl_as_glbl =
@@ -91,7 +91,7 @@ extern "C" int read(bsg_attr_remote int *__restrict A)
         ? group_y >= (GROUP_THREADS-THREADS_PER_GROUP)
         : group_y < THREADS_PER_GROUP;
 
-    bsg_tile_group_barrier(&rbar, &cbar);
+    bsg_barrier_hw_tile_group_sync();
     bsg_cuda_print_stat_kernel_start();
     int sum = 0;            
     if (participate) {
@@ -104,8 +104,10 @@ extern "C" int read(bsg_attr_remote int *__restrict A)
         }
         //asm volatile ("fence" ::: "memory");
     }
-    bsg_tile_group_barrier(&rbar, &cbar);    
+    bsg_barrier_hw_tile_group_sync();
     bsg_cuda_print_stat_kernel_end();
+    bsg_fence();
+    bsg_barrier_hw_tile_group_sync();
     return sum;
 }
 
