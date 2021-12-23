@@ -110,6 +110,7 @@ struct BuildOctree {
                 // index to the current body and unlock
                 if (child == NULL) {
                         b->idx = index;
+                        b->pred = node;
                         node->child[index].unlock_and_set(b);
                         return;
                 }
@@ -148,6 +149,7 @@ struct BuildOctree {
                         
                         // DR: Finish
                         new_node->idx = index;
+                        new_node->pred = node;
                         node->child[index].unlock_and_set(new_node);
                 } else {
                         // DR: Recurse into the child. This is redundant.

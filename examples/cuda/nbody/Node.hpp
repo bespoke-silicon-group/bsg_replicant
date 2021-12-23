@@ -7,6 +7,7 @@ struct Node {
         float mass;
         bool Leaf;
         char idx;
+        Node *pred;
 };
 
 
