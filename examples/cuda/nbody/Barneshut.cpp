@@ -109,7 +109,7 @@ struct BuildOctree {
                 // DR: If the child is null, set the value at the
                 // index to the current body and unlock
                 if (child == NULL) {
-                        node->idx = index;
+                        b->idx = index;
                         node->child[index].unlock_and_set(b);
                         return;
                 }
