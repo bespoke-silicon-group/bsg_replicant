@@ -109,4 +109,19 @@ struct Point {
 
         // DR: Compute the minimum scalar of the and  x,y,z dimension
         float minDim() const { return std::min(val[0], std::min(val[1], val[2])); }
+
+        char getChildIndex(const Point& b) {
+                char index = 0;
+                for (int i = 0; i < 3; ++i)
+                        if (val[i] < b[i])
+                                index |= (1 << i);
+                return index;
+        }
 };
+
+// DR: Maybe goes in Octree.hpp?
+inline Point updateCenter(Point v, int index, float radius) {
+        for (int i = 0; i < 3; i++)
+                v[i] += (index & (1 << i)) > 0 ? radius : -radius;
+        return v;
+}

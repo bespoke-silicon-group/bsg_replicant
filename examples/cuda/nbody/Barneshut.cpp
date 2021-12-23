@@ -29,7 +29,6 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/iterator/transform_iterator.hpp>
 
-#include <array>
 #include <limits>
 #include <iostream>
 #include <fstream>
@@ -38,7 +37,12 @@
 
 #include <strings.h>
 
-#include "Point.hpp"
+#include <Config.hpp>
+#include <Point.hpp>
+#include <Node.hpp>
+#include <Body.hpp>
+#include <Octree.hpp>
+#include <BoundingBox.hpp>
 
 std::ostream& operator<<(std::ostream& os, const Point& p) {
         os << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
@@ -61,85 +65,7 @@ static llvm::cl::opt<int> seed("seed",
                                llvm::cl::desc("Random seed (default value 7)"),
                                llvm::cl::init(7));
 
-struct Node {
-        Point pos; // DR: X, Y, Z location
-        float mass;
-        bool Leaf;
-};
-
-struct Body : public Node {
-        Point vel;
-        Point acc;
-};
-
-/**
- * A node in an octree is either an internal node or a leaf.
- */
-struct Octree : public Node {
-        // DR: Note, lock!
-        std::array<galois::substrate::PtrLock<Node>, 8> child;
-        char cLeafs;
-        char nChildren;
-
-        Octree(const Point& p) {
-                Node::pos  = p;
-                Node::Leaf = false;
-                cLeafs     = 0;
-                nChildren  = 0;
-        }
-};
-
-// DR: What is a bounding box used for?
-struct BoundingBox {
-        Point min;
-        Point max;
-        explicit BoundingBox(const Point& p) : min(p), max(p) {}
-        BoundingBox()
-                : min(std::numeric_limits<float>::max()),
-                  max(std::numeric_limits<float>::min()) {}
-
-        // DR: Merge two bounding boxes by taking the min and max
-        // x,y,z dimension from this box and another.
-        BoundingBox merge(const BoundingBox& other) const {
-                BoundingBox copy(*this);
-
-                copy.min.pairMin(other.min);
-                copy.max.pairMax(other.max);
-                return copy;
-        }
-
-        float diameter() const { return (max - min).minDim(); }
-        float radius() const { return diameter() * 0.5; }
-        // DR: Compute the geometric center of the bounding box
-        Point center() const { return (min + max) * 0.5; }
-};
-
-// DR: Configuration arguments
-struct Config {
-        const float dtime; // length of one time step
-        const float eps;   // potential softening parameter
-        const float tol;   // tolerance for stopping recursion, <0.57 to bound error
-        const float dthf, epssq, itolsq;
-        Config()
-                : dtime(0.5), eps(0.05), tol(0.05), // 0.025),
-                  dthf(dtime * 0.5), epssq(eps * eps), itolsq(1.0 / (tol * tol)) {}
-};
 Config config;
-
-
-inline int getIndex(const Point& a, const Point& b) {
-        int index = 0;
-        for (int i = 0; i < 3; ++i)
-                if (a[i] < b[i])
-                        index += (1 << i);
-        return index;
-}
-
-inline Point updateCenter(Point v, int index, float radius) {
-        for (int i = 0; i < 3; i++)
-                v[i] += (index & (1 << i)) > 0 ? radius : -radius;
-        return v;
-}
 
 /**
  * InsertBag: Unordered collection of elements. This data structure
@@ -161,7 +87,7 @@ struct BuildOctree {
 
                 // DR: Get the octant index by comparing the x,y,z of
                 // the body with the oct tree node.
-                int index   = getIndex(node->pos, b->pos);
+                int index   = node->pos.getChildIndex(b->pos);
 
                 // DR: getValue() is for lock
                 // DRTODO: Relaxed ordering? So not actually a lock?

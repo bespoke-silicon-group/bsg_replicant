@@ -82,7 +82,7 @@ CDEFINES +=
 CXXDEFINES += 
 
 INCLUDES  = -IGalois/install/include -IGalois/lonestar/liblonestar/include/
-INCLUDES += -I$(shell llvm-config-11-64  --includedir)
+INCLUDES += -I$(shell llvm-config-11-64  --includedir) -I.
 FLAGS     = -O3 -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++17 $(FLAGS)
