@@ -110,7 +110,7 @@ struct BuildOctree {
                 // index to the current body and unlock
                 if (child == NULL) {
                         b->idx = index;
-                        b->pred = node;
+                        b->pred.p = node;
                         node->child[index].unlock_and_set(b);
                         return;
                 }
@@ -149,7 +149,7 @@ struct BuildOctree {
                         
                         // DR: Finish
                         new_node->idx = index;
-                        new_node->pred = node;
+                        new_node->pred.p = node;
                         node->child[index].unlock_and_set(new_node);
                 } else {
                         // DR: Recurse into the child. This is redundant.
@@ -525,6 +525,48 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                [&](Body* body) { treeBuilder.insert(body, &top, box.radius()); },
                                galois::loopname("BuildTree"));
                 T_build.stop();
+
+                // DR: Convert Bodies, Tree into arrays of Body and Octree
+                int nBodies = 0, nNodes = 0, i = 0;
+                for (auto ii : pBodies) { nBodies ++; }
+                for (auto ii : t) { nNodes ++; }
+
+                // Map of Octree node pointer to index in hpNodes
+                std::map<Node*,int> nodeIdxMap;
+                Octree **hpNodes = new Octree*[nNodes];
+
+                // Traverse tree to find all Octree nodes
+                i = 0;
+                Octree *ptr = &top;
+                std::deque<Octree*> q;
+                q.push_back(ptr);
+                while(!q.empty()){
+                        ptr = q.back();
+                        q.pop_back();
+                        for (int c_i = 0; c_i < 8; c_i++) {
+                                Node* child = ptr->child[c_i].getValue();
+                                if (child && !child->Leaf) {
+                                        Octree *c = static_cast<Octree*>(child);
+                                        hpNodes[i] = c;
+                                        nodeIdxMap[c] = i;
+                                        q.push_back(c);
+                                        i++;
+                                } 
+                        }
+                }
+                
+                Body *hBodies = new Body[nBodies];
+                Body **hpBodies = new Body*[nBodies];
+                i = 0;
+                for (auto ii : pBodies) {
+                        ii->pred.id = nodeIdxMap[ii->pred.p];
+                        hpBodies[i] = ii;
+                        hBodies[i] = *ii;
+                        i++;
+                }
+
+                // DR: Send to Manycore to do bottom-up traversal of Octree
+                // DR: Transfer back from Manycore
 
                 // update centers of mass in tree
                 galois::timeThis(
