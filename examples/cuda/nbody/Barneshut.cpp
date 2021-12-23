@@ -38,7 +38,12 @@
 
 #include <strings.h>
 
-#include "Point.h"
+#include "Point.hpp"
+
+std::ostream& operator<<(std::ostream& os, const Point& p) {
+        os << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
+        return os;
+}
 
 const char* name = "Barnes-Hut N-Body Simulator";
 const char* desc =
@@ -58,7 +63,7 @@ static llvm::cl::opt<int> seed("seed",
 
 struct Node {
         Point pos; // DR: X, Y, Z location
-        double mass;
+        float mass;
         bool Leaf;
 };
 
@@ -90,8 +95,8 @@ struct BoundingBox {
         Point max;
         explicit BoundingBox(const Point& p) : min(p), max(p) {}
         BoundingBox()
-                : min(std::numeric_limits<double>::max()),
-                  max(std::numeric_limits<double>::min()) {}
+                : min(std::numeric_limits<float>::max()),
+                  max(std::numeric_limits<float>::min()) {}
 
         // DR: Merge two bounding boxes by taking the min and max
         // x,y,z dimension from this box and another.
@@ -103,18 +108,18 @@ struct BoundingBox {
                 return copy;
         }
 
-        double diameter() const { return (max - min).minDim(); }
-        double radius() const { return diameter() * 0.5; }
+        float diameter() const { return (max - min).minDim(); }
+        float radius() const { return diameter() * 0.5; }
         // DR: Compute the geometric center of the bounding box
         Point center() const { return (min + max) * 0.5; }
 };
 
 // DR: Configuration arguments
 struct Config {
-        const double dtime; // length of one time step
-        const double eps;   // potential softening parameter
-        const double tol;   // tolerance for stopping recursion, <0.57 to bound error
-        const double dthf, epssq, itolsq;
+        const float dtime; // length of one time step
+        const float eps;   // potential softening parameter
+        const float tol;   // tolerance for stopping recursion, <0.57 to bound error
+        const float dthf, epssq, itolsq;
         Config()
                 : dtime(0.5), eps(0.05), tol(0.05), // 0.025),
                   dthf(dtime * 0.5), epssq(eps * eps), itolsq(1.0 / (tol * tol)) {}
@@ -130,7 +135,7 @@ inline int getIndex(const Point& a, const Point& b) {
         return index;
 }
 
-inline Point updateCenter(Point v, int index, double radius) {
+inline Point updateCenter(Point v, int index, float radius) {
         for (int i = 0; i < 3; i++)
                 v[i] += (index & (1 << i)) > 0 ? radius : -radius;
         return v;
@@ -152,7 +157,7 @@ struct BuildOctree {
         Tree& T;
 
         // DR: Insert body b into octree, 
-        void insert(Body* b, Octree* node, double radius) const {
+        void insert(Body* b, Octree* node, float radius) const {
 
                 // DR: Get the octant index by comparing the x,y,z of
                 // the body with the oct tree node.
@@ -200,7 +205,7 @@ struct BuildOctree {
                         // add some jitter to guarantee uniqueness.
                         if (b->pos == child->pos) {
                                 // Jitter point to gaurantee uniqueness.
-                                double jitter = config.tol / 2;
+                                float jitter = config.tol / 2;
                                 assert(jitter < radius);
                                 b->pos += (new_node->pos - b->pos) * jitter;
                         }
@@ -226,7 +231,7 @@ struct BuildOctree {
 
 // DR: Recursively compute center of mass
 unsigned computeCenterOfMass(Octree* node) {
-        double mass = 0.0;
+        float mass = 0.0;
         Point accum;
         // DR: Why isn't num 0?
         unsigned num = 1;
@@ -275,10 +280,10 @@ unsigned computeCenterOfMass(Octree* node) {
         return num;
 }
 
-Point updateForce(Point delta, double psq, double mass) {
+Point updateForce(Point delta, float psq, float mass) {
         // Computing force += delta * mass * (|delta|^2 + eps^2)^{-3/2}
-        double idr   = 1 / sqrt((float)(psq + config.epssq));
-        double scale = mass * idr * idr * idr;
+        float idr   = 1 / sqrt((float)(psq + config.epssq));
+        float scale = mass * idr * idr * idr;
         return delta * scale;
 }
 
@@ -286,9 +291,9 @@ struct ComputeForces {
         // Optimize runtime for no conflict case
 
         Octree* top;
-        double root_dsq;
+        float root_dsq;
 
-        ComputeForces(Octree* _top, double diameter) : top(_top) {
+        ComputeForces(Octree* _top, float diameter) : top(_top) {
                 assert(diameter > 0.0 && "non positive diameter of bb");
                 root_dsq = diameter * diameter * config.itolsq;
         }
@@ -303,9 +308,9 @@ struct ComputeForces {
         }
 
         struct Frame {
-                double dsq;
+                float dsq;
                 Octree* node;
-                Frame(Octree* _node, double _dsq) : dsq(_dsq), node(_node) {}
+                Frame(Octree* _node, float _dsq) : dsq(_dsq), node(_node) {}
         };
 
         // DR: "Thread Loop" for computing the foces on a body
@@ -328,7 +333,7 @@ struct ComputeForces {
 
                         // DR: Compute distance squared (to avoid sqrt)
                         Point p    = b.pos - f.node->pos;
-                        double psq = p.dist2();
+                        float psq = p.dist2();
 
                         // Node is far enough away, summarize contribution
                         // DR: If node "Far enough", summarize using
@@ -342,7 +347,7 @@ struct ComputeForces {
                         // by adding all sub-nodes to the stack, and
                         // adding the contribution of the individual
                         // bodies.  DR: Why /4?
-                        double dsq = f.dsq * 0.25;
+                        float dsq = f.dsq * 0.25;
                         // DR: Iterate through the children
                         for (int i = 0; i < f.node->nChildren; i++) {
                                 Node* n = f.node->child[i].getValue();
@@ -410,7 +415,7 @@ struct CheckAllPairs {
 
         CheckAllPairs(Bodies& b) : bodies(b) {}
 
-        double operator()(const Body& body) const {
+        float operator()(const Body& body) const {
                 const Body* me = &body;
                 Point acc;
                 for (Bodies::iterator ii = bodies.begin(), ei = bodies.end(); ii != ei;
@@ -419,24 +424,24 @@ struct CheckAllPairs {
                         if (me == b)
                                 continue;
                         Point delta = me->pos - b->pos;
-                        double psq  = delta.dist2();
+                        float psq  = delta.dist2();
                         acc += updateForce(delta, psq, b->mass);
                 }
 
-                double dist2 = acc.dist2();
+                float dist2 = acc.dist2();
                 acc -= me->acc;
-                double retval = acc.dist2() / dist2;
+                float retval = acc.dist2() / dist2;
                 return retval;
         }
 };
 
-double checkAllPairs(Bodies& bodies, int N) {
+float checkAllPairs(Bodies& bodies, int N) {
         Bodies::iterator end(bodies.begin());
         std::advance(end, N);
 
         return galois::ParallelSTL::map_reduce(bodies.begin(), end,
                                                CheckAllPairs(bodies),
-                                               std::plus<double>(), 0.0) /
+                                               std::plus<float>(), 0.0) /
                 N;
 }
 
@@ -492,24 +497,24 @@ void printTree(Octree* node) {
  * realistic but perhaps not so much so according to astrophysicists
  */
 void generateInput(Bodies& bodies, BodyPtrs& pBodies, int nbodies, int seed) {
-        double v, sq, scale;
+        float v, sq, scale;
         Point p;
-        double PI = boost::math::constants::pi<double>();
+        float PI = boost::math::constants::pi<float>();
 
         std::mt19937 gen(seed);
 #if __cplusplus >= 201103L || defined(HAVE_CXX11_UNIFORM_INT_DISTRIBUTION)
-        std::uniform_real_distribution<double> dist(0, 1);
+        std::uniform_real_distribution<float> dist(0, 1);
 #else
-        std::uniform_real<double> dist(0, 1);
+        std::uniform_real<float> dist(0, 1);
 #endif
 
-        double rsc = (3 * PI) / 16;
-        double vsc = sqrt(1.0 / rsc);
+        float rsc = (3 * PI) / 16;
+        float vsc = sqrt(1.0 / rsc);
 
         std::vector<Body> tmp;
 
         for (int body = 0; body < nbodies; body++) {
-                double r = 1.0 / sqrt(pow(dist(gen) * 0.999, -2.0 / 3.0) - 1);
+                float r = 1.0 / sqrt(pow(dist(gen) * 0.999, -2.0 / 3.0) - 1);
                 do {
                         for (int i = 0; i < 3; i++)
                                 p[i] = dist(gen) * 2.0 - 1.0;

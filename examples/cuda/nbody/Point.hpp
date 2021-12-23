@@ -16,32 +16,32 @@
  * including but not limited to those resulting from defects in Software and/or
  * Documentation, or loss or inaccuracy of data of any kind.
  */
-
+#pragma once
 struct Point {
-        double val[3];
+        float val[3];
         Point() { val[0] = val[1] = val[2] = 0.0; }
-        // Point(double _x, double _y, double _z) : val{_x,_y,_z} {}
-        Point(double _x, double _y, double _z) {
+
+        Point(float _x, float _y, float _z) {
                 val[0] = _x;
                 val[1] = _y;
                 val[2] = _z;
         }
-        // explicit Point(double v) : val{v,v,v} {}
-        explicit Point(double v) {
+
+        explicit Point(float v) {
                 val[0] = v;
                 val[1] = v;
                 val[2] = v;
         }
 
-        double operator[](const int index) const { return val[index]; }
+        float operator[](const int index) const { return val[index]; }
 
-        double& operator[](const int index) { return val[index]; }
+        float& operator[](const int index) { return val[index]; }
 
-        double x() const { return val[0]; }
+        float x() const { return val[0]; }
 
-        double y() const { return val[1]; }
+        float y() const { return val[1]; }
 
-        double z() const { return val[2]; }
+        float z() const { return val[2]; }
 
         bool operator==(const Point& other) const {
                 return val[0] == other.val[0] && val[1] == other.val[1] &&
@@ -63,7 +63,7 @@ struct Point {
                 return *this;
         }
 
-        Point& operator*=(double value) {
+        Point& operator*=(float value) {
                 for (int i = 0; i < 3; ++i)
                         val[i] *= value;
                 return *this;
@@ -79,17 +79,17 @@ struct Point {
                              val[2] + other.val[2]);
         }
 
-        Point operator*(double d) const {
+        Point operator*(float d) const {
                 return Point(val[0] * d, val[1] * d, val[2] * d);
         }
 
-        Point operator/(double d) const {
+        Point operator/(float d) const {
                 return Point(val[0] / d, val[1] / d, val[2] / d);
         }
 
-        double dist2() const { return dot(*this); }
+        float dist2() const { return dot(*this); }
 
-        double dot(const Point& p2) const {
+        float dot(const Point& p2) const {
                 return val[0] * p2.val[0] + val[1] * p2.val[1] + val[2] * p2.val[2];
         }
 
@@ -108,10 +108,5 @@ struct Point {
         }
 
         // DR: Compute the minimum scalar of the and  x,y,z dimension
-        double minDim() const { return std::min(val[0], std::min(val[1], val[2])); }
+        float minDim() const { return std::min(val[0], std::min(val[1], val[2])); }
 };
-
-std::ostream& operator<<(std::ostream& os, const Point& p) {
-        os << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
-        return os;
-}
