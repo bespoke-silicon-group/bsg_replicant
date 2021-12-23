@@ -75,7 +75,7 @@ vpath %.cpp Galois/lonestar/liblonestar/src/
 TEST_SOURCES  = Barneshut.cpp  
 TEST_SOURCES  += BoilerPlate.cpp
 
-TEST_HEADERS =
+TEST_HEADERS = Node.hpp Point.hpp Body.hpp Config.hpp
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 

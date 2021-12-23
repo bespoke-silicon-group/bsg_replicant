@@ -109,6 +109,7 @@ struct BuildOctree {
                 // DR: If the child is null, set the value at the
                 // index to the current body and unlock
                 if (child == NULL) {
+                        node->idx = index;
                         node->child[index].unlock_and_set(b);
                         return;
                 }
@@ -146,6 +147,7 @@ struct BuildOctree {
                         insert(static_cast<Body*>(child), new_node, radius);
                         
                         // DR: Finish
+                        new_node->idx = index;
                         node->child[index].unlock_and_set(new_node);
                 } else {
                         // DR: Recurse into the child. This is redundant.
@@ -387,6 +389,7 @@ std::ostream& operator<<(std::ostream& os, const Config& c) {
            << " dtime: " << c.dtime << " eps: " << c.eps << " tol: " << c.tol;
         return os;
 }
+
 /*
 void printRec(std::ofstream& file, Node* node, unsigned level) {
         static const char* ct[] = {
@@ -394,16 +397,19 @@ void printRec(std::ofstream& file, Node* node, unsigned level) {
                 "darkorchid", "darkorange",
                 "deeppink", "gold", "chocolate"
         };
+
         if (!node) return;
-        file << "\"" << node << "\" [color=" << ct[node->owner / 4] << (node->owner %
-                                                                        4 + 1) << (level ? "" : " style=filled") << " label = \"" << (node->Leaf ? "L" :
-                                                                                                                                      "N") << "\"];\n"; if (!node->Leaf) { Octree* node2 = static_cast<Octree*>(node);
-                for (int i = 0; i < 8 && node2->child[i]; ++i) {
+        // DR: node->idx used to be node->owner, but node doesn't have an owner field.
+        file << "\"" << node << "\" [color=" << ct[node->idx / 4] << (node->idx % 4 + 1)
+             << (level ? "" : " style=filled") << " label = \"" << (node->Leaf ? "L" : "N")
+             << "\"];\n";
+        if (!node->Leaf) {
+                Octree* node2 = static_cast<Octree*>(node);
+                for (int i = 0; i < 8 && node2->child[i].getValue(); ++i) {
                         if (level == 3 || level == 6)
                                 file << "subgraph cluster_" << level << "_" << i << " {\n";
-                        file << "\"" << node << "\" -> \"" << node2->child[i] << "\"[weight=0.01]\n";
-                                 printRec(file, node2->child[i], level + 1); if (level == 3 ||
-                                                                                                  level == 6) file << "}\n";
+                        file << "\"" << node << "\" -> \"" << node2->child[i].getValue() << "\"[weight=0.01]\n";
+                        printRec(file, node2->child[i].getValue(), level + 1); if (level == 3 || level == 6) file << "}\n";
                 }
 }
         }
@@ -416,7 +422,8 @@ void printTree(Octree* node) {
         //  file << "overlap = scale\n";
         printRec(file, node, 0);
         file << "}\n";
-        }*/
+}
+*/
 
 /**
  * Generates random input according to the Plummer model, which is more
