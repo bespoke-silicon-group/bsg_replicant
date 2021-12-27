@@ -18,6 +18,7 @@
  */
 
 #include <bsg_manycore_regression.h>
+#include <bsg_manycore_cuda.h>
 
 #include "galois/Galois.h"
 #include "galois/Timer.h"
@@ -82,7 +83,7 @@ struct BuildOctree {
 
         Tree& T;
 
-        // DR: Insert body b into octree, 
+        // DR: Insert body b into octree,
         void insert(Body* b, Octree* node, float radius) const {
 
                 // DR: Get the octant index by comparing the x,y,z of
@@ -109,8 +110,8 @@ struct BuildOctree {
                 // DR: If the child is null, set the value at the
                 // index to the current body and unlock
                 if (child == NULL) {
-                        b->idx = index;
-                        b->pred.p = node;
+                        b->pred = node;
+                        b->octant = index;
                         node->child[index].unlock_and_set(b);
                         return;
                 }
@@ -146,10 +147,10 @@ struct BuildOctree {
                         insert(b, new_node, radius);
                         // DR: Recurse, on the new node, inserting the child
                         insert(static_cast<Body*>(child), new_node, radius);
-                        
+
                         // DR: Finish
-                        new_node->idx = index;
-                        new_node->pred.p = node;
+                        new_node->pred = node;
+                        new_node->octant = index;
                         node->child[index].unlock_and_set(new_node);
                 } else {
                         // DR: Recurse into the child. This is redundant.
@@ -170,7 +171,7 @@ unsigned computeCenterOfMass(Octree* node) {
         int index = 0;
         // DR: For each of the children within a node
         for (int i = 0; i < 8; ++i)
-                // DR: If the node exists (not null), densify by 
+                // DR: If the node exists (not null), densify by
                 // shifting the values at the indices toward 0
                 if (node->child[i].getValue())
                         node->child[index++].setValue(node->child[i].getValue());
@@ -488,6 +489,31 @@ void generateInput(Bodies& bodies, BodyPtrs& pBodies, int nbodies, int seed) {
                        galois::loopname("InsertBody"));
 }
 
+/**
+ * Convert an x86 pointer to a corresponding EVA pointer using the
+ * type and index, and check for buffer overrun.
+ * @param[in]  buf    Buffer pointer #eva
+ * @param[in]  sz     Buffer size (in bytes)
+ * @param[in]  index  Array index to convert   
+ * @param[out] hb_p   Starting #eva of the array index
+ * @return HB_MC_INVALID the index is larger than can be represented
+ * by the buffer. HB_MC_SUCCESS otherwise.
+ */
+template <typename T>
+__attribute__((warn_unused_result))
+int hb_mc_manycore_eva_translate(eva_t buf,
+                                 size_t sz,
+                                 unsigned int idx,
+                                 eva_t *hb_p){
+        *hb_p = buf + idx * sizeof(T);
+        if(*hb_p > (buf + sz)){
+                printf("Error in translation\n!");
+                exit(1);
+                return HB_MC_INVALID;
+        }
+        return HB_MC_SUCCESS;
+}
+
 void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
         typedef galois::worklists::StableIterator<true> WLL;
 
@@ -531,41 +557,135 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 for (auto ii : pBodies) { nBodies ++; }
                 for (auto ii : t) { nNodes ++; }
 
-                // Map of Octree node pointer to index in hpNodes
-                std::map<Node*,int> nodeIdxMap;
-                Octree **hpNodes = new Octree*[nNodes];
+                Octree **OctNodePtrs = new Octree*[nNodes];
+                printf("Nodes: %d\n", nNodes);
+                Body **BodyPtrs = new Body*[nBodies];
 
-                // Traverse tree to find all Octree nodes
-                i = 0;
-                Octree *ptr = &top;
+                // HammerBlade buffers
+                HBOctree HBOctNodes[nNodes];
+                eva_t _HBOctNodes = 0;
+                // BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBOctNodes), &_HBOctNodes));
+                HBBody HBBodies[nBodies];
+                eva_t _HBBodies = nNodes * sizeof(HBOctNodes);
+                // BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBBodes), &_HBBodies));
+
+                // Perform in-order octree tree traversal to enumerate all nodes/bodies
+                // Use the node/body pointer to create a map between nodes/bodies and their index
+                // Convert the x86 nodes/bodies to HB equivalents for processing
+
+                // Map of Octree node/body pointer to index
+                std::map<Node*, NodeIdx> nodeIdxMap;
+                std::map<Body*, BodyIdx> bodyIdxMap;
+                NodeIdx node_i = 0;
+                NodeIdx body_i = 0;
+
+                int err = HB_MC_SUCCESS;
+
+                // Start with the root node/top, and assign it index 0.
                 std::deque<Octree*> q;
-                q.push_back(ptr);
+                q.push_back(&top);
+                OctNodePtrs[node_i] = &top;
+                // The root's predecessor points to itself
+                top.pred = &top;
+                top.convert(_HBOctNodes, HBOctNodes[node_i]);
+                nodeIdxMap[&top] = node_i++;
+
                 while(!q.empty()){
-                        ptr = q.back();
+                        Octree *cur_p = q.back();
                         q.pop_back();
-                        for (int c_i = 0; c_i < 8; c_i++) {
-                                Node* child = ptr->child[c_i].getValue();
-                                if (child && !child->Leaf) {
-                                        Octree *c = static_cast<Octree*>(child);
-                                        hpNodes[i] = c;
-                                        nodeIdxMap[c] = i;
-                                        q.push_back(c);
-                                        i++;
-                                } 
+                        NodeIdx cur_i = nodeIdxMap[cur_p];
+
+                        // Get this node's EVA Pointer to set children predecessors
+                        eva_t _cur_p;
+                        err = hb_mc_manycore_eva_translate<HBOctree>(_HBOctNodes, sizeof(HBOctNodes), cur_i, &_cur_p);
+
+                        for (int c_i = 0; c_i < Octree::octants; c_i++) {
+                                Node *child = cur_p->child[c_i].getValue();
+                                if (child){
+                                        child->pred = cur_p;
+                                        if(!child->Leaf) {
+                                                // Internal octree node
+                                                Octree *c = static_cast<Octree*>(child);
+
+                                                // Convert Octree node to HBOctree node
+                                                c->convert(_cur_p, HBOctNodes[node_i]);
+
+                                                // Set up child EVA pointer
+                                                err = hb_mc_manycore_eva_translate<HBOctree>(_HBOctNodes, sizeof(HBOctNodes), node_i, &HBOctNodes[cur_i].child[c_i]);
+
+                                                OctNodePtrs[node_i] = c;
+                                                nodeIdxMap[c] = node_i++;
+
+                                                q.push_back(c);
+                                        } else {
+                                                // Leaf/Body
+                                                Body *b = static_cast<Body*>(child);
+                                                BodyPtrs[body_i] = b;
+
+                                                // Convert Octree Body to HBBody
+                                                b->convert(_cur_p, HBBodies[body_i]);
+
+                                                // Set up child EVA pointer
+                                                err = hb_mc_manycore_eva_translate<HBBody>(_HBBodies, sizeof(HBBodies), body_i, &HBOctNodes[cur_i].child[c_i]);
+
+                                                bodyIdxMap[b] = body_i++;
+                                        }
+                                }
                         }
                 }
-                
-                Body *hBodies = new Body[nBodies];
-                Body **hpBodies = new Body*[nBodies];
-                i = 0;
-                for (auto ii : pBodies) {
-                        ii->pred.id = nodeIdxMap[ii->pred.p];
-                        hpBodies[i] = ii;
-                        hBodies[i] = *ii;
-                        i++;
-                }
 
-                // DR: Send to Manycore to do bottom-up traversal of Octree
+                // DR: Check that the tree conversion happened correctly
+                // Don't check the root node (index 0) because it points to itself, start at index 1.
+                for (node_i = 1; node_i < nNodes; node_i ++){
+                        Octree *n = OctNodePtrs[node_i];
+                        HBOctree *_n = &HBOctNodes[node_i];
+                        int pred_i = (_n->pred - _HBOctNodes)/sizeof(HBOctree);
+                        // Check that Host and HB predecessors correspond                        
+                        if(n->pred != OctNodePtrs[pred_i]){
+                                printf("Error: Octree Node %d predecessor does not match HBNode!\n", node_i);
+                                exit(1);
+                        }
+
+                        // Check the predecessor's corresponding octant child eva matches the current node's eva.
+                        int octant_i = n->pred->pos.getChildIndex(_n->pos);
+                        eva_t _p = HBOctNodes[pred_i].child[octant_i];
+                        if(_p != (_HBOctNodes + node_i * sizeof(HBOctree))){
+                                printf("Error: HBOctree Node %d EVA does not match predecessor EVA @ Octant index!\n");
+                                exit(1);
+                        }
+
+                        // Check 
+                        if(!n->isMatch(*_n)){
+                                printf("Node %d Data Mismatch\n", node_i);
+                        }
+                }
+                printf("Finished checking nodes\n");
+
+                for (body_i = 0 ; body_i < nBodies; body_i ++){
+                        Body *b = BodyPtrs[body_i];
+                        HBBody *_b = &HBBodies[body_i];
+                        int pred_i = (_b->pred - _HBOctNodes)/sizeof(HBOctree);
+                        // Check that Host and HB predecessors correspond
+                        if(b->pred != OctNodePtrs[pred_i]){
+                                printf("Error: Octree Body %d predecessor does not match HBBody!\n", body_i);
+                                exit(1);
+                        }
+
+                        if(!b->isMatch(*_b)){
+                                printf("Body %d Data Mismatch\n", body_i);
+                        }
+
+                        // Check the predecessor's corresponding octant child eva matches the current body's eva.
+                        int octant_i = b->pred->pos.getChildIndex(_b->pos);
+                        eva_t _c = HBOctNodes[pred_i].child[octant_i];
+                        if(_c != (_HBBodies + body_i * sizeof(HBBody))){
+                                printf("Error: HBBody %d EVA does not match predecessor EVA @ Octant index!\n");
+                                exit(1);
+                        }
+                }
+                printf("Finished checking bodies\n");
+
+                // DR: Send to Manycore to do bottom-up traversal of Octree to update centers of mass
                 // DR: Transfer back from Manycore
 
                 // update centers of mass in tree
@@ -578,6 +698,9 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  "summarize-Serial");
 
                 ComputeForces cf(&top, box.diameter());
+                // DR: Send to Manycore to do per-body computation of forces.
+                // DR: After all tiles have finished, barrier, and update position/velocity.
+                // DR: Transfer back from Manycore
 
                 galois::StatTimer T_compute("ComputeTime");
                 T_compute.start();

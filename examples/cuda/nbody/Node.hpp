@@ -2,15 +2,31 @@
 
 #include <Point.hpp>
 
-struct Node {
+typedef int NodeIdx;
+
+struct _Node {
         Point pos; // DR: X, Y, Z location
         float mass;
         bool Leaf;
-        char idx;
-        union _pred {
-                Node *p; // Used on x86
-                int id; // Used on Manycore
-        } pred;
+        char octant;
 };
+
+struct HBNode : public _Node{
+        eva_t pred; // Used on Manycore
+};
+
+struct Node : public _Node{
+        Node *pred; // Used on x86
+        void convert(eva_t pred, HBNode &n){
+                _Node &_n = static_cast<_Node&>(n);
+                _n = static_cast<_Node>(*this);
+                n.pred = pred;
+        }
+        bool isMatch(HBNode &n){
+                return n.pos == pos && n.mass == mass && n.Leaf == Leaf && n.octant == octant;
+        }
+        
+};
+
 
 
