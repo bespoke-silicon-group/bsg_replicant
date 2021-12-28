@@ -735,7 +735,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 std::map<Node*, NodeIdx> nodeIdxMap;
                 std::map<Body*, BodyIdx> bodyIdxMap;
                 hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, bodyIdxMap, HBBodies, _HBBodies,
-                                          nNodes, OctNodePtrs, nodeIdxMap, HBOctNodes, _HBOctNodes);
+                                               nNodes, OctNodePtrs, nodeIdxMap, HBOctNodes, _HBOctNodes);
 
                 // DR: Send to Manycore to do bottom-up traversal of Octree to update centers of mass
                 // DR: Transfer back from Manycore
