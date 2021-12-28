@@ -515,119 +515,134 @@ int hb_mc_manycore_eva_translate(eva_t buf,
         return HB_MC_SUCCESS;
 }
 
+int hb_mc_manycore_check_nodes(int nNodes, Octree **nodes, HBOctree *hnodes, eva_t _hnodes){
+        // DR: Check that the tree conversion happened correctly
+        NodeIdx node_i = 0;
+        // Don't check the root node (index 0) because it points to itself, start at index 1.
+        for (node_i = 1; node_i < nNodes; node_i ++){
+                Octree *n = nodes[node_i];
+                HBOctree *_n = &hnodes[node_i];
+                int pred_i = (_n->pred - _hnodes)/sizeof(HBOctree);
+                // Check that Host and HB predecessors correspond
+                if(n->pred != nodes[pred_i]){
+                        printf("Error: Octree Node %d predecessor does not match HBNode!\n", node_i);
+                        return HB_MC_FAIL;
+                }
+
+                // Check data match
+                if(!n->isMatch(*_n)){
+                        printf("Node %d Data Mismatch\n", node_i);
+                        return HB_MC_FAIL;
+                }
+                        
+                int octant_i = n->pred->pos.getChildIndex(_n->pos);
+                eva_t _p = hnodes[pred_i].child[octant_i];
+                if(_p != (_hnodes + node_i * sizeof(HBOctree))){
+                        printf("Error: HBOctree Node %d EVA does not match predecessor EVA @ Octant index!\n");
+                        return HB_MC_FAIL;
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
+int hb_mc_manycore_check_bodies(int nBodies, Body **bodies, HBBody *hbodies, eva_t _hbodies, Octree **nodes, HBOctree *hnodes, eva_t _hnodes /* NOTE DIFFERENCE! */){
+        BodyIdx body_i = 0;
+        for (body_i = 0 ; body_i < nBodies; body_i ++){
+                Body *b = bodies[body_i];
+                HBBody *_b = &hbodies[body_i];
+                int pred_i = (_b->pred - _hnodes)/sizeof(HBOctree);
+                // Check that Host and HB predecessors correspond
+                if(b->pred != nodes[pred_i]){
+                        printf("Error: Octree Body %d predecessor does not match HBBody!\n", body_i);
+                        return HB_MC_FAIL;
+                }
+
+                if(!b->isMatch(*_b)){
+                        printf("Body %d Data Mismatch\n", body_i);
+                        return HB_MC_FAIL;
+                }
+
+                // Check the predecessor's corresponding octant child eva matches the current body's eva.
+                int octant_i = b->pred->pos.getChildIndex(_b->pos);
+                eva_t _c = hnodes[pred_i].child[octant_i];
+                if(_c != (_hbodies + body_i * sizeof(HBBody))){
+                        printf("Error: HBBody %d EVA does not match predecessor EVA @ Octant index!\n");
+                        return HB_MC_FAIL;
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
 // nodes[0] is the tree root
-void hb_mc_manycore_build_tree(int nBodies, Body **bodies, std::map<Body*, BodyIdx> &bodyIdxMap, HBBody *hbodies, eva_t _hbodies,
-                               int nNodes, Octree **nodes, std::map<Node*, NodeIdx> &nodeIdxMap, HBOctree *hnodes, eva_t _hnodes){
+int hb_mc_manycore_build_tree(int nBodies, Body **bodies, std::map<Body*, BodyIdx> &bodyIdxMap, HBBody *hbodies, eva_t _hbodies,
+                              int nNodes, Octree **nodes, std::map<Node*, NodeIdx> &nodeIdxMap, HBOctree *hnodes, eva_t _hnodes){
 
-                NodeIdx node_i = 0;
-                BodyIdx body_i = 0;
-                int err = HB_MC_SUCCESS;
+        NodeIdx node_i = 0;
+        BodyIdx body_i = 0;
+        int err = HB_MC_SUCCESS;
 
-                // Start with the root node/top, and assign it index 0.
-                std::deque<Octree*> q;
-                q.push_back(nodes[0]);
-                // The root's predecessor points to itself
-                nodes[0]->pred = nodes[0];
-                nodes[0]->convert(_hnodes, hnodes[node_i]);
-                nodeIdxMap[nodes[0]] = node_i++;
+        // Start with the root node/top, and assign it index 0.
+        std::deque<Octree*> q;
+        q.push_back(nodes[0]);
+        // The root's predecessor points to itself
+        nodes[0]->pred = nodes[0];
+        nodes[0]->convert(_hnodes, hnodes[node_i]);
+        nodeIdxMap[nodes[0]] = node_i++;
 
-                while(!q.empty()){
-                        Octree *cur_p = q.back();
-                        q.pop_back();
-                        NodeIdx cur_i = nodeIdxMap[cur_p];
+        while(!q.empty()){
+                Octree *cur_p = q.back();
+                q.pop_back();
+                NodeIdx cur_i = nodeIdxMap[cur_p];
 
-                        // Get this node's EVA Pointer to set children predecessors
-                        eva_t _cur_p;
-                        err = hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, cur_i, &_cur_p);
+                // Get this node's EVA Pointer to set children predecessors
+                eva_t _cur_p;
+                err = hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, cur_i, &_cur_p);
 
-                        for (int c_i = 0; c_i < Octree::octants; c_i++) {
-                                Node *child = cur_p->child[c_i].getValue();
-                                if (child){
-                                        cur_p->nChildren++; // Will be reset by CoM computation
-                                        hnodes[cur_i].nChildren++;
-                                        child->pred = cur_p;
-                                        if(!child->Leaf) {
-                                                // Internal octree node
-                                                Octree *c = static_cast<Octree*>(child);
+                for (int c_i = 0; c_i < Octree::octants; c_i++) {
+                        Node *child = cur_p->child[c_i].getValue();
+                        if (child){
+                                cur_p->nChildren++; // Will be reset by CoM computation
+                                hnodes[cur_i].nChildren++;
+                                child->pred = cur_p;
+                                if(!child->Leaf) {
+                                        // Internal octree node
+                                        Octree *c = static_cast<Octree*>(child);
 
-                                                // Convert Octree node to HBOctree node
-                                                c->convert(_cur_p, hnodes[node_i]);
+                                        // Convert Octree node to HBOctree node
+                                        c->convert(_cur_p, hnodes[node_i]);
 
-                                                // Set up child EVA pointer
-                                                err = hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, node_i, &hnodes[cur_i].child[c_i]);
+                                        // Set up child EVA pointer
+                                        err = hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, node_i, &hnodes[cur_i].child[c_i]);
 
-                                                nodes[node_i] = c;
-                                                nodeIdxMap[c] = node_i++;
+                                        nodes[node_i] = c;
+                                        nodeIdxMap[c] = node_i++;
 
-                                                q.push_back(c);
-                                        } else {
-                                                hnodes[cur_i].cLeafs++;
-                                                cur_p->cLeafs++;
-                                                // Leaf/Body
-                                                Body *b = static_cast<Body*>(child);
-                                                bodies[body_i] = b;
+                                        q.push_back(c);
+                                } else {
+                                        hnodes[cur_i].cLeafs++;
+                                        cur_p->cLeafs++;
+                                        // Leaf/Body
+                                        Body *b = static_cast<Body*>(child);
+                                        bodies[body_i] = b;
 
-                                                // Convert Octree Body to HBBody
-                                                b->convert(_cur_p, hbodies[body_i]);
+                                        // Convert Octree Body to HBBody
+                                        b->convert(_cur_p, hbodies[body_i]);
 
-                                                // Set up child EVA pointer
-                                                err = hb_mc_manycore_eva_translate<HBBody>(_hbodies, sizeof(HBBody) * nBodies, body_i, &hnodes[cur_i].child[c_i]);
+                                        // Set up child EVA pointer
+                                        err = hb_mc_manycore_eva_translate<HBBody>(_hbodies, sizeof(HBBody) * nBodies, body_i, &hnodes[cur_i].child[c_i]);
 
-                                                bodyIdxMap[b] = body_i++;
-                                        }
+                                        bodyIdxMap[b] = body_i++;
                                 }
                         }
                 }
-
-                // DR: Check that the tree conversion happened correctly
-                // Don't check the root node (index 0) because it points to itself, start at index 1.
-                for (node_i = 1; node_i < nNodes; node_i ++){
-                        Octree *n = nodes[node_i];
-                        HBOctree *_n = &hnodes[node_i];
-                        int pred_i = (_n->pred - _hnodes)/sizeof(HBOctree);
-                        // Check that Host and HB predecessors correspond                        
-                        if(n->pred != nodes[pred_i]){
-                                printf("Error: Octree Node %d predecessor does not match HBNode!\n", node_i);
-                                exit(1);
-                        }
-
-                        // Check data match
-                        if(!n->isMatch(*_n)){
-                                printf("Node %d Data Mismatch\n", node_i);
-                                exit(1);
-                        }
-                        
-                        int octant_i = n->pred->pos.getChildIndex(_n->pos);
-                        eva_t _p = hnodes[pred_i].child[octant_i];
-                        if(_p != (_hnodes + node_i * sizeof(HBOctree))){
-                                printf("Error: HBOctree Node %d EVA does not match predecessor EVA @ Octant index!\n");
-                                exit(1);
-                        }
-                }
-
-                for (body_i = 0 ; body_i < nBodies; body_i ++){
-                        Body *b = bodies[body_i];
-                        HBBody *_b = &hbodies[body_i];
-                        int pred_i = (_b->pred - _hnodes)/sizeof(HBOctree);
-                        // Check that Host and HB predecessors correspond
-                        if(b->pred != nodes[pred_i]){
-                                printf("Error: Octree Body %d predecessor does not match HBBody!\n", body_i);
-                                exit(1);
-                        }
-
-                        if(!b->isMatch(*_b)){
-                                printf("Body %d Data Mismatch\n", body_i);
-                                exit(1);
-                        }
-
-                        // Check the predecessor's corresponding octant child eva matches the current body's eva.
-                        int octant_i = b->pred->pos.getChildIndex(_b->pos);
-                        eva_t _c = hnodes[pred_i].child[octant_i];
-                        if(_c != (_hbodies + body_i * sizeof(HBBody))){
-                                printf("Error: HBBody %d EVA does not match predecessor EVA @ Octant index!\n");
-                                exit(1);
-                        }
-                }
+        }
+        err = hb_mc_manycore_check_nodes(nNodes, nodes, hnodes, _hnodes);
+        if(err != HB_MC_SUCCESS)
+                exit(1);
+        err = hb_mc_manycore_check_bodies(nBodies, bodies, hbodies, _hbodies, nodes, hnodes, _hnodes);
+        if(err != HB_MC_SUCCESS)
+                exit(1);
+        return HB_MC_SUCCESS;
 }
 
 void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
@@ -706,6 +721,13 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                          std::cout << "Tree Size: " << size << "\n";
                                  },
                                  "summarize-Serial");
+
+                // TODO: Turn this off if this is not the ROI.
+                // DR: Update centers of mass in the HB nodes
+                for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
+                        HBOctNodes[node_i].mass = OctNodePtrs[node_i]->mass;
+                        HBOctNodes[node_i].pos = OctNodePtrs[node_i]->pos;
+                }
 
                 ComputeForces cf(&top, box.diameter());
                 // DR: Send to Manycore to do per-body computation of forces.
