@@ -577,7 +577,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 std::map<Node*, NodeIdx> nodeIdxMap;
                 std::map<Body*, BodyIdx> bodyIdxMap;
                 NodeIdx node_i = 0;
-                NodeIdx body_i = 0;
+                BodyIdx body_i = 0;
 
                 int err = HB_MC_SUCCESS;
 
