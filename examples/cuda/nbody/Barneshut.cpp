@@ -20,6 +20,17 @@
 #include <bsg_manycore_regression.h>
 #include <bsg_manycore_cuda.h>
 
+// One-off replacement for BSG_CUDA_CALL
+#define HB_MC_CUDA_CALL(stmt)                                             \
+        {                                                               \
+                int __r = stmt;                                         \
+                if (__r != HB_MC_SUCCESS) {                             \
+                        bsg_pr_err("'%s' failed: %s\n", #stmt, hb_mc_strerror(__r)); \
+                        exit(1);                                        \
+                }                                                       \
+        }
+
+
 #include "galois/Galois.h"
 #include "galois/Timer.h"
 #include "galois/Bag.h"
@@ -65,6 +76,10 @@ ntimesteps("steps", llvm::cl::desc("Number of steps (default value 1)"),
 static llvm::cl::opt<int> seed("seed",
                                llvm::cl::desc("Random seed (default value 7)"),
                                llvm::cl::init(7));
+
+static llvm::cl::opt<std::string> kpath("k",
+                               llvm::cl::desc("Kernel path (default value: kernel.riscv)"),
+                               llvm::cl::init("kernel.riscv"));
 
 Config config;
 
@@ -495,7 +510,7 @@ void generateInput(Bodies& bodies, BodyPtrs& pBodies, int nbodies, int seed) {
  * type and index, and check for buffer overrun.
  * @param[in]  buf    Buffer pointer #eva
  * @param[in]  sz     Buffer size (in bytes)
- * @param[in]  index  Array index to convert   
+ * @param[in]  index  Array index to convert
  * @param[out] hb_p   Starting #eva of the array index
  * @return HB_MC_INVALID the index is larger than can be represented
  * by the buffer. HB_MC_SUCCESS otherwise.
@@ -534,7 +549,7 @@ int hb_mc_manycore_check_nodes(int nNodes, Octree **nodes, HBOctree *hnodes, eva
                         printf("Node %d Data Mismatch\n", node_i);
                         return HB_MC_FAIL;
                 }
-                        
+
                 int octant_i = n->pred->pos.getChildIndex(_n->pos);
                 eva_t _p = hnodes[pred_i].child[octant_i];
                 if(_p != (_hnodes + node_i * sizeof(HBOctree))){
@@ -545,7 +560,7 @@ int hb_mc_manycore_check_nodes(int nNodes, Octree **nodes, HBOctree *hnodes, eva
         return HB_MC_SUCCESS;
 }
 
-int hb_mc_manycore_check_bodies(int nBodies, Body **bodies, HBBody *hbodies, eva_t _hbodies, Octree **nodes, HBOctree *hnodes, eva_t _hnodes /* NOTE DIFFERENCE! */){
+int hb_mc_manycore_check_bodies(int nBodies, Body **bodies, HBBody *hbodies, eva_t _hbodies, Octree **nodes, HBOctree *hnodes, eva_t _hnodes){
         BodyIdx body_i = 0;
         for (body_i = 0 ; body_i < nBodies; body_i ++){
                 Body *b = bodies[body_i];
@@ -574,8 +589,8 @@ int hb_mc_manycore_check_bodies(int nBodies, Body **bodies, HBBody *hbodies, eva
 }
 
 // nodes[0] is the tree root
-int hb_mc_manycore_build_tree(int nBodies, Body **bodies, std::map<Body*, BodyIdx> &bodyIdxMap, HBBody *hbodies, eva_t _hbodies,
-                              int nNodes, Octree **nodes, std::map<Node*, NodeIdx> &nodeIdxMap, HBOctree *hnodes, eva_t _hnodes){
+int hb_mc_manycore_host_build_tree(int nBodies, Body **bodies, std::map<Body*, BodyIdx> &bodyIdxMap, HBBody *hbodies, eva_t _hbodies,
+                                   int nNodes, Octree **nodes, std::map<Node*, NodeIdx> &nodeIdxMap, HBOctree *hnodes, eva_t _hnodes){
 
         NodeIdx node_i = 0;
         BodyIdx body_i = 0;
@@ -645,6 +660,11 @@ int hb_mc_manycore_build_tree(int nBodies, Body **bodies, std::map<Body*, BodyId
         return HB_MC_SUCCESS;
 }
 
+int hb_mc_manycore_update_bodies(int nBodies, HBBody *hbodies, eva_t _hbodies){
+
+        return HB_MC_SUCCESS;
+}
+
 void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
         typedef galois::worklists::StableIterator<true> WLL;
 
@@ -652,6 +672,13 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                          (3 * sizeof(Octree) + 2 * sizeof(Body)) * nbodies /
                          galois::runtime::pagePoolSize());
         galois::reportPageAlloc("MeminfoPre");
+
+        hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
+        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+        hb_mc_device_t device;
+        std::string test_name = "Barnes-Hut Simulation";
+        HB_MC_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, tg_dim));
+        HB_MC_CUDA_CALL(hb_mc_device_program_init(&device, "kernel.riscv", "default_allocator", 0));
 
         for (int step = 0; step < ntimesteps; step++) {
 
@@ -695,10 +722,10 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // HammerBlade buffers. For now, I am just faking the EVA space to ensure correctness.
                 HBOctree HBOctNodes[nNodes];
                 eva_t _HBOctNodes = 0;
-                // BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBOctNodes), &_HBOctNodes));
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBOctNodes), &_HBOctNodes));
                 HBBody HBBodies[nBodies];
                 eva_t _HBBodies = nNodes * sizeof(HBOctNodes);
-                // BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBBodes), &_HBBodies));
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBBodies), &_HBBodies));
 
                 // Perform in-order octree tree traversal to enumerate all nodes/bodies
                 // Use the node/body pointer to create a map between nodes/bodies and their index
@@ -707,9 +734,9 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // Map of Octree node/body pointer to index
                 std::map<Node*, NodeIdx> nodeIdxMap;
                 std::map<Body*, BodyIdx> bodyIdxMap;
-                hb_mc_manycore_build_tree(nBodies, BodyPtrs, bodyIdxMap, HBBodies, _HBBodies,
+                hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, bodyIdxMap, HBBodies, _HBBodies,
                                           nNodes, OctNodePtrs, nodeIdxMap, HBOctNodes, _HBOctNodes);
-                
+
                 // DR: Send to Manycore to do bottom-up traversal of Octree to update centers of mass
                 // DR: Transfer back from Manycore
 
@@ -753,6 +780,14 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                          },
                                          "checkAllPairs");
                 }
+
+                // TODO: Turn this off if this is not the ROI.
+                // DR: Update centers of mass in the HB nodes
+                 for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                        HBBodies[body_i].acc = BodyPtrs[body_i]->acc;
+                        HBBodies[body_i].vel = BodyPtrs[body_i]->vel;
+                 }
+
                 // Done in compute forces
                 galois::do_all(
                                galois::iterate(pBodies),
@@ -766,6 +801,8 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                },
                                galois::loopname("advance"));
 
+                //hb_mc_manycore_update_bodies(device, &config, nBodies, HBBodies, _HBBodies);
+
                 std::cout << "Timestep " << step << " Center of Mass = ";
                 std::ios::fmtflags flags =
                         std::cout.setf(std::ios::showpos | std::ios::right |
@@ -776,6 +813,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
         }
 
         galois::reportPageAlloc("MeminfoPost");
+        HB_MC_CUDA_CALL(hb_mc_device_finish(&device));
 }
 
 int barneshut_main(int argc, char *argv[]) {
