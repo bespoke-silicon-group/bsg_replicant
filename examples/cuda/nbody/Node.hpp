@@ -12,9 +12,14 @@ struct _Node {
 };
 
 struct HBNode : public _Node{
+#ifndef RISCV
         eva_t pred; // Used on Manycore
+#else
+        HBNode *pred;
+#endif
 };
 
+#ifndef RISCV
 struct Node : public _Node{
         Node *pred; // Used on x86
         void convert(eva_t pred, HBNode &n){
@@ -27,6 +32,4 @@ struct Node : public _Node{
         }
         
 };
-
-
-
+#endif

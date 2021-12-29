@@ -16,10 +16,11 @@
  * including but not limited to those resulting from defects in Software and/or
  * Documentation, or loss or inaccuracy of data of any kind.
  */
+#include <algorithm>
 #pragma once
 struct Point {
         float val[3];
-        Point() { val[0] = val[1] = val[2] = 0.0; }
+        Point() { val[0] = val[1] = val[2] = 0.0f; }
 
         Point(float _x, float _y, float _z) {
                 val[0] = _x;

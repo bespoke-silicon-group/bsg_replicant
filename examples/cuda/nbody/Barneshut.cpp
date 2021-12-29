@@ -660,7 +660,30 @@ int hb_mc_manycore_host_build_tree(int nBodies, Body **bodies, std::map<Body*, B
         return HB_MC_SUCCESS;
 }
 
-int hb_mc_manycore_update_bodies(int nBodies, HBBody *hbodies, eva_t _hbodies){
+int hb_mc_manycore_update_bodies(hb_mc_device_t *device, eva_t _config, int nBodies, HBBody *hbodies, eva_t _hbodies){
+        hb_mc_dma_htod_t htod = {
+                .d_addr = _hbodies,
+                .h_addr = hbodies,
+                .size   = sizeof(HBBody) * nBodies
+        };
+
+        hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
+        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+        uint32_t cuda_argv[3] = {_config, nbodies, _hbodies};
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod, 1));
+        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "update", 3, cuda_argv));
+
+        /* Launch and execute all tile groups on device and wait for all to finish.  */
+        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+
+        hb_mc_dma_dtoh_t dtoh = {
+                .d_addr = _hbodies,
+                .h_addr = hbodies,
+                .size   = sizeof(HBBody) * nBodies
+        };
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
 
         return HB_MC_SUCCESS;
 }
@@ -673,12 +696,18 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                          galois::runtime::pagePoolSize());
         galois::reportPageAlloc("MeminfoPre");
 
-        hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
-        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
         hb_mc_device_t device;
         std::string test_name = "Barnes-Hut Simulation";
-        HB_MC_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, tg_dim));
+        eva_t _config;
+        HB_MC_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y}));
         HB_MC_CUDA_CALL(hb_mc_device_program_init(&device, "kernel.riscv", "default_allocator", 0));
+        HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(config), &_config));
+        hb_mc_dma_htod_t htod = {
+                .d_addr = _config,
+                .h_addr = &config,
+                .size   = sizeof(config)
+        };
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
         for (int step = 0; step < ntimesteps; step++) {
 
@@ -801,7 +830,15 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                },
                                galois::loopname("advance"));
 
-                //hb_mc_manycore_update_bodies(device, &config, nBodies, HBBodies, _HBBodies);
+                hb_mc_manycore_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies);
+                // DR: Update centers of mass in the HB nodes
+                float pmse;
+                float vmse;
+                for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                        pmse += (HBBodies[body_i].pos - BodyPtrs[body_i]->pos).dist2();
+                        vmse += (HBBodies[body_i].vel - BodyPtrs[body_i]->vel).dist2();
+                }
+                printf("%f %f\n", pmse, vmse);
 
                 std::cout << "Timestep " << step << " Center of Mass = ";
                 std::ios::fmtflags flags =

@@ -115,13 +115,15 @@ $(TEST_OBJECTS): $(TEST_HEADERS)
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
 
+update.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+
 BSG_MANYCORE_KERNELS ?= kernel.riscv
-RISCV_TARGET_OBJECTS += 
-RISCV_INCLUDES  +=
+RISCV_TARGET_OBJECTS += update.rvo 
+RISCV_INCLUDES  += -I.
 RISCV_CCPPFLAGS += -D__KERNEL__
 
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
-RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
+RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y) -DRISCV
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
@@ -136,7 +138,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 1000 -steps 10 -t 10
+C_ARGS   ?= -n 1000 -steps 1 -t 10
 
 SIM_ARGS ?=
 
