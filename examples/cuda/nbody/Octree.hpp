@@ -15,7 +15,11 @@ struct _Octree {
 
 struct HBOctree : public HBNode, public _Octree {
         // DR: Note, no lock!
+#ifndef RISCV
         std::array<eva_t, 8> child = {0};
+#else
+        std::array<HBNode*, 8> child = {0};
+#endif
         HBOctree(const Point& p) {
                 HBNode::pos  = p;
                 HBNode::Leaf = false;

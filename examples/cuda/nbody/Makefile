@@ -77,8 +77,8 @@ TEST_SOURCES  += BoilerPlate.cpp
 
 TEST_HEADERS = Node.hpp Point.hpp Body.hpp Config.hpp
 
-TILE_GROUP_DIM_X ?= 16
-TILE_GROUP_DIM_Y ?= 8
+TILE_GROUP_DIM_X ?= 1
+TILE_GROUP_DIM_Y ?= 1
 
 DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
@@ -116,9 +116,11 @@ $(TEST_OBJECTS): $(TEST_HEADERS)
 # be built before executing.
 
 update.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+forces.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 BSG_MANYCORE_KERNELS ?= kernel.riscv
-RISCV_TARGET_OBJECTS += update.rvo 
+RISCV_TARGET_OBJECTS += update.rvo
+RISCV_TARGET_OBJECTS += forces.rvo
 RISCV_INCLUDES  += -I.
 RISCV_CCPPFLAGS += -D__KERNEL__
 

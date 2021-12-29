@@ -229,7 +229,7 @@ unsigned computeCenterOfMass(Octree* node) {
 
 Point updateForce(Point delta, float psq, float mass) {
         // Computing force += delta * mass * (|delta|^2 + eps^2)^{-3/2}
-        float idr   = 1 / sqrt((float)(psq + config.epssq));
+        float idr   = 1.0f / sqrt((float)(psq + config.epssq));
         float scale = mass * idr * idr * idr;
         return delta * scale;
 }
@@ -279,7 +279,7 @@ struct ComputeForces {
                         stack.pop_back();
 
                         // DR: Compute distance squared (to avoid sqrt)
-                        Point p    = b.pos - f.node->pos;
+                        Point p   = b.pos - f.node->pos;
                         float psq = p.dist2();
 
                         // Node is far enough away, summarize contribution
@@ -660,7 +660,53 @@ int hb_mc_manycore_host_build_tree(int nBodies, Body **bodies, std::map<Body*, B
         return HB_MC_SUCCESS;
 }
 
-int hb_mc_manycore_update_bodies(hb_mc_device_t *device, eva_t _config, int nBodies, HBBody *hbodies, eva_t _hbodies){
+int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, float diamsq, int nNodes, HBOctree *hnodes, eva_t _hnodes, int nBodies, HBBody *hbodies, eva_t _hbodies){
+        hb_mc_dma_htod_t htod_bodies = {
+                .d_addr = _hbodies,
+                .h_addr = hbodies,
+                .size   = sizeof(HBBody) * nBodies
+        };
+
+        hb_mc_dma_htod_t htod_nodes = {
+                .d_addr = _hnodes,
+                .h_addr = hnodes,
+                .size   = sizeof(HBOctree) * nNodes
+        };
+        for(int i =0 ; i < nNodes; i++){
+                printf("Node: %d, %x, pred: %x\n", i, _hnodes + sizeof(HBOctree) * i, hnodes[i].pred);
+                for(int c = 0; c < Octree::octants; c++){
+                        printf("\t Child: %x\n", hnodes[i].child[c]);
+                }
+        }
+        for(int i =0 ; i < nBodies; i++){
+                printf("Body: %d, %x, pred: %x, Pos: %f %f %f\n", i, _hbodies + sizeof(HBBody) * i, hbodies[i].pred, hbodies[i].pos.val[0], hbodies[i].pos.val[1], hbodies[i].pos.val[2]);
+        }
+
+        hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
+        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+        // We can't transfer floats as arguments directly, so we pass it encoded as a binary value
+        uint32_t fdiamsq = *reinterpret_cast<uint32_t *>(&diamsq);
+        uint32_t cuda_argv[5] = {_config, _hnodes, _hbodies, nbodies, fdiamsq};
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
+        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "forces", 5, cuda_argv));
+
+        /* Launch and execute all tile groups on device and wait for all to finish.  */
+        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+
+        hb_mc_dma_dtoh_t dtoh = {
+                .d_addr = _hbodies,
+                .h_addr = hbodies,
+                .size   = sizeof(HBBody) * nBodies
+        };
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
+
+        return HB_MC_SUCCESS;
+}
+
+int hb_mc_manycore_device_update_bodies(hb_mc_device_t *device, eva_t _config, int nBodies, HBBody *hbodies, eva_t _hbodies){
         hb_mc_dma_htod_t htod = {
                 .d_addr = _hbodies,
                 .h_addr = hbodies,
@@ -752,9 +798,11 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 HBOctree HBOctNodes[nNodes];
                 eva_t _HBOctNodes = 0;
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBOctNodes), &_HBOctNodes));
+                printf("Nodes EVA (size): %x (%x)\n", _HBOctNodes, sizeof(HBOctree));
                 HBBody HBBodies[nBodies];
                 eva_t _HBBodies = nNodes * sizeof(HBOctNodes);
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBBodies), &_HBBodies));
+                printf("Bodies EVA: %x (%x)\n", _HBBodies, sizeof(HBBodies));
 
                 // Perform in-order octree tree traversal to enumerate all nodes/bodies
                 // Use the node/body pointer to create a map between nodes/bodies and their index
@@ -800,6 +848,15 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  galois::per_iter_alloc());
                 T_compute.stop();
 
+                hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies);                
+
+                float amse;
+                for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                        printf("HB: %2.4f %2.4f %2.4f\n", HBBodies[body_i].acc.val[0], HBBodies[body_i].acc.val[1], HBBodies[body_i].acc.val[2]);
+                        printf("86: %2.4f %2.4f %2.4f\n", BodyPtrs[body_i]->acc.val[0], BodyPtrs[body_i]->acc.val[1], BodyPtrs[body_i]->acc.val[2]);
+                        amse += (HBBodies[body_i].acc - BodyPtrs[body_i]->acc).dist2();
+                }
+                printf("Acceleration MSE: %f\n", amse);
                 if (!skipVerify) {
                         galois::timeThis(
                                          [&](void) {
@@ -817,7 +874,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         HBBodies[body_i].vel = BodyPtrs[body_i]->vel;
                  }
 
-                // Done in compute forces
+                // Update velocity and position.
                 galois::do_all(
                                galois::iterate(pBodies),
                                [](Body* b) {
@@ -830,7 +887,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                },
                                galois::loopname("advance"));
 
-                hb_mc_manycore_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies);
+                //hb_mc_manycore_device_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies);
                 // DR: Update centers of mass in the HB nodes
                 float pmse;
                 float vmse;
