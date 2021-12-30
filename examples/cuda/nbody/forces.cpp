@@ -20,9 +20,9 @@ extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBod
         Config cfg = *pcfg;
         float diam = *reinterpret_cast<float *>(&_diam);
         bsg_barrier_hw_tile_group_init();
-        bsg_barrier_hw_tile_group_sync();        
+        bsg_barrier_hw_tile_group_sync();   
         bsg_cuda_print_stat_kernel_start();
-        
+        bsg_cuda_print_stat_start(1);
         // In the x86 version, threads use a stack to do a DFS
         // traversal of a tree. We can't do that here because we have
         // limited stack space. Instead, we are going to do an
@@ -147,6 +147,7 @@ extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBod
                 HBBodies[cur].acc = curb.acc;
         }
 
+        bsg_cuda_print_stat_end(1);
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_end();
         bsg_fence();

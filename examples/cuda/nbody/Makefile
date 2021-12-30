@@ -77,8 +77,8 @@ TEST_SOURCES  += BoilerPlate.cpp
 
 TEST_HEADERS = Node.hpp Point.hpp Body.hpp Config.hpp
 
-TILE_GROUP_DIM_X ?= 1
-TILE_GROUP_DIM_Y ?= 1
+TILE_GROUP_DIM_X ?= 16
+TILE_GROUP_DIM_Y ?= 8
 
 DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
@@ -140,7 +140,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 1000 -steps 1 -t 10
+C_ARGS   ?= -n 4000 -steps 1 -t 10
 
 SIM_ARGS ?=
 
