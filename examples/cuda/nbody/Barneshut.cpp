@@ -227,6 +227,53 @@ unsigned computeCenterOfMass(Octree* node) {
         return num;
 }
 
+int hb_mc_manycore_device_summarize_centers(hb_mc_device_t *device, eva_t _config, int nNodes, HBOctree *hnodes, eva_t _hnodes, int nBodies, HBBody *hbodies, eva_t _hbodies){
+        hb_mc_dma_htod_t htod_bodies = {
+                .d_addr = _hbodies,
+                .h_addr = hbodies,
+                .size   = sizeof(HBBody) * nBodies
+        };
+
+        hb_mc_dma_htod_t htod_nodes = {
+                .d_addr = _hnodes,
+                .h_addr = hnodes,
+                .size   = sizeof(HBOctree) * nNodes
+        };
+
+        unsigned int idx = 127;
+        eva_t _idx;
+        HB_MC_CUDA_CALL(hb_mc_device_malloc(device, sizeof(idx), &_idx));
+        hb_mc_dma_htod_t htod_idx = {
+                .d_addr = _idx,
+                .h_addr = &idx,
+                .size   = sizeof(idx)
+        };
+
+        hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
+        hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+        // We can't transfer floats as arguments directly, so we pass it encoded as a binary value
+        uint32_t cuda_argv[4] = {_hnodes, _hbodies, nbodies, _idx};
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_idx, 1));
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
+        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "summarize", 4, cuda_argv));
+
+        /* Launch and execute all tile groups on device and wait for all to finish.  */
+        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+
+        hb_mc_dma_dtoh_t dtoh = {
+                .d_addr = _hnodes,
+                .h_addr = hnodes,
+                .size   = sizeof(HBOctree) * nNodes
+        };
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
+        HB_MC_CUDA_CALL(hb_mc_device_free(device, _idx));
+
+        return HB_MC_SUCCESS;
+}
+
 Point updateForce(Point delta, float psq, float mass) {
         // Computing force += delta * mass * (|delta|^2 + eps^2)^{-3/2}
         float idr   = 1.0f / sqrt((float)(psq + config.epssq));
@@ -814,10 +861,8 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, bodyIdxMap, HBBodies, _HBBodies,
                                                nNodes, OctNodePtrs, nodeIdxMap, HBOctNodes, _HBOctNodes);
 
-                // DR: Send to Manycore to do bottom-up traversal of Octree to update centers of mass
-                // DR: Transfer back from Manycore
-
-                // update centers of mass in tree
+                // ============================================================
+                // Summarize centers of mass in tree
                 galois::timeThis(
                                  [&](void) {
                                          unsigned size = computeCenterOfMass(&top);
@@ -826,17 +871,28 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  },
                                  "summarize-Serial");
 
-                // TODO: Turn this off if this is not the ROI.
-                // DR: Update centers of mass in the HB nodes
+                // TODO: Implement skipping for CoM summarizaion
+                hb_mc_manycore_device_summarize_centers(&device, _config, nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies);
+
+                float pmse = 0.0f;
+                for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
+                        printf("HB: %2.4f %2.4f %2.4f (%2.4f)\n", HBOctNodes[node_i].pos.val[0], HBOctNodes[node_i].pos.val[1], HBOctNodes[node_i].pos.val[2], HBOctNodes[node_i].mass);
+                        printf("86: %2.4f %2.4f %2.4f (%2.4f)\n", OctNodePtrs[node_i]->pos.val[0], OctNodePtrs[node_i]->pos.val[1], OctNodePtrs[node_i]->pos.val[2], OctNodePtrs[node_i]->mass);
+                        pmse += (HBOctNodes[node_i].pos - OctNodePtrs[node_i]->pos).dist2();
+                }
+                printf("Position MSE: %f\n", pmse);
+
+                // DR: Update centers of mass in the HB nodes, if the previous kernel is not run
                 for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
                         HBOctNodes[node_i].mass = OctNodePtrs[node_i]->mass;
                         HBOctNodes[node_i].pos = OctNodePtrs[node_i]->pos;
                 }
+                // ============================================================
 
+
+                // ============================================================
+                // Compute pair-wise forces using the Barnes-Hut Approximation
                 ComputeForces cf(&top, box.diameter());
-                // DR: Send to Manycore to do per-body computation of forces.
-                // DR: After all tiles have finished, barrier, and update position/velocity.
-                // DR: Transfer back from Manycore
 
                 galois::StatTimer T_compute("ComputeTime");
                 T_compute.start();
@@ -848,7 +904,8 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  galois::per_iter_alloc());
                 T_compute.stop();
 
-                hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies);                
+                // TODO: Implement skipping for forces computation
+                // hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies);                
 
                 float amse;
                 for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
@@ -857,6 +914,16 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         amse += (HBBodies[body_i].acc - BodyPtrs[body_i]->acc).dist2();
                 }
                 printf("Acceleration MSE: %f\n", amse);
+
+                // DR: Update centers of mass in the HB nodes
+                for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                        HBBodies[body_i].acc = BodyPtrs[body_i]->acc;
+                        HBBodies[body_i].vel = BodyPtrs[body_i]->vel;
+                }
+                // ============================================================
+
+
+                // Verify the results using a classic pair-wise computation on a random sampling of nodes
                 if (!skipVerify) {
                         galois::timeThis(
                                          [&](void) {
@@ -867,13 +934,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                          "checkAllPairs");
                 }
 
-                // TODO: Turn this off if this is not the ROI.
-                // DR: Update centers of mass in the HB nodes
-                 for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
-                        HBBodies[body_i].acc = BodyPtrs[body_i]->acc;
-                        HBBodies[body_i].vel = BodyPtrs[body_i]->vel;
-                 }
-
+                // ============================================================
                 // Update velocity and position.
                 galois::do_all(
                                galois::iterate(pBodies),
@@ -887,15 +948,17 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                },
                                galois::loopname("advance"));
 
-                //hb_mc_manycore_device_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies);
-                // DR: Update centers of mass in the HB nodes
-                float pmse;
-                float vmse;
+                // TODO: Implement skipping switch for update
+                // hb_mc_manycore_device_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies);
+
+                pmse = 0.0f;
+                float vmse = 0.0f;
                 for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
                         pmse += (HBBodies[body_i].pos - BodyPtrs[body_i]->pos).dist2();
                         vmse += (HBBodies[body_i].vel - BodyPtrs[body_i]->vel).dist2();
                 }
-                printf("%f %f\n", pmse, vmse);
+                printf("Position MSE: %f Velocity MSE: %f\n", pmse/nBodies, vmse/nBodies);
+                // ============================================================
 
                 std::cout << "Timestep " << step << " Center of Mass = ";
                 std::ios::fmtflags flags =
@@ -904,9 +967,13 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 std::cout << top.pos;
                 std::cout.flags(flags);
                 std::cout << "\n";
+
+                HB_MC_CUDA_CALL(hb_mc_device_free(&device, _HBBodies));
+                HB_MC_CUDA_CALL(hb_mc_device_free(&device, _HBOctNodes));
         }
 
         galois::reportPageAlloc("MeminfoPost");
+        HB_MC_CUDA_CALL(hb_mc_device_free(&device, _config));
         HB_MC_CUDA_CALL(hb_mc_device_finish(&device));
 }
 

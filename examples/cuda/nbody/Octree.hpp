@@ -9,8 +9,8 @@
 
 struct _Octree {
         static const int octants = 8;
+        int nChildren;
         char cLeafs;
-        char nChildren;
 };
 
 struct HBOctree : public HBNode, public _Octree {
