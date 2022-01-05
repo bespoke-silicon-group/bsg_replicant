@@ -13,7 +13,17 @@
 // Given a list of bodies, build an octree
 
 
-// nNodes - How many nodes have been pre-allocated (Should be at least nBodies * log2(nBodies) and more than 128)
+
+// nNodes - How many nodes have been pre-allocated (Should be at least
+// nBodies * log2(nBodies) and more than 128). Not currently used, but
+// tiles could check that they haven't gone beyond the end of the
+// array.
+
+// This kernel hasn't been completely tested, or optimized. It's not
+// clear that all the fences are necessary, for example. In some cases
+// I want the compiler to insert memory fences, not actual fence
+// instructions
+
 extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBody *bodies, int nBodies, int *bidx, unsigned int _radius){
         
         Config cfg = *pcfg;

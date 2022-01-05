@@ -946,6 +946,13 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
 
                 // TODO: Set HBOctNodes to Device or Host Version
 
+                // TODO: I don't know if the code for building a tree
+                // is working/correct. Next step is to write a method
+                // that verifies the tree. It would also be good to
+                // create a method that takes a HB tree and turns it
+                // back into a x86 tree.
+
+                // TL;DR, the biggest next-step is verification.
                 exit(1);
 
                 // ============================================================
