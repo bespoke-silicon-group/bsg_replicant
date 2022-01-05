@@ -2,7 +2,7 @@
 
 #include <Point.hpp>
 
-typedef int NodeIdx;
+typedef unsigned int NodeIdx;
 
 struct _Node {
         Point pos; // DR: X, Y, Z location

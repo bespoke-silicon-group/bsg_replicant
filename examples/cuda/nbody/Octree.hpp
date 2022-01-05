@@ -2,10 +2,13 @@
 
 #include <Node.hpp>
 #include <array>
-
-/**
- * A node in an octree is either an internal node or a leaf.
- */
+#ifdef RISCV
+#define BSG_TILE_GROUP_X_DIM bsg_tiles_X
+#define BSG_TILE_GROUP_Y_DIM bsg_tiles_Y
+#include <bsg_mcs_mutex.hpp>
+#else
+typedef std::atomic<eva_t> bsg_mcs_mutex_t;
+#endif
 
 struct _Octree {
         static const int octants = 8;
@@ -17,8 +20,10 @@ struct HBOctree : public HBNode, public _Octree {
         // DR: Note, no lock!
 #ifndef RISCV
         std::array<eva_t, 8> child = {0};
+        bsg_mcs_mutex_t mtx;
 #else
         std::array<HBNode*, 8> child = {0};
+        bsg_mcs_mutex_t mtx;
 #endif
         HBOctree(const Point& p) {
                 HBNode::pos  = p;
@@ -52,3 +57,27 @@ struct Octree : public Node, public _Octree {
 };
 #endif
 
+
+
+#ifdef RISCV
+template<unsigned int DEPTH>
+class HBOctreeTraverser{
+public:
+        bsg_mcs_mutex_node_t lcl, *lcl_as_glbl;
+        HBOctreeTraverser(){
+                lcl_as_glbl = (bsg_mcs_mutex_node_t*)bsg_tile_group_remote_ptr(int, bsg_x, bsg_y, &lcl);
+        }
+
+        // HBOctreeTraverser(const HBOctreeTraverser &t) = delete;
+
+        void lock(unsigned int depth, HBOctree *cur){
+                bsg_mcs_mutex_acquire(&cur->mtx, &lcl, lcl_as_glbl);
+
+        }
+
+        void unlock(unsigned int depth, HBOctree *cur){
+                bsg_mcs_mutex_release(&cur->mtx, &lcl, lcl_as_glbl);
+        }                
+};
+
+#endif
