@@ -131,7 +131,9 @@ struct BuildOctree {
                         return;
                 }
 
-                // DR: Why reduce radius?
+                // DR: I believe this is only partially correct and is
+                // a bug. I think the recursion above should also
+                // decrease the radius by .5
                 radius *= 0.5;
 
                 // DR: If the child is a leaf, create a new node (this is where the real fun begins)
@@ -143,11 +145,13 @@ struct BuildOctree {
                         // radius as an offset from the current
                         // (x,y,z) positiion.
                         Octree* new_node = &T.emplace(updateCenter(node->pos, index, radius));
-
+                        printf("New node position: %2.4f %2.4f %2.4f\n", node->pos[0], node->pos[1], node->pos[2]);
+                               
                         // DR: If the position of the former child,
                         // and the current child are identical then
                         // add some jitter to guarantee uniqueness.
                         if (b->pos == child->pos) {
+                                printf("Jittering\n");
                                 // Jitter point to gaurantee uniqueness.
                                 float jitter = config.tol / 2;
                                 assert(jitter < radius);
@@ -176,6 +180,7 @@ struct BuildOctree {
 };
 
 int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsigned int *nNodes, HBOctree *hnodes, eva_t _hnodes, unsigned int nBodies, HBBody *hbodies, eva_t _hbodies, float radius){
+        printf("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", hnodes[0].pos[0], hnodes[0].pos[1], hnodes[0].pos[2], radius);
         hb_mc_dma_htod_t htod_bodies = {
                 .d_addr = _hbodies,
                 .h_addr = hbodies,
@@ -862,10 +867,10 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                          (3 * sizeof(Octree) + 2 * sizeof(Body)) * nbodies /
                          galois::runtime::pagePoolSize());
         galois::reportPageAlloc("MeminfoPre");
-
         hb_mc_device_t device;
         std::string test_name = "Barnes-Hut Simulation";
         eva_t _config;
+
         HB_MC_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y}));
         HB_MC_CUDA_CALL(hb_mc_device_program_init(&device, "kernel.riscv", "default_allocator", 0));
         HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(config), &_config));
@@ -933,6 +938,8 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // Use the node/body pointer to create a map between nodes/bodies and their index
                 // Convert the x86 nodes/bodies to HB equivalents for processing
 
+                // Build tree on the device: 
+
                 // TODO: Create switch
                 // Convert Octree node to HBOctree node
                 top.convert(_DeviceHBOctNodes, DeviceHBOctNodes[0]);
@@ -947,10 +954,13 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // TODO: Set HBOctNodes to Device or Host Version
 
                 // TODO: I don't know if the code for building a tree
-                // is working/correct. Next step is to write a method
-                // that verifies the tree. It would also be good to
-                // create a method that takes a HB tree and turns it
-                // back into a x86 tree.
+                // is 100% correct. Next step is to write a method
+                // that verifies the tree -- checking that the
+                // position of all the children at a node are within
+                // it's radius, and are in the correct octant. It
+                // would also be good to create a method that takes a
+                // HB tree and turns it back into a x86 tree so we can
+                // hand it back to the CPU code
 
                 // TL;DR, the biggest next-step is verification.
                 exit(1);

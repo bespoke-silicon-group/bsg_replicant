@@ -25,7 +25,7 @@
 // instructions
 
 extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBody *bodies, int nBodies, int *bidx, unsigned int _radius){
-        
+
         Config cfg = *pcfg;
         HBOctreeTraverser<3> t;
         HBOctree *cur;
@@ -40,7 +40,7 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
         int local_nidx = __bsg_id + 1, local_bidx = __bsg_id, depth;
         HBOctree *newNode = &nodes[local_nidx];
         unsigned int remaining_children = 0;
-        char octant;
+        unsigned int octant;
 
         bsg_barrier_hw_tile_group_init();
         bsg_barrier_hw_tile_group_sync();
@@ -50,7 +50,7 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
 
         // While bodies remain
         while(local_bidx < nBodies){
-                //                bsg_print_hexadecimal(local_bidx);
+                //bsg_print_hexadecimal(0x01000000 | local_bidx);
                 float radius = *reinterpret_cast<float *>(&_radius);
                 ins = &bodies[local_bidx]; // Find a new node to insert
                 cur = nodes; // Start at root
@@ -58,7 +58,7 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                 // Get the octant relative to the current node
                 octant = cur->pos.getChildIndex(ins->pos);
                 child = cur->child[octant];
-                
+
                 // We may use the depth to switch between a spin lock
                 // and a MCS lock in the future. An MCS lock is great
                 // for high contention but has higher overhead. A spin
@@ -69,9 +69,9 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                 // "Recurse" until a null pointer or a leaf is found.
                 recurse:
                 while(child && !child->Leaf){
-                        //bsg_print_float(1.0f);
                         cur = (HBOctree *)child;
                         octant = cur->pos.getChildIndex(ins->pos);
+                        //bsg_print_hexadecimal(0x02000000 | octant);
                         child = cur->child[octant];
                         depth++;
                         // This radius update does not match the CPU code but it does seem to match the GPU code.
@@ -80,9 +80,8 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
 
                 // We have reached the point where we need to modify a
                 // node. Lock it.
-                // Heartbeat Start
+                //bsg_print_hexadecimal(0x10000000 | local_bidx);
                 t.lock(depth, cur);
-                // Heartbeat end
 
 
                 // Make sure that the compiler doesn't use stale
@@ -94,7 +93,7 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
 
                 // A null pointer means we can directly insert the current body as a leaf.
                 if(cur->child[octant] == nullptr){
-                        //bsg_print_float(2.0f);                        
+                        //bsg_print_hexadecimal(0x11000000);
                         cur->nChildren++;
                         ins->pred = cur;
                         ins->octant = octant;
@@ -110,6 +109,7 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         cur->child[octant] = ins;
 
                         // Fence before unlocking? Max's lock might handle this.
+                        // This should probably be before insertion.
                         std::atomic_thread_fence(std::memory_order_release);
                         // Update our local index for inserting a new node
                         local_bidx = bsg_amoadd(bidx, 1);
@@ -126,13 +126,28 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                 // Leaf/body means we need to create a new node and
                 // insert both bodies
                 if(child->Leaf){
-                        //bsg_print_float(3.0f);
+                        //bsg_print_hexadecimal(0x12000000 | local_nidx);
+                        //bsg_print_float(radius);
+                        //bsg_print_float((ins->pos - child->pos).dist2());
+
+                        // The last bug I fixed (I believe) led to infinite looping in this if statement.
+                        // The symptom is that the radius goes to 0.0f. The cause is that at least one insert node gets put in the wrong octant
+                        // and conflict. When a new node is inserted, they will always conflict and cause another new node to be inserted, until the radius is 0.
+                        // This if statement exists to catch that bug again if it happens. If it does, just bail with an "error".
+                        if(radius == 0.0f){
+                                bsg_print_hex(0xe0000000 | local_bidx);
+                                local_bidx = bsg_amoadd(bidx, 1);
+                                t.unlock(depth, cur);
+                                continue;
+                        }
+                        
                         // TODO: Check if local_nidx > nNodes
                         // Octree* new_node = &T.emplace(updateCenter(node->pos, index, radius));
-                        newNode->pos = updateCenter(cur->pos, octant, radius);
+                        // We are inserting a new node below this one, so pass it it's radius.
+                        newNode->pos = updateCenter(cur->pos, octant, radius * .5f);
 
                         // Now that we used local_nidx, get a new one.
-                        local_nidx = bsg_amoadd(nidx, 1);                        
+                        local_nidx = bsg_amoadd(nidx, 1);
 
                         // Insert original child
                         char new_octant = newNode->pos.getChildIndex(child->pos);
@@ -143,9 +158,9 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         // add some jitter to guarantee uniqueness.
                         // Usually we don't use == for floats, but it
                         // is important in this case.
+                        // TODO: Check if dist2 is less than minimum resolvable radius?
                         if(ins->pos == child->pos){
-                                //bsg_print_float(3.1f);
-                                float jitter = cfg.tol / 2;
+                                float jitter = cfg.tol * .5f;
                                 // assert(jitter < radius);
                                 ins->pos += (newNode->pos - ins->pos) * jitter;
                         }
@@ -178,9 +193,6 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         // get a new pointer. This also maximizes
                         // load-use distance.
                         newNode = &nodes[local_nidx];
-                        //bsg_print_int(local_nidx);
-                } else {
-                        //bsg_print_float(4.0f);
                 }
 
                 // If both conditions above fail, another tile managed
@@ -194,11 +206,12 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                 // Either outcome, the result is the same. Try inserting again.
 
                 // Unlock
+                //bsg_print_hexadecimal(0x14000000);
                 t.unlock(depth, cur);
                 // Retry inserting the existing body.
                 goto recurse;
         }
-        
+
         bsg_cuda_print_stat_end(1);
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_end();
