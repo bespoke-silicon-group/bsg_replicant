@@ -91,13 +91,12 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-                // Read data
+                int *score_matrix;
                 ifstream f_ref, f_query;
                 string ref_str, query_str, num;
                 map<char, int> dna_map = {
                   {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}
                 };
-                int sm_size = 0;
                 const int N = 32;
                 int *n1 = new int[N];
                 int *n2 = new int[N];
@@ -107,6 +106,10 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
+                const int SEQ_LEN = 256;
+                int *ref = new int[N*SEQ_LEN];
+                int *query = new int[N*SEQ_LEN];
+
                 for (int n = 0; n < N; n++) {
                   f_ref >> num >> ref_str;
                   f_query >> num >> query_str;
@@ -115,33 +118,25 @@ int kernel_smith_waterman (int argc, char **argv) {
                   n2[n] = query_str.length();
 
                   for (int i = 0; i < n1[n]; i++) {
-                    ref_vec.push_back(dna_map[ref_str[i]]);
+                    int base_pair = dna_map[ref_str[i]];
+                    ref[n*SEQ_LEN+i] = base_pair;
                   }
 
                   for (int i = 0; i < n2[n]; i++) {
-                    query_vec.push_back(dna_map[query_str[i]]);
+                    int base_pair = dna_map[query_str[i]];
+                    query[n*SEQ_LEN+i] = base_pair;
                   }
 
-                  sm_size += (n1[n] + 1) * (n2[n] + 1);
                 }
 
                 f_ref.close();
                 f_query.close();
 
-                int *ref = new int[ref_vec.size()];
-                int *query = new int[query_vec.size()];
-                copy(ref_vec.begin(), ref_vec.end(), ref);
-                copy(query_vec.begin(), query_vec.end(), query);
-
-                int *n1_host = n1;
-                int *n2_host = n2;
-                int *ref_host = ref;
-                int *query_host = query;
-
                 /* Allocate memory on the device for A, B and C. */
-                size_t vsize0 = ref_vec.size() * sizeof(int);
-                size_t vsize1 = query_vec.size() * sizeof(int);
-                size_t vsize2 = sm_size * sizeof(int);
+                int sm_size = (256 + 1) * (256 + 1);
+                size_t vsize0 = N * 256 * sizeof(int);
+                size_t vsize1 = N * 256 * sizeof(int);
+                size_t vsize2 = N * sm_size * sizeof(int);
                 size_t vsize3 = N * sizeof(int);
 
                 eva_t ref_device, query_device, score_matrix_device, n1_device, n2_device;
@@ -160,22 +155,22 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dma_htod_t htod_jobs [] = {
                         {
                                 .d_addr = ref_device,
-                                .h_addr = ref_host,
+                                .h_addr = ref,
                                 .size   = vsize0
                         },
                         {
                                 .d_addr = query_device,
-                                .h_addr = query_host,
+                                .h_addr = query,
                                 .size   = vsize1
                         },
                         {
                                 .d_addr = n1_device,
-                                .h_addr = n1_host,
+                                .h_addr = n1,
                                 .size   = vsize3
                         },
                         {
                                 .d_addr = n2_device,
-                                .h_addr = n2_host,
+                                .h_addr = n2,
                                 .size   =  vsize3
                         }
                 };
@@ -201,7 +196,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 /* Copy result matrix back from device DRAM into host memory.  */
-                int32_t *score_matrix_host = new int32_t [vsize2];
+                int* score_matrix_host = new int[N*sm_size]();
 
                 hb_mc_dma_dtoh_t dtoh_job = {
                         .d_addr = score_matrix_device,
@@ -230,21 +225,18 @@ int kernel_smith_waterman (int argc, char **argv) {
 #endif
 
 #ifdef PRINT_SCORE
-  int score[N];
+  int score;
   ofstream fout;
   fout.open("output", ios::out);
-  sm_size = 0;
   for (int n = 0; n < N; n++) {
-    score[n] = -1;
-    for (int i = 0; i < n1[n] + 1; i++) {
-      for (int j = 0; j < n2[n] + 1; j++) {
-        if (score_matrix_host[sm_size+(n2[n]+1)*i+j] > score[n])
-          score[n] = score_matrix_host[sm_size+(n2[n]+1)*i+j];
+    score = 0;
+    for (int i = 0; i < n1[n]; i++) {
+      for (int j = 0; j < n2[n]; j++) {
+        if (score_matrix_host[sm_size*n+256*i+j] > score)
+          score = score_matrix_host[sm_size*n+256*i+j];
       }
     }
-    sm_size += (n1[n] + 1) * (n2[n] + 1);
-    fout << score[n] << endl;
-    //printf("score[%d] = %d\n", n, score[n]);
+    fout << score << endl;
   }
   fout.close();
 #endif
