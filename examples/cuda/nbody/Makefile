@@ -142,7 +142,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 4096 -steps 1 -t 1
+C_ARGS   ?= -n 8192 -steps 1 -t 10
 
 SIM_ARGS ?=
 

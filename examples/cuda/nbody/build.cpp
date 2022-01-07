@@ -134,8 +134,9 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         // The symptom is that the radius goes to 0.0f. The cause is that at least one insert node gets put in the wrong octant
                         // and conflict. When a new node is inserted, they will always conflict and cause another new node to be inserted, until the radius is 0.
                         // This if statement exists to catch that bug again if it happens. If it does, just bail with an "error".
+                        // Update: this bug is not fixed - DR
                         if(radius == 0.0f){
-                                bsg_print_hex(0xe0000000 | local_bidx);
+                                bsg_print_hexadecimal(0xe0000000 | local_bidx);
                                 local_bidx = bsg_amoadd(bidx, 1);
                                 t.unlock(depth, cur);
                                 continue;

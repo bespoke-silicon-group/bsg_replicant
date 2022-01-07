@@ -113,7 +113,7 @@ struct BuildOctree {
                 // go through the tree lock-free while we can
                 // DR: Recurse if the child node exists, and it is not a leaf.
                 if (child && !child->Leaf) {
-                        insert(b, static_cast<Octree*>(child), radius);
+                        insert(b, static_cast<Octree*>(child), radius * .5f);
                         return;
                 }
 
@@ -134,7 +134,7 @@ struct BuildOctree {
                 // DR: I believe this is only partially correct and is
                 // a bug. I think the recursion above should also
                 // decrease the radius by .5
-                radius *= 0.5;
+                radius *= 0.5f;
 
                 // DR: If the child is a leaf, create a new node (this is where the real fun begins)
                 if (child->Leaf) {
@@ -145,7 +145,6 @@ struct BuildOctree {
                         // radius as an offset from the current
                         // (x,y,z) positiion.
                         Octree* new_node = &T.emplace(updateCenter(node->pos, index, radius));
-                        printf("New node position: %2.4f %2.4f %2.4f\n", node->pos[0], node->pos[1], node->pos[2]);
                                
                         // DR: If the position of the former child,
                         // and the current child are identical then
@@ -918,6 +917,8 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 for (auto ii : pBodies) { nBodies ++; }
                 for (auto ii : t) { nNodes ++; }
 
+                printf("x86 Created %u Nodes\n", nNodes);
+
                 Body **BodyPtrs = new Body*[nBodies];
                 Octree **OctNodePtrs = new Octree*[nNodes];
                 OctNodePtrs[0] = &top;
@@ -929,29 +930,42 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(DeviceHBOctNodes), &_DeviceHBOctNodes));
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HostHBOctNodes), &_HostHBOctNodes));
                 printf("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, sizeof(DeviceHBOctNodes));
-                HBBody HBBodies[nBodies];
-                eva_t _HBBodies;
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HBBodies), &_HBBodies));
-                printf("Bodies EVA (size): %x (%lu)\n", _HBBodies, sizeof(HBBodies));
+                HBBody HostHBBodies[nBodies], DeviceHBBodies[nBodies], *HBBodies;
+                eva_t _HostHBBodies, _DeviceHBBodies, _HBBodies;
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(DeviceHBBodies), &_DeviceHBBodies));
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HostHBBodies), &_HostHBBodies));
+                printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, sizeof(HostHBBodies));
 
-                // Perform in-order octree tree traversal to enumerate all nodes/bodies
-                // Use the node/body pointer to create a map between nodes/bodies and their index
-                // Convert the x86 nodes/bodies to HB equivalents for processing
-
-                // Build tree on the device: 
+                // If we use HostHBBodies to construct the array, they
+                // are produced from an in-order traversal of the Host
+                // Octree, and will have locality. This will increase
+                // contention. I believe the raw array has less
+                // contention in its ordering (and profiler stats
+                // support this).
+                BodyIdx body_i = 0;
+                for (auto b : pBodies) {
+                        b->convert(0, DeviceHBBodies[body_i]);
+                        body_i ++;
+                }
 
                 // TODO: Create switch
                 // Convert Octree node to HBOctree node
                 top.convert(_DeviceHBOctNodes, DeviceHBOctNodes[0]);
                 DeviceHBOctNodes[0].nChildren = 0;
                 
-                hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, HBBodies, _HBBodies,
+                // Perform in-order octree tree traversal to enumerate all nodes/bodies
+                // Use the node/body pointer to create a map between nodes/bodies and their index
+                // Convert the x86 nodes/bodies to HB equivalents for processing
+
+                // Build tree on the device: 
+                hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, HostHBBodies, _HostHBBodies,
                                                nNodes, OctNodePtrs, HostHBOctNodes, _HostHBOctNodes);
 
-                hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, HBBodies, _HBBodies, box.radius());
+                hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
                 printf("Created %u HB Nodes\n", nHBNodes);
 
                 // TODO: Set HBOctNodes to Device or Host Version
+                // TODO: Set HBBodies to Device or Host Version
 
                 // TODO: I don't know if the code for building a tree
                 // is 100% correct. Next step is to write a method
