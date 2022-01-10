@@ -18,7 +18,18 @@ PFACTOR=8
 PARTITIONS=$(call cartesian,$(call range,0,$(PFACTOR)),$(call range,0,$(PFACTOR)),x)
 
 $(foreach part,$(PARTITIONS),\
-$(eval TESTS += $(call test-name,08blocks,$(PFACTOR),$(part),yes,yes)))
+$(eval TESTS += $(call test-name,offshore,$(PFACTOR),$(part),yes,yes)))
+#$(eval TESTS += $(call test-name,wiki-vote,$(PFACTOR),$(part),yes,yes)))
+#$(eval TESTS += $(call test-name,road-central,$(PFACTOR),$(part),yes,yes)))
+#$(eval TESTS += $(call test-name,offshore,16,$(part),yes,yes)))
+#$(eval TESTS += $(call test-name,offshore,16,$(part),yes,yes)))
+
+#$(eval TESTS += $(call test-name,roadNet-CA,$(PFACTOR),$(part),yes,yes)))
+# $(eval TESTS += $(call test-name,road-central,$(PFACTOR),$(part),yes,yes))\
+# $(eval TESTS += $(call test-name,hollywood,$(PFACTOR),$(part),yes,yes))\
+# $(eval TESTS += $(call test-name,LiveJournal,$(PFACTOR),$(part),yes,yes))\
+# $(eval TESTS += $(call test-name,soc-Pokec,$(PFACTOR),$(part),yes,yes))\
+# $(eval TESTS += $(call test-name,road-usa,$(PFACTOR),$(part),yes,yes)))
 
 define get-test-parameters
 $(eval INPUT=$(call get-input,$1))
@@ -57,3 +68,8 @@ $(eval SIMULATION_DIR=$(APPLICATION_PATH)/spmm_abrev_multi_pod_model/$1)
 endef
 
 include $(EXAMPLES_PATH)/cuda/dwarfs/dwarf.mk
+
+$(foreach test,$(TESTS),$(test).stats): %.stats:
+	$(MAKE) -C $* stats
+
+stats: $(foreach test,$(TESTS),$(test).stats)
