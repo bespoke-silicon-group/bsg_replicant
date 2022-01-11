@@ -39,7 +39,8 @@ static thread spmm_elt_t local_elt_pool[TILE_ELT_POOL_SIZE];
 /**
  * List of all entries in the table
  */
-static thread spmm_elt_t *tbl_head;
+static thread spmm_elt_t  tbl_head;
+static thread spmm_elt_t *tbl_tail;
 static thread int         tbl_size;
 
 /**
@@ -156,8 +157,10 @@ static void update(float v, int idx, spmm_elt_t **u)
     p->part.idx = idx;
     p->part.val = v;
     p->bkt_next = nullptr;
-    p->tbl_next = tbl_head;
-    tbl_head = p;
+    // add to table list
+    p->tbl_next = nullptr;
+    tbl_tail->tbl_next = p;
+    tbl_tail = p;
     // update last
     *u = p;
     tbl_size++;
@@ -236,6 +239,59 @@ static void sort_table()
     tbl_head = sorted_head;
 }
 
+/**
+ * Sort hash table elements
+ */
+static void insertion_sort(
+    spmm_elt_t *head
+    , spmm_elt_t *tail
+    , spmm_elt_t **sorted_head_out
+    , spmm_elt_t **sorted_tail_out)
+{
+    if (head == nullptr)
+        return;
+    
+    // perform insertion sort on list
+    spmm_elt_t *sorted_head = head;
+    spmm_elt_t *sorted_tail = head;
+    spmm_elt_t *stop = tail->tbl_next;
+
+    while (sorted_tail->tbl_next != stop) {
+        // remove curr from list
+        spmm_elt_t *curr = sorted_tail->tbl_next;
+        bsg_print_int(curr->part.idx);
+        sorted_tail->tbl_next = curr->tbl_next;        
+        // special case; goes at start
+        if (curr->part.idx < sorted_head->part.idx) {
+            bsg_print_int(-sorted_head->part.idx);            
+            curr->tbl_next = sorted_head;
+            sorted_head = curr;
+            continue;
+        }
+        spmm_elt_t *prev = sorted_head;
+        spmm_elt_t *cand = prev->tbl_next;
+        while (prev != sorted_tail) {
+            // check if have found the right spot
+            bsg_print_int(-cand->part.idx);            
+            if (cand->part.idx >= curr->part.idx) {
+                break;
+            }
+            // next
+            prev = cand;
+            cand = cand->tbl_next;
+        }
+        curr->tbl_next = cand;        
+        prev->tbl_next = curr;               
+        if (prev == sorted_tail) {
+            // we reached the end
+            sorted_tail = curr;
+        }
+    }
+    *sorted_head_out = sorted_head;
+    *sorted_tail_out = sorted_tail;
+    bsg_print_hexadecimal(0xD00D);
+}
+
 static void init()
 {
     if (utils::is_cache_adjacent(utils::y())) {
@@ -283,7 +339,8 @@ static void init()
     elts_realloc_size = (VCACHE_STRIPE_WORDS*sizeof(int))/sizeof(spmm_elt_t);
 
     // init tbl
-    tbl_head = nullptr;
+    tbl_head.tbl_next = nullptr;
+    tbl_tail = &tbl_head;
     tbl_size = 0;
 
     for (int i = 0; i < ARRAY_SIZE(nonzeros_table); i++) {
@@ -413,6 +470,8 @@ void spmm_solve_row(int Ai)
     // pr_dbg("solving for row %3d\n", Ai);
     // set the number of partials to zero
     hash_table_coop::tbl_size = 0;
+    hash_table_coop::tbl_head.tbl_next = nullptr;
+    hash_table_coop::tbl_tail = &hash_table_coop::tbl_head;
 
     // fetch row meta data
     int off = A_lcl.mnr_off_remote_ptr[Ai];
@@ -452,10 +511,18 @@ void spmm_solve_row(int Ai)
                , Ai
                , hash_table_coop::tbl_size
                , parts_glbl);
-        
+
+        // sort
+        hash_table_coop::insertion_sort(
+            hash_table_coop::tbl_head.tbl_next
+            , hash_table_coop::tbl_tail
+            , &hash_table_coop::tbl_head.tbl_next
+            , &hash_table_coop::tbl_tail
+            );
+
         // for each entry in the table
         int j = 0; // tracks nonzero number
-        for (hash_table_coop::spmm_elt_t *e = hash_table_coop::tbl_head; e != nullptr; ) {
+        for (hash_table_coop::spmm_elt_t *e = hash_table_coop::tbl_head.tbl_next; e != nullptr; ) {
             // save the next poix1nter
             spmm_partial_t part;
             hash_table_coop::spmm_elt_t *next;
@@ -478,8 +545,6 @@ void spmm_solve_row(int Ai)
             // continue
             e = next;
         }
-
-        hash_table_coop::tbl_head = nullptr;
 
         // store as array of partials in the alg_priv_ptr field
         C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(parts_glbl);
