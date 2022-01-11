@@ -250,7 +250,7 @@ static void insertion_sort(
 {
     if (head == nullptr)
         return;
-    
+
     // perform insertion sort on list
     spmm_elt_t *sorted_head = head;
     spmm_elt_t *sorted_tail = head;
@@ -260,10 +260,10 @@ static void insertion_sort(
         // remove curr from list
         spmm_elt_t *curr = sorted_tail->tbl_next;
         bsg_print_int(curr->part.idx);
-        sorted_tail->tbl_next = curr->tbl_next;        
+        sorted_tail->tbl_next = curr->tbl_next;
         // special case; goes at start
         if (curr->part.idx < sorted_head->part.idx) {
-            bsg_print_int(-sorted_head->part.idx);            
+            bsg_print_int(-sorted_head->part.idx);
             curr->tbl_next = sorted_head;
             sorted_head = curr;
             continue;
@@ -272,7 +272,7 @@ static void insertion_sort(
         spmm_elt_t *cand = prev->tbl_next;
         while (prev != sorted_tail) {
             // check if have found the right spot
-            bsg_print_int(-cand->part.idx);            
+            bsg_print_int(-cand->part.idx);
             if (cand->part.idx >= curr->part.idx) {
                 break;
             }
@@ -280,8 +280,8 @@ static void insertion_sort(
             prev = cand;
             cand = cand->tbl_next;
         }
-        curr->tbl_next = cand;        
-        prev->tbl_next = curr;               
+        curr->tbl_next = cand;
+        prev->tbl_next = curr;
         if (prev == sorted_tail) {
             // we reached the end
             sorted_tail = curr;
