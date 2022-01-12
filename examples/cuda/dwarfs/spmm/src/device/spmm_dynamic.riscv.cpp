@@ -64,6 +64,7 @@ extern "C" int kernel_spmm(
         int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
         for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
             spmm_solve_row(Ci);
+            //bsg_print_float(static_cast<float>(Ci));
         }
     }
 //#endif
