@@ -245,7 +245,7 @@ static void sort_table()
 static void insertion_sort(
     spmm_elt_t *head
     , spmm_elt_t *tail
-    , spmm_elt_t **sorted_head_out
+    , spmm_elt_t *sorted_head_out
     , spmm_elt_t **sorted_tail_out)
 {
     if (head == nullptr)
@@ -259,20 +259,14 @@ static void insertion_sort(
     while (sorted_tail->tbl_next != stop) {
         // remove curr from list
         spmm_elt_t *curr = sorted_tail->tbl_next;
-        bsg_print_int(curr->part.idx);
+        //bsg_print_int(curr->part.idx);
         sorted_tail->tbl_next = curr->tbl_next;
-        // special case; goes at start
-        if (curr->part.idx < sorted_head->part.idx) {
-            bsg_print_int(-sorted_head->part.idx);
-            curr->tbl_next = sorted_head;
-            sorted_head = curr;
-            continue;
-        }
+
         spmm_elt_t *prev = sorted_head;
         spmm_elt_t *cand = prev->tbl_next;
         while (prev != sorted_tail) {
             // check if have found the right spot
-            bsg_print_int(-cand->part.idx);
+            //bsg_print_int(-cand->part.idx);
             if (cand->part.idx >= curr->part.idx) {
                 break;
             }
@@ -287,9 +281,111 @@ static void insertion_sort(
             sorted_tail = curr;
         }
     }
-    *sorted_head_out = sorted_head;
+    sorted_head_out->tbl_next = sorted_head->tbl_next;
     *sorted_tail_out = sorted_tail;
-    bsg_print_hexadecimal(0xD00D);
+    //bsg_print_hexadecimal(0xD00D);
+}
+
+static void pivot_sort_helper(
+    spmm_elt_t *head
+    ,spmm_elt_t *tail
+    ,spmm_elt_t *sorted_head_out
+    ,spmm_elt_t **sorted_tail_out
+    ,int depth
+    )
+{
+    constexpr int MAX_DEPTH = 5;
+    if (head == tail) {
+        // bsg_print_hexadecimal(0xE391E000 | depth);
+        sorted_head_out->tbl_next = head->tbl_next;
+        *sorted_tail_out = sorted_head_out;
+    } else if (depth == MAX_DEPTH) {
+        // we've reached the max depth;
+        // do an insertion sort
+        // bsg_print_hexadecimal(0xDE914000 | depth);
+        insertion_sort(
+            head
+            ,tail
+            ,sorted_head_out
+            ,sorted_tail_out
+            );
+    } else {
+        // bsg_print_hexadecimal(0x91701000 | depth);
+        // bsg_print_hexadecimal((unsigned)head);
+        // bsg_print_hexadecimal((unsigned)tail);
+        // pivot
+        // select the head as the pivot
+        spmm_elt_t *pivot = head->tbl_next;
+        head->tbl_next = pivot->tbl_next;
+        pivot->tbl_next = nullptr;
+        
+        spmm_elt_t lt_head, *lt_tail;
+        spmm_elt_t gt_head, *gt_tail;
+        lt_head.tbl_next = nullptr;
+        gt_head.tbl_next = nullptr;
+        lt_tail = &lt_head;
+        gt_tail = &gt_head;
+        spmm_elt_t *curr = head->tbl_next;
+        spmm_elt_t *stop = tail->tbl_next;
+        while (curr != stop) {
+            // remove curr from list
+            spmm_elt_t *next = curr->tbl_next;
+            curr->tbl_next = nullptr;
+            if (curr->part.idx < pivot->part.idx) {
+                //bsg_print_int(-curr->part.idx);
+                lt_tail->tbl_next = curr;
+                lt_tail = curr;
+            } else {
+                //bsg_print_int(curr->part.idx);                
+                gt_tail->tbl_next = curr;
+                gt_tail = curr;
+            }
+            curr = next;
+        }
+
+        // sort both lists
+        pivot_sort_helper(
+            &lt_head
+            ,lt_tail
+            ,&lt_head
+            ,&lt_tail
+            ,depth+1
+            );
+        pivot_sort_helper(
+            &gt_head
+            ,gt_tail
+            ,&gt_head
+            ,&gt_tail
+            ,depth+1
+            );
+
+        // merge two list        
+        lt_tail->tbl_next = pivot;
+        pivot->tbl_next = gt_head.tbl_next;
+
+        // set outputs
+        sorted_head_out->tbl_next = lt_head.tbl_next;
+        *sorted_tail_out = (gt_tail == &gt_head ? pivot : gt_tail);
+    }
+    // bsg_print_hexadecimal(0x5041ED00 | depth);
+    // bsg_print_hexadecimal((unsigned)sorted_head_out->tbl_next);
+    // bsg_print_hexadecimal((unsigned)(*sorted_tail_out));
+}
+
+static void pivot_sort(
+    spmm_elt_t *head
+    ,spmm_elt_t *tail
+    ,spmm_elt_t *sorted_head_out
+    ,spmm_elt_t **sorted_tail_out
+    )
+{
+    pivot_sort_helper(
+        head
+        ,tail
+        ,sorted_head_out
+        ,sorted_tail_out
+        ,0
+        );
 }
 
 static void init()
@@ -500,10 +596,10 @@ void spmm_solve_row(int Ai)
         std::size_t size = sizeof(spmm_partial_t)*hash_table_coop::tbl_size;
 
         // pad up to a cache line
-        std::size_t rem = size & (VCACHE_STRIPE_WORDS*sizeof(int)-1);
-        if (rem != 0)
-            size += (VCACHE_STRIPE_WORDS*sizeof(int) - rem);
-
+        std::size_t rem = size % (VCACHE_STRIPE_WORDS*sizeof(int));
+        if (rem > 0)
+            size += (VCACHE_STRIPE_WORDS*sizeof(int)) - rem;
+        
         spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(size);
 
         //bsg_print_int(tbl_size);
@@ -513,12 +609,14 @@ void spmm_solve_row(int Ai)
                , parts_glbl);
 
         // sort
-        hash_table_coop::insertion_sort(
-            hash_table_coop::tbl_head.tbl_next
+#ifdef SPMM_SKIP_SORTING
+        hash_table_coop::pivot_sort(
+            &hash_table_coop::tbl_head
             , hash_table_coop::tbl_tail
-            , &hash_table_coop::tbl_head.tbl_next
+            , &hash_table_coop::tbl_head
             , &hash_table_coop::tbl_tail
             );
+#endif
 
         // for each entry in the table
         int j = 0; // tracks nonzero number
