@@ -41,7 +41,7 @@ extern "C" int kernel_spmm(
 #if defined(__PART__)
     int row_start = C_part_lcl.partinfo.major_start;
     int row_stop  = C_part_lcl.partinfo.major_stop;
-#else
+#elif !defined(__ABREV__)
     int row_start = 0;
     int row_stop  = A_lcl.n_major;
 #endif
