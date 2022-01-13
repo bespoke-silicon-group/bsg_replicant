@@ -1,4 +1,5 @@
 #pragma once
+#include <cstdint>
 #include "bsg_tile_config_vars.h"
 
 namespace utils
@@ -44,4 +45,50 @@ namespace utils
             return tile_y+1;
         }
     }
+
+    /**
+     * check if memory is in dram
+     */
+    template <typename T>
+    static inline int is_dram(T *tp)
+    {
+        intptr_t ptr = reinterpret_cast<intptr_t>(tp);
+        return ptr & 0x80000000;
+    }
+
+    /**
+     * check if memory is in tile-group shared
+     */
+    template <typename T>
+    static inline int is_tile_group(T *tp)
+    {
+        intptr_t ptr = reinterpret_cast<intptr_t>(tp);
+        return ptr & 0xe0000000 == 0x20000000;
+    }
+
+    /**
+     * check if memory is in global tile memory
+     */
+    template <typename T>
+    static inline int is_tile_global(T *tp)
+    {
+        intptr_t ptr = reinterpret_cast<intptr_t>(tp);
+        return ptr & 0xc0000000 == 0x40000000;
+    }
+
+    /**
+     * check if memory is in tile local memory
+     */
+    template <typename T>
+    static inline int is_tile_local(T *tp)
+    {
+        intptr_t ptr = reinterpret_cast<intptr_t>(tp);        
+        return !(ptr & 0xe0000000);
+    }
 }
+
+/**
+ * Number of elements in static array
+ */
+#define ARRAY_SIZE(x)                              \
+    (sizeof(x)/sizeof(x[0]))
