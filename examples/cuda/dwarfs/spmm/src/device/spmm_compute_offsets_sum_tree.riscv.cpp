@@ -83,7 +83,7 @@ void spmm_compute_offsets()
     int start = C_part_lcl.partinfo.major_start + __bsg_id * region_size;
     int end = std::min(start + region_size, C_part_lcl.partinfo.major_stop+1);
 #else
-    int region_size = (C_lcl.n_major + THREADS - 1)/THREADS;
+    int region_size = (C_lcl.n_major + THREADS)/THREADS;
     int start = __bsg_id * region_size;
     int end   = std::min(start + region_size, C_lcl.n_major+1);
 #endif

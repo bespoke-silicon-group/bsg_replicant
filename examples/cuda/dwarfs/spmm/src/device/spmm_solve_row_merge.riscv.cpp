@@ -29,9 +29,26 @@ namespace solve_row_merge
         list_t *list
         ) {
         list->tail = &list->head;
-        list->head.next = nullptr;
+        list->head.next = &list->head;
     }
 
+    /**
+     * clear a list
+     */
+    static inline void list_clear(
+        list_t *list
+        ) {
+        list_init(list);
+    }
+
+    /**
+     * check if list is empty
+     */
+    static inline int list_empty(
+        list_t *list
+        ) {
+        return list->head.next == &list->head;
+    }
     /**
      * append to list
      */
@@ -41,43 +58,59 @@ namespace solve_row_merge
         ) {
         list->tail->next = node;
         list->tail = node;
-        node->next = nullptr;
+        node->next = &list->head;
+    }
+    /**
+     * prepend to list
+     */
+    static inline void list_prepend(
+        list_t *list
+        ,list_node_t *node
+        ) {
+        if (list_empty(list))
+            list->tail = node;
+        
+        node->next = list->head.next;
+        list->head.next = node;
+    }
+    /**
+     * extend list with another
+     */
+    static inline void list_extend(
+        list_t *extend_to
+        ,list_t *with
+        ) {
+        if (!list_empty(with)) {
+            extend_to->tail->next = with->head.next;
+            extend_to->tail = with->tail;
+            extend_to->tail->next = &extend_to->head;
+            list_clear(with);
+        }
     }
 
+    static inline list_node_t *list_front(
+        list_t *list
+        ) {
+        return list->head.next;
+    }
+    
     /**
      * pop from the front of the list
      */
-    static inline list_node_t * list_pop_front(
+    static inline void list_pop_front(
         list_t *list
         ) {
-        list_node_t *tmp = list->head.next;
-        list->head.next = tmp->next;
-        tmp->next = nullptr;
-        // update tail if necessary
-        if (list->head.next == nullptr)
-            list->tail = &list->head;
-        return tmp;
+        if (!list_empty(list)) {            
+            list_node_t *tmp = list->head.next;
+            list->head.next = tmp->next;
+            tmp->next = nullptr;
+
+            // update tail if necessary
+            if (list_empty(list))
+                list->tail = &list->head;
+        }
     }
 
-
-    /**
-     * clear a list
-     */
-    static inline void list_clear(
-        list_t *list
-        ) {
-        list->head.next = nullptr;
-        list->tail = &list->head;
-    }
-
-    /**
-     * check if list is empty
-     */
-    static inline int list_empty(
-        list_t *list
-        ) {
-        return list->tail == &list->head;
-    }
     /**
      * move a list
      */
@@ -85,8 +118,12 @@ namespace solve_row_merge
         list_t *dst
         ,list_t *src
         ) {
-        dst->head.next = src->head.next;
-        dst->tail = (list_empty(src) ? &dst->head : src->tail);
+        if (!list_empty(src) && (dst != src)) {
+            dst->head.next = src->head.next;
+            dst->tail =  src->tail;
+            dst->tail->next = &dst->head;
+            list_clear(src);
+        }
     }
     /**
      * partial list node
@@ -127,39 +164,28 @@ namespace solve_row_merge
      * allocate a new partial
      */
     static partial_t *new_partial() {
-        bsg_print_hexadecimal(0xAAAAAAAA);
         // prioritize tile group memory
         list_node_t *tmp;
         if (list_empty(&free_tg)) {
             // allocate from offchip memory
             if (list_empty(&free_offchip)) {                
                 // use malloc to allocate a new chunk
-                //bsg_print_hexadecimal(0xFFFF0000);                
                 partial_t *parts = (partial_t*)spmm_malloc(sizeof(partial_t) * VCACHE_STRIPE_WORDS);
                 for (int i = 0; i < VCACHE_STRIPE_WORDS; i++) {
                     list_append(&free_offchip, &parts[i].tbl);
                 }
-#if 0
-                int i = 0;
-                for (; i < VCACHE_STRIPE_WORDS-1; i++) {
-                    parts[i].tbl.next = &parts[i+1].tbl;
-                }
-                parts[i].tbl.next = nullptr;
-                free_offchip.tail->next = &parts[0].tbl;
-                free_offchip.tail = &parts[i].tbl;
-#endif
                 // pop head
-                tmp = list_pop_front(&free_offchip);
+                tmp = list_front(&free_offchip);
+                list_pop_front(&free_offchip);
             } else {
-                //bsg_print_hexadecimal(0xFFFF0001);
-                tmp = list_pop_front(&free_offchip);
+                tmp = list_front(&free_offchip);
+                list_pop_front(&free_offchip);
             }
         } else {
             // allocate from tile group memory
-            //bsg_print_hexadecimal(0xFFFF0002);
-            tmp = list_pop_front(&free_tg);
+            tmp = list_front(&free_tg);
+            list_pop_front(&free_tg);
         }
-        bsg_print_hexadecimal((unsigned)partial_from_node(tmp));
         return partial_from_node(tmp);
     }
 
@@ -167,15 +193,9 @@ namespace solve_row_merge
      * free a partial
      */
     static void free_partial(partial_t *part) {
-        bsg_print_hexadecimal(0xBBBBBBBB);
-        bsg_print_hexadecimal((unsigned)part);
         if (utils::is_dram(part)) {
-            //bsg_print_hexadecimal(0xEEEEEEEE);
-            //bsg_print_hexadecimal((unsigned)part);
             list_append(&free_offchip, &part->tbl);
         } else {
-            //bsg_print_hexadecimal(0xDDDDDDDD);
-            //bsg_print_hexadecimal((unsigned)part);            
             list_append(&free_tg, &part->tbl);
         }
     }
@@ -190,80 +210,51 @@ namespace solve_row_merge
         // outputs
         ,list_t *merged_list_o
         ) {
-        // for iterating over two input lists
-        list_node_t *frst_curr = frst_list->head.next;
-        list_node_t *scnd_curr = scnd_list->head.next;        
-        list_node_t *frst_stop = frst_list->tail->next;
-        list_node_t *scnd_stop = scnd_list->tail->next;
 
-        // build the merged list head
         list_t merged;
         list_init(&merged);
-        
-        // until we reach end of list
-        while (frst_curr != frst_stop
-               && scnd_curr != scnd_stop) {
-            partial_t *frst = partial_from_node(frst_curr);
-            partial_t *scnd = partial_from_node(scnd_curr);
-            // prefetch
-            float frst_v = frst->iv.val;
-            float scnd_v = scnd->iv.val;
-            list_node_t *frst_next = frst_curr->next;
-            list_node_t *scnd_next = scnd_curr->next;
-            bsg_compiler_memory_barrier();
-            frst_curr->next = nullptr;
-            scnd_curr->next = nullptr;
-            if (frst->iv.idx < scnd->iv.idx) {
-                // add frst to merged list
-                // todo: make this an amoswap?
-                // nope - if this lives in tile memory
-                // an amoswap will fail
-                list_append(&merged, frst_curr);
-                frst_curr = frst_next;
-            } else if (frst->iv.idx > scnd->iv.idx) {
-                // add scnd to merged list
-                list_append(&merged, scnd_curr);
-                scnd_curr = scnd_next;
-            } else {
-                // merge one into the other
-                if (utils::is_dram(frst)) {
-                    // merge frst -> scnd
-                    scnd->iv.val = frst_v + scnd_v;
-                    // free frst
-                    free_partial(frst);
-                    // add scnd to merged
-                    list_append(&merged, scnd_curr);
-                } else {
-                    // merge scnd -> frst
-                    frst->iv.val = frst_v + scnd_v;
-                    // free scnd
-                    free_partial(scnd);
-                    // add frst to merged
-                    list_append(&merged, frst_curr);
-                }
-                // iterate both lists
-                frst_curr = frst_next;
-                scnd_curr = scnd_next;
-            }
-        }
-        if (frst_curr != frst_stop) {
-            merged.tail->next = frst_curr;
-            merged.tail = frst_list->tail;
-        } else if (scnd_curr != scnd_stop) {
-            merged.tail->next = scnd_curr;
-            merged.tail = scnd_list->tail;
-        }
-        // clear first and scnd
-        list_clear(frst_list);
-        list_clear(scnd_list);
 
-        for (list_node_t *tmp = merged.head.next;
-             tmp != merged.tail->next;
-             tmp = tmp->next) {
-            //bsg_print_hexadecimal((unsigned)partial_from_node(tmp));
+        while (!list_empty(frst_list) && !list_empty(scnd_list)) {
+            partial_t *frst = partial_from_node(list_front(frst_list));
+            partial_t *scnd = partial_from_node(list_front(scnd_list));
+            // compare
+            if (frst->iv.idx < scnd->iv.idx) {
+                // pop from frst
+                list_pop_front(frst_list);
+                // append first to merged
+                list_append(&merged, &frst->tbl);
+            } else if (scnd->iv.idx < frst->iv.idx) {
+                // pop from scnd
+                list_pop_front(scnd_list);
+                // append second to merged
+                list_append(&merged, &scnd->tbl);
+            } else {
+                partial_t *from, *into;
+                if (utils::is_dram(frst)) {
+                    from = frst;
+                    into = scnd;
+                } else {
+                    from = scnd;
+                    into = frst;
+                }
+                into->iv.val += from->iv.val;
+                // pop frst and scnd
+                list_pop_front(frst_list);
+                list_pop_front(scnd_list);
+                // append 'into' to merged
+                list_append(&merged, &into->tbl);
+                // free 'from'
+                free_partial(from);
+            }
+        }        
+        // extend what's left        
+        if (!list_empty(frst_list)) {
+            list_extend(&merged, frst_list);
+        } else if (!list_empty(scnd_list)) {
+            list_extend(&merged, scnd_list);
         }
-        // move output
         list_move(merged_list_o, &merged);
+        return;
     }
 
     /**
@@ -294,8 +285,6 @@ namespace solve_row_merge
 #if defined(SPMM_PREFETCH)
 #define PREFETCH 4
         for (; nz + PREFETCH < nnz; nz += PREFETCH) {
-            //bsg_print_int(nz);            
-            //bsg_print_int(nnz);
             partial_t *part[PREFETCH];
             for (int pre = 0; pre < PREFETCH; pre++) {
                 part[pre] = new_partial();
@@ -321,7 +310,6 @@ namespace solve_row_merge
 #endif
                 part[pre]->iv.idx = Bj[pre];
                 part[pre]->iv.val = Cij[pre];
-                //bsg_print_hexadecimal(part[pre]->iv.idx);
             }
 
             for (int pre = 0; pre < PREFETCH; pre++)
@@ -330,8 +318,6 @@ namespace solve_row_merge
 #endif
         // strip mining code
         for (; nz < nnz; nz++) {
-            //bsg_print_int(nz);
-            //bsg_print_int(nnz);            
             float Bij, Cij;
             int   Bj;
             Bij = vals[nz];
@@ -345,16 +331,13 @@ namespace solve_row_merge
 #endif
             part->iv.idx = Bj;
             part->iv.val = Cij;
-            //bsg_print_hexadecimal(part->iv.idx);            
             list_append(&to_merge, &part->tbl);
         }
 
         // merge results
-        //bsg_print_hexadecimal(0xCAFEBABE);
         bsg_compiler_memory_barrier();
         merge(&row_partials, &to_merge, &row_partials);
         bsg_compiler_memory_barrier();        
-        //bsg_print_hexadecimal(0xDEADBEEF);
     }
 }
 
@@ -366,15 +349,17 @@ void spmm_solve_row(int Ai)
     //int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
     int nnz = A_lcl.mnr_off_remote_ptr[Ai+1]-off;
 
+    // clear list of partial results
+    list_clear(&row_partials);
+    
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &A_lcl.val_remote_ptr[off];
-
+    
     // for each nonzero entry in row A[i:]
     for (int nz = 0; nz < nnz; nz++) {
         int Bi = cols[nz];
         float Aij = vals[nz];
-        bsg_print_float(-static_cast<float>(Bi));
         scalar_row_product(Aij, Bi);
     }
 
@@ -387,40 +372,24 @@ void spmm_solve_row(int Ai)
             sz += (align-rem);
         
         spmm_partial_t *save_buffer = (spmm_partial_t*)spmm_malloc(sz);
-        
-        list_node_t *start = row_partials.head.next;
-        list_node_t *stop  = row_partials.tail->next;
         int nz = 0;
-        //bsg_print_hexadecimal(0xBEBADA55);
-        for (list_node_t *node = start; node != stop; ) {
-            // prefetch next
-            list_node_t *next = node->next;
-            bsg_compiler_memory_barrier();
-            // fetch idx
-            partial_t *part = partial_from_node(node);
-            //bsg_print_hexadecimal((unsigned)part);
-            int idx = part->iv.idx;
-            bsg_compiler_memory_barrier();
-            // fetch val
-            float val = part->iv.val;
-            bsg_compiler_memory_barrier();
-            // free part
+        pr_dbg("solve_row: write back\n");
+        pr_dbg("&row_partials->head = %p\n", &row_partials.head);
+        while (!list_empty(&row_partials)) {
+            partial_t *part = partial_from_node(list_front(&row_partials));
+            pr_dbg("part = %p\n", part);            
+            list_pop_front(&row_partials);
+            save_buffer[nz] = part->iv;
             free_partial(part);
-            bsg_compiler_memory_barrier();
-            // write to save buffer
-            save_buffer[nz].idx = idx;
-            save_buffer[nz].val = val;
-            nz++;            
-            node = next;
+            nz++;
         }
-        //bsg_print_hexadecimal(0xADDAB011);        
+
         nnz = nz;
         // store as array of partials
         C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(save_buffer);
         C_lcl.mjr_nnz_remote_ptr[Ai] = nnz;        
     }
 
-    list_clear(&row_partials);
     // update the global number of nonzeros
     std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));
     nnzp->fetch_add(nnz);
@@ -436,13 +405,9 @@ void spmm_solve_row_init()
     list_init(&free_tg);
     list_init(&free_offchip);
     list_init(&row_partials);
-    int i;
-    for (i = 0; i < ARRAY_SIZE(__local_partial_pool)-1; i++) {
-        __local_partial_pool[i].tbl.next = &__local_partial_pool[i+1].tbl;
+    for (int i = 0; i < ARRAY_SIZE(__local_partial_pool); i++) {
+        list_append(&free_tg, &__local_partial_pool[i].tbl);
     }
-    __local_partial_pool[i].tbl.next = nullptr;
-    free_tg.head.next = &__local_partial_pool[0].tbl;
-    free_tg.tail = &__local_partial_pool[i].tbl;
     // do we just allocate a huge chunk here?
     return;
 }
