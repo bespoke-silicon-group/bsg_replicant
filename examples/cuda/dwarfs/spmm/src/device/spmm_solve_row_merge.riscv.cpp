@@ -111,7 +111,8 @@ namespace solve_row_merge
     /**
      * pool of free tile group partial results
      */
-    static partial_t __local_partial_pool[SPMM_SOLVE_ROW_LOCAL_DATA_WORDS/sizeof(partial_t)];
+     static partial_t
+     __local_partial_pool[SPMM_SOLVE_ROW_LOCAL_DATA_WORDS/(sizeof(partial_t)/sizeof(int))];
     /**
      * list of free nodes in tile group memory
      */
@@ -126,15 +127,19 @@ namespace solve_row_merge
      * allocate a new partial
      */
     static partial_t *new_partial() {
-        bsg_print_hexadecimal(0xBEADBEAD);
+        bsg_print_hexadecimal(0xAAAAAAAA);
         // prioritize tile group memory
         list_node_t *tmp;
         if (list_empty(&free_tg)) {
             // allocate from offchip memory
             if (list_empty(&free_offchip)) {                
                 // use malloc to allocate a new chunk
-                bsg_print_hexadecimal(0xFFFF0000);                
+                //bsg_print_hexadecimal(0xFFFF0000);                
                 partial_t *parts = (partial_t*)spmm_malloc(sizeof(partial_t) * VCACHE_STRIPE_WORDS);
+                for (int i = 0; i < VCACHE_STRIPE_WORDS; i++) {
+                    list_append(&free_offchip, &parts[i].tbl);
+                }
+#if 0
                 int i = 0;
                 for (; i < VCACHE_STRIPE_WORDS-1; i++) {
                     parts[i].tbl.next = &parts[i+1].tbl;
@@ -142,15 +147,16 @@ namespace solve_row_merge
                 parts[i].tbl.next = nullptr;
                 free_offchip.tail->next = &parts[0].tbl;
                 free_offchip.tail = &parts[i].tbl;
+#endif
                 // pop head
                 tmp = list_pop_front(&free_offchip);
             } else {
-                bsg_print_hexadecimal(0xFFFF0001);
+                //bsg_print_hexadecimal(0xFFFF0001);
                 tmp = list_pop_front(&free_offchip);
             }
         } else {
             // allocate from tile group memory
-            bsg_print_hexadecimal(0xFFFF0002);
+            //bsg_print_hexadecimal(0xFFFF0002);
             tmp = list_pop_front(&free_tg);
         }
         bsg_print_hexadecimal((unsigned)partial_from_node(tmp));
@@ -161,13 +167,15 @@ namespace solve_row_merge
      * free a partial
      */
     static void free_partial(partial_t *part) {
+        bsg_print_hexadecimal(0xBBBBBBBB);
+        bsg_print_hexadecimal((unsigned)part);
         if (utils::is_dram(part)) {
-            bsg_print_hexadecimal(0xEEEEEEEE);
-            bsg_print_hexadecimal((unsigned)part);
+            //bsg_print_hexadecimal(0xEEEEEEEE);
+            //bsg_print_hexadecimal((unsigned)part);
             list_append(&free_offchip, &part->tbl);
         } else {
-            bsg_print_hexadecimal(0xDDDDDDDD);
-            bsg_print_hexadecimal((unsigned)part);            
+            //bsg_print_hexadecimal(0xDDDDDDDD);
+            //bsg_print_hexadecimal((unsigned)part);            
             list_append(&free_tg, &part->tbl);
         }
     }
@@ -184,13 +192,10 @@ namespace solve_row_merge
         ) {
         // for iterating over two input lists
         list_node_t *frst_curr = frst_list->head.next;
-        list_node_t *scnd_curr = scnd_list->head.next;
+        list_node_t *scnd_curr = scnd_list->head.next;        
         list_node_t *frst_stop = frst_list->tail->next;
         list_node_t *scnd_stop = scnd_list->tail->next;
-        bsg_print_hexadecimal((unsigned)frst_curr);
-        bsg_print_hexadecimal((unsigned)frst_stop);
-        bsg_print_hexadecimal((unsigned)scnd_curr);
-        bsg_print_hexadecimal((unsigned)scnd_stop);        
+
         // build the merged list head
         list_t merged;
         list_init(&merged);
@@ -225,23 +230,20 @@ namespace solve_row_merge
                     // merge frst -> scnd
                     scnd->iv.val = frst_v + scnd_v;
                     // free frst
-                    list_append(&free_offchip, frst_curr);
+                    free_partial(frst);
                     // add scnd to merged
                     list_append(&merged, scnd_curr);
-                    scnd_curr = scnd_next;
                 } else {
                     // merge scnd -> frst
                     frst->iv.val = frst_v + scnd_v;
                     // free scnd
-                    if (utils::is_dram(scnd)) {
-                        list_append(&free_offchip, scnd_curr);
-                    } else {
-                        list_append(&free_tg, scnd_curr);
-                    }
+                    free_partial(scnd);
                     // add frst to merged
                     list_append(&merged, frst_curr);
-                    frst_curr = frst_next;
                 }
+                // iterate both lists
+                frst_curr = frst_next;
+                scnd_curr = scnd_next;
             }
         }
         if (frst_curr != frst_stop) {
@@ -254,6 +256,12 @@ namespace solve_row_merge
         // clear first and scnd
         list_clear(frst_list);
         list_clear(scnd_list);
+
+        for (list_node_t *tmp = merged.head.next;
+             tmp != merged.tail->next;
+             tmp = tmp->next) {
+            //bsg_print_hexadecimal((unsigned)partial_from_node(tmp));
+        }
         // move output
         list_move(merged_list_o, &merged);
     }
@@ -286,8 +294,8 @@ namespace solve_row_merge
 #if defined(SPMM_PREFETCH)
 #define PREFETCH 4
         for (; nz + PREFETCH < nnz; nz += PREFETCH) {
-            bsg_print_int(nz);            
-            bsg_print_int(nnz);
+            //bsg_print_int(nz);            
+            //bsg_print_int(nnz);
             partial_t *part[PREFETCH];
             for (int pre = 0; pre < PREFETCH; pre++) {
                 part[pre] = new_partial();
@@ -322,8 +330,8 @@ namespace solve_row_merge
 #endif
         // strip mining code
         for (; nz < nnz; nz++) {
-            bsg_print_int(nz);
-            bsg_print_int(nnz);            
+            //bsg_print_int(nz);
+            //bsg_print_int(nnz);            
             float Bij, Cij;
             int   Bj;
             Bij = vals[nz];
@@ -342,11 +350,11 @@ namespace solve_row_merge
         }
 
         // merge results
-        bsg_print_hexadecimal(0xCAFEBABE);
+        //bsg_print_hexadecimal(0xCAFEBABE);
         bsg_compiler_memory_barrier();
         merge(&row_partials, &to_merge, &row_partials);
         bsg_compiler_memory_barrier();        
-        bsg_print_hexadecimal(0xDEADBEEF);
+        //bsg_print_hexadecimal(0xDEADBEEF);
     }
 }
 
@@ -383,14 +391,14 @@ void spmm_solve_row(int Ai)
         list_node_t *start = row_partials.head.next;
         list_node_t *stop  = row_partials.tail->next;
         int nz = 0;
-        bsg_print_hexadecimal(0xBEBADA55);
+        //bsg_print_hexadecimal(0xBEBADA55);
         for (list_node_t *node = start; node != stop; ) {
             // prefetch next
             list_node_t *next = node->next;
             bsg_compiler_memory_barrier();
             // fetch idx
             partial_t *part = partial_from_node(node);
-            bsg_print_hexadecimal((unsigned)part);
+            //bsg_print_hexadecimal((unsigned)part);
             int idx = part->iv.idx;
             bsg_compiler_memory_barrier();
             // fetch val
@@ -405,10 +413,11 @@ void spmm_solve_row(int Ai)
             nz++;            
             node = next;
         }
-        bsg_print_hexadecimal(0xADDAB011);        
+        //bsg_print_hexadecimal(0xADDAB011);        
         nnz = nz;
         // store as array of partials
         C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(save_buffer);
+        C_lcl.mjr_nnz_remote_ptr[Ai] = nnz;        
     }
 
     list_clear(&row_partials);
