@@ -5,6 +5,10 @@
 #include "spmm_solve_row.hpp"
 #include "spmm_utils.hpp"
 
+#ifdef SPMM_PREFETCH
+#define PREFETCH 4
+#endif
+
 namespace solve_row_merge
 {
     /**
@@ -283,7 +287,6 @@ namespace solve_row_merge
 
         int nz = 0;
 #if defined(SPMM_PREFETCH)
-#define PREFETCH 4
         for (; nz + PREFETCH < nnz; nz += PREFETCH) {
             partial_t *part[PREFETCH];
             for (int pre = 0; pre < PREFETCH; pre++) {
@@ -355,9 +358,24 @@ void spmm_solve_row(int Ai)
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &A_lcl.val_remote_ptr[off];
-    
+
+    int nz = 0;
+#ifdef SPMM_PREFETCH
+    for (; nz + PREFETCH < nnz; nz += PREFETCH) {
+        int    Bi[PREFETCH];
+        float Aij[PREFETCH];
+        bsg_unroll(4)
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            Bi[pre] = cols[nz+pre];
+            Aij[pre] = vals[nz+pre];            
+        }
+        for (int pre = 0; pre < PREFETCH; pre++) {
+            scalar_row_product(Aij[pre], Bi[pre]);
+        }
+    }
+#endif
     // for each nonzero entry in row A[i:]
-    for (int nz = 0; nz < nnz; nz++) {
+    for (; nz < nnz; nz++) {
         int Bi = cols[nz];
         float Aij = vals[nz];
         scalar_row_product(Aij, Bi);
