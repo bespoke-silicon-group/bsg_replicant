@@ -29,7 +29,7 @@ static void free_elt(spmm_elt_t *elt);
 
 
 #define TILE_ELT_POOL_SIZE \
-    ((SPMM_SOLVE_ROW_LOCAL_DATA_WORDS-NZ_BLOCK_SIZE)/sizeof(spmm_elt_t))
+    ((SPMM_SOLVE_ROW_LOCAL_DATA_WORDS/(sizeof(spmm_elt_t)/sizeof(int))))
 
 /**
  * Pool of free entries allocated in tiles
@@ -71,30 +71,25 @@ static spmm_elt_t* alloc_elt()
         elt = free_local_head;
         free_local_head = elt->tbl_next;
         elt->tbl_next = nullptr;
-        return elt;
-            // try to allocate from global memory
+        // try to allocate from global memory
     } else if (free_global_head != nullptr) {
         elt = free_global_head;
         free_global_head = elt->tbl_next;
         elt->tbl_next = nullptr;
-        return elt;
         // allocate more frames from global memory
     } else {
         spmm_elt_t *newelts = (spmm_elt_t*)spmm_malloc(elts_realloc_size*sizeof(spmm_elt_t));
         int i;
         // just in case this ever happens
-        bsg_print_hexadecimal(0xdeadbeef);
         for (i = 0; i < elts_realloc_size-1; i++) {
             newelts[i].tbl_next = &newelts[i+1];
         }
         newelts[elts_realloc_size-1].tbl_next = nullptr;
         free_global_head = &newelts[0];
-        pr_dbg("  %s: free_global_head = 0x%08x\n"
-               , __func__
-               , free_global_head);
         elts_realloc_size <<= 1;
-        return alloc_elt();
+        elt = alloc_elt();
     }
+    return elt;
 }
 
 /**
@@ -102,10 +97,9 @@ static spmm_elt_t* alloc_elt()
  */
 static void free_elt(spmm_elt_t *elt)
 {
-    intptr_t eltaddr = reinterpret_cast<intptr_t>(elt);
     elt->bkt_next = nullptr;
     // belongs in local memory?
-    if (!(eltaddr & 0x80000000)) {
+    if (utils::is_dram(elt)) {
         elt->tbl_next = free_local_head;
         free_local_head = elt;
         // belongs in global
@@ -188,14 +182,12 @@ static void insertion_sort(
     while (sorted_tail->tbl_next != stop) {
         // remove curr from list
         spmm_elt_t *curr = sorted_tail->tbl_next;
-        //bsg_print_int(curr->part.idx);
         sorted_tail->tbl_next = curr->tbl_next;
 
         spmm_elt_t *prev = sorted_head;
         spmm_elt_t *cand = prev->tbl_next;
         while (prev != sorted_tail) {
             // check if have found the right spot
-            //bsg_print_int(-cand->part.idx);
             if (cand->part.idx >= curr->part.idx) {
                 break;
             }
@@ -212,7 +204,6 @@ static void insertion_sort(
     }
     sorted_head_out->tbl_next = sorted_head->tbl_next;
     *sorted_tail_out = sorted_tail;
-    //bsg_print_hexadecimal(0xD00D);
 }
 
 static void pivot_sort_helper(
@@ -225,13 +216,11 @@ static void pivot_sort_helper(
 {
     constexpr int MAX_DEPTH = 5;
     if (head == tail) {
-        // bsg_print_hexadecimal(0xE391E000 | depth);
         sorted_head_out->tbl_next = head->tbl_next;
         *sorted_tail_out = sorted_head_out;
     } else if (depth == MAX_DEPTH) {
         // we've reached the max depth;
         // do an insertion sort
-        // bsg_print_hexadecimal(0xDE914000 | depth);
         insertion_sort(
             head
             ,tail
@@ -239,9 +228,6 @@ static void pivot_sort_helper(
             ,sorted_tail_out
             );
     } else {
-        // bsg_print_hexadecimal(0x91701000 | depth);
-        // bsg_print_hexadecimal((unsigned)head);
-        // bsg_print_hexadecimal((unsigned)tail);
         // pivot
         // select the head as the pivot
         spmm_elt_t *pivot = head->tbl_next;
@@ -261,11 +247,9 @@ static void pivot_sort_helper(
             spmm_elt_t *next = curr->tbl_next;
             curr->tbl_next = nullptr;
             if (curr->part.idx < pivot->part.idx) {
-                //bsg_print_int(-curr->part.idx);
                 lt_tail->tbl_next = curr;
                 lt_tail = curr;
             } else {
-                //bsg_print_int(curr->part.idx);                
                 gt_tail->tbl_next = curr;
                 gt_tail = curr;
             }
@@ -296,9 +280,6 @@ static void pivot_sort_helper(
         sorted_head_out->tbl_next = lt_head.tbl_next;
         *sorted_tail_out = (gt_tail == &gt_head ? pivot : gt_tail);
     }
-    // bsg_print_hexadecimal(0x5041ED00 | depth);
-    // bsg_print_hexadecimal((unsigned)sorted_head_out->tbl_next);
-    // bsg_print_hexadecimal((unsigned)(*sorted_tail_out));
 }
 
 static void pivot_sort(
@@ -329,10 +310,6 @@ static void init()
                 = utils::is_south_not_north(utils::y())
                 ? bsg_tile_group_remote_pointer(utils::x(), utils::y()-i, &solve_row_done)
                 : bsg_tile_group_remote_pointer(utils::x(), utils::y()+i, &solve_row_done);
-            pr_dbg("%s: nonzeros_table_blocks[%d] = 0x%08x\n"
-                   , __func__
-                   , i
-                   , nonzeros_table_blocks[i]);
         }
     }
 
@@ -352,10 +329,6 @@ static void init()
     free_frame_last->bkt_next = nullptr;
     free_frame_last->tbl_next = nullptr;
     free_local_tail_init = free_frame_last;
-
-    pr_dbg("%s: free_local_head = 0x%08x\n"
-           , __func__
-           , free_local_tail_init);
 
     bsg_compiler_memory_barrier();
     barrier::spmm_barrier();
@@ -391,9 +364,6 @@ static void init()
                 );
             free_local_tail_init->tbl_next = *head;
             free_local_tail_init = *tail;
-            pr_dbg("%s: free_local_tail_init = 0x%08x\n"
-                   , __func__
-                   , free_local_tail_init);
         }
     }
 
@@ -405,7 +375,6 @@ static void init()
     if (!utils::is_cache_adjacent(utils::y())) {
         // wait until solve_row_done
         bsg_wait_local_int_asm(&solve_row_done, 1);
-        pr_dbg("%s: released\n", __func__);
     }
 }
 
@@ -491,8 +460,6 @@ static void spmm_scalar_row_product(float Aij, int Bi)
 
 void spmm_solve_row(int Ai)
 {
-    //bsg_print_int(Ai);
-    // pr_dbg("solving for row %3d\n", Ai);
     // set the number of partials to zero
     hash_table_coop::tbl_size = 0;
     hash_table_coop::tbl_head.tbl_next = nullptr;
@@ -500,13 +467,13 @@ void spmm_solve_row(int Ai)
 
     // fetch row meta data
     int off = A_lcl.mnr_off_remote_ptr[Ai];
-    //int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
     int nnz = A_lcl.mnr_off_remote_ptr[Ai+1]-off;
 
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &A_lcl.val_remote_ptr[off];
 
+    pr_dbg("solving row %d\n", Ai);
     // for each nonzero entry in row A[i:]
     for (int nz = 0; nz < nnz; nz++) {
         int Bi = cols[nz];
@@ -528,14 +495,9 @@ void spmm_solve_row(int Ai)
         
         spmm_partial_t *parts_glbl = (spmm_partial_t*)spmm_malloc(size);
 
-        //bsg_print_int(tbl_size);
-        pr_dbg("solved row %3d, saving %3d nonzeros to address 0x%08x\n"
-               , Ai
-               , hash_table_coop::tbl_size
-               , parts_glbl);
-
         // sort
 #ifdef SPMM_SKIP_SORTING
+        pr_dbg("sorting nonzeros for row %d\n", Ai);        
         hash_table_coop::pivot_sort(
             &hash_table_coop::tbl_head
             , hash_table_coop::tbl_tail
@@ -559,10 +521,7 @@ void spmm_solve_row(int Ai)
             bsg_compiler_memory_barrier();
             // clear table entry
             *hash_table_coop::hash(part.idx) = nullptr;
-            // copy to partitions
-            pr_dbg("  copying from 0x%08x to 0x%08x\n"
-                   , reinterpret_cast<unsigned>(e)
-                   , reinterpret_cast<unsigned>(&parts_glbl[j]));
+            // copy to partitions            
             parts_glbl[j++] = part;
             // free entry
             hash_table_coop::free_elt(e);
