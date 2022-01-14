@@ -63,8 +63,8 @@ extern "C" int kernel_spmm(
          Ci_base = rowq_solve.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed)) {
         int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
         for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
+            bsg_print_float(static_cast<float>(Ci));
             spmm_solve_row(Ci);
-            //bsg_print_float(static_cast<float>(Ci));
         }
     }
 //#endif

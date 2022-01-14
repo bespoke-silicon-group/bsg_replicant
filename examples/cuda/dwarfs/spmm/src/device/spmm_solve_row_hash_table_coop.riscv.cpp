@@ -168,77 +168,6 @@ static void update(float v, int idx, spmm_elt_t **u)
 }
 
     
-static void sort_table()
-{
-    if (tbl_size  == 0)
-        return;
-
-    spmm_elt_t *sorted_head = tbl_head;
-    spmm_elt_t *sorted_tail = tbl_head;
-
-    // we ruse bkt_next as a prev pointer for this part
-    // since we are done with the hashing
-    sorted_head->tbl_prev = nullptr;
-
-    spmm_elt_t *to_sort = sorted_tail->tbl_next;
-
-    spmm_elt_t *median  = sorted_head;
-    int ltm = 0, gtm = 0;
-
-    while (to_sort != nullptr) {
-        // remove to_sort from list
-        sorted_tail->tbl_next = to_sort->tbl_next;
-        to_sort->tbl_next = nullptr;
-        to_sort->tbl_prev = nullptr;
-        // insert into sorted list
-        if (to_sort->part.idx < sorted_head->part.idx) {
-            pr_dbg("%s: inserting at head before %3d: %3d\n"
-                   , __func__
-                   , sorted_head->part.idx
-                   , to_sort->part.idx);
-            // special case if goes at start
-            to_sort->tbl_next = sorted_head;
-            sorted_head->tbl_prev = to_sort;
-            sorted_head = to_sort;
-        } else if (to_sort->part.idx > sorted_tail->part.idx) {
-            pr_dbg("%s: inserting at tail after %3d: %3d\n"
-                   , __func__
-                   , sorted_tail->part.idx
-                   , to_sort->part.idx);
-            // special case if goes at end
-            to_sort->tbl_next = sorted_tail->tbl_next;
-            to_sort->tbl_prev = sorted_tail;
-            sorted_tail->tbl_next = to_sort;
-            sorted_tail = to_sort;
-        } else {
-            spmm_elt_t *last, *cand;
-            last = sorted_head;
-            cand = sorted_head->tbl_next;
-
-            while (last != sorted_tail) {
-                // find first where to_sort < cand
-                if (to_sort->part.idx < cand->part.idx) {
-                    // insert to_sort between last and cand
-                    last->tbl_next = to_sort;
-                    to_sort->tbl_prev = last;
-                    to_sort->tbl_next = cand;
-                    cand->tbl_prev = to_sort;
-                    pr_dbg("%s: inserting before %d: %d\n"
-                           , __func__
-                           , cand->part.idx
-                           , to_sort->part.idx);
-                    break;
-                }
-                last = cand;
-                cand = cand->tbl_next;
-            }
-        }
-        // next to sort
-        to_sort = sorted_tail->tbl_next;
-    }
-    tbl_head = sorted_head;
-}
-
 /**
  * Sort hash table elements
  */
@@ -585,9 +514,6 @@ void spmm_solve_row(int Ai)
         spmm_scalar_row_product(Aij, Bi);
     }
 
-    // sort table entries
-    hash_table_coop::sort_table();
-    
     if (hash_table_coop::tbl_size > 0) {
         // insert partials into C
         C_lcl.mjr_nnz_remote_ptr[Ai] = hash_table_coop::tbl_size;

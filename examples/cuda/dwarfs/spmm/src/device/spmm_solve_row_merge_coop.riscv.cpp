@@ -423,11 +423,8 @@ void spmm_solve_row_init()
         int y = utils::inner_neighbor_y_to(utils::y());
         for (; y != -1; y = utils::inner_neighbor_y_to(y)) {
             pr_dbg("waiting for memory at %d\n", y);
-            volatile int *memory_init_done = bsg_tile_group_remote_pointer(
-                utils::x()
-                ,y
-                ,&solver.memory_init_done
-                );
+            volatile int *memory_init_done =
+                bsg_tile_group_remote_pointer(utils::x(), y ,&solver.memory_init_done);
             while (*memory_init_done != INIT_DONE);
             list_t *free_tg_rmt = bsg_tile_group_remote_pointer(utils::x(), y, &free_tg);
             list_extend(&free_tg, free_tg_rmt);
