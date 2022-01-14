@@ -31,7 +31,6 @@ RISCV_TARGET_OBJECTS += $(SPMM_COPY_RESULTS_RV)
 
 # all implementations use these
 RISCV_TARGET_OBJECTS += spmm_init.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
 RISCV_TARGET_OBJECTS += spmm_barrier.riscv.rvo
 
 RISCV_CCPPFLAGS-$(SPMM_PREFETCH)	+= -DSPMM_PREFETCH

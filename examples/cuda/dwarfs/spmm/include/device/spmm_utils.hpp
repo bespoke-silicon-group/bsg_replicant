@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include "bsg_tile_config_vars.h"
+#include "bsg_manycore.hpp"
 
 namespace utils
 {
@@ -29,7 +30,7 @@ namespace utils
 
     static inline int is_center(int tile_y)
     {
-        return tile_y == bsg_global_Y/2 || tile_y == 1 + bsg_global_Y/2;
+        return tile_y == (bsg_global_Y/2)-1 || (tile_y == bsg_global_Y/2);
     }
 
     /**
@@ -84,6 +85,15 @@ namespace utils
     {
         intptr_t ptr = reinterpret_cast<intptr_t>(tp);        
         return !(ptr & 0xe0000000);
+    }
+
+    /**
+     * make local pointer a tile group pointer;
+     * pointing to this tile's memory
+     */
+    template<typename PtrType>
+    static inline PtrType tile_group_pointer(PtrType ptr) {
+        return bsg_tile_group_remote_pointer(utils::x(), utils::y(), ptr);
     }
 }
 
