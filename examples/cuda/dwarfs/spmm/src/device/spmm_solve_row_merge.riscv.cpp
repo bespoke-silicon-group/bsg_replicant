@@ -171,7 +171,8 @@ namespace solve_row_merge
         // stall on off
         kernel_remote_int_ptr_t cols = &B_lcl.mnr_idx_remote_ptr[off];
         kernel_remote_float_ptr_t vals = &B_lcl.val_remote_ptr[off];
-
+        //bsg_print_hexadecimal(0xAAAAAAAA);
+        //bsg_fence();
         int nz = 0;
 #if defined(SPMM_PREFETCH)
         for (; nz + PREFETCH < nnz; nz += PREFETCH) {
@@ -230,6 +231,8 @@ namespace solve_row_merge
         }
 
         // merge results
+        //bsg_print_hexadecimal(0xBBBBBBBB);
+        //bsg_fence();
         bsg_compiler_memory_barrier();
         merge(&row_partials, &to_merge, &row_partials);
         bsg_compiler_memory_barrier();        
@@ -285,6 +288,9 @@ void spmm_solve_row(int Ai)
         int nz = 0;
         pr_dbg("solve_row: write back\n");
         pr_dbg("&row_partials->head = %p\n", &row_partials.head);
+        //bsg_print_hexadecimal(0xCCCCCCCC);
+        //bsg_fence();
+        //bsg_print_hexadecimal((unsigned)save_buffer);
         while (!list_empty(&row_partials)) {
             partial_t *part = partial_from_node(list_front(&row_partials));
             pr_dbg("part = %p\n", part);            
@@ -297,7 +303,8 @@ void spmm_solve_row(int Ai)
         nnz = nz;
         // store as array of partials
         C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(save_buffer);
-        C_lcl.mjr_nnz_remote_ptr[Ai] = nnz;        
+        C_lcl.mjr_nnz_remote_ptr[Ai] = nnz;
+        n_row_partials = 0;
     }
 
     // update the global number of nonzeros
