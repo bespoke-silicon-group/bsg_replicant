@@ -146,9 +146,6 @@ RISCV_HEADERS += $(EXAMPLES_PATH
 
 include $(APPLICATION_PATH)/spmm_abrev/opts.mk
 
-RISCV_TARGET_OBJECTS += spmm_init.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_hash_table.riscv.rvo
-RISCV_TARGET_OBJECTS += spmm_barrier.riscv.rvo
 # use 1 thread or 128 threads
 ifeq ($(PARALLEL),yes)
 TX=$(BSG_MACHINE_GLOBAL_X)
