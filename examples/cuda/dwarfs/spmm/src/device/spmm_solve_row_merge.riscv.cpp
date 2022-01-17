@@ -187,6 +187,11 @@ namespace solve_row_merge
             for (int pre = 0; pre < PREFETCH; pre++) {
                 Bij[pre] = vals[nz+pre];
                 Bj [pre] = cols[nz+pre];
+                // this memory barrier get ths compiler to schedule all 8 loads
+                // at once; it tries to do the multiplies in the next loop before issueing
+                // all loads otherwise
+                // we don't want that; we want all loads outstanding first
+                bsg_compiler_memory_barrier();
             }
             float Cij  [PREFETCH];
 
