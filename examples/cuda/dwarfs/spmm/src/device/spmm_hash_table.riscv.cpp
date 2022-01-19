@@ -1,3 +1,4 @@
+#include "spmm.hpp"
 #include "spmm_hash_table.hpp"
 #include "util.h"
 

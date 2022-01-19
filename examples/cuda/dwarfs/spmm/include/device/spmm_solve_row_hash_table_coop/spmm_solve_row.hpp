@@ -1,3 +1,5 @@
+#pragma once
+#include "spmm_solve_row_common.hpp"
 #include "bsg_manycore.h"
 #include "bsg_tile_config_vars.h"
 #include "sparse_matrix.h"
@@ -388,12 +390,12 @@ static void exit()
 }
 }
 
-void spmm_solve_row_init()
+static void spmm_solve_row_init()
 {
     hash_table_coop::init();
 }
 
-void spmm_solve_row_exit()
+static void spmm_solve_row_exit()
 {
     hash_table_coop::exit();
 }
@@ -458,7 +460,7 @@ static void spmm_scalar_row_product(float Aij, int Bi)
     }
 }
 
-void spmm_solve_row(
+static void spmm_solve_row(
     int Ai
     ,int Ai_off
     ,int Ai_nnz
@@ -542,18 +544,3 @@ void spmm_solve_row(
     }
 }
 
-#ifdef __KERNEL_SOLVE_ROW__
-extern "C" int kernel_solve_row(sparse_matrix_t *__restrict__ A_ptr, // csr
-                                sparse_matrix_t *__restrict__ B_ptr, // csr
-                                sparse_matrix_t *__restrict__ C_ptr, // csr
-                                std::atomic<intptr_t> *mem_pool_arg, // mem pool
-                                int Ai)
-{
-    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
-    spmm_solve_row_init();
-    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
-    spmm_solve_row(Ai);
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
-    return 0;
-}
-#endif

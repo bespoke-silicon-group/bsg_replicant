@@ -1,7 +1,8 @@
+#pragma once
 #include "bsg_manycore.h"
 #include "bsg_tile_config_vars.h"
 #include "sparse_matrix.h"
-#include "spmm_solve_row.hpp"
+#include "spmm_solve_row_common.hpp"
 #include <algorithm>
 #include <cstring>
 
@@ -79,28 +80,13 @@ static void spmm_scalar_row_product(float Aij, int Bi)
     }
 }
 
-#ifdef __KERNEL_SCALAR_ROW_PRODUCT__
-extern "C" kernel_spmm_scalar_row_product(sparse_matrix_t *__restrict__ A_ptr, // csr
-                                          sparse_matrix_t *__restrict__ B_ptr, // csr
-                                          sparse_matrix_t *__restrict__ C_ptr, // csr
-                                          std::atomic<intptr_t> *mem_pool_arg, // mem pool
-                                          float Aij,
-                                          int Bi)
-{
-    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
-    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
-    spmm_scalar_row_product(Aij, Bi);
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);    
-}
-#endif
-
-void spmm_solve_row_init()
+static void spmm_solve_row_init()
 {
     // pr_dbg(__FILE__ ": spmm_solve_row_init\n");
     return;
 }
 
-void spmm_solve_row(
+static void spmm_solve_row(
     int Ai
     ,int Ai_off
     ,int Ai_nnz
@@ -144,19 +130,6 @@ void spmm_solve_row(
         nnzp->fetch_add(num_parts);
     }
 }
-
-#ifdef __KERNEL_SOLVE_ROW__
-extern "C" int kernel_solve_row(sparse_matrix_t *__restrict__ A_ptr, // csr
-                                sparse_matrix_t *__restrict__ B_ptr, // csr
-                                sparse_matrix_t *__restrict__ C_ptr, // csr
-                                std::atomic<intptr_t> *mem_pool_arg, // mem pool
-                                int Ai)
+static void spmm_solve_row_exit(void)
 {
-    spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
-    spmm_solve_row_init();
-    bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
-    spmm_solve_row(Ai);
-    bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
-    return 0;
 }
-#endif
