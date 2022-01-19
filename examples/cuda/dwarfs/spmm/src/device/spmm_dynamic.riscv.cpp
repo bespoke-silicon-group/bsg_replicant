@@ -80,7 +80,6 @@ extern "C" int kernel_spmm(
             }
             bsg_compiler_memory_barrier(); 
             for (int pre = 0; pre < PREFETCH; pre++) {
-                bsg_print_float(static_cast<float>(Ci));
                 spmm_solve_row(Ci+pre, Ci_off[pre], Ci_nnz[pre]);
             }
         }
@@ -88,7 +87,6 @@ extern "C" int kernel_spmm(
         for (;Ci < Ci_stop; Ci++) {
             int Ci_off = A_lcl.mnr_off_remote_ptr[Ci];
             int Ci_nnz = A_lcl.mnr_off_remote_ptr[Ci+1] - Ci_off;
-            bsg_print_float(static_cast<float>(Ci));
             spmm_solve_row(Ci, Ci_off, Ci_nnz);
         }
     }
