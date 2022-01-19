@@ -37,14 +37,18 @@ void spmm_solve_row_init()
     pr_dbg(__FILE__ ": Calling spmm_solve_row_init\n");
 }
 
-void spmm_solve_row(int Ai)
+void spmm_solve_row(
+    int Ai
+    ,int Ai_off
+    ,int Ai_nnz
+    )
 {
     //bsg_print_int(Ai);
     pr_dbg("Solving for row %d\n", Ai);
   
     // fetch row meta data
-    int off = A_lcl.mnr_off_remote_ptr[Ai];
-    int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
+    int off = Ai_off;
+    int nnz = Ai_nnz;
 
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];

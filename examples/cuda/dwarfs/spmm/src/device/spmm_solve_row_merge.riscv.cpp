@@ -239,13 +239,17 @@ namespace solve_row_merge
     }
 }
 
-void spmm_solve_row(int Ai)
+void spmm_solve_row(
+    int Ci
+    ,int Ci_off
+    ,int Ci_nnz
+    )
 {
     using namespace solve_row_merge;
     // fetch row meta data
-    int off = A_lcl.mnr_off_remote_ptr[Ai];
+    int off = Ci_off;
     //int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
-    int nnz = A_lcl.mnr_off_remote_ptr[Ai+1]-off;
+    int nnz = Ci_nnz;
 
     // clear list of partial results
     list_clear(&row_partials);
@@ -302,9 +306,9 @@ void spmm_solve_row(int Ai)
 
         nnz = nz;
         // store as array of partials
-        C_lcl.alg_priv_remote_ptr[Ai] = reinterpret_cast<intptr_t>(save_buffer);
-        C_lcl.mjr_nnz_remote_ptr[Ai] = nnz;
         n_row_partials = 0;
+        C_lcl.alg_priv_remote_ptr[Ci] = reinterpret_cast<intptr_t>(save_buffer);
+        C_lcl.mjr_nnz_remote_ptr[Ci] = nnz;
     }
 
     // update the global number of nonzeros
@@ -345,12 +349,12 @@ extern "C" int kernel_solve_row(sparse_matrix_t *__restrict__ A_ptr, // csr
                                 sparse_matrix_t *__restrict__ B_ptr, // csr
                                 sparse_matrix_t *__restrict__ C_ptr, // csr
                                 std::atomic<intptr_t> *mem_pool_arg, // mem pool
-                                int Ai)
+                                int Ci)
 {
     spmm_init(A_ptr, B_ptr, C_ptr, mem_pool_arg);
     spmm_solve_row_init();
     bsg_cuda_print_stat_start(TAG_ROW_SOLVE);
-    spmm_solve_row(Ai);
+    spmm_solve_row(Ci);
     bsg_cuda_print_stat_end(TAG_ROW_SOLVE);
     return 0;
 }

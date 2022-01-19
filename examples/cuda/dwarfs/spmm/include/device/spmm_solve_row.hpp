@@ -9,6 +9,6 @@
 #endif
 
 void spmm_solve_row_init();
-void spmm_solve_row(int Ai);
+void spmm_solve_row(int Ci, int Ci_off, int Ci_nnz);
 void spmm_solve_row_exit();
 
