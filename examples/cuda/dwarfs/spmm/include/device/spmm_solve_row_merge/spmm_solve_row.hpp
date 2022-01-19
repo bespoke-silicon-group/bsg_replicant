@@ -293,14 +293,6 @@ static inline void spmm_solve_row(
         
         spmm_partial_t *save_buffer = (spmm_partial_t*)spmm_malloc(sz);
         int nz = 0;
-<<<<<<< HEAD:examples/cuda/dwarfs/spmm/src/device/spmm_solve_row_merge.riscv.cpp
-        pr_dbg("solve_row: write back\n");
-        pr_dbg("&row_partials->head = %p\n", &row_partials.head);
-        //bsg_print_hexadecimal(0xCCCCCCCC);
-        //bsg_fence();
-        //bsg_print_hexadecimal((unsigned)save_buffer);
-=======
->>>>>>> refactored for inlining:examples/cuda/dwarfs/spmm/include/device/spmm_solve_row_merge/spmm_solve_row.hpp
         while (!list_empty(&row_partials)) {
             partial_t *part = partial_from_node(list_front(&row_partials));
             list_pop_front(&row_partials);
