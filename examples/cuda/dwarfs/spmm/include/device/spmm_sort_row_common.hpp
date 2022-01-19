@@ -6,5 +6,5 @@ static void spmm_sort_row(int Ci)
 {
 }
 #else
-void spmm_sort_row(int Ci);
+static void spmm_sort_row(int Ci);
 #endif

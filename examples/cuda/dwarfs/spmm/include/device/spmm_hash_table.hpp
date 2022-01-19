@@ -1,5 +1,5 @@
 #pragma once
-#include "spmm_solve_row.hpp"
+#include "spmm_solve_row_common.hpp"
 #include "util.h"
 
 namespace hash_table {

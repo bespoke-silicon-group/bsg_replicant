@@ -8,7 +8,6 @@
     (7*128)
 #endif
 
-void spmm_solve_row_init();
-void spmm_solve_row(int Ci, int Ci_off, int Ci_nnz);
-void spmm_solve_row_exit();
-
+static void spmm_solve_row_init();
+static void spmm_solve_row(int Ci, int Ci_off, int Ci_nnz);
+static void spmm_solve_row_exit();

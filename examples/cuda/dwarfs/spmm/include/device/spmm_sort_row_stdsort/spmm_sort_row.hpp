@@ -1,7 +1,8 @@
-#include "spmm_sort_row.hpp"
+#pragma once
+#include "spmm_sort_row_common.hpp"
 #include <algorithm>
 #ifndef SPMM_SKIP_SORTING
-void spmm_sort_row(int Ci)
+static inline void spmm_sort_row(int Ci)
 {
     spmm_partial_t *partials = reinterpret_cast<spmm_partial_t*>(C_lcl.alg_priv_ptr[Ci]);
     int n = C_lcl.mjr_nnz_ptr[Ci];
@@ -10,3 +11,4 @@ void spmm_sort_row(int Ci)
         });
 }
 #endif
+
