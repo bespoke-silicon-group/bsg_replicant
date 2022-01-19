@@ -18,6 +18,12 @@
 #error "define SPMM_WORK_GRANULARITY"
 #endif
 
+#ifdef SPMM_PREFETCH
+#ifndef PREFETCH
+#define PREFETCH 4
+#endif
+#endif
+
 __attribute__((section(".dram")))
 std::atomic<int> rowq_solve;
 __attribute__((section(".dram")))
@@ -62,9 +68,28 @@ extern "C" int kernel_spmm(
          Ci_base < row_stop;
          Ci_base = rowq_solve.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed)) {
         int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
-        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
+        int Ci = Ci_base;
+#ifdef SPMM_PREFETCH
+        for (; Ci + PREFETCH < Ci_stop; Ci += PREFETCH) {
+            int Ci_nnz[PREFETCH];
+            int Ci_off[PREFETCH];
+            bsg_unroll(8)
+            for (int pre = 0; pre < PREFETCH; pre++) {
+                Ci_off[pre] = A_lcl.mnr_off_remote_ptr[Ci + pre];
+                Ci_nnz[pre] = A_lcl.mnr_off_remote_ptr[Ci + pre + 1] - Ci_off[pre];
+            }
+            bsg_compiler_memory_barrier(); 
+            for (int pre = 0; pre < PREFETCH; pre++) {
+                bsg_print_float(static_cast<float>(Ci));
+                spmm_solve_row(Ci+pre, Ci_off[pre], Ci_nnz[pre]);
+            }
+        }
+#endif
+        for (;Ci < Ci_stop; Ci++) {
+            int Ci_off = A_lcl.mnr_off_remote_ptr[Ci];
+            int Ci_nnz = A_lcl.mnr_off_remote_ptr[Ci+1] - Ci_off;
             bsg_print_float(static_cast<float>(Ci));
-            spmm_solve_row(Ci);
+            spmm_solve_row(Ci, Ci_off, Ci_nnz);
         }
     }
 //#endif
@@ -108,15 +133,34 @@ extern "C" int kernel_spmm(
 
     spmm_print_int(__bsg_id);
     barrier::spmm_barrier();
+    C_lcl = *C_glbl_p;
 
     bsg_cuda_print_stat_start(TAG_RESULTS_COPY);
     // foreach row
     for (int Ci_base = rowq_cpy.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed);
          Ci_base < row_stop;
          Ci_base = rowq_cpy.fetch_add(SPMM_WORK_GRANULARITY, std::memory_order_relaxed)) {
+        int Ci = Ci_base;
         int Ci_stop = std::min(Ci_base+SPMM_WORK_GRANULARITY, row_stop);
-        for (int Ci = Ci_base; Ci < Ci_stop; Ci++) {
-            spmm_copy_results(Ci);
+#ifdef SPMM_PREFETCH
+        for (; Ci + PREFETCH < Ci_stop; Ci += PREFETCH) {
+            int Ci_off[PREFETCH];
+            int Ci_nnz[PREFETCH];
+            bsg_unroll(8)
+            for (int pre = 0; pre < PREFETCH; pre++) {
+                Ci_off[pre] = C_lcl.mnr_off_remote_ptr[Ci + pre];
+                Ci_nnz[pre] = C_lcl.mnr_off_remote_ptr[Ci + pre + 1] - Ci_off[Ci + pre];
+            }
+            bsg_compiler_memory_barrier();
+            for (int pre = 0; pre < PREFETCH; pre++) {
+                spmm_copy_results(Ci, Ci_off[pre], Ci_nnz[pre]);
+            }
+        }
+#endif
+        for (; Ci < Ci_stop; Ci++) {
+            int Ci_off = C_lcl.mnr_off_remote_ptr[Ci];
+            int Ci_nnz = C_lcl.mnr_off_remote_ptr[Ci+1] - Ci_off;
+            spmm_copy_results(Ci, Ci_off, Ci_nnz);
         }
     }
 

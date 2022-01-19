@@ -458,7 +458,11 @@ static void spmm_scalar_row_product(float Aij, int Bi)
     }
 }
 
-void spmm_solve_row(int Ai)
+void spmm_solve_row(
+    int Ai
+    ,int Ai_off
+    ,int Ai_nnz
+    )
 {
     // set the number of partials to zero
     hash_table_coop::tbl_size = 0;
@@ -466,8 +470,8 @@ void spmm_solve_row(int Ai)
     hash_table_coop::tbl_tail = &hash_table_coop::tbl_head;
 
     // fetch row meta data
-    int off = A_lcl.mnr_off_remote_ptr[Ai];
-    int nnz = A_lcl.mnr_off_remote_ptr[Ai+1]-off;
+    int off = Ai_off;
+    int nnz = Ai_nnz;
 
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];

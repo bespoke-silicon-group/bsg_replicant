@@ -322,13 +322,17 @@ namespace solve_row_merge
     }
 }
 
-void spmm_solve_row(int Ai)
+void spmm_solve_row(
+    int Ci
+    ,int Ci_off
+    ,int Ci_nnz
+    )
 {
     using namespace solve_row_merge;
     // fetch row meta data
-    int off = A_lcl.mnr_off_remote_ptr[Ai];
+    int off = Ci_off;
     //int nnz = A_lcl.mjr_nnz_remote_ptr[Ai];
-    int nnz = A_lcl.mnr_off_remote_ptr[Ai+1]-off;
+    int nnz = Ci_nnz;
 
     // clear list of partial results
     list_clear(&row_partials);
