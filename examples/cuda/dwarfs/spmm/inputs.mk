@@ -3,6 +3,22 @@ $(error "APPLICATION_PATH not defined. Please define this variable")
 endif
 INPUTS_DIR = $(APPLICATION_PATH)/inputs
 
+
+###################
+# Empty 1024x1024 #
+###################
+empty1024		= $(INPUTS_DIR)/empty1024/empty1024.mtx
+empty1024__directed	= yes
+empty1024__weighted	= yes
+empty1024__zero-indexed = no
+empty1024__rows         = 1024
+empty1024__cols         = 1024
+empty1024__nnz          = 0
+empty1024__solnnz       = 0
+#$(empty1024):  url=https://suitesparse-collection-website.herokuapp.com/MM/SNAP/wiki-Vote.tar.gz
+#$(empty1024):  tar=wiki-Vote.tar.gz
+
+
 ###################
 # Wiki-Vote graph #
 ###################
@@ -221,7 +237,15 @@ $(foreach i,$(INPUTS),$($i)):
 	@cd $(INPUTS_DIR) && tar zxf $(tar)
 	@touch $@ # updates the timecode of the untared file
 
+$(empty1024):
+	@echo "Generating $@"
+	@mkdir -p $(INPUTS_DIR)
+	@mkdir -p $(dirname $@)
+	@echo "%%MatrixMarket matrix coordinate integer general" > $@
+	@echo "1024 1024 0" >> $@
+
 inputs: $(foreach i,$(INPUTS),$($i))
+inputs: $(empty1024)
 
 clean.inputs:
 	rm -rf $(INPUTS_DIR)
