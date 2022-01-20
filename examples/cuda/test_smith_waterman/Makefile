@@ -84,7 +84,7 @@ include $(EXAMPLES_PATH)/link.mk
 BSG_MANYCORE_KERNELS = $(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 1
+TILE_GROUP_DIM_X = 2
 TILE_GROUP_DIM_Y = 1
 
 $(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include

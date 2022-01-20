@@ -73,7 +73,7 @@ int kernel_smith_waterman (int argc, char **argv) {
 
         /* Define path to binary. */
         /* Initialize device, load binary and unfreeze tiles. */
-        hb_mc_dimension_t tg_dim = { .x = 1, .y = 1};
+        hb_mc_dimension_t tg_dim = { .x = 2, .y = 1};
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
 
@@ -91,7 +91,6 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-                int *score_matrix;
                 ifstream f_ref, f_query;
                 string ref_str, query_str, num;
                 map<char, int> dna_map = {
@@ -186,7 +185,9 @@ int kernel_smith_waterman (int argc, char **argv) {
 
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N};
+                // N1 is the number of alignments per tile while N is the numeber of total alignments
+                int N1 = 16;
+                uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N1};
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
