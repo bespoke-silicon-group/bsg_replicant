@@ -100,6 +100,8 @@ static spmm_partial_t *new_pvec(int size)
             );
         return &pvec_from_list_node(n)->v[0];
     } else {
+        // allocate enough for the max size of this bucket
+        size = bucket_to_size(bkt);
         int alloc_size = size * sizeof(spmm_partial_t);
         // include extra for the buffer header
         alloc_size += sizeof(pvec_t);
@@ -209,6 +211,7 @@ static void partial_buffers_merge(
            ,merged.size
            ,merged.partials
         );
+
     int first_i = 0, second_i = 0, merged_i = 0;
     while (first_i < first->size
            && second_i < second->size) {
@@ -239,6 +242,7 @@ static void partial_buffers_merge(
     for (;second_i < second->size; second_i++) {
         merged.partials[merged_i++] = second->partials[second_i];
     }
+
     // set the size
     merged.size = merged_i;
     // clear first + second
@@ -337,6 +341,7 @@ static void spmm_solve_row(
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &A_lcl.val_remote_ptr[off];
     pr_dbg("solving row %d\n", Ci);
+
     partial_buffer_init(&Cv, 0);
     int nz = 0;
 #ifdef SPMM_PREFETCH
