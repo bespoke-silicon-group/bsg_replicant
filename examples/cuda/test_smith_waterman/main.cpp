@@ -96,7 +96,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 map<char, int> dna_map = {
                   {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}
                 };
-                const int N = 1024;
+                const int N = 256;
                 int *n1 = new int[N];
                 int *n2 = new int[N];
                 vector<int> ref_vec, query_vec;
@@ -105,7 +105,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
-                const int SEQ_LEN = 256;
+                const int SEQ_LEN = 512;
                 int *ref = new int[N*SEQ_LEN];
                 int *query = new int[N*SEQ_LEN];
 
@@ -132,9 +132,9 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_query.close();
 
                 /* Allocate memory on the device for A, B and C. */
-                int sm_size = (256 + 1) * (256 + 1);
-                size_t vsize0 = N * 256 * sizeof(int);
-                size_t vsize1 = N * 256 * sizeof(int);
+                int sm_size = (512 + 1) * (512 + 1);
+                size_t vsize0 = N * 512 * sizeof(int);
+                size_t vsize1 = N * 512 * sizeof(int);
                 size_t vsize2 = N * sm_size * sizeof(int);
                 size_t vsize3 = N * sizeof(int);
 
@@ -186,7 +186,7 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 /* Prepare list of input arguments for kernel. */
                 // N1 is the number of alignments per tile while N is the numeber of total alignments
-                int N1 = 8;
+                int N1 = 2;
                 uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N1};
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
@@ -233,8 +233,8 @@ int kernel_smith_waterman (int argc, char **argv) {
     score = 0;
     for (int i = 0; i < n1[n]; i++) {
       for (int j = 0; j < n2[n]; j++) {
-        if (score_matrix_host[sm_size*n+256*i+j] > score)
-          score = score_matrix_host[sm_size*n+256*i+j];
+        if (score_matrix_host[sm_size*n+512*i+j] > score)
+          score = score_matrix_host[sm_size*n+512*i+j];
       }
     }
     fout << score << endl;
