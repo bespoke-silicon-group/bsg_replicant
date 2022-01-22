@@ -93,11 +93,13 @@ static spmm_partial_t *new_pvec(int size)
     if (!list_empty(&free_buffers[bkt])) {
         list_node_t *n = list_front(&free_buffers[bkt]);
         list_pop_front(&free_buffers[bkt]);
+#ifdef DEBUG_ALLOC
         pr_dbg("%p allocd from pool %d: size = %d\n"
                ,&pvec_from_list_node(n)->v[0]
                ,bkt
                ,pvec_from_list_node(n)->size
             );
+#endif
         return &pvec_from_list_node(n)->v[0];
     } else {
         // allocate enough for the max size of this bucket
@@ -114,10 +116,12 @@ static spmm_partial_t *new_pvec(int size)
         pv = (pvec_t*)spmm_malloc(alloc_size);
         pv->size = bucket_to_size(bkt);
         pv->free.next = nullptr;
+#ifdef DEBUG_ALLOC
         pr_dbg("%p allocd from heap: size = %d\n"
                ,&pv->v[0]
                ,pv->size
             );
+#endif
         return &pv->v[0];
     }
 }
@@ -129,11 +133,13 @@ static void free_pvec(spmm_partial_t *p)
 {
     pvec_t *pv = pvec_from_partial(p);
     int bkt = bucket(pv->size);
+#ifdef DEBUG_ALLOC
     pr_dbg("%p freeing to pool %d: size = %d\n"
            ,p
            ,bkt
            ,pv->size
         );
+#endif
     list_append(&free_buffers[bkt], &pv->free);
 }
 
@@ -156,11 +162,13 @@ static void partial_buffer_init(partial_buffer_t *pb, int max_size)
     } else {
         pb->partials = nullptr;
     }
+#ifdef DEBUG_ALLOC
     pr_dbg("initializing partial_buffer %p for max_size = %d, partials = %p\n"
            ,pb
            ,max_size
            ,pb->partials
         );
+#endif
     pb->size = 0;
 }
 /**
@@ -168,11 +176,13 @@ static void partial_buffer_init(partial_buffer_t *pb, int max_size)
  */
 static void partial_buffer_exit(partial_buffer_t *pb)
 {
+#ifdef DEBUG_ALLOC
     pr_dbg("cleaning up partial_buffer %p, size = %d, partials = %p\n"
            ,pb
            ,pb->size
            ,pb->partials
         );
+#endif
     pb->size = 0;
     if (pb->partials != nullptr) {
         free_pvec(pb->partials);
@@ -252,6 +262,150 @@ static void partial_buffers_merge(
     partial_buffer_move(merged_o, &merged);
 }
 
+template <int UNROLL>
+static inline void partial_copy(
+    spmm_partial_t  *__restrict__ dst
+    ,const spmm_partial_t *__restrict__ src
+    ,int n
+    )
+{
+    int i = 0;
+    for (; i + UNROLL < n; i += UNROLL) {
+        int   tx [UNROLL];
+        float tv [UNROLL];
+        bsg_unroll(8)
+        for (int pre = 0; pre < UNROLL; pre++) {
+            tx[pre] = src[i+pre].idx;
+            tv[pre] = src[i+pre].val;
+        }
+        bsg_compiler_memory_barrier();
+        bsg_unroll(8)
+        for (int pre = 0; pre < UNROLL; pre++) {
+            dst[i+pre].idx = tx[pre];
+            dst[i+pre].val = tv[pre];
+        }
+    }
+
+    for (; i < n; i++) {
+        int   tx = src[i].idx;
+        float tv = src[i].val;
+        dst[i].idx = tx;
+        dst[i].val = tv;
+    }
+}
+/**
+ * merge two partial buffers
+ */
+static void partial_buffers_merge_optimized(
+    partial_buffer_t  *first
+    ,partial_buffer_t *second
+    ,partial_buffer_t *merged_o
+    ) {
+    partial_buffer_t merged;
+    partial_buffer_init(&merged, first->size + second->size);
+    pr_dbg("merging {%2d @ %p} and {%2d @ %p} into {%2d @ %p}\n"
+           ,first->size
+           ,first->partials
+           ,second->size
+           ,second->partials
+           ,merged.size
+           ,merged.partials
+        );
+    int n0 = first->size, n1 = second->size;
+    int i0 = 0, i1 = 0, im = 0;
+    int x0, x1, x0_n, x1_n;
+    float v0, v1, v0_n, v1_n;
+    // preload x0, v0, x1, v1
+    // x0_n, x1_n, v0_n, and v1_n
+    if (i0 < n0) {
+        x0 = first->partials[i0].idx;
+        v0 = first->partials[i0].val;
+        x0_n = first->partials[i0+1].idx;
+        v0_n = first->partials[i0+1].val;
+    }
+    if (i1 < n1) {
+        x1 = second->partials[i1].idx;
+        v1 = second->partials[i1].val;
+        x1_n = second->partials[i1+1].idx;
+        v1_n = second->partials[i1+1].val;
+    }
+    bsg_compiler_memory_barrier();
+    while (i0 < n0 && i1 < n1) {
+        pr_dbg("i0 = %2d, x0 = %2d, x0_n = %2d, i1 = %2d, x1 = %2d, x1_n = %2d\n"
+               ,i0
+               ,x0
+               ,x0_n
+               ,i1
+               ,x1
+               ,x1_n);
+        int   xm;
+        float vm;
+        if (x0 < x1) {
+            // merge
+            xm = x0;
+            vm = v0;
+            // set next
+            x0 = x0_n;
+            v0 = v0_n;
+            // increment
+            i0++;
+            // prefetch
+            x0_n = first->partials[i0+1].idx;
+            v0_n = first->partials[i0+1].val;
+        } else if (x1 < x0) {
+            // merge
+            xm = x1;
+            vm = v1;
+            // set next
+            x1 = x1_n;
+            v1 = v1_n;
+            // increment
+            i1++;
+            // prefetch
+            x1_n = second->partials[i1+1].idx;
+            v1_n = second->partials[i1+1].val;
+        } else {
+            // merge
+            xm = x0;
+            vm = v0+v1;
+            // set next
+            x0 = x0_n;
+            v0 = v0_n;
+            x1 = x1_n;
+            v1 = v1_n;
+            // increment
+            i0++;
+            i1++;
+            // prefetch
+            x0_n = first->partials[i0+1].idx;
+            v0_n = first->partials[i0+1].val;
+            x1_n = second->partials[i1+1].idx;
+            v1_n = second->partials[i1+1].val;
+
+        }
+        bsg_compiler_memory_barrier();
+        // write back
+        pr_dbg("im = %2d, xm = %2d\n"
+               ,im
+               ,xm);
+        merged.partials[im].idx = xm;
+        merged.partials[im].val = vm;
+        im++;
+    }
+    // copy which ever buffer remains
+    partial_copy<PREFETCH>(&merged.partials[im], &first->partials[i0], n0-i0);
+    partial_copy<PREFETCH>(&merged.partials[im], &second->partials[i1], n1-i1);
+
+    // set the size, add remainder
+    merged.size = im + (n0-i0) + (n1-i1);
+
+    // clear first + second
+    partial_buffer_exit(first);
+    partial_buffer_exit(second);
+
+    // move merged -> merged_o
+    partial_buffer_move(merged_o, &merged);
+}
 }
 
 static vmerge::partial_buffer_t Cv;
@@ -324,7 +478,7 @@ static void scalar_row_product(
         Bv.partials[nz].val = Cij;
     }
     // merge results
-    partial_buffers_merge(&Cv, &Bv, &Cv);
+    partial_buffers_merge_optimized(&Cv, &Bv, &Cv);
 }
 
 static void spmm_solve_row(
