@@ -437,30 +437,31 @@ static void scalar_row_product(
 
     int nz = 0;
 #if defined(SPMM_PREFETCH)
-    for (; nz + PREFETCH < nnz; nz += PREFETCH) {
+    constexpr int UNROLL = 8;
+    for (; nz + UNROLL < nnz; nz += UNROLL) {
         bsg_compiler_memory_barrier();
-        float Bij [PREFETCH];
-        int   Bj  [PREFETCH];
+        float Bij [UNROLL];
+        int   Bj  [UNROLL];
         // prefetch data
         bsg_unroll(8)
-        for (int pre = 0; pre < PREFETCH; pre++) {
+        for (int pre = 0; pre < UNROLL; pre++) {
             Bij[pre] = vals[nz+pre];
             Bj [pre] = cols[nz+pre];
-            // this memory barrier get ths compiler to schedule all 8 loads
-            // at once; it tries to do the multiplies in the next loop before issueing
-            // all loads otherwise
-            // we don't want that; we want all loads outstanding first
-            bsg_compiler_memory_barrier();
         }
-        float Cij  [PREFETCH];
+        // this memory barrier get ths compiler to schedule all 8 loads
+        // at once; it tries to do the multiplies in the next loop before issueing
+        // all loads otherwise
+        // we don't want that; we want all loads outstanding first
+        bsg_compiler_memory_barrier();
+        float Cij  [UNROLL];
         // ilp fmul
         bsg_unroll(8)
-        for (int pre = 0; pre < PREFETCH; pre++) {
+        for (int pre = 0; pre < UNROLL; pre++) {
             Cij[pre]   = Aij * Bij[pre];
         }
         // write into temp buffer
         bsg_unroll(8)
-        for (int pre = 0; pre < PREFETCH; pre++) {
+        for (int pre = 0; pre < UNROLL; pre++) {
             Bv.partials[nz+pre].idx =  Bj[pre];
             Bv.partials[nz+pre].val = Cij[pre];
         }
@@ -502,7 +503,7 @@ static void spmm_solve_row(
     for (; nz + PREFETCH < nnz; nz += PREFETCH) {
         int    Bi[PREFETCH];
         float Aij[PREFETCH];
-        bsg_unroll(4)
+        bsg_unroll(8)
         for (int pre = 0; pre < PREFETCH; pre++) {
             Bi[pre] = cols[nz+pre];
             Aij[pre] = vals[nz+pre];
