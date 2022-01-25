@@ -51,6 +51,7 @@ module bsg_manycore_endpoint_to_fifos
   , parameter credit_counter_width_p = `BSG_WIDTH(32)
   , parameter ep_fifo_els_p = "inv"
   , parameter rev_fifo_els_p="inv" // for FIFO credit counting.
+  , parameter icache_block_size_in_words_p = "inv"
 
   , parameter link_sif_width_lp = `bsg_manycore_link_sif_width(addr_width_p,data_width_p,x_cord_width_p,y_cord_width_p)
   , parameter debug_p = 0
@@ -200,6 +201,7 @@ module bsg_manycore_endpoint_to_fifos
     ,.addr_width_p(addr_width_p)
     ,.data_width_p(data_width_p)
     ,.credit_counter_width_p(credit_counter_width_p)
+    ,.icache_block_size_in_words_p(icache_block_size_in_words_p)
     ,.rev_fifo_els_p(rev_fifo_els_p)
   ) epsd (
     .clk_i(clk_i)
