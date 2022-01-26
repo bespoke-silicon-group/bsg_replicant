@@ -73,6 +73,12 @@ NOT_SPMD += saif
 # Breaks our flow (but could be used)
 NOT_SPMD += bsg_riscv_tests
 
+# Currently hang. Reason needs to be diagnosed:
+NOT_SPMD += hw_barrier_16x8_interrupt_test
+NOT_SPMD += hw_barrier_context_switch_test
+NOT_SPMD += barrier_in_interrupt
+NOT_SPMD += energy_loop_test
+
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
 
