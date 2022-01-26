@@ -256,7 +256,8 @@ static inline void spmm_solve_row(
 
     // clear list of partial results
     list_clear(&row_partials);
-    
+    n_row_partials = 0;
+
     // this will stall on 'off'
     kernel_remote_int_ptr_t cols = &A_lcl.mnr_idx_remote_ptr[off];
     kernel_remote_float_ptr_t vals = &A_lcl.val_remote_ptr[off];
@@ -302,11 +303,11 @@ static inline void spmm_solve_row(
         }
 
         nnz = nz;
+
         // store as array of partials
-        n_row_partials = 0;
         C_lcl.alg_priv_remote_ptr[Ci] = reinterpret_cast<intptr_t>(save_buffer);
-        C_lcl.mjr_nnz_remote_ptr[Ci] = nnz;
     }
+    C_lcl.mjr_nnz_remote_ptr[Ci] = nnz;
 
     // update the global number of nonzeros
     std::atomic<int>* nnzp = reinterpret_cast<std::atomic<int> *>((&C_glbl_p->n_non_zeros));

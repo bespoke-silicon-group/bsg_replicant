@@ -153,7 +153,7 @@ extern "C" int kernel_spmm(
             bsg_unroll(8)
             for (int pre = 0; pre < PREFETCH; pre++) {
                 Ci_off[pre] = C_lcl.mnr_off_remote_ptr[Ci + pre];
-                Ci_nnz[pre] = C_lcl.mnr_off_remote_ptr[Ci + pre + 1] - Ci_off[Ci + pre];
+                Ci_nnz[pre] = C_lcl.mnr_off_remote_ptr[Ci + pre + 1] - Ci_off[pre];
             }
             bsg_compiler_memory_barrier();
             for (int pre = 0; pre < PREFETCH; pre++) {
