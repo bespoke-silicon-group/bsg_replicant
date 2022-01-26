@@ -64,7 +64,10 @@ NOT_SPMD += beebs
 NOT_SPMD += interrupt_tests
 NOT_SPMD += bp_manycore_test
 NOT_SPMD += bsg_cuda_lite_runtime
+NOT_SPMD += bsg_test_accel_default
+NOT_SPMD += recurse-results
 NOT_SPMD += common
+NOT_SPMD += energy_ubenchmark
 # Already run as part of test_saif
 NOT_SPMD += saif
 # Breaks our flow (but could be used)
