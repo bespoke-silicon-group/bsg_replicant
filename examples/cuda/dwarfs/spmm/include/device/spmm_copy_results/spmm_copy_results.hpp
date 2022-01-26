@@ -17,7 +17,7 @@ static  void spmm_update_nonzeros(
            , reinterpret_cast<unsigned>(val_ptr));
            
     int nonzero = 0;
-    while (nonzero + UNROLL <= nnz) {
+    for (; nonzero + UNROLL < nnz;) {
         int   idx_tmp[UNROLL];
         float val_tmp[UNROLL];
         for (int i = 0; i < UNROLL; i++) {
