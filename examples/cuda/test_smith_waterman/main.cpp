@@ -97,13 +97,11 @@ int kernel_smith_waterman (int argc, char **argv) {
                 const int gap_open       = 3;
                 const int gap_extend     = 1;
                 ifstream f_ref, f_query;
-                ofstream fout;
 
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
-                fout.open("output", ios::out);
 
-                const int N = 128;
+                const int N = 1;
                 string str, num;
                 string seqa_str = "";
                 string seqb_str = "";
@@ -119,6 +117,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                   sizeb[i] = str.size();
                   seqb_str += str;
                 };
+                f_ref.close();
+                f_query.close();
 
                 int* seqa = new int[seqa_str.size()];
                 int* seqb = new int[seqb_str.size()];
@@ -130,10 +130,6 @@ int kernel_smith_waterman (int argc, char **argv) {
                 for (int i = 0; i < seqb_str.size(); i++) {
                   seqb[i] = dna_char2int[seqb_str[i]];
                 }
-
-                f_ref.close();
-                f_query.close();
-                fout.close();
 
                 // == Sending data to device
 
@@ -196,25 +192,32 @@ int kernel_smith_waterman (int argc, char **argv) {
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
-                /* Copy result matrix back from device DRAM into host memory.  */
-                //int* score_matrix_host = new int[N*sm_size]();
+                // Transfer data device -> host
+                int* score = new int[N];
+                hb_mc_dma_dtoh_t dtoh_job = {
+                        .d_addr = score_d,
+                        .h_addr = score,
+                        .size   = score_bytes
+                };
 
-                //hb_mc_dma_dtoh_t dtoh_job = {
-                        //.d_addr = score_matrix_device,
-                        //.h_addr = score_matrix_host,
-                        //.size   = vsize2
-                //};
+                bsg_pr_test_info("Reading C to host\n");
 
-                //bsg_pr_test_info("Reading C to host\n");
-
-                //BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
+                BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
 
                 /* Calculate the expected result using host code and compare the results.  */
                 //if (mismatch)
                         //return HB_MC_FAIL;
 
                 /* Freeze the tiles and memory manager cleanup.  */
-                //BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
+                BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
+
+                // write N scores to file
+                ofstream fout;
+                fout.open("output", ios::out);
+                for (int i = 0; i < N; i++) {
+                  fout << score[i] << endl;
+                }
+                fout.close();
 
         }
 
