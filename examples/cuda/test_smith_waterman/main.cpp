@@ -93,9 +93,9 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // == Reading data ==
                 const int match_score    = 1;
-                const int mismatch_score = -3;
-                const int gap_open       = -3;
-                const int gap_extend     = -1;
+                const int mismatch_score = 3;
+                const int gap_open       = 3;
+                const int gap_extend     = 1;
                 ifstream f_ref, f_query;
                 ofstream fout;
 
@@ -120,8 +120,16 @@ int kernel_smith_waterman (int argc, char **argv) {
                   seqb_str += str;
                 };
 
-                const char* seqa = seqa_str.c_str();
-                const char* seqb = seqb_str.c_str();
+                int* seqa = new int[seqa_str.size()];
+                int* seqb = new int[seqb_str.size()];
+
+                map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
+                for (int i = 0; i < seqa_str.size(); i++) {
+                  seqa[i] = dna_char2int[seqa_str[i]];
+                }
+                for (int i = 0; i < seqb_str.size(); i++) {
+                  seqb[i] = dna_char2int[seqb_str[i]];
+                }
 
                 f_ref.close();
                 f_query.close();
@@ -130,8 +138,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // == Sending data to device
 
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = seqa_str.size() * sizeof(char);
-                size_t seqb_bytes = seqb_str.size() * sizeof(char);
+                size_t seqa_bytes = seqa_str.size() * sizeof(int);
+                size_t seqb_bytes = seqb_str.size() * sizeof(int);
                 size_t sizea_bytes = N * sizeof(int);
                 size_t sizeb_bytes = N * sizeof(int);
                 size_t score_bytes = N * sizeof(int);
@@ -172,23 +180,21 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
 
-                /* Define block_size_x/y: amount of work for each tile group */
+                // == Launching kernel ==
+                // Define amount of work for each tile group
                 /* Define tg_dim_x/y: number of tiles in each tile group */
                 /* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y */
-                //hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
-
+                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                // N1 is the number of alignments per tile while N is the numeber of total alignments
-                //int N1 = 2;
-                //uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N1};
+                uint32_t cuda_argv[10] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, gap_open, gap_extend, match_score, mismatch_score, score_d};
 
-                /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
+                /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                //BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 10, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
-                //BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 /* Copy result matrix back from device DRAM into host memory.  */
                 //int* score_matrix_host = new int[N*sm_size]();
