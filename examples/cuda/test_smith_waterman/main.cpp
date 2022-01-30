@@ -129,6 +129,14 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // == Sending data to device
 
+                // Define the sizes of the input / output arrays
+                size_t* bytes = new size_t[5];
+                bytes[0] = seqa_str.size() * sizeof(char);
+                bytes[1] = seqb_str.size() * sizeof(char);
+                bytes[2] = N * sizeof(int);
+                bytes[3] = N * sizeof(int);
+                bytes[4] = N * sizeof(int);
+
                 /* Allocate memory on the device for A, B and C. */
                 //int sm_size = (512 + 1) * (512 + 1);
                 //size_t vsize0 = N * 512 * sizeof(int);
