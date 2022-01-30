@@ -91,169 +91,129 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
+                // == Reading data ==
+                const int match_score    = 1;
+                const int mismatch_score = -3;
+                const int gap_open       = -3;
+                const int gap_extend     = -1;
                 ifstream f_ref, f_query;
-                string ref_str, query_str, num;
-                map<char, int> dna_map = {
-                  {'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}
-                };
-                const int N = 256;
-                int *n1 = new int[N];
-                int *n2 = new int[N];
-                vector<int> ref_vec, query_vec;
+                ofstream fout;
 
-                // read sequences from file
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
+                fout.open("output", ios::out);
 
-                const int SEQ_LEN = 512;
-                int *ref = new int[N*SEQ_LEN];
-                int *query = new int[N*SEQ_LEN];
+                const int N = 128;
+                string str, num;
+                string seqa_str = "";
+                string seqb_str = "";
+                int* sizea = new int[N];
+                int* sizeb = new int[N];
 
-                for (int n = 0; n < N; n++) {
-                  f_ref >> num >> ref_str;
-                  f_query >> num >> query_str;
+                // read N sequences from file
+                for (int i = 0; i < N; i++) {
+                  f_ref >> num >> str;
+                  seqa_str += str;
+                  sizea[i] = str.size();
+                  f_query >> num >> str;
+                  sizeb[i] = str.size();
+                  seqb_str += str;
+                };
 
-                  n1[n] = ref_str.length();
-                  n2[n] = query_str.length();
-
-                  for (int i = 0; i < n1[n]; i++) {
-                    int base_pair = dna_map[ref_str[i]];
-                    ref[n*SEQ_LEN+i] = base_pair;
-                  }
-
-                  for (int i = 0; i < n2[n]; i++) {
-                    int base_pair = dna_map[query_str[i]];
-                    query[n*SEQ_LEN+i] = base_pair;
-                  }
-
-                }
+                const char* seqa = seqa_str.c_str();
+                const char* seqb = seqb_str.c_str();
 
                 f_ref.close();
                 f_query.close();
+                fout.close();
+
+                // == Sending data to device
 
                 /* Allocate memory on the device for A, B and C. */
-                int sm_size = (512 + 1) * (512 + 1);
-                size_t vsize0 = N * 512 * sizeof(int);
-                size_t vsize1 = N * 512 * sizeof(int);
-                size_t vsize2 = N * sm_size * sizeof(int);
-                size_t vsize3 = N * sizeof(int);
+                //int sm_size = (512 + 1) * (512 + 1);
+                //size_t vsize0 = N * 512 * sizeof(int);
+                //size_t vsize1 = N * 512 * sizeof(int);
+                //size_t vsize2 = N * sm_size * sizeof(int);
+                //size_t vsize3 = N * sizeof(int);
 
-                eva_t ref_device, query_device, score_matrix_device, n1_device, n2_device;
-                /* allocate A[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize0, &ref_device));
-                 /* allocate B[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize1, &query_device));
-                 /* allocate C[N] on the device */
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize2, &score_matrix_device));
+                //eva_t ref_device, query_device, score_matrix_device, n1_device, n2_device;
+                //[> allocate A[N] on the device <]
+                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize0, &ref_device));
+                 //[> allocate B[N] on the device <]
+                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize1, &query_device));
+                 //[> allocate C[N] on the device <]
+                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize2, &score_matrix_device));
 
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n1_device));
+                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n1_device));
 
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n2_device));
+                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n2_device));
 
                 /* Copy A & B from host onto device DRAM. */
-                hb_mc_dma_htod_t htod_jobs [] = {
-                        {
-                                .d_addr = ref_device,
-                                .h_addr = ref,
-                                .size   = vsize0
-                        },
-                        {
-                                .d_addr = query_device,
-                                .h_addr = query,
-                                .size   = vsize1
-                        },
-                        {
-                                .d_addr = n1_device,
-                                .h_addr = n1,
-                                .size   = vsize3
-                        },
-                        {
-                                .d_addr = n2_device,
-                                .h_addr = n2,
-                                .size   =  vsize3
-                        }
-                };
+                //hb_mc_dma_htod_t htod_jobs [] = {
+                        //{
+                                //.d_addr = ref_device,
+                                //.h_addr = ref,
+                                //.size   = vsize0
+                        //},
+                        //{
+                                //.d_addr = query_device,
+                                //.h_addr = query,
+                                //.size   = vsize1
+                        //},
+                        //{
+                                //.d_addr = n1_device,
+                                //.h_addr = n1,
+                                //.size   = vsize3
+                        //},
+                        //{
+                                //.d_addr = n2_device,
+                                //.h_addr = n2,
+                                //.size   =  vsize3
+                        //}
+                //};
 
-                bsg_pr_test_info("Writing A and B to device\n");
+                //bsg_pr_test_info("Writing A and B to device\n");
 
-                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
+                //BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
 
                 /* Define block_size_x/y: amount of work for each tile group */
                 /* Define tg_dim_x/y: number of tiles in each tile group */
                 /* Calculate grid_dim_x/y: number of tile groups needed based on block_size_x/y */
-                hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
+                //hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
 
                 /* Prepare list of input arguments for kernel. */
                 // N1 is the number of alignments per tile while N is the numeber of total alignments
-                int N1 = 2;
-                uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N1};
+                //int N1 = 2;
+                //uint32_t cuda_argv[6] = {ref_device, query_device, score_matrix_device, n1_device, n2_device, N1};
 
                 /* Enqqueue grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
+                //BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
-                BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+                //BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 /* Copy result matrix back from device DRAM into host memory.  */
-                int* score_matrix_host = new int[N*sm_size]();
+                //int* score_matrix_host = new int[N*sm_size]();
 
-                hb_mc_dma_dtoh_t dtoh_job = {
-                        .d_addr = score_matrix_device,
-                        .h_addr = score_matrix_host,
-                        .size   = vsize2
-                };
+                //hb_mc_dma_dtoh_t dtoh_job = {
+                        //.d_addr = score_matrix_device,
+                        //.h_addr = score_matrix_host,
+                        //.size   = vsize2
+                //};
 
-                bsg_pr_test_info("Reading C to host\n");
+                //bsg_pr_test_info("Reading C to host\n");
 
-                BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
+                //BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
 
                 /* Calculate the expected result using host code and compare the results.  */
                 //if (mismatch)
                         //return HB_MC_FAIL;
 
                 /* Freeze the tiles and memory manager cleanup.  */
-                BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
+                //BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
-#ifdef PRINT_MATRIX
-                for (int i = 0; i < *n1_host + 1; i++) {
-                  for (int j = 0; j < *n2_host + 1; j++) {
-                    printf("%d\t", score_matrix_host[(*n2_host+1)*i+j]);
-                  }
-                  printf("\n");
-                }
-#endif
-
-#ifdef PRINT_SCORE
-  int score;
-  ofstream fout;
-  fout.open("output", ios::out);
-  for (int n = 0; n < N; n++) {
-    score = 0;
-    for (int i = 0; i < n1[n]; i++) {
-      for (int j = 0; j < n2[n]; j++) {
-        if (score_matrix_host[sm_size*n+512*i+j] > score)
-          score = score_matrix_host[sm_size*n+512*i+j];
-      }
-    }
-    fout << score << endl;
-  }
-  fout.close();
-#endif
-
-//#ifdef PRINT_SCORE
-                //int score = -1;
-                //for (int i = 0; i < *n1_host + 1; i++) {
-                  //for (int j = 0; j < *n2_host + 1; j++) {
-                    //if (score_matrix_host[(*n2_host+1)*i+j] > score)
-                      //score = score_matrix_host[(*n2_host+1)*i+j];
-                  //}
-                //}
-                //printf("Score = %d\n", score);
-//#endif
-
-                delete [] score_matrix_host;
         }
 
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
