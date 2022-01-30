@@ -129,28 +129,20 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // == Sending data to device
 
-                // Define the sizes of the input / output arrays
-                size_t* bytes = new size_t[5];
-                bytes[0] = seqa_str.size() * sizeof(char);
-                bytes[1] = seqb_str.size() * sizeof(char);
-                bytes[2] = N * sizeof(int);
-                bytes[3] = N * sizeof(int);
-                bytes[4] = N * sizeof(int);
+                // Define the sizes of the I/O arrays
+                size_t seqa_bytes = seqa_str.size() * sizeof(char);
+                size_t seqb_bytes = seqb_str.size() * sizeof(char);
+                size_t sizea_bytes = N * sizeof(int);
+                size_t sizeb_bytes = N * sizeof(int);
+                size_t score_bytes = N * sizeof(int);
 
-                /* Allocate memory on the device for A, B and C. */
-                //int sm_size = (512 + 1) * (512 + 1);
-                //size_t vsize0 = N * 512 * sizeof(int);
-                //size_t vsize1 = N * 512 * sizeof(int);
-                //size_t vsize2 = N * sm_size * sizeof(int);
-                //size_t vsize3 = N * sizeof(int);
-
-                //eva_t ref_device, query_device, score_matrix_device, n1_device, n2_device;
-                //[> allocate A[N] on the device <]
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize0, &ref_device));
-                 //[> allocate B[N] on the device <]
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize1, &query_device));
-                 //[> allocate C[N] on the device <]
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize2, &score_matrix_device));
+                // Allocate device memory for the I/O arrays
+                eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d;
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, seqa_bytes, &seqa_d));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, seqb_bytes, &seqb_d));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizea_bytes, &sizea_d));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeb_bytes, &sizeb_d));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, score_bytes, &score_d));
 
                 //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n1_device));
 
