@@ -144,37 +144,33 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeb_bytes, &sizeb_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, score_bytes, &score_d));
 
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n1_device));
+                // Transfer data host -> device
+                hb_mc_dma_htod_t htod_jobs [] = {
+                        {
+                                .d_addr = seqa_d,
+                                .h_addr = seqa,
+                                .size   = seqa_bytes
+                        },
+                        {
+                                .d_addr = seqb_d,
+                                .h_addr = seqb,
+                                .size   = seqb_bytes
+                        },
+                        {
+                                .d_addr = sizea_d,
+                                .h_addr = sizea,
+                                .size   = sizea_bytes
+                        },
+                        {
+                                .d_addr = sizeb_d,
+                                .h_addr = sizeb,
+                                .size   = sizeb_bytes
+                        }
+                };
 
-                //BSG_CUDA_CALL(hb_mc_device_malloc(&device, vsize3, &n2_device));
+                bsg_pr_test_info("Writing A and B to device\n");
 
-                /* Copy A & B from host onto device DRAM. */
-                //hb_mc_dma_htod_t htod_jobs [] = {
-                        //{
-                                //.d_addr = ref_device,
-                                //.h_addr = ref,
-                                //.size   = vsize0
-                        //},
-                        //{
-                                //.d_addr = query_device,
-                                //.h_addr = query,
-                                //.size   = vsize1
-                        //},
-                        //{
-                                //.d_addr = n1_device,
-                                //.h_addr = n1,
-                                //.size   = vsize3
-                        //},
-                        //{
-                                //.d_addr = n2_device,
-                                //.h_addr = n2,
-                                //.size   =  vsize3
-                        //}
-                //};
-
-                //bsg_pr_test_info("Writing A and B to device\n");
-
-                //BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
+                BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
 
                 /* Define block_size_x/y: amount of work for each tile group */
                 /* Define tg_dim_x/y: number of tiles in each tile group */
