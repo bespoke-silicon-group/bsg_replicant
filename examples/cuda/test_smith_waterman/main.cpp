@@ -101,7 +101,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
-                const int N = 1;
+                const int N = 32;
                 string str, num;
                 string seqa_str = "";
                 string seqb_str = "";
