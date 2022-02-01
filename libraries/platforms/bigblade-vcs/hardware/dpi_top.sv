@@ -140,6 +140,17 @@ module replicant_tb_top
    bsg_manycore_link_sif_s host_link_sif_li;
    bsg_manycore_link_sif_s host_link_sif_lo;
 
+   // vanilla opererations trace
+   int vanilla_trace_fd;
+   localparam vanilla_trace_file = "vanilla_operation_trace.csv";
+   initial begin
+     vanilla_trace_fd = $fopen(vanilla_trace_file, "w");
+     $fwrite(vanilla_trace_fd, "cycle,x,y,pc,operation\n");
+   end
+   final begin
+     $fclose(vanilla_trace_fd);
+   end
+
    // Trace Enable wire for runtime argument to enable tracing (+trace)
    logic                                        trace_en;
    logic                                        log_en;
