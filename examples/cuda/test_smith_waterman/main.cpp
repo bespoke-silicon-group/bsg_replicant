@@ -73,7 +73,7 @@ int kernel_smith_waterman (int argc, char **argv) {
 
         /* Define path to binary. */
         /* Initialize device, load binary and unfreeze tiles. */
-        hb_mc_dimension_t tg_dim = { .x = 16, .y = 8};
+        hb_mc_dimension_t tg_dim = { .x = 1, .y = 1};
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
 
