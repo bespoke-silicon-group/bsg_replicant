@@ -288,6 +288,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter bsg_machine_core_dmem_words_gp = 1024;" >> $@
 	@echo "parameter bsg_machine_core_icache_entries_gp = 1024;" >> $@
 	@echo "parameter bsg_machine_core_icache_tag_width_gp = 12;" >> $@
+	@echo "parameter bsg_machine_core_icache_line_words_gp = 4;" >> $@
 	@echo >> $@
 	@echo "parameter string bsg_machine_name_gp = \"$(BSG_MACHINE_NAME)\";" >> $@
 	@echo >> $@

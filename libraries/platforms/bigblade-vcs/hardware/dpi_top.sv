@@ -26,6 +26,10 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_pod_tiles_subarray_y_gp   = %d", bsg_machine_pod_tiles_subarray_y_gp);
       $display("[INFO][TESTBENCH] bsg_machine_pod_llcache_rows_gp       = %d", bsg_machine_pod_llcache_rows_gp);
 
+      $display("[INFO][TESTBENCH] bsg_machine_core_icache_line_words_gp = %d", bsg_machine_core_icache_line_words_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_core_icache_entries_gp    = %d", bsg_machine_core_icache_entries_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_core_icache_tag_width_gp  = %d", bsg_machine_core_icache_tag_width_gp);
+
       $display("[INFO][TESTBENCH] bsg_machine_noc_cfg_gp                = %s", bsg_machine_noc_cfg_gp.name());
       $display("[INFO][TESTBENCH] bsg_machine_noc_ruche_factor_X_gp     = %d", bsg_machine_noc_ruche_factor_X_gp);
       $display("[INFO][TESTBENCH] bsg_machine_barrier_ruche_factor_X_gp = %d", bsg_machine_barrier_ruche_factor_X_gp);
@@ -193,6 +197,7 @@ module replicant_tb_top
        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
        ,.data_width_p(bsg_machine_noc_data_width_gp)
        ,.dmem_size_p(bsg_machine_core_dmem_words_gp)
+       ,.icache_block_size_in_words_p(bsg_machine_core_icache_line_words_gp)
        ,.icache_entries_p(bsg_machine_core_icache_entries_gp)
        ,.icache_tag_width_p(bsg_machine_core_icache_tag_width_gp)
 
@@ -265,6 +270,7 @@ module replicant_tb_top
        ,.data_width_p(bsg_machine_noc_data_width_gp)
        ,.ep_fifo_els_p(ep_fifo_els_lp)
        ,.dpi_fifo_els_p(bsg_machine_dpi_fifo_els_gp)
+       ,.icache_block_size_in_words_p(bsg_machine_core_icache_line_words_gp)
        ,.fifo_width_p(128) // It would be better to read this from somewhere
        ,.rev_fifo_els_p(3) // Necessary for manycore correctness.
        ,.rom_els_p(bsg_machine_rom_els_gp)
