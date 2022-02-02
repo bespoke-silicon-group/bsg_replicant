@@ -151,6 +151,16 @@ module replicant_tb_top
      $fclose(vanilla_trace_fd);
    end
 
+  // vcache trace
+  int vcache_trace_fd;
+  localparam vcache_trace_file_lp = "vcache_operation_trace.csv";
+  initial begin
+    vcache_trace_fd = $fopen(vcache_trace_file_lp, "w");
+    $fwrite(vcache_trace_fd, "cycle,vcache,operation\n");
+  end
+  final begin
+    $fclose(vcache_trace_fd);
+  end
    // Trace Enable wire for runtime argument to enable tracing (+trace)
    logic                                        trace_en;
    logic                                        log_en;
