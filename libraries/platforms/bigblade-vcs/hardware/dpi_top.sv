@@ -161,6 +161,18 @@ module replicant_tb_top
   final begin
     $fclose(vcache_trace_fd);
   end
+
+  // remote load trace
+  int remote_trace_fd;
+  localparam remote_load_trace_file_lp = "remote_load_trace.csv";
+  initial begin
+    remote_trace_fd = $fopen(remote_load_trace_file_lp, "w");
+    $fwrite(remote_trace_fd, "start_cycle,end_cycle,src_x,src_y,dest_x,dest_y,type,latency\n");
+  end
+  final begin
+    $fclose(remote_trace_fd);
+  end
+
    // Trace Enable wire for runtime argument to enable tracing (+trace)
    logic                                        trace_en;
    logic                                        log_en;
