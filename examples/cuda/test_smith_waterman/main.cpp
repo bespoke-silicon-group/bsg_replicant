@@ -110,10 +110,10 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // read N sequences from file
                 for (int i = 0; i < N; i++) {
-                  f_ref >> num >> str;
+                  f_query >> num >> str;
                   seqa_str += str;
                   sizea[i] = str.size();
-                  f_query >> num >> str;
+                  f_ref >> num >> str;
                   sizeb[i] = str.size();
                   seqb_str += str;
                 };
