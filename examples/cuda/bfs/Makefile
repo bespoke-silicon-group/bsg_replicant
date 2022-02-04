@@ -122,7 +122,7 @@ TEST_PODS := $(shell seq 0 1 $(MAX_POD))
 $(foreach threads,$(TEST_THREADS),\
 $(foreach iter,$(TEST_ITERS),\
 $(foreach pods,$(TEST_PODS),\
-$(eval TESTS += $(call test-name,$(TEST_GRAPH_TYPE),$(TEST_VERTICES),$(TEST_EDGES),$(TEST_ROOT_NODE),$(iter),$(threads),1,1,$(pods))))))
+$(eval TESTS += $(call test-name,$(TEST_GRAPH_TYPE),$(TEST_VERTICES),$(TEST_EDGES),$(TEST_ROOT_NODE),$(iter),1,16,8,$(pods))))))
 
 # simulation directory generation
 TESTS_MAKEFILE  = $(addsuffix /Makefile,$(TESTS))

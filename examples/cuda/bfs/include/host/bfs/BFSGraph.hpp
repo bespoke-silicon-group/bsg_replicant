@@ -16,6 +16,12 @@ namespace BFS {
             _hb(hammerblade::host::HammerBlade::Get()) {
         }
 
+        //~BFSGraph(){
+        //    _hb->free(_kgraph_dev);
+        //    _hb->free(_vdata_dev);
+        //    _hb->free(_edata_dev);
+        //}
+
         const WGraph & graph() const { return _graph; }
         WGraph & graph() { return _graph; }
         const graph_t &kraph() const { return _kgraph; }
@@ -26,6 +32,7 @@ namespace BFS {
         int num_edges() const { return static_cast<int>(_graph.num_edges()); }
         // format the graph on the device 
         void formatOnDevice();
+        void formatOnDevice(kernel_graph_ptr_t, kernel_vertex_data_ptr_t, kernel_edge_data_ptr_t);
         
     private:
         WGraph  _graph;

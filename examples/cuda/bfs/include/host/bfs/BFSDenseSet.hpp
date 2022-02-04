@@ -29,10 +29,19 @@ namespace BFS {
                 _kset[m] = 1;            
         }
 
+        //~BFSDenseSet(){
+        //    _hb->free(_set_dev);
+        //}
+
         void formatOnDevice() {
             _set_dev = _hb->alloc(_kset.size()*sizeof(int));
             _hb->push_write(_set_dev, &_kset[0],
                             _kset.size()*sizeof(int));
+        }
+
+        void formatOnDevice(kernel_int_ptr_t dev_ptr){
+            _hb->push_write(dev_ptr, &_kset[0],
+                            _kset.size()*sizeof(int));    
         }
 
         void updateFromDevice() {
@@ -47,7 +56,16 @@ namespace BFS {
             return after;
         }
 
+        std::set<int> setAfterUpdate(int len) const {
+            std::set<int> after;
+            for (int i = 0; i < len; i++)
+                after.insert(_kset[i]);
+            return after;
+        }
+        
+
         const std::set<int> & set() const { return _set; }
+        
         
         kernel_int_ptr_t dev() const { return _set_dev; }
 

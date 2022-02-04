@@ -36,7 +36,13 @@ typedef struct graph {
 #else
     typedef kernel_void_ptr_t kernel_graph_ptr_t;
 #endif
-    
+
+#ifdef __KERNEL__
+    typedef graph_t** kernel_graph_list_t;
+#else
+    typedef kernel_void_ptr_t kernel_graph_list_t;
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -27,6 +27,7 @@ namespace BFS {
         // destructor
         ~BFSSparseSet(){
             free(_kset);
+            //_hb->free(_set_dev);
         }
 
         BFSSparseSet(const BFSSparseSet &other) = delete;
@@ -59,10 +60,13 @@ namespace BFS {
         }
                 
         const std::set<int> &set() const { return _set; }
+        sparse_set_t * kset() const { return _kset; }
         kernel_sparse_set_ptr_t dev() const { return _set_dev; }
         
         // format the set on the device
         void formatOnDevice();
+        void formatOnDevice(kernel_sparse_set_ptr_t);
+        void updateFromDevice();
         
     private:
         void init_kset(int cap) {

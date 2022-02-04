@@ -50,17 +50,7 @@ int main(int argc, char *argv[])
     }
     printf("Selected %d as the root\n", root);
     
-    std::vector<SparsePushBFS> stats_push;
-    std::vector<SparsePullBFS> stats_pull;
-    if(DIRECTION == "PUSH"){
-        stats_push = SparsePushBFS::RunBFS(wg, root, ITERS, false);
-    }
-    else if (DIRECTION == "PULL" && GRAPH_TYPE == "GRAPH500"){
-        stats_pull = SparsePullBFS::RunBFS(wg_csc, root, ITERS, false);
-    }
-    else {
-        stats_pull = SparsePullBFS::RunBFS(wg, root, ITERS, false);
-    }
+    
 
     // write the output
     FILE *output = fopen(OUTPUT_NAME.c_str(), "w");
@@ -98,8 +88,14 @@ int main(int argc, char *argv[])
             "traversed_edges",
             "updates"
         );
+
     if(DIRECTION == "PUSH"){
-        for (int i = 0; i < stats_push.size(); i++) {
+        std::shared_ptr<WGraph> wgptr = std::shared_ptr<WGraph>(new WGraph(wg));
+        std::set<int> frontier = {root};
+        std::set<int> visited = {root};
+        for(int i=0; i<ITERS; i++){
+            SparsePushBFS bfs = SparsePushBFS(wgptr, frontier, visited); 
+            bfs.run(1000);
             fprintf(output,
                     "%"  FIELD_STR_FMT
                     ",%" FIELD_INT_FMT
@@ -118,42 +114,19 @@ int main(int argc, char *argv[])
                     static_cast<int>(wg.num_nodes()),
                     static_cast<int>(wg.num_edges()),
                     i,
-                    stats_push[i].frontier_in().size(),
-                    stats_push[i].frontier_out().size(),
-                    stats_push[i].visited_in().size(),
-                    stats_push[i].visited_out().size(),
-                    stats_push[i].traversed_edges(),
-                    stats_push[i].updates());
+                    bfs.frontier_in().size(),
+                    bfs.frontier_out().size(),
+                    bfs.visited_in().size(),
+                    bfs.visited_out().size(),
+                    bfs.traversed_edges(),
+                    bfs.updates()); 
+            frontier = bfs.frontier_out();
+            visited = bfs.visited_out();
         }
+        
     }
-    else{
-        for (int i = 0; i < stats_pull.size(); i++) {
-            fprintf(output,
-                    "%"  FIELD_STR_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT                
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    ",%" FIELD_INT_FMT
-                    "\n",
-                    INPUT_NAME.c_str(),
-                    root,
-                    static_cast<int>(wg.num_nodes()),
-                    static_cast<int>(wg.num_edges()),
-                    i,
-                    stats_pull[i].frontier_in().size(),
-                    stats_pull[i].frontier_out().size(),
-                    stats_pull[i].visited_in().size(),
-                    stats_pull[i].visited_out().size(),
-                    stats_pull[i].traversed_edges(),
-                    stats_pull[i].updates());
-        }  
-    }
+    
+    
 
     fclose(output);
     
