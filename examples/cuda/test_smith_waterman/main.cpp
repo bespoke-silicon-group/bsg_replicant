@@ -92,16 +92,12 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
                 // == Reading data ==
-                const int match_score    = 1;
-                const int mismatch_score = 3;
-                const int gap_open       = 3;
-                const int gap_extend     = 1;
                 ifstream f_ref, f_query;
 
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
-                const int N = 32;
+                const int N = 1;
                 string str, num;
                 string seqa_str = "";
                 string seqb_str = "";
@@ -183,11 +179,11 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[10] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, gap_open, gap_extend, match_score, mismatch_score, score_d};
+                uint32_t cuda_argv[6] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, score_d};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 10, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
