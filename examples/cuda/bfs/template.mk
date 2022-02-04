@@ -115,8 +115,8 @@ RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/bfs/include/kernel
 RISCV_INCLUDES += -I$(EXAMPLES_PATH)/cuda/bfs/include/common
 RISCV_CCPPFLAGS += -D__KERNEL__
 
-TILE_GROUP_DIM_X ?= 1
-TILE_GROUP_DIM_Y ?= 1
+TILE_GROUP_DIM_X ?= 16
+TILE_GROUP_DIM_Y ?= 8
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
@@ -183,6 +183,8 @@ help:
 
 clean:
 	rm -f bfs_stats.txt
+	rm -rf stats
+	rm -f out_put_lenth.txt
 
 
 ###############
