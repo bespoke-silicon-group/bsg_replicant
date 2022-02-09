@@ -94,8 +94,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // == Reading data ==
                 ifstream f_ref, f_query;
 
-                f_ref.open("data/dna-reference.fasta", ios::in);
-                f_query.open("data/dna-query.fasta", ios::in);
+                f_ref.open("../data/dna-reference.fasta", ios::in);
+                f_query.open("../data/dna-query.fasta", ios::in);
 
                 const short N = 32;
                 const int SIZE = 100000;
