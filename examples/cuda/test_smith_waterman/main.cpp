@@ -97,7 +97,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
-                const int N = 1;
+                const int N = 32;
+                const int SIZE = 100000;
                 string str, num;
                 string seqa_str = "";
                 string seqb_str = "";
@@ -135,14 +136,18 @@ int kernel_smith_waterman (int argc, char **argv) {
                 size_t sizea_bytes = N * sizeof(int);
                 size_t sizeb_bytes = N * sizeof(int);
                 size_t score_bytes = N * sizeof(int);
+                size_t matrix_bytes = SIZE * sizeof(int);
 
                 // Allocate device memory for the I/O arrays
-                eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d;
+                eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d, E, F, H;
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, seqa_bytes, &seqa_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, seqb_bytes, &seqb_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizea_bytes, &sizea_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeb_bytes, &sizeb_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, score_bytes, &score_d));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, matrix_bytes, &E));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, matrix_bytes, &F));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, matrix_bytes, &H));
 
                 // Transfer data host -> device
                 hb_mc_dma_htod_t htod_jobs [] = {
@@ -179,11 +184,11 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[6] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, score_d};
+                uint32_t cuda_argv[9] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, score_d, E, F, H};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 9, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
