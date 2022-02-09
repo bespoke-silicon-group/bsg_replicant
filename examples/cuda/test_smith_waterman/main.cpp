@@ -117,8 +117,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.close();
                 f_query.close();
 
-                short* seqa = new short[seqa_str.size()];
-                short* seqb = new short[seqb_str.size()];
+                unsigned char* seqa = new unsigned char[seqa_str.size()];
+                unsigned char* seqb = new unsigned char[seqb_str.size()];
 
                 map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
                 for (int i = 0; i < seqa_str.size(); i++) {
@@ -131,11 +131,11 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // == Sending data to device
 
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = seqa_str.size() * sizeof(short);
-                size_t seqb_bytes = seqb_str.size() * sizeof(short);
+                size_t seqa_bytes = seqa_str.size() * sizeof(unsigned char);
+                size_t seqb_bytes = seqb_str.size() * sizeof(unsigned char);
                 size_t sizea_bytes = N * sizeof(short);
                 size_t sizeb_bytes = N * sizeof(short);
-                size_t score_bytes = N * sizeof(short);
+                size_t score_bytes = N * sizeof(unsigned char);
                 size_t matrix_bytes = SIZE * sizeof(short);
 
                 // Allocate device memory for the I/O arrays
@@ -194,7 +194,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 // Transfer data device -> host
-                short* score = new short[N];
+                unsigned char* score = new unsigned char[N];
                 hb_mc_dma_dtoh_t dtoh_job = {
                         .d_addr = score_d,
                         .h_addr = score,
@@ -216,7 +216,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 ofstream fout;
                 fout.open("output", ios::out);
                 for (int i = 0; i < N; i++) {
-                  fout << score[i] << endl;
+                  fout << (int)score[i] << endl;
                 }
                 fout.close();
 
