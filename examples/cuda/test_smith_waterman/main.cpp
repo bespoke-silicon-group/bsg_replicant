@@ -97,13 +97,13 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.open("data/dna-reference.fasta", ios::in);
                 f_query.open("data/dna-query.fasta", ios::in);
 
-                const int N = 32;
+                const short N = 32;
                 const int SIZE = 100000;
                 string str, num;
                 string seqa_str = "";
                 string seqb_str = "";
-                int* sizea = new int[N];
-                int* sizeb = new int[N];
+                short* sizea = new short[N];
+                short* sizeb = new short[N];
 
                 // read N sequences from file
                 for (int i = 0; i < N; i++) {
@@ -117,8 +117,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 f_ref.close();
                 f_query.close();
 
-                int* seqa = new int[seqa_str.size()];
-                int* seqb = new int[seqb_str.size()];
+                short* seqa = new short[seqa_str.size()];
+                short* seqb = new short[seqb_str.size()];
 
                 map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
                 for (int i = 0; i < seqa_str.size(); i++) {
@@ -131,12 +131,12 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // == Sending data to device
 
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = seqa_str.size() * sizeof(int);
-                size_t seqb_bytes = seqb_str.size() * sizeof(int);
-                size_t sizea_bytes = N * sizeof(int);
-                size_t sizeb_bytes = N * sizeof(int);
-                size_t score_bytes = N * sizeof(int);
-                size_t matrix_bytes = SIZE * sizeof(int);
+                size_t seqa_bytes = seqa_str.size() * sizeof(short);
+                size_t seqb_bytes = seqb_str.size() * sizeof(short);
+                size_t sizea_bytes = N * sizeof(short);
+                size_t sizeb_bytes = N * sizeof(short);
+                size_t score_bytes = N * sizeof(short);
+                size_t matrix_bytes = SIZE * sizeof(short);
 
                 // Allocate device memory for the I/O arrays
                 eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d, E, F, H;
@@ -194,7 +194,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 // Transfer data device -> host
-                int* score = new int[N];
+                short* score = new short[N];
                 hb_mc_dma_dtoh_t dtoh_job = {
                         .d_addr = score_d,
                         .h_addr = score,
