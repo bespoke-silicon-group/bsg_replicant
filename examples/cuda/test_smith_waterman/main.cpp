@@ -91,48 +91,47 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-                // == Reading data ==
-                ifstream f_ref, f_query;
-
-                f_ref.open("../data/dna-reference.fasta", ios::in);
-                f_query.open("../data/dna-query.fasta", ios::in);
-
-                const short N = 32;
-                const int SIZE = 100000;
+                const short N = 16;
+                const int ARR_SIZE = 32;
+                map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
+                map<int, char> dna_int2char = {{0, 'A'}, {1, 'C'}, {2, 'G'}, {3, 'T'}};
                 string str, num;
-                string seqa_str = "";
-                string seqb_str = "";
-                short* sizea = new short[N];
-                short* sizeb = new short[N];
 
-                // read N sequences from file
+                // read N queries
+                ifstream f_query;
+                unsigned char* seqa = new unsigned char[N*ARR_SIZE]();
+                short* sizea = new short[N];
+                f_query.open("../data/dna-query.fasta", ios::in);
                 for (int i = 0; i < N; i++) {
                   f_query >> num >> str;
-                  seqa_str += str;
+                  for (int j = 0; j < str.size(); j++) {
+                    seqa[i*ARR_SIZE+j] = dna_char2int[str[j]];
+                  }
                   sizea[i] = str.size();
-                  f_ref >> num >> str;
-                  sizeb[i] = str.size();
-                  seqb_str += str;
+
                 };
-                f_ref.close();
                 f_query.close();
 
-                unsigned char* seqa = new unsigned char[seqa_str.size()];
-                unsigned char* seqb = new unsigned char[seqb_str.size()];
-
-                map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
-                for (int i = 0; i < seqa_str.size(); i++) {
-                  seqa[i] = dna_char2int[seqa_str[i]];
-                }
-                for (int i = 0; i < seqb_str.size(); i++) {
-                  seqb[i] = dna_char2int[seqb_str[i]];
-                }
+                // read N references
+                ifstream f_ref;
+                unsigned char* seqb = new unsigned char[N*ARR_SIZE]();
+                short* sizeb = new short[N];
+                f_ref.open("../data/dna-reference.fasta", ios::in);
+                for (int i = 0; i < N; i++) {
+                  f_ref >> num >> str;
+                  for (int j = 0; j < str.size(); j++) {
+                    seqb[i*ARR_SIZE+j] = dna_char2int[str[j]];
+                  }
+                  sizeb[i] = str.size();
+                };
+                f_ref.close();
 
                 // == Sending data to device
+                const int SIZE = (ARR_SIZE + 1) * (ARR_SIZE + 1);
 
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = seqa_str.size() * sizeof(unsigned char);
-                size_t seqb_bytes = seqb_str.size() * sizeof(unsigned char);
+                size_t seqa_bytes = N * ARR_SIZE * sizeof(unsigned char);
+                size_t seqb_bytes = N * ARR_SIZE * sizeof(unsigned char);
                 size_t sizea_bytes = N * sizeof(short);
                 size_t sizeb_bytes = N * sizeof(short);
                 size_t score_bytes = N * sizeof(unsigned char);
@@ -184,7 +183,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[9] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, score_d, E, F, H};
+                const int NUM_TILES = tg_dim.x * tg_dim.y;
+                uint32_t cuda_argv[9] = {seqa_d, seqb_d, sizea_d, sizeb_d, N/NUM_TILES, score_d, E, F, H};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
