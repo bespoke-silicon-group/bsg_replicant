@@ -91,7 +91,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-                const short N = 16;
+                const short N = 4;
                 const int ARR_SIZE = 32;
                 map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
                 map<int, char> dna_int2char = {{0, 'A'}, {1, 'C'}, {2, 'G'}, {3, 'T'}};
@@ -183,8 +183,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                const int NUM_TILES = tg_dim.x * tg_dim.y;
-                uint32_t cuda_argv[9] = {seqa_d, seqb_d, sizea_d, sizeb_d, N/NUM_TILES, score_d, E, F, H};
+                uint32_t cuda_argv[9] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, score_d, E, F, H};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
