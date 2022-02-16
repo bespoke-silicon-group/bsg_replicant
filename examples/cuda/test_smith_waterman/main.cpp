@@ -99,7 +99,7 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // read N queries
                 ifstream f_query;
-                unsigned char* seqa = new unsigned char[N*ARR_SIZE]();
+                unsigned* seqa = new unsigned[N*ARR_SIZE]();
                 short* sizea = new short[N];
                 f_query.open("../data/dna-query.fasta", ios::in);
                 for (int i = 0; i < N; i++) {
@@ -114,7 +114,7 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // read N references
                 ifstream f_ref;
-                unsigned char* seqb = new unsigned char[N*ARR_SIZE]();
+                unsigned* seqb = new unsigned[N*ARR_SIZE]();
                 short* sizeb = new short[N];
                 f_ref.open("../data/dna-reference.fasta", ios::in);
                 for (int i = 0; i < N; i++) {
@@ -130,11 +130,11 @@ int kernel_smith_waterman (int argc, char **argv) {
                 const int SIZE = (ARR_SIZE + 1) * (ARR_SIZE + 1);
 
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = N * ARR_SIZE * sizeof(unsigned char);
-                size_t seqb_bytes = N * ARR_SIZE * sizeof(unsigned char);
+                size_t seqa_bytes = N * ARR_SIZE * sizeof(unsigned);
+                size_t seqb_bytes = N * ARR_SIZE * sizeof(unsigned);
                 size_t sizea_bytes = N * sizeof(short);
                 size_t sizeb_bytes = N * sizeof(short);
-                size_t score_bytes = N * sizeof(unsigned char);
+                size_t score_bytes = N * sizeof(unsigned);
                 size_t matrix_bytes = SIZE * sizeof(short);
 
                 // Allocate device memory for the I/O arrays
@@ -191,7 +191,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
                 // Transfer data device -> host
-                unsigned char* score = new unsigned char[N];
+                unsigned* score = new unsigned[N];
                 hb_mc_dma_dtoh_t dtoh_job = {
                         .d_addr = score_d,
                         .h_addr = score,
