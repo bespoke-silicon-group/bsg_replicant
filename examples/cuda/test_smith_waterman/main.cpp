@@ -135,7 +135,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 size_t sizea_bytes = N * sizeof(unsigned);
                 size_t sizeb_bytes = N * sizeof(unsigned);
                 size_t score_bytes = N * sizeof(unsigned);
-                size_t matrix_bytes = SIZE * sizeof(short);
+                size_t matrix_bytes = SIZE * sizeof(int);
 
                 // Allocate device memory for the I/O arrays
                 eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d, H;
