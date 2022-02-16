@@ -91,7 +91,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-                const short N = 4;
+                const unsigned N = 4;
                 const int ARR_SIZE = 32;
                 map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
                 map<int, char> dna_int2char = {{0, 'A'}, {1, 'C'}, {2, 'G'}, {3, 'T'}};
@@ -100,7 +100,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // read N queries
                 ifstream f_query;
                 unsigned* seqa = new unsigned[N*ARR_SIZE]();
-                short* sizea = new short[N];
+                unsigned* sizea = new unsigned[N];
                 f_query.open("../data/dna-query.fasta", ios::in);
                 for (int i = 0; i < N; i++) {
                   f_query >> num >> str;
@@ -115,7 +115,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // read N references
                 ifstream f_ref;
                 unsigned* seqb = new unsigned[N*ARR_SIZE]();
-                short* sizeb = new short[N];
+                unsigned* sizeb = new unsigned[N];
                 f_ref.open("../data/dna-reference.fasta", ios::in);
                 for (int i = 0; i < N; i++) {
                   f_ref >> num >> str;
@@ -132,8 +132,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 // Define the sizes of the I/O arrays
                 size_t seqa_bytes = N * ARR_SIZE * sizeof(unsigned);
                 size_t seqb_bytes = N * ARR_SIZE * sizeof(unsigned);
-                size_t sizea_bytes = N * sizeof(short);
-                size_t sizeb_bytes = N * sizeof(short);
+                size_t sizea_bytes = N * sizeof(unsigned);
+                size_t sizeb_bytes = N * sizeof(unsigned);
                 size_t score_bytes = N * sizeof(unsigned);
                 size_t matrix_bytes = SIZE * sizeof(short);
 
