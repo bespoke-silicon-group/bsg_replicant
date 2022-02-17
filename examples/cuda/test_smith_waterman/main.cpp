@@ -181,7 +181,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[7] = {seqa_d, seqb_d, sizea_d, sizeb_d, N, score_d, H};
+                int num_tiles = tg_dim.x * tg_dim.y;
+                uint32_t cuda_argv[7] = {seqa_d, seqb_d, sizea_d, sizeb_d, N/num_tiles, score_d, H};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
