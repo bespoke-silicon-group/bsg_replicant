@@ -138,13 +138,12 @@ int kernel_smith_waterman (int argc, char **argv) {
                 size_t matrix_bytes = SIZE * sizeof(int);
 
                 // Allocate device memory for the I/O arrays
-                eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d, H;
+                eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d;
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, seqa_bytes, &seqa_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, seqb_bytes, &seqb_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizea_bytes, &sizea_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeb_bytes, &sizeb_d));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, score_bytes, &score_d));
-                BSG_CUDA_CALL(hb_mc_device_malloc(&device, matrix_bytes, &H));
 
                 // Transfer data host -> device
                 hb_mc_dma_htod_t htod_jobs [] = {
@@ -182,11 +181,11 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 /* Prepare list of input arguments for kernel. */
                 int num_tiles = tg_dim.x * tg_dim.y;
-                uint32_t cuda_argv[7] = {seqa_d, seqb_d, sizea_d, sizeb_d, N/num_tiles, score_d, H};
+                uint32_t cuda_argv[6] = {seqa_d, seqb_d, sizea_d, sizeb_d, N/num_tiles, score_d};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 7, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
