@@ -43,6 +43,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <assert.h>
 
 using namespace std;
 
@@ -195,21 +196,25 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 BSG_CUDA_CALL(hb_mc_device_dma_to_host(&device, &dtoh_job, 1));
 
-                /* Calculate the expected result using host code and compare the results.  */
-                //if (mismatch)
-                        //return HB_MC_FAIL;
-
                 /* Freeze the tiles and memory manager cleanup.  */
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
-                // write N scores to file
-                ofstream fout;
-                fout.open("output", ios::out);
+                // == Check output
+                // check N scores against golden
+                unsigned score_golden[N];
+                ifstream fin;
+                fin.open("../data/output32", ios::in);
                 for (int i = 0; i < N; i++) {
-                  fout << (int)score[i] << endl;
+                  fin >> score_golden[i];
                 }
-                fout.close();
+                fin.close();
 
+                for (int i = 0; i < N; i++) {
+                  if (score[i] != score_golden[i]) {
+                    cout << "ERROR : mismatch for score " << i << endl;
+                    return HB_MC_FAIL;
+                  }
+                }
         }
 
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
