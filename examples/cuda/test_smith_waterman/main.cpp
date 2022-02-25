@@ -59,6 +59,23 @@ using namespace std;
                 }                                                       \
         }
 
+void read_seq(const string file_name, const int N,
+              const int SIZE_SEQ, unsigned* seq, unsigned* size) {
+  map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
+
+  ifstream fin;
+  fin.open(file_name, ios::in);
+  for (int i = 0; i < N; i++) {
+    string str, num;
+    fin >> num >> str;
+    for (int j = 0; j < str.size(); j++) {
+      seq[i*SIZE_SEQ+j] = dna_char2int[str[j]];
+    }
+    size[i] = str.size();
+  };
+  fin.close();
+}
+
 int kernel_smith_waterman (int argc, char **argv) {
         char *bin_path, *test_name;
         struct arguments_path args = {NULL, NULL};
@@ -91,51 +108,27 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
+                // == Reading data
                 const unsigned N = 4;
-                const int ARR_SIZE = 32;
-                map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
-                map<int, char> dna_int2char = {{0, 'A'}, {1, 'C'}, {2, 'G'}, {3, 'T'}};
-                string str, num;
-
                 // read N queries
-                ifstream f_query;
-                unsigned* seqa = new unsigned[N*ARR_SIZE]();
+                const int SIZEA_MAX = 32;
+                unsigned* seqa = new unsigned[N*SIZEA_MAX]();
                 unsigned* sizea = new unsigned[N];
-                f_query.open("../data/dna-query.fasta", ios::in);
-                for (int i = 0; i < N; i++) {
-                  f_query >> num >> str;
-                  for (int j = 0; j < str.size(); j++) {
-                    seqa[i*ARR_SIZE+j] = dna_char2int[str[j]];
-                  }
-                  sizea[i] = str.size();
-
-                };
-                f_query.close();
+                read_seq("../data/dna-query.fasta", N, SIZEA_MAX, seqa, sizea);
 
                 // read N references
-                ifstream f_ref;
-                unsigned* seqb = new unsigned[N*ARR_SIZE]();
+                const int SIZEB_MAX = 32;
+                unsigned* seqb = new unsigned[N*SIZEB_MAX]();
                 unsigned* sizeb = new unsigned[N];
-                f_ref.open("../data/dna-reference.fasta", ios::in);
-                for (int i = 0; i < N; i++) {
-                  f_ref >> num >> str;
-                  for (int j = 0; j < str.size(); j++) {
-                    seqb[i*ARR_SIZE+j] = dna_char2int[str[j]];
-                  }
-                  sizeb[i] = str.size();
-                };
-                f_ref.close();
+                read_seq("../data/dna-reference.fasta", N, SIZEB_MAX, seqb, sizeb);
 
                 // == Sending data to device
-                const int SIZE = (ARR_SIZE + 1) * (ARR_SIZE + 1);
-
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = N * ARR_SIZE * sizeof(unsigned);
-                size_t seqb_bytes = N * ARR_SIZE * sizeof(unsigned);
+                size_t seqa_bytes = N * SIZEA_MAX * sizeof(unsigned);
+                size_t seqb_bytes = N * SIZEB_MAX * sizeof(unsigned);
                 size_t sizea_bytes = N * sizeof(unsigned);
                 size_t sizeb_bytes = N * sizeof(unsigned);
                 size_t score_bytes = N * sizeof(unsigned);
-                size_t matrix_bytes = SIZE * sizeof(int);
 
                 // Allocate device memory for the I/O arrays
                 eva_t seqa_d, seqb_d, sizea_d, sizeb_d, score_d;
