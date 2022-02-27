@@ -151,7 +151,8 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
                 // == Get data
-                const int N = 4;
+                int num_tiles = tg_dim.x * tg_dim.y;
+                const int N = 4 * num_tiles;
                 const int SIZEA_MAX = 32;
                 const int SIZEB_MAX = 32;
                 unsigned* seqa = new unsigned[N * SIZEA_MAX];
@@ -211,7 +212,6 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                int num_tiles = tg_dim.x * tg_dim.y;
                 uint32_t cuda_argv[8] = {N / num_tiles, SIZEA_MAX, SIZEB_MAX,
                                          seqa_d, seqb_d, sizea_d,
                                          sizeb_d, score_d};
