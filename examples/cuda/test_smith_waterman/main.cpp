@@ -151,7 +151,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
                 // == Get data
-                const unsigned N = 4;
+                const int N = 4;
                 const int SIZEA_MAX = 32;
                 const int SIZEB_MAX = 32;
                 unsigned* seqa = new unsigned[N * SIZEA_MAX];
@@ -212,11 +212,13 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 /* Prepare list of input arguments for kernel. */
                 int num_tiles = tg_dim.x * tg_dim.y;
-                uint32_t cuda_argv[6] = {seqa_d, seqb_d, sizea_d, sizeb_d, N/num_tiles, score_d};
+                uint32_t cuda_argv[8] = {N / num_tiles, SIZEA_MAX, SIZEB_MAX,
+                                         seqa_d, seqb_d, sizea_d,
+                                         sizeb_d, score_d};
 
                 /* Enque grid of tile groups, pass in grid and tile group dimensions,
                    kernel name, number and list of input arguments */
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 6, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_smith_waterman", 8, cuda_argv));
 
                 /* Launch and execute all tile groups on device and wait for all to finish.  */
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
