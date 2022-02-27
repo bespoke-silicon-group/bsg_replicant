@@ -60,22 +60,63 @@ using namespace std;
                 }                                                       \
         }
 
-void read_seq(const string file_name, const int N,
-              const int SIZE_SEQ, unsigned* seq, unsigned* size) {
-  map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
+class Sequence {
+  private:
+  // Read DNA Sequence from file
+  static void read_seq(const string file_name, const int N,
+                const int SIZE_SEQ, unsigned* seq, unsigned* size) {
+    map<char, int> dna_char2int = {{'A', 0}, {'C', 1}, {'G', 2}, {'T', 3}, {'N', 0}};
 
-  ifstream fin;
-  fin.open(file_name, ios::in);
-  for (int i = 0; i < N; i++) {
-    string str, num;
-    fin >> num >> str;
-    for (int j = 0; j < str.size(); j++) {
-      seq[i*SIZE_SEQ+j] = dna_char2int[str[j]];
+    ifstream fin;
+    fin.open(file_name, ios::in);
+    for (int i = 0; i < N; i++) {
+      string str, num;
+      fin >> num >> str;
+      for (int j = 0; j < str.size(); j++) {
+        seq[i*SIZE_SEQ+j] = dna_char2int[str[j]];
+      }
+      size[i] = str.size();
+    };
+    fin.close();
+  }
+
+  // Pack DNA sequence
+  static void pack(const unsigned* unpacked, const int num_unpacked, unsigned* packed) {
+    const int num_packed = (num_unpacked + 15) / 16;
+    for (int i = 0; i < num_packed; i++) {
+      for (int j = 0; j < 16 && i * 16 + j < num_unpacked; j++) {
+        int unpacked_val = unpacked[j] << (30 - 2 * j);
+        packed[i] |= unpacked_val;
+      }
+      unpacked += 16;
     }
-    size[i] = str.size();
+  }
+
+  public:
+  // Get packed data
+  static void get_data_packed(const int N, const int SIZEA_MAX, const int SIZEB_MAX,
+                              unsigned* seqa, unsigned* seqb,
+                              unsigned* sizea, unsigned* sizeb) {
+      // read N queries
+      unsigned* seqa_unpacked = new unsigned[N*SIZEA_MAX]();
+      read_seq("../data/dna-query.fasta", N, SIZEA_MAX, seqa_unpacked, sizea);
+
+      // read N references
+      unsigned* seqb_unpacked = new unsigned[N*SIZEB_MAX]();
+      read_seq("../data/dna-reference.fasta", N, SIZEB_MAX, seqb_unpacked, sizeb);
+
+      // pack
+      int num_unpacked = N * SIZEA_MAX;
+      int num_packed = (num_unpacked + 15) / 16;
+      unsigned* unpacked = seqa_unpacked;
+      pack(unpacked, num_unpacked, seqa);
+
+      num_unpacked = N * SIZEB_MAX;
+      num_packed = (num_unpacked + 15) / 16;
+      unpacked = seqb_unpacked;
+      pack(unpacked, num_unpacked, seqb);
+  }
   };
-  fin.close();
-}
 
 int kernel_smith_waterman (int argc, char **argv) {
         char *bin_path, *test_name;
@@ -109,19 +150,15 @@ int kernel_smith_waterman (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_set_default_pod(&device, pod));
                 BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
-                // == Reading data
+                // == Get data
                 const unsigned N = 4;
-                // read N queries
                 const int SIZEA_MAX = 32;
-                unsigned* seqa = new unsigned[N*SIZEA_MAX]();
-                unsigned* sizea = new unsigned[N];
-                read_seq("../data/dna-query.fasta", N, SIZEA_MAX, seqa, sizea);
-
-                // read N references
                 const int SIZEB_MAX = 32;
-                unsigned* seqb = new unsigned[N*SIZEB_MAX]();
+                unsigned* seqa = new unsigned[N * SIZEA_MAX];
+                unsigned* seqb = new unsigned[N * SIZEB_MAX];
+                unsigned* sizea = new unsigned[N];
                 unsigned* sizeb = new unsigned[N];
-                read_seq("../data/dna-reference.fasta", N, SIZEB_MAX, seqb, sizeb);
+                Sequence::get_data_packed(N, SIZEA_MAX, SIZEB_MAX, seqa, seqb, sizea, sizeb);
 
                 // == Sending data to device
                 // Define the sizes of the I/O arrays
