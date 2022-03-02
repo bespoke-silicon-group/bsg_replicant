@@ -115,6 +115,8 @@ class Sequence {
       num_packed = (num_unpacked + 15) / 16;
       unpacked = seqb_unpacked;
       pack(unpacked, num_unpacked, seqb);
+      delete[] seqa_unpacked;
+      delete[] seqb_unpacked;
   }
   };
 
@@ -204,6 +206,10 @@ int kernel_smith_waterman (int argc, char **argv) {
                 bsg_pr_test_info("Writing A and B to device\n");
 
                 BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_jobs, 4));
+                delete[] seqa;
+                delete[] seqb;
+                delete[] sizea;
+                delete[] sizeb;
 
                 // == Launching kernel ==
                 // Define amount of work for each tile group
@@ -254,6 +260,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                     return HB_MC_FAIL;
                   }
                 }
+                delete[] score;
         }
 
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
