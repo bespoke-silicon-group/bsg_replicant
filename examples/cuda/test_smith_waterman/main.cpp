@@ -154,9 +154,12 @@ int kernel_smith_waterman (int argc, char **argv) {
 
                 // == Get data
                 int num_tiles = tg_dim.x * tg_dim.y;
-                const int N = 4 * num_tiles;
+                const int N_TILE = 4;
+                const int N = N_TILE * num_tiles;
                 const int SIZEA_MAX = 32;
                 const int SIZEB_MAX = 32;
+                const int SIZEA_MAX_PACKED = (SIZEA_MAX + 15) / 16;
+                const int SIZEB_MAX_PACKED = (SIZEB_MAX + 15) / 16;
                 unsigned* seqa = new unsigned[N * SIZEA_MAX];
                 unsigned* seqb = new unsigned[N * SIZEB_MAX];
                 unsigned* sizea = new unsigned[N];
@@ -218,7 +221,7 @@ int kernel_smith_waterman (int argc, char **argv) {
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
                 /* Prepare list of input arguments for kernel. */
-                uint32_t cuda_argv[8] = {N / num_tiles, SIZEA_MAX, SIZEB_MAX,
+                uint32_t cuda_argv[8] = {N_TILE, SIZEA_MAX, SIZEB_MAX,
                                          seqa_d, seqb_d, sizea_d,
                                          sizeb_d, score_d};
 
