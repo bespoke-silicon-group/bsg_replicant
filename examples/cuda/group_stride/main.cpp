@@ -143,16 +143,16 @@ int kernel_group_stride (int argc, char **argv) {
         // Calculate the expected result matrix using host code and
         // compare the results.
         // ************************************************************
-        for(int ix = 0; ix < tg_dim.x; ++ix){
-                for(int iy = 0; iy < tg_dim.y; ++iy){
-                        if(nx[tg_dim.x * iy + ix] != ((ix + 1) % tg_dim.x)){
-                                bsg_pr_err(BSG_RED("Incorrect east neighbor for tile X: %d, Y: %d. Expected: %d, Got: %d\n"), ix, iy, ((ix + 1) % tg_dim.x), nx[tg_dim.x * iy + ix]);
-                                return HB_MC_FAIL;
-                        }
-                        if(ny[tg_dim.x * iy + ix] != ((iy + 1) % tg_dim.y)){
-                                bsg_pr_err(BSG_RED("Incorrect south neighbor for tile X: %d, Y: %d. Expected: %d, Got: %d\n"), ix, iy, ((iy + 1) % tg_dim.y), ny[tg_dim.x * iy + ix]);
-                                return HB_MC_FAIL;
-                        }
+        hb_mc_coordinate_t tg_coord;
+        foreach_coordinate(tg_coord, HB_MC_COORDINATE(0,0), tg_dim){
+                bsg_pr_info("Checking Tile @ Coordinate %d, %d\n", tg_coord.x, tg_coord.y);
+                if(nx[tg_dim.x * tg_coord.y + tg_coord.x] != ((tg_coord.x + 1) % tg_dim.x)){
+                        bsg_pr_err(BSG_RED("Incorrect east neighbor for tile X: %d, Y: %d. Expected: %d, Got: %d\n"), tg_coord.x, tg_coord.y, ((tg_coord.x + 1) % tg_dim.x), nx[tg_dim.x * tg_coord.y + tg_coord.x]);
+                        return HB_MC_FAIL;
+                }
+                if(ny[tg_dim.x * tg_coord.y + tg_coord.x] != ((tg_coord.y + 1) % tg_dim.y)){
+                        bsg_pr_err(BSG_RED("Incorrect south neighbor for tile X: %d, Y: %d. Expected: %d, Got: %d\n"), tg_coord.x, tg_coord.y, ((tg_coord.y + 1) % tg_dim.y), ny[tg_dim.x * tg_coord.y + tg_coord.x]);
+                        return HB_MC_FAIL;
                 }
         }
 
