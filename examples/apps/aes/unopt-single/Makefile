@@ -44,15 +44,17 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
-VPATH = ../tiny-AES-c
 
 
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
 KERNEL_NAME = aes
+VPATH = ../tiny-AES-c
 
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+TILE_GROUP_DIM_X = 1
+TILE_GROUP_DIM_Y = 1
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
@@ -61,12 +63,14 @@ TEST_SOURCES += aes.c
 aes.o: CFLAGS += -DHOST_CODE
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DECB=0 -DCTR=0
+DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
+DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 CDEFINES += 
 CXXDEFINES += 
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable -I../tiny-AES-c/
 CFLAGS   += -std=gnu99 $(FLAGS)
-CXXFLAGS += -std=c++11 $(FLAGS) -Os
+CXXFLAGS += -std=c++11 $(FLAGS) -O3
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -95,12 +99,11 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 aes.rvo: RISCV_OPT_LEVEL = -O3
 aes.rvo: RISCV_DEFINES += -DECB=0 -DCTR=0
 aes.rvo: RISCV_DEFINES += -DBSG_MANYCORE
+kernel.rvo: RISCV_INCLUDES += -I../tiny-AES-c
 
-kernel.riscv: aes.rvo
+kernel.riscv: kernel.rvo aes.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 1
-TILE_GROUP_DIM_Y = 1
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
@@ -133,6 +136,5 @@ regression: exec.log
 .PHONY: clean
 
 clean:
-	rm -rf stats
 	rm -rf aes.rvo
 
