@@ -54,14 +54,13 @@ int kernel_aes (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-        bsg_pr_test_info("Running the CUDA AES Kernel on a grid of 16x8 tile groups.\n\n");
+        bsg_pr_test_info("Running the CUDA AES Kernel on a grid of %dx%d tile groups.\n\n", TILE_GROUP_DIM_X, TILE_GROUP_DIM_Y);
 
         /*********************/
         /* Initialize device */
         /*********************/
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
-
 
         hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(&device, pod)
@@ -75,7 +74,7 @@ int kernel_aes (int argc, char **argv) {
 
                 // Define tg_x/y: number of tiles in each tile group
                 // Calculate grid_dim_x/y: number of tile groups needed
-                hb_mc_dimension_t tg = { .x = 16, .y = 8 };
+                hb_mc_dimension_t tg = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
                 hb_mc_dimension_t grid = { .x = 1, .y = 1};
                 int niters = 4;
                 uint8_t buf[tg.x * tg.y * MSG_LEN * niters];
@@ -120,7 +119,6 @@ int kernel_aes (int argc, char **argv) {
                 hb_mc_dma_htod_t htod;
                 hb_mc_dma_dtoh_t dtoh;
 
-                //BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, sizeof(ctx), HB_MC_MEMCPY_TO_DEVICE));
                 htod.d_addr = ctx_device;
                 htod.h_addr = src;
                 htod.size   = sizeof(ctx);
@@ -129,7 +127,6 @@ int kernel_aes (int argc, char **argv) {
 
                 dst = (void *) ((intptr_t) buf_device);
                 src = (void *) &buf[0];
-                //BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, sizeof(buf), HB_MC_MEMCPY_TO_DEVICE));
 
                 htod.d_addr = buf_device;
                 htod.h_addr = src;
@@ -164,7 +161,6 @@ int kernel_aes (int argc, char **argv) {
                 // Copy result back from device DRAM into host memory.
                 src = (void *) ((intptr_t) buf_device);
                 dst = (void *) &buf[0];
-                //BSG_CUDA_CALL(hb_mc_device_memcpy (&device, (void *) dst, src, sizeof(buf), HB_MC_MEMCPY_TO_HOST));
 
                 dtoh.d_addr = buf_device;
                 dtoh.h_addr = dst;
@@ -174,11 +170,11 @@ int kernel_aes (int argc, char **argv) {
 
                 BSG_CUDA_CALL(hb_mc_device_program_finish(&device));
 
-                // Compare the results.
-                for(int tidx = 0; tidx < tg.x * tg.y; tidx++){
+                hb_mc_coordinate_t tile;
+                foreach_coordinate(tile, HB_MC_COORDINATE(0,0), tg){
                         for(int iter = 0; iter < niters; iter++){
-                                if(memcmp(host_buf, &buf[tidx * niters * MSG_LEN + iter * MSG_LEN], MSG_LEN) != 0){
-                                        bsg_pr_err(BSG_RED("Ciphertext mismatch from tidx %d, iter %d!\n"), tidx, iter);
+                                if(memcmp(host_buf, &buf[(tile.y * tg.x + tile.x) * niters * MSG_LEN + iter * MSG_LEN], MSG_LEN) != 0){
+                                        bsg_pr_err(BSG_RED("Ciphertext mismatch from tidx %d, iter %d!\n"), (tile.y * tg.x + tile.x), iter);
                                         for (int i = 0; i < MSG_LEN;){
                                                 int j;
                                                 for(j = 0; j < 32; ++j){
@@ -193,7 +189,7 @@ int kernel_aes (int argc, char **argv) {
                                         }
                                         return HB_MC_FAIL;
                                 } else {
-                                        bsg_pr_info(BSG_GREEN("Ciphertext matches for tidx %d!\n"), tidx);
+                                        bsg_pr_info(BSG_GREEN("Ciphertext matches for tidx %d!\n"), (tile.y * tg.x + tile.x));
                                 }
                         }
                 }

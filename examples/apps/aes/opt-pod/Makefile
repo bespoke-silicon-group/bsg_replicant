@@ -53,6 +53,8 @@ VPATH = ../tiny-AES-c
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.cpp
@@ -61,6 +63,8 @@ TEST_SOURCES += aes.c
 aes.o: CFLAGS += -DHOST_CODE
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DECB=0 -DCTR=0
+DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
+DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 CDEFINES += 
 CXXDEFINES += 
 
@@ -103,8 +107,6 @@ kernel.rvo: RISCV_INCLUDES += -I../tiny-AES-c
 kernel.riscv: kernel.rvo aes.rvo
 
 # Tile Group Dimensions
-TILE_GROUP_DIM_X = 16
-TILE_GROUP_DIM_Y = 8
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
 
