@@ -51,10 +51,10 @@ int kernel_bs (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-        bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of 1x1 tile groups.\n\n");
+        bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of %dx%d tile groups.\n\n", TILE_GROUP_DIM_X, TILE_GROUP_DIM_Y);
 
         // TODO: Set values
-        char *inputFile = "inputs/in_4K.txt";
+        char *inputFile = "../data/in_16K.txt";
 
         FILE *file;
         int i;
@@ -184,7 +184,7 @@ int kernel_bs (int argc, char **argv) {
 
                 // Define tg_dim_x/y: number of tiles in each tile group
                 // Calculate grid_dim_x/y: number of tile groups needed
-                hb_mc_dimension_t tg_dim = { .x = 1, .y = 1 };
+                hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y };
                 hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
                 uint32_t opts_tile = numOptions / (grid_dim.x * grid_dim.y);
                 if(numOptions % (grid_dim.x * grid_dim.y)){
