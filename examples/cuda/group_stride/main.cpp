@@ -54,18 +54,8 @@ int kernel_group_stride (int argc, char **argv) {
         // Initialize device, load binary and unfreeze tiles.
         //
         hb_mc_device_t device;
-        rc = hb_mc_device_init(&device, test_name, 0);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("Failed to initialize device.\n");
-                return rc;
-        }
-
-
-        rc = hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("Failed to initialize program.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+        BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
         //************************************************************
         // Define tg_dim_x/y: number of tiles in each tile group
@@ -86,18 +76,9 @@ int kernel_group_stride (int argc, char **argv) {
         bsg_pr_info("Tile Group Dimensions: %d x %d \n", tg_dim.x, tg_dim.y);
 
         eva_t _nx, _ny;
-        rc = hb_mc_device_malloc(&device, sizeof(nx), &_nx);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("Failed to allocate nx on device.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(nx), &_nx));
 
-        rc = hb_mc_device_malloc(&device, sizeof(ny), &_ny);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("Failed to allocate ny on device.\n");
-                return rc;
-        }
-
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(ny), &_ny));
 
         //************************************************************
         // Copy nx and ny, from host onto device
@@ -107,20 +88,12 @@ int kernel_group_stride (int argc, char **argv) {
         bsg_pr_info("Copying nx\n");
         dst = (void *) ((intptr_t) _nx);
         src = (void *) &nx;
-        rc = hb_mc_device_memcpy (&device, dst, src, sizeof(nx), HB_MC_MEMCPY_TO_DEVICE);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("Failed to copy nx to device.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, sizeof(nx), HB_MC_MEMCPY_TO_DEVICE));
 
         bsg_pr_info("Copying ny\n");
         dst = (void *) ((intptr_t) _ny);
         src = (void *) &ny;
-        rc = hb_mc_device_memcpy (&device, dst, src, sizeof(ny), HB_MC_MEMCPY_TO_DEVICE);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("Failed to copy ny to device.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, sizeof(ny), HB_MC_MEMCPY_TO_DEVICE));
 
 
         //************************************************************
@@ -133,11 +106,7 @@ int kernel_group_stride (int argc, char **argv) {
         // dimensions, kernel name, number and list of arguments
         //************************************************************
         bsg_pr_info("Enqueue Kernel\n");
-        rc = hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_group_stride", sizeof(cuda_argv)/sizeof(cuda_argv[0]), cuda_argv);
-        if (rc != HB_MC_SUCCESS) { 
-                bsg_pr_err("failed to initialize grid.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_group_stride", sizeof(cuda_argv)/sizeof(cuda_argv[0]), cuda_argv));
 
 
         //************************************************************
@@ -148,11 +117,7 @@ int kernel_group_stride (int argc, char **argv) {
         uint64_t cycle_start, cycle_end;
         hb_mc_manycore_get_cycle((&device)->mc, &cycle_start);
 
-        rc = hb_mc_device_tile_groups_execute(&device);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to execute tile groups.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
 
         hb_mc_manycore_get_cycle((&device)->mc, &cycle_end);
 
@@ -162,30 +127,17 @@ int kernel_group_stride (int argc, char **argv) {
         bsg_pr_info("Copying result back\n");
         src = (void *) ((intptr_t) _nx);
         dst = (void *) nx;
-        rc = hb_mc_device_memcpy (&device, dst, src, sizeof(nx), HB_MC_MEMCPY_TO_HOST);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to copy memory from device.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, sizeof(nx), HB_MC_MEMCPY_TO_HOST));
 
         bsg_pr_info("Copying result back\n");
         src = (void *) ((intptr_t) _ny);
         dst = (void *) ny;
-        rc = hb_mc_device_memcpy (&device, dst, src, sizeof(ny), HB_MC_MEMCPY_TO_HOST);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to copy memory from device.\n");
-                return rc;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, sizeof(ny), HB_MC_MEMCPY_TO_HOST));
 
         //************************************************************
         // Freeze the tiles and memory manager cleanup.
         //************************************************************
-        rc = hb_mc_device_finish(&device);
-        if (rc != HB_MC_SUCCESS) {
-                bsg_pr_err("failed to de-initialize device.\n");
-                return rc;
-        }
-
+        BSG_CUDA_CALL(hb_mc_device_finish(&device));
 
         //************************************************************
         // Calculate the expected result matrix using host code and
@@ -213,15 +165,4 @@ int kernel_group_stride (int argc, char **argv) {
         return HB_MC_SUCCESS;
 }
 
-#ifdef VCS
-int vcs_main(int argc, char ** argv) {
-#else
-        int main(int argc, char ** argv) {
-#endif
-                bsg_pr_test_info("Tile Group Striding Regression Test\n");
-                int rc = kernel_group_stride(argc, argv);
-                bsg_pr_test_pass_fail(rc == HB_MC_SUCCESS);
-                return rc;
-        }
-
-
+declare_program_main("Group Stride", kernel_group_stride);
