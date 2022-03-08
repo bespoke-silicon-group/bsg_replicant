@@ -81,8 +81,7 @@ class Sequence {
   }
 
   // Pack DNA sequence
-  static void pack(const unsigned* unpacked, const int num_unpacked, unsigned* packed) {
-    const int num_packed = (num_unpacked + 15) / 16;
+  static void pack(const unsigned* unpacked, const int num_unpacked, const int num_packed, unsigned* packed) {
     for (int i = 0; i < num_packed; i++) {
       for (int j = 0; j < 16 && i * 16 + j < num_unpacked; j++) {
         int unpacked_val = unpacked[j] << (30 - 2 * j);
@@ -107,14 +106,16 @@ class Sequence {
 
       // pack
       int num_unpacked = N * SIZEA_MAX;
-      int num_packed = (num_unpacked + 15) / 16;
+      const int SIZEA_MAX_PACKED = (SIZEA_MAX + 15) / 16;
+      int num_packed = N * SIZEA_MAX_PACKED;
       unsigned* unpacked = seqa_unpacked;
-      pack(unpacked, num_unpacked, seqa);
+      pack(unpacked, num_unpacked, num_packed, seqa);
 
+      const int SIZEB_MAX_PACKED = (SIZEB_MAX + 15) / 16;
       num_unpacked = N * SIZEB_MAX;
-      num_packed = (num_unpacked + 15) / 16;
+      num_packed = N * SIZEB_MAX_PACKED;
       unpacked = seqb_unpacked;
-      pack(unpacked, num_unpacked, seqb);
+      pack(unpacked, num_unpacked, num_packed, seqb);
       delete[] seqa_unpacked;
       delete[] seqb_unpacked;
   }
@@ -160,16 +161,16 @@ int kernel_smith_waterman (int argc, char **argv) {
                 const int SIZEB_MAX = 32;
                 const int SIZEA_MAX_PACKED = (SIZEA_MAX + 15) / 16;
                 const int SIZEB_MAX_PACKED = (SIZEB_MAX + 15) / 16;
-                unsigned* seqa = new unsigned[N * SIZEA_MAX];
-                unsigned* seqb = new unsigned[N * SIZEB_MAX];
+                unsigned* seqa = new unsigned[N * SIZEA_MAX_PACKED]();
+                unsigned* seqb = new unsigned[N * SIZEB_MAX_PACKED]();
                 unsigned* sizea = new unsigned[N];
                 unsigned* sizeb = new unsigned[N];
                 Sequence::get_data_packed(N, SIZEA_MAX, SIZEB_MAX, seqa, seqb, sizea, sizeb);
 
                 // == Sending data to device
                 // Define the sizes of the I/O arrays
-                size_t seqa_bytes = N * SIZEA_MAX * sizeof(unsigned);
-                size_t seqb_bytes = N * SIZEB_MAX * sizeof(unsigned);
+                size_t seqa_bytes = N * SIZEA_MAX_PACKED * sizeof(unsigned);
+                size_t seqb_bytes = N * SIZEB_MAX_PACKED * sizeof(unsigned);
                 size_t sizea_bytes = N * sizeof(unsigned);
                 size_t sizeb_bytes = N * sizeof(unsigned);
                 size_t score_bytes = N * sizeof(unsigned);
