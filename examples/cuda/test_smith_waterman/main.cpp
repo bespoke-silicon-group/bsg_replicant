@@ -98,11 +98,11 @@ class Sequence {
                               unsigned* sizea, unsigned* sizeb) {
       // read N queries
       unsigned* seqa_unpacked = new unsigned[N*SIZEA_MAX]();
-      read_seq("../data/dna-query.fasta", N, SIZEA_MAX, seqa_unpacked, sizea);
+      read_seq("../data/dna-query32.fasta", N, SIZEA_MAX, seqa_unpacked, sizea);
 
       // read N references
       unsigned* seqb_unpacked = new unsigned[N*SIZEB_MAX]();
-      read_seq("../data/dna-reference.fasta", N, SIZEB_MAX, seqb_unpacked, sizeb);
+      read_seq("../data/dna-reference32.fasta", N, SIZEB_MAX, seqb_unpacked, sizeb);
 
       // pack
       int num_unpacked = N * SIZEA_MAX;
