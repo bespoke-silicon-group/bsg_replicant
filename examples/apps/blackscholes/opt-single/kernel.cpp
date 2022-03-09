@@ -7,8 +7,7 @@ extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalia
                                     float bsg_attr_remote * bsg_attr_noalias puts,
                                     float bsg_attr_remote * bsg_attr_noalias calls,
                                     int elems){
-	int grid_idx = (bsg_tiles_X * __bsg_y + __bsg_x);
-        int start = grid_idx * elems;
+        int start = __bsg_id * elems;
         bsg_barrier_hw_tile_group_init();
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
@@ -18,7 +17,6 @@ extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalia
         OptionData _data[CHUNK_SIZE];
         float _puts[CHUNK_SIZE];
         float _calls[CHUNK_SIZE];
-
         for(int i = start; i < (start + elems); i += CHUNK_SIZE){
 
                 for(int ci = 0; ci < CHUNK_SIZE; ++ci){

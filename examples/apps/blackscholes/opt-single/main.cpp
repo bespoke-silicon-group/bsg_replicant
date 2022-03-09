@@ -72,40 +72,39 @@ int kernel_bs (int argc, char **argv) {
         //Read input data from file
         file = fopen(inputFile, "r");
         if(file == NULL) {
-                printf("ERROR: Unable to open file `%s'.\n", inputFile);
-                exit(1);
+                bsg_pr_test_err("ERROR: Unable to open file `%s'.\n", inputFile);
+                return HB_MC_FAIL;
         }
 
         // File format:
         rv = fscanf(file, "%i", &numOptions);
         if(rv != 1) {
-                printf("ERROR: Unable to read from file `%s'.\n", inputFile);
+                bsg_pr_test_err("ERROR: Unable to read from file `%s'.\n", inputFile);
                 fclose(file);
-                exit(1);
+                return HB_MC_FAIL;
         }
 
-        printf("Number of Options: %d\n", numOptions);
+        bsg_pr_test_info("Number of Options: %d\n", numOptions);
 
         data = (OptionData*)malloc(numOptions*sizeof(OptionData));
         for (int i = 0; i < numOptions; ++ i ){
                 rv = fscanf(file, "%f %f %f %f %f %f %c %f %f", &data[i].s, &data[i].strike, &data[i].r, &data[i].divq, &data[i].v, &data[i].t, &data[i].OptionType, &data[i].divs, &data[i].DGrefval);
                 if(rv != 9) {
-                        printf("ERROR: Unable to read from file `%s'.\n", inputFile);
+                        bsg_pr_test_err("Unable to read from file `%s'.\n", inputFile);
                         fclose(file);
-                        exit(1);
+                        return HB_MC_FAIL;
                 }
         }
 
-        rv = fclose(file);
         // Only do 1/64th of the dataset, but make sure it divides evenly
         numOptions = numOptions/64;
-        numOptions += (128 - (numOptions % 128));
+        numOptions += (numOptions - (numOptions % 128));
 
+        rv = fclose(file);
         if(rv != 0) {
-                printf("ERROR: Unable to close file `%s'.\n", inputFile);
+                bsg_pr_test_err("Unable to close file `%s'.\n", inputFile);
                 exit(1);
         }
-
 
         // Allocate outputs
         _puts = (float*)malloc(numOptions*sizeof(float));
@@ -130,7 +129,6 @@ int kernel_bs (int argc, char **argv) {
         /*********************/
         hb_mc_device_t device;
         BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
-
 
         hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(&device, pod)
