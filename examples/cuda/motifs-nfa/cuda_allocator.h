@@ -1,0 +1,69 @@
+// Copyright (C) 2010  
+// Pierluigi Rolando (pierluigi.rolando@polito.it)
+// Netgroup - DAUIN - Politecnico di Torino
+//
+// Niccolo' Cascarano (niccolo.cascarano@polito.it)
+// Netgroup - DAUIN - Politecnico di Torino
+//
+// This program is free software; you can redistribute it and/or
+// modify it under the terms of the GNU General Public License
+// as published by the Free Software Foundation; either version 2
+// of the License, or (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program; if not, write to the Free Software
+// Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+#ifndef CUDA_ALLOCATOR_H_
+#define CUDA_ALLOCATOR_H_
+
+#ifdef DEBUG
+#include <iostream>
+#endif
+
+#include "cuda_wrappers.h"
+
+#include <assert.h>
+#include <vector>
+
+class CudaAllocator {
+	private:
+		std::vector<void *> host_;
+		std::vector<void *> device_;
+
+	public:
+		CudaAllocator();
+		~CudaAllocator();
+
+		template<typename T>
+			T *alloc_host(size_t size) {
+				T *ptr(0);
+				if(w_cudaMallocHost((void **) &ptr, size) != w_cudaSuccess)
+					ptr = 0;
+				else
+					host_.push_back(ptr);
+				return ptr;
+			}
+
+		template<typename T>
+			T *alloc_device(size_t size) {
+				T *ptr(0);
+				if(w_cudaMalloc((void **) &ptr, size) != w_cudaSuccess)
+					ptr = 0;
+				else
+					device_.push_back(ptr);
+				return ptr;
+			}
+
+		void dealloc_host(void *ptr);
+		void dealloc_device(void *ptr);
+
+};
+
+
+#endif /* HOST_FUNCTIONS_H_ */
