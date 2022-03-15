@@ -82,8 +82,8 @@ include $(EXAMPLES_PATH)/link.mk
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
 
-BSG_MANYCORE_KERNELS ?= kernel.riscv
-RISCV_TARGET_OBJECTS += kernel.rvo
+BSG_MANYCORE_KERNELS ?= ../kernel.riscv
+RISCV_TARGET_OBJECTS += ../kernel.rvo
 RISCV_INCLUDES  +=
 RISCV_CCPPFLAGS += -D__KERNEL__
 
