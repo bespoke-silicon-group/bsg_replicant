@@ -81,21 +81,20 @@ include $(EXAMPLES_PATH)/link.mk
 
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
-BSG_MANYCORE_KERNELS = $(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv
 
-# Tile Group Dimensions
-TILE_GROUP_DIM_X = 1
-TILE_GROUP_DIM_Y = 1
+BSG_MANYCORE_KERNELS ?= kernel.riscv
+RISCV_TARGET_OBJECTS += kernel.rvo
+RISCV_INCLUDES  +=
+RISCV_CCPPFLAGS += -D__KERNEL__
 
-$(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	$(MAKE) -j1 -C $(CUDALITE_SRC_PATH)/$(KERNEL_NAME) clean main.riscv
+TILE_GROUP_DIM_X ?= 1
+TILE_GROUP_DIM_Y ?= 1
+RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
+RISCV_DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
+RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
+RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
+
+include $(EXAMPLES_PATH)/cuda/riscv.mk
 
 ###############################################################################
 # Execution flow
