@@ -86,6 +86,7 @@ TESTS += test_hammer_cache
 TESTS += test_tracer
 TESTS += test_conv1d
 TESTS += test_conv2d
+TESTS += group_stride
 
 regression: $(TESTS)
 	@echo "CUDA REGRESSION PASSED"
