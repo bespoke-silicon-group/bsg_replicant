@@ -2,8 +2,8 @@
 
 This directory contains a variety of target machine configurations for
 HammerBlade. Each sub-directory is a target with a valid
-Makefile.machine.include file. The Makefile.machine.include specifies
-the machine configuration.
+Makefile.machine.include file that specifies the machine
+configuration.
 
 To use a specific machine, change BSG_MACHINE_PATH to specify one of
 the following directories in
@@ -12,75 +12,27 @@ Makefile.machine.include file.
 
 ## Machines and Platforms
 
-These machines are supported by the `dpi-verilator` and `dpi-vcs` platform:
+All machines are currently supported by the `bigblade-vcs`
+platform. These simulate the current state-of-the-art HammerBlade
+pod-based architecture.
 
-- timing_*
-- baseline_*
-- infinite_*
+- pod_X1Y1_ruche_X16Y8_hbm_one_pseudo_channel: HammerBlade architecture with 1 Manycore pod, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to a single HBM2 pseudochannel.
+- pod_X1_Y1_ruche_X16Y8_hbm: HammerBlade architecture with 1 Manycore pod, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to two HBM channels.
+- pod_X2_Y2_ruche_X16Y8_hbm: HammerBlade architecture with 4 Manycore pods arranged in a 2 x 2 grid, each with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to eight HBM channels.
+- pod_X4_Y4_ruche_X16Y8_hbm: HammerBlade architecture with 16 Manycore pods arranged in a 4 x 4 grid, each with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to thirty-two HBM cxhannels.
 
-The `aws-fpga` and `aws-vcs` platform only supports the
-4x4_blocking_vcache_f1_model  4x4_blocking_vcache_f1_dram
-
-## Performance Metric Machines
-
-- timing_* machines: Manycore pod with caches on top and bottom. There
-  are 16 caches per HBM channel. Each cache is mapped to a separate
-  channel bank within its respective channel. 
-
-  ruche indicates a _ruched_ mesh network. Mesh indicates a
-  traditional 2-D mesh network.
-
-  *This configuration should be the default for taking performance
-  measurements and making decisions based on them.*
-
-- infinite_* machines: Manycore pod with infinite, single-cycle
-  memories on top and bottom of each row. 
-
-  ruche indicates a _ruched_ mesh network. Mesh indicates a
-  traditional 2-D mesh network.
-
-  *This configuration should be used to estimate the impact of memory
-  latency.*
-
-- baseline_* machines: Manycore pod with infinite, single-cycle
-  memories on top and bottom of each row. 
-
-  The baseline designs use a crossbar network.
-
-  *This configuration should be used to estimate the impact of an
-  ideal network*
-
-## Correctness Machines
-
-**DO NOT USE THESE MACHINES FOR PERFORMANCE METRICS**
-
-- 4x4_blocking_vcache_f1_model: This is a 4x4 array of RISC-V Vanilla
-  Cores with 1 FAKE DRAM DIM with bounded/low latency attached through
-  an AXI-4 interface to the top and bottom of the array. This models
-  the configuration on F1 and is used to build the F1 image. 
-
-- 4x4_amo_support: Same as 4x4_blocking_vcache_f1_model
-
-- 4x4_blocking_vcache_f1_dram: This is a 4x4 array of RISC-V Vanilla
-  Cores with 1 DRAM DIM with bounded/low latency attached through an
-  AXI-4 interface to the top and bottom of the array. The DRAM is a
-  Micron model provided by Xilinx. This models the configuration on F1
-  and is used to build the F1 image. *This machine simulates very
-  slowly*
-
-## Legacy Machines
-
-**DO NOT USE THESE MACHINES**
-
+- bigblade_pod_X1_Y1_ruche_X16Y8_hbm: HammerBlade architecture with 1 Manycore pod arrange, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to an and an HBM2 memory system that mimics the Bigblade memory system.
 
 ## Parameters:
 
 The following parameters in each Makefile.machine.include file can be changed:
 
-
 ### Core Configurations
-- `BSG_MACHINE_NUM_CORES_X`: Number of RV32 Cores in the X dimension (width)
-- `BSG_MACHINE_NUM_CORES_Y`: Number of RV32 Cores in the Y dimension (height)
+- `BSG_MACHINE_PODS_X`: Number of HammerBlade Pods in the X dimension (width)
+- `BSG_MACHINE_PODS_Y`: Number of HammerBlade Pods in the Y dimension (height)
+
+- `BSG_MACHINE_POD_TILES_X`: Number of RV32 Cores in the X dimension (width)
+- `BSG_MACHINE_POD_TILES_Y`: Number of RV32 Cores in the Y dimension (height)
 
 - `BSG_MACHINE_HETERO_TYPE_VEC`: Heterogeneous tile composition. Must
 be a 1-d array equal to the number of tiles, or shorthand
@@ -95,7 +47,6 @@ valid values are defined in [bsg_machine_network_cfg_pkg.v](https://github.com/b
 - `BSG_MACHINE_RUCHE_FACTOR_X`: X-dimension ruche factor. Only applies when `BSG_MACHINE_NETWORK_CFG` is `e_network_half_ruche_x`
 
 ### Memory System Parameters
-- `BSG_MACHINE_DRAM_INCLUDED`: Defines whether the DRAM interface is used. Default is 1. 
 - `BSG_MACHINE_MEM_CFG`: Defines memory system configuration as a triple (Cache, Interface, Type). Values are defined and explained in (bsg_bladerunner_mem_cfg_pkg.v)[https://github.com/bespoke-silicon-group/bsg_replicant/blob/master/hardware/bsg_bladerunner_mem_cfg_pkg.v].
 
 - `BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL`: Defines number of Last-Level Caches per DRAM channel.
