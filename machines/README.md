@@ -42,7 +42,9 @@ is for Vanilla Core (RV32), and anything else should be described in
 the relevant Makefile.machine.include file.
 
 ### Network Parameters
-- `BSG_MACHINE_RUCHE_FACTOR_X`: X-dimension ruche factor
+- `BSG_MACHINE_NETWORK_CFG`: Network configuration. Valid values are : e_network_mesh, e_network_crossbar, and e_network_half_ruche_x
+valid values are defined in [bsg_machine_network_cfg_pkg.v](https://github.com/bespoke-silicon-group/bsg_manycore/blob/master/testbenches/common/v/bsg_manycore_network_cfg_pkg.v)
+- `BSG_MACHINE_RUCHE_FACTOR_X`: X-dimension ruche factor. Only applies when `BSG_MACHINE_NETWORK_CFG` is `e_network_half_ruche_x`
 
 ### Memory System Parameters
 - `BSG_MACHINE_MEM_CFG`: Defines memory system configuration as a triple (Cache, Interface, Type). Values are defined and explained in (bsg_bladerunner_mem_cfg_pkg.v)[https://github.com/bespoke-silicon-group/bsg_replicant/blob/master/hardware/bsg_bladerunner_mem_cfg_pkg.v].
