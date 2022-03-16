@@ -9,7 +9,7 @@ HammerBlade instruction cache.
 
 # Quick-Start:
 
-1. Clone the submodule, tiny-AES-c
+1. Clone the submodule, tiny-AES-c: `git submodule update --init --checkout tiny-AES-c`
 2. From one of the four sub-directories, run the typical HB flow:
    - `unopt-single`: Unoptimized version of AES, running on a single tile
    - `unopt-pod`: Unoptimized version of AES, running on an entire pod
