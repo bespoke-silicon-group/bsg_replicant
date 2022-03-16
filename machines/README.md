@@ -16,9 +16,10 @@ All machines are currently supported by the `bigblade-vcs`
 platform. These simulate the current state-of-the-art HammerBlade
 pod-based architecture.
 
-- pod_X1_Y1_ruche_X16Y8_hbm: HammerBlade architecture with 1 Manycore pod, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to an and an HBM2 memory system.
-- pod_X2_Y2_ruche_X16Y8_hbm: HammerBlade architecture with 4 Manycore pods arranged in a 2 x 2 grid, each with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to an and an HBM2 memory system.
-- pod_X4_Y4_ruche_X16Y8_hbm: HammerBlade architecture with 16 Manycore pods arranged in a 4 x 4 grid, each with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to an and an HBM2 memory system.
+- pod_X1Y1_ruche_X16Y8_hbm_one_pseudo_channel: HammerBlade architecture with 1 Manycore pod, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to a single HBM2 pseudochannel.
+- pod_X1_Y1_ruche_X16Y8_hbm: HammerBlade architecture with 1 Manycore pod, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to two HBM channels.
+- pod_X2_Y2_ruche_X16Y8_hbm: HammerBlade architecture with 4 Manycore pods arranged in a 2 x 2 grid, each with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to eight HBM channels.
+- pod_X4_Y4_ruche_X16Y8_hbm: HammerBlade architecture with 16 Manycore pods arranged in a 4 x 4 grid, each with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to thirty-two HBM cxhannels.
 
 - bigblade_pod_X1_Y1_ruche_X16Y8_hbm: HammerBlade architecture with 1 Manycore pod arrange, with 128 RISC-V tiles arranged in a 16 x 8 grid (W x H), and connected to an and an HBM2 memory system that mimics the Bigblade memory system.
 
