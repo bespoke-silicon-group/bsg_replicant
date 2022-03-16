@@ -25,8 +25,6 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-<<<<<<< HEAD
-=======
 ############################################################################################
 # pod_X4Y4_ruche_X16Y8_hbm                                                                 #
 # 16 pods (4 pods high, 4 pods wide)                                                       #
@@ -37,7 +35,6 @@
 # There is a vanilla, 2D mesh network augmented with Ruche links                           #
 ############################################################################################
 
->>>>>>> b665274d... Update documents and machine configurations
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Chip Pod Dimensions
@@ -55,7 +52,7 @@ BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 
 # Network Parameters
 # BSG_MACHINE_NETWORK_CFG longer has an effect, fixed at e_network_half_ruche_x
-# BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
+BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
 BSG_MACHINE_RUCHE_FACTOR_X            = 3
 BSG_MACHINE_BARRIER_RUCHE_FACTOR_X    = 3
 
