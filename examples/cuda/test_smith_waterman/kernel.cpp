@@ -154,6 +154,55 @@ inline int get_tid(){
 #endif
 }
 
+inline void align(const unsigned length, const unsigned width,
+                  const unsigned char* seqa_spm_ptr,
+                  const unsigned char* seqb_spm_ptr,
+                  int* E_spm, int* F_spm, int* H_spm, int* H_prev_spm, unsigned* score) {
+  // Hyperparameters (match GPGPU-Sim)
+  const int match_score    = 1;
+  const int mismatch_score = -3;
+  const int gap_open       = 3;
+  const int gap_extend     = 1;
+
+  // compute 2D DP matrix
+  int score_temp = 0;
+  const auto mm = [&](const unsigned char a, const unsigned char b){ return (a==b)?match_score:mismatch_score; };
+  for(int i = 0; i < 1; i++) {
+    for(int j = 1; j < width; j++) {
+      E_spm[j] = max(E_spm[j-1] - gap_extend,
+                     H_spm[j-1] - gap_open
+                     );
+
+      F_spm[j] = 0;
+
+      H_prev_spm[j] = H_spm[j];
+      H_spm[j] = max(0, E_spm[j], F_spm[j]);
+      if (H_spm[j] > score_temp)
+        score_temp = H_spm[j];
+    }
+  }
+  for(int i = 1; i < length; i++) {
+    unsigned char seqa_val = seqa_spm_ptr[i];
+    for(int j = 1; j < width; j++) {
+      E_spm[j] = max(E_spm[j-1] - gap_extend,
+                     H_spm[j-1] - gap_open
+                     );
+
+      F_spm[j] = max(F_spm[j] - gap_extend,
+                       H_spm[j] - gap_open
+                      );
+
+      H_prev_spm[j] = H_spm[j];
+      H_spm[j] = max(0, E_spm[j], F_spm[j],
+                    H_prev_spm[j-1] + mm(seqa_val, seqb_spm_ptr[j]));
+      if (H_spm[j] > score_temp)
+        score_temp = H_spm[j];
+      }
+  }
+  // DRAM write
+  *score = score_temp;
+}
+
 #ifdef HB
 extern "C" __attribute__ ((noinline))
 #endif
@@ -168,12 +217,6 @@ void kernel_smith_waterman(
   unsigned* score
 ){
   profile_start();
-  // Hyperparameters (match GPGPU-Sim)
-  const int match_score    = 1;
-  const int mismatch_score = -3;
-  const int gap_open       = 3;
-  const int gap_extend     = 1;
-
   // determine which alignments the tile does
   int tid = get_tid();
   const int SIZEA_MAX_PACKED = (SIZEA_MAX + 15) / 16;
@@ -215,45 +258,10 @@ void kernel_smith_waterman(
 
   // loop through N alignments
   for (int k = 0; k < N; k++) {
-    const auto mm = [&](const unsigned char a, const unsigned char b){ return (a==b)?match_score:mismatch_score; };
+    // Compute score
+    align(length[k], width[k], seqa_spm_ptr, seqb_spm_ptr, E_spm, F_spm, H_spm, H_prev_spm, score_ptr);
 
-    // compute 2D DP matrix
-    score_temp = 0;
-    for(int i = 0; i < 1; i++) {
-      debug_printf(tid, k, N, i, length[k]);
-      for(int j = 1; j < width[k]; j++) {
-        E_spm[j] = max(E_spm[j-1] - gap_extend,
-                       H_spm[j-1] - gap_open
-                       );
-
-        F_spm[j] = 0;
-
-        H_prev_spm[j] = H_spm[j];
-        H_spm[j] = max(0, E_spm[j], F_spm[j]);
-        if (H_spm[j] > score_temp)
-          score_temp = H_spm[j];
-      }
-    }
-    for(int i = 1; i < length[k]; i++) {
-      debug_printf(tid, k, N, i, length[k]);
-      unsigned char seqa_val = seqa_spm_ptr[i];
-      for(int j = 1; j < width[k]; j++) {
-        E_spm[j] = max(E_spm[j-1] - gap_extend,
-                       H_spm[j-1] - gap_open
-                       );
-
-        F_spm[j] = max(F_spm[j] - gap_extend,
-                       H_spm[j] - gap_open
-                      );
-
-        H_prev_spm[j] = H_spm[j];
-        H_spm[j] = max(0, E_spm[j], F_spm[j],
-                      H_prev_spm[j-1] + mm(seqa_val, seqb_spm_ptr[j]));
-        if (H_spm[j] > score_temp)
-          score_temp = H_spm[j];
-      }
-    }
-    score_ptr[k] = score_temp;
+    score_ptr++;
     seqa_spm_ptr += SIZEA_MAX;
     seqb_spm_ptr += SIZEB_MAX;
   }
