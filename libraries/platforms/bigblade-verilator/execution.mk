@@ -25,11 +25,11 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd
+.PRECIOUS: threaded.log exec.log profile.log exec.log debug.vpd
 .PHONY: platform.execution.clean dve
 
 # TODO: Only provide the targets we care about
-saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/simsc
+threaded.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/threaded/simsc
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simsc
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
@@ -40,7 +40,6 @@ profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 
-saifgen.saif: saifgen.log ;
 
 debug.vpd: SIM_ARGS += +vpdfile+debug.vpd
 debug.vpd: debug.log ;
@@ -67,9 +66,9 @@ execution.clean: platform.execution.clean
 
 help:
 	@echo "Usage:"
-	@echo "make {clean | exec.log | profile.log | debug.log | debug.vpd | saifgen.log | saifgen.saif }"
+	@echo "make {clean | exec.log | profile.log | debug.log | debug.vpd | threaded.log }"
 	@echo "      exec.log: Run program with SAIF, profilers, and waveform generation disabled (Fastest)"
 	@echo "      profile.log: Run program with profilers enabled, SAIF and waveform generation disabled"
-	@echo "      saifgen.log saifgen.saif: Run program with SAIF generation enabled, profilers and waveform generation disabled"
+	@echo "      threaded.log: Run program with THREADED VERILATOR, profilers and waveform generation disabled"
 	@echo "      debug.log debug.vpd: Run program with waveform and profiles enabled, SAIF generation disabled"
 	@echo "      clean: Remove all subdirectory-specific outputs"
