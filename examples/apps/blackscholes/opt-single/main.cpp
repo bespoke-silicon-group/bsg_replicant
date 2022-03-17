@@ -54,7 +54,7 @@ int kernel_bs (int argc, char **argv) {
         bsg_pr_test_info("Running the CUDA Black-Scholes Kernel on a grid of %dx%d tile groups.\n\n", TILE_GROUP_DIM_X, TILE_GROUP_DIM_Y);
 
         // TODO: Set values
-        char *inputFile = "../data/in_16K.txt";
+        char *inputFile = "../data/in_10M.txt";
 
         FILE *file;
         int i;
@@ -97,8 +97,9 @@ int kernel_bs (int argc, char **argv) {
         }
 
         // Only do 1/64th of the dataset, but make sure it divides evenly
-        numOptions = numOptions/64;
-        numOptions += (numOptions - (numOptions % 128));
+        numOptions = exp2(floor(log2f(numOptions)));
+        numOptions = numOptions/256;
+        printf("%d\n", numOptions);
 
         rv = fclose(file);
         if(rv != 0) {
