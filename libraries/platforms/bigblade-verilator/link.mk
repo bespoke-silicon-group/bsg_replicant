@@ -98,9 +98,10 @@ VERILATOR_VFLAGS += --assert
 # VERILATOR_VFLAGS += --trace --trace-structs
 
 # libbsg_manycore_runtime will be compiled in $(BSG_PLATFORM_PATH)
-VERILATOR_LDFLAGS += -lbsg_manycore_regression -lbsg_manycore_runtime -lm
-VERILATOR_LDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
-VERILATOR_LDFLAGS += -lmachine -L$(BSG_MACHINE_PATH) -Wl,-rpath=$(BSG_MACHINE_PATH)
+VERILATOR_LDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH) -lbsg_manycore_regression -lbsg_manycore_runtime
+VERILATOR_LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldramsim3
+VERILATOR_LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
+VERILATOR_LDFLAGS += -lm
 VERILATOR_LDFLAGS += -ldl
 
 TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
@@ -130,8 +131,11 @@ $(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHINExPLATFORM_PATH)/debug $(BSG_MACHI
 	mkdir -p $@
 
 %/simsc: LD = $(CXX)
-%/simsc: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so  $(BSG_MACHINE_PATH)/libmachine.so | %
-	$(LD) -o $@ $(VERILATOR_LDFLAGS)
+# TODO: I don't like that we have to enumerate every single shared
+# library dependency, when these are already dependencies for the
+# runtime. Is there a better way?
+%/simsc: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so  $(BSG_MACHINE_PATH)/obj_dir/V$(BSG_DESIGN_TOP)__ALL.a $(LIBMACHINE_OBJECTS) $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.o | %
+	$(LD) -o $@ $(VERILATOR_LDFLAGS) $(filter %.a,$^) $(filter %.o,$^)
 
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/exec/simsc
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/debug/simsc
