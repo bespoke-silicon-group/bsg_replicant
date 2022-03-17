@@ -34,14 +34,15 @@ inline T max(T a, T b, T c)
 }
 
 inline void unpack(const unsigned* packed, const int num_packed, unsigned char* unpacked) {
+  unsigned char* unpacked_ptr = unpacked;
   for (int i = 0; i < num_packed; i++) {
     int packed_val = packed[i];
     for (int j = 0; j < 16; j++) {
       unsigned char unpacked_val = packed_val >> (30 - 2 * j);
       unpacked_val &= 0x00000003;
-      unpacked[j] = unpacked_val;
+      unpacked_ptr[j] = unpacked_val;
     }
-    unpacked += 16;
+    unpacked_ptr += 16;
   }
 }
 
@@ -69,6 +70,49 @@ inline void debug_printf(int tid, int k, int N, int i, int length){
   bsg_printf("[Tile %d] Alignment %d/%d, Row %d/%d\n", tid, k, N, i, length);
 #endif
 #endif
+}
+
+// copy N iterations of 16 words from DRAM via non-blocking loads
+template <typename T>
+inline void copyXAxisN(const T* src, const int N, T* dst) {
+  for (int i = 0; i < N; i++) {
+    T tmp00 =  src[0];
+    T tmp01 =  src[1];
+    T tmp02 =  src[2];
+    T tmp03 =  src[3];
+    T tmp04 =  src[4];
+    T tmp05 =  src[5];
+    T tmp06 =  src[6];
+    T tmp07 =  src[7];
+    T tmp08 =  src[8];
+    T tmp09 =  src[9];
+    T tmp10 = src[10];
+    T tmp11 = src[11];
+    T tmp12 = src[12];
+    T tmp13 = src[13];
+    T tmp14 = src[14];
+    T tmp15 = src[15];
+    asm volatile("": : :"memory");
+     dst[0] = tmp00;
+     dst[1] = tmp01;
+     dst[2] = tmp02;
+     dst[3] = tmp03;
+     dst[4] = tmp04;
+     dst[5] = tmp05;
+     dst[6] = tmp06;
+     dst[7] = tmp07;
+     dst[8] = tmp08;
+     dst[9] = tmp09;
+    dst[10] = tmp10;
+    dst[11] = tmp11;
+    dst[12] = tmp12;
+    dst[13] = tmp13;
+    dst[14] = tmp14;
+    dst[15] = tmp15;
+    dst += 16;
+    src += 16;
+  }
+  return;
 }
 
 inline void load_spm(const unsigned* seqa, const unsigned* seqb,
@@ -157,7 +201,7 @@ inline int get_tid(){
 inline void align(const unsigned length, const unsigned width,
                   const unsigned char* seqa_spm_ptr,
                   const unsigned char* seqb_spm_ptr,
-                  int* E_spm, int* F_spm, int* H_spm, int* H_prev_spm, unsigned* score) {
+                  short* E_spm, short* F_spm, short* H_spm, short* H_prev_spm, unsigned* score) {
   // Hyperparameters (match GPGPU-Sim)
   const int match_score    = 1;
   const int mismatch_score = -3;
@@ -176,7 +220,7 @@ inline void align(const unsigned length, const unsigned width,
       F_spm[j] = 0;
 
       H_prev_spm[j] = H_spm[j];
-      H_spm[j] = max(0, E_spm[j], F_spm[j]);
+      H_spm[j] = max((short)0, E_spm[j], F_spm[j]);
       if (H_spm[j] > score_temp)
         score_temp = H_spm[j];
     }
@@ -193,8 +237,8 @@ inline void align(const unsigned length, const unsigned width,
                       );
 
       H_prev_spm[j] = H_spm[j];
-      H_spm[j] = max(0, E_spm[j], F_spm[j],
-                    H_prev_spm[j-1] + mm(seqa_val, seqb_spm_ptr[j]));
+      H_spm[j] = max((short)0, E_spm[j], F_spm[j],
+                    (short)(H_prev_spm[j-1] + mm(seqa_val, seqb_spm_ptr[j])));
       if (H_spm[j] > score_temp)
         score_temp = H_spm[j];
       }
@@ -235,19 +279,11 @@ void kernel_smith_waterman(
   load_spm(seqa_ptr, seqb_ptr, sizea_ptr, sizeb_ptr, SIZEA_MAX_PACKED, SIZEB_MAX_PACKED, N,
            seqa_packed_spm, seqb_packed_spm, length, width);
 
-  // Unpack sequences in SPM
-  unsigned char seqa_spm[N*SIZEA_MAX];
-  unsigned char seqb_spm[N*SIZEB_MAX];
-  unpack(seqa_packed_spm, N * SIZEA_MAX_PACKED, seqa_spm);
-  unpack(seqb_packed_spm, N * SIZEB_MAX_PACKED, seqb_spm);
-
-  unsigned char* seqa_spm_ptr = seqa_spm;
-  unsigned char* seqb_spm_ptr = seqb_spm;
-
-  int E_spm[SIZEB_MAX];
-  int F_spm[SIZEB_MAX];
-  int H_spm[SIZEB_MAX];
-  int H_prev_spm[SIZEB_MAX];
+  // Initialize matrices
+  short E_spm[SIZEB_MAX];
+  short F_spm[SIZEB_MAX];
+  short H_spm[SIZEB_MAX];
+  short H_prev_spm[SIZEB_MAX];
   unsigned score_temp;
   for (int i = 0; i < SIZEB_MAX; i++) {
     E_spm[i] = 0;
@@ -256,14 +292,24 @@ void kernel_smith_waterman(
     H_prev_spm[i] = 0;
   }
 
+  unsigned* seqa_packed_spm_ptr = seqa_packed_spm;
+  unsigned* seqb_packed_spm_ptr = seqb_packed_spm;
+
   // loop through N alignments
   for (int k = 0; k < N; k++) {
-    // Compute score
-    align(length[k], width[k], seqa_spm_ptr, seqb_spm_ptr, E_spm, F_spm, H_spm, H_prev_spm, score_ptr);
+    // unpack sequences in SPM
+    unsigned char seqa_spm[SIZEA_MAX];
+    unsigned char seqb_spm[SIZEB_MAX];
+    unpack(seqa_packed_spm_ptr, SIZEA_MAX_PACKED, seqa_spm);
+    unpack(seqb_packed_spm_ptr, SIZEB_MAX_PACKED, seqb_spm);
 
+    // compute score
+    align(length[k], width[k], seqa_spm, seqb_spm, E_spm, F_spm, H_spm, H_prev_spm, score_ptr);
+
+    // move to next sequence
+    seqa_packed_spm_ptr += SIZEA_MAX_PACKED;
+    seqb_packed_spm_ptr += SIZEB_MAX_PACKED;
     score_ptr++;
-    seqa_spm_ptr += SIZEA_MAX;
-    seqb_spm_ptr += SIZEB_MAX;
   }
   profile_end();
   sync();

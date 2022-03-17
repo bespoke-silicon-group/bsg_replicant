@@ -258,17 +258,22 @@ int kernel_smith_waterman (int argc, char **argv) {
                 }
                 fin.close();
 
+                // Write to file
                 ofstream fout;
                 fout.open("output", ios::out);
                 for (int i = 0; i < N; i++) {
                   fout << score[i] << endl;
+                }
+                fout.close();
+
+                // Check
+                for (int i = 0; i < N; i++) {
                   if (score[i] != score_golden[i]) {
                     cout << "ERROR : mismatch for score " << i << endl;
                     return HB_MC_FAIL;
                   }
                 }
                 delete[] score;
-                fout.close();
         }
 
         BSG_CUDA_CALL(hb_mc_device_finish(&device));
