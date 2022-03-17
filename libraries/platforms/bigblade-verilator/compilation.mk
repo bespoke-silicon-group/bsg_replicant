@@ -36,11 +36,8 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 # 
 
-DEFINES    += -DVERILATOR
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
-INCLUDES   += -I$(VERILATOR_ROOT)/include
-INCLUDES   += -I$(VERILATOR_ROOT)/include/vltstd
 
 LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
 CXXFLAGS   += $(DEFINES) -fPIC

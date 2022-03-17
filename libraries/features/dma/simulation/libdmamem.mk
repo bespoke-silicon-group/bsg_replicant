@@ -64,6 +64,8 @@ $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -std=c++11 -
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXX=g++
+# Uncomment to enable Verilator profiling with operf
+# $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -g -pg
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
