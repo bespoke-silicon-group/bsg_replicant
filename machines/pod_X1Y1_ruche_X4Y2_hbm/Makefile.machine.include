@@ -40,6 +40,9 @@
 BSG_MACHINE_PODS_X                    = 1
 BSG_MACHINE_PODS_Y                    = 1
 
+# 1 GHz Core Clock
+BSG_MACHINE_PODS_CYCLE_TIME_PS         = 1000
+
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
 # 0 is for Vanilla Core (RV32).
@@ -47,8 +50,10 @@ BSG_MACHINE_PODS_Y                    = 1
 BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 
 # Network Parameters
+# BSG_MACHINE_NETWORK_CFG longer has an effect, fixed at e_network_half_ruche_x
 BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
 BSG_MACHINE_RUCHE_FACTOR_X            = 3
+BSG_MACHINE_BARRIER_RUCHE_FACTOR_X    = 3
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
@@ -56,7 +61,7 @@ BSG_MACHINE_MEM_DRAMSIM3_PKG          = bsg_dramsim3_hbm2_8gb_x128_pkg
 BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
 
 # Victim Cache Parameters
-BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
+BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 4
 BSG_MACHINE_VCACHE_SET                = 64
 BSG_MACHINE_VCACHE_WAY                = 8
 BSG_MACHINE_VCACHE_LINE_WORDS         = 32
@@ -109,7 +114,6 @@ BSG_MACHINE_POD_TILES                := $(shell echo $(BSG_MACHINE_POD_TILES_X)*
 BSG_MACHINE_NUM_PODS                 := $(shell echo $(BSG_MACHINE_PODS_X)*$(BSG_MACHINE_PODS_Y) | bc)
 BSG_MACHINE_NUM_VCACHE               := $(shell echo $(BSG_MACHINE_POD_TILES_X)*2*$(BSG_MACHINE_NUM_PODS) | bc)
 BSG_MACHINE_DRAM_CHANNELS            := $(shell echo $(BSG_MACHINE_NUM_VCACHE)/$(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL) | bc)
-
 BSG_MACHINE_DRAM_WORDS               := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS)*$(BSG_MACHINE_DRAM_CHANNELS) | bc)
 BSG_MACHINE_DRAM_PER_CACHE_WORDS      = $(shell echo "$(BSG_MACHINE_DRAM_WORDS) / $(BSG_MACHINE_NUM_VCACHE)" | bc)
 

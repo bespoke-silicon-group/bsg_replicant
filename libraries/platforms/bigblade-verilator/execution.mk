@@ -25,30 +25,18 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-# All simulations should run with +ntb_random_seed_automatic.
-# 
-# From the VCS MX User-Guide: +ntb_random_seed_automatic Picks a unique value to
-# supply as the first seed used by a testbench. The value is determined by
-# combining the time of day, host name and process id. This ensures that no two
-# simulations have the same starting seed.
-SIM_ARGS += +ntb_random_seed_automatic
-
-# These are the execution rules for the binaries. We can't pass
-# C-style arguments through the command line, so instead we specify
-# them as the VCS plusarg argument +c_args. Users can specify C-style
-# arguments using the C_ARGS make variable.
-
 .PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd
 .PHONY: platform.execution.clean dve
 
+# TODO: Only provide the targets we care about
 saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/simsc
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simsc
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 
-%.log: % $(BSG_MANYCORE_KERNELS)
-	./$< $(SIM_ARGS) $(C_ARGS) 2>&1 | tee $@
+# TODO: Document the use of main.so, like we do in CCS
+%.log: main.so $(BSG_MANYCORE_KERNELS)
+	$(filter %/simsc, $^) $(CURDIR)/main.so $(C_ARGS) 2>&1 | tee $@
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 
