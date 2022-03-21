@@ -47,6 +47,7 @@ valid values are defined in [bsg_machine_network_cfg_pkg.v](https://github.com/b
 - `BSG_MACHINE_RUCHE_FACTOR_X`: X-dimension ruche factor. Only applies when `BSG_MACHINE_NETWORK_CFG` is `e_network_half_ruche_x`
 
 ### Memory System Parameters
+- `BSG_MACHINE_DRAM_INCLUDED`: Defines whether the DRAM interface is used. Default is 1. 
 - `BSG_MACHINE_MEM_CFG`: Defines memory system configuration as a triple (Cache, Interface, Type). Values are defined and explained in (bsg_bladerunner_mem_cfg_pkg.v)[https://github.com/bespoke-silicon-group/bsg_replicant/blob/master/hardware/bsg_bladerunner_mem_cfg_pkg.v].
 
 - `BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL`: Defines number of Last-Level Caches per DRAM channel.
