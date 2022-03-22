@@ -6,8 +6,8 @@ module replicant_tb_top
    // BSG_VERILATOR_WAVEFORM turns on waveform generation
 `ifdef BSG_VERILATOR_WAVEFORM
    initial begin
-    $display("[%0t] Tracing to waveform.vcd...\n", $time);
-    $dumpfile("debug.vcd");
+    $display("[%0t] Tracing to debug.fst...\n", $time);
+    $dumpfile("debug.fst");
     $dumpvars();
    end
 `endif

@@ -79,27 +79,31 @@ LIBS  = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP)__ALL.a)
 SIMSCS = $(foreach d,$(DIRS),$d/simsc)
 
 # Generic Verilator source files that are compiiled into libmachine.so
-VERILATOR_SRCS := verilated.cpp verilated_vcd_c.cpp verilated_dpi.cpp
+VERILATOR_SRCS := verilated.cpp verilated_dpi.cpp
 THREADED_SRCS  := $(VERILATOR_SRCS) verilated_threads.cpp
+WAVEFORM_SRCS  := verilated_fst_c.cpp $(VERILATOR_SRCS) 
 
 THREADED_OBJS = $(foreach o,$(THREADED_SRCS:.cpp=.o),$(BSG_MACHINExPLATFORM_PATH)/threaded/$o)
 VERILATOR_OBJS = $(foreach o,$(VERILATOR_SRCS:.cpp=.o),$(BSG_MACHINExPLATFORM_PATH)/$o)
+WAVEFORM_OBJS = $(foreach o,$(WAVEFORM_SRCS:.cpp=.o),$(BSG_MACHINExPLATFORM_PATH)/debug/$o)
 
-$(THREADED_OBJS) $(VERILATOR_OBJS): DEFINES := -DVL_PRINTF=printf
-$(THREADED_OBJS) $(VERILATOR_OBJS): DEFINES += -DVM_SC=0
-$(THREADED_OBJS) $(VERILATOR_OBJS): DEFINES += -DVM_TRACE=0
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): DEFINES := -DVL_PRINTF=printf
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): DEFINES += -DVM_SC=0
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): DEFINES += -DVM_TRACE=0
 $(THREADED_OBJS): DEFINES += -DVL_THREADED=1
-$(THREADED_OBJS) $(VERILATOR_OBJS): INCLUDES := -I$(VERILATOR_ROOT)/include
-$(THREADED_OBJS) $(VERILATOR_OBJS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
-$(THREADED_OBJS) $(VERILATOR_OBJS): INCLUDES += -I$(BSG_MACHINE_PATH)/obj_dir
-$(THREADED_OBJS) $(VERILATOR_OBJS): CFLAGS    := -std=c11 -fPIC $(INCLUDES) $(DEFINES)
-$(THREADED_OBJS) $(VERILATOR_OBJS): CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES) $(DEFINES)
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): INCLUDES := -I$(VERILATOR_ROOT)/include
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): INCLUDES += -I$(BSG_MACHINE_PATH)/obj_dir
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): CFLAGS    := -std=c11 -fPIC $(INCLUDES) $(DEFINES)
+$(WAVEFORM_OBJS) $(THREADED_OBJS) $(VERILATOR_OBJS): CXXFLAGS  := -std=c++11 -fPIC $(INCLUDES) $(DEFINES)
 # Uncomment to enable Verilator profiling with operf
 # $(THREADED_OBJS) $(VERILATOR_OBJS): CFLAGS    += -g -pg
 # $(THREADED_OBJS) $(VERILATOR_OBJS): CXXFLAGS  += -g -pg
 $(THREADED_OBJS): $(BSG_MACHINExPLATFORM_PATH)/threaded/%.o : $(VERILATOR_ROOT)/include/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 $(VERILATOR_OBJS): $(BSG_MACHINExPLATFORM_PATH)/%.o : $(VERILATOR_ROOT)/include/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
+$(WAVEFORM_OBJS): $(BSG_MACHINExPLATFORM_PATH)/debug/%.o : $(VERILATOR_ROOT)/include/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
 # Build directory rule
@@ -113,7 +117,7 @@ $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 
 # Defines to generate waveforms. These are specific to Verilator.
-$(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --trace --trace-structs
+$(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --trace-fst --trace-structs
 $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_VERILATOR_WAVEFORM
 
 $(BSG_MACHINExPLATFORM_PATH)/threaded/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads 4
@@ -159,13 +163,14 @@ $(SIMOS): $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp
 # simsc binary build rules
 $(BSG_MACHINExPLATFORM_PATH)/threaded/simsc: $(THREADED_OBJS)
 $(BSG_MACHINExPLATFORM_PATH)/exec/simsc: $(VERILATOR_OBJS)
-$(BSG_MACHINExPLATFORM_PATH)/debug/simsc: $(VERILATOR_OBJS)
+$(BSG_MACHINExPLATFORM_PATH)/debug/simsc: $(WAVEFORM_OBJS)
 $(BSG_MACHINExPLATFORM_PATH)/profile/simsc: $(VERILATOR_OBJS)
 
 $(SIMSCS): LD = $(CXX)
 $(SIMSCS): LDFLAGS  = -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH) -lbsg_manycore_regression -lbsg_manycore_runtime
 $(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldramsim3 -ldmamem
 $(SIMSCS): LDFLAGS += -lm
+$(SIMSCS): LDFLAGS += -lz
 $(SIMSCS): LDFLAGS += -ldl
 $(SIMSCS): LDFLAGS += -lpthread
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so

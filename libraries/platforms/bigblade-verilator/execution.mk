@@ -41,7 +41,7 @@ profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 
 
-debug.vcd: debug.log ;
+debug.fst: debug.log ;
 
 dve: debug.vpd
 	$(DVE) -full64 -vpd $< &
@@ -57,7 +57,7 @@ platform.execution.clean:
 	rm -rf router_stat.csv
 	rm -rf remote_load_trace.csv
 	rm -rf vanilla.log
-	rm -rf debug.vpd 
+	rm -rf debug.fst debug.fst.hier
 	rm -rf ucli.key
 	rm -rf dramsim3.json dramsim3.tag.json dramsim3.txt dramsim3epoch.json
 
@@ -65,9 +65,9 @@ execution.clean: platform.execution.clean
 
 help:
 	@echo "Usage:"
-	@echo "make {clean | exec.log | profile.log | debug.log | debug.vpd | threaded.log }"
+	@echo "make {clean | exec.log | profile.log | debug.log | debug.fst | threaded.log }"
 	@echo "      exec.log: Run program with SAIF, profilers, and waveform generation disabled (Fastest)"
 	@echo "      profile.log: Run program with profilers enabled, SAIF and waveform generation disabled"
 	@echo "      threaded.log: Run program with THREADED VERILATOR, profilers and waveform generation disabled"
-	@echo "      debug.log debug.vpd: Run program with waveform and profiles enabled, SAIF generation disabled"
+	@echo "      debug.log debug.fst: Run program with waveform generate enabled"
 	@echo "      clean: Remove all subdirectory-specific outputs"
