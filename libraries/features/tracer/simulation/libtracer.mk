@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile fragment is for building the simulation "DMA Engine"
+# This Makefile fragment is for building the simulation tracer runtime library
 # library for cosimulation
 ORANGE=\033[0;33m
 RED=\033[0;31m
@@ -59,7 +59,7 @@ tracer.clean:
 # Add as a subrule to simlibs.clean
 libraries.clean: tracer.clean
 
-# Rules for building Simulation "DMA library"
+# Rules for building Simulation tracer runtime library
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -I$(BSG_MANYCORE_DIR)/testbenches/common/v
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXX=g++
@@ -68,4 +68,4 @@ $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: $(BSG_MANYCORE_DIR)/t
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: $(BSG_MANYCORE_DIR)/testbenches/common/v/remote_load_profiler.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
 
-endif # ifndef(_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
+endif # ifndef (_BSG_F1_TESTBENCHES_LIBTRACER_MK)
