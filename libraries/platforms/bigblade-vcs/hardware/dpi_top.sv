@@ -126,9 +126,9 @@ module replicant_tb_top
    // reset_done is deasserted when tag programming is done.
    logic core_reset_done_lo, core_reset_done_r;
 
-   logic mem_clk;
-   logic mem_reset;
-   bit   mem_bit_clk;
+   logic dram_clk;
+   logic dram_reset;
+   bit   dram_bit_clk;
 
    logic cache_clk;
    logic cache_reset;
