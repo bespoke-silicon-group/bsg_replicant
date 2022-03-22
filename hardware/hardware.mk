@@ -90,6 +90,7 @@ include $(BSG_MANYCORE_DIR)/machines/arch_filelist.mk
 # but transformed into a tool-specific syntax where necesssary.
 VINCLUDES += $(HARDWARE_PATH)
 VINCLUDES += $(BSG_MACHINE_PATH)
+VINCLUDES  += $(BSG_MANYCORE_DIR)/testbenches/common/v/
 
 # Configuration definitions
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_network_cfg_pkg.v
