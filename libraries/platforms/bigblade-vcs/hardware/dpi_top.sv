@@ -3,14 +3,15 @@ module replicant_tb_top
   import bsg_bladerunner_pkg::*;
   ();
 
-   // Uncomment this to enable VCD Dumping
-   /*
-    initial begin
-    $display("[%0t] Tracing to vlt_dump.vcd...\n", $time);
-    $dumpfile("dump.vcd");
+   // BSG_VERILATOR_WAVEFORM turns on waveform generation
+`ifdef BSG_VERILATOR_WAVEFORM
+   initial begin
+    $display("[%0t] Tracing to waveform.vcd...\n", $time);
+    $dumpfile("debug.vcd");
     $dumpvars();
    end
-    */
+`endif
+
    initial begin
 `ifndef VERILATOR
       #0;

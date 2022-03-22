@@ -41,8 +41,7 @@ profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 
 
-debug.vpd: SIM_ARGS += +vpdfile+debug.vpd
-debug.vpd: debug.log ;
+debug.vcd: debug.log ;
 
 dve: debug.vpd
 	$(DVE) -full64 -vpd $< &

@@ -41,8 +41,10 @@ SimulationWrapper::SimulationWrapper(){
         // of z/x may cause erroneous assertions.
         Verilated::assertOn(false);
 
-        // Uncomment THIS and the statement in verilator_top.sv to enable tracing
-        // Verilated::traceEverOn(true);
+        // Define BSG_VERILATOR_WAVEFORM to enable tracing
+#ifdef BSG_VERILATOR_WAVEFORM
+        Verilated::traceEverOn(true);
+#endif
 
         top->eval();
         root = new std::string("TOP.replicant_tb_top");

@@ -72,7 +72,7 @@ VERILATOR_VFLAGS += --assert
 # Debugging (in case of segfault, break glass)
 # VERILATOR_VFLAGS += --debug --gdbbt
 
-DIRS  = $(foreach t,exec profile threaded,$(BSG_MACHINExPLATFORM_PATH)/$t)
+DIRS  = $(foreach t,exec profile threaded debug,$(BSG_MACHINExPLATFORM_PATH)/$t)
 FRAGS = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP).mk)
 SIMOS = $(foreach d,$(DIRS),$d/bsg_manycore_simulator.o)
 LIBS  = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP)__ALL.a)
@@ -112,11 +112,9 @@ $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 
-# TODO: To enable waveform tracing, a new macro needs to be defined to
-# uncomment the lines in bsg_manycore_simulator.cpp, and the
-# $dumpfile/dumpvars calls in dpi_top.sv
-# These enable verilator waveforms
+# Defines to generate waveforms. These are specific to Verilator.
 $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --trace --trace-structs
+$(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_VERILATOR_WAVEFORM
 
 $(BSG_MACHINExPLATFORM_PATH)/threaded/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads 4
 $(BSG_MACHINExPLATFORM_PATH)/threaded/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
@@ -145,6 +143,7 @@ $(LIBS): %/V$(BSG_DESIGN_TOP)__ALL.a : %/V$(BSG_DESIGN_TOP).mk
 # libbsg_manycore_runtime to be compiled independently from the
 # machine.
 $(BSG_MACHINExPLATFORM_PATH)/threaded/bsg_manycore_simulator.o: DEFINES  += -DVL_THREADED
+$(BSG_MACHINExPLATFORM_PATH)/debug/bsg_manycore_simulator.o: DEFINES  += -DBSG_VERILATOR_WAVEFORM
 $(SIMOS): INCLUDES := -I$(BSG_PLATFORM_PATH)
 $(SIMOS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace
 $(SIMOS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test
