@@ -168,7 +168,8 @@ $(BSG_MACHINExPLATFORM_PATH)/profile/simsc: $(VERILATOR_OBJS)
 
 $(SIMSCS): LD = $(CXX)
 $(SIMSCS): LDFLAGS  = -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH) -lbsg_manycore_regression -lbsg_manycore_runtime
-$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldramsim3 -ldmamem
+$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldramsim3 -ldmamem -ltracer
+$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/tracer/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/tracer/simulation -ltracer
 $(SIMSCS): LDFLAGS += -lm
 $(SIMSCS): LDFLAGS += -lz
 $(SIMSCS): LDFLAGS += -ldl
@@ -178,6 +179,7 @@ $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
+$(SIMSCS): $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so
 # TODO: Don't like pattern matching. Better way?
 $(SIMSCS): %/simsc : %/bsg_manycore_simulator.o %/V$(BSG_DESIGN_TOP)__ALL.a
 	$(LD) -o $@ $(LDFLAGS) $^
