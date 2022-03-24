@@ -28,13 +28,11 @@
 .PRECIOUS: threaded.log exec.log profile.log exec.log debug.vpd
 .PHONY: platform.execution.clean dve
 
-# TODO: Only provide the targets we care about
 threaded.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/threaded/simsc
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simsc
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 
-# TODO: Document the use of main.so, like we do in CCS
 %.log: main.so $(BSG_MANYCORE_KERNELS)
 	$(filter %/simsc, $^) $(CURDIR)/main.so $(C_ARGS) 2>&1 | tee $@
 
