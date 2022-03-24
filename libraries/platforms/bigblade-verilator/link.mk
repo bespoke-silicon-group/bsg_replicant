@@ -194,7 +194,6 @@ $(SIMSCS): %/simsc : %/bsg_manycore_simulator.o %/V$(BSG_DESIGN_TOP)__ALL.a
 REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/exec/simsc
 REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/debug/simsc
 REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/profile/simsc
-REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/saifgen/simsc
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
