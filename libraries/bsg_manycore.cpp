@@ -166,6 +166,13 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
                 return err;
         }
 
+        // Initialize EVA Maps
+        if ((err = hb_mc_manycore_eva_init(mc)) != HB_MC_SUCCESS){
+                free((void*)mc->name);
+                hb_mc_platform_cleanup(mc);
+                return err;
+        }
+
         // initialize responders
         if ((err = hb_mc_responders_init(mc))){
                 hb_mc_platform_cleanup(mc);

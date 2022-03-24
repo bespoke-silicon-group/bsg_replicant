@@ -44,8 +44,10 @@
 
 #ifdef __cplusplus
 #include <cmath>
+#include <climits>
 #else
 #include <math.h>
+#include <limits.h>
 #endif
 
 #define MAKE_MASK(WIDTH) ((1ULL << (WIDTH)) - 1ULL)
@@ -1001,8 +1003,21 @@ int default_eva_size(
 
 }
 
-const hb_mc_coordinate_t default_origin = {.x = HB_MC_CONFIG_VCORE_BASE_X,
-                                           .y = HB_MC_CONFIG_VCORE_BASE_Y};
+
+hb_mc_coordinate_t default_origin = {.x = INT_MAX,
+        .y = INT_MAX};
+
+/**
+ * Initializes the default EVA map
+ * @param[in]  cfg    An initialized manycore configuration struct
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+static int default_eva_map_init(const hb_mc_config_t *cfg)
+{
+        default_origin = hb_mc_config_get_origin_vcore(cfg);
+        return HB_MC_SUCCESS;
+}
+
 hb_mc_eva_map_t default_map = {
         .eva_map_name = "Default EVA space",
         .priv = (const void *)(&default_origin),
@@ -1088,6 +1103,16 @@ int hb_mc_eva_size(hb_mc_manycore_t *mc,
 static size_t min_size_t(size_t x, size_t y)
 {
         return x < y ? x : y;
+}
+
+/**
+ * Initializes all EVA maps
+ * @param[in]  mc     An initialized manycore struct
+ * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+ */
+int hb_mc_manycore_eva_init(hb_mc_manycore_t *mc)
+{
+        return default_eva_map_init(&(mc->config));
 }
 
 /**

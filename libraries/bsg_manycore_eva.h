@@ -152,8 +152,15 @@ extern "C" {
                              size_t *sz);
 
 
-        extern const hb_mc_coordinate_t default_origin;
         extern hb_mc_eva_map_t default_map;
+
+        /**
+         * Initialize all EVA Maps
+         * @param[in]  mc     An initialized manycore struct
+         * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_eva_init(hb_mc_manycore_t *mc);
 
         /**
          * Get the name of an eva map.

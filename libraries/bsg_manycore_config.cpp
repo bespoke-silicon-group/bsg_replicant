@@ -130,11 +130,20 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->pods.y = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X];
+        CHECK_FIELD(HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X, idx >= 0 && idx <= 64);
         config->host_interface.x = idx;
 
         idx = raw[HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y];
+        CHECK_FIELD(HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y, idx >= 0 && idx <= 64);
         config->host_interface.y = idx;
 
+        idx = raw[HB_MC_CONFIG_ORIGIN_COORD_X];
+        CHECK_FIELD(HB_MC_CONFIG_ORIGIN_COORD_X, idx >= 0 && idx <= 64);
+        config->origin.x = idx;
+
+        idx = raw[HB_MC_CONFIG_ORIGIN_COORD_Y];
+        CHECK_FIELD(HB_MC_CONFIG_ORIGIN_COORD_Y, idx >= 0 && idx <= 64);
+        config->origin.y = idx;
 
         idx = raw[HB_MC_CONFIG_NOC_COORD_X_WIDTH];
         CHECK_FIELD(HB_MC_CONFIG_NOC_COORD_X_WIDTH, idx > 0 && idx < 32);
@@ -191,11 +200,14 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
                 return err;
         }
 
-        // Dervived variables from the ROM
-        config->pod_coord_width  = hb_mc_coordinate(3, 4);
+        // Derived variables from the ROM
         config->tile_coord_width = hb_mc_coordinate(
-            config->noc_coord_width.x - config->pod_coord_width.x,
-            config->noc_coord_width.y - config->pod_coord_width.y
+            log2(config->pod_shape.x),
+            log2(config->pod_shape.y)
+            );
+        config->pod_coord_width  = hb_mc_coordinate(
+            config->noc_coord_width.x - config->tile_coord_width.x,
+            config->noc_coord_width.y - config->tile_coord_width.y
             );
 
         return hb_mc_config_init_check_memsys(config);

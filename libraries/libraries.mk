@@ -95,7 +95,7 @@ LIB_CXXSOURCES_CUDA_POD_REPL += $(LIBRARIES_PATH)/bsg_manycore_cuda_legacy_repli
 LIB_CSOURCES_REGRESSION += $(LIBRARIES_PATH)/bsg_manycore_regression.c
 
 # Objects that should be compiled with debug flags
-LIB_DEBUG_OBJECTS  +=
+LIB_DEBUG_OBJECTS  += $(LIBRARIES_PATH)/bsg_manycore_eva.o
 
 LIB_OBJECTS += $(patsubst %cpp,%o,$(LIB_CXXSOURCES))
 LIB_OBJECTS += $(patsubst %c,%o,$(LIB_CSOURCES))

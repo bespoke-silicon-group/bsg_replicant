@@ -156,6 +156,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_POD_TILES_Y))       >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_HOST_COORD_X))      >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_HOST_COORD_Y))      >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_ORIGIN_COORD_X))    >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_ORIGIN_COORD_Y))    >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_X_WIDTH)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_NOC_COORD_Y_WIDTH)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_RUCHE_FACTOR_X))    >> $@.temp
@@ -258,8 +260,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter int bsg_machine_noc_data_width_gp = $(BSG_MACHINE_DATA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_noc_coord_x_width_gp = $(BSG_MACHINE_NOC_COORD_X_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_noc_coord_y_width_gp = $(BSG_MACHINE_NOC_COORD_Y_WIDTH);" >> $@
-	@echo "parameter int bsg_machine_noc_pod_coord_x_width_gp = 3;" >> $@
-	@echo "parameter int bsg_machine_noc_pod_coord_y_width_gp = 4;" >> $@
+	@echo "parameter int bsg_machine_noc_pod_coord_x_width_gp = bsg_machine_noc_coord_x_width_gp - \$$clog2(bsg_machine_pod_tiles_x_gp);" >> $@
+	@echo "parameter int bsg_machine_noc_pod_coord_y_width_gp = bsg_machine_noc_coord_y_width_gp - \$$clog2(bsg_machine_pod_tiles_y_gp);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_llcache_sets_gp = $(BSG_MACHINE_VCACHE_SET);" >> $@
 	@echo "parameter int bsg_machine_llcache_ways_gp = $(BSG_MACHINE_VCACHE_WAY);" >> $@

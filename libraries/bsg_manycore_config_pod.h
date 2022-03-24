@@ -20,23 +20,6 @@ extern "C" {
         /* Pod geometry, addressing, and iteration */
         /*******************************************/
 
-        /**
-         * Return the number of bits used for pods in each dimension
-         */
-        static inline hb_mc_coordinate_t
-        hb_mc_config_pod_coord_width(const hb_mc_config_t *cfg)
-        {
-                return hb_mc_coordinate(3,4);
-        }
-
-        static inline hb_mc_coordinate_t
-        hb_mc_config_tile_coord_width(const hb_mc_config_t *cfg)
-        {
-                hb_mc_coordinate_t pod = hb_mc_config_pod_coord_width(cfg);
-                hb_mc_coordinate_t noc = cfg->noc_coord_width;
-                return hb_mc_coordinate(noc.x - pod.x, noc.y - pod.y);
-        }
-
         static inline hb_mc_coordinate_t
         hb_mc_config_tile_coord_mask(const hb_mc_config_t *cfg)
         {

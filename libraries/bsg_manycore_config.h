@@ -58,9 +58,6 @@ extern "C" {
         #define HB_MC_CONFIG_MAX_BITWIDTH_ADDR 30
         #define HB_MC_CONFIG_MAX_BITWIDTH_DATA 32
 
-        #define HB_MC_CONFIG_VCORE_BASE_X 16
-        #define HB_MC_CONFIG_VCORE_BASE_Y 8
-
         // normal limit for the flow-control parameters
         #define HB_MC_REMOTE_LOAD_MIN 1
         #define HB_MC_REMOTE_LOAD_MAX 32
@@ -98,6 +95,7 @@ extern "C" {
                 hb_mc_dimension_t pod_coord_width;
                 hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;
+                hb_mc_coordinate_t origin;
                 hb_mc_githash_t basejump;
                 hb_mc_githash_t manycore;
                 hb_mc_githash_t f1;
@@ -124,23 +122,25 @@ extern "C" {
                 HB_MC_CONFIG_POD_DIM_Y = 7,
                 HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_X = 8,
                 HB_MC_CONFIG_DEVICE_HOST_INTF_COORD_Y = 9,
-                HB_MC_CONFIG_NOC_COORD_X_WIDTH = 10,
-                HB_MC_CONFIG_NOC_COORD_Y_WIDTH = 11,
-                HB_MC_CONFIG_RUCHE_FACTOR_X = 12,
-                HB_MC_CONFIG_BARRIER_RUCHE_FACTOR_X = 13,
-                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 14,
-                HB_MC_CONFIG_REPO_MANYCORE_HASH = 15,
-                HB_MC_CONFIG_REPO_F1_HASH = 16,
-                HB_MC_CONFIG_VCACHE_WAYS = 17,
-                HB_MC_CONFIG_VCACHE_SETS = 18,
-                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 19,
-                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 20,
-                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 21,
-                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 22,
-                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 23,
-                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 24,
-                HB_MC_CONFIG_CHIP_ID = 25,
-                HB_MC_CONFIG_MEMSYS = 26,
+                HB_MC_CONFIG_ORIGIN_COORD_X = 10,
+                HB_MC_CONFIG_ORIGIN_COORD_Y = 11,
+                HB_MC_CONFIG_NOC_COORD_X_WIDTH = 12,
+                HB_MC_CONFIG_NOC_COORD_Y_WIDTH = 13,
+                HB_MC_CONFIG_RUCHE_FACTOR_X = 14,
+                HB_MC_CONFIG_BARRIER_RUCHE_FACTOR_X = 15,
+                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 16,
+                HB_MC_CONFIG_REPO_MANYCORE_HASH = 17,
+                HB_MC_CONFIG_REPO_F1_HASH = 18,
+                HB_MC_CONFIG_VCACHE_WAYS = 19,
+                HB_MC_CONFIG_VCACHE_SETS = 20,
+                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 21,
+                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 22,
+                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 23,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 24,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 25,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 26,
+                HB_MC_CONFIG_CHIP_ID = 27,
+                HB_MC_CONFIG_MEMSYS = 28,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
@@ -202,16 +202,20 @@ extern "C" {
                 return cfg->host_interface;
         }
 
+        static inline hb_mc_coordinate_t hb_mc_config_get_origin(const hb_mc_config_t *cfg){
+                return cfg->origin;
+        }
+
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_vcore(const hb_mc_config_t *cfg){
                 return cfg->pod_shape;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_vcore_base_y(const hb_mc_config_t *cfg){
-                return HB_MC_CONFIG_VCORE_BASE_Y; // TODO: These should be defined in the ROM?
+                return cfg->origin.y;
         }
 
         static inline hb_mc_idx_t hb_mc_config_get_vcore_base_x(const hb_mc_config_t *cfg){
-                return HB_MC_CONFIG_VCORE_BASE_X; // TODO: These should be defined in the ROM?
+                return cfg->origin.x;
         }
 
         static inline hb_mc_coordinate_t hb_mc_config_get_origin_vcore(const hb_mc_config_t *cfg){
@@ -225,6 +229,14 @@ extern "C" {
 
         static inline hb_mc_dimension_t hb_mc_config_noc_coord_width(const hb_mc_config_t *cfg){
                 return cfg->noc_coord_width;
+        }
+
+        static inline hb_mc_dimension_t hb_mc_config_pod_coord_width(const hb_mc_config_t *cfg){
+                return cfg->pod_coord_width;
+        }
+
+        static inline hb_mc_dimension_t hb_mc_config_tile_coord_width(const hb_mc_config_t *cfg){
+                return cfg->tile_coord_width;
         }
 
         static inline hb_mc_dimension_t hb_mc_config_get_dimension_network(const hb_mc_config_t *cfg){
