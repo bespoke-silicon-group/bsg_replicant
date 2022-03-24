@@ -57,6 +57,9 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_io_coord_x_gp             = %d", bsg_machine_io_coord_x_gp);
       $display("[INFO][TESTBENCH] bsg_machine_io_coord_y_gp             = %d", bsg_machine_io_coord_y_gp);
 
+      $display("[INFO][TESTBENCH] bsg_machine_origin_coord_y_gp         = %d", bsg_machine_origin_coord_y_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_origin_coord_x_gp         = %d", bsg_machine_origin_coord_x_gp);
+
       $display("[INFO][TESTBENCH] bsg_machine_enable_vcore_profiling_lp = %d", bsg_machine_enable_vcore_profiling_lp);
       $display("[INFO][TESTBENCH] bsg_machine_enable_router_profiling_lp= %d", bsg_machine_enable_router_profiling_lp);
       $display("[INFO][TESTBENCH] bsg_machine_enable_cache_profiling_lp = %d", bsg_machine_enable_cache_profiling_lp);
