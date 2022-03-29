@@ -221,19 +221,11 @@ int kernel_conv1d(int argc, char **argv)
         int mismatches = 0;
 
         bsg_pr_info("(N, F, P, S, M) = (%d, %d, %d, %d, %d)\n", N, F, P, S, M);
+        double err;
         for(int i = 0; i < M; i++)
-                if(!hb_mc_floats_match(B_actual[i], B_expected[i]))
-                {
-                        bsg_pr_err(BSG_RED("Mismatch: ") "B[%d] = %.9f = 0x%x \t Expected: %.9f = 0x%x\n",
-                                   i,
-                                   B_actual[i],
-                                   *((uint32_t *)(B_actual + i)),
-                                   B_expected[i],
-                                   *((uint32_t *)(B_expected + i)));
-                        mismatches++;
-                }
+                err += (B_actual[i] - B_expected[i]) *(B_actual[i] - B_expected[i]);
 
-        if(!mismatches)
+        if(err > .001)
         {
                 bsg_pr_test_info(BSG_GREEN("Vectors match!\n"));
                 return HB_MC_SUCCESS;

@@ -43,7 +43,6 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
-CUDALITE_SRC_PATH = $(SPMD_SRC_PATH)/bsg_cuda_lite_runtime
 
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
 KERNEL_NAME = shared_mem_load_store
@@ -70,7 +69,7 @@ include $(EXAMPLES_PATH)/compilation.mk
 # Host code link flags and flow
 ###############################################################################
 
-LDFLAGS += -L$(BSG_PLATFORM_PATH) -lbsgmc_cuda_legacy_pod_repl 
+LDFLAGS += -L$(BSG_PLATFORM_PATH) -lbsgmc_cuda_legacy_pod_repl
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
@@ -81,21 +80,18 @@ include $(EXAMPLES_PATH)/link.mk
 
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
-BSG_MANYCORE_KERNELS = $(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv
+BSG_MANYCORE_KERNELS = kernel.riscv
 
 # Tile Group Dimensions
 TILE_GROUP_DIM_X = 2
 TILE_GROUP_DIM_Y = 2
 
-$(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv: $(BSG_MACHINE_PATH)/Makefile.machine.include
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
-	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
-	$(MAKE) -j1 -C $(CUDALITE_SRC_PATH)/$(KERNEL_NAME) clean main.riscv
+kernel.riscv: kernel.rvo
+
+RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
+RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
+
+include $(EXAMPLES_PATH)/cuda/riscv.mk
 
 ###############################################################################
 # Execution flow
@@ -124,11 +120,5 @@ regression: exec.log
 .PHONY: clean
 
 clean:
-	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
-	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
-	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
-	IGNORE_CADENV=1 \
-	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
-	$(MAKE) -j1 -C $(CUDALITE_SRC_PATH)/$(KERNEL_NAME) clean
-
+	rm -rf *.ld
 
