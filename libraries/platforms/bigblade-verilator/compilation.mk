@@ -25,34 +25,46 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# C/C++ memory system libraries. These will add dependencies to
-# $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0.
-include $(LIBRARIES_PATH)/features/dma/simulation/dramsim3.mk
-include $(LIBRARIES_PATH)/features/dma/simulation/infmem.mk
-include $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.mk
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
-# Simulation uses "Magic" DMA to reduce runtime so we compile
-# features/dma/simulation/bsg_manycore_dma.cpp.
-DMA_FEATURE_CXXSOURCES := $(LIBRARIES_PATH)/features/dma/simulation/bsg_manycore_dma.cpp
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
-DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
-DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
 
-$(DMA_FEATURE_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_mem
-$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
-$(DMA_FEATURE_OBJECTS): CFLAGS   := -std=c11 -fPIC $(INCLUDES) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
-$(DMA_FEATURE_OBJECTS): CXXFLAGS := -std=c++11 -fPIC $(INCLUDES) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-# Uncomment to enable Verilator profiling with operf
-# $(DMA_FEATURE_OBJECTS): CXXFLAGS := -g -pg
-# $(DMA_FEATURE_OBJECTS): CFLAGS   := -g -pg
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
+CXXFLAGS   += $(DEFINES) -fPIC
+CFLAGS     += $(DEFINES) -fPIC
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(DMA_FEATURE_OBJECTS)
+# each regression target needs to build its .o from a .c and .h of the
+# same name
+%.o: %.c
+	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES)
 
+# ... or a .cpp and .hpp of the same name
+%.o: %.cpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
 
-.PHONY: dma_feature.clean
-dma_feature.clean:
-	rm -f $(DMA_FEATURE_OBJECTS)
+# Compile all of the sources into a shared object file for dynamic loading.
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
-platform.clean: dma_feature.clean
+main.so: $(TEST_OBJECTS)
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
+
+.PRECIOUS: %.o %.so
+
+.PHONY: platform.compilation.clean
+platform.compilation.clean:
+	rm -rf *.o *.so
+
+compilation.clean: platform.compilation.clean

@@ -45,7 +45,7 @@ int test_rom (int argc, char **argv) {
         hb_mc_manycore_t mc = {0};
         hb_mc_memsys_id_t memsysid;
         char *path;
-        struct arguments_none args = {NULL};
+        struct arguments_none args = {};
 
         rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
 
@@ -215,6 +215,7 @@ int test_rom (int argc, char **argv) {
                 fail = 1;
         }
 
+        goto cleanup;
 cleanup:
         rc = hb_mc_manycore_exit(&mc);
 

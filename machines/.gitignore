@@ -8,11 +8,11 @@ bsg_manycore_machine.h
 libmachine.so
 Vmanycore_tb_top*
 verilated.o
-verilated_dpi.o
-verilated_vcd_c.o
+verilated_*.o
 dpi-vcs
 aws-vcs
 bigblade-vcs
 bsg_tag_boot_rom.v
 bsg_tag_boot_rom.tr
 tapeout-vcs
+bigblade-verilator

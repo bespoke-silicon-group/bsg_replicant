@@ -26,7 +26,7 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # This Makefile fragment defines all of the rules for linking
-# aws-vcs binaries
+# bigblade-vcs binaries
 
 ORANGE=\033[0;33m
 RED=\033[0;31m

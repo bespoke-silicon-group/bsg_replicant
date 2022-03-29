@@ -5,10 +5,11 @@ Synopsys VCS (simulation), and others. Each platform requires a
 different runtime library, hardware files, and build commands.
 We abstract these differences in the makefiles. 
 
-Available platforms are subdirectories in this directory: aws-fpga,
-aws-vcs. Each platform provides its own `bsg_manycore_platform.cpp`
-file that implements the API in `bsg_manycore_platform.h`. Each
-platform also provides a `library.mk` with build rules.
+Available platforms are subdirectories in this directory:. Each
+platform provides its own `bsg_manycore_platform.cpp` file that
+implements the API in `bsg_manycore_platform.h`. Each platform also
+provides makefile fragments with build rules (e.g. `library.mk`,
+`execution.mk`, etc)
 
 To switch platforms, set the variable `BSG_PLATFORM` in
 [platform.mk](../../platform.mk). For the most part, users

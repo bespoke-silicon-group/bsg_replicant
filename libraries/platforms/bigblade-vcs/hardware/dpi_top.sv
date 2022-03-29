@@ -3,16 +3,19 @@ module replicant_tb_top
   import bsg_bladerunner_pkg::*;
   ();
 
-   // Uncomment this to enable VCD Dumping
-   /*
-    initial begin
-    $display("[%0t] Tracing to vlt_dump.vcd...\n", $time);
-    $dumpfile("dump.vcd");
+   // BSG_VERILATOR_WAVEFORM turns on waveform generation
+`ifdef BSG_VERILATOR_WAVEFORM
+   initial begin
+    $display("[%0t] Tracing to debug.fst...\n", $time);
+    $dumpfile("debug.fst");
     $dumpvars();
    end
-    */
+`endif
+
    initial begin
+`ifndef VERILATOR
       #0;
+`endif
       
       $display("==================== BSG MACHINE SETTINGS: ====================");
 
@@ -56,6 +59,8 @@ module replicant_tb_top
 
       $display("[INFO][TESTBENCH] bsg_machine_io_coord_x_gp             = %d", bsg_machine_io_coord_x_gp);
       $display("[INFO][TESTBENCH] bsg_machine_io_coord_y_gp             = %d", bsg_machine_io_coord_y_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_origin_coord_y_gp         = %d", bsg_machine_origin_coord_y_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_origin_coord_x_gp         = %d", bsg_machine_origin_coord_x_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_origin_coord_y_gp         = %d", bsg_machine_origin_coord_y_gp);
       $display("[INFO][TESTBENCH] bsg_machine_origin_coord_x_gp         = %d", bsg_machine_origin_coord_x_gp);
@@ -124,9 +129,9 @@ module replicant_tb_top
    // reset_done is deasserted when tag programming is done.
    logic core_reset_done_lo, core_reset_done_r;
 
-   logic mem_clk;
-   logic mem_reset;
-   bit   mem_bit_clk;
+   logic dram_clk;
+   logic dram_reset;
+   bit   dram_bit_clk;
 
    logic cache_clk;
    logic cache_reset;

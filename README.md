@@ -42,11 +42,10 @@ HammerBlade applications can be run on multiple platforms. These
 platforms could simulate the architecture (VCS, Verilator), emulate
 it, or run natively.
 
-We currently support one platforms:
+We currently support two platforms:
 
 - `bigblade-vcs`: Native (x86) host execution, simulated HammerBlade (with VCS, using Verilog DPI for IO)
-
-Support for verilator will be re-added in the future.
+- `bigblade-verilator`: Native (x86) host execution, simulated HammerBlade (with Verilator, using Verilog DPI for IO)
 
 Each platform has different advantages and drawbacks. Simulated
 platforms support an in-depth profiling infrastructure and emulated
