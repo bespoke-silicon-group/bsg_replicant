@@ -87,7 +87,7 @@ int kernel_jacobi (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-        bsg_pr_test_info("Running the CUDA Jacobi Kernel on one 2x2 tile groups.\n\n");
+        bsg_pr_test_info("Running the CUDA Jacobi Kernel on %dx%d tile groups.\n\n", TILE_GROUP_DIM_Y, TILE_GROUP_DIM_X);
 
         srand(time);
 

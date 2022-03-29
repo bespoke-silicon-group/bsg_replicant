@@ -47,6 +47,10 @@ SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
 KERNEL_NAME = jacobi
 
+# Tile Group Dimensions
+TILE_GROUP_DIM_X = 16
+TILE_GROUP_DIM_Y = 8
+
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
@@ -55,6 +59,8 @@ KERNEL_NAME = jacobi
 TEST_SOURCES = main.c
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
+DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
+DEFINES += -DTILE_GROUP_DIM_Y=$(TILE_GROUP_DIM_Y)
 CDEFINES +=
 CXXDEFINES +=
 
@@ -81,10 +87,6 @@ include $(EXAMPLES_PATH)/link.mk
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
-
-# Tile Group Dimensions
-TILE_GROUP_DIM_X = 16
-TILE_GROUP_DIM_Y = 8
 
 kernel.riscv: kernel.rvo
 
