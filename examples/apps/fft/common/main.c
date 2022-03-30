@@ -47,7 +47,7 @@
 // Generated input: cos(n*pi/8)
 // This signal is known to have only two pulses of magnitude N/2 at N/16 and
 // 15*N/16
-#define LOCAL_POINTS (256)
+
 /* #define NUM_POINTS 16 */
 /* #define NUM_POINTS 256 */
 #define NUM_POINTS (LOCAL_POINTS*LOCAL_POINTS)
@@ -98,7 +98,7 @@ int verify_fft (float complex *out, int N) {
 }
 
 
-int kernel_fft_256x256_all_no_twiddle (int argc, char **argv) {
+int kernel_fft (int argc, char **argv) {
         int rc;
         char *bin_path, *test_name;
         struct arguments_path args = {NULL, NULL};
@@ -107,7 +107,7 @@ int kernel_fft_256x256_all_no_twiddle (int argc, char **argv) {
         bin_path = args.path;
         test_name = args.name;
 
-        bsg_pr_test_info("Running the CUDA FFT Kernel on one 8x16 tile group.\n\n");
+        bsg_pr_test_info("Running the CUDA FFT Kernel with %d points on one 8x16 tile group.\n\n", NUM_POINTS);
 
         srand(time); 
 
@@ -203,7 +203,7 @@ int kernel_fft_256x256_all_no_twiddle (int argc, char **argv) {
                  * Enquque grid of tile groups, pass in grid and tile group dimensions, kernel name, number and list of input arguments
                  ******************************************************************************************************************/
 
-                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_fft_256x256_all_no_twiddle", 4, cuda_argv));
+                BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel_fft", 4, cuda_argv));
 
                 /*****************************************************************************************************************
                  * Launch and execute all tile groups on device and wait for all to finish.
@@ -249,4 +249,4 @@ int kernel_fft_256x256_all_no_twiddle (int argc, char **argv) {
         return HB_MC_SUCCESS;
 }
 
-declare_program_main("test_fft_256x256_all_no_twiddle", kernel_fft_256x256_all_no_twiddle);
+declare_program_main("fft", kernel_fft);

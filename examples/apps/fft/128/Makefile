@@ -45,7 +45,7 @@ include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
 # KERNEL_NAME is the name of the CUDA-Lite Kernel
-KERNEL_NAME = fft_256x256_all_no_twiddle
+KERNEL_NAME = fft_128x128_all_no_twiddle
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -55,6 +55,7 @@ KERNEL_NAME = fft_256x256_all_no_twiddle
 TEST_SOURCES = main.c
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
+DEFINES += -DLOCAL_POINTS=128
 CDEFINES += 
 CXXDEFINES += 
 
