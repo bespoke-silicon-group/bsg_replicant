@@ -55,6 +55,7 @@ extern "C" __attribute__ ((noinline))
 int kernel_jacobi(int c0, int c1, float *A0, float * Anext,
                   const int nx, const int ny, const int nz) {
 
+        bsg_nonsynth_saif_start();
   bsg_barrier_hw_tile_group_init();
   bsg_fence();
   bsg_barrier_hw_tile_group_sync();
@@ -149,6 +150,6 @@ int kernel_jacobi(int c0, int c1, float *A0, float * Anext,
   bsg_cuda_print_stat_kernel_end();
   bsg_fence();
   bsg_barrier_hw_tile_group_sync();
-
+        bsg_nonsynth_saif_end();
 	return 0;
 }
