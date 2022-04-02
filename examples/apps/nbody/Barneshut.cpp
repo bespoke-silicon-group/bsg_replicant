@@ -968,7 +968,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 eva_t _HostHBBodies, _DeviceHBBodies, _HBBodies;
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_DeviceHBBodies));
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_HostHBBodies));
-                printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, sizeof(HostHBBodies));
+                printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, nBodies * sizeof(HBBody));
 
                 // If we use HostHBBodies to construct the array, they
                 // are produced from an in-order traversal of the Host
