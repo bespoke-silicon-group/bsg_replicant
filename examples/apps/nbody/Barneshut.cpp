@@ -202,7 +202,8 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
         };
 
         // Node 0, the root, is already created.
-        unsigned int node_idx = TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y;
+        // node_idx is the location of the first free node.
+        unsigned int node_idx = TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y + 1;
         eva_t _node_idx;
         HB_MC_CUDA_CALL(hb_mc_device_malloc(device, sizeof(node_idx), &_node_idx));
         hb_mc_dma_htod_t htod_node_idx = {
@@ -210,7 +211,6 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
                 .h_addr = &node_idx,
                 .size   = sizeof(node_idx)
         };
-
 
         HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_body_idx, 1));
         HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_node_idx, 1));
@@ -230,21 +230,46 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
         /* Launch and execute all tile groups on device and wait for all to finish.  */
         HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
 
-        hb_mc_dma_dtoh_t dtoh_bodies = {
-                .d_addr = _hnodes,
-                .h_addr = hnodes,
-                .size   = sizeof(HBOctree) * (*nNodes)
-        };
-        hb_mc_dma_dtoh_t dtoh_nbodies = {
+        hb_mc_dma_dtoh_t dtoh_nnodes = {
                 .d_addr = _node_idx,
                 .h_addr = nNodes,
                 .size   = sizeof(node_idx)
         };
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nnodes, 1));
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_bodies, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nbodies, 1));
+        printf("%d HB Nodes\n", *nNodes);
+        hb_mc_dma_dtoh_t dtoh_nodes = {
+                .d_addr = _hnodes,
+                .h_addr = hnodes,
+                .size   = sizeof(HBOctree) * (*nNodes)
+        };
+
+        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nodes, 1));
         HB_MC_CUDA_CALL(hb_mc_device_free(device, _body_idx));
         HB_MC_CUDA_CALL(hb_mc_device_free(device, _node_idx));
+
+        /* Code doesn't work, but may be useful:
+        for(int n_i = 0; n_i < *nNodes; n_i++){
+                HBOctree *cur = &hnodes[n_i];
+                printf("Cur Position: %2.4f %2.4f %2.4f \n", cur->pos[0], cur->pos[1], cur->pos[2]);
+
+                for(int c_i = 0; c_i <8; c_i++){
+                        eva_t child_eva = cur->child[c_i];
+                        int idx = (_hbodies - child_eva) / sizeof(*hbodies);
+                        int rem = (_hbodies - child_eva) % sizeof(*hbodies); // Should be 0
+                        if(rem != 0){
+                                bsg_pr_err("Oops! Non-zero remainder\n");
+                                exit(1);
+                        }
+                        
+                        if(idx){
+                                HBBody *child = &hbodies[idx];
+                           printf("    Leaf %d : %2.4f %2.4f %2.4f \n", child->pos[1], child->pos[1], child->pos[2]);
+                        }
+                }
+        }
+        */
+        
 
         return HB_MC_SUCCESS;
 }
@@ -924,7 +949,7 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 OctNodePtrs[0] = &top;
 
                 // HammerBlade buffers
-                NodeIdx maxNodes = nBodies * std::log2(nBodies) + 128, nHBNodes = 0;
+                NodeIdx maxNodes = nBodies * std::log2(nBodies) + 128, nHBNodes = maxNodes;
                 HBOctree DeviceHBOctNodes[maxNodes] = {}, HostHBOctNodes[nNodes] = {}, *HBOctNodes;
                 eva_t _DeviceHBOctNodes = 0, _HostHBOctNodes, _HBOctNodes;
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(DeviceHBOctNodes), &_DeviceHBOctNodes));
