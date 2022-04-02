@@ -237,7 +237,6 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
         };
         HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nnodes, 1));
 
-        printf("%d HB Nodes\n", *nNodes);
         hb_mc_dma_dtoh_t dtoh_nodes = {
                 .d_addr = _hnodes,
                 .h_addr = hnodes,
@@ -887,6 +886,7 @@ int hb_mc_manycore_device_update_bodies(hb_mc_device_t *device, eva_t _config, u
 void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
         typedef galois::worklists::StableIterator<true> WLL;
 
+
         galois::preAlloc(galois::getActiveThreads() +
                          (3 * sizeof(Octree) + 2 * sizeof(Body)) * nbodies /
                          galois::runtime::pagePoolSize());
@@ -948,17 +948,26 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 Octree **OctNodePtrs = new Octree*[nNodes];
                 OctNodePtrs[0] = &top;
 
-                // HammerBlade buffers
+                // Host buffers
+                HBOctree *HostHBOctNodes = new HBOctree[nNodes];
+                HBBody *HostHBBodies = new HBBody[nBodies];
+
+                // HammerBlade buffers. We don't know how many nodes
+                // HB will need to create, so we make a very rough
+                // estimate.
                 NodeIdx maxNodes = nBodies * std::log2(nBodies) + 128, nHBNodes = maxNodes;
-                HBOctree DeviceHBOctNodes[maxNodes] = {}, HostHBOctNodes[nNodes] = {}, *HBOctNodes;
+                HBOctree *DeviceHBOctNodes = new HBOctree[maxNodes];
+                HBOctree *HBOctNodes;
                 eva_t _DeviceHBOctNodes = 0, _HostHBOctNodes, _HBOctNodes;
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(DeviceHBOctNodes), &_DeviceHBOctNodes));
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HostHBOctNodes), &_HostHBOctNodes));
-                printf("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, sizeof(DeviceHBOctNodes));
-                HBBody HostHBBodies[nBodies], DeviceHBBodies[nBodies], *HBBodies;
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, maxNodes * sizeof(HBOctree), &_DeviceHBOctNodes));
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nNodes * sizeof(HBOctree), &_HostHBOctNodes));
+                printf("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, maxNodes *sizeof(HBOctree));
+
+                HBBody *DeviceHBBodies = new HBBody[nBodies];
+                HBBody *HBBodies;
                 eva_t _HostHBBodies, _DeviceHBBodies, _HBBodies;
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(DeviceHBBodies), &_DeviceHBBodies));
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(HostHBBodies), &_HostHBBodies));
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_DeviceHBBodies));
+                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_HostHBBodies));
                 printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, sizeof(HostHBBodies));
 
                 // If we use HostHBBodies to construct the array, they
@@ -982,9 +991,10 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // Use the node/body pointer to create a map between nodes/bodies and their index
                 // Convert the x86 nodes/bodies to HB equivalents for processing
 
-                // Build tree on the device: 
+                // Build tree on the device:
                 hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, HostHBBodies, _HostHBBodies,
                                                nNodes, OctNodePtrs, HostHBOctNodes, _HostHBOctNodes);
+
 
                 hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
                 printf("Created %u HB Nodes\n", nHBNodes);
