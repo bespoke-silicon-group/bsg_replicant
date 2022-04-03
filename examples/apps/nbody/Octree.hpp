@@ -27,7 +27,6 @@ struct HBOctree : public HBNode, public _Octree {
 #endif
         HBOctree(const Point& p) {
                 HBNode::pos  = p;
-                HBNode::Leaf = false;
                 cLeafs     = 0;
                 nChildren  = 0;
         }
@@ -51,8 +50,8 @@ struct Octree : public Node, public _Octree {
                 _Octree &_o = static_cast<_Octree&>(o);
                 _o = static_cast<_Octree>(*this);
         }
-        bool isMatch(HBOctree &o){
-                return Node::isMatch(static_cast<HBNode&>(o)) && o.cLeafs == cLeafs && o.nChildren == nChildren;
+        bool isMatch(HBOctree &o, bool HBLeaf){
+                return Node::isMatch(static_cast<HBNode&>(o), HBLeaf) && o.cLeafs == cLeafs && o.nChildren == nChildren;
         }        
 };
 #endif

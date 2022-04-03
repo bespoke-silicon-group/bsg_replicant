@@ -690,7 +690,7 @@ int hb_mc_manycore_check_host_conversion_nodes(unsigned int nNodes, Octree **nod
                 }
 
                 // Check data match
-                if(!n->isMatch(*_n)){
+                if(!n->isMatch(*_n, false)){
                         printf("Node %d Data Mismatch\n", node_i);
                         return HB_MC_FAIL;
                 }
@@ -717,7 +717,7 @@ int hb_mc_manycore_check_host_conversion_bodies(unsigned int nBodies, Body **bod
                         return HB_MC_FAIL;
                 }
 
-                if(!b->isMatch(*_b)){
+                if(!b->isMatch(*_b, true)){
                         printf("Body %d Data Mismatch\n", body_i);
                         return HB_MC_FAIL;
                 }
@@ -949,26 +949,28 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 OctNodePtrs[0] = &top;
 
                 // Host buffers
-                HBOctree *HostHBOctNodes = new HBOctree[nNodes];
-                HBBody *HostHBBodies = new HBBody[nBodies];
+                HBOctree *HostHBOctNodes = new HBOctree[nNodes]();
+                HBBody *HostHBBodies = new HBBody[nBodies]();
 
                 // HammerBlade buffers. We don't know how many nodes
                 // HB will need to create, so we make a very rough
                 // estimate.
                 NodeIdx maxNodes = nBodies * std::log2(nBodies) + 128, nHBNodes = maxNodes;
-                HBOctree *DeviceHBOctNodes = new HBOctree[maxNodes];
+                HBOctree *DeviceHBOctNodes = new HBOctree[maxNodes]();
                 HBOctree *HBOctNodes;
                 eva_t _DeviceHBOctNodes = 0, _HostHBOctNodes, _HBOctNodes;
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, maxNodes * sizeof(HBOctree), &_DeviceHBOctNodes));
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nNodes * sizeof(HBOctree), &_HostHBOctNodes));
                 printf("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, maxNodes *sizeof(HBOctree));
+                printf("Node Size: %d\n", sizeof(HBNode));
 
-                HBBody *DeviceHBBodies = new HBBody[nBodies];
+                HBBody *DeviceHBBodies = new HBBody[nBodies]();
                 HBBody *HBBodies;
                 eva_t _HostHBBodies, _DeviceHBBodies, _HBBodies;
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_DeviceHBBodies));
                 HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_HostHBBodies));
                 printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, nBodies * sizeof(HBBody));
+                printf("Body Size: %d\n", sizeof(HBBody));
 
                 // If we use HostHBBodies to construct the array, they
                 // are produced from an in-order traversal of the Host

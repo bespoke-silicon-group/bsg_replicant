@@ -21,8 +21,8 @@ struct Body : public Node, public _Body {
                 _b = static_cast<_Body>(*this);
         }
 
-        bool isMatch(HBBody &b){
-                return Node::isMatch(static_cast<HBNode&>(b)) && b.vel == vel && b.acc == acc;
+        bool isMatch(HBBody &b, bool HBLeaf){
+                return Node::isMatch(static_cast<HBNode&>(b), HBLeaf) && b.vel == vel && b.acc == acc;
         }
 };
 #endif

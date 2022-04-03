@@ -68,11 +68,12 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
 
                 // "Recurse" until a null pointer or a leaf is found.
                 recurse:
-                while(child && !child->Leaf){
+                while(child && !(((unsigned int) child) & 1)){
                         cur = (HBOctree *)child;
                         octant = cur->pos.getChildIndex(ins->pos);
                         //bsg_print_hexadecimal(0x02000000 | octant);
                         child = cur->child[octant];
+                        //bsg_print_hexadecimal((unsigned int) child);
                         depth++;
                         // This radius update does not match the CPU code but it does seem to match the GPU code.
                         radius *= 0.5f;
@@ -106,7 +107,8 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         // updates made by the winning tile. The cost
                         // of removing this race condition is a lot
                         // more locking.
-                        cur->child[octant] = ins;
+                        // DR: The low-order bit of the address is a leaf flag.
+                        cur->child[octant] = (HBBody *)(((unsigned int) ins) | 1);
 
                         // Fence before unlocking? Max's lock might handle this.
                         // This should probably be before insertion.
@@ -125,18 +127,14 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
 
                 // Leaf/body means we need to create a new node and
                 // insert both bodies
-                if(child->Leaf){
+                // DR: The low-order bit of the pchild address indicates it is a leaf.
+                if(((unsigned int) child) & 1){
                         //bsg_print_hexadecimal(0x12000000 | local_nidx);
                         //bsg_print_float(radius);
-                        //bsg_print_float((ins->pos - child->pos).dist2());
-
-                        // The last bug I fixed (I believe) led to infinite looping in this if statement.
-                        // The symptom is that the radius goes to 0.0f. The cause is that at least one insert node gets put in the wrong octant
-                        // and conflict. When a new node is inserted, they will always conflict and cause another new node to be inserted, until the radius is 0.
-                        // This if statement exists to catch that bug again if it happens. If it does, just bail with an "error".
-                        // Update: this bug is not fixed - DR
+                        //bsg_print_float((inps->pos - child->pos).dist2());
+                        HBBody * leaf = (HBBody *) (((unsigned int)child) & (~1));
                         if(radius == 0.0f){
-                                bsg_print_hexadecimal(0xe0000000 | local_bidx);
+                                //bsg_print_hexadecimal(0xe0000000 | local_bidx);
                                 local_bidx = bsg_amoadd(bidx, 1);
                                 t.unlock(depth, cur);
                                 continue;
@@ -151,7 +149,8 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         local_nidx = bsg_amoadd(nidx, 1);
 
                         // Insert original child
-                        char new_octant = newNode->pos.getChildIndex(child->pos);
+                        char new_octant = newNode->pos.getChildIndex(leaf->pos);
+                        // Child already had the LOB set for leaf
                         newNode->child[new_octant] = child;
 
                         // DR: If the position of the former child,
@@ -160,7 +159,8 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         // Usually we don't use == for floats, but it
                         // is important in this case.
                         // TODO: Check if dist2 is less than minimum resolvable radius?
-                        if(ins->pos == child->pos){
+                        if(ins->pos == leaf->pos){
+                                bsg_print_hexadecimal(0xf0000000 | local_bidx);                                
                                 float jitter = cfg.tol * .5f;
                                 // assert(jitter < radius);
                                 ins->pos += (newNode->pos - ins->pos) * jitter;
