@@ -6,8 +6,8 @@ typedef unsigned int NodeIdx;
 
 struct _Node {
         Point pos; // DR: X, Y, Z location
-        float mass;
         int octant;
+        float mass;
 };
 
 struct HBNode : public _Node{
