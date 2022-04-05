@@ -88,9 +88,9 @@ CXXDEFINES +=
 
 INCLUDES  = -IGalois/install/include -IGalois/lonestar/liblonestar/include/
 INCLUDES += -I$(shell llvm-config-11-64  --includedir) -I.
-FLAGS     = -O3 -g -Wall -Wno-unused-function -Wno-unused-variable
+FLAGS     = -O3 -g -Wall -Wno-unused-function -Wno-unused-variable -Wno-strict-aliasing -Wno-deprecated-declarations
 CFLAGS   += -std=c99 $(FLAGS)
-CXXFLAGS += -std=c++17 $(FLAGS)
+CXXFLAGS += -std=c++17 $(FLAGS) 
 LDFLAGS  = -lpthread -Wl,-rpath=Galois/install/lib64 -LGalois/install/lib64 -lgalois_shmem -lnuma $(shell llvm-config-11-64 --ldflags --libs)
 
 main.so: Galois/install/lib64/libgalois_shmem.so
@@ -120,9 +120,9 @@ forces.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 build.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 BSG_MANYCORE_KERNELS ?= kernel.riscv
-#RISCV_TARGET_OBJECTS += update.rvo
+RISCV_TARGET_OBJECTS += update.rvo
 #RISCV_TARGET_OBJECTS += forces.rvo
-#RISCV_TARGET_OBJECTS += summarize.rvo
+RISCV_TARGET_OBJECTS += summarize.rvo
 RISCV_TARGET_OBJECTS += build.rvo
 RISCV_INCLUDES  += -I.
 RISCV_CCPPFLAGS += -D__KERNEL__ -O3
@@ -143,7 +143,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 8192 -steps 1 -t 1
+C_ARGS   ?= -n 512 -steps 1 -t 1 -phase summarize
 
 SIM_ARGS ?=
 

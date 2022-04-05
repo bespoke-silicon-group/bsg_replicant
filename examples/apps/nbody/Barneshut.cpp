@@ -20,16 +20,6 @@
 #include <bsg_manycore_regression.h>
 #include <bsg_manycore_cuda.h>
 
-// One-off replacement for BSG_CUDA_CALL
-#define HB_MC_CUDA_CALL(stmt)                                             \
-        {                                                               \
-                int __r = stmt;                                         \
-                if (__r != HB_MC_SUCCESS) {                             \
-                        bsg_pr_err("'%s' failed: %s\n", #stmt, hb_mc_strerror(__r)); \
-                        exit(1);                                        \
-                }                                                       \
-        }
-
 
 #include "galois/Galois.h"
 #include "galois/Timer.h"
@@ -80,6 +70,18 @@ static llvm::cl::opt<int> seed("seed",
 static llvm::cl::opt<std::string> kpath("k",
                                llvm::cl::desc("Kernel path (default value: kernel.riscv)"),
                                llvm::cl::init("kernel.riscv"));
+
+static llvm::cl::opt<std::string> phase("phase",
+                                        llvm::cl::desc("Phase of Barnes Hut to run"),
+                                        llvm::cl::init("build"));
+
+static llvm::cl::opt<int> py("px",
+                             llvm::cl::desc("Pod X ID to simulate"),
+                             llvm::cl::init(0));
+
+static llvm::cl::opt<int> px("py",
+                             llvm::cl::desc("Pod Y ID to simulate"),
+                             llvm::cl::init(0));
 
 Config config;
 
@@ -179,7 +181,7 @@ struct BuildOctree {
 };
 
 int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsigned int *nNodes, HBOctree *hnodes, eva_t _hnodes, unsigned int nBodies, HBBody *hbodies, eva_t _hbodies, float radius){
-        printf("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", hnodes[0].pos[0], hnodes[0].pos[1], hnodes[0].pos[2], radius);
+        bsg_pr_info("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", hnodes[0].pos[0], hnodes[0].pos[1], hnodes[0].pos[2], radius);
         hb_mc_dma_htod_t htod_bodies = {
                 .d_addr = _hbodies,
                 .h_addr = hbodies,
@@ -194,7 +196,7 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
 
         unsigned int body_idx = TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y;
         eva_t _body_idx;
-        HB_MC_CUDA_CALL(hb_mc_device_malloc(device, sizeof(body_idx), &_body_idx));
+        BSG_CUDA_CALL(hb_mc_device_malloc(device, sizeof(body_idx), &_body_idx));
         hb_mc_dma_htod_t htod_body_idx = {
                 .d_addr = _body_idx,
                 .h_addr = &body_idx,
@@ -205,17 +207,17 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
         // node_idx is the location of the first free node.
         unsigned int node_idx = TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y + 1;
         eva_t _node_idx;
-        HB_MC_CUDA_CALL(hb_mc_device_malloc(device, sizeof(node_idx), &_node_idx));
+        BSG_CUDA_CALL(hb_mc_device_malloc(device, sizeof(node_idx), &_node_idx));
         hb_mc_dma_htod_t htod_node_idx = {
                 .d_addr = _node_idx,
                 .h_addr = &node_idx,
                 .size   = sizeof(node_idx)
         };
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_body_idx, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_node_idx, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_body_idx, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_node_idx, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
 
         hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
@@ -225,17 +227,17 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
 
         //extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBody *bodies, int nBodies, int *bidx, unsigned int _radius){
         uint32_t cuda_argv[8] = {_config, _hnodes, (*nNodes), _node_idx, _hbodies, nBodies, _body_idx, fradius};
-        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "build", 8, cuda_argv));
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "build", 8, cuda_argv));
 
         /* Launch and execute all tile groups on device and wait for all to finish.  */
-        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
 
         hb_mc_dma_dtoh_t dtoh_nnodes = {
                 .d_addr = _node_idx,
                 .h_addr = nNodes,
                 .size   = sizeof(node_idx)
         };
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nnodes, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nnodes, 1));
 
         hb_mc_dma_dtoh_t dtoh_nodes = {
                 .d_addr = _hnodes,
@@ -243,9 +245,9 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
                 .size   = sizeof(HBOctree) * (*nNodes)
         };
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nodes, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_free(device, _body_idx));
-        HB_MC_CUDA_CALL(hb_mc_device_free(device, _node_idx));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh_nodes, 1));
+        BSG_CUDA_CALL(hb_mc_device_free(device, _body_idx));
+        BSG_CUDA_CALL(hb_mc_device_free(device, _node_idx));
 
         /* Code doesn't work, but may be useful:
         for(int n_i = 0; n_i < *nNodes; n_i++){
@@ -340,7 +342,7 @@ int hb_mc_manycore_device_summarize_centers(hb_mc_device_t *device, eva_t _confi
 
         unsigned int idx = 127;
         eva_t _idx;
-        HB_MC_CUDA_CALL(hb_mc_device_malloc(device, sizeof(idx), &_idx));
+        BSG_CUDA_CALL(hb_mc_device_malloc(device, sizeof(idx), &_idx));
         hb_mc_dma_htod_t htod_idx = {
                 .d_addr = _idx,
                 .h_addr = &idx,
@@ -352,13 +354,13 @@ int hb_mc_manycore_device_summarize_centers(hb_mc_device_t *device, eva_t _confi
         // We can't transfer floats as arguments directly, so we pass it encoded as a binary value
         uint32_t cuda_argv[4] = {_hnodes, _hbodies, nBodies, _idx};
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_idx, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
-        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "summarize", 4, cuda_argv));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_idx, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "summarize", 4, cuda_argv));
 
         /* Launch and execute all tile groups on device and wait for all to finish.  */
-        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
 
         hb_mc_dma_dtoh_t dtoh = {
                 .d_addr = _hnodes,
@@ -366,8 +368,8 @@ int hb_mc_manycore_device_summarize_centers(hb_mc_device_t *device, eva_t _confi
                 .size   = sizeof(HBOctree) * nNodes
         };
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_free(device, _idx));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
+        BSG_CUDA_CALL(hb_mc_device_free(device, _idx));
 
         return HB_MC_SUCCESS;
 }
@@ -837,12 +839,12 @@ int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, 
         uint32_t fdiamsq = *reinterpret_cast<uint32_t *>(&diamsq);
         uint32_t cuda_argv[5] = {_config, _hnodes, _hbodies, nBodies, fdiamsq};
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
-        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "forces", 5, cuda_argv));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "forces", 5, cuda_argv));
 
         /* Launch and execute all tile groups on device and wait for all to finish.  */
-        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
 
         hb_mc_dma_dtoh_t dtoh = {
                 .d_addr = _hbodies,
@@ -850,7 +852,7 @@ int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, 
                 .size   = sizeof(HBBody) * nBodies
         };
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
 
         return HB_MC_SUCCESS;
 }
@@ -866,11 +868,11 @@ int hb_mc_manycore_device_update_bodies(hb_mc_device_t *device, eva_t _config, u
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
         uint32_t cuda_argv[3] = {_config, nBodies, _hbodies};
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod, 1));
-        HB_MC_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "update", 3, cuda_argv));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod, 1));
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "update", 3, cuda_argv));
 
         /* Launch and execute all tile groups on device and wait for all to finish.  */
-        HB_MC_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
+        BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(device));
 
         hb_mc_dma_dtoh_t dtoh = {
                 .d_addr = _hbodies,
@@ -878,12 +880,13 @@ int hb_mc_manycore_device_update_bodies(hb_mc_device_t *device, eva_t _config, u
                 .size   = sizeof(HBBody) * nBodies
         };
 
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, &dtoh, 1));
 
         return HB_MC_SUCCESS;
 }
 
-void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
+int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
+        int rc = HB_MC_SUCCESS;
         typedef galois::worklists::StableIterator<true> WLL;
 
 
@@ -894,16 +897,19 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
         hb_mc_device_t device;
         std::string test_name = "Barnes-Hut Simulation";
         eva_t _config;
-
-        HB_MC_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y}));
-        HB_MC_CUDA_CALL(hb_mc_device_program_init(&device, "kernel.riscv", "default_allocator", 0));
-        HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(config), &_config));
+        const std::string prog_phase = phase;
+        int pod_x = px;
+        int pod_y = py;
+        bsg_pr_info("Running Barnes-Hut Phase %s on pod X:%d Y:%d\n", prog_phase.c_str(), pod_x, pod_y);
+        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y}));
+        BSG_CUDA_CALL(hb_mc_device_program_init(&device, "kernel.riscv", "default_allocator", 0));
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(config), &_config));
         hb_mc_dma_htod_t htod = {
                 .d_addr = _config,
                 .h_addr = &config,
                 .size   = sizeof(config)
         };
-        HB_MC_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
 
         for (int step = 0; step < ntimesteps; step++) {
 
@@ -957,20 +963,18 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // estimate.
                 NodeIdx maxNodes = nBodies * std::log2(nBodies) + 128, nHBNodes = maxNodes;
                 HBOctree *DeviceHBOctNodes = new HBOctree[maxNodes]();
-                HBOctree *HBOctNodes;
-                eva_t _DeviceHBOctNodes = 0, _HostHBOctNodes, _HBOctNodes;
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, maxNodes * sizeof(HBOctree), &_DeviceHBOctNodes));
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nNodes * sizeof(HBOctree), &_HostHBOctNodes));
+                eva_t _DeviceHBOctNodes = 0, _HostHBOctNodes;
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, maxNodes * sizeof(HBOctree), &_DeviceHBOctNodes));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, nNodes * sizeof(HBOctree), &_HostHBOctNodes));
                 printf("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, maxNodes *sizeof(HBOctree));
-                printf("Node Size: %d\n", sizeof(HBNode));
+                printf("Node Size: %lu\n", sizeof(HBNode));
 
                 HBBody *DeviceHBBodies = new HBBody[nBodies]();
-                HBBody *HBBodies;
-                eva_t _HostHBBodies, _DeviceHBBodies, _HBBodies;
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_DeviceHBBodies));
-                HB_MC_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_HostHBBodies));
+                eva_t _HostHBBodies, _DeviceHBBodies;
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_DeviceHBBodies));
+                BSG_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_HostHBBodies));
                 printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, nBodies * sizeof(HBBody));
-                printf("Body Size: %d\n", sizeof(HBBody));
+                printf("Body Size: %lu\n", sizeof(HBBody));
 
                 // If we use HostHBBodies to construct the array, they
                 // are produced from an in-order traversal of the Host
@@ -984,7 +988,6 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         body_i ++;
                 }
 
-                // TODO: Create switch
                 // Convert Octree node to HBOctree node
                 top.convert(_DeviceHBOctNodes, DeviceHBOctNodes[0]);
                 DeviceHBOctNodes[0].nChildren = 0;
@@ -994,28 +997,38 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // Convert the x86 nodes/bodies to HB equivalents for processing
 
                 // Build tree on the device:
+
                 hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, HostHBBodies, _HostHBBodies,
                                                nNodes, OctNodePtrs, HostHBOctNodes, _HostHBOctNodes);
 
-
-                hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
-                printf("Created %u HB Nodes\n", nHBNodes);
-
                 // TODO: Set HBOctNodes to Device or Host Version
                 // TODO: Set HBBodies to Device or Host Version
+                HBOctree *HBOctNodes;
+                eva_t _HBOctNodes;
+                HBBody *HBBodies;
+                eva_t _HBBodies;
 
-                // TODO: I don't know if the code for building a tree
-                // is 100% correct. Next step is to write a method
-                // that verifies the tree -- checking that the
-                // position of all the children at a node are within
-                // it's radius, and are in the correct octant. It
-                // would also be good to create a method that takes a
-                // HB tree and turns it back into a x86 tree so we can
-                // hand it back to the CPU code
+                if(prog_phase == "build"){
+                        rc = hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
+                        printf("Created %u HB Nodes\n", nHBNodes);
+                        return rc;
+                        // TODO: I don't know if the code for building a tree
+                        // is 100% correct. Next step is to write a method
+                        // that verifies the tree -- checking that the
+                        // position of all the children at a node are within
+                        // it's radius, and are in the correct octant. It
+                        // would also be good to create a method that takes a
+                        // HB tree and turns it back into a x86 tree so we can
+                        // hand it back to the CPU code
+                        
+                        // TL;DR, the biggest next-step is verification.
+                }
 
-                // TL;DR, the biggest next-step is verification.
-                exit(1);
+                HBBodies = HostHBBodies;
+                _HBBodies = _HostHBBodies;
 
+                HBOctNodes = HostHBOctNodes;
+                _HBOctNodes = _HostHBOctNodes;
                 // ============================================================
 
                 // ============================================================
@@ -1028,21 +1041,25 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  },
                                  "summarize-Serial");
 
-                // TODO: Implement skipping for CoM summarizaion
-                hb_mc_manycore_device_summarize_centers(&device, _config, nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies);
+                if(prog_phase == "summarize"){
+                        BSG_CUDA_CALL(hb_mc_manycore_device_summarize_centers(&device, _config, nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies));
 
-                float pmse = 0.0f;
-                for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
-                        printf("HB: %2.4f %2.4f %2.4f (%2.4f)\n", HBOctNodes[node_i].pos.val[0], HBOctNodes[node_i].pos.val[1], HBOctNodes[node_i].pos.val[2], HBOctNodes[node_i].mass);
-                        printf("86: %2.4f %2.4f %2.4f (%2.4f)\n", OctNodePtrs[node_i]->pos.val[0], OctNodePtrs[node_i]->pos.val[1], OctNodePtrs[node_i]->pos.val[2], OctNodePtrs[node_i]->mass);
-                        pmse += (HBOctNodes[node_i].pos - OctNodePtrs[node_i]->pos).dist2();
-                }
-                printf("Position MSE: %f\n", pmse);
-
-                // DR: Update centers of mass in the HB nodes, if the previous kernel is not run
-                for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
-                        HBOctNodes[node_i].mass = OctNodePtrs[node_i]->mass;
-                        HBOctNodes[node_i].pos = OctNodePtrs[node_i]->pos;
+                        float pmse = 0.0f;
+                        for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
+                                // bsg_pr_info("HB: %2.4f %2.4f %2.4f (%2.4f)\n", HBOctNodes[node_i].pos.val[0], HBOctNodes[node_i].pos.val[1], HBOctNodes[node_i].pos.val[2], HBOctNodes[node_i].mass);
+                                // bsg_pr_info("86: %2.4f %2.4f %2.4f (%2.4f)\n", OctNodePtrs[node_i]->pos.val[0], OctNodePtrs[node_i]->pos.val[1], OctNodePtrs[node_i]->pos.val[2], OctNodePtrs[node_i]->mass);
+                                pmse += (HBOctNodes[node_i].pos - OctNodePtrs[node_i]->pos).dist2();
+                        }
+                        bsg_pr_info("HB Position MSE: %f\n", pmse);
+                        if(pmse > .01f)
+                                return HB_MC_FAIL; 
+                        return HB_MC_SUCCESS;
+                } else {
+                        // DR: Update centers of mass in the HB nodes, if the previous kernel is not run
+                        for(NodeIdx node_i = 0; node_i < nNodes; node_i++){
+                                HBOctNodes[node_i].mass = OctNodePtrs[node_i]->mass;
+                                HBOctNodes[node_i].pos = OctNodePtrs[node_i]->pos;
+                        }
                 }
                 // ============================================================
 
@@ -1061,21 +1078,27 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  galois::per_iter_alloc());
                 T_compute.stop();
 
-                // TODO: Implement skipping for forces computation
-                // hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies);                
 
-                float amse = 0.0f;
-                for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
-                        printf("HB: %2.4f %2.4f %2.4f\n", HBBodies[body_i].acc.val[0], HBBodies[body_i].acc.val[1], HBBodies[body_i].acc.val[2]);
-                        printf("86: %2.4f %2.4f %2.4f\n", BodyPtrs[body_i]->acc.val[0], BodyPtrs[body_i]->acc.val[1], BodyPtrs[body_i]->acc.val[2]);
-                        amse += (HBBodies[body_i].acc - BodyPtrs[body_i]->acc).dist2();
-                }
-                printf("Acceleration MSE: %f\n", amse);
+                if(prog_phase == "forces"){
+                        BSG_CUDA_CALL(hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies));
 
-                // DR: Update centers of mass in the HB nodes
-                for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
-                        HBBodies[body_i].acc = BodyPtrs[body_i]->acc;
-                        HBBodies[body_i].vel = BodyPtrs[body_i]->vel;
+                        float amse = 0.0f;
+                        for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                                // bsg_pr_info("HB: %2.4f %2.4f %2.4f\n", HBBodies[body_i].acc.val[0], HBBodies[body_i].acc.val[1], HBBodies[body_i].acc.val[2]);
+                                // bsg_pr_info("86: %2.4f %2.4f %2.4f\n", BodyPtrs[body_i]->acc.val[0], BodyPtrs[body_i]->acc.val[1], BodyPtrs[body_i]->acc.val[2]);
+                                amse += (HBBodies[body_i].acc - BodyPtrs[body_i]->acc).dist2();
+                        }
+
+                        bsg_pr_info("Acceleration MSE: %f\n", amse);
+                        if(amse > .01f)
+                                return HB_MC_FAIL; 
+                        return HB_MC_SUCCESS;
+                } else {
+                        // DR: Update centers of mass in the HB nodes
+                        for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                                HBBodies[body_i].acc = BodyPtrs[body_i]->acc;
+                                HBBodies[body_i].vel = BodyPtrs[body_i]->vel;
+                        }
                 }
                 // ============================================================
 
@@ -1105,16 +1128,22 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                },
                                galois::loopname("advance"));
 
-                // TODO: Implement skipping switch for update
-                // hb_mc_manycore_device_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies);
+                if(prog_phase == "update"){
+                        BSG_CUDA_CALL(hb_mc_manycore_device_update_bodies(&device, _config, nBodies, HBBodies, _HBBodies));
 
-                pmse = 0.0f;
-                float vmse = 0.0f;
-                for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
-                        pmse += (HBBodies[body_i].pos - BodyPtrs[body_i]->pos).dist2();
-                        vmse += (HBBodies[body_i].vel - BodyPtrs[body_i]->vel).dist2();
+                        float pmse = 0.0f;
+                        float vmse = 0.0f;
+                        for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                                pmse += (HBBodies[body_i].pos - BodyPtrs[body_i]->pos).dist2();
+                                vmse += (HBBodies[body_i].vel - BodyPtrs[body_i]->vel).dist2();
+                        }
+                        bsg_pr_info("Position MSE: %f, Velocity MSE: %f\n", pmse/nBodies, vmse/nBodies);
+                        if(pmse > .01f)
+                                return HB_MC_FAIL; 
+                        if(vmse > .01f)
+                                return HB_MC_FAIL; 
+                        return HB_MC_SUCCESS;
                 }
-                printf("Position MSE: %f Velocity MSE: %f\n", pmse/nBodies, vmse/nBodies);
                 // ============================================================
 
                 std::cout << "Timestep " << step << " Center of Mass = ";
@@ -1125,13 +1154,14 @@ void run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 std::cout.flags(flags);
                 std::cout << "\n";
 
-                HB_MC_CUDA_CALL(hb_mc_device_free(&device, _HBBodies));
-                HB_MC_CUDA_CALL(hb_mc_device_free(&device, _HBOctNodes));
+                BSG_CUDA_CALL(hb_mc_device_free(&device, _HBBodies));
+                BSG_CUDA_CALL(hb_mc_device_free(&device, _HBOctNodes));
         }
 
         galois::reportPageAlloc("MeminfoPost");
-        HB_MC_CUDA_CALL(hb_mc_device_free(&device, _config));
-        HB_MC_CUDA_CALL(hb_mc_device_finish(&device));
+        BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
+        BSG_CUDA_CALL(hb_mc_device_finish(&device));
+        return HB_MC_SUCCESS;
 }
 
 int barneshut_main(int argc, char *argv[]) {
