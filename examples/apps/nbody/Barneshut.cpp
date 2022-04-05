@@ -147,12 +147,12 @@ struct BuildOctree {
                         // radius as an offset from the current
                         // (x,y,z) positiion.
                         Octree* new_node = &T.emplace(updateCenter(node->pos, index, radius));
-                               
+
                         // DR: If the position of the former child,
                         // and the current child are identical then
                         // add some jitter to guarantee uniqueness.
                         if (b->pos == child->pos) {
-                                printf("Jittering\n");
+                                bsg_pr_warn("Jittering\n");
                                 // Jitter point to gaurantee uniqueness.
                                 float jitter = config.tol / 2;
                                 assert(jitter < radius);
@@ -222,7 +222,7 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
         hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
         // We can't transfer floats as arguments directly, so we pass it encoded as a binary value
-        
+
         uint32_t fradius = *reinterpret_cast<uint32_t *>(&radius);
 
         //extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBody *bodies, int nBodies, int *bidx, unsigned int _radius){
@@ -262,7 +262,7 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
                                 bsg_pr_err("Oops! Non-zero remainder\n");
                                 exit(1);
                         }
-                        
+
                         if(idx){
                                 HBBody *child = &hbodies[idx];
                            printf("    Leaf %d : %2.4f %2.4f %2.4f \n", child->pos[1], child->pos[1], child->pos[2]);
@@ -270,7 +270,7 @@ int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsi
                 }
         }
         */
-        
+
 
         return HB_MC_SUCCESS;
 }
@@ -670,8 +670,7 @@ int hb_mc_manycore_eva_translate(eva_t buf,
                                  eva_t *hb_p){
         *hb_p = buf + idx * sizeof(T);
         if(*hb_p > (buf + sz)){
-                printf("Error in translation!\n");
-                exit(1);
+                bsg_pr_err("Error in translation!\n");
                 return HB_MC_INVALID;
         }
         return HB_MC_SUCCESS;
@@ -687,20 +686,20 @@ int hb_mc_manycore_check_host_conversion_nodes(unsigned int nNodes, Octree **nod
                 int pred_i = (_n->pred - _hnodes)/sizeof(HBOctree);
                 // Check that Host and HB predecessors correspond
                 if(n->pred != nodes[pred_i]){
-                        printf("Error: Node %d predecessor does not match HBNode!\n", node_i);
+                        bsg_pr_err("Error: Node %d predecessor does not match HBNode!\n", node_i);
                         return HB_MC_FAIL;
                 }
 
                 // Check data match
                 if(!n->isMatch(*_n, false)){
-                        printf("Node %d Data Mismatch\n", node_i);
+                        bsg_pr_err("Node %d Data Mismatch\n", node_i);
                         return HB_MC_FAIL;
                 }
 
                 int octant_i = n->pred->pos.getChildIndex(_n->pos);
                 eva_t _p = hnodes[pred_i].child[octant_i];
                 if(_p != (_hnodes + node_i * sizeof(HBOctree))){
-                        printf("Error: HBOctree Node %u EVA does not match predecessor EVA @ Octant index!\n", node_i);
+                        bsg_pr_err("Error: HBOctree Node %u EVA does not match predecessor EVA @ Octant index!\n", node_i);
                         return HB_MC_FAIL;
                 }
         }
@@ -715,20 +714,26 @@ int hb_mc_manycore_check_host_conversion_bodies(unsigned int nBodies, Body **bod
                 int pred_i = (_b->pred - _hnodes)/sizeof(HBOctree);
                 // Check that Host and HB predecessors correspond
                 if(b->pred != nodes[pred_i]){
-                        printf("Error: Body %d predecessor does not match HBBody!\n", body_i);
+                        bsg_pr_err("Error: Body %d predecessor does not match HBBody!\n", body_i);
                         return HB_MC_FAIL;
                 }
 
                 if(!b->isMatch(*_b, true)){
-                        printf("Body %d Data Mismatch\n", body_i);
+                        bsg_pr_err("Body %d Data Mismatch\n", body_i);
                         return HB_MC_FAIL;
                 }
 
                 // Check the predecessor's corresponding octant child eva matches the current body's eva.
                 int octant_i = b->pred->pos.getChildIndex(_b->pos);
                 eva_t _c = hnodes[pred_i].child[octant_i];
+                bool leaf = _c & 1;
+                _c = _c & (~1);
                 if(_c != (_hbodies + body_i * sizeof(HBBody))){
-                        printf("Error: HBBody %d EVA does not match predecessor EVA @ Octant index!\n", body_i);
+                        bsg_pr_err("Error: HBBody %d EVA does not match predecessor EVA @ Octant index!\n", body_i);
+                        return HB_MC_FAIL;
+                }
+                if(!leaf){
+                        bsg_pr_err("Error: HBBody %d was not marked as leaf in predecessor!\n", body_i);
                         return HB_MC_FAIL;
                 }
         }
@@ -762,7 +767,7 @@ int hb_mc_manycore_host_build_tree(unsigned int nBodies, Body **bodies, HBBody *
 
                 // Get this node's EVA Pointer to set children predecessors
                 eva_t _cur_p;
-                err = hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, cur_i, &_cur_p);
+                BSG_CUDA_CALL(hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, cur_i, &_cur_p));
 
                 for (int c_i = 0; c_i < Octree::octants; c_i++) {
                         Node *child = cur_p->child[c_i].getValue();
@@ -778,7 +783,7 @@ int hb_mc_manycore_host_build_tree(unsigned int nBodies, Body **bodies, HBBody *
                                         c->convert(_cur_p, hnodes[node_i]);
 
                                         // Set up child EVA pointer
-                                        err = hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, node_i, &hnodes[cur_i].child[c_i]);
+                                        BSG_CUDA_CALL(hb_mc_manycore_eva_translate<HBOctree>(_hnodes, sizeof(HBOctree) * nNodes, node_i, &hnodes[cur_i].child[c_i]));
 
                                         nodes[node_i] = c;
                                         nodeIdxMap[c] = node_i++;
@@ -795,19 +800,19 @@ int hb_mc_manycore_host_build_tree(unsigned int nBodies, Body **bodies, HBBody *
                                         b->convert(_cur_p, hbodies[body_i]);
 
                                         // Set up child EVA pointer
-                                        err = hb_mc_manycore_eva_translate<HBBody>(_hbodies, sizeof(HBBody) * nBodies, body_i, &hnodes[cur_i].child[c_i]);
+                                        eva_t _child;
+                                        BSG_CUDA_CALL(hb_mc_manycore_eva_translate<HBBody>(_hbodies, sizeof(HBBody) * nBodies, body_i, &_child));
+                                        // Use low-order bit of the EV to signal leaf
+                                        hnodes[cur_i].child[c_i] = _child | 1;
 
                                         bodyIdxMap[b] = body_i++;
                                 }
                         }
                 }
         }
-        err = hb_mc_manycore_check_host_conversion_nodes(nNodes, nodes, hnodes, _hnodes);
-        if(err != HB_MC_SUCCESS)
-                exit(1);
-        err = hb_mc_manycore_check_host_conversion_bodies(nBodies, bodies, hbodies, _hbodies, nodes, hnodes, _hnodes);
-        if(err != HB_MC_SUCCESS)
-                exit(1);
+        BSG_CUDA_CALL(hb_mc_manycore_check_host_conversion_nodes(nNodes, nodes, hnodes, _hnodes));
+        BSG_CUDA_CALL(hb_mc_manycore_check_host_conversion_bodies(nBodies, bodies, hbodies, _hbodies, nodes, hnodes, _hnodes));
+        
         return HB_MC_SUCCESS;
 }
 
@@ -824,13 +829,13 @@ int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, 
                 .size   = sizeof(HBOctree) * nNodes
         };
         for(NodeIdx i =0 ; i < nNodes; i++){
-                printf("Node: %u, %lx, pred: %x\n", i, _hnodes + sizeof(HBOctree) * i, hnodes[i].pred);
+                bsg_pr_info("Node: %u, %lx, pred: %x\n", i, _hnodes + sizeof(HBOctree) * i, hnodes[i].pred);
                 for(int c = 0; c < Octree::octants; c++){
-                        printf("\t Child: %x\n", hnodes[i].child[c]);
+                        bsg_pr_info("\t Child: %x\n", hnodes[i].child[c]);
                 }
         }
         for(BodyIdx i =0 ; i < nBodies; i++){
-                printf("Body: %u, %lx, pred: %x, Pos: %f %f %f\n", i, _hbodies + sizeof(HBBody) * i, hbodies[i].pred, hbodies[i].pos.val[0], hbodies[i].pos.val[1], hbodies[i].pos.val[2]);
+                bsg_pr_info("Body: %u, %lx, pred: %x, Pos: %f %f %f\n", i, _hbodies + sizeof(HBBody) * i, hbodies[i].pred, hbodies[i].pos.val[0], hbodies[i].pos.val[1], hbodies[i].pos.val[2]);
         }
 
         hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
@@ -948,7 +953,7 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 for (auto ii : pBodies) { nBodies ++; }
                 for (auto ii : t) { nNodes ++; }
 
-                printf("x86 Created %u Nodes\n", nNodes);
+                bsg_pr_info("x86 Created %u Nodes\n", nNodes);
 
                 Body **BodyPtrs = new Body*[nBodies];
                 Octree **OctNodePtrs = new Octree*[nNodes];
@@ -966,15 +971,15 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 eva_t _DeviceHBOctNodes = 0, _HostHBOctNodes;
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, maxNodes * sizeof(HBOctree), &_DeviceHBOctNodes));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, nNodes * sizeof(HBOctree), &_HostHBOctNodes));
-                printf("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, maxNodes *sizeof(HBOctree));
-                printf("Node Size: %lu\n", sizeof(HBNode));
+                bsg_pr_info("Nodes EVA (size): %x (%lu)\n", _DeviceHBOctNodes, maxNodes *sizeof(HBOctree));
+                bsg_pr_info("Node Size: %lu\n", sizeof(HBNode));
 
                 HBBody *DeviceHBBodies = new HBBody[nBodies]();
                 eva_t _HostHBBodies, _DeviceHBBodies;
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_DeviceHBBodies));
                 BSG_CUDA_CALL(hb_mc_device_malloc(&device, nBodies * sizeof(HBBody), &_HostHBBodies));
-                printf("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, nBodies * sizeof(HBBody));
-                printf("Body Size: %lu\n", sizeof(HBBody));
+                bsg_pr_info("Bodies EVA (size): %x (%lu)\n", _HostHBBodies, nBodies * sizeof(HBBody));
+                bsg_pr_info("Body Size: %lu\n", sizeof(HBBody));
 
                 // If we use HostHBBodies to construct the array, they
                 // are produced from an in-order traversal of the Host
@@ -991,15 +996,15 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // Convert Octree node to HBOctree node
                 top.convert(_DeviceHBOctNodes, DeviceHBOctNodes[0]);
                 DeviceHBOctNodes[0].nChildren = 0;
-                
+
                 // Perform in-order octree tree traversal to enumerate all nodes/bodies
                 // Use the node/body pointer to create a map between nodes/bodies and their index
                 // Convert the x86 nodes/bodies to HB equivalents for processing
 
-                // Build tree on the device:
 
-                hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, HostHBBodies, _HostHBBodies,
-                                               nNodes, OctNodePtrs, HostHBOctNodes, _HostHBOctNodes);
+                BSG_CUDA_CALL(hb_mc_manycore_host_build_tree(nBodies, BodyPtrs, HostHBBodies, _HostHBBodies,
+                                                             nNodes, OctNodePtrs, HostHBOctNodes, _HostHBOctNodes));
+                bsg_pr_info("Host Tree building/conversion successful!\n");
 
                 // TODO: Set HBOctNodes to Device or Host Version
                 // TODO: Set HBBodies to Device or Host Version
@@ -1008,9 +1013,10 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 HBBody *HBBodies;
                 eva_t _HBBodies;
 
+                // Build tree on the device:
                 if(prog_phase == "build"){
                         rc = hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
-                        printf("Created %u HB Nodes\n", nHBNodes);
+                        bsg_pr_info("Created %u HB Nodes\n", nHBNodes);
                         return rc;
                         // TODO: I don't know if the code for building a tree
                         // is 100% correct. Next step is to write a method
@@ -1020,8 +1026,8 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         // would also be good to create a method that takes a
                         // HB tree and turns it back into a x86 tree so we can
                         // hand it back to the CPU code
-                        
-                        // TL;DR, the biggest next-step is verification.
+
+                        // TL;DR, the biggest next-step is verification.                        
                 }
 
                 HBBodies = HostHBBodies;
@@ -1041,6 +1047,8 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  },
                                  "summarize-Serial");
 
+                bsg_pr_info("Host masses summarization successful!\n");
+
                 if(prog_phase == "summarize"){
                         BSG_CUDA_CALL(hb_mc_manycore_device_summarize_centers(&device, _config, nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies));
 
@@ -1050,9 +1058,9 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                 // bsg_pr_info("86: %2.4f %2.4f %2.4f (%2.4f)\n", OctNodePtrs[node_i]->pos.val[0], OctNodePtrs[node_i]->pos.val[1], OctNodePtrs[node_i]->pos.val[2], OctNodePtrs[node_i]->mass);
                                 pmse += (HBOctNodes[node_i].pos - OctNodePtrs[node_i]->pos).dist2();
                         }
-                        bsg_pr_info("HB Position MSE: %f\n", pmse);
+                        bsg_pr_info("HB Center of Mass MSE: %f\n", pmse);
                         if(pmse > .01f)
-                                return HB_MC_FAIL; 
+                                return HB_MC_FAIL;
                         return HB_MC_SUCCESS;
                 } else {
                         // DR: Update centers of mass in the HB nodes, if the previous kernel is not run
@@ -1078,6 +1086,7 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                  galois::per_iter_alloc());
                 T_compute.stop();
 
+                bsg_pr_info("Host forces calculation successful!\n");
 
                 if(prog_phase == "forces"){
                         BSG_CUDA_CALL(hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies));
@@ -1091,7 +1100,7 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
 
                         bsg_pr_info("Acceleration MSE: %f\n", amse);
                         if(amse > .01f)
-                                return HB_MC_FAIL; 
+                                return HB_MC_FAIL;
                         return HB_MC_SUCCESS;
                 } else {
                         // DR: Update centers of mass in the HB nodes
@@ -1139,9 +1148,9 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         }
                         bsg_pr_info("Position MSE: %f, Velocity MSE: %f\n", pmse/nBodies, vmse/nBodies);
                         if(pmse > .01f)
-                                return HB_MC_FAIL; 
+                                return HB_MC_FAIL;
                         if(vmse > .01f)
-                                return HB_MC_FAIL; 
+                                return HB_MC_FAIL;
                         return HB_MC_SUCCESS;
                 }
                 // ============================================================
