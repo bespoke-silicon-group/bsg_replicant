@@ -828,6 +828,7 @@ int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, 
                 .h_addr = hnodes,
                 .size   = sizeof(HBOctree) * nNodes
         };
+        /*
         for(NodeIdx i =0 ; i < nNodes; i++){
                 bsg_pr_info("Node: %u, %lx, pred: %x\n", i, _hnodes + sizeof(HBOctree) * i, hnodes[i].pred);
                 for(int c = 0; c < Octree::octants; c++){
@@ -836,7 +837,7 @@ int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, 
         }
         for(BodyIdx i =0 ; i < nBodies; i++){
                 bsg_pr_info("Body: %u, %lx, pred: %x, Pos: %f %f %f\n", i, _hbodies + sizeof(HBBody) * i, hbodies[i].pred, hbodies[i].pos.val[0], hbodies[i].pos.val[1], hbodies[i].pos.val[2]);
-        }
+                }*/
 
         hb_mc_dimension_t tg_dim = { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y};
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
@@ -1061,6 +1062,8 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         bsg_pr_info("HB Center of Mass MSE: %f\n", pmse);
                         if(pmse > .01f)
                                 return HB_MC_FAIL;
+                        BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
+                        BSG_CUDA_CALL(hb_mc_device_finish(&device));
                         return HB_MC_SUCCESS;
                 } else {
                         // DR: Update centers of mass in the HB nodes, if the previous kernel is not run
@@ -1101,6 +1104,8 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         bsg_pr_info("Acceleration MSE: %f\n", amse);
                         if(amse > .01f)
                                 return HB_MC_FAIL;
+                        BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
+                        BSG_CUDA_CALL(hb_mc_device_finish(&device));
                         return HB_MC_SUCCESS;
                 } else {
                         // DR: Update centers of mass in the HB nodes
@@ -1151,6 +1156,8 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                 return HB_MC_FAIL;
                         if(vmse > .01f)
                                 return HB_MC_FAIL;
+                        BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
+                        BSG_CUDA_CALL(hb_mc_device_finish(&device));
                         return HB_MC_SUCCESS;
                 }
                 // ============================================================

@@ -76,8 +76,13 @@ extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBod
                 float distsq;
                 char octant = 0;
                 while (pother != proot || (pother == proot && octant < HBOctree::octants)){
+                        // Leaf status is encoded in the low-order bit of the address.
+                        unsigned int leaf = reinterpret_cast<uintptr_t>(pother) & 1;
+                        pother = reinterpret_cast<HBNode*>(reinterpret_cast<uintptr_t>(pother) & (~1));
                         HBOctree *node = static_cast<HBOctree *>(pother);
-                        if(pother->Leaf){
+
+                        // child && !(((unsigned int) child) & 1)
+                        if(leaf){
                                 //bsg_print_float(1.0f);
                                 // Leaf node, compute force
                                 if(pother != static_cast<HBNode *>(pcurb)){
