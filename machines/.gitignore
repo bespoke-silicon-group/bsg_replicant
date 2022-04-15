@@ -16,3 +16,4 @@ bsg_tag_boot_rom.v
 bsg_tag_boot_rom.tr
 tapeout-vcs
 bigblade-verilator
+bigblade-xcelium
