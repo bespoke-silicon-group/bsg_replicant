@@ -25,22 +25,47 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-ifndef __BSG_MACHINE_MK
-__BSG_MACHINE_MK := 1
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
-# BSG_F1_DIR: The path to the BSG F1 repository
-ifndef BSG_F1_DIR
-$(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_F1_DIR is not defined$(NC)"))
-endif
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
-# BSG Machine Path is the path to the target Makefile.machine.include
-# file. We allow it to be overriden.
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
 
-# To switch machines, simply switch the path of BSG_MACHINE_PATH to
-# another directory with a Makefile.machine.include file.
-BSG_MACHINE_PATH ?= $(BSG_F1_DIR)/machines/pod_X1Y1_ruche_X8Y4_hbm
+DEFINES    += -DXCELIUM
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-# Convert the machine path to an abspath
-override BSG_MACHINE_PATH := $(abspath $(BSG_MACHINE_PATH))
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
+CXXFLAGS   += $(DEFINES) -fPIC
+CFLAGS     += $(DEFINES) -fPIC
 
-endif
+# each regression target needs to build its .o from a .c and .h of the
+# same name
+%.o: %.c
+	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES)
+
+# ... or a .cpp and .hpp of the same name
+%.o: %.cpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
+
+# Compile all of the sources into a shared object file for dynamic loading.
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+
+main.so: $(TEST_OBJECTS)
+	$(CXX) -shared -o $@ $^ $(LDFLAGS)
+
+.PRECIOUS: %.o %.so
+
+.PHONY: platform.compilation.clean
+platform.compilation.clean:
+	rm -rf *.o *.so
+
+compilation.clean: platform.compilation.clean

@@ -238,6 +238,8 @@ module bsg_manycore_endpoint_to_fifos
     ,.returning_data_i(ep_rsp_data_li)
     ,.returning_v_i(ep_rsp_v_li)
 
+    ,.returned_credit_reg_id_r_o()
+    ,.returned_credit_v_r_o()
     ,.out_credits_used_o(out_credits_used_o)
 
     ,.global_x_i(global_x_i)
