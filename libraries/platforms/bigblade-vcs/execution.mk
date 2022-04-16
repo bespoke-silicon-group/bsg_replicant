@@ -46,6 +46,7 @@ saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/simv
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simv
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simv
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simv
+pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simv
 
 # Use VANILLA_STATS and VCACHE_STATS to override paths
 VANILLA_STATS ?= vanilla_stats.csv
