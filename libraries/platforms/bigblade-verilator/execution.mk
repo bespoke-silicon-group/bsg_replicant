@@ -25,13 +25,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.PRECIOUS: threaded.log exec.log profile.log exec.log debug.vpd
+.PRECIOUS: threaded.log exec.log profile.log exec.log pc-histogram.log debug.vpd
 .PHONY: platform.execution.clean dve
 
 threaded.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/threaded/simsc
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simsc
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
+pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simsc
 
 %.log: main.so $(BSG_MANYCORE_KERNELS)
 	$(filter %/simsc, $^) $(CURDIR)/main.so $(C_ARGS) 2>&1 | tee $@
