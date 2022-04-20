@@ -69,6 +69,7 @@ std::string SimulationWrapper::getRoot(){
 
 SimulationWrapper::~SimulationWrapper(){
         Vreplicant_tb_top *top = reinterpret_cast<Vreplicant_tb_top *>(this->top);
+        top->final();
         delete top;
         this->top = nullptr;
 }
