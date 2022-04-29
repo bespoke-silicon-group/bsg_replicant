@@ -84,6 +84,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_manycore_profile_pkg.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
 
 # Core Profiler/Trace
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_scoreboard_tracker_pkg.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_exe_bubble_classifier_pkg.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_exe_bubble_classifier.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_scoreboard_tracker.v
