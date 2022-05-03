@@ -45,6 +45,7 @@
 #include <Body.hpp>
 #include <Octree.hpp>
 #include <BoundingBox.hpp>
+#include <algorithm>    // std::sort
 
 std::ostream& operator<<(std::ostream& os, const Point& p) {
         os << "(" << p[0] << "," << p[1] << "," << p[2] << ")";
@@ -181,7 +182,6 @@ struct BuildOctree {
 };
 
 int hb_mc_manycore_device_build_tree(hb_mc_device_t *device, eva_t _config, unsigned int *nNodes, HBOctree *hnodes, eva_t _hnodes, unsigned int nBodies, HBBody *hbodies, eva_t _hbodies, float radius){
-        bsg_pr_info("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", hnodes[0].pos[0], hnodes[0].pos[1], hnodes[0].pos[2], radius);
         hb_mc_dma_htod_t htod_bodies = {
                 .d_addr = _hbodies,
                 .h_addr = hbodies,
@@ -389,6 +389,7 @@ struct ComputeForces {
 
         ComputeForces(Octree* _top, float diameter) : top(_top) {
                 assert(diameter > 0.0 && "non positive diameter of bb");
+                // DR: This calculation is effectively theta?
                 root_dsq = diameter * diameter * config.itolsq;
         }
 
@@ -609,11 +610,12 @@ void generateInput(Bodies& bodies, BodyPtrs& pBodies, int nbodies, int seed) {
 
         float rsc = (3 * PI) / 16;
         float vsc = sqrt(1.0 / rsc);
-
+        float a = 1.0;
         std::vector<Body> tmp;
 
         for (int body = 0; body < nbodies; body++) {
-                float r = 1.0 / sqrt(pow(dist(gen) * 0.999, -2.0 / 3.0) - 1);
+                // DR: r is the radius. 1.0 can be split into initial radius and "softening length"
+                float r = 1.0 * a / sqrt(pow(dist(gen) * 0.999, -2.0 / 3.0) - 1);
                 do {
                         for (int i = 0; i < 3; i++)
                                 p[i] = dist(gen) * 2.0 - 1.0;
@@ -624,11 +626,15 @@ void generateInput(Bodies& bodies, BodyPtrs& pBodies, int nbodies, int seed) {
                 Body b;
                 b.mass = 1.0 / nbodies;
                 b.pos  = p * scale;
+                // Generate velocity
                 do {
                         p[0] = dist(gen);
                         p[1] = dist(gen) * 0.1;
                 } while (p[1] > p[0] * p[0] * pow(1 - p[0] * p[0], 3.5));
-                v = p[0] * sqrt(2.0 / sqrt(1 + r * r));
+
+                // 1 can be replaced by _a*_a, a softening parameter
+                v = p[0] * sqrt(2.0 / sqrt(a * a + r * r));
+
                 do {
                         for (int i = 0; i < 3; i++)
                                 p[i] = dist(gen) * 2.0 - 1.0;
@@ -812,7 +818,7 @@ int hb_mc_manycore_host_build_tree(unsigned int nBodies, Body **bodies, HBBody *
         }
         BSG_CUDA_CALL(hb_mc_manycore_check_host_conversion_nodes(nNodes, nodes, hnodes, _hnodes));
         BSG_CUDA_CALL(hb_mc_manycore_check_host_conversion_bodies(nBodies, bodies, hbodies, _hbodies, nodes, hnodes, _hnodes));
-        
+
         return HB_MC_SUCCESS;
 }
 
@@ -938,14 +944,35 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 // ============================================================
                 // Build Octree (on the Host)
                 Tree t;
+                Point Median;
+
+                for(int di =0; di < 3; ++di){
+                        std::vector<float> pcs (nbodies);
+                        int bi = 0;
+                        for (auto b : pBodies) {;
+                                pcs[bi++] = b->pos[di];
+                        }
+                        printf("Pre-Median: %f\n", pcs[nbodies/2]);
+                        std::sort(pcs.begin(), pcs.end());
+                        printf("Post-Median: %f\n", pcs[nbodies/2]);
+                        Median[di] = pcs[nbodies/2];
+                }
+                float median_rad = 0.0;
+                for (auto b : pBodies) {
+                        median_rad = std::max(median_rad, (b->pos-Median).dist2());
+                }
+                median_rad = std::sqrt(median_rad);
+                printf("Median Radius: %f\n", median_rad);
+
+
                 BuildOctree treeBuilder{t};
-                Octree& top = t.emplace(box.center());
+                Octree& top = t.emplace(Median);
 
                 galois::StatTimer T_build("BuildTime");
                 T_build.start();
                 galois::do_all(
                                galois::iterate(pBodies),
-                               [&](Body* body) { treeBuilder.insert(body, &top, box.radius()); },
+                               [&](Body* body) { treeBuilder.insert(body, &top, median_rad); },
                                galois::loopname("BuildTree"));
                 T_build.stop();
 
@@ -1007,16 +1034,11 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                                              nNodes, OctNodePtrs, HostHBOctNodes, _HostHBOctNodes));
                 bsg_pr_info("Host Tree building/conversion successful!\n");
 
-                // TODO: Set HBOctNodes to Device or Host Version
-                // TODO: Set HBBodies to Device or Host Version
-                HBOctree *HBOctNodes;
-                eva_t _HBOctNodes;
-                HBBody *HBBodies;
-                eva_t _HBBodies;
 
+                bsg_pr_info("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", DeviceHBOctNodes[0].pos[0], DeviceHBOctNodes[0].pos[1], DeviceHBOctNodes[0].pos[2], median_rad);
                 // Build tree on the device:
                 if(prog_phase == "build"){
-                        rc = hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
+                        rc = hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, median_rad);
                         bsg_pr_info("Created %u HB Nodes\n", nHBNodes);
                         return rc;
                         // TODO: I don't know if the code for building a tree
@@ -1028,8 +1050,60 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         // HB tree and turns it back into a x86 tree so we can
                         // hand it back to the CPU code
 
-                        // TL;DR, the biggest next-step is verification.                        
+                        // TL;DR, the biggest next-step is verification.
                 }
+
+                for (int pod_x_i = 0; pod_x_i < 8; ++ pod_x_i){
+                        Node *pod_top = top.child[pod_x_i].getValue();
+                        for (int pod_y_i = 0; pod_y_i < 8; ++ pod_y_i){
+                                int nfound = 0;
+                                Node *curn;
+                                Octree *curo;
+                                int octant = 0;
+                                if(pod_top){
+                                        if(pod_top->Leaf){
+                                                nfound = 1;
+                                        } else {
+                                                pod_top = static_cast<Octree*>(pod_top)->child[pod_y_i].getValue();
+                                                curn = pod_top;
+                                                while(!((curn == pod_top) && (octant == Octree::octants)) && curn){
+                                                        //printf("%d %d\n", curn == pod_top, octant);
+                                                        if(curn->Leaf){
+                                                                nfound ++;
+                                                                // printf("Up - Leaf (Octant %d)\n", octant);
+                                                                if(curn != pod_top){
+                                                                        octant = curn->octant + 1;
+                                                                        curn = curn->pred;
+                                                                } else {
+                                                                        break;
+                                                                }
+                                                        } else if(octant < Octree :: octants) {
+                                                                curo = static_cast<Octree*>(curn);
+                                                                while((curo->child[octant].getValue() == nullptr) && (octant < Octree::octants)){
+                                                                        // printf("Skip (Octant %d)\n", octant);
+                                                                        octant ++;
+                                                                }
+                                                                if(octant < Octree::octants){
+                                                                        curn = curo->child[octant].getValue();
+                                                                        // printf("Down (Octant %d)\n", octant);
+                                                                        octant = 0;
+                                                                }
+                                                        } else {
+                                                                // printf("Up - Node (Octant %d)\n", octant);
+                                                                octant = curn->octant + 1;
+                                                                curn = curn->pred;
+                                                        }
+                                                }
+                                        }
+                                }
+                                bsg_pr_info("Found %d bodies for X: %d, Y: %d\n", nfound, pod_x_i, pod_y_i);
+                        }
+                }
+                exit(1);
+                HBOctree *HBOctNodes;
+                eva_t _HBOctNodes;
+                HBBody *HBBodies;
+                eva_t _HBBodies;
 
                 HBBodies = HostHBBodies;
                 _HBBodies = _HostHBBodies;

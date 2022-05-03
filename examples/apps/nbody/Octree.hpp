@@ -44,6 +44,10 @@ struct Octree : public Node, public _Octree {
                 Node::Leaf = false;
                 cLeafs     = 0;
                 nChildren  = 0;
+                for(int i = 0; i < 8; ++i){
+                        child[i].lock();
+                        child[i].unlock_and_set(nullptr);
+                }
         }
         void convert(eva_t pred, HBOctree &o){
                 Node::convert(pred, static_cast<HBNode&>(o));
