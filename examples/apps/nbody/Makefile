@@ -120,10 +120,11 @@ forces.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 build.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 BSG_MANYCORE_KERNELS ?= kernel.riscv
-RISCV_TARGET_OBJECTS += update.rvo
-#RISCV_TARGET_OBJECTS += forces.rvo
-RISCV_TARGET_OBJECTS += summarize.rvo
-RISCV_TARGET_OBJECTS += build.rvo
+kernel.riscv: update.rvo
+kernel.riscv: forces.rvo
+kernel.riscv: summarize.rvo
+kernel.riscv: build.rvo
+
 RISCV_INCLUDES  += -I.
 RISCV_CCPPFLAGS += -D__KERNEL__ -O3
 
@@ -143,7 +144,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 512 -steps 1 -t 1 -phase summarize
+C_ARGS   ?= -n 16384 -steps 1 -t 1 -phase update
 
 SIM_ARGS ?=
 
@@ -173,3 +174,4 @@ help:
 .PHONY: clean
 
 clean:
+	rm -rf bsg_link.ld
