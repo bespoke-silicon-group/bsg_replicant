@@ -88,10 +88,14 @@ include $(EXAMPLES_PATH)/link.mk
 # be built before executing.
 BSG_MANYCORE_KERNELS = kernel.riscv
 
-kernel.riscv: kernel.rvo
+compute.rvo: RISCV_CC = $(RISCV_CLANG)
+kernel.riscv: kernel.rvo compute.rvo
 
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(TILE_GROUP_DIM_Y)
+RISCV_CCXXFLAGS += -O3
+#compute.rvo: RISCV_CFLAGS += -flto
+RISCV_LDFLAGS += -flto
 
 include $(EXAMPLES_PATH)/cuda/riscv.mk
 
