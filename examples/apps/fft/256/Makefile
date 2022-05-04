@@ -87,6 +87,7 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 TILE_GROUP_DIM_X = 16
 TILE_GROUP_DIM_Y = 8
 
+kernel.rvo: ../common/fft.hpp
 kernel.rvo: RISCV_INCLUDES += -I../common
 
 kernel.riscv: kernel.rvo

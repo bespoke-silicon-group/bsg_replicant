@@ -14,7 +14,7 @@ FP32Complex fft_workset[NUM_POINTS];
 
 extern "C" __attribute__ ((noinline))
 int
-kernel_fft(FP32Complex *in, FP32Complex *out, FP32Complex *tw, int N) {
+kernel_fft(FP32Complex * bsg_attr_noalias  in, FP32Complex * bsg_attr_noalias out, FP32Complex * bsg_attr_noalias tw, int N) {
     /* bsg_set_tile_x_y(); */
 
     bsg_cuda_print_stat_kernel_start();
