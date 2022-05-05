@@ -116,7 +116,7 @@ $(TEST_OBJECTS): $(TEST_HEADERS)
 # be built before executing.
 
 update.rvo: RISCV_CXX = $(RISCV_CLANGXX)
-forces.rvo: RISCV_CXX = $(RISCV_CLANGXX)
+forces.rvo: RISCV_CXX = $(RISCV_GCC)
 build.rvo: RISCV_CXX = $(RISCV_CLANGXX)
 
 BSG_MANYCORE_KERNELS ?= kernel.riscv
@@ -144,7 +144,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 16384 -steps 1 -t 1 -phase update
+C_ARGS   ?= -n 1024 -steps 1 -t 1 -phase forces
 
 SIM_ARGS ?=
 

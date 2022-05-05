@@ -65,7 +65,7 @@ extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBod
 
         // Since we don't have a work queue at the moment we will do static work allocation
 	for (int cur = __bsg_id; cur < nBodies; cur += TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y) {
-                bsg_print_int(cur);
+                //bsg_print_int(cur);
                 float diamsq = diam * diam * cfg.itolsq;
                 HBBody *pcurb = &HBBodies[cur];
                 HBBody curb = *pcurb;

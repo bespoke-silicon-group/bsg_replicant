@@ -91,7 +91,11 @@ extern "C" void build(Config *pcfg, HBOctree *nodes, int nNodes, int *nidx, HBBo
                         //bsg_print_hexadecimal((unsigned int) child);
                         depth++;
                         // This radius update does not match the CPU code but it does seem to match the GPU code.
+                        // The compiler tries to schedule the access child = cur->child[octant] after the radius computation.
+                        // These force the compiler to do otherwise.
+                        asm volatile("" ::: "memory");                        
                         radius *= 0.5f;
+                        asm volatile("" ::: "memory");
                 }
 
                 // We have reached the point where we need to modify a

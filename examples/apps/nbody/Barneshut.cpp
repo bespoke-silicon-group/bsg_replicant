@@ -966,15 +966,60 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
 
 
                 BuildOctree treeBuilder{t};
-                Octree& top = t.emplace(Median);
+                Octree& top = t.emplace(box.center());
 
                 galois::StatTimer T_build("BuildTime");
                 T_build.start();
                 galois::do_all(
                                galois::iterate(pBodies),
-                               [&](Body* body) { treeBuilder.insert(body, &top, median_rad); },
+                               [&](Body* body) { treeBuilder.insert(body, &top, box.radius()); },
                                galois::loopname("BuildTree"));
                 T_build.stop();
+                /*
+                for (int pod_x_i = 0; pod_x_i < 8; ++ pod_x_i){
+                        Node *pod_top = top.child[pod_x_i].getValue();
+                        for (int pod_y_i = 0; pod_y_i < 8; ++ pod_y_i){
+                                int nfound = 0;
+                                Node *curn;
+                                Octree *curo;
+                                int octant = 0;
+                                if(pod_top && pod_top->Leaf){
+                                        nfound = 1;
+                                } else if(pod_top){
+                                        pod_top = static_cast<Octree*>(pod_top)->child[pod_y_i].getValue();
+                                        curn = pod_top;
+                                        if(curn && curn->Leaf){
+                                                nfound = 1;
+                                                break;
+                                        }
+                                        while(!((curn == pod_top) && (octant == Octree::octants))){
+                                                printf("%d %d, %d\n", curn == pod_top, octant, curn->Leaf);
+                                                if(octant < Octree :: octants) {
+                                                        curo = static_cast<Octree*>(curn);
+                                                        while((curo->child[octant].getValue() == nullptr) && (octant < Octree::octants)){
+                                                                printf("Skip (Octant %d)\n", octant);
+                                                                octant ++;
+                                                        }
+                                                        
+                                                        if(curo->child[octant].getValue() != nullptr && (octant < Octree::octants) && curo->child[octant].getValue()->Leaf){
+                                                                nfound ++;
+                                                                printf("Leaf: %d\n", nfound);
+                                                        } else if((curo->child[octant].getValue() != nullptr) && (octant < Octree::octants)){
+                                                                curn = curo->child[octant].getValue();
+                                                                printf("Down (Octant %d)\n", octant);
+                                                                octant = 0;
+                                                        }
+                                                }
+                                                if(octant == Octree::octants){
+                                                        printf("Up - Node (Octant %d, Leaf %d %d)\n", octant, curn->Leaf, nfound);
+                                                        octant = curn->octant + 1;
+                                                        curn = curn->pred;
+                                                }
+                                        }
+                                }
+                                bsg_pr_info("Found %d bodies for X: %d, Y: %d\n", nfound, pod_x_i, pod_y_i);
+                        }
+                        }*/
 
                 // DR: Convert Bodies, Tree into arrays of Body and Octree
                 unsigned int nBodies = 0, nNodes = 0, i = 0;
@@ -1035,11 +1080,13 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 bsg_pr_info("Host Tree building/conversion successful!\n");
 
 
-                bsg_pr_info("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", DeviceHBOctNodes[0].pos[0], DeviceHBOctNodes[0].pos[1], DeviceHBOctNodes[0].pos[2], median_rad);
+                bsg_pr_info("Root Position: %2.4f %2.4f %2.4f, Radius: %2.4f \n", DeviceHBOctNodes[0].pos[0], DeviceHBOctNodes[0].pos[1], DeviceHBOctNodes[0].pos[2], box.radius());
                 // Build tree on the device:
                 if(prog_phase == "build"){
-                        rc = hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, median_rad);
+                        rc = hb_mc_manycore_device_build_tree(&device, _config, &nHBNodes, DeviceHBOctNodes, _DeviceHBOctNodes, nBodies, DeviceHBBodies, _DeviceHBBodies, box.radius());
                         bsg_pr_info("Created %u HB Nodes\n", nHBNodes);
+                        BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
+                        BSG_CUDA_CALL(hb_mc_device_finish(&device));
                         return rc;
                         // TODO: I don't know if the code for building a tree
                         // is 100% correct. Next step is to write a method
@@ -1053,53 +1100,6 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                         // TL;DR, the biggest next-step is verification.
                 }
 
-                for (int pod_x_i = 0; pod_x_i < 8; ++ pod_x_i){
-                        Node *pod_top = top.child[pod_x_i].getValue();
-                        for (int pod_y_i = 0; pod_y_i < 8; ++ pod_y_i){
-                                int nfound = 0;
-                                Node *curn;
-                                Octree *curo;
-                                int octant = 0;
-                                if(pod_top){
-                                        if(pod_top->Leaf){
-                                                nfound = 1;
-                                        } else {
-                                                pod_top = static_cast<Octree*>(pod_top)->child[pod_y_i].getValue();
-                                                curn = pod_top;
-                                                while(!((curn == pod_top) && (octant == Octree::octants)) && curn){
-                                                        //printf("%d %d\n", curn == pod_top, octant);
-                                                        if(curn->Leaf){
-                                                                nfound ++;
-                                                                // printf("Up - Leaf (Octant %d)\n", octant);
-                                                                if(curn != pod_top){
-                                                                        octant = curn->octant + 1;
-                                                                        curn = curn->pred;
-                                                                } else {
-                                                                        break;
-                                                                }
-                                                        } else if(octant < Octree :: octants) {
-                                                                curo = static_cast<Octree*>(curn);
-                                                                while((curo->child[octant].getValue() == nullptr) && (octant < Octree::octants)){
-                                                                        // printf("Skip (Octant %d)\n", octant);
-                                                                        octant ++;
-                                                                }
-                                                                if(octant < Octree::octants){
-                                                                        curn = curo->child[octant].getValue();
-                                                                        // printf("Down (Octant %d)\n", octant);
-                                                                        octant = 0;
-                                                                }
-                                                        } else {
-                                                                // printf("Up - Node (Octant %d)\n", octant);
-                                                                octant = curn->octant + 1;
-                                                                curn = curn->pred;
-                                                        }
-                                                }
-                                        }
-                                }
-                                bsg_pr_info("Found %d bodies for X: %d, Y: %d\n", nfound, pod_x_i, pod_y_i);
-                        }
-                }
-                exit(1);
                 HBOctree *HBOctNodes;
                 eva_t _HBOctNodes;
                 HBBody *HBBodies;
@@ -1134,10 +1134,10 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                                 pmse += (HBOctNodes[node_i].pos - OctNodePtrs[node_i]->pos).dist2();
                         }
                         bsg_pr_info("HB Center of Mass MSE: %f\n", pmse);
-                        if(pmse > .01f)
-                                return HB_MC_FAIL;
                         BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
                         BSG_CUDA_CALL(hb_mc_device_finish(&device));
+                        if(pmse > .01f)
+                                return HB_MC_FAIL;
                         return HB_MC_SUCCESS;
                 } else {
                         // DR: Update centers of mass in the HB nodes, if the previous kernel is not run
