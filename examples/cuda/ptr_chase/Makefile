@@ -149,13 +149,13 @@ logsz-from-name       = $(firstword $(subst _, ,$(filter %_logsz,$(subst __, ,$1
 
 test-name = $(1)_threads__$(2)_work__$(3)_offset__$(4)_logsz.deploy
 
-# Divergence DRAM Throughput Sweep (LOGSZ = 20, STRIDE = 1)
+# Divergence DRAM Throughput Sweep (LOGSZ = 24, STRIDE = 1)
 DD_SWEEP_THREADS = 1tx_1ty 2tx_1ty 4tx_1ty 8tx_1ty 16tx_1ty 16tx_2ty 16tx_4ty 16tx_8ty
 DD_SWEEP_WORK = 1 2 4 8 16
 
 $(foreach t,$(DD_SWEEP_THREADS),\
 $(foreach w,$(DD_SWEEP_WORK),\
-$(eval DD_TESTS += $(call test-name,$t,$w,128,22))))
+$(eval DD_TESTS += $(call test-name,$t,$w,128,24))))
 
 # Divergence Cache Throughput Sweep (LOGSZ = 18, STRIDE = 1)
 DC_SWEEP_THREADS = 1tx_1ty 2tx_1ty 4tx_1ty 8tx_1ty 16tx_1ty 16tx_2ty 16tx_4ty 16tx_8ty
@@ -165,13 +165,13 @@ $(foreach t,$(DC_SWEEP_THREADS),\
 $(foreach w,$(DC_SWEEP_WORK),\
 $(eval DC_TESTS += $(call test-name,$t,$w,128,18))))
 
-# Latency DRAM Sweep (LOGSZ = 20, STRIDE = 1)
+# Latency DRAM Sweep (LOGSZ = 24, STRIDE = 1)
 LD_SWEEP_THREADS = 16tx_8ty
 LD_SWEEP_WORK = 1 2 4 8 16
 
 $(foreach t,$(LD_SWEEP_THREADS),\
 $(foreach w,$(LD_SWEEP_WORK),\
-$(eval LD_TESTS += $(call test-name,$t,$w,128,20))))
+$(eval LD_TESTS += $(call test-name,$t,$w,128,24))))
 
 # Latency Cache Throughput Sweep (LOGSZ = 18, STRIDE = 1)
 LC_SWEEP_THREADS = 16tx_8ty
@@ -183,6 +183,11 @@ $(eval LD_TESTS += $(call test-name,$t,$w,128,18))))
 
 
 go: $(DC_TESTS) $(DD_TESTS) $(LC_TESTS) $(LD_TESTS)
+
+cleanfollow:
+	rm -rf $(FOLLOW)
+
+follow: $(FOLLOW)
 
 %.deploy:
 	mkdir $@
