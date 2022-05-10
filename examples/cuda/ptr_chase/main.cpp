@@ -36,9 +36,17 @@
 #include <bsg_manycore_cuda.h>
 #include <bsg_manycore_regression.h>
 
+#ifndef ARR_LOG2_NUM_ELEMENTS
 #define ARR_LOG2_NUM_ELEMENTS 15
+#endif
+#ifndef OFFSET_STRIDE
+#define OFFSET_STRIDE 1
+#endif
+#ifndef LATENCY_WORK
+#define LATENCY_WORK 1
+#endif
 #define ALLOC_NAME "default_allocator"
-
+#define NUM_ITERATIONS 100
 #include <bit>
 template<unsigned long long BITS>
 class LFSR{
@@ -118,7 +126,10 @@ int kernel_ptr_chase (int argc, char **argv) {
         //************************************************************
         hb_mc_dimension_t dev_dim = hb_mc_config_get_dimension_vcore(hb_mc_manycore_get_config(device.mc));
 
-        hb_mc_dimension_t tg_dim = { .x = dev_dim.x, .y = dev_dim.y };
+        unsigned int t_x = TILE_GROUP_DIM_X;
+        unsigned int t_y = TILE_GROUP_DIM_Y;
+        
+        hb_mc_dimension_t tg_dim = { .x = t_x, .y = t_y };
 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
 
@@ -154,13 +165,16 @@ int kernel_ptr_chase (int argc, char **argv) {
         // If the dataset fits in cache, warm the cache
         size_t tot_cache_size = dev_dim.x * 2 * hb_mc_config_get_vcache_size(hb_mc_manycore_get_config(device.mc));
         if(((1 << ARR_LOG2_NUM_ELEMENTS) * sizeof(eva_t)) <= tot_cache_size){
+                bsg_pr_info("Pre-Warming Cache\n: %lu vs %lu\n", ((1 << ARR_LOG2_NUM_ELEMENTS) * sizeof(eva_t)), tot_cache_size);
                 BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, (1 << ARR_LOG2_NUM_ELEMENTS) * sizeof(eva_t), HB_MC_MEMCPY_TO_DEVICE));
         }
 
         //************************************************************
         // Prepare list of arguments for kernel.
         //************************************************************
-        uint32_t cuda_argv[3] = {_ps, 1, (1 << ARR_LOG2_NUM_ELEMENTS)};
+        uint32_t cuda_argv[3] = {_ps, OFFSET_STRIDE, NUM_ITERATIONS};
+
+        bsg_pr_info("Test Parameters: %lu, %lu, %lu, %lu, %lu,\n", OFFSET_STRIDE, TILE_GROUP_DIM_X, TILE_GROUP_DIM_Y, LATENCY_WORK, NUM_ITERATIONS);
 
         //************************************************************
         // Enquque grid of tile groups, pass in grid and tile group

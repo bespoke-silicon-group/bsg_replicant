@@ -2,10 +2,19 @@
 #include <bsg_cuda_lite_barrier.h>
 #include <math.h>
 
-extern "C" int kernel_dram_pointer_chase(unsigned int ** ptrs, int stride, unsigned int nels){
-        unsigned int * cur;
-        int start = __bsg_id * stride + 1;
-        cur = ptrs[start];
+#ifndef LATENCY_WORK
+#define LATENCY_WORK 1
+#endif
+
+extern "C" int kernel_dram_pointer_chase(unsigned int volatile ** ptrs, int stride, unsigned int niters){
+        volatile unsigned int * cur[LATENCY_WORK];
+        int start = 1 + __bsg_id * (stride * LATENCY_WORK);
+        bsg_unroll(100)
+        for (int w = 0; w < LATENCY_WORK; ++w){
+                cur[w] = ptrs[start + w];
+        }
+
+
 
         bsg_barrier_hw_tile_group_init();
         // Start profiling
@@ -13,9 +22,15 @@ extern "C" int kernel_dram_pointer_chase(unsigned int ** ptrs, int stride, unsig
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
 
-        do{
-                cur = (unsigned int *)*cur;
-        }while(cur != ptrs[start]);
+        for(int iter = 0; iter < niters; ++iter){
+                bsg_unroll(128)
+                for(int unroll = 0; unroll < 128/LATENCY_WORK; ++unroll){
+                        bsg_unroll(100)
+                        for (int w = 0; w < LATENCY_WORK; ++w){
+                                cur[w] = (unsigned int *)*cur[w];
+                        }
+                }
+        }
         
         bsg_cuda_print_stat_kernel_end();
         bsg_barrier_hw_tile_group_sync();
