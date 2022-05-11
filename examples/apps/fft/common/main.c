@@ -141,6 +141,7 @@ int kernel_fft (int argc, char **argv) {
                  ******************************************************************************************************************/
 
                 float complex A_host[N]; /* allocate A[N] on the host */
+                float complex B_host[N];
                 for (int i = 0; i < N; i++) { /* fill A with arbitrary data */
                         A_host[i] = cosf(i*M_PI/8.0);
                 }
@@ -183,6 +184,11 @@ int kernel_fft (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, htod_A_job, 2));
                 /* BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, N * sizeof(float complex), HB_MC_MEMCPY_TO_DEVICE)); /1* Copy A to the device  *1/ */
 
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, TW_device, &TW_host[0], N * sizeof(float complex), HB_MC_MEMCPY_TO_DEVICE));
+                
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, A_device, &A_host[0], N * sizeof(float complex), HB_MC_MEMCPY_TO_DEVICE));
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, B_device, &B_host[0], N * sizeof(float complex), HB_MC_MEMCPY_TO_DEVICE));
+
                 /*****************************************************************************************************************
                  * Define block_size_x/y: amount of work for each tile group
                  * Define tg_dim_x/y: number of tiles in each tile group
@@ -215,7 +221,6 @@ int kernel_fft (int argc, char **argv) {
                  * Copy result matrix back from device DRAM into host memory.
                  ******************************************************************************************************************/
 
-                float complex B_host[N];
                 /* src = (void *) ((intptr_t) B_device); */
                 /* dst = (void *) &B_host[0]; */
                 /* BSG_CUDA_CALL(hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(float complex), HB_MC_MEMCPY_TO_HOST)); /1* copy B to the host *1/ */
@@ -241,6 +246,7 @@ int kernel_fft (int argc, char **argv) {
                 int mismatch = verify_fft(B_host, N);
 
                 if (mismatch) {
+                        BSG_CUDA_CALL(hb_mc_device_finish(&device));
                         return HB_MC_FAIL;
                 }
         }

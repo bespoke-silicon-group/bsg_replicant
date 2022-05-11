@@ -15,12 +15,13 @@ FP32Complex fft_workset[NUM_POINTS];
 
 extern "C" __attribute__ ((noinline))
 int
-kernel_fft(FP32Complex *in, FP32Complex *out, FP32Complex *tw, int N) {
+kernel_fft(FP32Complex *in, FP32Complex *out, float bsg_attr_remote * bsg_attr_noalias tw, int N) {
 
-    bsg_cuda_print_stat_kernel_start();
 
     bsg_barrier_hw_tile_group_init();
 
+    bsg_cuda_print_stat_kernel_start();
+    // TODO: Prefetch Source
     bsg_cuda_print_stat_start(1);
     load_fft_scale_no_twiddle(in, fft_workset, tw, __bsg_id, 128, 128, N);
     bsg_cuda_print_stat_end(1);
@@ -33,6 +34,7 @@ kernel_fft(FP32Complex *in, FP32Complex *out, FP32Complex *tw, int N) {
     tg_mem_square_transpose_inp(fft_workset, 128);
     bsg_cuda_print_stat_end(2);
 
+    // TODO: Prefetch Destination
     asm volatile("": : :"memory");
     bsg_barrier_hw_tile_group_sync();
 
@@ -41,13 +43,14 @@ kernel_fft(FP32Complex *in, FP32Complex *out, FP32Complex *tw, int N) {
     fft_store(fft_workset, out, __bsg_id, 128, 128, N);
     bsg_cuda_print_stat_end(3);
 
+    bsg_fence();
+
     asm volatile("": : :"memory");
     bsg_barrier_hw_tile_group_sync();
 
 
     bsg_cuda_print_stat_kernel_end();
 
-    bsg_fence();
 
     asm volatile("": : :"memory");
     bsg_barrier_hw_tile_group_sync();
