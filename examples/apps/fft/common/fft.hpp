@@ -10,6 +10,7 @@
 // number of points
 #define MAX_NUM_POINTS      256
 #define MAX_LOG2_NUM_POINTS 8
+#define UNROLL 4
 
 #ifdef FFT128
 #define NUM_POINTS      128
@@ -497,11 +498,12 @@ load_fft_store(FP32Complex *lst,
     opt_data_transfer_dst_strided(out+start, local_lst, stride, local_point);
 }
 
-inline void
+__attribute__ ((always_inline)) void
 load_fft_store_no_twiddle(FP32Complex *lst,
                           FP32Complex *out,
                           FP32Complex *local_lst,
-                          FP32Complex *tw,
+                          float bsg_attr_remote * bsg_attr_noalias tw,
+                          //FP32Complex *tw,
                           int start,
                           int stride,
                           int local_point,
@@ -523,22 +525,40 @@ load_fft_store_no_twiddle(FP32Complex *lst,
 
     // Optional twiddle scaling
     if (scaling) {
+            tw = tw+local_point*start;
+            float buf[(sizeof(FP32Complex)/sizeof(float)) * UNROLL];
+            FP32Complex *_tw = reinterpret_cast<FP32Complex *>(&buf);
+    
+            for (int c = 0; c < local_point/UNROLL; c+=UNROLL, tw+=UNROLL) {
+                    bsg_unroll(8)
+                    for(int u = 0; u < (UNROLL * (sizeof(FP32Complex)/sizeof(float))); ++u){
+                            buf[u] = tw[u];
+                    }
+                    bsg_unroll(8)
+                    for(int u = 0; u < UNROLL; ++u){
+                            FP32Complex w = _tw[u];
+                            local_lst[c + u] = w * local_lst[c + u];
+                    }
+            }
+    }
+    /*
+    if (scaling) {
         tw = tw+local_point*start;
         for (int c = 0; c < local_point; c++, tw++) {
             FP32Complex w = *tw;
             local_lst[c] = w*local_lst[c];
-        }
+            }*/
         /* debug_print_complex(local_lst, local_point, "After scaling"); */
-    }
+    //}
 
     // Strided store into DRAM
     opt_data_transfer_dst_strided(out+start, local_lst, stride, local_point);
 }
 
-inline void
+__attribute__ ((always_inline)) void
 load_fft_scale_no_twiddle(FP32Complex *lst,
                           FP32Complex *local_lst,
-                          FP32Complex *tw,
+                          float bsg_attr_remote * bsg_attr_noalias tw,
                           int start,
                           int stride,
                           int local_point,
@@ -559,10 +579,28 @@ load_fft_scale_no_twiddle(FP32Complex *lst,
 
     // Twiddle scaling
     tw = tw+local_point*start;
+    // float buf[(sizeof(float)/sizeof(FP32Complex)) * UNROLL];
+    float buf[(sizeof(FP32Complex)/sizeof(float)) * UNROLL];
+    FP32Complex *_tw = reinterpret_cast<FP32Complex *>(&buf);
+    
+    for (int c = 0; c < local_point/UNROLL; c+=UNROLL, tw+=UNROLL) {
+            bsg_unroll(8)
+            for(int u = 0; u < (UNROLL * (sizeof(FP32Complex)/sizeof(float))); ++u){
+                    buf[u] = tw[u];
+            }
+            bsg_unroll(8)
+            for(int u = 0; u < UNROLL; ++u){
+                    FP32Complex w = _tw[u];
+                    local_lst[c + u] = w * local_lst[c + u];
+            }
+    }
+    
+    /*
     for (int c = 0; c < local_point; c++, tw++) {
         FP32Complex w = *tw;
         local_lst[c] = w*local_lst[c];
     }
+    */
 
     /* debug_print_complex(local_lst, local_point, "After scaling"); */
 }
@@ -595,6 +633,7 @@ fft_store(FP32Complex *local_lst,
 inline void
 square_transpose(FP32Complex *lst, int size) {
     FP32Complex tmp;
+    // TODO: Increase unroll factoor
     for (int i = 0; i < size; i++)
         for (int j = i+1; j < size; j++) {
             tmp = lst[i+j*size];

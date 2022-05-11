@@ -91,6 +91,7 @@ kernel.rvo: ../common/fft.hpp
 kernel.rvo: RISCV_INCLUDES += -I../common
 
 kernel.riscv: kernel.rvo
+kernel.rvo: RISCV_CXX=$(RISCV_CLANGXX)
 
 # Tile Group Dimensions
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)

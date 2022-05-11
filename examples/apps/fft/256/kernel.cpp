@@ -4,19 +4,23 @@
 
 #include <bsg_manycore.h>
 #include <bsg_set_tile_x_y.h>
-#include <bsg_tile_group_barrier.hpp>
+#include <bsg_cuda_lite_barrier.h>
 
 #include <fft.hpp>
 
-bsg_barrier<bsg_tiles_X, bsg_tiles_Y> tg_barrier;
 
 FP32Complex fft_workset[NUM_POINTS];
 
 extern "C" __attribute__ ((noinline))
 int
-kernel_fft(FP32Complex * bsg_attr_noalias  in, FP32Complex * bsg_attr_noalias out, FP32Complex * bsg_attr_noalias tw, int N) {
+kernel_fft(FP32Complex * bsg_attr_noalias  in,
+           FP32Complex * bsg_attr_noalias out,
+           float bsg_attr_remote * bsg_attr_noalias tw,
+           //FP32Complex * bsg_attr_noalias tw,
+           int N) {
     /* bsg_set_tile_x_y(); */
 
+    bsg_barrier_hw_tile_group_init();
     bsg_cuda_print_stat_kernel_start();
 
     bsg_cuda_print_stat_start(1);
@@ -26,14 +30,15 @@ kernel_fft(FP32Complex * bsg_attr_noalias  in, FP32Complex * bsg_attr_noalias ou
     bsg_cuda_print_stat_end(1);
 
     asm volatile("": : :"memory");
-    tg_barrier.sync();
+    bsg_barrier_hw_tile_group_sync();
 
     bsg_cuda_print_stat_start(2);
+    // Unroll this
     opt_square_transpose(in, 256);
     bsg_cuda_print_stat_end(2);
 
     asm volatile("": : :"memory");
-    tg_barrier.sync();
+    bsg_barrier_hw_tile_group_sync();
 
     bsg_cuda_print_stat_start(3);
     for (int iter = 0; iter < 2; iter++) {
@@ -44,7 +49,7 @@ kernel_fft(FP32Complex * bsg_attr_noalias  in, FP32Complex * bsg_attr_noalias ou
     bsg_cuda_print_stat_kernel_end();
 
     asm volatile("": : :"memory");
-    tg_barrier.sync();
+    bsg_barrier_hw_tile_group_sync();
 
     return 0;
 }
