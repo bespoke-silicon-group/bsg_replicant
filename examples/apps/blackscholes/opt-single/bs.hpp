@@ -9,7 +9,7 @@ typedef struct OptionData_ {
                            //     (1yr = 1.0, 6mos = 0.5, 3mos = 0.25, ..., etc)  
         int OptionType;   // Option type.  "P"=PUT, "C"=CALL
         float divs;       // dividend vals (not used in this test)
-        float DGrefval;   // DerivaGem Reference Value
+        //float DGrefval;   // DerivaGem Reference Value
 } OptionData;
 
 void BlkSchlsEqEuroNoDiv( float sptprice,

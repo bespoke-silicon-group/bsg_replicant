@@ -87,8 +87,9 @@ int kernel_bs (int argc, char **argv) {
         bsg_pr_test_info("Number of Options: %d\n", numOptions);
 
         data = (OptionData*)malloc(numOptions*sizeof(OptionData));
+        float unused;
         for (int i = 0; i < numOptions; ++ i ){
-                rv = fscanf(file, "%f %f %f %f %f %f %c %f %f", &data[i].s, &data[i].strike, &data[i].r, &data[i].divq, &data[i].v, &data[i].t, &data[i].OptionType, &data[i].divs, &data[i].DGrefval);
+                rv = fscanf(file, "%f %f %f %f %f %f %c %f %f", &data[i].s, &data[i].strike, &data[i].r, &data[i].divq, &data[i].v, &data[i].t, &data[i].OptionType, &data[i].divs, &unused);//, &data[i].DGrefval);
                 if(rv != 9) {
                         bsg_pr_test_err("Unable to read from file `%s'.\n", inputFile);
                         fclose(file);
@@ -98,7 +99,8 @@ int kernel_bs (int argc, char **argv) {
 
         // Only do 1/64th of the dataset, but make sure it divides evenly
         numOptions = exp2(floor(log2f(numOptions)));
-        numOptions = numOptions/256;
+        numOptions = numOptions/64;
+
         printf("%d\n", numOptions);
 
         rv = fclose(file);
@@ -162,6 +164,13 @@ int kernel_bs (int argc, char **argv) {
                 htod.size   = numOptions * sizeof(OptionData);
 
                 BSG_CUDA_CALL(hb_mc_device_dma_to_device(&device, &htod, 1));
+
+                hb_mc_dimension_t dev_dim = hb_mc_config_get_dimension_vcore(hb_mc_manycore_get_config(device.mc));
+                size_t tot_cache_size = dev_dim.x * 2 * hb_mc_config_get_vcache_size(hb_mc_manycore_get_config(device.mc));
+                /*
+                if(numOptions * sizeof(OptionData) <= tot_cache_size){
+                        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, tot_cache_size, HB_MC_MEMCPY_TO_DEVICE));
+                        }*/
 
                 // Define tg_dim_x/y: number of tiles in each tile group
                 // Calculate grid_dim_x/y: number of tile groups needed
