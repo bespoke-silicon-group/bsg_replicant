@@ -38,6 +38,7 @@ __attribute__((no_builtin("memcpy", "memset")))
         for (int i = 0; i < BY; i++) {
                 // If the unroll factor > B, it will unroll by factor B
                 // instead.
+                // TODO: Put loop maintenance instructions between loads and stores.
                 bsg_unroll(16)
                 for (int j = 0 ; j < BX; j ++){
                         if (!TRANSPOSE)
@@ -56,8 +57,10 @@ inline void prefetch(float bsg_attr_remote * bsg_attr_noalias p,
                 (by_i * BY * strides[0]) +
                 (bx_i * BX * strides[1]);
 
+        bsg_unroll(16)
         for (int i = 0; i < BY; i++) {
-                asm("lw x0, %0": : "m" (p[i * strides[0]]));
+                asm("amoadd.w x0, x0, %0": : "m" (p[i * strides[0]]));
+                //asm("lw x0, %0": : "m" (p[i * strides[0]]));
         }
         //        bsg_fence();
 }
@@ -607,8 +610,11 @@ __attribute__((no_builtin("memcpy", "memset")))
         // As BSG_TILE_GROUP_X_DIM approaches infinity the ratio becomes 32/25, or 1.33 flops/instr
 
         bsg_barrier_hw_tile_group_init();
-        // Start profiling
         bsg_fence();
+        prefetch<BY, BX>(mat1, mat1_strides, __bsg_tile_group_id_y * BSG_TILE_GROUP_Y_DIM + __bsg_y, __bsg_x);
+        prefetch<BY, BX>(mat2, mat2_strides, __bsg_y , __bsg_tile_group_id_x * BSG_TILE_GROUP_X_DIM + __bsg_x);
+        bsg_fence();
+        // Start profiling
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
         //        bsg_cuda_print_stat_start(1);
@@ -627,9 +633,11 @@ __attribute__((no_builtin("memcpy", "memset")))
                                 load_block<BY, BX, false>(block_col, mat2, mat2_strides, bz_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
                                 bsg_barrier_hw_tile_group_sync();
 
+                                prefetch<BY, BX>(mat1, mat1_strides, by_i * BSG_TILE_GROUP_Y_DIM + __bsg_y, (bz_i + bz_stride) * BSG_TILE_GROUP_X_DIM + __bsg_x);
+                                prefetch<BY, BX>(mat2, mat2_strides, (bz_i + bz_stride) * BSG_TILE_GROUP_Y_DIM + __bsg_y , bx_i * BSG_TILE_GROUP_X_DIM + __bsg_x);
+
                                 // Multiply the blocks, and accumulate into the result
                                 accum_row<BY, 4, BX, 4, 2, LOAD_M1_TRANSPOSED>(block_out, prow, pcol);
-                                
                                 bsg_barrier_hw_tile_group_sync();
                         }
                         // Store the result, AND zero the block_out array
