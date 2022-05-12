@@ -20,6 +20,7 @@ extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalia
         asm volatile("" ::: "memory");
         bsg_fence();
         bsg_cuda_print_stat_kernel_start();
+        bsg_nonsynth_saif_start();
         //bsg_fence();
         // Use chunk size to load a cache line
         OptionData _data[CHUNK_SIZE];
@@ -51,6 +52,7 @@ extern "C" int kernel_black_scholes(OptionData bsg_attr_remote * bsg_attr_noalia
                         calls[start + i * TILE_GROUP_SIZE + ci] = _calls[ci];
                 }
         }
+        bsg_nonsynth_saif_end();
         bsg_cuda_print_stat_kernel_end();
         bsg_fence();
         bsg_barrier_hw_tile_group_sync();
