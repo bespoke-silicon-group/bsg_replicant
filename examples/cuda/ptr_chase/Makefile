@@ -155,7 +155,7 @@ DD_SWEEP_WORK = 1 2 4 8 16
 
 $(foreach t,$(DD_SWEEP_THREADS),\
 $(foreach w,$(DD_SWEEP_WORK),\
-$(eval DD_TESTS += $(call test-name,$t,$w,128,24))))
+$(eval DD_TESTS += $(call test-name,$t,$w,65535,27))))
 
 # Divergence Cache Throughput Sweep (LOGSZ = 18, STRIDE = 1)
 DC_SWEEP_THREADS = 1tx_1ty 2tx_1ty 4tx_1ty 8tx_1ty 16tx_1ty 16tx_2ty 16tx_4ty 16tx_8ty
@@ -165,13 +165,13 @@ $(foreach t,$(DC_SWEEP_THREADS),\
 $(foreach w,$(DC_SWEEP_WORK),\
 $(eval DC_TESTS += $(call test-name,$t,$w,128,18))))
 
-# Latency DRAM Sweep (LOGSZ = 24, STRIDE = 1)
+# Latency DRAM Sweep (LOGSZ = 27, STRIDE = 1)
 LD_SWEEP_THREADS = 16tx_8ty
 LD_SWEEP_WORK = 1 2 4 8 16
 
 $(foreach t,$(LD_SWEEP_THREADS),\
 $(foreach w,$(LD_SWEEP_WORK),\
-$(eval LD_TESTS += $(call test-name,$t,$w,128,24))))
+$(eval LD_TESTS += $(call test-name,$t,$w,65535,27))))
 
 # Latency Cache Throughput Sweep (LOGSZ = 18, STRIDE = 1)
 LC_SWEEP_THREADS = 16tx_8ty
@@ -182,7 +182,7 @@ $(foreach w,$(LC_SWEEP_WORK),\
 $(eval LD_TESTS += $(call test-name,$t,$w,128,18))))
 
 
-go: $(DC_TESTS) $(DD_TESTS) $(LC_TESTS) $(LD_TESTS)
+go:$(DD_TESTS) $(LD_TESTS)
 
 cleanfollow:
 	rm -rf $(FOLLOW)
@@ -196,6 +196,7 @@ follow: $(FOLLOW)
 	echo "DEFINES += -DARR_LOG2_NUM_ELEMENTS=$(call logsz-from-name,$*)" >> $@/Makefile
 	echo "DEFINES += -DOFFSET_STRIDE=$(call offset-from-name,$*)" >> $@/Makefile
 	echo "DEFINES += -DLATENCY_WORK=$(call work-from-name,$*)" >> $@/Makefile
+	echo "RISCV_DEFINES +=-DARR_LOG2_NUM_ELEMENTS=$(call logsz-from-name,$*)" >> $@/Makefile
 	echo "RISCV_DEFINES +=-DLATENCY_WORK=$(call work-from-name,$*)" >> $@/Makefile
 	echo "VPATH =.." >> $@/Makefile
 	cat Makefile >> $@/Makefile

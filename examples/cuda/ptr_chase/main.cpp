@@ -51,7 +51,7 @@
 template<unsigned long long BITS>
 class LFSR{
 
-        unsigned long long htaps[25] = {
+        unsigned long long htaps[34] = {
                 0x0,// Error
                 0x1,
                 0x3,
@@ -76,7 +76,16 @@ class LFSR{
                 0x140000,
                 0x300000,
                 0x420000,
-                0xE10000};
+                0xE10000,
+                0x1000493,
+                0x20005DA,
+                0x400062F,
+                0x8000979,
+                0x100001BE,
+                0x20000357,
+                0x400000A2,
+                0x80000414
+        };
 
         unsigned long long taps = htaps[BITS];
 

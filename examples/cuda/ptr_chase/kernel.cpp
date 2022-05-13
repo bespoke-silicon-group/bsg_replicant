@@ -8,7 +8,7 @@
 
 extern "C" int kernel_dram_pointer_chase(unsigned int volatile ** ptrs, int stride, unsigned int niters){
         volatile unsigned int * cur[LATENCY_WORK];
-        int start = 1 + __bsg_id * (stride * LATENCY_WORK);
+        int start = (1 + __bsg_id * (stride * LATENCY_WORK)) % (1<<ARR_LOG2_NUM_ELEMENTS);
 
         // LATENCY_WORK is how much we will unroll the inner loop to hide latency
         // This loop sets the start point for each work item.
