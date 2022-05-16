@@ -136,7 +136,11 @@ int kernel_jacobi (int argc, char **argv) {
                  ******************************************************************************************************************/
                 void *dst = (void *) ((intptr_t) A0_device);
                 void *src = (void *) &A0_host[0];
-                DMA_host_to_device(&device, dst, src, N * sizeof(float)); /* Copy A0 to the device  */
+                //DMA_host_to_device(&device, dst, src, N * sizeof(float)); /* Copy A0 to the device  */
+                BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, N * sizeof(float), HB_MC_MEMCPY_TO_DEVICE));
+                dst = (void *) ((intptr_t) Anext_device);
+                src = (void *) &Anext_host[0];
+                //BSG_CUDA_CALL(hb_mc_device_memcpy (&device, dst, src, N * sizeof(float), HB_MC_MEMCPY_TO_DEVICE));
 
                 /*****************************************************************************************************************
                  * Define block_size_x/y: amount of work for each tile group
