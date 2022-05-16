@@ -525,11 +525,11 @@ load_fft_store_no_twiddle(FP32Complex *lst,
 
     // Optional twiddle scaling
     if (scaling) {
-            tw = tw+local_point*start;
+            tw = tw+(sizeof(FP32Complex)/sizeof(float))*local_point*start;
             float buf[(sizeof(FP32Complex)/sizeof(float)) * UNROLL];
             FP32Complex *_tw = reinterpret_cast<FP32Complex *>(&buf);
     
-            for (int c = 0; c < local_point/UNROLL; c+=UNROLL, tw+=UNROLL) {
+            for (int c = 0; c < local_point; c+=UNROLL, tw+=(sizeof(FP32Complex)/sizeof(float))*UNROLL) {
                     bsg_unroll(8)
                     for(int u = 0; u < (UNROLL * (sizeof(FP32Complex)/sizeof(float))); ++u){
                             buf[u] = tw[u];
@@ -578,12 +578,11 @@ load_fft_scale_no_twiddle(FP32Complex *lst,
     /* debug_print_complex(local_lst, local_point, "After uFFT"); */
 
     // Twiddle scaling
-    tw = tw+local_point*start;
-    // float buf[(sizeof(float)/sizeof(FP32Complex)) * UNROLL];
+    tw = tw+(sizeof(FP32Complex)/sizeof(float))*local_point*start;
     float buf[(sizeof(FP32Complex)/sizeof(float)) * UNROLL];
     FP32Complex *_tw = reinterpret_cast<FP32Complex *>(&buf);
     
-    for (int c = 0; c < local_point/UNROLL; c+=UNROLL, tw+=UNROLL) {
+    for (int c = 0; c < local_point; c+=UNROLL, tw+=(sizeof(FP32Complex)/sizeof(float))*UNROLL) {
             bsg_unroll(8)
             for(int u = 0; u < (UNROLL * (sizeof(FP32Complex)/sizeof(float))); ++u){
                     buf[u] = tw[u];
