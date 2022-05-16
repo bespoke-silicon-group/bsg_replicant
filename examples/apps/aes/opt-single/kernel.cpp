@@ -7,11 +7,13 @@ extern "C" void aes_singlegrid(struct AES_ctx *ctx, uint8_t* buf, size_t length,
         bsg_barrier_hw_tile_group_init();
         bsg_barrier_hw_tile_group_sync();
         bsg_cuda_print_stat_kernel_start();
+        bsg_nonsynth_saif_start();
 
         for(int i = 0 ; i < niters; ++i){
                 AES_CBC_encrypt_buffer(&ctx[tg_idx * niters + i], &buf[tg_idx * niters * length + length * i], length);
         }
 
+        bsg_nonsynth_saif_end();
         bsg_cuda_print_stat_kernel_end();
         bsg_fence();
         bsg_barrier_hw_tile_group_sync();
