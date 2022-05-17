@@ -214,8 +214,10 @@ int kernel_fft (int argc, char **argv) {
                 /*****************************************************************************************************************
                  * Launch and execute all tile groups on device and wait for all to finish.
                  ******************************************************************************************************************/
+                hb_mc_manycore_trace_enable((&device)->mc);
 
                 BSG_CUDA_CALL(hb_mc_device_tile_groups_execute(&device));
+                hb_mc_manycore_trace_disable((&device)->mc);
 
                 /*****************************************************************************************************************
                  * Copy result matrix back from device DRAM into host memory.
