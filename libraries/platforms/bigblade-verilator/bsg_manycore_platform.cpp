@@ -162,6 +162,15 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
         auto key = active_ids.find(platform->id);
         active_ids.erase(key);
 
+        delete platform->top;
+        auto m = machines.find(platform->id);
+        if(m != machines.end()){
+                machines.erase(m);
+        } else {
+                // Whoa, this would be an error condition but there's really no good way to handle it.
+                // Possible causes: Cleanup before init, memory corruption
+                manycore_pr_err(mc, "Machine ID %d was not found during platform cleanup. Memory corruption?", platform->id);
+        }
         platform->id = 0;
 
         // Ideally, we would clean up each platform in
