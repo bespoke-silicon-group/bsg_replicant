@@ -69,6 +69,7 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_enable_router_profiling_lp= %d", bsg_machine_enable_router_profiling_lp);
       $display("[INFO][TESTBENCH] bsg_machine_enable_cache_profiling_lp = %d", bsg_machine_enable_cache_profiling_lp);
       $display("[INFO][TESTBENCH] bsg_machine_enable_vcore_pc_histogram_lp = %d", bsg_machine_enable_vcore_pc_histogram_lp);     
+      $display("[INFO][TESTBENCH] bsg_machine_enable_remote_op_profiling_lp = %d", bsg_machine_enable_remote_op_profiling_lp);
       $display("[INFO][TESTBENCH] bsg_machine_name_gp                   = %s", bsg_machine_name_gp);
    end
 
@@ -98,6 +99,12 @@ module replicant_tb_top
    localparam bsg_machine_enable_cache_profiling_lp = 1;
 `else
    localparam bsg_machine_enable_cache_profiling_lp = 0;
+`endif
+
+`ifndef BSG_MACHINE_DISABLE_REMOTE_OP_PROFILING
+   localparam bsg_machine_enable_remote_op_profiling_lp = 1;
+`else
+   localparam bsg_machine_enable_remote_op_profiling_lp = 0;
 `endif
 
 `ifndef BSG_MACHINE_DISABLE_VCORE_PC_HISTOGRAM
@@ -239,6 +246,7 @@ module replicant_tb_top
        ,.enable_vcore_profiling_p(bsg_machine_enable_vcore_profiling_lp)
        ,.enable_router_profiling_p(bsg_machine_enable_router_profiling_lp)
        ,.enable_cache_profiling_p(bsg_machine_enable_cache_profiling_lp)
+       ,.enable_remote_op_profiling_p(bsg_machine_enable_remote_op_profiling_lp)
        ,.enable_vanilla_core_pc_histogram_p(bsg_machine_enable_vcore_pc_histogram_lp)
        ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
 
