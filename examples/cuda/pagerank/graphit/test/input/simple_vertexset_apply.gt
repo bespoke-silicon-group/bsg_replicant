@@ -1,0 +1,16 @@
+element Vertex end
+const vector_a : vector{Vertex}(float) = 1.0;
+const vertices : vertexset{Vertex} = new vertexset{Vertex}(5);
+
+func addone(v : Vertex)
+    vector_a[v] = vector_a[v] + 1;
+end
+
+func main()
+    vertices.apply(addone);
+    var sum : float = 0;
+    for i in 0:5
+        sum += vector_a[i];
+    end
+    print sum;
+end
