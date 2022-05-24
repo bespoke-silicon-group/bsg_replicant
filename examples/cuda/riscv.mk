@@ -400,8 +400,8 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 # This builds a .riscv binary for the current machine type and tile
 # group size. RISCV_TARGET_OBJECTS are .rvo files that will be linked
 # in the final binary.
-%.riscv: crt.rvo  main.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT) libbsg_manycore_riscv.a
-	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(filter %.rvo,$^) $(RISCV_LDFLAGS) -o $@
+%.riscv: crt.rvo  main.rvo $(RISCV_TARGET_OBJECTS) $(RISCV_LINK_SCRIPT) libbsg_manycore_objects.a
+	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(filter %.rvo,$^) -o $@  $(RISCV_LDFLAGS)
 
 %.dis: %.riscv
 	$(RISCV_OBJDUMP) -dS $<
