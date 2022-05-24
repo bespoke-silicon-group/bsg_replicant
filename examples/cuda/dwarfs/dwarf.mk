@@ -82,19 +82,22 @@ TESTS_EXEC    = $(addsuffix .exec,$(TESTS))
 TESTS_DEBUG   = $(addsuffix .debug,$(TESTS))
 TESTS_PROFILE = $(addsuffix .profile,$(TESTS))
 TESTS_SAIFGEN = $(addsuffix .saifgen,$(TESTS))
+TESTS_PC-HISTOGRAM  = $(addsuffix .pc-histogram,$(TESTS))
 
 $(TESTS_EXEC):    %.exec:    %
 $(TESTS_DEBUG):   %.debug:   %
+$(TESTS_PC-HISTOGRAM):  %.pc-histogram:  %
 $(TESTS_PROFILE): %.profile: %
 $(TESTS_SAIFGEN): %.saifgen: %
 
-$(TESTS_EXEC) $(TESTS_DEBUG) $(TESTS_PROFILE) $(TESTS_SAIFGEN):
+$(TESTS_EXEC) $(TESTS_DEBUG) $(TESTS_PROFILE) $(TESTS_SAIFGEN) $(TESTS_PC-HISTOGRAM):
 	@$(eval TEST_NAME=$(firstword $(subst ., ,$@)))
 	@$(eval RUN_TYPE=$(lastword $(subst ., ,$@)))
 	@echo "Running '$(RUN_TYPE)' on test $(TEST_NAME)"
 	@$(MAKE) -C $(TEST_NAME) $(RUN_TYPE).log
 
 exec:    $(TESTS_EXEC)
+pc-histogram:  $(TESTS_PC-HISTOGRAM)
 debug:   $(TEST_DEBUG)
 saifgen: $(TESTS_SAIFGEN)
 profile: $(TESTS_PROFILE)
