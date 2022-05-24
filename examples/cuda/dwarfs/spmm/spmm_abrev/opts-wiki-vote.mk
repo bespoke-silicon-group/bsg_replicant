@@ -1,8 +1,8 @@
 # use dynamic work scheduling
 SPMM_RV				= spmm_dynamic.riscv.rvo
 # use hash table to solve row
-SPMM_SOLVE_ROW_RV		= spmm_solve_row_merge
-SPMM_HASH_TABLE			= no
+SPMM_SOLVE_ROW_RV		= spmm_solve_row_hash_table
+SPMM_HASH_TABLE			= yes
 # use sum tree to compute offsets
 SPMM_COMPUTE_OFFSETS_RV		= spmm_compute_offsets_sum_tree
 # use copy results
@@ -18,6 +18,6 @@ SPMM_PREFETCH_N			= 4
 # use an aligned hash table
 SPMM_ALIGNED_TABLE		= yes
 # do sort results
-SPMM_SKIP_SORTING		= yes
+SPMM_SKIP_SORTING		= no
 # tiles grab four work items at once
 SPMM_WORK_GRANULARITY		= 4
