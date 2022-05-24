@@ -93,7 +93,9 @@ int SpGEMM(int argc, char *argv[])
         , mem_pool
         );
 
+    hb->trace(true);
     hb->exec();
+    hb->trace(false);
 
     std::shared_ptr<CSR> C_ptr = C_dev->updateEmptyProduct();
     auto & Ap = *partitioner.EigenA(cl.partition_i(), cl.partition_j());
