@@ -2,7 +2,7 @@
 SPMM_RV				= spmm_dynamic.riscv.rvo
 # use hash table to solve row
 SPMM_SOLVE_ROW_RV		= spmm_solve_row_merge
-SPMM_HASH_TABLE			= yes
+SPMM_HASH_TABLE			= no
 # use sum tree to compute offsets
 SPMM_COMPUTE_OFFSETS_RV		= spmm_compute_offsets_sum_tree
 # use copy results
