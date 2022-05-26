@@ -1,4 +1,5 @@
 #include <cmath>
+#include <bsg_manycore_atomic.h>
 #include <bsg_manycore.h>
 #include <bsg_cuda_lite_barrier.h>
 
@@ -13,7 +14,7 @@ Point updateForce(Config &cfg, Point delta, float psq, float mass) {
         return delta * scale;
 }
 
-extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBodies, unsigned int _diam){
+extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBodies, unsigned int _diam, int *amocur, int body_end){
         // We can't pass float arguments (technical issue), just
         // pointers and integer arguments.
         // Copy frequently used data to local
@@ -63,9 +64,12 @@ extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBod
         //       cur = cur.pred
         //       diamsq * 4.0f
 
-        // Since we don't have a work queue at the moment we will do static work allocation
-	for (int cur = __bsg_id; cur < nBodies; cur += TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y) {
-                //bsg_print_int(cur);
+        // Work imbalance is a pain. Use an amoadd queue to allocate work dynamically.
+        int cur;
+        cur = bsg_amoadd(amocur, 1);
+        while(cur < body_end){
+                //	for (int cur = __bsg_id + body_start; cur < body_end; cur += TILE_GROUP_DIM_X * TILE_GROUP_DIM_Y) {
+                bsg_print_int(cur);
                 float diamsq = diam * diam * cfg.itolsq;
                 HBBody *pcurb = &HBBodies[cur];
                 HBBody curb = *pcurb;
@@ -150,6 +154,7 @@ extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBod
                 curb.vel += (curb.acc - prev_acc) * cfg.dthf;
                 HBBodies[cur].vel = curb.vel;
                 HBBodies[cur].acc = curb.acc;
+                cur = bsg_amoadd(amocur, 1);                
         }
 
         bsg_cuda_print_stat_end(1);

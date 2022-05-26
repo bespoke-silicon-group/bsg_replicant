@@ -144,7 +144,13 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 
-C_ARGS   ?= -n 1024 -steps 1 -t 1 -phase forces
+PHASE    ?= forces
+POD_ID_X ?= 0
+POD_ID_Y ?= 0
+PODS_X   ?= 1
+PODS_Y   ?= 1
+
+C_ARGS   ?= -n 128 -steps 1 -t 1 -phase $(PHASE) -px $(POD_ID_X) -py $(POD_ID_Y) -npx $(PODS_X) -npy $(PODS_Y)
 
 SIM_ARGS ?=
 

@@ -76,11 +76,19 @@ static llvm::cl::opt<std::string> phase("phase",
                                         llvm::cl::desc("Phase of Barnes Hut to run"),
                                         llvm::cl::init("build"));
 
-static llvm::cl::opt<int> py("px",
+static llvm::cl::opt<int> npx("npx",
+                             llvm::cl::desc("Number of X-pods"),
+                             llvm::cl::init(0));
+
+static llvm::cl::opt<int> npy("npy",
+                             llvm::cl::desc("Number of Y-pods"),
+                             llvm::cl::init(0));
+
+static llvm::cl::opt<int> py("py",
                              llvm::cl::desc("Pod X ID to simulate"),
                              llvm::cl::init(0));
 
-static llvm::cl::opt<int> px("py",
+static llvm::cl::opt<int> px("px",
                              llvm::cl::desc("Pod Y ID to simulate"),
                              llvm::cl::init(0));
 
@@ -826,7 +834,16 @@ int hb_mc_manycore_host_build_tree(unsigned int nBodies, Body **bodies, HBBody *
         return HB_MC_SUCCESS;
 }
 
-int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, float diamsq, unsigned int nNodes, HBOctree *hnodes, eva_t _hnodes, unsigned int nBodies, HBBody *hbodies, eva_t _hbodies){
+int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, float diamsq, unsigned int nNodes, HBOctree *hnodes, eva_t _hnodes, unsigned int nBodies, HBBody *hbodies, eva_t _hbodies, int body_start, int body_end){
+
+        eva_t _start;
+        BSG_CUDA_CALL(hb_mc_device_malloc(device, sizeof(body_start), &_start));
+        hb_mc_dma_htod_t htod_start = {
+                .d_addr = _start,
+                .h_addr = &body_start,
+                .size   = sizeof(body_start)
+        };
+
         hb_mc_dma_htod_t htod_bodies = {
                 .d_addr = _hbodies,
                 .h_addr = hbodies,
@@ -853,11 +870,12 @@ int hb_mc_manycore_device_compute_forces(hb_mc_device_t *device, eva_t _config, 
         hb_mc_dimension_t grid_dim = { .x = 1, .y = 1};
         // We can't transfer floats as arguments directly, so we pass it encoded as a binary value
         uint32_t fdiamsq = *reinterpret_cast<uint32_t *>(&diamsq);
-        uint32_t cuda_argv[5] = {_config, _hnodes, _hbodies, nBodies, fdiamsq};
+        uint32_t cuda_argv[7] = {_config, _hnodes, _hbodies, nBodies, fdiamsq, _start, body_end};
 
         BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_bodies, 1));
         BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_nodes, 1));
-        BSG_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "forces", 5, cuda_argv));
+        BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, &htod_start, 1));
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (device, grid_dim, tg_dim, "forces", 7, cuda_argv));
 
         /* Launch and execute all tile groups on device and wait for all to finish.  */
         hb_mc_manycore_trace_enable(device->mc);
@@ -920,6 +938,10 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
         const std::string prog_phase = phase;
         int pod_x = px;
         int pod_y = py;
+        int npods_x = npx;
+        int npods_y = npy;
+        int npods = npods_x * npods_y;
+        int pod_id = pod_x + npods_x * py;
         bsg_pr_info("Running Barnes-Hut Phase %s on pod X:%d Y:%d\n", prog_phase.c_str(), pod_x, pod_y);
         BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name.c_str(), 0, { .x = TILE_GROUP_DIM_X, .y = TILE_GROUP_DIM_Y}));
         BSG_CUDA_CALL(hb_mc_device_program_init(&device, "kernel.riscv", "default_allocator", 0));
@@ -1174,20 +1196,27 @@ int run(Bodies& bodies, BodyPtrs& pBodies, size_t nbodies) {
                 bsg_pr_info("Host forces calculation successful!\n");
 
                 if(prog_phase == "forces"){
-                        BSG_CUDA_CALL(hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies));
+                        // TODO: Check for non-power of 2
+                        int nbodies_per_pod = nBodies / npods;
+                        int body_start = pod_id * nbodies_per_pod;
+                        int body_end = (pod_id + 1) * nbodies_per_pod - 1;
+                        // extern "C" void forces(Config *pcfg, HBOctree *proot, HBBody *HBBodies, int nBodies, unsigned int _diam, int body_start, int body_end){
+                        bsg_pr_info("Pod (x,y): (%d, %d) ID: %d processing nodes %d through %d of %d\n", pod_x, pod_y, pod_id, body_start, body_end, nBodies);
+                        BSG_CUDA_CALL(hb_mc_manycore_device_compute_forces(&device, _config, box.diameter(), nNodes, HBOctNodes, _HBOctNodes, nBodies, HBBodies, _HBBodies, body_start, body_end));
 
+                        // TODO: Check start-end
                         float amse = 0.0f;
-                        for(BodyIdx body_i = 0; body_i < nBodies; body_i++){
+                        for(BodyIdx body_i = body_start; body_i < body_end; body_i++){
                                 // bsg_pr_info("HB: %2.4f %2.4f %2.4f\n", HBBodies[body_i].acc.val[0], HBBodies[body_i].acc.val[1], HBBodies[body_i].acc.val[2]);
                                 // bsg_pr_info("86: %2.4f %2.4f %2.4f\n", BodyPtrs[body_i]->acc.val[0], BodyPtrs[body_i]->acc.val[1], BodyPtrs[body_i]->acc.val[2]);
                                 amse += (HBBodies[body_i].acc - BodyPtrs[body_i]->acc).dist2();
                         }
 
                         bsg_pr_info("Acceleration MSE: %f\n", amse);
-                        if(amse > .01f)
-                                return HB_MC_FAIL;
                         BSG_CUDA_CALL(hb_mc_device_free(&device, _config));
                         BSG_CUDA_CALL(hb_mc_device_finish(&device));
+                        if(amse > .01f)
+                                return HB_MC_FAIL;
                         return HB_MC_SUCCESS;
                 } else {
                         // DR: Update centers of mass in the HB nodes
