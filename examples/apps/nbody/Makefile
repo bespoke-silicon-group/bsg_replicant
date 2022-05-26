@@ -71,7 +71,7 @@ setup: Galois/install/lib64/libgalois_shmem.so
 ###############################################################################
 # TEST_SOURCES is a list of source files that need to be compiled
 
-vpath %.cpp Galois/lonestar/liblonestar/src/
+vpath %.cpp $(REPLICANT_PATH)/examples/apps/nbody/Galois/lonestar/liblonestar/src/
 TEST_SOURCES  = Barneshut.cpp  
 TEST_SOURCES  += BoilerPlate.cpp
 
@@ -86,14 +86,14 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
 
-INCLUDES  = -IGalois/install/include -IGalois/lonestar/liblonestar/include/
-INCLUDES += -I$(shell llvm-config-11-64  --includedir) -I.
+INCLUDES  = -I$(REPLICANT_PATH)/examples/apps/nbody/Galois/install/include -I$(REPLICANT_PATH)/examples/apps/nbody/Galois/lonestar/liblonestar/include/
+INCLUDES += -I$(shell llvm-config-11-64  --includedir) -I$(REPLICANT_PATH)/examples/apps/nbody/
 FLAGS     = -O3 -g -Wall -Wno-unused-function -Wno-unused-variable -Wno-strict-aliasing -Wno-deprecated-declarations
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++17 $(FLAGS) 
-LDFLAGS  = -lpthread -Wl,-rpath=Galois/install/lib64 -LGalois/install/lib64 -lgalois_shmem -lnuma $(shell llvm-config-11-64 --ldflags --libs)
+LDFLAGS  = -lpthread -Wl,-rpath=$(REPLICANT_PATH)/examples/apps/nbody/Galois/install/lib64 -L$(REPLICANT_PATH)/examples/apps/nbody/Galois/install/lib64 -lgalois_shmem -lnuma $(shell llvm-config-11-64 --ldflags --libs)
 
-main.so: Galois/install/lib64/libgalois_shmem.so
+main.so: $(REPLICANT_PATH)/examples/apps/nbody/Galois/install/lib64/libgalois_shmem.so
 
 # compilation.mk defines rules for compilation of C/C++
 include $(EXAMPLES_PATH)/compilation.mk
@@ -101,7 +101,6 @@ include $(EXAMPLES_PATH)/compilation.mk
 ###############################################################################
 # Host code link flags and flow
 ###############################################################################
-
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
@@ -125,7 +124,7 @@ kernel.riscv: forces.rvo
 kernel.riscv: summarize.rvo
 kernel.riscv: build.rvo
 
-RISCV_INCLUDES  += -I.
+RISCV_INCLUDES  += -I$(REPLICANT_PATH)/examples/apps/nbody/
 RISCV_CCPPFLAGS += -D__KERNEL__ -O3
 
 RISCV_DEFINES += -DTILE_GROUP_DIM_X=$(TILE_GROUP_DIM_X)
@@ -147,10 +146,11 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 PHASE    ?= forces
 POD_ID_X ?= 0
 POD_ID_Y ?= 0
-PODS_X   ?= 1
-PODS_Y   ?= 1
+NPODS_X   ?= 8
+NPODS_Y   ?= 8
+NBODIES  ?= 128
 
-C_ARGS   ?= -n 128 -steps 1 -t 1 -phase $(PHASE) -px $(POD_ID_X) -py $(POD_ID_Y) -npx $(PODS_X) -npy $(PODS_Y)
+C_ARGS   ?= -n $(NBODIES) -steps 1 -t 1 -phase $(PHASE) -px $(POD_ID_X) -py $(POD_ID_Y) -npx $(PODS_X) -npy $(PODS_Y)
 
 SIM_ARGS ?=
 
@@ -181,3 +181,58 @@ help:
 
 clean:
 	rm -rf bsg_link.ld
+###############################################################################
+# Sweep flow
+###############################################################################
+
+# 16tx_1ty_threads__1_work__128_offset__18_logsz.deploy
+
+#<phase>_bh__<pod_x>x_<pod_y>x_id__<nbodies>_nbodies__<npods_x>x_<npods_y>y__pods
+
+# bh__forces__
+podx-from-name        = $(subst x, ,$(word 1, $(subst _, ,$(filter %_id,$(subst __, ,$1)))))
+pody-from-name        = $(subst y, ,$(word 2, $(subst _, ,$(filter %_id,$(subst __, ,$1)))))
+npodsx-from-name      = $(subst x, ,$(word 1, $(subst _, ,$(filter %_pods,$(subst __, ,$1)))))
+npodsy-from-name      = $(subst y, ,$(word 2, $(subst _, ,$(filter %_pods,$(subst __, ,$1)))))
+phase-from-name       = $(firstword $(subst _, ,$(filter %_bh,$(subst __, ,$1))))
+nbodies-from-name     = $(firstword $(subst _, ,$(filter %_nbodies,$(subst __, ,$1))))
+
+test-name = $(1)_bh__$(2)x_$(3)y_id__$(4)_nbodies__$(5)x_$(6)y_pods.deploy
+
+range = $(shell seq -s " " $1 $(shell echo $2 - 1 | bc))
+RANGE_PODS_X := $(call range,0,$(NPODS_X))
+RANGE_PODS_Y := $(call range,0,$(NPODS_Y))
+
+# Forces, 8192 Bodies, 64 pods
+$(foreach x,$(RANGE_PODS_X),\
+$(foreach y,$(RANGE_PODS_Y),\
+$(eval FORCES_TEST_8192 += $(call test-name,forces,$x,$y,8192,8,8))))
+
+# Forces, 16384 Bodies, 64 pods
+$(foreach x,$(RANGE_PODS_X),\
+$(foreach y,$(RANGE_PODS_Y),\
+$(eval FORCES_TEST_16384 += $(call test-name,forces,$x,$y,16384,8,8))))
+
+# Forces, 32768 Bodies, 64 pods
+$(foreach x,$(RANGE_PODS_X),\
+$(foreach y,$(RANGE_PODS_Y),\
+$(eval FORCES_TEST_32768 += $(call test-name,forces,$x,$y,32768,8,8))))
+
+go: $(FORCES_TEST_8192) $(FORCES_TEST_16384) $(FORCES_TEST_32768)
+
+%.deploy:
+	mkdir $@
+	echo "PHASE    = $(call phase-from-name,$*)">> $@/Makefile
+	echo "POD_ID_X = $(call podx-from-name,$*)">> $@/Makefile
+	echo "POD_ID_Y = $(call pody-from-name,$*)">> $@/Makefile
+	echo "NPODS_X  = $(call npodsx-from-name,$*)">> $@/Makefile
+	echo "NPODS_Y  = $(call npodsy-from-name,$*)">> $@/Makefile
+	echo "NBODIES  = $(call nbodies-from-name,$*)">> $@/Makefile
+	echo "VPATH =.." >> $@/Makefile
+	cat Makefile >> $@/Makefile
+	$(MAKE) -C $@ kernel.dis > $@/kernel.dis
+	$(MAKE) -C $@ main.so
+	#$(MAKE) -C $@ stats
+
+cleansweep:
+	rm -rf *.deploy
