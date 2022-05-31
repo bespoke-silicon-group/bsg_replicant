@@ -342,10 +342,15 @@ module replicant_tb_top
        ,.addr_width_p(bsg_machine_noc_epa_width_gp)
        ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
        ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
+       ,.enable_vcore_profiling_p(bsg_machine_enable_vcore_profiling_lp)
        )
    print_stat_snoop
      (
-      .loader_link_sif_in_i(host_link_sif_lo) // output from manycore
+      .clk_i(core_clk)
+      ,.reset_i(core_reset)
+      ,.global_ctr_i(global_ctr)
+
+      ,.loader_link_sif_in_i(host_link_sif_lo) // output from manycore
       ,.loader_link_sif_out_i(host_link_sif_li) // output from host
 
       ,.print_stat_v_o(print_stat_v)
