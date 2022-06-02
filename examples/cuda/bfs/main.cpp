@@ -62,15 +62,13 @@ int Main(int argc, char *argv[])
     HB = HammerBlade::Get();
     HB->load_application(cl.binary_path());
     int iter = cl.bfs_iteration();
-    //int pod_ite = cl.bfs_podnum();
-    //std::cout<<"====================ite ID is "<<iter<<"======================="<<std::endl;
+    std::string input_graph_path = cl.input_graph_path();
+    std::string input_graph_name = cl.graph_type();
     int pod_ite = cl.pod_id();
     int num_pods = 64;
-    WGraph g = WGraph::FromCSR("wiki-Vote","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/wiki-Vote/");
-    //WGraph g = WGraph::FromCSR("ljournal-2008","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/livejournal/");
-    //SparsePushBFS stats = SparsePushBFS::RunBFS_single(g, cl.bfs_root(), cl.bfs_iteration(), false);
+    WGraph g = WGraph::FromCSR(input_graph_name,input_graph_path+"CSR/");
+    
     // load application
-
     std::shared_ptr<WGraph> wgptr = std::shared_ptr<WGraph>(new WGraph(g));
     std::set<int> frontier = {cl.bfs_root()};
     std::set<int> visited = {cl.bfs_root()};
@@ -86,25 +84,13 @@ int Main(int argc, char *argv[])
 
     const std::set<int>& frontier_out_host = bfs.frontier_out();
     std::cout<<"=========================host out frontier size "<<frontier_out_host.size()<<"======================="<<std::endl;
-    //std::cout<<"=========================host in frontier size "<<frontier_size<<"======================="<<std::endl;
-    //std::cout<<"=========================host visited io size "<<bfs.visited_in().size()<<"======================="<<std::endl;
     
-    WGraph g_csr = WGraph::FromCSR("wiki-Vote","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSCfile/wiki-Vote/",pod_ite,num_pods);
-    WGraph g_csc = WGraph::FromCSC("wiki-Vote","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/wiki-Vote/",pod_ite,num_pods);
-    //WGraph g_csr = WGraph::FromCSR("soc-Pokec","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/pokec/",pod_ite,num_pods);
-    //WGraph g_csc = WGraph::FromCSC("soc-Pokec","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSCfile/pokec/",pod_ite,num_pods);
-    //WGraph g_csr = WGraph::FromCSR("ljournal-2008","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/livejournal/",pod_ite,num_pods);
-    //WGraph g_csc = WGraph::FromCSR("ljournal-2008","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSCfile/livejournal/",pod_ite,num_pods);
-    //WGraph g_csr = WGraph::FromCSR("lgc_csr_float32","/work/global/zy383/Bladerunner6.4.0/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/lgc_ista/",pod_ite,num_pods);
-    //WGraph g_csc = WGraph::FromCSR("lgc_csr_float32","/work/global/zy383/Bladerunner6.4.0/bsg_replicant/examples/cuda/bfs/inputs/CSCfile/lgc_ista/",pod_ite,num_pods);
-    //WGraph g_csr = WGraph::FromGraph500Data(Graph500Data::FromFile(cl.input_graph_path()));
-    //WGraph g_csc = WGraph::FromGraph500Data(Graph500Data::FromFile(cl.input_graph_path()),true);
-    //WGraph g_csr = WGraph::FromCSR("wiki-Vote","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSRfile/wiki-Vote/");
-    //WGraph g_csc = WGraph::C2SR("wiki-Vote","/work/shared/users/phd/zy383/HB_Cosim/Bladerunner_6.2.0/bsg_bladerunner/bsg_replicant/examples/cuda/bfs/inputs/CSCfile/wiki-Vote/");
-    //std::cout<<"===================================after graph init!=============================="<<std::endl;
+    
+    WGraph g_csr = WGraph::FromCSR(input_graph_name,input_graph_path+"CSC/",pod_ite,num_pods);
+    WGraph g_csc = WGraph::FromCSC(input_graph_name,input_graph_path+"CSR/",pod_ite,num_pods);
+    
     //decide the edge traversal direction
-    //float frontier_density = stats[iter].frontier_in().size()/g_csc.num_nodes();
-    //bsg_pr_info("Frontier density is %d, frontier size is %d, num of node is %d \n",frontier_density,(stats[iter].frontier_in()).size(), g_csc.num_nodes());
+    
     BFSGraph bfsg_csc(g_csc);
     BFSGraph bfsg_csr(g_csr);
     //std::cout<<"=================================== graph fromated! =============================="<<std::endl;

@@ -143,7 +143,7 @@ $(TESTS_PARAMETERS_MK): %/parameters.mk:
 	@echo TILE_GROUP_DIM_X = $(TGX) >> $@
 	@echo TILE_GROUP_DIM_Y = $(TGY) >> $@
 	@echo POD = $(POD) >> $@
-	@echo INPUT_GRAPH_PATH = $(EXAMPLES_PATH)/cuda/bfs/inputs/$(call graph-name,$(GRAPH_TYPE),$(VERTICES),$(EDGES)) >> $@
+	@echo INPUT_GRAPH_PATH = $(EXAMPLES_PATH)/cuda/bfs/inputs/$(GRAPH_TYPE) >> $@
 
 # copy the template to the the target directory
 $(TESTS_MAKEFILE): %/Makefile: template.mk

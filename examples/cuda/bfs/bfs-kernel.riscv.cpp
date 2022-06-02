@@ -2,34 +2,52 @@
 #include "bsg_set_tile_x_y.h"
 #include "bfs/graph.h"
 #include "bfs/sparse_set.h"
+#include "bsg_manycore_atomic.h"
 #include <atomic>
+
 #include "bsg_cuda_lite_barrier.h"
+
+
 
 #define GRANULARITY_PULL 20
 #define GRANULARITY_PUSH 5
+#define GRANULARITY_INDEX 16
 
-__attribute__((section(".dram")))                                                                                                                            
-std::atomic<int> workq;
+//bsg_barrier<bsg_tiles_X, bsg_tiles_Y> barrier;
 
-extern "C" int bfs(graph_t *G_csr_ptr,
-        graph_t *G_csc_ptr,
-        bsg_attr_remote sparse_set_t *frontier_in_sparse,
-        bsg_attr_remote int *frontier_in_dense,
-        bsg_attr_remote int *frontier_out,
-        bsg_attr_remote int *visited,
-        bsg_attr_remote int *direction,
-        bsg_attr_remote int *num_pods){
+__attribute__((section(".dram"))) std::atomic<int> workq;
+
+__attribute__((section(".dram"))) std::atomic<int> index_rd;
+
+__attribute__((section(".dram"))) std::atomic<int> index_wr;
+
+extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
+        graph_t * bsg_attr_noalias G_csc_ptr,
+        sparse_set_t bsg_attr_remote * bsg_attr_noalias frontier_in_sparse,
+        int bsg_attr_remote * bsg_attr_noalias frontier_in_dense,
+        int bsg_attr_remote * bsg_attr_noalias frontier_out_sparse,
+        int bsg_attr_remote * bsg_attr_noalias frontier_out_dense,
+        int bsg_attr_remote * bsg_attr_noalias visited,
+        int bsg_attr_remote * bsg_attr_noalias direction,
+        //bsg_attr_remote int *ite_id,
+        int bsg_attr_remote * bsg_attr_noalias outlen   ){
 
     //bsg_cuda_print_stat_start(*ite);
-    //bsg_barrier_hw_tile_group_init();
-    bsg_cuda_print_stat_kernel_start();
-    //bsg_cuda_print_stat_start(ite);
-    //if(__bsg_tile_group_id == 0){
-        //bsg_printf("===== enter device,direction is========================================%d\n",*direction);
-        //bsg_printf("g_csr is %d, g_csc is %d, frontier_sp is %d,frontier_d is %d, frontierout is %d, visited is %d, ite is %d\n",(unsigned)G_csr_ptr,(unsigned)G_csc_ptr,(unsigned)frontier_in_sparse,(unsigned)frontier_in_dense,(unsigned)frontier_out,(unsigned)visited,*ite);
-    //}
+    //bsg_cuda_print_stat_kernel_start();
+    bsg_barrier_hw_tile_group_init();
     
+    //pseduo read to warm up LLC with input frontier for testing road maps
+    //shold be commented if input frontier size is larger than 512KB
+    int cmp = 0;
+    for(int i=0; i<frontier_in_sparse->set_size;i++){
+        int tmp = frontier_in_sparse->members[i];
+        if (tmp > cmp) cmp = tmp;
+    }
+
+    bsg_cuda_print_stat_start(0);
+    //PULL direction
     if (*direction == 0){
+        
         graph_t G = *G_csr_ptr;
         int num_nodes = G.V;
         for (int src_base_i = workq.fetch_add(GRANULARITY_PULL, std::memory_order_relaxed); src_base_i < num_nodes; src_base_i = workq.fetch_add(GRANULARITY_PULL, std::memory_order_relaxed)) {
@@ -40,7 +58,10 @@ extern "C" int bfs(graph_t *G_csr_ptr,
             int stop = (src_base_i + GRANULARITY_PULL > num_nodes) ? num_nodes : src_base_i + GRANULARITY_PULL;
             for (int src_i = src_base_i; src_i<stop; src_i++){
                 //use mask to check vertex[src_i] has not been visted yet
-                if (visited[src_i]==0){
+                int bit_chunk = src_i/32;
+                int bit_position = 1<< (src_i % 32);
+                int visited_check = visited[bit_chunk] & bit_position;
+                if (!visited_check){
                     //int temp_frontier_idx=0
                     kernel_vertex_data_ptr_t src_data = &G.vertex_data[src_i];
                     int degree = src_data->degree;
@@ -51,296 +72,86 @@ extern "C" int bfs(graph_t *G_csr_ptr,
                         int dst = neib[dst_i];
                    
                         //if find a match in the coming edge, stop matching other coming edges
-                        if (frontier_in_dense[dst] == 1){
-                            visited[src_i] = 1;
-                            frontier_out[src_i] = 1;
+                        
+                        if (frontier_in_dense[dst/32] & (1<<(dst%32))){
+                            int result_visit = bsg_amoor(&visited[bit_chunk],bit_position);
+                            //visited[src_i] = 1;
+                            int result_frontier = bsg_amoor(&frontier_out_dense[bit_chunk],bit_position);
+                            //frontier_out_dense[src_i] = 1;
                             break;
                         }
                     }
                 }
             }
         }
+        //bsg_cuda_print_stat_end(1);
 
     }
     else{
+        //bsg_cuda_print_stat_start(2);
         graph_t G = *G_csc_ptr;
         int num_nodes = G.V;
         for (int src_base_i = workq.fetch_add(GRANULARITY_PUSH, std::memory_order_relaxed); src_base_i < frontier_in_sparse->set_size; src_base_i = workq.fetch_add(GRANULARITY_PUSH, std::memory_order_relaxed)) {
         // update all neibs
             int stop = (src_base_i + GRANULARITY_PUSH > frontier_in_sparse->set_size) ? frontier_in_sparse->set_size : src_base_i + GRANULARITY_PUSH;
+            
             for (int src_i = src_base_i; src_i<stop; src_i++){
                 int src = frontier_in_sparse->members[src_i];
                 kernel_vertex_data_ptr_t src_data = &G.vertex_data[src];
                 int degree = src_data->degree;
                 kernel_edge_data_ptr_t neib = src_data->neib;
-                int dst_i = 0;
-                for (; dst_i+7 < degree; dst_i +=8) {
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    int dst3 = neib[dst_i+2];
-                    int dst4 = neib[dst_i+3];
-                    int dst5 = neib[dst_i+4];
-                    int dst6 = neib[dst_i+5];
-                    int dst7 = neib[dst_i+6];
-                    int dst8 = neib[dst_i+7];
 
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    int visited3 = visited[dst3];
-                    int visited4 = visited[dst4];
-                    int visited5 = visited[dst5];
-                    int visited6 = visited[dst6];
-                    int visited7 = visited[dst7];
-                    int visited8 = visited[dst8];
-
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    if (visited3 == 0) {
-                        frontier_out[dst3] = 1;
-                        visited[dst3] = 1;
-                    }
-                    if (visited4 == 0) {
-                        frontier_out[dst4] = 1;
-                        visited[dst4] = 1;
-                    }
-                    if (visited5 == 0) {
-                        frontier_out[dst5] = 1;
-                        visited[dst5] = 1;
-                    }
-                    if (visited6 == 0) {
-                        frontier_out[dst6] = 1;
-                        visited[dst6] = 1;
-                    }
-                    if (visited7 == 0) {
-                        frontier_out[dst7] = 1;
-                        visited[dst7] = 1;
-                    }
-                    if (visited8 == 0) {
-                        frontier_out[dst8] = 1;
-                        visited[dst8] = 1;
-                    }
+                bsg_unroll(16)
+                for(int dst_i=0; dst_i<degree; dst_i ++){
+                  int dst = neib[dst_i];
+                  if(!(visited[dst/32]&(1<<(dst%32)))){
+                    int result_visit = bsg_amoor(&visited[dst/32],1<<(dst%32));  
+                    int result_frontier = bsg_amoor(&frontier_out_dense[dst/32],1<<(dst%32));
+                  }
                 }
-                if (dst_i+6 < degree){
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    int dst3 = neib[dst_i+2];
-                    int dst4 = neib[dst_i+3];
-                    int dst5 = neib[dst_i+4];
-                    int dst6 = neib[dst_i+5];
-                    int dst7 = neib[dst_i+6];
 
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    int visited3 = visited[dst3];
-                    int visited4 = visited[dst4];
-                    int visited5 = visited[dst5];
-                    int visited6 = visited[dst6];
-                    int visited7 = visited[dst7];             
 
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    if (visited3 == 0) {
-                        frontier_out[dst3] = 1;
-                        visited[dst3] = 1;
-                    }
-                    if (visited4 == 0) {
-                        frontier_out[dst4] = 1;
-                        visited[dst4] = 1;
-                    }
-                    if (visited5 == 0) {
-                        frontier_out[dst5] = 1;
-                        visited[dst5] = 1;
-                    }
-                    if (visited6 == 0) {
-                        frontier_out[dst6] = 1;
-                        visited[dst6] = 1;
-                    }
-                    if (visited7 == 0) {
-                        frontier_out[dst7] = 1;
-                        visited[dst7] = 1;
-                    }
-                }
-                else if (dst_i+5 < degree){
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    int dst3 = neib[dst_i+2];
-                    int dst4 = neib[dst_i+3];
-                    int dst5 = neib[dst_i+4];
-                    int dst6 = neib[dst_i+5];
-                    //int dst7 = neib[dst_i+6];
-
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    int visited3 = visited[dst3];
-                    int visited4 = visited[dst4];
-                    int visited5 = visited[dst5];
-                    int visited6 = visited[dst6];
-                    //int visited7 = visited[dst7];             
-
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    if (visited3 == 0) {
-                        frontier_out[dst3] = 1;
-                        visited[dst3] = 1;
-                    }
-                    if (visited4 == 0) {
-                        frontier_out[dst4] = 1;
-                        visited[dst4] = 1;
-                    }
-                    if (visited5 == 0) {
-                        frontier_out[dst5] = 1;
-                        visited[dst5] = 1;
-                    }
-                    if (visited6 == 0) {
-                        frontier_out[dst6] = 1;
-                        visited[dst6] = 1;
-                    }
-                }
-                else if (dst_i+4 < degree){
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    int dst3 = neib[dst_i+2];
-                    int dst4 = neib[dst_i+3];
-                    int dst5 = neib[dst_i+4];
-                    //int dst6 = neib[dst_i+5];
-                    //int dst7 = neib[dst_i+6];
-
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    int visited3 = visited[dst3];
-                    int visited4 = visited[dst4];
-                    int visited5 = visited[dst5];
-                    //int visited6 = visited[dst6];
-                    //int visited7 = visited[dst7];             
-
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    if (visited3 == 0) {
-                        frontier_out[dst3] = 1;
-                        visited[dst3] = 1;
-                    }
-                    if (visited4 == 0) {
-                        frontier_out[dst4] = 1;
-                        visited[dst4] = 1;
-                    }
-                    if (visited5 == 0) {
-                        frontier_out[dst5] = 1;
-                        visited[dst5] = 1;
-                    }
-                }
-                else if (dst_i+3 < degree){
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    int dst3 = neib[dst_i+2];
-                    int dst4 = neib[dst_i+3];
-                    //int dst5 = neib[dst_i+4];
-                    //int dst6 = neib[dst_i+5];
-                    //int dst7 = neib[dst_i+6];
-
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    int visited3 = visited[dst3];
-                    int visited4 = visited[dst4];
-                    //int visited5 = visited[dst5];
-                    //int visited6 = visited[dst6];
-                    //int visited7 = visited[dst7];             
-
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    if (visited3 == 0) {
-                        frontier_out[dst3] = 1;
-                        visited[dst3] = 1;
-                    }
-                    if (visited4 == 0) {
-                        frontier_out[dst4] = 1;
-                        visited[dst4] = 1;
-                    }
-                }
-                else if (dst_i+2 < degree){
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    int dst3 = neib[dst_i+2];
-                    
-
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    int visited3 = visited[dst3];
-                                 
-
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    if (visited3 == 0) {
-                        frontier_out[dst3] = 1;
-                        visited[dst3] = 1;
-                    }
-                }
-                else if (dst_i+1 < degree){
-                    int dst1 = neib[dst_i];
-                    int dst2 = neib[dst_i+1];
-                    
-
-                    int visited1 = visited[dst1];
-                    int visited2 = visited[dst2];
-                    
-                                 
-
-                    if (visited1 == 0) {
-                        frontier_out[dst1] = 1;
-                        visited[dst1] = 1;
-                    }
-                    if (visited2 == 0) {
-                        frontier_out[dst2] = 1;
-                        visited[dst2] = 1;
-                    }
-                    
-                }
-                else if (dst_i < degree){
-                    int dst = neib[dst_i];
-                    if (visited[dst] ==0){
-                        frontier_out[dst] = 1;
-                        visited[dst] = 1;
-                    }
-                }
             }
-        }   
+        }
+        //bsg_cuda_print_stat_end(2);   
     }
+    bsg_cuda_print_stat_end(0);
+    // the phase which generates output frontier in sparse set format
+    //#############################################################
+    bsg_barrier_hw_tile_group_sync();
+    //barrier.sync();
+    //#############################################################
+    bsg_cuda_print_stat_start(1);
     
-    bsg_cuda_print_stat_kernel_end();
+    
+    for (int src_base_i = index_rd.fetch_add(GRANULARITY_INDEX, std::memory_order_relaxed); src_base_i < *outlen; src_base_i = index_rd.fetch_add(GRANULARITY_INDEX, std::memory_order_relaxed)) {
+        int stop = (src_base_i + GRANULARITY_INDEX > *outlen) ? *outlen : src_base_i + GRANULARITY_INDEX;
+        for (int src_i = src_base_i; src_i<stop; src_i++){
+            if(frontier_out_dense[src_i/32]&(1<<(src_i%32))){
+                int out_idx = index_wr.fetch_add(1, std::memory_order_relaxed);
+                frontier_out_sparse[out_idx] = src_i;
+                //int result_frontier = bsg_amoor(&frontier_out_dense[src_i/32],1<<(src_i%32));
+                //frontier_out_dense[src_i] = 0;
+                //bsg_printf("========================= output frontier element : %d, src_base_i: %d, tile id: %d=======================================\n",src_i,src_base_i,__bsg_id);
+            }
+        }
+    }
+    bsg_cuda_print_stat_end(1);
+    //write the output frontier length
+    //#############################################################
+    bsg_barrier_hw_tile_group_sync();
+    //#############################################################
+    //bsg_cuda_print_stat_start(3);
+    if(__bsg_id == 0){
+        *outlen = index_wr.load();   
+    //    bsg_printf("========================= output frontier size : %d, work_q value: %d, rd_idx value: %d=======================================\n",index_wr.load(),workq.load(),index_rd.load());
+        *direction = cmp; // write cmp so that the pseduo code is not optimized away
+    }
+
+    //bsg_cuda_print_stat_end(1);
+    bsg_barrier_hw_tile_group_sync();
+
+    //bsg_cuda_print_stat_end(1);
+    //bsg_cuda_print_stat_kernel_end();
     return 0;
 }
