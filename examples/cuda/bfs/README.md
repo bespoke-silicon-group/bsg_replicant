@@ -27,7 +27,7 @@ Run ``python py/bfs_parallelexec.py``
 *dirpath* : the path of the working directories
 
 ### Step 4: Collect data ###
-Run ``python py/bfs_datacollect.py``  
+Run ``python py/bfs_datacollect_2tags.py``  
 *dirpattern* and *dirpath* same as bfs_parallelexec.py    
 *logpath* : path and name of the result log file  
 *ite_start* : the start iteration ID to be collected from  
