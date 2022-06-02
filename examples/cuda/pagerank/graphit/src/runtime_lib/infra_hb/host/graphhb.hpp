@@ -222,11 +222,9 @@ private:
           if (true) {
             //throw hammerblade::runtime_error("transpose not supported");
             // convert
-            int64_t c2sr_idxnum = 2 * num_nodes() + 1;
             std::vector<int32_t> index(num_nodes() + 1);
-            std::vector<int32_t> c2sr_index(c2sr_idxnum);
             int64_t rows_within_block = (num_nodes() % NUM_PODS) == 0 ? (num_nodes() / NUM_PODS) : (num_nodes() / NUM_PODS + 1);
-            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each block" << std::endl;
+            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each pod under blocking partitioning" << std::endl;
             int64_t pod_row_start = CURRENT_POD * rows_within_block;   
             int64_t pod_row_end = (pod_row_start + rows_within_block) > num_nodes() ? num_nodes() : (pod_row_start + rows_within_block);
             int64_t length = pod_row_end - pod_row_start;
@@ -242,7 +240,6 @@ private:
 	       tmp_vertexlist[i] = tmp_elem;
             }
 	    index[num_nodes()] = num_edges();
-            std::cout << "start c2sr calculate" << std::endl;
             for(int64_t i = 0; i < num_nodes() + 1; i++) {
               c2sr_index[i] = index[i];
             }

@@ -223,10 +223,13 @@ private:
             //throw hammerblade::runtime_error("transpose not supported");
             // convert
             std::vector<int32_t> index(num_nodes() + 1);
-            int64_t rows_within_pod = ((num_nodes()-CURRENT_POD) % NUM_PODS) == 0 ? ((num_nodes()-CURRENT_POD) / NUM_PODS) : ((num_nodes()-CURRENT_POD) / NUM_PODS + 1);
-            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_pod << " rows within each pod under cyclic partitioning" << std::endl;
-            std::vector<int32_t> cyclic_index(rows_within_pod + 1);
-            std::vector<int32_t> cyclic_neighbor(num_edges());
+            int64_t rows_within_block = (num_nodes() % NUM_PODS) == 0 ? (num_nodes() / NUM_PODS) : (num_nodes() / NUM_PODS + 1);
+            std::cout << "Simulating current pod " << CURRENT_POD << "with total nodes " << num_nodes() << " and " << rows_within_block << " rows within each pod under blocking partitioning" << std::endl;
+            int64_t pod_row_start = CURRENT_POD * rows_within_block;   
+            int64_t pod_row_end = (pod_row_start + rows_within_block) > num_nodes() ? num_nodes() : (pod_row_start + rows_within_block);
+            int64_t length = pod_row_end - pod_row_start;
+            std::vector<int32_t> block_index(rows_within_block + 1);
+            std::vector<int32_t> block_neighbor(num_edges());
             std::vector<int32_t> tmp_deg = this->get_in_degrees();
 	    std::vector<vertexdata> tmp_vertexlist(num_nodes());
 	    # pragma omp parallel for
@@ -236,26 +239,24 @@ private:
 	       tmp_vertexlist[i] = tmp_elem;
             }
 	    index[num_nodes()] = num_edges();
-            cyclic_index[0] = 0;
+            block_index[0] = 0;
             int64_t index_idx = 1;
             int64_t idx = 0;
-            for (int64_t i = CURRENT_POD; i < num_nodes(); i=i+NUM_PODS) {
+            for (int64_t i = pod_row_start; i < pod_row_end; i++) {
               int32_t nnz_i = index[i+1] - index[i];
-              cyclic_index[index_idx] = cyclic_index[index_idx-1] + nnz_i;
-//              std::cout << "cyclic_index[" << index_idx << "] is: " << cyclic_index[index_idx] << std::endl;
+              block_index[index_idx] = block_index[index_idx-1] + nnz_i;
               for (int32_t j = 0; j < nnz_i; j++) {
-                cyclic_neighbor[idx] = *(_host_g.in_index_shared_.get()[i]+j);
-//                std::cout << "cyclic_neighbor[" << idx << "] is: " << cyclic_neighbor[idx] << std::endl;
+                block_neighbor[idx] = *(_host_g.in_index_shared_.get()[i]+j);
                 idx++;
               }
               index_idx++;
             }
-
+            // allocate
 	    _in_index = Vec(num_nodes() + 1);
 	    _in_neighbors = Vec(num_edges());
 
-	    _in_index.copyToDevice(cyclic_index.data(), cyclic_index.size());
-	    _in_neighbors.copyToDevice(cyclic_neighbor.data(), cyclic_neighbor.size());
+            _in_index.copyToDevice(block_index.data(), block_index.size());
+            _in_neighbors.copyToDevice(block_neighbor.data(), block_neighbor.size());
 	  }
 
 	  // out neighbor
@@ -265,7 +266,6 @@ private:
 	  #pragma omp parallel for
 	  for (int64_t i = 0; i < num_nodes(); i++) {
 	    index[i] = _host_g.out_index_shared_.get()[i] - _host_g.out_neighbors_shared_.get();
-          
 	    vertexdata tmp_elem = {.offset = index[i], .degree = tmp_deg[i]};
 	    tmp_vertexlist[i] = tmp_elem;
 	  }
