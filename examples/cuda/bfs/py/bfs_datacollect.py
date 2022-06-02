@@ -1,6 +1,15 @@
 import glob
 import subprocess
 import re
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--logpath", type=str, default="./stat.log", 
+                        help="path and name of the result log")
+parser.add_argument("--graphpattern", type=str, default="./pokec*", 
+                        help="path and name pattern of the working directories")
+args = parser.parse_args()
+
 
 aggr_inst = 0
 aggr_cyc = 0
@@ -15,10 +24,10 @@ abs_seq = {}
 cache_idle = {}
 cache_bandwidth = {}
 cache_missrate = {}
-file_name_wr = './pokec.log'
+file_name_wr = args.logpath
 f_ptr      = open(file_name_wr, "w")
 
-for name in glob.glob('./pokec_graph*/'):
+for name in glob.glob(args.graphpattern):
     #openfile=subprocess.run(["cd",name],check=True)
     #print("open %s result: %d",name,openfile)
     #vanilla_stats = name + "vanilla_stats.csv"

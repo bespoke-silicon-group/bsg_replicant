@@ -2,7 +2,17 @@
 import glob
 import subprocess as sp
 import multiprocessing as mp
+import argparse
 from os.path import exists as file_exists  
+
+
+parser = argparse.ArgumentParser()
+
+parser.add_argument("--dirpattern", type=str, default="pokec", 
+                        help="pattern of the working directories")
+parser.add_argument("--dirpath", type=str, default="./", 
+                        help="path of the working directories")  
+args = parser.parse_args()
 
 def work(path):
     """Defines the work unit on an input file"""
@@ -21,7 +31,8 @@ def work(path):
 
 if __name__ == '__main__':
     #Specify files to be worked with typical shell syntax and glob module
-    folder_pattern = './hollywood_graph*/'
+    
+    folder_pattern = args.dirpath + args.dirpattern + '*'
     tasks = glob.glob(folder_pattern)
     
     #Set up the parallel task pool to use all available processors
