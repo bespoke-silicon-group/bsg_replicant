@@ -88,6 +88,7 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 
 vpath %.cpp $(EXAMPLES_PATH)/cuda/pagerank/kernel/csr_blocking_remote_attribute
 
+kernel.rvo:RISCV_CXX=$(RISCV_CLANGXX)
 kernel.riscv: kernel.rvo
 
 # Tile Group Dimensions
