@@ -84,7 +84,7 @@ To use Verilator platforms, users will need:
 Users should use the Verilator installation provided by
 bsg_bladerunner.
 
-##Running pagerank examples
+## Running pagerank examples
 
 1. Running on brg-vip server with clusters, use `python cluster-runn-all-hb.py` command. Remember to change the `BRG_BSG_BLADERUNNER_DIR` path to your own path in the file.
 2. Running on servers without clusters setting up, use `python run-all-hb.py` command. Remember to change the `BRG_BSG_BLADERUNNER_DIR` path to your own path in the file. Also by setting up `parallel_num` in `run-all-hb.py` file, you are able to control the parallel simulation jobs.
