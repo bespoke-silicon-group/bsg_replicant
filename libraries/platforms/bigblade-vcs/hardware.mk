@@ -94,8 +94,6 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/instr_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_pc_histogram.v
-# We reuse the print_stat_snoop module from aws-vcs
-VSOURCES += $(LIBRARIES_PATH)/platforms/aws-vcs/hardware/bsg_print_stat_snoop.v
 
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/router_profiler.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/remote_load_trace.v
@@ -109,6 +107,7 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_io_co
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_spmd_loader.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_monitor.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_wormhole_test_mem.v
+VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_print_stat_snoop.v
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/bsg_nonsynth_manycore_testbench.v
 VSOURCES += $(BASEJUMP_STL_DIR)/bsg_cache/bsg_wormhole_to_cache_dma_fanout.v
 

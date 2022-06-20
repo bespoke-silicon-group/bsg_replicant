@@ -148,10 +148,6 @@ module replicant_tb_top
    logic cache_clk;
    logic cache_reset;
 
-   // Snoop wires for Print Stat
-   logic                                       print_stat_v;
-   logic [bsg_machine_noc_data_width_gp-1:0]   print_stat_tag;
-
    logic [bsg_machine_noc_coord_x_width_gp-1:0] host_x_coord_li = (bsg_machine_noc_coord_x_width_gp)'(bsg_machine_io_coord_x_gp);
    logic [bsg_machine_noc_coord_y_width_gp-1:0] host_y_coord_li = (bsg_machine_noc_coord_y_width_gp)'(bsg_machine_io_coord_y_gp);
 
@@ -334,22 +330,6 @@ module replicant_tb_top
       .clk_i(core_clk)
       ,.reset_i(core_reset)
       ,.ctr_r_o(global_ctr)
-      );
-
-   bsg_print_stat_snoop
-     #(
-       .data_width_p(bsg_machine_noc_data_width_gp)
-       ,.addr_width_p(bsg_machine_noc_epa_width_gp)
-       ,.x_cord_width_p(bsg_machine_noc_coord_x_width_gp)
-       ,.y_cord_width_p(bsg_machine_noc_coord_y_width_gp)
-       )
-   print_stat_snoop
-     (
-      .loader_link_sif_in_i(host_link_sif_lo) // output from manycore
-      ,.loader_link_sif_out_i(host_link_sif_li) // output from host
-
-      ,.print_stat_v_o(print_stat_v)
-      ,.print_stat_tag_o(print_stat_tag)
       );
 
    // In VCS, the C/C++ testbench is controlled by the

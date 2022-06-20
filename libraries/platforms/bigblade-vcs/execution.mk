@@ -71,6 +71,7 @@ dve: debug.vpd
 platform.execution.clean:
 	rm -rf saifgen.log exec.log profile.log exec.log debug.vpd
 	rm -rf vanilla_stats.csv
+	rm -rf simple_stats.csv
 	rm -rf infinite_mem_stats.csv
 	rm -rf vcache_stats.csv
 	rm -rf vanilla_operation_trace.csv
