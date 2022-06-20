@@ -75,26 +75,37 @@ XMSIM_FLAGS += $(subst -L, -SV_ROOT ,$(subst -l, -SV_LIB lib, $(VLDFLAGS)))
 $(BSG_MACHINExPLATFORM_PATH)/debug/simx: XRUN_FLAGS += -access +rwc
 $(BSG_MACHINExPLATFORM_PATH)/debug/simx: XMSIM_FLAGS += -input $(BSG_PLATFORM_PATH)/xcelium_dump.tcl
 
-$(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
-$(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
-$(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simx $(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simx $(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simx $(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx $(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_REMOTE_OP_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx $(BSG_MACHINExPLATFORM_PATH)/profile/simx $(BSG_MACHINExPLATFORM_PATH)/saifgen/simx $(BSG_MACHINExPLATFORM_PATH)/exec/simx: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PC_HISTOGRAM
+$(BSG_MACHINExPLATFORM_PATH)/saifgen/simx: VDEFINES += BSG_MACHINE_ENABLE_SAIF
+
+# The repl library must be linked before the other libraries to ensure
+# that it "intercepts" the non replicated versions
+# TODO: FIX
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx: XMSIM_FLAGS += -SV_LIB libbsgmc_cuda_legacy_pod_repl
+$(BSG_MACHINExPLATFORM_PATH)/repl/simx: $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 
 $(BSG_MACHINExPLATFORM_PATH)/saifgen/simx:
 	$(error SAIF generation is not currently supported for xcelium)
 
-$(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHINExPLATFORM_PATH)/debug $(BSG_MACHINExPLATFORM_PATH)/saifgen $(BSG_MACHINExPLATFORM_PATH)/profile:
+$(BSG_MACHINExPLATFORM_PATH)/repl $(BSG_MACHINExPLATFORM_PATH)/pc-histogram $(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHINExPLATFORM_PATH)/debug $(BSG_MACHINExPLATFORM_PATH)/saifgen $(BSG_MACHINExPLATFORM_PATH)/profile:
 	mkdir -p $@
 
-%/simx: $(XRUN_VSOURCES) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so %
+%/simx: $(XRUN_VSOURCES) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so %
 	$(XRUN) -top replicant_tb_top $(XRUN_VSOURCES) $(XRUN_FLAGS) -xmlibdirname $(abspath $*)/xcelium.d  -l $@.xrun.log
 	echo "ln -nsf $(abspath $*)/xcelium.d xcelium.d" > $@
 	echo "$(XMSIM) $(XMSIM_FLAGS) replicant_tb_top \$$@" >> $@
 	chmod +x $@
 
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/exec/simx
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/repl/simx
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/debug/simx
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/proile/simx
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/saifgen/simx
+.PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simx
 
 # When running recursive regression, make is launched in independent,
 # non-communicating parallel processes that try to build these objects
@@ -102,8 +113,10 @@ $(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHINExPLATFORM_PATH)/debug $(BSG_MACHI
 # define REGRESSION_PREBUILD so that regression tests can build them
 # before launching parallel execution
 REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/exec/simx
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/repl/simx
 REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/debug/simx
 REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/profile/simx
+REGRESSION_PREBUILD += $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simx
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 REGRESSION_PREBUILD += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so

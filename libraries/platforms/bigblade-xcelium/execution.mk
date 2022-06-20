@@ -40,6 +40,8 @@ saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/simx
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simx
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simx
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simx
+pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simx
+repl.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/repl/simx
 
 # Use VANILLA_STATS and VCACHE_STATS to override paths
 VANILLA_STATS ?= vanilla_stats.csv
@@ -66,13 +68,14 @@ simvision: debug.shm
 
 platform.execution.clean:
 	rm -rf xcelium.d xrun.history
-	rm -rf saifgen.log exec.log profile.log exec.log debug.shm
+	rm -rf saifgen.log exec.log profile.log repl.log debug.shm
 	rm -rf vanilla_stats.csv
 	rm -rf infinite_mem_stats.csv
 	rm -rf vcache_stats.csv
 	rm -rf vanilla_operation_trace.csv
 	rm -rf operation_trace.csv
 	rm -rf vcache_operation_trace.csv
+	rm -rf vanilla_core_pc_hist.csv
 	rm -rf router_stat.csv
 	rm -rf remote_load_trace.csv
 	rm -rf vanilla.log
