@@ -151,7 +151,7 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(LIB_OBJECTS_REGRESSION
 
 .PHONY: libraries.clean
 libraries.clean:
-	rm -f $(LIB_OBJECTS)
+	rm -f $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION)
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 	rm -f $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0

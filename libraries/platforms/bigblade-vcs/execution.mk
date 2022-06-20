@@ -39,10 +39,11 @@ SIM_ARGS += +ntb_random_seed_automatic
 # them as the VCS plusarg argument +c_args. Users can specify C-style
 # arguments using the C_ARGS make variable.
 
-.PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd
+.PRECIOUS: saifgen.log exec.log profile.log exec.log debug.vpd repl.log
 .PHONY: platform.execution.clean dve
 
 saifgen.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/saifgen/simv
+repl.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/repl/simv
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simv
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simv
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simv
