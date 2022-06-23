@@ -17,6 +17,9 @@ do not need to worry about what platform they are running on;
 `platform.mk` will automatically deduce the correct platform from
 the environment
 
+Deprecated platforms are in the `deprecated` folder. They may not work
+without modification or effort.
+
 ## Notes
 
 The aws-fpga and aws-vcs platforms are identical EXCEPT for how they

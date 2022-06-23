@@ -65,7 +65,6 @@ regression:
 
 clean:
 	$(MAKE) -C examples clean 
-	$(MAKE) -C build clean 
 	$(MAKE) -C hardware clean 
 	$(MAKE) -C libraries clean
 
