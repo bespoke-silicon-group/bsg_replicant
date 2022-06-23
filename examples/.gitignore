@@ -25,3 +25,4 @@ ucli.key
 *.json
 dramsim3.txt
 *.a
+*.d

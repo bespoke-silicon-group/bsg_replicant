@@ -11,3 +11,4 @@ __pycache__
 *.tree
 machines/*/V*
 machines/*/obj_dir/
+xcelium.d/
