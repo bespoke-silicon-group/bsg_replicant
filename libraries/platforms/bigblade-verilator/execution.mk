@@ -25,7 +25,7 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.PRECIOUS: threaded.log exec.log profile.log exec.log pc-histogram.log debug.vpd
+.PRECIOUS: threaded.log exec.log profile.log exec.log pc-histogram.log debug.fst
 .PHONY: platform.execution.clean dve
 
 threaded.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/threaded/simsc
@@ -48,14 +48,10 @@ blood: profile.log
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 
-
 debug.fst: debug.log ;
 
-dve: debug.vpd
-	$(DVE) -full64 -vpd $< &
-
 platform.execution.clean:
-	rm -rf saifgen.log exec.log profile.log exec.log debug.vpd
+	rm -rf saifgen.log exec.log profile.log exec.log debug.fst
 	rm -rf vanilla_stats.csv
 	rm -rf infinite_mem_stats.csv
 	rm -rf vcache_stats.csv
