@@ -49,15 +49,6 @@ exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simv
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simv
 pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simv
 
-# Use VANILLA_STATS and VCACHE_STATS to override paths
-VANILLA_STATS ?= vanilla_stats.csv
-VCACHE_STATS ?= vcache_stats.csv
-stats: profile.log
-	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ python3 -m vanilla_parser --only stats_parser --stats $(VANILLA_STATS) --vcache-stats $(VCACHE_STATS)  --tile-group --tile --cache-line-words $(BSG_MACHINE_VCACHE_LINE_WORDS)
-
-blood: profile.log
-	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ python3 -m vanilla_parser --stats $(VANILLA_STATS) --vcache-stats $(VCACHE_STATS)  --tile-group --tile --cache-line-words $(BSG_MACHINE_VCACHE_LINE_WORDS)
-
 %.log: main.so $(BSG_MANYCORE_KERNELS) 
 	$(filter %/simv, $^) $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
