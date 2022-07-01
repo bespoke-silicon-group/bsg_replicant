@@ -201,9 +201,9 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
 {
         cache_id_to_memory_id = new parameter_t [hb_mc_vcache_num_caches(mc)];
         cache_id_to_bank_id   = new parameter_t [hb_mc_vcache_num_caches(mc)];
-        if (mc->config.chip_id == HB_MC_CHIP_ID_PAPER) {
-                return hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(mc);
-        }
+        // if (mc->config.chip_id == HB_MC_CHIP_ID_PAPER) {
+        //         return hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(mc);
+        // }
 
         // Despite X16 being in the dma map name, these configurations appear
         //   only to depend on the pod arrangement
