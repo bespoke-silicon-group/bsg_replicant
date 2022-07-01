@@ -136,7 +136,7 @@ extern "C" {
                 if (!buf)
                         return buf;
 
-                snprintf(buf, sz, "(%" PRId8 ",%" PRId8 ")",
+                snprintf(buf, sz, "(%3" PRId8 ",%3" PRId8 ")",
                          hb_mc_coordinate_get_x(coordinate),
                          hb_mc_coordinate_get_y(coordinate));
 

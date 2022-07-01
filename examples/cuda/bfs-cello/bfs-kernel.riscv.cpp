@@ -5,6 +5,8 @@
 #include "bsg_cuda_lite_barrier.h"
 #include "cello.hpp"
 
+#define STEP 4
+
 extern "C" void cello_start(void);
 
 graph_t *G;
@@ -43,7 +45,29 @@ int cello_main()
             kernel_vertex_data_ptr_t src_data = &G->vertex_data[src];
             int degree = src_data->degree;
             kernel_edge_data_ptr_t neib = src_data->neib;
-            for (int dst_i = 0; dst_i < degree; dst_i++) {
+            int dst_i;
+            // unrolled
+            for (dst_i = 0; dst_i+STEP < degree; dst_i++) {
+                // read in dst
+                int dst[STEP];
+                for (int k = 0; k < STEP; k++) {
+                    dst[k] = neib[dst_i+k];
+                }
+                // read visited
+                int vis[STEP];
+                for (int k = 0; k < STEP; k++) {
+                    vis[k] = visited[dst[k]];
+                }
+                // add to frontier and visited
+                for (int k = 0; k < STEP; k++) {
+                    if (vis[k] == 0) {
+                        frontier_out[dst[k]] = 1;
+                        visited[dst[k]] = 1;
+                    }
+                }
+            }
+            // strip mine
+            for (; dst_i < degree; dst_i++) {
                 int dst = neib[dst_i];
                 if (visited[dst] == 0) {
                     frontier_out[dst] = 1;
