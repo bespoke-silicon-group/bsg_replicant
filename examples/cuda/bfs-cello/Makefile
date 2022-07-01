@@ -45,7 +45,7 @@ checkout_repos: $(repos)
 
 include $(REPLICANT_PATH)/environment.mk
 
-include $(EXAMPLES_PATH)/cuda/bfs/config.mk
+include $(EXAMPLES_PATH)/cuda/bfs-cello/config.mk
 
 # $1 = graph_type
 # $2 = vertices
@@ -125,7 +125,7 @@ $(TESTS_PARAMETERS_MK): %/parameters.mk:
 	$(call get-test-parameters,$*)
 	@echo "Creating $@"
 	@mkdir -p $*
-	@echo RISCV_PATH = $(EXAMPLES_PATH)/cuda/bfs/$*/main.riscv > $@
+	@echo RISCV_PATH = $(EXAMPLES_PATH)/cuda/bfs-cello/$*/main.riscv > $@
 	@echo GRAPH_TYPE = $(GRAPH_TYPE) >> $@
 	@echo GRAPH_VERTICES = $(VERTICES) >> $@
 	@echo GRAPH_EDGES = $(EDGES) >> $@
@@ -134,7 +134,7 @@ $(TESTS_PARAMETERS_MK): %/parameters.mk:
 	@echo TILE_GROUPS = $(TILE_GROUPS) >> $@
 	@echo TILE_GROUP_DIM_X = $(TGX) >> $@
 	@echo TILE_GROUP_DIM_Y = $(TGY) >> $@
-	@echo INPUT_GRAPH_PATH = $(EXAMPLES_PATH)/cuda/bfs/inputs/$(call graph-name,$(GRAPH_TYPE),$(VERTICES),$(EDGES)) >> $@
+	@echo INPUT_GRAPH_PATH = $(EXAMPLES_PATH)/cuda/bfs-cello/inputs/$(call graph-name,$(GRAPH_TYPE),$(VERTICES),$(EDGES)) >> $@
 
 # copy the template to the the target directory
 $(TESTS_MAKEFILE): %/Makefile: template.mk
@@ -185,7 +185,7 @@ $(TESTS_BLOOD): %.blood: %
 blood: $(TESTS_BLOOD)
 
 # some support executables
-graphtools-dir = $(EXAMPLES_PATH)/cuda/bfs/graph-tools
+graphtools-dir = $(EXAMPLES_PATH)/cuda/bfs-cello/graph-tools
 -include $(graphtools-dir)/libgraphtools.mk
 
 SUPPORT_TOOLS = input-gen input-analyze input-degree-list
@@ -202,11 +202,11 @@ support-tools: $(SUPPORT_TOOLS)
 
 dramsim3.summary.csv: $(addsuffix /dramsim3.tag.json,$(TESTS))
 	@echo Creating $@
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/bfs/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/bfs/py/dramsim3.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/bfs-cello/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/bfs-cello/py/dramsim3.py $^
 
 vcache.summary.csv: $(addsuffix /vcache_stats.csv,$(TESTS))
 	@echo Creating $@
-	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/bfs/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/bfs/py/vcache.py $^
+	@PYTHONPATH=$(EXAMPLES_PATH)/cuda/bfs-cello/hammerblade-helpers/py python3 $(EXAMPLES_PATH)/cuda/bfs-cello/py/vcache.py $^
 
 purge:
 	rm -rf $(TESTS)

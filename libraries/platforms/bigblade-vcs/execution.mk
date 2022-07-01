@@ -51,7 +51,7 @@ pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simv
 # Use VANILLA_STATS and VCACHE_STATS to override paths
 VANILLA_STATS ?= vanilla_stats.csv
 VCACHE_STATS ?= vcache_stats.csv
-stats: profile.log
+stats:
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ python3 -m vanilla_parser --only stats_parser --stats $(VANILLA_STATS) --vcache-stats $(VCACHE_STATS)  --tile-group --tile --cache-line-words $(BSG_MACHINE_VCACHE_LINE_WORDS)
 
 %.log: main.so $(BSG_MANYCORE_KERNELS) 

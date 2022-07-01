@@ -2,17 +2,22 @@
 #include "bsg_set_tile_x_y.h"
 #include "bfs/graph.h"
 #include "bfs/sparse_set.h"
+#include "bsg_cuda_lite_barrier.h"
 
 int bfs(graph_t *G_ptr,
         bsg_attr_remote sparse_set_t *frontier_in,
         bsg_attr_remote int *frontier_out,
         bsg_attr_remote int *visited)
 {
+    // init barrier
+    bsg_barrier_hw_tile_group_init();
+    bsg_barrier_hw_tile_group_sync();    
     bsg_cuda_print_stat_kernel_start();
+
     graph_t G = *G_ptr;
-    for (int src_i = __bsg_tile_group_id;
+    for (int src_i = __bsg_id;
          src_i < frontier_in->set_size;
-         src_i += __bsg_grid_dim_x*__bsg_grid_dim_y) {
+         src_i += bsg_tiles_X*bsg_tiles_Y) {
         // update all neibs
         int src = frontier_in->members[src_i];
         kernel_vertex_data_ptr_t src_data = &G.vertex_data[src];
@@ -26,6 +31,9 @@ int bfs(graph_t *G_ptr,
             }
         }
     }
+    bsg_barrier_hw_tile_group_sync();    
     bsg_cuda_print_stat_kernel_end();
+    bsg_fence();
+    bsg_barrier_hw_tile_group_sync();
     return 0;
 }
