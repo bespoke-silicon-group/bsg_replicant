@@ -624,3 +624,13 @@ int hb_mc_platform_log_disable(hb_mc_manycore_t *mc){
         hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         return hb_mc_tracer_log_disable(pl->tracer);
 }
+
+/**
+ * Check if chip reset has completed.
+ * @param[in] mc    A manycore instance initialized with hb_mc_manycore_init()
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
+{
+        return HB_MC_SUCCESS;
+}
