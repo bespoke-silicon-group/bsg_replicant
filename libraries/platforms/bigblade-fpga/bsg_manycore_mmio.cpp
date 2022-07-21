@@ -24,6 +24,22 @@
 // ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#define FPGA_TARGET_LOCAL
+
+#ifdef FPGA_TARGET_LOCAL
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <limits.h>
+const size_t MAP_SIZE=32768UL;
+const char* device_name = "/dev/xdma0_user";
+#endif
+
 #include <bsg_manycore_mmio.h>
 #include <fpga_pci.h>
 
@@ -46,12 +62,25 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 mmio_pr_err((*mmio), "Failed to init MMIO: invalid ID\n");
                 return HB_MC_INVALID;
         }
-
+#if !defined(FPGA_TARGET_LOCAL)
         if ((err = fpga_pci_attach(id, pf_id, bar_id, write_combine, handle)) != 0) {
                 mmio_pr_err((*mmio), "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
                 mmio_pr_err((*mmio), "Are you running with sudo?\n");
                 return r;
         }
+#endif
+
+#if defined(FPGA_TARGET_LOCAL)
+        uint8_t fd;
+        if ((fd = open(device_name, O_RDWR | O_SYNC)) == -1) {
+                fprintf(stderr, "Failed to open device: %s\n", device_name);
+                goto cleanup;
+            }
+        else {
+                mmio->p = (uintptr_t) mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                printf("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, fd, mmio->p);
+        }
+#else
 
         // it is not clear to me where 0x4000 comes from...
         // map in the base address register to our address space
@@ -59,12 +88,20 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 mmio_pr_err((*mmio), "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
                 goto cleanup;
         }
+#endif
         r = HB_MC_SUCCESS;
         mmio_pr_dbg(mmio, "%s: mmio = 0x%" PRIxPTR "\n", __func__, mmio->p);
         goto done;
 
  cleanup:
+#if defined(FPGA_TARGET_LOCAL)
+        if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
+            mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
+        }
+        close(fd);
+#else
         fpga_pci_detach(*handle);
+#endif
         *handle = PCI_BAR_HANDLE_INIT;
  done:
         return r;
