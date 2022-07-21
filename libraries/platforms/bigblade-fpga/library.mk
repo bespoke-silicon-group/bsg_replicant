@@ -29,8 +29,8 @@
 # reuse the bsg_manycore_platform.cpp file between the two platforms
 # aws-fpga, but provide our own bsg_manycore_mmio.cpp file that
 # handles PCIE-based MMIO.
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_mmio.cpp
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/aws-fpga/bsg_manycore_platform.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-fpga/bsg_manycore_mmio.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-fpga/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
 
@@ -43,7 +43,7 @@ PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
 $(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/aws-fpga
+$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/bigblade-fpga
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
@@ -55,9 +55,9 @@ $(PLATFORM_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURC
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
 
 # libfpga_mgmt is the platform library provided by AWS.
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
+#$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
 
-_DOCSTRING := "Rules from aws-fpga/library.mk\n"
+_DOCSTRING := "Rules from bigblade-fpga/library.mk\n"
 _TARGETS :=
 
 _TARGETS +="install"
