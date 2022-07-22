@@ -28,12 +28,13 @@
 # This Makefile fragment defines the rules that are used for executing
 # applications on HammerBlade Platforms
 
-# The rule below defines how to run test_loader for tests.
-TEST_NAME=$(@:%.log=%)
-$(UNIFIED_TESTS:%=%.log): %.log: test_loader %.rule
-	sudo ./$< $(C_ARGS) | tee $@
+.PRECIOUS: exec.log
+.PHONY: platform.execution.clean
 
-# The rule below defines how to run all tests that don't use test_loader
-$(INDEPENDENT_TESTS:%=%.log): %.log: % %.rule
-	sudo ./$< $(C_ARGS) | tee $@
+exec.log: test_loader.o $(BSG_MANYCORE_KERNELS)
+	sudo ./$< $(C_ARGS) 2>&1 | tee $@
 
+platform.execution.clean:
+	rm -rf exec.log
+
+execution.clean: platform.execution.clean
