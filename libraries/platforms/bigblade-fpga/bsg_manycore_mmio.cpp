@@ -43,6 +43,8 @@ const char* device_name = "/dev/xdma0_user";
 #include <bsg_manycore_mmio.h>
 #include <fpga_pci.h>
 
+uint8_t fd;
+
 /**
  * Initialize MMIO for operation
  * @param[in]  mmio   MMIO pointer to initialize
@@ -71,7 +73,6 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
 #endif
 
 #if defined(FPGA_TARGET_LOCAL)
-        uint8_t fd;
         if ((fd = open(device_name, O_RDWR | O_SYNC)) == -1) {
                 fprintf(stderr, "Failed to open device: %s\n", device_name);
                 goto cleanup;
@@ -121,8 +122,15 @@ int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
         if (*handle == PCI_BAR_HANDLE_INIT)
                 return HB_MC_SUCCESS;
 
+#if defined(FPGA_TARGET_LOCAL)
+        if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
+            mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
+        }
+        close(fd);
+#else
         if ((err = fpga_pci_detach(*handle)) != 0)
                 mmio_pr_err((*mmio), "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
+#endif
 
         *handle = PCI_BAR_HANDLE_INIT;
         (*mmio).p = reinterpret_cast<uintptr_t>(nullptr);

@@ -48,7 +48,7 @@ $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 $(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
 # not sure if these are still necessary for AWS, if fpga_mgmt is installed
-$(PLATFORM_OBJECTS): INCLUDES += -I$(SDK_DIR)/userspace/include
+$(PLATFORM_OBJECTS): INCLUDES += -I$(CL_DIR)/../aws-fpga/sdk/userspace/include
 $(PLATFORM_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
 $(PLATFORM_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
 
