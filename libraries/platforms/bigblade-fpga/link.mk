@@ -32,20 +32,18 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-LDFLAGS += -lbsg_manycore_runtime -lm
+LDFLAGS += -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
 
-$(UNIFIED_TESTS): %: test_loader
-test_loader: LD=$(CC)
-test_loader: %: %.o
-	$(LD) $(filter %.o, $^) $(LDFLAGS) -o $@
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
-# each target, '%', in INDEPENDENT_TESTS relies on an object file '%.o'
-$(INDEPENDENT_TESTS): LD=$(CXX)
-$(INDEPENDENT_TESTS): %: %.o
-	$(LD) -o $@ $(filter %.o, $^) $(LDFLAGS)
+test_loader: $(TEST_OBJECTS)
+	$(CXX) -o $@ $^ $(LDFLAGS)
 
 .PHONY: platform.link.clean
 platform.link.clean:
-	rm -rf $(INDEPENDENT_TESTS) test_loader
+	rm -rf test_loader
 
 link.clean: platform.link.clean
