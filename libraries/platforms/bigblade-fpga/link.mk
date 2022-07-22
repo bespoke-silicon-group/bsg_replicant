@@ -39,11 +39,11 @@ TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
 TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
-test_loader: $(TEST_OBJECTS)
+test_loader.o: $(TEST_OBJECTS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 .PHONY: platform.link.clean
 platform.link.clean:
-	rm -rf test_loader
+	rm -rf test_loader.o
 
 link.clean: platform.link.clean
