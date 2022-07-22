@@ -42,17 +42,23 @@ include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
 
-$(PLATFORM_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/bigblade-fpga
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
-$(PLATFORM_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
-# not sure if these are still necessary for AWS, if fpga_mgmt is installed
-$(PLATFORM_OBJECTS): INCLUDES += -I$(CL_DIR)/../aws-fpga/sdk/userspace/include
-$(PLATFORM_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
-$(PLATFORM_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+PLATFORM_REGRESSION_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_REGRESSION_CXXSOURCES))
+PLATFORM_REGRESSION_OBJECTS += $(patsubst %c,%o,$(PLATFORM_REGRESSION_CSOURCES))
+
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/bigblade-fpga
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
+
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(CL_DIR)/../aws-fpga/sdk/userspace/include
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -fPIC
+$(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -ldl
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)
 
 # libfpga_mgmt is the platform library provided by AWS.
 #$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -lfpga_mgmt
@@ -62,19 +68,27 @@ _TARGETS :=
 
 _TARGETS +="install"
 _DOCSTRING += "    install:\n"
-_DOCSTRING += "        - Install libbsg_manycore_runtime.so in\n"
+_DOCSTRING += "        - Install libbsg_manycore_runtime.so, libbsg_manycore_regression.so and libbsgmc_cuda_legacy_pod_repl.so in\n"
 _DOCSTRING += "          /usr/lib64 and the headers in /usr/include\n"
-install: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
-	mv $< /usr/lib64/
-	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so.1
-	ln -sf /usr/lib64/$(notdir $<) /usr/lib64/libbsg_manycore_runtime.so
+install: $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0 \
+         $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0 \
+         $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0
+	mv $(word 1,$^) /usr/lib64/
+	ln -sf /usr/lib64/$(notdir $(word 1,$^)) /usr/lib64/libbsg_manycore_runtime.so.1
+	ln -sf /usr/lib64/$(notdir $(word 1,$^)) /usr/lib64/libbsg_manycore_runtime.so
+	mv $(word 2,$^) /usr/lib64/
+	ln -sf /usr/lib64/$(notdir $(word 2,$^)) /usr/lib64/libbsg_manycore_regression.so.1
+	ln -sf /usr/lib64/$(notdir $(word 2,$^)) /usr/lib64/libbsg_manycore_regression.so
+	mv $(word 3,$^) /usr/lib64/
+	ln -sf /usr/lib64/$(notdir $(word 3,$^)) /usr/lib64/libbsgmc_cuda_legacy_pod_repl.so.1
+	ln -sf /usr/lib64/$(notdir $(word 3,$^)) /usr/lib64/libbsgmc_cuda_legacy_pod_repl.so
 	cp -t /usr/include $(LIB_HEADERS)
 
 _TARGETS +="uninstall"
 _DOCSTRING += "    uninstall:\n"
 _DOCSTRING += "        - Remove the installed libraries\n"
 uninstall: clean
-	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/include/bsg_manycore*.h
+	sudo rm -f /usr/lib64/libbsg_manycore_* /usr/lib64/libbsgmc_* /usr/include/bsg_manycore*.h
 
 .PHONY: platform.clean install uninstall
 platform.clean:
