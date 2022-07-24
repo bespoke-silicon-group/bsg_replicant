@@ -30,7 +30,8 @@ extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
         int bsg_attr_remote * bsg_attr_noalias visited,
         int bsg_attr_remote * bsg_attr_noalias direction,
         //bsg_attr_remote int *ite_id,
-        int bsg_attr_remote * bsg_attr_noalias outlen   ){
+        int bsg_attr_remote * bsg_attr_noalias outlen,
+        int bsg_attr_remote * bsg_attr_noalias cachewarm   ){
 
     //bsg_cuda_print_stat_start(*ite);
     //bsg_cuda_print_stat_kernel_start();
@@ -39,9 +40,11 @@ extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
     //pseduo read to warm up LLC with input frontier for testing road maps
     //shold be commented if input frontier size is larger than 512KB
     int cmp = 0;
-    for(int i=0; i<frontier_in_sparse->set_size;i++){
-        int tmp = frontier_in_sparse->members[i];
-        if (tmp > cmp) cmp = tmp;
+    if(*cachewarm==1){
+      for(int i=0; i<frontier_in_sparse->set_size;i++){
+          int tmp = frontier_in_sparse->members[i];
+          if (tmp > cmp) cmp = tmp;
+      }
     }
 
     bsg_cuda_print_stat_start(0);
@@ -106,7 +109,11 @@ extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
                   int dst = neib[dst_i];
                   if(!(visited[dst/32]&(1<<(dst%32)))){
                     int result_visit = bsg_amoor(&visited[dst/32],1<<(dst%32));  
-                    int result_frontier = bsg_amoor(&frontier_out_dense[dst/32],1<<(dst%32));
+                    if (! (result_visit & (1<<(dst%32)) ) ){
+                      int out_idx = index_wr.fetch_add(1, std::memory_order_relaxed);
+                      frontier_out_sparse[out_idx] = dst;  
+                    }
+                    //int result_frontier = bsg_amoor(&frontier_out_dense[dst/32],1<<(dst%32));
                   }
                 }
 
@@ -121,10 +128,10 @@ extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
     bsg_barrier_hw_tile_group_sync();
     //barrier.sync();
     //#############################################################
-    bsg_cuda_print_stat_start(1);
+    //bsg_cuda_print_stat_start(1);
     
     
-    for (int src_base_i = index_rd.fetch_add(GRANULARITY_INDEX, std::memory_order_relaxed); src_base_i < *outlen; src_base_i = index_rd.fetch_add(GRANULARITY_INDEX, std::memory_order_relaxed)) {
+    /*for (int src_base_i = index_rd.fetch_add(GRANULARITY_INDEX, std::memory_order_relaxed); src_base_i < *outlen; src_base_i = index_rd.fetch_add(GRANULARITY_INDEX, std::memory_order_relaxed)) {
         int stop = (src_base_i + GRANULARITY_INDEX > *outlen) ? *outlen : src_base_i + GRANULARITY_INDEX;
         for (int src_i = src_base_i; src_i<stop; src_i++){
             if(frontier_out_dense[src_i/32]&(1<<(src_i%32))){
@@ -136,7 +143,8 @@ extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
             }
         }
     }
-    bsg_cuda_print_stat_end(1);
+    */
+    //bsg_cuda_print_stat_end(1);
     //write the output frontier length
     //#############################################################
     bsg_barrier_hw_tile_group_sync();

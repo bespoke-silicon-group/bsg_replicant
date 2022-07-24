@@ -82,6 +82,11 @@ int Main(int argc, char *argv[])
     int direction;//edge traversal direction, 0 for pull and 1 for push
     direction = (frontier_density>0.1) ? 0:1;
 
+    //compute frontier length in bits
+    int frontier_b = direction == 0 ? num_nodes : frontier_size * 32;
+    //if frontier length smaller than 521KB, cache is warm after frontier transmission
+    int cachewarm = frontier_b < 512*1024*8 ? 1 : 0;
+
     const std::set<int>& frontier_out_host = bfs.frontier_out();
     std::cout<<"=========================host out frontier size "<<frontier_out_host.size()<<"======================="<<std::endl;
     
@@ -95,8 +100,16 @@ int Main(int argc, char *argv[])
     BFSGraph bfsg_csr(g_csr);
     //std::cout<<"=================================== graph fromated! =============================="<<std::endl;
     BFSSparseSet frontier_in_sparse(bfs.frontier_in(), num_nodes);
-    BFSDenseSet  frontier_in_dense(bfs.frontier_in(), num_nodes);
-    
+    //BFSDenseSet  frontier_in_dense(bfs.frontier_in(), num_nodes);
+    //build bit vector for dense frontier in
+    int frontier_bit_len = (num_nodes+31)/32;
+    int frontier_bvector[frontier_bit_len];
+    for(int i=0; i<frontier_bit_len; i++){
+      frontier_bvector[i] = 0;
+    }
+    for (int m: bfs.frontier_in()){
+      frontier_bvector[m/32] = frontier_bvector[m/32] | (1<<(m%32));
+    }  
     //std::cout<<"===================================init graph complete!=============================="<<std::endl;
     
     //TODO RECONSTRUCT VISITED VECTOR AND OUTPUT FRONTIER
@@ -107,11 +120,20 @@ int Main(int argc, char *argv[])
             visited_ite.insert(m/num_pods);
         }    
     }
-    int visited_size = (pod_ite < num_nodes % num_pods) ? (num_nodes+num_pods-1)/num_pods:num_nodes/num_pods;
+    int visited_size = (num_nodes+num_pods-1)/num_pods;
+    int visited_bit_len = (visited_size + 31)/32;
     BFSDenseSet   frontier_out_sparse(std::set<int>(),    visited_size);
-    BFSDenseSet   frontier_out_dense(std::set<int>(),    visited_size);
+    BFSDenseSet   frontier_out_dense(std::set<int>(),     visited_bit_len);
     
-    BFSDenseSet  visited_io(visited_ite,   visited_size);
+    //build bit vector for visited
+    int visited_bvector[visited_bit_len];
+    for(int i=0; i<visited_bit_len; i++){
+      visited_bvector[i] = 0;
+    }
+    for (int m: visited_ite){
+      visited_bvector[m/32] = visited_bvector[m/32] | (1<<(m%32));
+    }
+    //BFSDenseSet  visited_io(visited_ite,   visited_size);
     
     hammerblade::host::HammerBlade::Ptr _hb(hammerblade::host::HammerBlade::Get());
     kernel_int_ptr_t dircetion_hb = _hb->alloc(sizeof(int));
@@ -120,16 +142,22 @@ int Main(int argc, char *argv[])
     kernel_int_ptr_t len_hb = _hb->alloc(sizeof(int));
     _hb->push_write(len_hb, &visited_size,sizeof(int));
 
-    kernel_int_ptr_t ite_hb = _hb->alloc(sizeof(int));
-    _hb->push_write(ite_hb, &pod_ite,sizeof(int));
+    kernel_int_ptr_t cachewarm_hb = _hb->alloc(sizeof(int));
+    _hb->push_write(cachewarm_hb, &cachewarm,sizeof(int));
+
+    kernel_int_ptr_t visited_hb = _hb->alloc(sizeof(int)*visited_bit_len);
+    _hb->push_write(visited_hb, &visited_bvector[0],sizeof(int)*visited_bit_len);
+
+    kernel_int_ptr_t frontier_in_dense_hb = _hb->alloc(sizeof(int)*frontier_bit_len);
+    _hb->push_write(frontier_in_dense_hb, &frontier_bvector[0],sizeof(int)*frontier_bit_len);
 
     bfsg_csr.formatOnDevice(); 
     bfsg_csc.formatOnDevice();
-    frontier_in_dense.formatOnDevice();
+    //frontier_in_dense.formatOnDevice();
     frontier_in_sparse.formatOnDevice();
     frontier_out_dense.formatOnDevice();
     frontier_out_sparse.formatOnDevice();
-    visited_io.formatOnDevice();
+    //visited_io.formatOnDevice();
     //std::cout<<"===================================prepare complete!=============================="<<std::endl;
     // sync writes
     HB->sync_write();
@@ -141,7 +169,7 @@ int Main(int argc, char *argv[])
                 cl.bfs_root());
     bsg_pr_info("Launching BFS with %d groups of shape (x=%d,y=%d)\n", cl.groups(), cl.tgx(), cl.tgy());
     HB->push_job(Dim(cl.groups(),1), Dim(cl.tgx(),cl.tgy()),
-             "bfs", bfsg_csr.kgraph_dev(),bfsg_csc.kgraph_dev(), frontier_in_sparse.dev(), frontier_in_dense.dev(), frontier_out_sparse.dev(), frontier_out_dense.dev(), visited_io.dev(),dircetion_hb,len_hb);
+             "bfs", bfsg_csr.kgraph_dev(),bfsg_csc.kgraph_dev(), frontier_in_sparse.dev(), frontier_in_dense_hb, frontier_out_sparse.dev(), frontier_out_dense.dev(), visited_hb,dircetion_hb,len_hb,cachewarm_hb);
     HB->exec();
     // read output
     //frontier_out_dense.updateFromDevice();
