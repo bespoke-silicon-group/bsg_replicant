@@ -1,5 +1,0 @@
-func main() 
-    var int_list : list{int} = new list{int}(); 
-    int_list.append(1);
-    var one : int = int_list.pop();
-end
