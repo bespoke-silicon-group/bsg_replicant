@@ -43,11 +43,11 @@ REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 include $(REPLICANT_PATH)/environment.mk
 GRAPHIT_PATH:=$(EXAMPLES_PATH)/cuda/pagerank/graphit
 
-# Zhongyuan!!!!!! Run `make checkout_graphit`
+# Run `make checkout_graphit`
 .PHONY: checkout_graphit
 checkout_graphit:
-	git clone git@github.com:bespoke-silicon-group/graphit
-	cd graphit && git checkout ruttenberg/hb-vm-fixup
+	cd ..
+	git clone -b pagerank git@github.com:bespoke-silicon-group/graphit
 
 ###############################################################################
 # Host code compilation flags and flow
