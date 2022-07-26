@@ -1,1 +1,0 @@
-../opt-single/kernel.cpp

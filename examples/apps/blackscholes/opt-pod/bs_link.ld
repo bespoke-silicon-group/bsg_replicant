@@ -1,1 +1,0 @@
-../opt-single/bs_link.ld
