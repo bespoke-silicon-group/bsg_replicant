@@ -110,12 +110,12 @@ static int hb_mc_platform_drain(hb_mc_manycore_t *mc,
                                         "src (%d,%d), "
                                         "dst (%d,%d), "
                                         "addr: 0x%08x, "
-                                        "data: 0x%08x\n",
+                                        "payload: 0x%08x\n",
                                         __func__, typestr,
                                         recv.x_src, recv.y_src,
                                         recv.x_dst, recv.y_dst,
                                         recv.addr,
-                                        recv.data);
+                                        recv.payload);
                 }
         }
 
@@ -126,8 +126,8 @@ static int hb_mc_platform_drain(hb_mc_manycore_t *mc,
 
         /* fail if new packets have arrived */
         if (occupancy > 0){
-                platform_pr_err(pl, "%s: Failed to drain %s fifo: new packets generated\n",
-                                __func__, type);
+                platform_pr_err(pl, "%s: Failed to drain fifo: %d new packets generated\n",
+                                __func__, occupancy);
                 return HB_MC_FAIL;
         }
 
