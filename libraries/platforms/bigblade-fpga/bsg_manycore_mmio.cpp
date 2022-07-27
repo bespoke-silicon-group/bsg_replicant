@@ -182,6 +182,7 @@ int hb_mc_mmio_read(hb_mc_mmio_t mmio, uintptr_t offset,
                 mmio_pr_err((mmio), "%s: Failed: invalid load size (%zu)\n", __func__, sz);
                 return HB_MC_INVALID;
         }
+        //mmio_pr_info("0_%08x_%08x\n", offset, *(uint32_t *)vp);
 
         return HB_MC_SUCCESS;
 }
@@ -199,6 +200,7 @@ int hb_mc_mmio_write(hb_mc_mmio_t mmio, uintptr_t offset,
 {
         unsigned char *addr = reinterpret_cast<unsigned char *>(mmio.p);
         uint32_t tmp;
+        //mmio_pr_info("1_%08x_%08x\n", offset, *(uint32_t *)vp);
 
         if (addr == nullptr) {
                 mmio_pr_err((mmio), "%s: Failed: MMIO not initialized", __func__);
