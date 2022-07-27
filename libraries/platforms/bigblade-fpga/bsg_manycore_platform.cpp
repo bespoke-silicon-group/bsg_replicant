@@ -518,7 +518,7 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc,
         max_credits = hb_mc_config_get_io_endpoint_max_out_credits(cfg);
 
         // wait until out credts are fully resumed, and the tx fifo vacancy equals to host credits
-        while ((vacancy != max_vacancy) | (credits != max_credits)) {
+        while ((vacancy != max_vacancy) | (credits != 0)) {
                 err = hb_mc_platform_get_transmit_vacancy(mc, HB_MC_FIFO_TX_REQ, &vacancy);
                 if (err != HB_MC_SUCCESS)
                         return err;
