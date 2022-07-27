@@ -28,6 +28,14 @@
 # This Makefile Fragment defines rules for linking object files for native
 # regression tests
 
+# hardware.mk is the file list for the simulation RTL. It includes the
+# platform specific hardware.mk file.
+include $(HARDWARE_PATH)/hardware.mk
+
+# libraries.mk defines how to build libbsg_manycore_runtime.so, which is
+# pre-linked against all other simulation binaries.
+include $(LIBRARIES_PATH)/libraries.mk
+
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m

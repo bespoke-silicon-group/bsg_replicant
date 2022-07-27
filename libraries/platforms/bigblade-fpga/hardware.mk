@@ -92,3 +92,8 @@ VSOURCES := $(filter-out $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_1rw_sync_mask_write
 VSOURCES += $(BASEJUMP_STL_DIR)/hard/ultrascale_plus/bsg_mem/bsg_mem_1rw_sync_mask_write_bit.v
 
 .PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
+
+hardware.clean: machine.hardware.clean
+
+machine.hardware.clean:
+	@echo "cleaning hardware\n"
