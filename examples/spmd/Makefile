@@ -69,6 +69,8 @@ NOT_SPMD += common
 NOT_SPMD += saif
 # Breaks our flow (but could be used)
 NOT_SPMD += bsg_riscv_tests
+NOT_SPMD += store_bug
+NOT_SPMD += store_bug_2
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
