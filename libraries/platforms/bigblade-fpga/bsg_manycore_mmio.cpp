@@ -122,12 +122,7 @@ int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
         if (*handle == PCI_BAR_HANDLE_INIT)
                 return HB_MC_SUCCESS;
 
-#if defined(FPGA_TARGET_LOCAL)
-        if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
-            mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
-        }
-        close(fd);
-#else
+#if !defined(FPGA_TARGET_LOCAL)
         if ((err = fpga_pci_detach(*handle)) != 0)
                 mmio_pr_err((*mmio), "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
 #endif
