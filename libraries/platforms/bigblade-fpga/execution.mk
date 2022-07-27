@@ -28,7 +28,7 @@
 # This Makefile fragment defines the rules that are used for executing
 # applications on HammerBlade Platforms
 
-.PRECIOUS: exec.log
+.PRECIOUS: exec.log saifgen.log
 .PHONY: platform.execution.clean
 
 %.log: test_loader.o $(BSG_MANYCORE_KERNELS)
