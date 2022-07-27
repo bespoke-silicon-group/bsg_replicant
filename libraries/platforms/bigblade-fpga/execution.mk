@@ -31,7 +31,7 @@
 .PRECIOUS: exec.log
 .PHONY: platform.execution.clean
 
-exec.log: test_loader.o $(BSG_MANYCORE_KERNELS)
+%.log: test_loader.o $(BSG_MANYCORE_KERNELS)
 	sudo ./$< $(C_ARGS) 2>&1 | tee $@
 
 platform.execution.clean:
