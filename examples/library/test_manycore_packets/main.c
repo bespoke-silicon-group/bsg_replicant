@@ -182,6 +182,10 @@ int test_manycore_packets(int argc, char *argv[]) {
         }
         bsg_pr_test_info("Comparing to expected read packet:\n");
 
+        // Skip checking when tx and rx hosts have different cords
+        res_expected[0] = hb_mc_response_packet_get_x_dst(&res);
+        res_expected[1] = hb_mc_response_packet_get_y_dst(&res);
+
         response_packet_to_array(&res, actual);
         if(hb_mc_compare_results(4, res_desc, res_expected, actual) == HB_MC_FAIL)
                 return HB_MC_FAIL;
