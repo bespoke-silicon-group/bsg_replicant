@@ -44,7 +44,7 @@ __BSG_ENVIRONMENT_MK := 1
 # Name of this project
 PROJECT = cl_manycore
 
-CL_DIR           := $(shell git rev-parse --show-toplevel)
+CL_DIR           ?= $(shell git rev-parse --show-toplevel)
 HARDWARE_PATH    := $(CL_DIR)/hardware
 LIBRARIES_PATH   := $(CL_DIR)/libraries
 MACHINES_PATH    := $(CL_DIR)/machines
