@@ -270,6 +270,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo "parameter int bsg_machine_llcache_miss_fifo_els_gp = $(BSG_MACHINE_VCACHE_MISS_FIFO_ELS);" >> $@
 	@echo "parameter int bsg_machine_llcache_channel_width_gp = $(BSG_MACHINE_VCACHE_DMA_DATA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_llcache_dram_channel_ratio_gp = $(BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL);" >> $@
+	@echo "parameter int bsg_machine_llcache_word_tracking_gp = $(BSG_MACHINE_VCACHE_WORD_TRACKING);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_dram_bank_words_gp = $(BSG_MACHINE_DRAM_BANK_WORDS);" >> $@
 	@echo "parameter int bsg_machine_dram_channels_gp = $(BSG_MACHINE_DRAM_CHANNELS);" >> $@
