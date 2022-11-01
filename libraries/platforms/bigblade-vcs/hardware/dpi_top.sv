@@ -242,6 +242,7 @@ module replicant_tb_top
        ,.wh_len_width_p(bsg_machine_wh_len_width_lp)
        ,.wh_cord_width_p(bsg_machine_wh_coord_width_lp)
 
+       ,.bsg_manycore_network_cfg_p(bsg_machine_noc_cfg_gp)
        ,.bsg_manycore_mem_cfg_p(bsg_machine_dram_cfg_gp)
        ,.bsg_dram_size_p(bsg_machine_dram_words_gp)
 
