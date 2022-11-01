@@ -40,16 +40,16 @@ ifndef CL_DIR
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: CL_DIR is not defined$(NC)"))
 endif
 
-# Cosimulation requires VCS-MX and Vivado. Bespoke Silicon Group uses
+# Bespoke Silicon Group uses
 # bsg_cadenv to reduce environment mis-configuration errors. We simply
 # check to see if bsg_cadenv exists, and use cadenv.mk to configure
 # EDA Environment if it is present. If it is not present, we check for
 # Vivado and VCS and warn if they do not exist.
 ifneq ("$(wildcard $(CL_DIR)/../bsg_cadenv/cadenv.mk)","")
 include $(CL_DIR)/../bsg_cadenv/cadenv.mk
-# We use vcs-mx, so we re-define VCS_HOME in the environment
-export VCS_HOME=$(VCSMX_HOME)
+# We no longer use VCS-MX
 else
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Couldn't find bsg_cadenv. User must configure CAD Environment.$(NC)"))
 endif
 endif
+
