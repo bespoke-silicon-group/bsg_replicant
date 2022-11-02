@@ -96,7 +96,7 @@ BSG_MACHINE_HOST_X_CORD              = $(BSG_MACHINE_HOST_COORD_X)
 BSG_MACHINE_HOST_Y_CORD              = $(BSG_MACHINE_HOST_COORD_Y)
 
 # Manycore Origin (Rarely Changed)
-BSG_MACHINE_ORIGIN_COORD_X            = 16
+BSG_MACHINE_ORIGIN_COORD_X            = 8
 BSG_MACHINE_ORIGIN_COORD_Y            = 8
 
 # Cache-DRAM Interface Width (Rarely Changed)
