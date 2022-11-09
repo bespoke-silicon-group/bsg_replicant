@@ -51,6 +51,9 @@
 
 #define ALLOC_NAME "default_allocator"
 
+//#define N 64
+//#define K 4
+
 
 int kernel_multikernel(int argc, char **argv) {
         int rc;
@@ -87,14 +90,13 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         /* Allocate memory on the device for A & B.                           */
         /**********************************************************************/
-        uint32_t N = 64;
+        uint32_t N = 8;
         uint32_t K = 4;
-        uint32_t sync = 0;
 
         hb_mc_eva_t buffer_device;
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, K * N * sizeof(uint32_t), &buffer_device));
         hb_mc_eva_t sync_device;
-        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t), sync_device));
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t), &sync_device));
 
         /**********************************************************************/
         /* Allocate A & B on the host.                                        */
@@ -114,14 +116,14 @@ int kernel_multikernel(int argc, char **argv) {
             } 
         }
 
-        // Copy A from host to device
+        // Copy buffer from host to device
         void *dst, *src;
         dst = (void *) ((intptr_t) buffer_device);
         src = (void *) &buffer_host[0];
         BSG_CUDA_CALL(hb_mc_device_memcpy(&device, dst, src, K * N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE));
 
-        dst = (void *) ((intptr_t) sync_device);
-        BSG_CUDA_CALL(hb_mc_device_memset(&device, dst, 0, sizeof(uint32_t)));
+        // Initialize sync variable to 0
+        BSG_CUDA_CALL(hb_mc_device_memset(&device, &sync_device, 0, sizeof(uint32_t)));
 
         /**********************************************************************/
         /* Define block_size_x/y: amount of work for each tile group          */

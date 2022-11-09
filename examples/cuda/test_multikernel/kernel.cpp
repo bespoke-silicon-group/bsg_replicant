@@ -2,8 +2,7 @@
 
 #include "bsg_manycore.h"
 #include "bsg_set_tile_x_y.h"
-
-#include "bsg_tile_group_barrier.hpp"
+#include "bsg_manycore_atomic.h"
 
 #define MAKE_FUNCTION_NAME(x) kernel##x
 #define FUNCTION_NAME(x) \
@@ -14,6 +13,14 @@
   for (int i = 0; i < N; i++) {                                                       \
       buffer[x*N+i] += 100*(x+1);                                                     \
       bsg_printf("kernel %d Process[%d]: %d\n", x, i, buffer[x*N+i]);                 \
+  }                                                                                   \
+                                                                                      \
+  volatile int *sync_ptr = sync;                                                      \
+  int sync_val;                                                                       \
+  bsg_printf("[kernel %d] Trying to sync to EVA: %x", x, sync);                       \
+  bsg_amoadd(sync, 1);                                                                \
+  while ((sync_val = *sync_ptr) < K) {                                                \
+     bsg_printf("[kernel %d] Waiting for sync_ptr == %d (%d)", x, K, sync_val);       \
   }                                                                                   \
                                                                                       \
   return 0;                                                                           \
