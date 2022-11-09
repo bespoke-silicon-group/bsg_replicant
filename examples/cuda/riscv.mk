@@ -400,7 +400,10 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 	$(RISCV_LD) -T $(RISCV_LINK_SCRIPT) $(filter %.rvo,$^) $(RISCV_LDFLAGS) -o $@
 
 %.dis: %.riscv
-	$(RISCV_OBJDUMP) -dS $<
+	$(RISCV_OBJDUMP) -dS $< > $@
+
+%.diso: %.rvo
+	$(RISCV_OBJDUMP) -dS $< > $@
 
 stats: profile.log
 	PYTHONPATH=$(BSG_MANYCORE_DIR)/software/py/ python3 -m vanilla_parser --only stats_parser --stats vanilla_stats.csv --vcache-stats vcache_stats.csv --tile-group --tile

@@ -26,3 +26,5 @@ ucli.key
 dramsim3.txt
 *.a
 *.d
+*.dis
+*.diso
