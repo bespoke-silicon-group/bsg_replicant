@@ -6,13 +6,13 @@
 #include "bsg_tile_group_barrier.hpp"
 
 extern "C" __attribute__ ((noinline)) 
-int kernel0(int *buffer, int N, int K) {
+int kernel1(int *buffer, int N, int K) {
 
-  bsg_printf("Hello from kernel 0: Tile X: %x Tile Y: %x\n", __bsg_x, __bsg_y);
+  bsg_printf("Hello from kernel 1: Tile X: %x Tile Y: %x\n", __bsg_x, __bsg_y);
 
   for (int i = 0; i < N; i++) {
-      buffer[0*N+i] += 100;
-      bsg_printf("kernel 0 Process[%d]: %d\n", i, buffer[0*N+i]);
+      buffer[1*N+i] += 200;
+      bsg_printf("kernel 1 Process[%d]: %d\n", i, buffer[1*N+i]);
   } 
 
   return 0;

@@ -88,28 +88,33 @@ int kernel_multikernel(int argc, char **argv) {
         /* Allocate memory on the device for A & B.                           */
         /**********************************************************************/
         uint32_t N = 64;
+        uint32_t K = 2;
 
         hb_mc_eva_t buffer_device; 
-        BSG_CUDA_CALL(hb_mc_device_malloc(&device, N * sizeof(uint32_t), &buffer_device));
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, K * N * sizeof(uint32_t), &buffer_device));
 
         /**********************************************************************/
         /* Allocate A & B on the host.                                        */
         /* Fill A with random values and set B to -1 on the host.             */
         /* Copy A from host to device DRAM and set B to 0 on device DRAM.     */
         /**********************************************************************/
-        uint32_t buffer_host[N];
-        for (int i = 0; i < N; i++) { /* fill A with increasing data */
-                buffer_host[i] = i;
+        uint32_t buffer_host[K*N];
+        for (int j = 0; j < K; j++) {
+            for (int i = 0; i < N; i++) { /* fill A with increasing data */
+                buffer_host[j*N+i] = i;
+            }
         }
 
-        for (int i = 0; i < N; i++) {
-            bsg_pr_info("Host Buffer Init[%x]: %x\n", i, buffer_host[i]);
-        } 
+        for (int j = 0; j < K; j++) {
+            for (int i = 0; i < N; i++) {
+                bsg_pr_info("Host Buffer Init[%d]: %d\n", j*N+i, buffer_host[j*N+i]);
+            } 
+        }
 
         // Copy A from host to device
         void *dst = (void *) ((intptr_t) buffer_device);
         void *src = (void *) &buffer_host[0];
-        BSG_CUDA_CALL(hb_mc_device_memcpy(&device, dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE));
+        BSG_CUDA_CALL(hb_mc_device_memcpy(&device, dst, src, K * N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE));
 
         /**********************************************************************/
         /* Define block_size_x/y: amount of work for each tile group          */
@@ -125,8 +130,11 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         /* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-        #define cuda_argc 2
-        int cuda_argv[cuda_argc] = {buffer_device, N};
+        uint32_t cuda_argc = 3;
+        int cuda_argv[cuda_argc];
+        cuda_argv[0] = buffer_device;
+        cuda_argv[1] = N;
+        cuda_argv[2] = K;
 
 
         /**********************************************************************/
@@ -134,6 +142,7 @@ int kernel_multikernel(int argc, char **argv) {
         /* kernel name, number and list of input arguments                    */
         /**********************************************************************/
         BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel0", cuda_argc, cuda_argv));
+        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel1", cuda_argc, cuda_argv));
 
 
         /**********************************************************************/
@@ -147,7 +156,7 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         src = (void *) ((intptr_t) buffer_device);
         dst = (void *) &buffer_host;
-        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, (void *) dst, src, N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST));
+        BSG_CUDA_CALL(hb_mc_device_memcpy (&device, (void *) dst, src, K * N * sizeof(uint32_t), HB_MC_MEMCPY_TO_HOST));
 
 
         /**********************************************************************/
@@ -155,9 +164,11 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         BSG_CUDA_CALL(hb_mc_device_finish(&device)); 
 
-        for (int i = 0; i < N; i++) {
-            bsg_pr_info("Host Buffer Final[%x]: %x\n", i, buffer_host[i]);
-        } 
+        for (int j = 0; j < K; j++) {
+            for (int i = 0; i < N; i++) {
+                bsg_pr_info("Host Buffer Final[%d]: %d\n", j*N+i, buffer_host[j*N+i]);
+            } 
+        }
 
         return HB_MC_SUCCESS;
 }
