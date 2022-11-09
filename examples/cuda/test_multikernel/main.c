@@ -89,9 +89,12 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         uint32_t N = 64;
         uint32_t K = 4;
+        uint32_t sync = 0;
 
-        hb_mc_eva_t buffer_device; 
+        hb_mc_eva_t buffer_device;
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, K * N * sizeof(uint32_t), &buffer_device));
+        hb_mc_eva_t sync_device;
+        BSG_CUDA_CALL(hb_mc_device_malloc(&device, sizeof(uint32_t), sync_device));
 
         /**********************************************************************/
         /* Allocate A & B on the host.                                        */
@@ -112,9 +115,13 @@ int kernel_multikernel(int argc, char **argv) {
         }
 
         // Copy A from host to device
-        void *dst = (void *) ((intptr_t) buffer_device);
-        void *src = (void *) &buffer_host[0];
+        void *dst, *src;
+        dst = (void *) ((intptr_t) buffer_device);
+        src = (void *) &buffer_host[0];
         BSG_CUDA_CALL(hb_mc_device_memcpy(&device, dst, src, K * N * sizeof(uint32_t), HB_MC_MEMCPY_TO_DEVICE));
+
+        dst = (void *) ((intptr_t) sync_device);
+        BSG_CUDA_CALL(hb_mc_device_memset(&device, dst, 0, sizeof(uint32_t)));
 
         /**********************************************************************/
         /* Define block_size_x/y: amount of work for each tile group          */
@@ -130,11 +137,12 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         /* Prepare list of input arguments for kernel.                        */
         /**********************************************************************/
-        uint32_t cuda_argc = 3;
+        uint32_t cuda_argc = 4;
         int cuda_argv[cuda_argc];
         cuda_argv[0] = buffer_device;
         cuda_argv[1] = N;
-        cuda_argv[2] = K;
+        cuda_argv[2] = sync_device;
+        cuda_argv[3] = K;
 
 
         /**********************************************************************/

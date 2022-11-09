@@ -86,7 +86,7 @@ BSG_MANYCORE_KERNELS = kernel.riscv
 TILE_GROUP_DIM_X = 1
 TILE_GROUP_DIM_Y = 1
 
-kernel.riscv: kernel0.rvo kernel1.rvo kernel2.rvo kernel3.rvo
+kernel.riscv: kernel.rvo
 
 RISCV_CCPPFLAGS += -O3 -std=c++14
 RISCV_DEFINES += -Dbsg_tiles_X=$(TILE_GROUP_DIM_X)
