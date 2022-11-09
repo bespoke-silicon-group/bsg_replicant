@@ -55,7 +55,10 @@ KERNEL_NAME = multikernel
 TEST_SOURCES = main.c
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
-CDEFINES += 
+# default to 16 64-wide kernels
+DEFINES += -DNUM_KERNELS=16
+DEFINES += -DBUFFER_SIZE=64
+CDEFINES +=
 CXXDEFINES += 
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable

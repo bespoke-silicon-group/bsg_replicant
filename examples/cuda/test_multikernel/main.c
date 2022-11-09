@@ -51,9 +51,8 @@
 
 #define ALLOC_NAME "default_allocator"
 
-//#define N 64
-//#define K 4
-
+#define K NUM_KERNELS
+#define N BUFFER_SIZE
 
 int kernel_multikernel(int argc, char **argv) {
         int rc;
@@ -90,9 +89,6 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         /* Allocate memory on the device for A & B.                           */
         /**********************************************************************/
-        uint32_t N = 8;
-        uint32_t K = 4;
-
         hb_mc_eva_t buffer_device;
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, K * N * sizeof(uint32_t), &buffer_device));
         hb_mc_eva_t sync_device;
