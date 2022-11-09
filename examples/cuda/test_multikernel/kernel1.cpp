@@ -6,7 +6,7 @@
 #include "bsg_tile_group_barrier.hpp"
 
 extern "C" __attribute__ ((noinline)) 
-int kernel1(int *buffer, int N, int K) {
+int kernel1(int *buffer, int N, int K, int *sync) {
 
   bsg_printf("Hello from kernel 1: Tile X: %x Tile Y: %x\n", __bsg_x, __bsg_y);
 

@@ -88,7 +88,7 @@ int kernel_multikernel(int argc, char **argv) {
         /* Allocate memory on the device for A & B.                           */
         /**********************************************************************/
         uint32_t N = 64;
-        uint32_t K = 2;
+        uint32_t K = 4;
 
         hb_mc_eva_t buffer_device; 
         BSG_CUDA_CALL(hb_mc_device_malloc(&device, K * N * sizeof(uint32_t), &buffer_device));
@@ -138,12 +138,14 @@ int kernel_multikernel(int argc, char **argv) {
 
 
         /**********************************************************************/
-        /* Enquque grid of tile groups, pass in grid and tile group dimensions*/
-        /* kernel name, number and list of input arguments                    */
+        /* Enqueue a variable number of kernels. Ensure k <= the kernels      */
+        /* compiled.                                                          */
         /**********************************************************************/
-        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel0", cuda_argc, cuda_argv));
-        BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, "kernel1", cuda_argc, cuda_argv));
-
+        char kernel_name[12];
+        for (int i = 0; i < K; i++) {
+          sprintf(kernel_name, "kernel%d", i);
+          BSG_CUDA_CALL(hb_mc_kernel_enqueue (&device, grid_dim, tg_dim, kernel_name, cuda_argc, cuda_argv));
+        }
 
         /**********************************************************************/
         /* Launch and execute all tile groups on device and wait for finish.  */ 
@@ -164,13 +166,17 @@ int kernel_multikernel(int argc, char **argv) {
         /**********************************************************************/
         BSG_CUDA_CALL(hb_mc_device_finish(&device)); 
 
+        int mismatch = 0;
         for (int j = 0; j < K; j++) {
             for (int i = 0; i < N; i++) {
                 bsg_pr_info("Host Buffer Final[%d]: %d\n", j*N+i, buffer_host[j*N+i]);
+                if (buffer_host[j*N+i] != (j+1)*100+i) {
+                    mismatch = 1;
+                }
             } 
         }
 
-        return HB_MC_SUCCESS;
+        return mismatch ? HB_MC_FAIL : HB_MC_SUCCESS;
 }
 
 declare_program_main("test_multikernel", kernel_multikernel);
