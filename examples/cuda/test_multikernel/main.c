@@ -26,13 +26,13 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 /******************************************************************************/
-/* Runs the device_memcpy kernel a grid of 2x2 tile groups.                   */
-/* Host allcoates space on DRAM and passes the pointer and size to tiles      */
-/* Tiles fill the space by copying from array A to array B                    */
-/* Host the compares the values with expected.                                */
-/* Grid dimensions are prefixed at 1x1.                                       */
-/* This tests uses the software/spmd/bsg_cuda_lite_runtime/device_memcpy/     */
-/* manycore binary in the BSG Manycore repository.                            */
+/* Runs the multikernel example on a series of 1x1 tile groups                */
+/* Host allocates a buffer of arbitrary data                                  */
+/* Kernels increment the data based on their kernel id                        */
+/* Host the compares the values with expected                                 */
+/* Grid dimensions are prefixed at 1x1                                        */
+/* This tests uses the software/spmd/bsg_cuda_lite_runtime/main/              */
+/* manycore binary in the BSG Manycore repository                             */
 /******************************************************************************/
 
 
