@@ -1457,7 +1457,24 @@ int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod
 
         // calculate boundary condition
         hb_mc_dimension_t origin_boundary;
-        BSG_CUDA_CALL(hb_mc_coordinate_sub_safe(pod->mesh->dim, tile_group->dim, &origin_boundary));
+        //BSG_CUDA_CALL(hb_mc_coordinate_sub_safe(pod->mesh->dim, tile_group->dim, &origin_boundary));
+        int err = hb_mc_coordinate_sub_safe(
+            pod->mesh->dim,
+            tile_group->dim,
+            &origin_boundary
+            );
+        if (err != HB_MC_SUCCESS) {
+            char tgrp_str[256];
+            char mesh_str[256];
+            hb_mc_coordinate_to_string(tile_group->dim, tgrp_str, sizeof(tgrp_str));
+            hb_mc_coordinate_to_string(pod->mesh->dim, mesh_str, sizeof(mesh_str));
+            bsg_pr_err("checking the origin boundary for group size %s on mesh size %s: %s\n"
+                       ,tgrp_str
+                       ,mesh_str
+                       ,hb_mc_strerror(err));
+            return err;
+        }
+
         origin_boundary = hb_mc_coordinate_add(origin_boundary, hb_mc_dimension(1,1));
 
         // scan for contiguous group of free tile groups
