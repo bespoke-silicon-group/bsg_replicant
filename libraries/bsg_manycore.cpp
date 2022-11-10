@@ -1284,6 +1284,58 @@ int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_
         return hb_mc_manycore_write(mc, npa, &v, 4);
 }
 
+/**
+ * Do a 32-bit amoadd to manycore hardware at a given NPA (must be a DRAM address)
+ * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+ * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
+ * @param[in]  v      A word value to be added to the NPA
+ * @param[out] vpo    The previous value at the NPA
+ * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+ */
+int hb_mc_manycore_amoadd(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, const uint32_t v, uint32_t *vpo)
+{
+        int err;
+        hb_mc_packet_t rqst;
+
+        /* format the request packet */
+        err = hb_mc_manycore_format_request_packet(mc, &rqst.request, npa);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
+
+        // AMO are always 4B
+        size_t sz = 4;
+        err = hb_mc_manycore_epa_check_alignment(&epa, sz);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_AMOADD);
+        hb_mc_request_packet_set_data(&rqst.request, v);
+
+        err = hb_mc_manycore_request_tx(mc, &rqst.request, -1);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        /* transmit the request */
+        manycore_pr_dbg(mc, "Sending %d-byte amo request to NPA "
+                        "(x: %d, y: %d, 0x%08x) (data = 0x%08" PRIx32 ")\n",
+                        sz,
+                        hb_mc_npa_get_x(npa),
+                        hb_mc_npa_get_y(npa),
+                        hb_mc_npa_get_epa(npa),
+                        hb_mc_request_packet_get_data(&rqst.request));
+
+        /* read back response */
+        uint32_t load_data;
+        err = hb_mc_manycore_recv_read_rsp(mc, &load_data);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        *vpo = load_data;
+        return HB_MC_SUCCESS;
+}
+
 
 /**
  * Enable DRAM mode on the manycore instance.

@@ -254,6 +254,17 @@ extern "C" {
         int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t v);
 
         /**
+         * Do a 32-bit amoadd to manycore hardware at a given NPA (must be a DRAM address)
+         * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
+         * @param[in]  npa    A valid hb_mc_npa_t aligned to a four byte boundary
+         * @param[in]  v      A word value to be added to the NPA
+         * @param[out] vpo    Pointer to the previous value at the NPA
+         * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_amoadd(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t vpi, uint32_t *vpo);
+
+        /**
          * Set memory to a given value starting at a given NPA
          * @param[in]  mc     A manycore instance initialized with hb_mc_manycore_init()
          * @param[in]  npa    A valid hb_mc_npa_t

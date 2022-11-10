@@ -14,3 +14,4 @@ machines/*/obj_dir/
 xcelium.d/
 blood_detailed.png
 key_detailed.png
+*.vpd
