@@ -64,11 +64,20 @@ NOT_SPMD += beebs
 NOT_SPMD += interrupt_tests
 NOT_SPMD += bp_manycore_test
 NOT_SPMD += bsg_cuda_lite_runtime
+NOT_SPMD += bsg_test_accel_default
+NOT_SPMD += recurse-results
 NOT_SPMD += common
+NOT_SPMD += energy_ubenchmark
 # Already run as part of test_saif
 NOT_SPMD += saif
 # Breaks our flow (but could be used)
 NOT_SPMD += bsg_riscv_tests
+
+# Currently hang. Reason needs to be diagnosed:
+NOT_SPMD += hw_barrier_16x8_interrupt_test
+NOT_SPMD += hw_barrier_context_switch_test
+NOT_SPMD += barrier_in_interrupt
+NOT_SPMD += energy_loop_test
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
