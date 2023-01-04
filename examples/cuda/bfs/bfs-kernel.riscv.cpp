@@ -80,6 +80,8 @@ extern "C" int bfs(graph_t * bsg_attr_noalias G_csr_ptr,
                             int result_visit = bsg_amoor(&visited[bit_chunk],bit_position);
                             //visited[src_i] = 1;
                             int result_frontier = bsg_amoor(&frontier_out_dense[bit_chunk],bit_position);
+                            int out_idx = index_wr.fetch_add(1, std::memory_order_relaxed);
+                            frontier_out_sparse[out_idx] = src_i; 
                             //frontier_out_dense[src_i] = 1;
                             break;
                         }
