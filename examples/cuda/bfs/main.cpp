@@ -65,7 +65,8 @@ int Main(int argc, char *argv[])
     std::string input_graph_path = cl.input_graph_path();
     std::string input_graph_name = cl.graph_type();
     int pod_ite = cl.pod_id();
-    int num_pods = 64;
+    //std::cout<<"max pod is "<<cl.max_pod()<<std::endl;
+    int num_pods = cl.max_pod()+1;
     WGraph g = WGraph::FromCSR(input_graph_name,input_graph_path+"CSR/");
     
     // load application

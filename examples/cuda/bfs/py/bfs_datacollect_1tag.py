@@ -1,4 +1,5 @@
 import glob
+import sys, os
 import subprocess
 import re
 import argparse
@@ -7,10 +8,8 @@ from os.path import exists as file_exists
 parser = argparse.ArgumentParser()
 parser.add_argument("--logpath", type=str, default="./stat.log", 
                         help="path and name of the result log")
-parser.add_argument("--dirpattern", type=str, default="pokec", 
+parser.add_argument("--dirpattern", type=str, default="wiki-Vote", 
                         help="pattern of the working directories")
-parser.add_argument("--dirpath", type=str, default="./", 
-                        help="path of the working directories")  
 parser.add_argument("--ite_start", type=int, default=0, 
                         help="start iteration ID")
 parser.add_argument("--ite_num", type=int, default=16, 
@@ -40,15 +39,21 @@ f_ptr      = open(file_name_wr, "w")
 
 idx_increase = args.ite_start
 num_ite = args.ite_num
-for i in range(num_ite+1):
+for i in range(num_ite):
     abs_seq[i+idx_increase]=0
     largest_out[i+idx_increase]=0
     out_per_ite[i+idx_increase]=0
     abs_avg[i+idx_increase]=0
     abs_small[i+idx_increase]=10000000000
 
-dirmatch = args.dirpath + args.dirpattern + '*'
-for name in glob.glob('./roadNetCA_graph*/'):
+#dirmatch = args.dirpath + args.dirpattern + '*'
+pattern = args.dirpattern+'*'
+absolute_path = os.path.dirname(__file__)
+relative_path = "../"
+work_path = os.path.join(absolute_path,relative_path,pattern," ")
+work_path = str(os.path.normpath(work_path))
+work_path = work_path.strip()
+for name in glob.glob(work_path):
     #openfile=subprocess.run(["cd",name],check=True)
     #print("open %s result: %d",name,openfile)
     #vanilla_stats = name + "vanilla_stats.csv"

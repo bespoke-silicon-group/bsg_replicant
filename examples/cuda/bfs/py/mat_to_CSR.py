@@ -22,13 +22,16 @@ print('scipy version: {}\n'.format(scipy.__version__))
 def main(args):
 
     # define file name
-    #file_path       = "./"
-    #file_path       = "/work/shared/common/research/graphblas/data/sparse_matrix_graph/"
-    file_path       = str(args.path)
-    file_name       = file_path + str(args.name) + ".mtx"
-    file_name_base  = args.name
-    file_name_idx_A = file_name_base + "_A_idx.dat"
-    file_name_ptr_A = file_name_base + "_A_ptr.dat"
+    absolute_path = os.path.dirname(__file__)
+    relative_path = "../inputs/" + str(args.name) + "/CSR/"
+    out_path = os.path.join(absolute_path,relative_path)
+    isExist = os.path.exists(out_path)
+    if not isExist:
+        os.makedirs(out_path)
+    
+    file_name_idx_A = str(out_path) + "/" + str(args.name) + "_A_idx.dat"
+    file_name_ptr_A = str(out_path) + "/" + str(args.name) + "_A_ptr.dat"
+    input_file_name = str(args.path) + str(args.name) + ".mtx"
     
     #read the row index, column index and value of the sparse matrix from the .mat file 
     row_coo = []
@@ -36,7 +39,7 @@ def main(args):
     val_coo = []
 
     # load the matrix file in .mtx format
-    with open(file_name,'r') as mat_f:
+    with open(input_file_name,'r') as mat_f:
         line = mat_f.readline()
         #get matrix type in the first line
         para_parse = line.split(" ")
@@ -118,13 +121,13 @@ def main(args):
     # Dataset info
     ################################################
     if args.info:
-        file_name  = "spm_tb_info.dat"
+        file_name  = str(out_path) + "/spm_tb_info.dat"
         # open file
         fp         = open(file_name, "w")
         # matrix size
         fp.write(str(mat_m)+"\n")
         fp.write(str(mat_n)+"\n")
-        fp.write(args.name)
+        fp.write(args.name+"\n")
         # density
         fp.write(str(spm_density)+"\n")
         # total nnz in matrix A
@@ -142,11 +145,11 @@ def main(args):
 
 # "real" main function
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Generate random SpMV test cases.')
-    parser.add_argument("--name", type=str, default="dump-c", 
-                        help="size of matrices")
-    parser.add_argument("--path", type=str, default="/work/shared/users/phd/zy383/SuiteSparse/", 
-                        help="path of the source file") 
+    parser = argparse.ArgumentParser(description='Convert matrix format from mtx to dat in CSR')
+    parser.add_argument("--name", type=str, default="wiki-Vote", 
+                        help="name of matrices")
+    parser.add_argument("--path", type=str, default="../inputs/MTX/", 
+                        help="path of the source file")
     parser.add_argument("--info", type=bool, default=True, 
                         help="Create graph info file.")   
     args = parser.parse_args()

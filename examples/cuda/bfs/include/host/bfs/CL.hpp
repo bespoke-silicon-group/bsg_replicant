@@ -19,6 +19,7 @@ namespace BFS {
             _tgx            = atoi(argv[10]);
             _tgy            = atoi(argv[11]);
             _pod            = atoi(argv[12]);
+            _max_pod        = atoi(argv[13]);
             return 0;
         }
 
@@ -35,6 +36,7 @@ namespace BFS {
         int         _tgx;
         int         _tgy;
         int         _pod;
+        int         _max_pod;
         
         std::string binary_path() const { return _binary_path; }
         std::string exec_path() const { return _exec_path; }
@@ -48,6 +50,7 @@ namespace BFS {
         int groups() const { return _groups; }
         int tgx() const { return _tgx; }
         int tgy() const { return _tgy; }
-        int pod_id() const { return _pod; }             
+        int pod_id() const { return _pod; } 
+        int max_pod() const { return _max_pod; }            
     };
 }

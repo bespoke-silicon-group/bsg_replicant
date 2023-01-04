@@ -1,5 +1,6 @@
 #Process level parallelism for make profile execution
 import glob
+import sys, os
 import subprocess as sp
 import multiprocessing as mp
 import argparse
@@ -8,11 +9,10 @@ from os.path import exists as file_exists
 
 parser = argparse.ArgumentParser()
 
-parser.add_argument("--dirpattern", type=str, default="pokec", 
+parser.add_argument("--dirpattern", type=str, default="wiki-Vote", 
                         help="pattern of the working directories")
-parser.add_argument("--dirpath", type=str, default="./", 
-                        help="path of the working directories")  
 args = parser.parse_args()
+
 
 def work(path):
     """Defines the work unit on an input file"""
@@ -25,15 +25,23 @@ def work(path):
     while not log_exists :
         sp.run(["make", "clean"],cwd=path,stdout=sp.DEVNULL,stderr=sp.STDOUT)
         sp.run(["make","profile.log"],cwd=path,stdout=sp.DEVNULL,stderr=sp.STDOUT)
-        sp.run(["python","/work/global/zy383/Bladerunner6.4.0/bsg_manycore/software/py/vanilla_parser/stats_parser.py", "--stats", "vanilla_stats.csv", "--vcache-stats", "vcache_stats.csv"],check=False,cwd=path)
+        sp.run(["python","../../../../../bsg_manycore/software/py/vanilla_parser/stats_parser.py", "--stats", "vanilla_stats.csv", "--vcache-stats", "vcache_stats.csv"],check=False,cwd=path)
         log_exists = file_exists(logstats)
     return 0
 
 if __name__ == '__main__':
     #Specify files to be worked with typical shell syntax and glob module
     
-    folder_pattern = args.dirpath + args.dirpattern + '*'
-    tasks = glob.glob(folder_pattern)
+    
+    #folder_pattern = '../wiki-Vote*/'
+    pattern = args.dirpattern+'*'
+    absolute_path = os.path.dirname(__file__)
+    relative_path = "../"
+    work_path = os.path.join(absolute_path,relative_path,pattern," ")
+    work_path = str(os.path.normpath(work_path))
+    work_path = work_path.strip()
+    tasks = glob.glob(work_path)
+    #print(tasks)
     
     #Set up the parallel task pool to use all available processors
     count = mp.cpu_count()
