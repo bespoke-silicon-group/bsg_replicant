@@ -374,6 +374,34 @@ extern "C" {
                                             const uint32_t argc,
                                             const uint32_t *argv);
 
+
+        /**
+         * Wait for all tile groups to finish execution.
+         *
+         * This function does not block and lets kernels execute independently from host
+         * @param[in]  device        Pointer to device
+         * @param[in]  pod           Pod ID
+         * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
+         *
+         */
+        int hb_mc_device_pod_all_tile_groups_finished(hb_mc_device_t *device,
+                                                      hb_mc_pod_t *pod);
+
+        /**
+         * Try to launch as many tile groups as possible in pod.
+         *
+         * This function does not block and lets kernels execute independently from host
+         * @param[in]  device        Pointer to device
+         * @param[in]  pod           Pod ID
+         * @return HB_MC_SUCCESS if successful. Otherwise an error code is returned.
+         *
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pod_try_launch_tile_groups(hb_mc_device_t *device,
+                                                    hb_mc_pod_t *pod);
+
+int hb_mc_device_pod_wait_for_tile_group_finish_any(hb_mc_device_t *device, hb_mc_pod_t *pod, int timeout);
+
         /**
          * Launches all kernel invocations enqueued on pod.
          * These kernel invocations are enqueued by
