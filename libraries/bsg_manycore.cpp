@@ -1332,7 +1332,8 @@ int hb_mc_manycore_amoadd(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, const ui
         if (err != HB_MC_SUCCESS)
                 return err;
 
-        *vpo = load_data;
+        if (vpo != NULL)
+                *vpo = load_data;
         return HB_MC_SUCCESS;
 }
 
