@@ -32,7 +32,7 @@
 # supply as the first seed used by a testbench. The value is determined by
 # combining the time of day, host name and process id. This ensures that no two
 # simulations have the same starting seed.
-SIM_ARGS += +ntb_random_seed_automatic
+SIM_ARGS += +ntb_random_seed_automatic -reportstats
 
 # These are the execution rules for the binaries. We can't pass
 # C-style arguments through the command line, so instead we specify
