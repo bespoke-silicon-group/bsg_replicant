@@ -64,6 +64,7 @@ VCS_VFLAGS  += -assert svaext -undef_vcs_macro
 VCS_VFLAGS  += +warn=noLCA_FEATURES_ENABLED
 VCS_VFLAGS  += +warn=noMC-FCNAFTMI
 VCS_VFLAGS  += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
+VCS_VFLAGS  += -reportstats
 VCS_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VCS_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VCS_FLAGS   = $(VCS_LDFLAGS) $(VCS_VFLAGS) $(VCS_INCLUDES) $(VCS_DEFINES)
