@@ -12,3 +12,4 @@ __pycache__
 machines/*/V*
 machines/*/obj_dir/
 xcelium.d/
+*.vpd
