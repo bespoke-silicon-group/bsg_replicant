@@ -1,4 +1,28 @@
-## BFS simulation insturctions ##
+## BFS simulation Instructions##
+
+Dustin's edits:
+
+0. Setup tools: `make checkout_repos`
+
+1. Download graphs (I downloaded and unziped in this directory)
+   - Hollywood: https://suitesparse-collection-website.herokuapp.com/MM/LAW/hollywood-2009.tar.gz
+
+2. Run conversion scripts, e.g: 
+   - `./py/mat_to_CSC.py  --name hollywood-2009 --path hollywood-2009/`
+   - `./py/mat_to_CSR.py  --name hollywood-2009 --path hollywood-2009/`
+
+3. Create a config file:
+   - `TEST_GRAPH_TYPE` should be set the same as ***GRAPH_NAME*** in the previous step.  
+   - `MAX_POD` defines the max pod ID which is 0-based (e.g., when set to 63, total number of pods is 64)  
+   - `ITE_START` and `ITE_END` specify the scope of iterations covered by the generated working directories (one directory for one iteration only). This is useful for road networks
+   - `TEST_ROOT_NODE`
+
+   - Numbers for `TEST_ROOT_NODE` and `ITE_START/END` can be found in this doc: https://docs.google.com/document/d/1iVrcJGkZiwzmuV-eHTh6k3aAE7yWL50nnPze0qa0U6U/edit#. We will likely need to figure out number of iterations by running the social networks with gapbs.
+
+4. Run `make tests_dir`. This will generate all the pod x iteration x graph directories for the given config.mk file
+
+5. Run parallel simulations. `python py/bfs_parallelexec.py --dirpattern <graph-name>`. This seems dangerous as it will try to use all processors.
+
 
 
 ### Step 1: Prepare graphs in CSR or CSC formats ###   

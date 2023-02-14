@@ -188,7 +188,7 @@ blood: $(TESTS_BLOOD)
 
 # some support executables
 graphtools-dir = $(EXAMPLES_PATH)/cuda/bfs/graph-tools
-include $(graphtools-dir)/libgraphtools.mk
+-include $(graphtools-dir)/libgraphtools.mk
 
 SUPPORT_TOOLS = input-gen input-analyze input-degree-list
 $(SUPPORT_TOOLS): $(libgraphtools-interface-headers)

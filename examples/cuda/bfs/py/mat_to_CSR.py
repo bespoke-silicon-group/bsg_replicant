@@ -1,4 +1,4 @@
-#!usr/bin/python
+#!/bin/env python3
 import random
 import sys, os
 import argparse
