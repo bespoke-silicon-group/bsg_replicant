@@ -41,8 +41,8 @@ INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
 LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
-CXXFLAGS   += $(DEFINES) -fPIC
-CFLAGS     += $(DEFINES) -fPIC
+CXXFLAGS   += $(DEFINES) -fPIC -D_BSD_SOURCE
+CFLAGS     += $(DEFINES) -fPIC -D_BSD_SOURCE
 
 # each regression target needs to build its .o from a .c and .h of the
 # same name

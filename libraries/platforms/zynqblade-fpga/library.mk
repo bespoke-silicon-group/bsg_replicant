@@ -29,7 +29,6 @@
 # reuse the bsg_manycore_platform.cpp file between the two platforms
 # aws-fpga, but provide our own bsg_manycore_mmio.cpp file that
 # handles PCIE-based MMIO.
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/zynqblade-fpga/bsg_manycore_mmio.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/zynqblade-fpga/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
@@ -46,15 +45,37 @@ PLATFORM_REGRESSION_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_REGRESSION_CXXSOURC
 PLATFORM_REGRESSION_OBJECTS += $(patsubst %c,%o,$(PLATFORM_REGRESSION_CSOURCES))
 
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/zynqblade-fpga
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)
 
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_BSD_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_BSD_SOURCE -D_GNU_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -fPIC
 $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -ldl
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)
+
+# Mirror the extensions linux installation in /usr/lib provides so
+# that we can use -lbsg_manycore_runtime
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
+	ln -sf $@.0 $@
+
+$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1: %: %.0
+	ln -sf $@.0 $@
+
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1: %: %.0
+	ln -sf $@.0 $@
+
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
+	ln -sf $@.1 $@
+
+$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so: %: %.1
+	ln -sf $@.1 $@
+
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so: %: %.1
+	ln -sf $@.1 $@
 
 .PHONY: platform.clean install uninstall
 platform.clean:
