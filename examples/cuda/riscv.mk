@@ -180,8 +180,8 @@ RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 # For an example of how to use this file see
 # test_credit_csr_tile/Makefile.
 
-RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 tee $*.rvo.log
-RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 tee $*.rvo.log
+RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 | tee $*.rvo.log
+RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 | tee $*.rvo.log
 
 # The clang version of the functions hide the fact that LLC (the
 # optimizer) is being called between steps.
