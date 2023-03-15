@@ -25,33 +25,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
-
-# hardware.mk is the file list for the simulation RTL. It includes the
-# platform specific hardware.mk file.
-include $(HARDWARE_PATH)/hardware.mk
-
-# libraries.mk defines how to build libbsg_manycore_runtime.so, which is
-# pre-linked against all other simulation binaries.
-include $(LIBRARIES_PATH)/libraries.mk
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-LDFLAGS += -Wl,-rpath,$(BSG_PLATFORM_PATH) -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
 
-TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
-TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
-TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
-TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+DEFINES    += -DVCS
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-test_loader.o: $(TEST_OBJECTS) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
-	$(CXX) -o $@ $^ $(LDFLAGS)
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
+CXXFLAGS   += $(DEFINES) -fPIC
+CFLAGS     += $(DEFINES) -fPIC
 
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf test_loader.o
+# each regression target needs to build its .o from a .c and .h of the
+# same name
+%.o: %.c
+	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES)
 
-link.clean: platform.link.clean
+# ... or a .cpp and .hpp of the same name
+%.o: %.cpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
+
+.PRECIOUS: %.o
+
+.PHONY: platform.compilation.clean
+platform.compilation.clean:
+	rm -rf *.o
+
+compilation.clean: platform.compilation.clean

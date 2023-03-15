@@ -40,14 +40,14 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
-LDFLAGS += -Wl,-rpath,$(BSG_PLATFORM_PATH) -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
+LDFLAGS += -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
 
 TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
 TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
 TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
-test_loader.o: $(TEST_OBJECTS) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+test_loader.o: $(TEST_OBJECTS)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 .PHONY: platform.link.clean

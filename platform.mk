@@ -45,6 +45,7 @@ endif
 # HOWEVER, if VCS_HOME is not defined then we will assume that
 # VCS/VCS-MX is not installed and try fall-back options
 BSG_PLATFORM ?= zynqblade-fpga
+#BSG_PLATFORM ?= bigblade-fpga
 
 # FIRST check if BSG_PLATFORM is valid. It should match of the
 # directories in libraries/platforms

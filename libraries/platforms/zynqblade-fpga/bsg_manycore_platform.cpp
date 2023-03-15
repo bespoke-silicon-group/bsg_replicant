@@ -1,5 +1,6 @@
 
 #include <bsg_manycore.h>
+#include <bsg_manycore_platform.h>
 
 /**
  * This file defines the interface that runtime platforms provide to

@@ -31,8 +31,9 @@
 .PRECIOUS: exec.log saifgen.log
 .PHONY: platform.execution.clean
 
-%.log: test_loader.o $(BSG_MANYCORE_KERNELS)
-	sudo ./$< $(C_ARGS) 2>&1 | tee $@
+%.log: test_loader.o $(BSG_MANYCORE_KERNELS) $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
+	./$< $(C_ARGS) 2>&1 | tee $@
+	#sudo ./$< $(C_ARGS) 2>&1 | tee $@
 
 platform.execution.clean:
 	rm -rf exec.log

@@ -25,33 +25,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# hardware.mk: Platform-specific HDL listing. 
+#
+# For simulation platforms, it also describes how to build the
+# simulation "libraries" that are required by CAD tools.
+#
+# This file should be included from bsg_replicant/hardware/hardware.mk. It checks
+# BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
 
-# hardware.mk is the file list for the simulation RTL. It includes the
-# platform specific hardware.mk file.
-include $(HARDWARE_PATH)/hardware.mk
+VSOURCES += $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
+ASCII_TO_ROM_PY = $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py
+$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
+	env python2 $(ASCII_TO_ROM_PY) $< bsg_bladerunner_configuration > $@
 
-# libraries.mk defines how to build libbsg_manycore_runtime.so, which is
-# pre-linked against all other simulation binaries.
-include $(LIBRARIES_PATH)/libraries.mk
+.PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+hardware.clean: machine.hardware.clean
 
-LDFLAGS += -Wl,-rpath,$(BSG_PLATFORM_PATH) -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
-
-TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
-TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
-TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
-TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
-
-test_loader.o: $(TEST_OBJECTS) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf test_loader.o
-
-link.clean: platform.link.clean
+machine.hardware.clean:
+	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v

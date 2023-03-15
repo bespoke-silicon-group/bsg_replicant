@@ -25,33 +25,16 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# This Makefile Fragment defines rules for linking object files for native
-# regression tests
+# This Makefile fragment defines the rules that are used for executing
+# applications on HammerBlade Platforms
 
-# hardware.mk is the file list for the simulation RTL. It includes the
-# platform specific hardware.mk file.
-include $(HARDWARE_PATH)/hardware.mk
+.PRECIOUS: exec.log saifgen.log
+.PHONY: platform.execution.clean
 
-# libraries.mk defines how to build libbsg_manycore_runtime.so, which is
-# pre-linked against all other simulation binaries.
-include $(LIBRARIES_PATH)/libraries.mk
+%.log: test_loader.o $(BSG_MANYCORE_KERNELS)
+	sudo ./$< $(C_ARGS) 2>&1 | tee $@
 
-ORANGE=\033[0;33m
-RED=\033[0;31m
-NC=\033[0m
+platform.execution.clean:
+	rm -rf exec.log
 
-LDFLAGS += -Wl,-rpath,$(BSG_PLATFORM_PATH) -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
-
-TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
-TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
-TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
-TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
-
-test_loader.o: $(TEST_OBJECTS) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
-	$(CXX) -o $@ $^ $(LDFLAGS)
-
-.PHONY: platform.link.clean
-platform.link.clean:
-	rm -rf test_loader.o
-
-link.clean: platform.link.clean
+execution.clean: platform.execution.clean
