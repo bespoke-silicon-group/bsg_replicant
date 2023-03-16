@@ -2,6 +2,52 @@
 #include <bsg_manycore.h>
 #include <bsg_manycore_platform.h>
 
+// GP0 Read Memory Map
+#define GP0_RD_CSR_SYS_RESETN    (GP0_ADDR_BASE                   )
+#define GP0_RD_CSR_TAG_BITBANG   (GP0_RD_CSR_SYS_RESETN    + 0x4  )
+#define GP0_RD_CSR_DRAM_INITED   (GP0_RD_CSR_TAG_BITBANG   + 0x4  )
+#define GP0_RD_CSR_DRAM_BASE     (GP0_RD_CSR_DRAM_INITED   + 0x4  )
+#define GP0_RD_CSR_ROM_ADDR      (GP0_RD_CSR_DRAM_BASE     + 0x4  )
+#define GP0_RD_MC_REQ_FIFO_DATA  (GP0_RD_CSR_ROM_ADDR      + 0x4  )
+#define GP0_RD_MC_RSP_FIFO_DATA  (GP0_RD_MC_REQ_FIFO_DATA  + 0x4  )
+#define GP0_RD_MC_REQ_FIFO_CTR   (GP0_RD_MC_RSP_FIFO_DATA  + 0x4  )
+#define GP0_RD_MC_RSP_FIFO_CTR   (GP0_RD_MC_REQ_FIFO_CTR   + 0x4  )
+#define GP0_RD_EP_REQ_FIFO_CTR   (GP0_RD_MC_RSP_FIFO_CTR   + 0x4  )
+#define GP0_RD_EP_RSP_FIFO_CTR   (GP0_RD_EP_REQ_FIFO_CTR   + 0x4  )
+#define GP0_RD_CREDIT_COUNT      (GP0_RD_MC_RSP_FIFO_CTR   + 0x4  )
+#define GP0_RD_ROM_DATA          (GP0_RD_CREDIT_COUNT      + 0x4  )
+
+// GP0 Write Memory Map
+#define GP0_WR_CSR_SYS_RESETN     GP0_RD_CSR_SYS_RESETN
+#define GP0_WR_CSR_TAG_BITBANG    GP0_RD_CSR_TAG_BITBANG
+#define GP0_WR_CSR_DRAM_INITED    GP0_RD_CSR_DRAM_INITED
+#define GP0_WR_CSR_DRAM_BASE      GP0_RD_CSR_DRAM_BASE
+#define GP0_WR_CSR_ROM_ADDR       GP0_RD_CSR_ROM_ADDR
+#define GP0_WR_EP_REQ_FIFO_DATA  (GP0_WR_CSR_DRAM_BASE    + 0x4)
+#define GP0_WR_EP_RSP_FIFO_DATA  (GP0_WR_EP_REQ_FIFO_DATA + 0x4)
+
+#define TAG_NUM_CLIENTS 16
+#define TAG_MAX_LEN 1
+#define TAG_CLIENT_MC_RESET_ID 0
+#define TAG_CLIENT_MC_RESET_WIDTH 1
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <locale.h>
+#include <pthread.h>
+#include <time.h>
+#include <queue>
+#include <unistd.h>
+#include <bitset>
+
+#include "bp_zynq_pl.h"
+#include "bsg_printing.h"
+#include "bsg_tag_bitbang.h"
+#include "bsg_argparse.h"
+
+#define array_size(x)                           \
+        (sizeof(x)/sizeof(x[0]))
+
 /**
  * This file defines the interface that runtime platforms provide to
  * BSG Manycore and CUDA Lite Runtime libraries. This interface
@@ -16,13 +62,15 @@
  *
  */
 
+bp_zynq_pl *zpl;
+
 /**
  * Clean up the runtime platform
  * @param[in] mc    A manycore to clean up
  */
 void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
-
+	// Does nothing
 }
 
 /**
@@ -34,6 +82,26 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 int hb_mc_platform_init(hb_mc_manycore_t *mc,
 			hb_mc_manycore_id_t id)
 {
+	bsg_pr_info("ABCD\n");
+	zpl = new bp_zynq_pl(NULL, NULL);
+
+  	////bsg_tag_bitbang *btb = new bsg_tag_bitbang(zpl, GP0_WR_CSR_TAG_BITBANG, TAG_NUM_CLIENTS, TAG_MAX_LEN);
+  	////bsg_tag_client *mc_reset_client = new bsg_tag_client(TAG_CLIENT_MC_RESET_ID, TAG_CLIENT_MC_RESET_WIDTH);
+
+  	////// Reset the bsg tag master
+  	////btb->reset_master();
+  	////// Reset bsg client0
+  	////btb->reset_client(mc_reset_client);
+  	////// Set bsg client0 to 1 (assert BP reset)
+  	////btb->set_client(mc_reset_client, 0x1);
+  	////// Set bsg client0 to 0 (deassert BP reset)
+  	////btb->set_client(mc_reset_client, 0x0);
+
+  	////// We need some additional toggles for data to propagate through
+  	////btb->idle(50);
+  	////// Deassert the active-low system reset as we finish initializing the whole system
+  	////zpl->axil_write(GP0_WR_CSR_SYS_RESETN, 0x1, 0xF);
+
 	return HB_MC_SUCCESS;
 }
 
@@ -49,6 +117,16 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
 			    hb_mc_fifo_tx_t type,
 			    long timeout)
 {
+        if (timeout != -1) {
+                return HB_MC_INVALID;
+        }
+
+	// transmit the data one word at a time
+	for (unsigned i = 0; i < array_size(packet->words); i++) {
+		while(zpl->axil_read(GP0_RD_MC_REQ_FIFO_CTR) == 0);
+        	zpl->axil_write(GP0_WR_EP_REQ_FIFO_DATA, packet->words[i], 0xf);
+	}
+
 	return HB_MC_SUCCESS;
 }
 
