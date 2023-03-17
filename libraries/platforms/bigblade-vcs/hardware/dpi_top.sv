@@ -1,6 +1,7 @@
 module replicant_tb_top
   import bsg_manycore_pkg::*;
   import bsg_bladerunner_pkg::*;
+  import bsg_manycore_network_cfg_pkg::*;
   ();
 
    // BSG_VERILATOR_WAVEFORM turns on waveform generation
@@ -91,7 +92,7 @@ module replicant_tb_top
 `endif
 
 `ifndef BSG_MACHINE_DISABLE_ROUTER_PROFILING
-   localparam bsg_machine_enable_router_profiling_lp = 1;
+   localparam bsg_machine_enable_router_profiling_lp = 0;
 `else
    localparam bsg_machine_enable_router_profiling_lp = 0;
 `endif
@@ -253,6 +254,10 @@ module replicant_tb_top
        ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
 
        ,.reset_depth_p(reset_depth_lp)
+      
+       ,.host_x_cord_p(bsg_machine_io_coord_x_gp) 
+       ,.host_y_cord_p(bsg_machine_io_coord_y_gp)
+       ,.bsg_manycore_network_cfg_p(e_network_xbar)
        )
    testbench
      (
