@@ -12,6 +12,13 @@ module replicant_tb_top
    end
 `endif
 
+`ifdef ENABLE_FSDB_DUMP
+  initial begin
+    $fsdbDumpfile("debug.fsdb");
+    $fsdbDumpvars();
+  end
+`endif
+
    initial begin
 `ifndef VERILATOR
       #0;
