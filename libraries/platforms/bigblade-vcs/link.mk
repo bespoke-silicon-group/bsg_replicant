@@ -72,7 +72,7 @@ VCS_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VCS_FLAGS   = $(VCS_LDFLAGS) $(VCS_VFLAGS) $(VCS_INCLUDES) $(VCS_DEFINES)
 VCS_VSOURCES = $(VHEADERS) $(VSOURCES)
 
-$(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk -debug_pp
+$(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save -kdb -debug_acc+all -debug_region+cell+encrypt +memcbk +define+ENABLE_FSDB_DUMP +fsdb+struct=on
 
 $(BSG_MACHINExPLATFORM_PATH)/repl/simv $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simv $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/repl/simv $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simv $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
