@@ -180,21 +180,21 @@ RISCV_LLVM_LIB    ?= $(RISCV_LLVM_PATH)/lib
 # For an example of how to use this file see
 # test_credit_csr_tile/Makefile.
 
-RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
-RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+RISCV_GCC = $(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 | tee $*.rvo.log
+RISCV_GXX = $(_RISCV_GXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 | tee $*.rvo.log
 
 # The clang version of the functions hide the fact that LLC (the
 # optimizer) is being called between steps.
 define RISCV_CLANGXX
 $(_RISCV_CLANGXX) $(RISCV_CXXFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm && \
 $(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S && \
-$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ 2>&1 | tee $*.rvo.log
 endef 
 
 define RISCV_CLANG
-$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm |& tee $*.rvo.ll.log && \
-$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S |& tee $*.rvo.S.log && \
-$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ |& tee $*.rvo.log
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@.ll -S -emit-llvm 2>&1 | tee $*.rvo.ll.log && \
+$(RISCV_LLVM_LLC) $(RISCV_LLVM_LLC_FLAGS) $@.ll -o $@.S 2>&1 | tee $*.rvo.S.log && \
+$(_RISCV_CLANG) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $@.S -o $@ 2>&1 | tee $*.rvo.log
 endef
 
 # Set the default RISC-V Compilers.
@@ -262,7 +262,7 @@ RISCV_DEFINES += -DPREALLOCATE=0
 RISCV_DEFINES += -DHOST_DEBUG=0
 
 crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
-	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ |& tee $*.rvo.log
+	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 | tee $*.rvo.log
 
 # We compile these locally so that we don't interfere with the files in
 # $(BSG_MANYCORE_LIB_PATH).
