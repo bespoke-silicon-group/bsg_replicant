@@ -349,7 +349,11 @@ module replicant_tb_top
        )
    print_stat_snoop
      (
-      .loader_link_sif_in_i(host_link_sif_lo) // output from manycore
+      .clk_i(core_clk)
+      ,.reset_i(core_reset)
+      ,.global_ctr_i(global_ctr)
+
+      ,.loader_link_sif_in_i(host_link_sif_lo) // output from manycore
       ,.loader_link_sif_out_i(host_link_sif_li) // output from host
 
       ,.print_stat_v_o(print_stat_v)
