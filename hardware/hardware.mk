@@ -248,6 +248,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_c
 	@echo >> $@
 	@echo "parameter int bsg_machine_pod_tiles_y_gp = $(BSG_MACHINE_POD_TILES_Y);" >> $@
 	@echo "parameter int bsg_machine_pod_tiles_x_gp = $(BSG_MACHINE_POD_TILES_X);" >> $@
+	@echo "\`define BSG_MACHINE_GLOBAL_Y $(BSG_MACHINE_POD_TILES_Y)" >> $@
+	@echo "\`define BSG_MACHINE_GLOBAL_X $(BSG_MACHINE_POD_TILES_X)" >> $@
 	@echo "parameter int bsg_machine_pod_llcache_rows_gp = $(BSG_MACHINE_POD_VCACHE_NUM_ROWS);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_pod_tiles_subarray_y_gp = $(BSG_MACHINE_POD_TILES_SUBARRAY_Y);" >> $@
