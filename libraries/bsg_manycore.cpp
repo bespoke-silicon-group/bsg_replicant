@@ -1310,6 +1310,10 @@ int hb_mc_manycore_amoadd(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, const ui
         if (err != HB_MC_SUCCESS)
                 return err;
 
+        // AMO are only supported on DRAM regions
+        if (hb_mc_config_is_dram(hb_mc_manycore_get_config(mc), hb_mc_npa_get_xy(npa)) == 0)
+            return HB_MC_INVALID;
+
         hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_AMOADD);
         hb_mc_request_packet_set_data(&rqst.request, v);
 
