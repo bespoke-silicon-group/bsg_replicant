@@ -1292,7 +1292,7 @@ int hb_mc_manycore_write32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_
  * @param[out] vpo    The previous value at the NPA
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_manycore_amoadd(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, const uint32_t v, uint32_t *vpo)
+int hb_mc_manycore_amoadd32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, const uint32_t v, uint32_t *vpo)
 {
         int err;
         hb_mc_packet_t rqst;

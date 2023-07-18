@@ -262,7 +262,7 @@ extern "C" {
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
         __attribute__((warn_unused_result))
-        int hb_mc_manycore_amoadd(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t vpi, uint32_t *vpo);
+        int hb_mc_manycore_amoadd32(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa, uint32_t vpi, uint32_t *vpo);
 
         /**
          * Set memory to a given value starting at a given NPA

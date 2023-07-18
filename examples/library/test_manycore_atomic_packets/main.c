@@ -118,7 +118,7 @@ int test_manycore_atomic_packets(int argc, char *argv[]) {
 
         bsg_pr_test_info("Sending %d auto amo packets\n", n);
         for (int i = 0; i < n; i++) {
-            BSG_CUDA_CALL(hb_mc_manycore_amoadd(mc, &npa, 1, &data));
+            BSG_CUDA_CALL(hb_mc_manycore_amoadd32(mc, &npa, 1, &data));
             bsg_pr_test_info("Data received: %d\n", data);
             if (data != n+i) {
                 bsg_pr_test_err("Data mismatch: %d != %d", data, n+i);
