@@ -144,6 +144,12 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         CHECK_FIELD(HB_MC_CONFIG_NOC_COORD_Y_WIDTH, idx > 0 && idx < 32);
         config->noc_coord_width.y = idx;
 
+        config->noc_ruche_factor.x = 3;
+        config->noc_ruche_factor.y = 0;
+
+        config->bar_ruche_factor.x = config->noc_ruche_factor.x;
+        config->bar_ruche_factor.y = config->noc_ruche_factor.y;
+
         config->basejump = raw[HB_MC_CONFIG_REPO_BASEJUMP_HASH];
         config->manycore = raw[HB_MC_CONFIG_REPO_MANYCORE_HASH];
         config->f1 = raw[HB_MC_CONFIG_REPO_F1_HASH];

@@ -25,6 +25,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <bsg_manycore_cuda.h>
+#include <bsg_manycore_cuda_barrier.h>
 #include <bsg_manycore_tile.h>
 #include <bsg_manycore_memory_manager.h>
 #include <bsg_manycore_elf.h>
@@ -342,13 +343,13 @@ static int tile_unfreeze(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t 
  * Sets the CUDA runtime symbols for a  tile
  */
 __attribute__((warn_unused_result))
-static int tile_set_runtime_symbols(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile,
-                                    const hb_mc_eva_map_t *map,
-                                    uint32_t    argc,
-                                    hb_mc_eva_t argv_addr,
-                                    hb_mc_npa_t finish_signal_npa,
-                                    hb_mc_eva_t kernel_addr)
+static int tile_set_runtime_symbols(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile, hb_mc_tile_group_t *tg,
+                                    uint32_t    argc, hb_mc_eva_t kernel_addr)
 {
+        const hb_mc_eva_map_t *map = tg->map;
+        hb_mc_eva_t argv_addr = tg->argv_eva;
+        hb_mc_npa_t finish_signal_npa = tg->finish_signal_npa;
+
         BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_argc", argc));
         BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_argv_ptr", argv_addr));
 
@@ -356,6 +357,11 @@ static int tile_set_runtime_symbols(hb_mc_device_t *device, hb_mc_pod_t *pod, hb
         size_t sz;
         BSG_CUDA_CALL(hb_mc_npa_to_eva(device->mc, map, &tile->coord, &finish_signal_npa, &finish_signal_addr, &sz));
         BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_finish_signal_addr", finish_signal_addr));
+
+        // set the barrier pointer, if found
+        if (tg->barcfg_eva != 0)
+                BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "__cuda_barrier_cfg", tg->barcfg_eva));
+
 
         // tiles wake-on-broken reservation on this address
         // this write wakes up the kernel and 'launches' it
@@ -1311,6 +1317,7 @@ static int hb_mc_device_pod_tile_group_exit(hb_mc_device_t *device, hb_mc_pod_t 
         // arguments of tile group's kernel
         hb_mc_pod_id_t pod_id = hb_mc_device_pod_to_pod_id(device, pod);
         BSG_CUDA_CALL(hb_mc_device_pod_free(device, pod_id, tg->argv_eva));
+        BSG_CUDA_CALL(hb_mc_device_pod_free(device, pod_id, tg->barcfg_eva));
 
         // release tile gorup resources
         tg->dim = HB_MC_DIMENSION(0,0);
@@ -1560,6 +1567,67 @@ int hb_mc_device_pod_tile_group_deallocate_tiles(hb_mc_device_t *device, hb_mc_p
         return HB_MC_SUCCESS;
 }
 
+/**
+ * Initialize the array of CSR values for the hw barrier.
+ * This function checks if the barrier is used in the kernel, and if so an array is allocated
+ * and initialized.
+ */
+static int hb_mc_device_pod_tile_group_barrier_init(hb_mc_device_t *device
+                                                    , hb_mc_pod_t *pod
+                                                    , hb_mc_tile_group_t *tg)
+{
+        hb_mc_kernel_t *kernel = tg->kernel;
+        bsg_pr_dbg("%s: device<%s>: program<%s>: Initializing hardware barrier array for kernel '%s'\n"
+                   , __func__
+                   , device->name
+                   , pod->program->bin_name
+                   , kernel->name);
+
+        // check that the barrier is used
+        // to do this, look for a symbol "__cuda_barrier_cfg"
+        int err;
+        hb_mc_eva_t barr_config_ptr;
+        err = hb_mc_loader_symbol_to_eva(pod->program->bin
+                                         , pod->program->bin_size
+                                         , "__cuda_barrier_cfg"
+                                         , &barr_config_ptr);
+
+        // if not found, no barrier initialization
+        if (err == HB_MC_NOTFOUND) {
+                tg->barcfg_eva = 0;
+                return HB_MC_SUCCESS;
+        }
+
+        // found the barrier pointer
+        // allocate an array for csr values
+        hb_mc_eva_t barcfg_eva;
+        hb_mc_pod_id_t pod_id = hb_mc_device_pod_to_pod_id(device, pod);
+        BSG_CUDA_CALL(hb_mc_device_pod_malloc(device
+                                              , pod_id
+                                              , (1 + tg->dim.x * tg->dim.y) * sizeof(int)
+                                              , &barcfg_eva));
+
+        // initialize barcfg
+        int barcfg [tg->dim.x * tg->dim.y + 1];
+        hb_mc_coordinate_t cord, og = hb_mc_coordinate(0,0);
+        foreach_coordinate(cord, og, tg->dim) {
+                int id = cord.y * tg->dim.x + cord.x;
+
+                // compute for id
+                barcfg[1+id] = hb_mc_hw_barrier_csr_val(&device->mc->config, cord.x, cord.y, tg->dim.x, tg->dim.y);
+        }
+        // word zero holds the amoadd barrier lock
+        barcfg[0] = 0;
+
+        // copy csr val vector to device
+        BSG_CUDA_CALL(hb_mc_device_pod_memcpy_to_device(device, pod_id, barcfg_eva, barcfg, sizeof(barcfg)));
+
+        // save so we can free later
+        tg->barcfg_eva = barcfg_eva;
+
+        return HB_MC_SUCCESS;       
+}
+
 __attribute__((warn_unused_result))
 static
 int hb_mc_device_pod_tile_group_launch(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
@@ -1581,6 +1649,9 @@ int hb_mc_device_pod_tile_group_launch(hb_mc_device_t *device, hb_mc_pod_t *pod,
                                                         &kernel->argv[0],
                                                         kernel->argc * sizeof(*(kernel->argv))));
 
+        // initialize hw barrier array
+        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_barrier_init(device, pod, tile_group));
+
         // find kernel
         hb_mc_eva_t kernel_addr;
         BSG_CUDA_CALL(hb_mc_loader_symbol_to_eva(pod->program->bin, pod->program->bin_size, kernel->name, &kernel_addr));
@@ -1592,12 +1663,8 @@ int hb_mc_device_pod_tile_group_launch(hb_mc_device_t *device, hb_mc_pod_t *pod,
                 hb_mc_idx_t tile_id = hb_mc_get_tile_id(pod->mesh->origin, pod->mesh->dim, coord);
                 hb_mc_tile_t *tile = &pod->mesh->tiles[tile_id];
                 // this will wake the tile up
-                BSG_CUDA_CALL(tile_set_runtime_symbols(device, pod, tile,
-                                                       tile_group->map,
-                                                       kernel->argc,
-                                                       tile_group->argv_eva,
-                                                       tile_group->finish_signal_npa,
-                                                       kernel_addr));
+                BSG_CUDA_CALL(tile_set_runtime_symbols(device, pod, tile, tile_group,
+                                                       kernel->argc, kernel_addr));
         }
 
         // make tile group as launched

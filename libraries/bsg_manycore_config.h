@@ -93,6 +93,8 @@ extern "C" {
                 hb_mc_dimension_t pods;      // how many vcore pods?
                 hb_mc_dimension_t pod_shape; // what is the shape of a pod?
                 hb_mc_dimension_t noc_coord_width;
+                hb_mc_dimension_t noc_ruche_factor;
+                hb_mc_dimension_t bar_ruche_factor;
                 hb_mc_dimension_t pod_coord_width;
                 hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;

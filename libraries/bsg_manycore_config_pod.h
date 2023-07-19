@@ -244,6 +244,7 @@ extern "C" {
                         return  tile.x
                                 + cfg->pod_shape.x;
                 }
+                return 0;
         }
 
         static inline hb_mc_idx_t
