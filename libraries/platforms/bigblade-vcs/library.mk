@@ -25,66 +25,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_platform.cpp
+PLATFORM_CXXSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp
+PLATFORM_CXXSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_platform.cpp
 
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_simulator.cpp
+include $(LIBRARIES_PATH)/platforms/common/dpi/library.mk
+ifeq ($(VCS_HOME),)
+$(error Please set VCS_HOME to a VCS release directory)
+endif
+$(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib
 
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/simulation/bsg_manycore_tracer.cpp
-
-PLATFORM_REGRESSION_CSOURCES += $(LIBRARIES_PATH)/platforms/bigblade-vcs/bsg_manycore_regression_platform.c
-
-include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
-include $(LIBRARIES_PATH)/features/tracer/simulation/feature.mk
-include $(LIBRARIES_PATH)/features/pc_histogram/simulation/feature.mk
-
-PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
-PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
-
-PLATFORM_REGRESSION_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_REGRESSION_CXXSOURCES))
-PLATFORM_REGRESSION_OBJECTS += $(patsubst %c,%o,$(PLATFORM_REGRESSION_CSOURCES))
-
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_MACHINE_PATH)/notrace/
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib/
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_MANYCORE_DIR)/testbenches/dpi/
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test/
-
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS    = -std=c11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE -DVERILATOR $(INCLUDES)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS  = -std=c++11 -fPIC -D_GNU_SOURCE -D_DEFAULT_SOURCE -DVERILATOR $(INCLUDES)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -fPIC
-$(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -ldl
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
-$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)
-
-# Mirror the extensions linux installation in /usr/lib provides so
-# that we can use -lbsg_manycore_runtime
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
-	ln -sf $@.0 $@
-
-$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1: %: %.0
-	ln -sf $@.0 $@
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1: %: %.0
-	ln -sf $@.0 $@
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
-	ln -sf $@.1 $@
-
-$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so: %: %.1
-	ln -sf $@.1 $@
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so: %: %.1
-	ln -sf $@.1 $@
-
-platform.clean:
-	rm -f $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS)
-	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
-	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1
-	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so*
-	rm -f $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so*
-
-libraries.clean: platform.clean
