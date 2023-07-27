@@ -25,23 +25,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# aws-fpga does not provide a DMA feature. Therefore, we compile
-# features/dma/noimpl/bsg_manycore_dma.cpp that simply returns
-# HB_MC_NO_IMPL for each function call.
-DMA_FEATURE_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
+# hardware.mk: Platform-specific HDL listing. 
+#
+# For simulation platforms, it also describes how to build the
+# simulation "libraries" that are required by CAD tools.
+#
+# This file should be included from bsg_replicant/hardware/hardware.mk. It checks
+# BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
 
-DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
-DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))
+VSOURCES += $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
+ASCII_TO_ROM_PY = $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py
+$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
+	env python2 $(ASCII_TO_ROM_PY) $< bsg_bladerunner_configuration > $@
 
-$(DMA_FEATURE_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
-$(DMA_FEATURE_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
-$(DMA_FEATURE_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+.PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(DMA_FEATURE_OBJECTS)
+hardware.clean: machine.hardware.clean
 
-.PHONY: dma_feature.clean
-dma_feature.clean:
-	rm -f $(DMA_FEATURE_OBJECTS)
-
-platform.clean: dma_feature.clean
+machine.hardware.clean:
+	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
