@@ -26,22 +26,22 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # aws-fpga does not provide a DMA feature. Therefore, we compile
-# features/dma/noimpl/bsg_manycore_dma.cpp that simply returns
+# features/tracer/noimpl/bsg_manycore_tracer.cpp that simply returns
 # HB_MC_NO_IMPL for each function call.
-DMA_FEATURE_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
+DMA_FEATURE_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
 
 DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
 DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))
 
 $(DMA_FEATURE_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
+$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
 $(DMA_FEATURE_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
 $(DMA_FEATURE_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(DMA_FEATURE_OBJECTS)
 
-.PHONY: dma_feature.clean
-dma_feature.clean:
+.PHONY: tracer_feature.clean
+tracer_feature.clean:
 	rm -f $(DMA_FEATURE_OBJECTS)
 
-platform.clean: dma_feature.clean
+platform.clean: tracer_feature.clean
