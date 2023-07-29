@@ -36,9 +36,14 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 # 
 
+CC  := /home/dpetrisko/scratch/nfs/zynq-parrot/software/import/black-parrot-sdk/install/bin/riscv64-unknown-elf-dramfs-gcc
+CXX := /home/dpetrisko/scratch/nfs/zynq-parrot/software/import/black-parrot-sdk/install/bin/riscv64-unknown-elf-dramfs-g++
+AR  := /home/dpetrisko/scratch/nfs/zynq-parrot/software/import/black-parrot-sdk/install/bin/riscv64-unknown-elf-dramfs-ar
+
 DEFINES    += -DFPGA
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)/include
 
 LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
 CXXFLAGS   += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000
