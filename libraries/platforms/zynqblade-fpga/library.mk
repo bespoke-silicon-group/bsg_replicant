@@ -25,10 +25,22 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/platforms/zynqparrot-fpga/bsg_manycore_platform.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
 PLATFORM_CXXSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_platform.cpp
+
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-ba.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-eexst.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-fmtstream.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-fs-xinl.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-help.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-parse.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-pv.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-pvh.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-xinl.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/flockfile.c
+LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/funlockfile.c
 
 # aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
 # features/dma/noimpl/feature.mk that simply returns
@@ -42,7 +54,8 @@ PLATFORM_REGRESSION_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_REGRESSION_CXXSOURC
 PLATFORM_REGRESSION_OBJECTS += $(patsubst %c,%o,$(PLATFORM_REGRESSION_CSOURCES))
 
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/zynqparrot-fpga
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_PLATFORM_PATH)/include
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/tracer
@@ -57,28 +70,8 @@ $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS := -std=c++11 -fPIC
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -fPIC
 $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS   = -ldl
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
-$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)
-
-# Mirror the extensions linux installation in /usr/lib provides so
-# that we can use -lbsg_manycore_runtime
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1: %: %.0
-	ln -sf $@.0 $@
-
-$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1: %: %.0
-	ln -sf $@.0 $@
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1: %: %.0
-	ln -sf $@.0 $@
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so: %: %.1
-	ln -sf $@.1 $@
-
-$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so: %: %.1
-	ln -sf $@.1 $@
-
-$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so: %: %.1
-	ln -sf $@.1 $@
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a: $(PLATFORM_OBJECTS)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a: $(PLATFORM_REGRESSION_OBJECTS)
 
 .PHONY: platform.clean install uninstall
 platform.clean:
