@@ -50,8 +50,6 @@ TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
 test_loader.o: $(TEST_OBJECTS) $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 	$(CXX) -o $@ $^ $(LDFLAGS)
-#test_loader.o: $(TEST_OBJECTS)
-#	$(CXX) -o $@ $^ $(LDFLAGS)
 
 .PHONY: platform.link.clean
 platform.link.clean:
