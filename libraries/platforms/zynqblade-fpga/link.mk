@@ -40,10 +40,20 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
+# We transform C_ARGS to CDEFINES to pass directly
+CDEFINES ?= 
+
+LDFLAGS += -mcmodel=medany
+LDFLAGS += -static
+LDFLAGS += -fPIC
+LDFLAGS += -lm
 LDFLAGS += -L$(BSG_PLATFORM_PATH)
-LDFLAGS += -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
+LDFLAGS += -T$(BLACKPARROT_SDK_DIR)/install/linker/riscv.ld
+LDFLAGS +=  -Wl,--whole-archive -lbsgmc_cuda_legacy_pod_repl -lbsg_manycore_runtime -lbsg_manycore_regression -Wl,--no-whole-archive
 
 TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CSOURCES   += $(BSG_PLATFORM_PATH)/src/bsg_newlib_intf.c
+TEST_CSOURCES   += lfs.c
 TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
 TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
@@ -52,8 +62,14 @@ REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a
 REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a
 REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a
 
+# 1 MB
+DRAMFS_MKLFS ?= $(BLACKPARROT_SDK_DIR)/install/bin/dramfs_mklfs 128 8192
+lfs.c: $(BSG_MANYCORE_KERNELS)
+	cp $< $(notdir $(BSG_MANYCORE_KERNELS))
+	$(DRAMFS_MKLFS) $(notdir $(BSG_MANYCORE_KERNELS)) > $@
+
 test_loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $(TEST_OBJECTS) $(LDFLAGS)
 
 .PHONY: platform.link.clean
 platform.link.clean:
