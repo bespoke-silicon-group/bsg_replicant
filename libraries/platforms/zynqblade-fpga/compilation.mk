@@ -36,18 +36,23 @@ NC=\033[0m
 # set by the Makefile that includes this makefile..
 # 
 
-CC  := /home/dpetrisko/scratch/nfs/zynq-parrot/software/import/black-parrot-sdk/install/bin/riscv64-unknown-elf-dramfs-gcc
-CXX := /home/dpetrisko/scratch/nfs/zynq-parrot/software/import/black-parrot-sdk/install/bin/riscv64-unknown-elf-dramfs-g++
-AR  := /home/dpetrisko/scratch/nfs/zynq-parrot/software/import/black-parrot-sdk/install/bin/riscv64-unknown-elf-dramfs-ar
+CC = $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-gcc
+CXX = $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-g++
+AR = $(BLACKPARROT_SDK_DIR)/install/bin/riscv64-unknown-elf-dramfs-ar
 
 DEFINES    += -DFPGA
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)/include
 
-LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
-CXXFLAGS   += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000
-CFLAGS     += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH) -mcmodel=medany
+CXXFLAGS   += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000 -nostartfiles
+CFLAGS     += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000 -nostartfiles
+
+ARGV       += "$(subst $(BSG_MANYCORE_KERNELS), $(notdir $(BSG_MANYCORE_KERNELS)),test_loader $(C_ARGS))"
+
+CDEFINES   += -D__init_argc=$(words $(ARGV)) -D__init_argv=\"$(strip $(ARGV))\"
+CXXDEFINES += -D__init_argc=$(words $(ARGV)) -D__init_argv=\"$(strip $(ARGV))\"
 
 # each regression target needs to build its .o from a .c and .h of the
 # same name

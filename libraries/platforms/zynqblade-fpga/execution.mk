@@ -31,10 +31,28 @@
 .PRECIOUS: exec.log saifgen.log
 .PHONY: platform.execution.clean
 
-%.log: test_loader.o $(BSG_MANYCORE_KERNELS) 
-	echo "Test created"
-
-platform.execution.clean:
-	rm -rf exec.log
-
-execution.clean: platform.execution.clean
+##%.log: test_loader.riscv
+##	echo "Test created"
+##
+##DRAMFS_CSOURCES += $(BSG_PLATFORM_PATH)/src/bsg_newlib_intf.c
+##DRAMFS_CSOURCES += lfs.c
+##
+##DRAMFS_OBJECTS += $(patsubst %cpp,%o,$(DRAMFS_CXXSOURCES))
+##DRAMFS_OBJECTS += $(patsubst %c,%o,$(DRAMFS_CSOURCES))
+##
+##test_loader.riscv: test_loader.o $(DRAMFS_OBJECTS)
+##	echo "Trying to build test_loader.riscv"
+##	$(CXX) -mcmodel=medany -fPIC -static -T$(BLACKPARROT_SDK_DIR)/install/linker/riscv.ld -o $@ $^
+##
+###LDFLAGS += -T$(BLACKPARROT_SDK_DIR)/install/linker/riscv.ld
+##
+### 1 MB
+##DRAMFS_MKLFS ?= $(BLACKPARROT_SDK_DIR)/install/bin/dramfs_mklfs 128 8192
+##lfs.c: $(BSG_MANYCORE_KERNELS)
+##	cp $< $(notdir $(BSG_MANYCORE_KERNELS))
+##	$(DRAMFS_MKLFS) $(notdir $(BSG_MANYCORE_KERNELS)) > $@
+##
+##platform.execution.clean:
+##	rm -rf exec.log
+##
+##execution.clean: platform.execution.clean

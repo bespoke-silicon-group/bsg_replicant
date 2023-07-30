@@ -53,7 +53,7 @@ REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 
 test_loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
-	$(CXX) -o $@ $^ $(LDFLAGS)
+	$(CXX) -o $@ $^ $(LDFLAGS) $(CDEFINES)
 
 .PHONY: platform.link.clean
 platform.link.clean:
