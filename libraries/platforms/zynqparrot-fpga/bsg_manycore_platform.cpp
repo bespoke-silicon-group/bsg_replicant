@@ -162,7 +162,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
                 return HB_MC_NOIMPL;
         }
 
-	send_mc_request_packet(zpl, (hb_mc_request_packet_t *)packet);
+        send_mc_request_packet(zpl, (hb_mc_request_packet_t *)packet);
 
         return HB_MC_SUCCESS;
 }
@@ -187,16 +187,16 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
                 return HB_MC_INVALID;
         }
 
-	switch (type) {
-		case HB_MC_FIFO_RX_REQ:
-			recv_mc_request_packet(zpl, (hb_mc_request_packet_t *)packet);
-			break;
-		case HB_MC_FIFO_RX_RSP:
-			recv_mc_response_packet(zpl, (hb_mc_response_packet_t *)packet);
-		default:
-			bsg_pr_err("%s: Unknown packet type\n", __func__);
-			return HB_MC_NOIMPL;
-	}
+        switch (type) {
+                case HB_MC_FIFO_RX_REQ:
+                        recv_mc_request_packet(zpl, (hb_mc_request_packet_t *)packet);
+                        break;
+                case HB_MC_FIFO_RX_RSP:
+                        recv_mc_response_packet(zpl, (hb_mc_response_packet_t *)packet);
+                default:
+                        bsg_pr_err("%s: Unknown packet type\n", __func__);
+                        return HB_MC_NOIMPL;
+        }
 
         return HB_MC_SUCCESS;
 }
@@ -212,15 +212,15 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
                                  unsigned int idx,
                                  hb_mc_config_raw_t *config)
 {
-	bsg_zynq_pl *zpl = reinterpret_cast<bsg_zynq_pl *>(mc->platform);
+        bsg_zynq_pl *zpl = reinterpret_cast<bsg_zynq_pl *>(mc->platform);
 
-	if (idx < HB_MC_CONFIG_MAX) {
-		zpl->axil_write(GP0_WR_CSR_ROM_ADDR, idx, 0xf);
-		*config = zpl->axil_read(GP0_RD_ROM_DATA);
-        	return HB_MC_SUCCESS;
-	}
+        if (idx < HB_MC_CONFIG_MAX) {
+                zpl->axil_write(GP0_WR_CSR_ROM_ADDR, idx, 0xf);
+                *config = zpl->axil_read(GP0_RD_ROM_DATA);
+        return HB_MC_SUCCESS;
+        }
 
-	return HB_MC_INVALID;
+        return HB_MC_INVALID;
 }
 
 /**
@@ -229,9 +229,9 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
  */
 void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 {
-	bsg_zynq_pl *zpl = reinterpret_cast<bsg_zynq_pl *>(mc->platform);
+        bsg_zynq_pl *zpl = reinterpret_cast<bsg_zynq_pl *>(mc->platform);
 
-	delete zpl;
+        delete zpl;
 
         return;
 }
@@ -245,34 +245,34 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 int hb_mc_platform_init(hb_mc_manycore_t *mc,
                         hb_mc_manycore_id_t id)
 {
-	int err;
-	zpl = new bsg_zynq_pl(0, NULL);
+        int err;
+        zpl = new bsg_zynq_pl(0, NULL);
 
-	if (mc->platform)
-		return HB_MC_INITIALIZED_TWICE;
+        if (mc->platform)
+                return HB_MC_INITIALIZED_TWICE;
 
         if (id != 0) {
                 return HB_MC_INVALID;
         }
 
-	mc->platform = reinterpret_cast<void *>(zpl);
+        mc->platform = reinterpret_cast<void *>(zpl);
 
-	bsg_tag_bitbang *btb = new bsg_tag_bitbang(zpl, GP0_WR_CSR_TAG_BITBANG, TAG_NUM_CLIENTS, TAG_MAX_LEN);
-	bsg_tag_client *mc_reset_client = new bsg_tag_client(TAG_CLIENT_MC_RESET_ID, TAG_CLIENT_MC_RESET_WIDTH);
+        bsg_tag_bitbang *btb = new bsg_tag_bitbang(zpl, GP0_WR_CSR_TAG_BITBANG, TAG_NUM_CLIENTS, TAG_MAX_LEN);
+        bsg_tag_client *mc_reset_client = new bsg_tag_client(TAG_CLIENT_MC_RESET_ID, TAG_CLIENT_MC_RESET_WIDTH);
 
-	// Reset the bsg tag master
-	btb->reset_master();
-	// Reset bsg client0
-	btb->reset_client(mc_reset_client);
-	// Set bsg client0 to 1 (assert BP reset)
-	btb->set_client(mc_reset_client, 0x1);
-	// Set bsg client0 to 0 (deassert BP reset)
-	btb->set_client(mc_reset_client, 0x0);
-	
-	// We need some additional toggles for data to propagate through
-	btb->idle(50);
-	// Deassert the active-low system reset as we finish initializing the whole system
-	zpl->axil_write(GP0_WR_CSR_SYS_RESETN, 0x1, 0xF);
+        // Reset the bsg tag master
+        btb->reset_master();
+        // Reset bsg client0
+        btb->reset_client(mc_reset_client);
+        // Set bsg client0 to 1 (assert BP reset)
+        btb->set_client(mc_reset_client, 0x1);
+        // Set bsg client0 to 0 (deassert BP reset)
+        btb->set_client(mc_reset_client, 0x0);
+        
+        // We need some additional toggles for data to propagate through
+        btb->idle(50);
+        // Deassert the active-low system reset as we finish initializing the whole system
+        zpl->axil_write(GP0_WR_CSR_SYS_RESETN, 0x1, 0xF);
 
         return HB_MC_SUCCESS;
 }
@@ -327,7 +327,7 @@ int hb_mc_platform_get_cycle(hb_mc_manycore_t *mc, uint64_t *time)
 {
         bsg_zynq_pl *zpl = reinterpret_cast<bsg_zynq_pl *>(mc->platform);
 
-	return HB_MC_NOIMPL;
+        return HB_MC_NOIMPL;
 }
 
 /**
