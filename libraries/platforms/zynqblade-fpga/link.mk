@@ -64,16 +64,17 @@ REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a
 
 # 1 MB
 DRAMFS_MKLFS ?= $(BLACKPARROT_SDK_DIR)/install/bin/dramfs_mklfs 128 8192
-lfs.c: $(BSG_MANYCORE_KERNELS)
-	cp $< $(notdir $(BSG_MANYCORE_KERNELS))
+lfs.c:
+	$(MAKE) $(BSG_MANYCORE_KERNELS)
+	cp $(BSG_MANYCORE_KERNELS) $(notdir $(BSG_MANYCORE_KERNELS))
 	$(DRAMFS_MKLFS) $(notdir $(BSG_MANYCORE_KERNELS)) > $@
 
-test_loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
+loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
 	$(CXX) -o $@ $(TEST_OBJECTS) $(LDFLAGS)
 
 .PHONY: platform.link.clean
 platform.link.clean:
-	rm -rf test_loader.o
+	rm -rf loader.o
 
 link.clean: platform.link.clean
 

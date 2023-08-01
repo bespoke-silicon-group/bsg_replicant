@@ -31,28 +31,23 @@
 .PRECIOUS: exec.log saifgen.log
 .PHONY: platform.execution.clean
 
-##%.log: test_loader.riscv
-##	echo "Test created"
-##
-##DRAMFS_CSOURCES += $(BSG_PLATFORM_PATH)/src/bsg_newlib_intf.c
-##DRAMFS_CSOURCES += lfs.c
-##
-##DRAMFS_OBJECTS += $(patsubst %cpp,%o,$(DRAMFS_CXXSOURCES))
-##DRAMFS_OBJECTS += $(patsubst %c,%o,$(DRAMFS_CSOURCES))
-##
-##test_loader.riscv: test_loader.o $(DRAMFS_OBJECTS)
-##	echo "Trying to build test_loader.riscv"
-##	$(CXX) -mcmodel=medany -fPIC -static -T$(BLACKPARROT_SDK_DIR)/install/linker/riscv.ld -o $@ $^
-##
-###LDFLAGS += -T$(BLACKPARROT_SDK_DIR)/install/linker/riscv.ld
-##
-### 1 MB
-##DRAMFS_MKLFS ?= $(BLACKPARROT_SDK_DIR)/install/bin/dramfs_mklfs 128 8192
-##lfs.c: $(BSG_MANYCORE_KERNELS)
-##	cp $< $(notdir $(BSG_MANYCORE_KERNELS))
-##	$(DRAMFS_MKLFS) $(notdir $(BSG_MANYCORE_KERNELS)) > $@
-##
-##platform.execution.clean:
-##	rm -rf exec.log
-##
-##execution.clean: platform.execution.clean
+RISCV_DEFINES += -Dbsg_tiles_X=$(BSG_MACHINE_POD_TILES_X)
+RISCV_DEFINES += -Dbsg_tiles_Y=$(BSG_MACHINE_POD_TILES_Y)
+include $(BSG_F1_DIR)/examples/cuda/riscv.mk
+
+main.o:
+	$(MAKE) -C $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime
+	cp $(BSG_MANYCORE_DIR)/software/spmd/bsg_cuda_lite_runtime/main.so
+
+ZYNQPARROT_EXECUTION_DIR ?= $(ZYNQPARROT_DIR)/cosim/hammerblade-example/vcs
+
+%.log: loader.o clr.riscv
+	cp clr.riscv $(ZYNQPARROT_EXECUTION_DIR)/clr.riscv32
+	cp loader.o  $(ZYNQPARROT_EXECUTION_DIR)/loader.riscv64
+	$(MAKE) -C $(ZYNQPARROT_EXECUTION_DIR) NBF_FILE=clr.loader.nbf run
+
+platform.execution.clean:
+	rm -rf exec.log
+
+execution.clean: platform.execution.clean
+

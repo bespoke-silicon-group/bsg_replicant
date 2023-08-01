@@ -52,12 +52,12 @@ REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
 
-test_loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
+loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
 	$(CXX) -o $@ $^ $(LDFLAGS) $(CDEFINES)
 
 .PHONY: platform.link.clean
 platform.link.clean:
-	rm -rf test_loader.o
+	rm -rf loader.o
 
 link.clean: platform.link.clean
 
