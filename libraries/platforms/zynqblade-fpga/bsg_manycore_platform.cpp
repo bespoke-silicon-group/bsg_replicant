@@ -21,21 +21,25 @@
 /////////////////////////////////////////////
 
 #define HOST_BASE_ADDRESS 0x100000
-#define HOST_PUTCHAR_REG 0x1000
-#define HOST_GETCHAR_REG 0x2000
-#define HOST_BOOTROM_REG 0x3000
+#define HOST_PUTCHAR_REG  (HOST_BASE_ADDRESS + 0x1000)
+#define HOST_GETCHAR_REG  (HOST_BASE_ADDRESS + 0x2000)
+#define HOST_BOOTROM_REG  (HOST_BASE_ADDRESS + 0x3000)
 
 class bp_mc_link_t {
     private:
-        uint64_t  fifo_base_addr        = (uint64_t) 0x500000;
-        uint64_t *bp_req_fifo_data_addr = (uint64_t *) (fifo_base_addr + 0x1000);
-        int      *bp_req_fifo_ctr_addr  = (int *) (fifo_base_addr + 0x2000);
-        uint64_t *mc_rsp_fifo_data_addr = (uint64_t *) (fifo_base_addr + 0x3000);
-        int      *mc_rsp_fifo_ctr_addr  = (int *) (fifo_base_addr + 0x4000);
-        uint64_t *mc_req_fifo_data_addr = (uint64_t *) (fifo_base_addr + 0x5000);
-        int      *mc_req_fifo_ctr_addr  = (int *) (fifo_base_addr + 0x6000);
+                 uint64_t  fifo_base_addr        = (uint64_t) 0x500000;
+        volatile uint64_t *bp_req_fifo_data_addr = (volatile uint64_t *) (fifo_base_addr + 0x1000);
+        volatile int      *bp_req_fifo_ctr_addr  = (volatile int *) (fifo_base_addr + 0x2000);
+        volatile uint64_t *mc_rsp_fifo_data_addr = (volatile uint64_t *) (fifo_base_addr + 0x3000);
+        volatile int      *mc_rsp_fifo_ctr_addr  = (volatile int *) (fifo_base_addr + 0x4000);
+        volatile uint64_t *mc_req_fifo_data_addr = (volatile uint64_t *) (fifo_base_addr + 0x5000);
+        volatile int      *mc_req_fifo_ctr_addr  = (volatile int *) (fifo_base_addr + 0x6000);
+        volatile uint64_t *bp_rsp_fifo_data_addr = (volatile uint64_t *) (fifo_base_addr + 0x7000);
+        volatile int      *bp_rsp_fifo_ctr_addr  = (volatile int *) (fifo_base_addr + 0x8000);
+        volatile int      *endpoint_credits_addr = (volatile int *) (fifo_base_addr + 0x9000);
 
         int try_write_bp_request_fifo(uint64_t data);
+        int try_write_bp_response_fifo(uint64_t data);
         int try_read_mc_response_fifo(uint64_t *data);
         int try_read_mc_request_fifo(uint64_t *data);
 
@@ -46,18 +50,28 @@ class bp_mc_link_t {
         int rx_fifo_rsp(hb_mc_response_packet_t *packet);
         int mmio_read(uint64_t address, int32_t *data);
         int mmio_write(uint64_t address, int32_t data, uint8_t mask);
-
+        int fifo_fence();
+        int fifo_drain();
 };
 
 int bp_mc_link_t::try_write_bp_request_fifo(uint64_t data)
 {
     int ctr = *bp_req_fifo_ctr_addr;
 
-    if (ctr > 0) {
+    if (ctr == 0) {
         return -1;
     }
 
     *bp_req_fifo_data_addr = data;
+
+    return 0;
+}
+
+int bp_mc_link_t::try_write_bp_response_fifo(uint64_t data)
+{   
+    int ctr = *bp_rsp_fifo_ctr_addr;
+
+    *bp_rsp_fifo_data_addr = data;
 
     return 0;
 }
@@ -94,6 +108,8 @@ int bp_mc_link_t::tx_fifo_req(hb_mc_request_packet_t *packet)
 
     uint64_t *pkt_data = reinterpret_cast<uint64_t *>(packet);
 
+    bsg_pr_dbg("Transmit (%x,%x)[%x] <- [%x]\n", packet->y_dst, packet->x_dst, packet->addr, packet->payload);
+
     int i = 0;
     int rc;
     while (i < packet_len) {
@@ -109,7 +125,21 @@ int bp_mc_link_t::tx_fifo_req(hb_mc_request_packet_t *packet)
 
 int bp_mc_link_t::tx_fifo_rsp(hb_mc_response_packet_t *packet)
 {
-    return HB_MC_NOIMPL;
+    int packet_len = sizeof(hb_mc_response_packet_t) / 8;
+
+    uint64_t *pkt_data = reinterpret_cast<uint64_t *>(packet);
+
+    int i = 0;
+    int rc;
+    while (i < packet_len) {
+        rc = try_write_bp_response_fifo(pkt_data[i]);
+
+        if (rc == 0) {
+            i++;
+        }
+    }
+
+    return HB_MC_SUCCESS; 
 }
 
 int bp_mc_link_t::rx_fifo_req(hb_mc_request_packet_t *packet)
@@ -169,7 +199,28 @@ int bp_mc_link_t::mmio_write(uint64_t address, int32_t data, uint8_t mask) {
     return HB_MC_SUCCESS;
 }
 
-bp_mc_link_t *mcl;
+int bp_mc_link_t::fifo_fence() {
+    while (*endpoint_credits_addr > 0);
+
+    return HB_MC_SUCCESS;
+}
+
+int bp_mc_link_t::fifo_drain() {
+    int unused;
+    int i = 0;
+    bsg_pr_info("Draining Request Fifo\n");
+    while (*mc_req_fifo_ctr_addr > 0) {
+        unused = *mc_req_fifo_data_addr;
+    }
+
+    i = 0;
+    bsg_pr_info("Draining Response Fifo\n");
+    while (*mc_rsp_fifo_ctr_addr > 0) {
+        unused = *mc_rsp_fifo_data_addr;
+    }
+
+    return HB_MC_SUCCESS;
+}
 
 /////////////////////////////////////////////
 // Convenience Functions
@@ -193,6 +244,16 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
+    if (timeout != -1) {
+            return HB_MC_INVALID;
+    }
+
+    switch (type) {
+        case HB_MC_FIFO_TX_REQ: return mcl->tx_fifo_req((hb_mc_request_packet_t *)packet);
+        case HB_MC_FIFO_TX_RSP: return mcl->tx_fifo_rsp((hb_mc_response_packet_t *)packet);
+    }
+    bsg_pr_info("failed to transmit...\n");
+
     return HB_MC_NOIMPL;
 }
 
@@ -209,6 +270,15 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
         long timeout)
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
+
+    if (timeout != -1) {    
+            return HB_MC_INVALID;
+    }
+
+    switch (type) {
+        case HB_MC_FIFO_RX_REQ: return mcl->rx_fifo_req((hb_mc_request_packet_t *)packet);
+        case HB_MC_FIFO_RX_RSP: return mcl->rx_fifo_rsp((hb_mc_response_packet_t *)packet);
+    }
 
     return HB_MC_NOIMPL;
 }
@@ -227,13 +297,14 @@ int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
     if (idx < HB_MC_CONFIG_MAX) {
-        int config_address = HOST_BASE_ADDRESS + HOST_BOOTROM_REG + (idx << 2);
+        int config_address = hb_mc_config_id_to_addr(HOST_BOOTROM_REG, (hb_mc_config_id_t) idx);
         int config_data;
-        mcl->mmio_read(config_address, &config_data);
+        int rc = mcl->mmio_read(config_address, &config_data);
+        if (rc == HB_MC_SUCCESS) {
+            *config = config_data;
+        }
 
-        *config = config_data;
-
-        return HB_MC_SUCCESS;
+        return rc;
     }
 
     return HB_MC_INVALID;
@@ -260,7 +331,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         hb_mc_manycore_id_t id)
 {
     int err;
-    mcl = new bp_mc_link_t;
+    bp_mc_link_t *mcl = new bp_mc_link_t;
 
     if (mc->platform)
         return HB_MC_INITIALIZED_TWICE;
@@ -270,6 +341,8 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
     }
 
     mc->platform = reinterpret_cast<void *>(mcl);
+
+    mcl->fifo_drain();
 
     return HB_MC_SUCCESS;
 }
@@ -286,7 +359,9 @@ int hb_mc_platform_fence(hb_mc_manycore_t *mc,
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
-    return HB_MC_NOIMPL;
+    mcl->fifo_fence();
+
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -298,7 +373,7 @@ int hb_mc_platform_start_bulk_transfer(hb_mc_manycore_t *mc)
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
-    return HB_MC_NOIMPL;
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -310,7 +385,7 @@ int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc)
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
-    return HB_MC_NOIMPL;
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -398,6 +473,6 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
-    return HB_MC_NOIMPL;
+    return HB_MC_SUCCESS;
 }
 

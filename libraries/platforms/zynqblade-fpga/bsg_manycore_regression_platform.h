@@ -18,18 +18,18 @@ extern "C" {
 //
 #define declare_program_main(test_name, name)                  \
                                                                \
-        int   _argc = __init_argc;                             \
-        char _argv_flat[100]; /* Up to 100 characters */       \
-        char* _argv[10];      /* Up to ten arguments  */       \
+    int   _argc = __init_argc;                                 \
+    char _argv_flat[100]; /* Up to 100 characters */           \
+    char* _argv[10];      /* Up to ten arguments  */           \
     int main() {                                               \
         int i = 0;                                             \
         int j = 0;                                             \
-	_argv[j++] = &_argv_flat[i];                           \
+        _argv[j++] = &_argv_flat[i];                           \
         do {                                                   \
           if (__init_argv[i] == ' ') {                         \
             _argv_flat[i] = '\0';                              \
             _argv[j++] = &_argv_flat[i+1];                     \
-	  } else {                                             \
+          } else {                                             \
             _argv_flat[i] = __init_argv[i];                    \
           }                                                    \
         } while (__init_argv[i++] != '\0');                    \
