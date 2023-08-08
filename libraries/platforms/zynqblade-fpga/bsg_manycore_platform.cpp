@@ -68,7 +68,7 @@ int bp_mc_link_t::try_write_bp_request_fifo(uint64_t data)
 }
 
 int bp_mc_link_t::try_write_bp_response_fifo(uint64_t data)
-{   
+{
     int ctr = *bp_rsp_fifo_ctr_addr;
 
     *bp_rsp_fifo_data_addr = data;
@@ -139,7 +139,7 @@ int bp_mc_link_t::tx_fifo_rsp(hb_mc_response_packet_t *packet)
         }
     }
 
-    return HB_MC_SUCCESS; 
+    return HB_MC_SUCCESS;
 }
 
 int bp_mc_link_t::rx_fifo_req(hb_mc_request_packet_t *packet)
@@ -156,7 +156,7 @@ int bp_mc_link_t::rx_fifo_req(hb_mc_request_packet_t *packet)
         if (rc == 0) {
             i++;
         }
-    } 
+    }
 
     return HB_MC_SUCCESS;
 }
@@ -271,7 +271,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 {
     bp_mc_link_t *mcl = reinterpret_cast<bp_mc_link_t *>(mc->platform);
 
-    if (timeout != -1) {    
+    if (timeout != -1) {
             return HB_MC_INVALID;
     }
 
@@ -290,7 +290,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
  * @param[out] config Configuration value at index
  * @return HB_MC_NOIMPL on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, 
+int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
         unsigned int idx,
         hb_mc_config_raw_t *config)
 {

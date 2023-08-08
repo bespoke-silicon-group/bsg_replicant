@@ -208,7 +208,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
  * @param[out] config Configuration value at index
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
-int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc, 
+int hb_mc_platform_get_config_at(hb_mc_manycore_t *mc,
                                  unsigned int idx,
                                  hb_mc_config_raw_t *config)
 {
@@ -268,7 +268,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         btb->set_client(mc_reset_client, 0x1);
         // Set bsg client0 to 0 (deassert BP reset)
         btb->set_client(mc_reset_client, 0x0);
-        
+
         // We need some additional toggles for data to propagate through
         btb->idle(50);
         // Deassert the active-low system reset as we finish initializing the whole system
