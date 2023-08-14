@@ -77,6 +77,7 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
                 memsys->feature_cache = 1;
                 memsys->feature_dma = 0;
         }
+        memsys->dma2cache = 0;
 
         return HB_MC_SUCCESS;
 }

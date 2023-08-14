@@ -63,6 +63,7 @@ typedef struct __hb_mc_memsys_t {
         // memory system features
         uint32_t feature_dma; //!< Can I do DMA?
         uint32_t feature_cache; //!< Do I have DMA?
+        uint32_t dma2cache; //!< Does my DMA write directly to vcache
         // dram address bitfields
         hb_mc_dram_pa_bitfield dram_ro; //!< DRAM row bits info
         hb_mc_dram_pa_bitfield dram_bg; //!< DRAM bankgroup bits info

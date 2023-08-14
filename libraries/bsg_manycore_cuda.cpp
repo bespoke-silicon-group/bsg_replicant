@@ -2105,12 +2105,14 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
         hb_mc_pod_t *pod = &device->pods[pod_id];
 
         // flush cache
-        err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
-        if (err != HB_MC_SUCCESS) {
-                bsg_pr_err("%s: failed to flush victim cache: %s\n",
-                           __func__,
-                           hb_mc_strerror(err));
-                return err;
+        if (!device->mc->config.memsys.dma2cache) {
+                err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("%s: failed to flush victim cache: %s\n",
+                                   __func__,
+                                   hb_mc_strerror(err));
+                        return err;
+                }
         }
 
         // for each job...
@@ -2136,9 +2138,11 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
         }
 
         // invalidate cache
-        err = hb_mc_manycore_pod_invalidate_vcache(device->mc, pod->pod_coord);
-        if (err != HB_MC_SUCCESS) {
-                return err;
+        if (!device->mc->config.memsys.dma2cache) {
+                err = hb_mc_manycore_pod_invalidate_vcache(device->mc, pod->pod_coord);
+                if (err != HB_MC_SUCCESS) {
+                        return err;
+                }
         }
 
         return HB_MC_SUCCESS;
@@ -2155,12 +2159,14 @@ int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod_id, 
 
         // flush cache
         hb_mc_pod_t *pod = &device->pods[pod_id];
-        err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
-        if (err != HB_MC_SUCCESS) {
-                bsg_pr_err("%s: failed to flush victim cache: %s\n",
-                           __func__,
-                           hb_mc_strerror(err));
-                return err;
+        if (!device->mc->config.memsys.dma2cache) {
+                err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
+                if (err != HB_MC_SUCCESS) {
+                        bsg_pr_err("%s: failed to flush victim cache: %s\n",
+                                   __func__,
+                                   hb_mc_strerror(err));
+                        return err;
+                }
         }
 
         // for each job...
