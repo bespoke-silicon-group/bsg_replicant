@@ -27,7 +27,7 @@
 
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/profiler/noimpl/bsg_manycore_profiler.cpp
 PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/tracer/noimpl/bsg_manycore_tracer.cpp
-PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
+PLATFORM_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/blackparrot/bsg_manycore_dma.cpp
 PLATFORM_CXXSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_platform.cpp
 
 LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-ba.c
@@ -42,10 +42,7 @@ LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/argp/argp-xinl.c
 LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/flockfile.c
 LIB_CSOURCES += $(BSG_PLATFORM_PATH)/src/funlockfile.c
 
-# aws-fpga does not provide a DMA feature. Therefore, we use the fragment in 
-# features/dma/noimpl/feature.mk that simply returns
-# HB_MC_NO_IMPL for each function call.
-include $(LIBRARIES_PATH)/features/dma/noimpl/feature.mk
+include $(LIBRARIES_PATH)/features/dma/blackparrot/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
