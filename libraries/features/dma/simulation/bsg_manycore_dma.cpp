@@ -136,6 +136,19 @@ int hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(hb_mc_manycore_t *mc)
 }
 
 /**
+ * Initializes a specialized DRAM bank to channel map 2x1 pod model  */
+static
+int hb_mc_dma_init_pod_X2Y1_X16_hbm_one_pseudo_channel(hb_mc_manycore_t *mc)
+{
+        for (int id = 0; id < 64; id++) {
+          cache_id_to_memory_id[id] = 0;
+          cache_id_to_bank_id[id] = id;
+        }
+        return HB_MC_SUCCESS;
+}
+
+
+/**
  * Initializes a specialized DRAM bank to channel map for the BigBlade Chip with wormhole test memory
  */
 static
@@ -184,6 +197,7 @@ int hb_mc_dma_init_pod_X4Y4_X16_test_mem(hb_mc_manycore_t *mc)
 static
 int hb_mc_dma_init_default(hb_mc_manycore_t *mc)
 {
+        //printf("%s called;\n", __func__);
         for (unsigned long cache_id = 0; cache_id <  hb_mc_vcache_num_caches(mc); cache_id++)
         {
                 unsigned long caches_per_channel =
@@ -202,7 +216,11 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
         cache_id_to_memory_id = new parameter_t [hb_mc_vcache_num_caches(mc)];
         cache_id_to_bank_id   = new parameter_t [hb_mc_vcache_num_caches(mc)];
         if (mc->config.chip_id == HB_MC_CHIP_ID_PAPER) {
-                return hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(mc);
+                if (mc->config.pods.x == 1 && mc->config.pods.y == 1) {
+                  return hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(mc);
+                } else if (mc->config.pods.x == 2 && mc->config.pods.y == 1) {
+                  return hb_mc_dma_init_pod_X2Y1_X16_hbm_one_pseudo_channel(mc);
+                }
         }
 
         // Despite X16 being in the dma map name, these configurations appear
@@ -271,7 +289,8 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         hb_mc_idx_t cache_id = hb_mc_config_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
         parameter_t id = cache_id_to_memory_id[cache_id];
         parameter_t bank = cache_id_to_bank_id[cache_id]; // which bank within channel
-
+        //printf("%s, npa_x=%d, npa_y=%d\n", __func__, npa->x,npa->y);
+        //printf("%s, cache_id=%d, id=%d, bank=%d\n", __func__, cache_id, id, bank);
         /*
           Use the backdoor to our non-synthesizable memory.
         */
