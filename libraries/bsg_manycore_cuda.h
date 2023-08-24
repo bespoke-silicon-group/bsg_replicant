@@ -177,7 +177,7 @@ extern "C" {
         }
 
 #define hb_mc_device_foreach_pod_id(device_ptr, pod_id)   \
-        for (pod_id = 0; pod_id < (device_ptr)->num_pods; pod_id++)
+        for (pod_id = (device_ptr)->num_pods-1; pod_id >= 0; pod_id--)
 
         /********************************/
         /* Pod Interface Initialization */
