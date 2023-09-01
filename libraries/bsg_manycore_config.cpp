@@ -193,6 +193,11 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         CHECK_FIELD(HB_MC_CONFIG_IO_HOST_CREDITS_CAP, idx >= HB_MC_HOST_CREDITS_MIN && idx <= HB_MC_HOST_CREDITS_MAX);
         config->io_host_credits_cap = idx;
 
+        // Host type
+        idx = raw[HB_MC_CONFIG_HOST_TYPE];
+        CHECK_FIELD(HB_MC_CONFIG_HOST_TYPE, idx >= HB_MC_HOST_TYPE_PC && idx <= HB_MC_HOST_TYPE_BLACKPARROT);
+        config->host_type = idx;
+
         err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: Failed to initialize memory system: %s\n",
