@@ -2105,7 +2105,7 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
         hb_mc_pod_t *pod = &device->pods[pod_id];
 
         // flush cache
-        if (!device->mc->config.memsys.dma2cache) {
+        if (device->mc->config.host_type == HB_MC_HOST_TYPE_PC) {
                 err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
                 if (err != HB_MC_SUCCESS) {
                         bsg_pr_err("%s: failed to flush victim cache: %s\n",
@@ -2138,7 +2138,7 @@ int hb_mc_device_pod_dma_to_device(hb_mc_device_t *device, hb_mc_pod_id_t pod_id
         }
 
         // invalidate cache
-        if (!device->mc->config.memsys.dma2cache) {
+        if (device->mc->config.host_type == HB_MC_HOST_TYPE_PC) {
                 err = hb_mc_manycore_pod_invalidate_vcache(device->mc, pod->pod_coord);
                 if (err != HB_MC_SUCCESS) {
                         return err;
@@ -2159,7 +2159,7 @@ int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod_id, 
 
         // flush cache
         hb_mc_pod_t *pod = &device->pods[pod_id];
-        if (!device->mc->config.memsys.dma2cache) {
+        if (device->mc->config.host_type == 0) {
                 err = hb_mc_manycore_pod_flush_vcache(device->mc, pod->pod_coord);
                 if (err != HB_MC_SUCCESS) {
                         bsg_pr_err("%s: failed to flush victim cache: %s\n",

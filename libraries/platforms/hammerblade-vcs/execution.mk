@@ -35,6 +35,8 @@ RISCV_DEFINES += -Dbsg_tiles_X=$(BSG_MACHINE_POD_TILES_X)
 RISCV_DEFINES += -Dbsg_tiles_Y=$(BSG_MACHINE_POD_TILES_Y)
 include $(BSG_F1_DIR)/examples/cuda/riscv.mk
 
+# TODO: This will always dump waves. To not dump waves, pass TRACE=""
+#   We should do this automatically on exec.log (not debug.log)
 %.log: ZYNQPARROT_EXECUTION_DIR ?= $(ZYNQPARROT_DIR)/cosim/hammerblade-example/vcs
 %.log: loader.o clr.riscv
 	$(MAKE) -C $(ZYNQPARROT_EXECUTION_DIR) clean
