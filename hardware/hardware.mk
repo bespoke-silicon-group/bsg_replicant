@@ -175,6 +175,7 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_EP_CREDITS)) >> $@.temp
 	@echo $(call dec2bin,0)                            >> $@.temp
 	@echo $(call hex2bin,$(CHIP_ID))                   >> $@.temp
+	@echo $(call dec2bin,$(BSG_MACHINE_HOST_TYPE))     >> $@.temp
 	@cat $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom >> $@.temp
 	mv $@.temp $@
 
@@ -212,6 +213,7 @@ $(BSG_MACHINE_PATH)/bsg_manycore_machine.h: $(BSG_MACHINE_PATH)/Makefile.machine
 	@echo "    (2 * (BSG_MANYCORE_MACHINE_DIM_X))" >> $@.temp
 	@echo "#define BSG_MANYCORE_MACHINE_VCACHE_SETS \\" >> $@.temp
 	@echo "    ((BSG_MANYCORE_MACHINE_VCACHE_BANK_SETS)*(BSG_MANYCORE_MACHINE_VCACHE_BANKS))" >> $@.temp
+	@echo "/* 0 = off-chip host 1 = BlackParrot host */" >> $@.temp
 	@echo "#endif" >> $@.temp
 	mv $@.temp $@
 

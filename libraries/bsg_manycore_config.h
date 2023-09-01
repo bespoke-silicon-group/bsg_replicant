@@ -108,6 +108,7 @@ extern "C" {
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
                 uint32_t chip_id;
+                uint32_t host_type;
                 hb_mc_memsys_t memsys;
         } hb_mc_config_t;
 
@@ -142,7 +143,8 @@ extern "C" {
                 HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 26,
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 27,
                 HB_MC_CONFIG_CHIP_ID = 28,
-                HB_MC_CONFIG_MEMSYS = 29,
+                HB_MC_CONFIG_HOST_TYPE = 29,
+                HB_MC_CONFIG_MEMSYS = 30,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
