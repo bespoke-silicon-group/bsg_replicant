@@ -614,7 +614,7 @@ static int hb_mc_loader_get_segment(const void *bin, size_t sz, unsigned segidx,
  */
 static int hb_mc_loader_load_segments(const void *bin, size_t sz,
                                       hb_mc_manycore_t *mc, const hb_mc_eva_map_t *map,
-                                      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
+                                      const hb_mc_coordinate_t *tiles, uint32_t ntiles, int enable_dram)
 {
         const Elf32_Ehdr *ehdr = (const Elf32_Ehdr *)bin;
         int rc, icache_segidx = -1;
@@ -638,7 +638,7 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
                 if (hb_mc_loader_segment_is_load_never(mc, phdr, map, tiles, ntiles)) {
                         // this segment should not be loaded
                         continue;
-                } else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
+                } else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles) && enable_dram) {
                         // this segment should be loaded only once (e.g. DRAM = .text + .dram)
                         rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
                         if (rc != HB_MC_SUCCESS) {
@@ -839,7 +839,7 @@ static int hb_mc_loader_tiles_initialize(hb_mc_manycore_t *mc,
  */
 int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
                       const hb_mc_eva_map_t *map,
-                      const hb_mc_coordinate_t *tiles, uint32_t ntiles)
+                      const hb_mc_coordinate_t *tiles, uint32_t ntiles, int enable_dram)
 {
         int rc;
         hb_mc_eva_t pc_init;
@@ -868,7 +868,7 @@ int hb_mc_loader_load(const void *bin, size_t sz, hb_mc_manycore_t *mc,
         }
 
         // Load segments
-        rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles);
+        rc = hb_mc_loader_load_segments(bin, sz, mc, map, tiles, ntiles, enable_dram);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_dbg("%s: failed to load segments\n", __func__);
                 return rc;

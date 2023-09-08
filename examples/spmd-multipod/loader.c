@@ -122,6 +122,9 @@ int test_loader(int argc, char **argv) {
                   continue;
                 }
 
+                // enable dram? for loading program data?
+                int enable_dram = (pod.y < 2);
+
                 /* initialize the tile */
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
@@ -142,7 +145,7 @@ int test_loader(int argc, char **argv) {
                         /* load the program */
                         err = hb_mc_loader_load(program_data, program_size,
                                                 mc, &default_map,
-                                                &target, 1);
+                                                &target, 1, enable_dram);
                         if (err != HB_MC_SUCCESS) {
                                 bsg_pr_err("failed to load binary '%s': %s\n",
                                            bin_path, hb_mc_strerror(err));

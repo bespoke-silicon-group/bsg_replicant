@@ -795,7 +795,7 @@ int hb_mc_device_pod_program_load (hb_mc_device_t *device, hb_mc_pod_t *pod)
                                device->mc,
                                &default_map,
                                tile_list,
-                               mesh_num_tiles(pod->mesh));
+                               mesh_num_tiles(pod->mesh), true);
         if (r != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to load program '%s': %s\n",
                            __func__,
