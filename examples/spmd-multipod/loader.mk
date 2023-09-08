@@ -10,6 +10,8 @@ endif
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+POD_GROUP_X ?= 4
+POD_GROUP_Y ?= 4
 TILE_GROUP_DIM_X ?= 16
 TILE_GROUP_DIM_Y ?= 8
 
@@ -17,7 +19,8 @@ TILE_GROUP_DIM_Y ?= 8
 TEST_SOURCES = $(EXAMPLES_PATH)/spmd-multipod/loader.c
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
-CDEFINES += 
+CDEFINES += -DPOD_GROUP_X=$(POD_GROUP_X)
+CDEFINES += -DPOD_GROUP_Y=$(POD_GROUP_Y)
 CXXDEFINES += 
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable

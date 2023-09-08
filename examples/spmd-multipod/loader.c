@@ -113,12 +113,19 @@ int test_loader(int argc, char **argv) {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
         hb_mc_config_foreach_pod(pod, cfg)
         {
+                // pod string
+                char pod_str[256];
+                hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
+
+                if ((pod.x >= POD_GROUP_X) || (pod.y >= POD_GROUP_Y)) {
+                  bsg_pr_test_info("Skipping pod (%d, %d)\n", pod.x, pod.y);
+                  continue;
+                }
+
                 /* initialize the tile */
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
 
-                char pod_str[256];
-                hb_mc_coordinate_to_string(pod, pod_str, sizeof(pod_str));
                 bsg_pr_test_info("Loading to pod %s\n", pod_str);
 
                 foreach_coordinate(target, origin, tg){
@@ -170,6 +177,7 @@ int test_loader(int argc, char **argv) {
                 }
 
                 /* unfreeze tile */
+                bsg_pr_test_info("Unfreezing pod %s \n", pod_str);
                 origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 target = origin;
                 foreach_coordinate(target, origin, tg){
@@ -184,6 +192,7 @@ int test_loader(int argc, char **argv) {
                 }
       
                 /* wait until all tiles have completed */
+                bsg_pr_test_info("Waiting for to pod %s to finish\n", pod_str);
                 int done = 0;
                 while (done < tg.x * tg.y) {
                   hb_mc_packet_t pkt;
