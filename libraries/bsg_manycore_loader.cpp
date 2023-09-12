@@ -182,6 +182,7 @@ static int hb_mc_loader_eva_write(const Elf32_Phdr *phdr,
         size_t off = 0, rem = sz;
         int rc;
         char segname[64];
+        //printf("hb_mc_loader_eva_write: start_eva=%x, sz=%d\n", start_eva, (int) sz);
 
         hb_mc_loader_segment_to_string(phdr, segname, sizeof(segname));
 
@@ -521,6 +522,7 @@ static bool hb_mc_loader_segment_is_load_once(hb_mc_manycore *mc,
            what the underlying hardware is */
         /* for now, just check that the most significant bit of the EVA is 1 */
         hb_mc_eva_t eva = RV32_Addr_to_host(phdr->p_paddr);
+        //printf("hb_mc_loader_segment_is_load_once: eva=%x\n", eva);
         return (eva & (1<<31) ? true : false);
 }
 
@@ -638,11 +640,13 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
                 if (hb_mc_loader_segment_is_load_never(mc, phdr, map, tiles, ntiles)) {
                         // this segment should not be loaded
                         continue;
-                } else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles) && enable_dram) {
-                        // this segment should be loaded only once (e.g. DRAM = .text + .dram)
-                        rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
-                        if (rc != HB_MC_SUCCESS) {
+                } else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
+                        if (enable_dram) {
+                          // this segment should be loaded only once (e.g. DRAM = .text + .dram)
+                          rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
+                          if (rc != HB_MC_SUCCESS) {
                                 return rc;
+                          }
                         }
                 } else { // this segment should be loaded once for each tile (e.g. DMEM = .data)
                         rc = hb_mc_loader_load_tiles_segment(mc, map, phdr, segdata,
