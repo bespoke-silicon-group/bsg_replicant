@@ -1,7 +1,7 @@
 POD_GROUP_X ?= 4
 POD_GROUP_Y ?= 4
-TILE_GROUP_DIM_X ?= 1
-TILE_GROUP_DIM_Y ?= 1
+TILE_GROUP_DIM_X ?= 16
+TILE_GROUP_DIM_Y ?= 8
 
 
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
