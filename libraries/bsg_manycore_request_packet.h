@@ -75,7 +75,7 @@ extern "C" {
                 uint8_t  op_v2;    //!< opcode
                 uint32_t addr;  //!< address field (EPA)
                 uint8_t  reserved[2];
-        }  __attribute__((packed, aligned(4))) hb_mc_request_packet_t;
+        }  __attribute__((packed, aligned(8))) hb_mc_request_packet_t;
 
         typedef struct hb_mc_request_packet_load_info {
                 uint32_t part_sel;

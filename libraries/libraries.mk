@@ -115,6 +115,7 @@ $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES 
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(BSG_PLATFORM_PATH)
+$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(BSG_PLATFORM_PATH)/include
 
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CFLAGS    += -std=c11 -fPIC $(INCLUDES) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CXXFLAGS  += -std=c++11 -fPIC $(INCLUDES) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
@@ -149,11 +150,23 @@ $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(LIB_OBJECTS_REGRESSION)
 	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
 
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a: $(LIB_OBJECTS)
+	$(AR) -rc $@ $^
+
+$(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a: $(LIB_OBJECTS_CUDA_POD_REPL)
+	$(AR) -rc $@ $^
+
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a: $(LIB_OBJECTS_REGRESSION)
+	$(AR) -rc $@ $^
+
 .PHONY: libraries.clean
 libraries.clean:
 	rm -f $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION)
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0
 	rm -f $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0
 	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0
+	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.a
+	rm -f $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.a
+	rm -f $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.a
 
 endif
