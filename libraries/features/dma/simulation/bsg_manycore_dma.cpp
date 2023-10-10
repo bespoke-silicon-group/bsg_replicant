@@ -289,16 +289,16 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         hb_mc_idx_t cache_id = hb_mc_config_dram_id(cfg, hb_mc_npa_get_xy(npa)); // which cache
         parameter_t id = cache_id_to_memory_id[cache_id];
         parameter_t bank = cache_id_to_bank_id[cache_id]; // which bank within channel
-        printf("%s, npa_x=%d, npa_y=%d\n", __func__, npa->x,npa->y);
-        printf("%s, cache_id=%d, id=%d, bank=%d\n", __func__, cache_id, id, bank);
+        //printf("%s, npa_x=%d, npa_y=%d\n", __func__, npa->x,npa->y);
+        //printf("%s, cache_id=%d, id=%d, bank=%d\n", __func__, cache_id, id, bank);
         /*
           Use the backdoor to our non-synthesizable memory.
         */
         Memory *memory = bsg_mem_dma_get_memory(id);
         parameter_t bank_size = memory->size()/caches_per_channel;
-        printf("memory_size=%d\n", memory->size());
-        printf("caches_per_channel=%d\n", caches_per_channel);
-        printf("bank_size=%d\n", bank_size);
+        //printf("memory_size=%d\n", memory->size());
+        //printf("caches_per_channel=%d\n", caches_per_channel);
+        //printf("bank_size=%d\n", bank_size);
         hb_mc_epa_t epa = hb_mc_npa_get_epa(npa);
         char npa_str[256];
 

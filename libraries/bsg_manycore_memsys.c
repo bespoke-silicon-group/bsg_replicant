@@ -285,11 +285,11 @@ static
 unsigned long long
 hb_mc_memsys_map_to_physical_channel_address_dramsim3(const hb_mc_memsys_t *memsys, unsigned long long address)
 {
-        printf("ro: bits=%d, bitidx=%d\n", memsys->dram_ro.bits, memsys->dram_ro.bitidx);
-        printf("bg: bits=%d, bitidx=%d\n", memsys->dram_bg.bits, memsys->dram_bg.bitidx);
-        printf("ba: bits=%d, bitidx=%d\n", memsys->dram_ba.bits, memsys->dram_ba.bitidx);
-        printf("co: bits=%d, bitidx=%d\n", memsys->dram_co.bits, memsys->dram_co.bitidx);
-        printf("bo: bits=%d, bitidx=%d\n", memsys->dram_byte_offset.bits, memsys->dram_byte_offset.bitidx);
+        //printf("ro: bits=%d, bitidx=%d\n", memsys->dram_ro.bits, memsys->dram_ro.bitidx);
+        //printf("bg: bits=%d, bitidx=%d\n", memsys->dram_bg.bits, memsys->dram_bg.bitidx);
+        //printf("ba: bits=%d, bitidx=%d\n", memsys->dram_ba.bits, memsys->dram_ba.bitidx);
+        //printf("co: bits=%d, bitidx=%d\n", memsys->dram_co.bits, memsys->dram_co.bitidx);
+        //printf("bo: bits=%d, bitidx=%d\n", memsys->dram_byte_offset.bits, memsys->dram_byte_offset.bitidx);
         unsigned long long ro = hb_mc_dram_pa_bitfield_get(&memsys->dram_ro, address);
         unsigned long long bg = hb_mc_dram_pa_bitfield_get(&memsys->dram_bg, address);
         unsigned long long ba = hb_mc_dram_pa_bitfield_get(&memsys->dram_ba, address);
