@@ -92,6 +92,7 @@ extern "C" {
                 hb_mc_dimension_t noc_coord_width;
                 hb_mc_dimension_t noc_ruche_factor;
                 hb_mc_dimension_t bar_ruche_factor;
+                hb_mc_dimension_t wh_ruche_factor;
                 hb_mc_dimension_t pod_coord_width;
                 hb_mc_dimension_t tile_coord_width;
                 hb_mc_coordinate_t host_interface;
@@ -126,21 +127,22 @@ extern "C" {
                 HB_MC_CONFIG_ORIGIN_COORD_Y = 11,
                 HB_MC_CONFIG_NOC_COORD_X_WIDTH = 12,
                 HB_MC_CONFIG_NOC_COORD_Y_WIDTH = 13,
-                HB_MC_CONFIG_RUCHE_FACTOR_X = 14,
+                HB_MC_CONFIG_NOC_RUCHE_FACTOR_X = 14,
                 HB_MC_CONFIG_BARRIER_RUCHE_FACTOR_X = 15,
-                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 16,
-                HB_MC_CONFIG_REPO_MANYCORE_HASH = 17,
-                HB_MC_CONFIG_REPO_F1_HASH = 18,
-                HB_MC_CONFIG_VCACHE_WAYS = 19,
-                HB_MC_CONFIG_VCACHE_SETS = 20,
-                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 21,
-                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 22,
-                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 23,
-                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 24,
-                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 25,
-                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 26,
-                HB_MC_CONFIG_CHIP_ID = 27,
-                HB_MC_CONFIG_MEMSYS = 28,
+                HB_MC_CONFIG_WH_RUCHE_FACTOR_X = 16,
+                HB_MC_CONFIG_REPO_BASEJUMP_HASH = 17,
+                HB_MC_CONFIG_REPO_MANYCORE_HASH = 18,
+                HB_MC_CONFIG_REPO_F1_HASH = 19,
+                HB_MC_CONFIG_VCACHE_WAYS = 20,
+                HB_MC_CONFIG_VCACHE_SETS = 21,
+                HB_MC_CONFIG_VCACHE_BLOCK_WORDS = 22,
+                HB_MC_CONFIG_VCACHE_STRIPE_WORDS = 23,
+                HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 24,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 25,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 26,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 27,
+                HB_MC_CONFIG_CHIP_ID = 28,
+                HB_MC_CONFIG_MEMSYS = 29,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 

@@ -78,8 +78,7 @@ module replicant_tb_top
    localparam bsg_machine_llcache_addr_width_lp=(bsg_machine_noc_epa_width_gp-1+`BSG_SAFE_CLOG2(bsg_machine_noc_data_width_gp>>3));
 
    localparam bsg_machine_wh_flit_width_lp = bsg_machine_llcache_channel_width_gp;
-   localparam bsg_machine_wh_ruche_factor_lp = 2;
-   localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_lp*2);
+   localparam bsg_machine_wh_cid_width_lp = `BSG_SAFE_CLOG2(bsg_machine_wh_ruche_factor_gp*2);
    localparam bsg_machine_wh_len_width_lp = `BSG_SAFE_CLOG2(1 + ((bsg_machine_llcache_line_words_gp * bsg_machine_llcache_data_width_lp) / bsg_machine_llcache_channel_width_gp));
    localparam bsg_machine_wh_coord_width_lp = bsg_machine_noc_coord_x_width_gp;
 
@@ -237,7 +236,7 @@ module replicant_tb_top
        ,.vcache_word_tracking_p(bsg_machine_llcache_word_tracking_gp)
 
        ,.wh_flit_width_p(bsg_machine_wh_flit_width_lp)
-       ,.wh_ruche_factor_p(bsg_machine_wh_ruche_factor_lp)
+       ,.wh_ruche_factor_p(bsg_machine_wh_ruche_factor_gp)
        ,.wh_cid_width_p(bsg_machine_wh_cid_width_lp)
        ,.wh_len_width_p(bsg_machine_wh_len_width_lp)
        ,.wh_cord_width_p(bsg_machine_wh_coord_width_lp)
