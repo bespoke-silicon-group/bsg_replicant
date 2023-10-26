@@ -89,9 +89,8 @@ BSG_MACHINE_POD_TILES_SUBARRAY_X      = 1
 BSG_MACHINE_POD_TILES_SUBARRAY_Y      = 1
 
 # Host Coordinate (Rarely Changed)
-# For true host
-BSG_MACHINE_HOST_COORD_X              = 2
-BSG_MACHINE_HOST_COORD_Y              = 0
+BSG_MACHINE_HOST_COORD_X              = 3
+BSG_MACHINE_HOST_COORD_Y              = 6
 
 BSG_MACHINE_HOST_X_CORD              = $(BSG_MACHINE_HOST_COORD_X)
 BSG_MACHINE_HOST_Y_CORD              = $(BSG_MACHINE_HOST_COORD_Y)

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, University of Washington All rights reserved.
+// Copyright (c) 2020, University of Washington All rights reserved.
 // 
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
@@ -25,39 +25,27 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#ifndef BSG_MANYCORE_PACKET_H
-#define BSG_MANYCORE_PACKET_H
+// Note: Users should only use this file for compiling with NEWLIB
 
-#include <bsg_manycore_features.h>
-#include <bsg_manycore_request_packet.h>
-#include <bsg_manycore_response_packet.h>
+// In GLIBC, this header file is present in the default include path however
+// in NEWLIB, the same header file is present in <default include path>/machine/
+// therefore, this dummy file is used to actually call the correct header file in
+// NEWLIB whilst still maintaining the same interface as GLIBC. This is done to prevent
+// changes to the CUDA-lite library code.
 
-#ifdef __cplusplus
-extern "C" {
+#ifndef _ENDIAN_H
+#define _ENDIAN_H
+
+#include <machine/endian.h>
+
+#if defined(_DEFAULT_SOURCE) && (!defined(__ASSEMBLER__))
+// BlackParrot is Little Endian
+#define le16toh(_x) ((__uint16_t)(_x))
+#define htole16(_x) ((__uint16_t)(_x))
+#define le32toh(_x) ((__uint32_t)(_x))
+#define htole32(_x) ((__uint32_t)(_x))
+#define le64toh(_x) ((__uint64_t)(_x))
+#define htole64(_x) ((__uint64_t)(_x))
 #endif
 
-        typedef union packet {
-                hb_mc_request_packet_t request; /**/
-                hb_mc_response_packet_t response; /* from the Hammerblade Manycore */
-                uint32_t words[4];
-        } __attribute__((aligned(8))) hb_mc_packet_t;
-
-        /**
-         * Fill a response packet fields using a request packet.
-         * @param[out] rsp a response packet
-         * @param[in] req a request packet
-         */
-        static void hb_mc_response_packet_fill(hb_mc_response_packet_t *rsp,
-                                               const hb_mc_request_packet_t *req)
-        {
-                hb_mc_response_packet_set_y_dst(rsp, hb_mc_request_packet_get_y_src(req));
-                hb_mc_response_packet_set_x_dst(rsp, hb_mc_request_packet_get_x_src(req));
-                hb_mc_response_packet_set_op(rsp, hb_mc_request_packet_get_op(req));
-                hb_mc_response_packet_set_load_id(rsp, hb_mc_request_packet_get_load_id(req));
-                return;
-        }
-
-#ifdef __cplusplus
-}
-#endif
-#endif
+#endif/* _ENDIAN_H__ */
