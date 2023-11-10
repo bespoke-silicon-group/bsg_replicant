@@ -70,7 +70,7 @@ int test_dma (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
+        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, args.device_id, tg_dim));
 
         hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(&device, pod)

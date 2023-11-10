@@ -40,12 +40,17 @@
 #define ARRAY_LEN 4096
 #define BASE_ADDR 0x0000
 
-int test_vcache_sequence() {
+int test_vcache_sequence(int argc, char **argv) {
         srand(time(0));
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL;
+        struct arguments_none args = {};
 
-        err = hb_mc_manycore_init(mc, "test_vcache_sequence", 0);
+        err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(err != HB_MC_SUCCESS){
+                return err;
+        }
+        err = hb_mc_manycore_init(mc, "test_vcache_sequence", args.device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to init manycore: %s\n",
                            __func__, hb_mc_strerror(err));

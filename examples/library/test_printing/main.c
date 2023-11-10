@@ -56,7 +56,13 @@ static int test_printing(int argc, char *argv[])
 {
         int rc;
         hb_mc_manycore_t mc = {0};
-        rc = hb_mc_manycore_init(&mc, "manycore@test_rom", 0);
+        struct arguments_none args = {};
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(rc != HB_MC_SUCCESS){
+            return rc;
+        }
+
+        rc = hb_mc_manycore_init(&mc, "manycore@test_rom", args.device_id);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device: %s\n",
                                 hb_mc_strerror(rc));

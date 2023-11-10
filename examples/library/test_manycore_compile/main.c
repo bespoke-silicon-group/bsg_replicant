@@ -50,7 +50,12 @@ int test_manycore_compile(int argc, char *argv[])
 {
         int rc;
         hb_mc_manycore_t manycore;
-        rc = hb_mc_manycore_init(&manycore, "manycore@test_manycore_compile", 0);
+        struct arguments_none args = {};
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(rc != HB_MC_SUCCESS){
+                return rc;
+        }
+        rc = hb_mc_manycore_init(&manycore, "manycore@test_manycore_compile", args.device_id);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device!\n");
                 return HB_MC_FAIL;

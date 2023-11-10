@@ -47,6 +47,7 @@ include $(REPLICANT_PATH)/environment.mk
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+DEVICE_ID ?= -1
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.c
@@ -78,7 +79,7 @@ include $(EXAMPLES_PATH)/link.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?=
+C_ARGS ?= $(DEVICE_ID)
 
 SIM_ARGS ?=
 

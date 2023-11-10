@@ -161,14 +161,21 @@ int test_read_write(hb_mc_manycore_t *mc) {
 }
 
 int test_manycore_dmem_read_write (int argc, char *argv[]) {
+        int rc;
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
+        struct arguments_none args = {};
+
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(rc != HB_MC_SUCCESS){
+                return rc;
+        }
 
         srand(0xBEEF);
 
         /********/
         /* INIT */
         /********/
-        int err = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        int err = hb_mc_manycore_init(mc, TEST_NAME, args.device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to initialize manycore: %s\n",
                            __func__, hb_mc_strerror(err));

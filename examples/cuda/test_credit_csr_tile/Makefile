@@ -52,6 +52,7 @@ KERNEL_NAME = vec_add_parallel
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+DEVICE_ID ?= -1
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.c
@@ -106,7 +107,7 @@ include $(EXAMPLES_PATH)/cuda/riscv.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) $(DEVICE_ID)
 
 SIM_ARGS ?=
 

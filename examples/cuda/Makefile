@@ -51,6 +51,7 @@ TESTS += test_multiple_binary_load
 TESTS += test_host_memset
 TESTS += test_stack_load
 TESTS += test_memory_leak
+DEVICE_ID ?= -1
 TESTS += test_dram_load_store
 TESTS += test_dram_host_allocated
 TESTS += test_dram_device_allocated

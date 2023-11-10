@@ -57,6 +57,7 @@ int test_loader(int argc, char **argv) {
 
   int err, r = HB_MC_FAIL;
   hb_mc_dimension_t tg;
+  int device_id;
   char *bin_path, *test_name;
   struct arguments_spmd args = {NULL, NULL, 0, 0};
 
@@ -65,10 +66,12 @@ int test_loader(int argc, char **argv) {
   test_name = args.name;
   tg.x = args.tg_x;
   tg.y = args.tg_y;
+  device_id = args.device_id;
 
   printf("Reading from file: %s\n", bin_path);
   printf("Pod group dim: %d %d\n", POD_GROUP_X, POD_GROUP_Y);
   printf("Tile group dim: %d %d\n", tg.x, tg.y);
+  printf("Hardware device ID: %d\n", device_id);
 
   // read program;
   unsigned char *program_data;
@@ -78,7 +81,7 @@ int test_loader(int argc, char **argv) {
 
   // init manycore;
   hb_mc_manycore_t manycore = {0}, *mc = &manycore;
-  hb_mc_manycore_init(&manycore, test_name, 0, POD_GROUP_X, POD_GROUP_Y);
+  hb_mc_manycore_init(&manycore, test_name, device_id, POD_GROUP_X, POD_GROUP_Y);
   const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
   hb_mc_coordinate_t pod;  
 

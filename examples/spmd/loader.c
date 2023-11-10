@@ -82,6 +82,7 @@ int test_loader(int argc, char **argv) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL;
         hb_mc_dimension_t tg;
+        int device_id;
         char *bin_path, *test_name;
         struct arguments_spmd args = {NULL, NULL, 0, 0};
 
@@ -90,10 +91,12 @@ int test_loader(int argc, char **argv) {
         test_name = args.name;
         tg.x = args.tg_x;
         tg.y = args.tg_y;
+        device_id = args.device_id;
 
 
         bsg_pr_test_info("Reading from file: %s\n", bin_path);
         bsg_pr_test_info("Tile group dimension: %d %d\n", tg.x, tg.y);
+        bsg_pr_test_info("Hardware device ID: %d\n", device_id);
 
 
         // read in the program data from the file system
@@ -102,7 +105,7 @@ int test_loader(int argc, char **argv) {
                 return err;
 
         // initialize the manycore
-        err = hb_mc_manycore_init(&manycore, test_name, 0);
+        err = hb_mc_manycore_init(&manycore, test_name, device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("failed to initialize manycore instance: %s\n",
                            hb_mc_strerror(err));

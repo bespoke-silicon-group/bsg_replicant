@@ -52,8 +52,15 @@
     } while (0)
 
 int test_pod_iteration (int argc, char **argv) {
+    int rc;
+    struct arguments_none args = {};
     hb_mc_manycore_t mc = {};
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_pod_iteration", 0));
+    rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+    if(rc != HB_MC_SUCCESS){
+            return rc;
+    }
+
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_pod_iteration", args.device_id));
 
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(&mc);
     // iterate over each pod and report its origin coordinate

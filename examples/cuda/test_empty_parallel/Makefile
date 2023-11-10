@@ -51,6 +51,7 @@ KERNEL_NAME = empty_parallel
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+DEVICE_ID ?= -1
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.c
@@ -103,7 +104,7 @@ $(CUDALITE_SRC_PATH)/$(KERNEL_NAME)/main.riscv: $(BSG_MACHINE_PATH)/Makefile.mac
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(KERNEL_NAME) $(DEVICE_ID)
 
 SIM_ARGS ?=
 

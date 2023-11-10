@@ -57,10 +57,15 @@ static hb_mc_npa_t make_npa(hb_mc_idx_t x, hb_mc_idx_t y, hb_mc_epa_t addr)
 int test_vcache_simplified(int argc, char *argv[]) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL;
+        struct arguments_none args = {};
 
+        err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(err != HB_MC_SUCCESS){
+                return err;
+        }
         srand(0);
 
-        err = hb_mc_manycore_init(mc, "test_vcache_simplified", 0);
+        err = hb_mc_manycore_init(mc, "test_vcache_simplified", args.device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to init manycore: %s\n",
                            __func__, hb_mc_strerror(err));

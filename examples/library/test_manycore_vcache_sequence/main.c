@@ -50,10 +50,15 @@ int test_manycore_vcache_sequence(int argc, char *argv[]) {
         /********/
         int err, r = HB_MC_FAIL;
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
+        struct arguments_none args = {};
+        err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(err != HB_MC_SUCCESS){
+                return err;
+        }
 
         srand(time(0));
         
-        err = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        err = hb_mc_manycore_init(mc, TEST_NAME, args.device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to intialize manycore: %s\n",
                            __func__,

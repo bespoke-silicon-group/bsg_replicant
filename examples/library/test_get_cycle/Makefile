@@ -65,6 +65,7 @@ include $(EXAMPLES_PATH)/compilation.mk
 ###############################################################################
 # Host code link flags and flow
 ###############################################################################
+DEVICE_ID ?= -1
 
 LDFLAGS += 
 
@@ -78,7 +79,7 @@ include $(EXAMPLES_PATH)/link.mk
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?=
+C_ARGS ?= $(DEVICE_ID)
 
 SIM_ARGS ?=
 

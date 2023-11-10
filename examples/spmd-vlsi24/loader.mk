@@ -14,6 +14,7 @@ POD_GROUP_X ?= 1
 POD_GROUP_Y ?= 1
 TILE_GROUP_DIM_X ?= 1
 TILE_GROUP_DIM_Y ?= 1
+DEVICE_ID ?= -1
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = $(EXAMPLES_PATH)/spmd-vlsi24/loader.c
@@ -63,7 +64,7 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME) $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME) $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y) $(DEVICE_ID)
 
 SIM_ARGS ?=
 
