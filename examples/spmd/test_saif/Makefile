@@ -70,6 +70,7 @@ include $(EXAMPLES_PATH)/compilation.mk
 ###############################################################################
 # Host code link flags and flow
 ###############################################################################
+DEVICE_ID ?= 0
 
 # link.mk defines rules for linking of the final execution binary.
 include $(EXAMPLES_PATH)/link.mk
@@ -100,7 +101,7 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME) $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME) $(TILE_GROUP_DIM_X) $(TILE_GROUP_DIM_Y) $(DEVICE_ID)
 
 SIM_ARGS ?=
 

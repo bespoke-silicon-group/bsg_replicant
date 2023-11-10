@@ -81,8 +81,8 @@ static struct test tests [] = {
         .manycore_init_output = { HB_MC_INVALID },
     },
     {
-        .name = "non-zero-id",
-        .manycore_init_input  = { MANYCORE_PTR_DEFAULT, "nzero", 1},
+        .name = "neg-id",
+        .manycore_init_input  = { MANYCORE_PTR_DEFAULT, "negid", -1},
         .manycore_init_output = { HB_MC_INVALID },
     },
     {
@@ -106,9 +106,15 @@ static
 int test_manycore_init(int argc, char *argv[])
 {
     int testno, fail = 0, err;
-
+    int device_id;
+    struct arguments_none args = {};
+    err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+    if(err != HB_MC_SUCCESS){
+            return err;
+    }
+    device_id = args.device_id;
     hb_mc_manycore_t initialized = {0};
-    err = hb_mc_manycore_init(&initialized, "initialized", 0);
+    err = hb_mc_manycore_init(&initialized, "initialized", device_id);
     if (err != HB_MC_SUCCESS) {
         test_pr_err(BSG_RED("ERROR") " while initializing test suite: %s\n",
                     hb_mc_strerror(err));
@@ -119,7 +125,9 @@ int test_manycore_init(int argc, char *argv[])
     for (testno = 0; testno < array_size(tests); testno++) {    
         struct test *test = &tests[testno];
         hb_mc_manycore_t manycore = {0};
-
+        if(test->manycore_init_input.mc_id >= 0) {
+                test->manycore_init_input.mc_id = device_id;
+        }
         switch (test->manycore_init_input.mc_ptr) {
         case MANYCORE_PTR_NULL:
             err = hb_mc_manycore_init(0,

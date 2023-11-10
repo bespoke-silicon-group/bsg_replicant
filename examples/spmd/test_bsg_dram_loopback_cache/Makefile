@@ -77,6 +77,7 @@ include $(EXAMPLES_PATH)/link.mk
 ###############################################################################
 # Device code compilation flow
 ###############################################################################
+DEVICE_ID ?= 0
 
 # BSG_MANYCORE_KERNELS is a list of manycore executables that should
 # be built before executing.
@@ -100,7 +101,7 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME) $(DEVICE_ID)
 
 SIM_ARGS ?=
 

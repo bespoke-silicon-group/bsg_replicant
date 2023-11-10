@@ -37,7 +37,7 @@
 #include <unistd.h>
 #include <limits.h>
 const size_t MAP_SIZE=32768UL;
-const char* device_name = "/dev/xdma0_user";
+#define DEVICE_NAME_FORMAT "/dev/xdma%d_user"
 #endif
 
 #include <bsg_manycore_mmio.h>
@@ -59,8 +59,7 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         int pf_id = FPGA_APP_PF, write_combine = 0, bar_id = APP_PF_BAR0;
         int r = HB_MC_FAIL, err;
 
-        // all IDs except 0 are unused at the moment
-        if (id != 0) {
+        if (id < 0) {
                 mmio_pr_err((*mmio), "Failed to init MMIO: invalid ID\n");
                 return HB_MC_INVALID;
         }
@@ -73,6 +72,8 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
 #endif
 
 #if defined(FPGA_TARGET_LOCAL)
+        char device_name[32];
+        sprintf(device_name, DEVICE_NAME_FORMAT, id);
         if ((fd = open(device_name, O_RDWR | O_SYNC)) == -1) {
                 fprintf(stderr, "Failed to open device: %s\n", device_name);
                 goto cleanup;

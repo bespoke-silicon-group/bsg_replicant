@@ -82,10 +82,14 @@ int test_manycore_eva (int argc, char *argv[]) {
 
         const hb_mc_config_t *config;
         hb_mc_manycore_t mc = {0};
-
+        struct arguments_none args = {};
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(rc != HB_MC_SUCCESS){
+                return rc;
+        }
         srand(42);
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_manycore_eva", 0);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_manycore_eva", args.device_id);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device: %s\n",
                                 hb_mc_strerror(rc));

@@ -46,10 +46,16 @@ int test_manycore_credits(int argc, char *argv[]) {
         /********/
         int rc, i;
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
+        struct arguments_none args = {};
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+
+        if(rc != HB_MC_SUCCESS){
+                return rc;
+        }
 
         srand(time(0));
         
-        rc = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        rc = hb_mc_manycore_init(mc, TEST_NAME, args.device_id);
         if (rc != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to intialize manycore: %s\n",
                            __func__,

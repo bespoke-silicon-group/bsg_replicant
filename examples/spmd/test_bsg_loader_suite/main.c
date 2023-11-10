@@ -629,8 +629,9 @@ static int run_npa_to_eva_tests()
 /******************/
 int test_loader_suite (int argc, char **argv) {
         int err, rc = HB_MC_SUCCESS;
+        int device_id = atoi(argv[argc-1]);
 
-        err = hb_mc_manycore_init(&manycore, SUITE_NAME, 0);
+        err = hb_mc_manycore_init(&manycore, SUITE_NAME, device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to initialize manycore: %s\n",
                              SUITE_NAME, hb_mc_strerror(err));

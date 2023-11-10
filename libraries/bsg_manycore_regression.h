@@ -81,15 +81,17 @@ int   hb_mc_floats_match(float a, float b);
 /* Command line parsing */
 /************************/
 
-// Do not expect command line arguments
+// Do not expect command line arguments except the hardware device ID
 extern struct argp argp_none;
 struct arguments_none{
+        int device_id; // Hardware device ID
 };
 
 // Expect the name of a riscv binary
 extern struct argp argp_name;
 struct arguments_name{
         char *testname; // Name of RISC-V Manycore Binary to run
+        int device_id; // Hardware device ID
 };
 
 // Expect the name of a riscv binary and a test name
@@ -98,6 +100,7 @@ extern struct argp argp_path;
 struct arguments_path{
         char *path; // Path to RISC-V Manycore Binary to run
         char *name; // Name of Test to Run
+        int device_id; // Hardware device ID
 };
 
 extern struct argp argp_spmd;
@@ -106,6 +109,7 @@ struct arguments_spmd{
         char *name; // Name of Test to Run
         int tg_x;
         int tg_y;
+        int device_id; // Hardware device ID
 };
 
 

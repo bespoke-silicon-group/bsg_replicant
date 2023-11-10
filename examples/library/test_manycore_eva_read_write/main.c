@@ -225,10 +225,15 @@ int test_manycore_eva_read_write (int argc, char *argv[]) {
         hb_mc_idx_t x, y;
         uint8_t memset_char;
         uint32_t memset_word;
+        struct arguments_none args = {};
+        err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(err != HB_MC_SUCCESS){
+                return err;
+        }
         /********/
         /* INIT */
         /********/
-        err = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        err = hb_mc_manycore_init(mc, TEST_NAME, args.device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to initialize manycore: %s\n",
                            __func__, hb_mc_strerror(err));

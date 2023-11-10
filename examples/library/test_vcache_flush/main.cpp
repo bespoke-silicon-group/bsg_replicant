@@ -161,13 +161,19 @@ int test_vcache_flush(int argc, char *argv[]) {
         hb_mc_dimension_t dim;
         hb_mc_coordinate_t host, dest;
         hb_mc_idx_t host_x, host_y, dim_x, dim_y;
+        struct arguments_none args = {};
+
+        rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(rc != HB_MC_SUCCESS){
+                return rc;
+        }
 
         uint32_t addr_bitwidth;
         hb_mc_epa_t addrs[NUM_TESTS];
         hb_mc_epa_t addr;
         srand(0xDEADBEEF);
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", 0);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", args.device_id);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device!\n");
                 return HB_MC_FAIL;

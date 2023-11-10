@@ -129,8 +129,13 @@ static int compare(void)
 static int run_tests(int argc, char *argv[])
 {
         int err, rc = HB_MC_FAIL;
+        struct arguments_none args = {};
+        err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(err != HB_MC_SUCCESS){
+                return err;
+        }
 
-        err = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        err = hb_mc_manycore_init(mc, TEST_NAME, args.device_id);
         if (err != HB_MC_SUCCESS) {
                 test_pr_err("failed to initialize manycore: %s\n",
                             hb_mc_strerror(err));

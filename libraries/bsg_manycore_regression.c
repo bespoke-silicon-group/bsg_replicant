@@ -148,19 +148,21 @@ static char doc[] = "A regression test for BSG Manycore on F1";
   args_doc: A description of the non-option command-line arguments that we
   accept.
 */
-static char desc_name[] = "<Test Name>";
-static char desc_path[] = "<Path to Manycore Binary> <Name of Test>";
-static char desc_spmd[] = "<Path to Manycore Binary> <Name of Test> <Tile Group Dimension X> <Tile Group Dimension Y>";
-static char desc_path_py[] = "<Path to Python Tests Directory> <Name of Test>";
-static char desc_none[] = "";
+static char desc_name[] = "<Test Name> <Hardware device ID>";
+static char desc_path[] = "<Path to Manycore Binary> <Name of Test> <Hardware device ID>";
+static char desc_spmd[] = "<Path to Manycore Binary> <Name of Test> <Tile Group Dimension X> <Tile Group Dimension Y> <Hardware device ID>";
+static char desc_path_py[] = "<Path to Python Tests Directory> <Name of Test> <Hardware device ID>";
+static char desc_none[] = "<Hardware device ID>";
 
 static struct argp_option opts_name[] = {
         {0, 'b', "TEST", 0, "Name of Manycore Test to Run"},
+        {0, 'd',   "ID", 0, "Hardware device ID"},
         {0}};
 
 static struct argp_option opts_path[] = {
         {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
         {0, 'p', "PATH", 0, "Path to RISC-V Manycore Binary"},
+        {0, 'd',   "ID", 0, "Hardware device ID"},
         {0}};
 
 static struct argp_option opts_spmd[] = {
@@ -168,14 +170,18 @@ static struct argp_option opts_spmd[] = {
         {0, 'p', "PATH", 0, "Path to RISC-V Manycore Binary"},
         {0, 'x', "TG_X", 0, "Tile Group X Dimension"},
         {0, 'y', "TG_Y", 0, "Tile Group Y Dimension"},
+        {0, 'd',   "ID", 0, "Hardware device ID"},
         {0}};
 
 static struct argp_option opts_path_py[] = {
         {0, 'n', "NAME", 0, "Name of Manycore Test to Run"},
         {0, 'p', "PATH", 0, "Path to Python Folder"},
+        {0, 'd',   "ID", 0, "Hardware device ID"},
         {0}};
 
-static struct argp_option opts_none[] = {{0}};
+static struct argp_option opts_none[] = {
+        {0, 'd',   "ID", 0, "Hardware device ID"},
+        {0}};
 
 static error_t parse_name (int key, char *arg, struct argp_state *state){
         struct arguments_name *args = (struct arguments_name *)state->input;
@@ -185,11 +191,17 @@ static error_t parse_name (int key, char *arg, struct argp_state *state){
                 case 'b':
                         args->testname = arg;
                         break;
+                case 'd':
+                        args->device_id = atoi(arg);
+                        break;
                 case ARGP_KEY_ARG:
                         if (state->arg_num == 0){
                                 args->testname = arg;
                         }
-                        if (state->arg_num > 1){
+                        if (state->arg_num == 1){
+                                args->device_id = atoi(arg);
+                        }
+                        if (state->arg_num > 2){
                                 bsg_pr_test_err("Too Many Arguments provided!\n");
                                 argp_usage(state);
                         }
@@ -197,6 +209,10 @@ static error_t parse_name (int key, char *arg, struct argp_state *state){
                 case ARGP_KEY_END:
                         if (!args->testname){
                                 bsg_pr_test_err("Test Name not provided!\n");
+                                argp_usage(state);
+                        }
+                        if (args->device_id < -1){
+                                bsg_pr_test_err("Hardware device ID not valid!\n");
                                 argp_usage(state);
                         }
                         break;
@@ -217,6 +233,9 @@ static error_t parse_path (int key, char *arg, struct argp_state *state){
                 case 'n':
                         args->name = arg;
                         break;
+                case 'd':
+                        args->device_id = atoi(arg);
+                        break;
                 case ARGP_KEY_ARG:
                         if (state->arg_num == 0){
                                 args->path = arg;
@@ -224,7 +243,10 @@ static error_t parse_path (int key, char *arg, struct argp_state *state){
                         if (state->arg_num == 1){
                                 args->name = arg;
                         }
-                        if (state->arg_num > 2){
+                        if (state->arg_num == 2){
+                                args->device_id = atoi(arg);
+                        }
+                        if (state->arg_num > 3){
                                 bsg_pr_test_err("Too Many Arguments provided!\n");
                                 argp_usage(state);
                         }
@@ -236,6 +258,10 @@ static error_t parse_path (int key, char *arg, struct argp_state *state){
                         }
                         if (!args->name){
                                 bsg_pr_test_err("Test Name not provided!\n");
+                                argp_usage(state);
+                        }
+                        if (args->device_id < -1){
+                                bsg_pr_test_err("Hardware device ID not valid!\n");
                                 argp_usage(state);
                         }
                         break;
@@ -262,6 +288,9 @@ static error_t parse_spmd (int key, char *arg, struct argp_state *state){
                 case 'y':
                         args->tg_y = arg;
                         break;
+                case 'd':
+                        args->device_id = atoi(arg);
+                        break;
                 case ARGP_KEY_ARG:
                         if (state->arg_num == 0){
                                 args->path = arg;
@@ -275,7 +304,10 @@ static error_t parse_spmd (int key, char *arg, struct argp_state *state){
                         if (state->arg_num == 3){
                                 args->tg_y = atoi(arg);
                         }
-                        if (state->arg_num > 4){
+                        if (state->arg_num == 4){
+                                args->device_id = atoi(arg);
+                        }
+                        if (state->arg_num > 5){
                                 bsg_pr_test_err("Too Many Arguments provided!\n");
                                 argp_usage(state);
                         }
@@ -297,6 +329,10 @@ static error_t parse_spmd (int key, char *arg, struct argp_state *state){
                                 bsg_pr_test_err("Tile Group X dimension not valid!\n");
                                 argp_usage(state);
                         }
+                        if (args->device_id < -1){
+                                bsg_pr_test_err("Hardware device ID not valid!\n");
+                                argp_usage(state);
+                        }
                         break;
                 default:
                         return ARGP_ERR_UNKNOWN;
@@ -309,12 +345,27 @@ static error_t parse_path_py (int key, char *arg, struct argp_state *state){
 }
 
 static error_t parse_none (int key, char *arg, struct argp_state *state){
+        struct arguments_none *args = (struct arguments_none *)state->input;
 
         switch (key)
                 {
+                case 'd':
+                        args->device_id = atoi(arg);
+                        break;
                 case ARGP_KEY_ARG:
-                        bsg_pr_test_err("Too Many Arguments provided!\n");
-                        argp_usage(state);
+                        if (state->arg_num == 0){
+                                args->device_id = atoi(arg);
+                        }
+                        if (state->arg_num > 1){
+                                bsg_pr_test_err("Too Many Arguments provided!\n");
+                                argp_usage(state);
+                        }
+                        break;
+                case ARGP_KEY_END:
+                        if (args->device_id < -1){
+                                bsg_pr_test_err("Hardware device ID not valid!\n");
+                                argp_usage(state);
+                        }
                         break;
                 default:
                         return ARGP_ERR_UNKNOWN;

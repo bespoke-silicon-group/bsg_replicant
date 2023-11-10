@@ -47,6 +47,7 @@ include $(REPLICANT_PATH)/environment.mk
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+DEVICE_ID ?= 0
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.c
@@ -80,7 +81,7 @@ include $(EXAMPLES_PATH)/link.mk
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
 PYTHON_TEST_PATH = $(EXAMPLES_PATH)/python/test_loader
-C_ARGS = $(PYTHON_TEST_PATH)/test_python.py
+C_ARGS = $(PYTHON_TEST_PATH)/test_python.py $(DEVICE_ID)
 
 SIM_ARGS ?=
 

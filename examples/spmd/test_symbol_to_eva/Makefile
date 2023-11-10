@@ -50,6 +50,7 @@ SPMD_NAME = symbol_to_eva
 ###############################################################################
 # Host code compilation flags and flow
 ###############################################################################
+DEVICE_ID ?= 0
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = main.c
@@ -100,7 +101,7 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 #
 # SIM_ARGS: Use this to pass arguments to the simulator
 ###############################################################################
-C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME)
+C_ARGS ?= $(BSG_MANYCORE_KERNELS) $(SPMD_NAME) $(DEVICE_ID)
 
 SIM_ARGS ?=
 

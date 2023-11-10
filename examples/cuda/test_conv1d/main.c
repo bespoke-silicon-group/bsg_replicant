@@ -103,7 +103,7 @@ int kernel_conv1d(int argc, char **argv)
         srand(42);
         int rc;
         hb_mc_device_t manycore, *mc = &manycore;
-        rc = hb_mc_device_init(mc, test_name, 0);
+        rc = hb_mc_device_init(mc, test_name, args.device_id);
         if(rc != HB_MC_SUCCESS)
         {
                 bsg_pr_err("Failed to initialize device.\n");

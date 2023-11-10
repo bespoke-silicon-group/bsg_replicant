@@ -69,11 +69,16 @@ void response_packet_to_array(/*const*/ hb_mc_response_packet_t *pack, /*out*/ u
 int test_manycore_packets(int argc, char *argv[]) {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err;
+        struct arguments_none args = {};
+        err = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+        if(err != HB_MC_SUCCESS){
+                return err;
+        }
 
         /*****************************/
         /* Initializing the manycore */
         /*****************************/
-        err = hb_mc_manycore_init(mc, "test_manycore_packets", 0);
+        err = hb_mc_manycore_init(mc, "test_manycore_packets", args.device_id);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err(BSG_RED("failed to initialize manycore: %s\n"), hb_mc_strerror(err));
                 return err;

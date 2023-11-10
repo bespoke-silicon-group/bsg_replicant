@@ -73,7 +73,7 @@ int kernel_vec_add (int argc, char **argv) {
         * Initialize device, load binary and unfreeze tiles.
         ******************************************************************************************************************/
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, args.device_id));
 
         hb_mc_pod_id_t pod;
         hb_mc_device_foreach_pod_id(&device, pod)

@@ -71,8 +71,16 @@ int test_compile(int argc, char **argv)
  */
 int test_wait (int argc, char **argv)
 {
+    int rc;
+    struct arguments_none args = {};
     hb_mc_manycore_t mc = {0};
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", 0));
+    rc = argp_parse (&argp_none, argc, argv, 0, 0, &args);
+    if(rc != HB_MC_SUCCESS){
+            return rc;
+    }
+
+
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", args.device_id));
 
     hb_mc_request_packet_t write_rqst;
 
