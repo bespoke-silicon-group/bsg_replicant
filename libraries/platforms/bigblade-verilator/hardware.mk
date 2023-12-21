@@ -33,7 +33,7 @@ else
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Bladerunner is cloned, but verilator not found.$(NC)"))
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Compile verilator in bsg_bladerunner to remove this warning$(NC)"))
 endif
-VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.v
+VSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.sv
 
 include $(LIBRARIES_PATH)/platforms/common/dpi/hardware.mk
 
