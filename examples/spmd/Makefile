@@ -71,6 +71,8 @@ NOT_SPMD += saif
 NOT_SPMD += bsg_riscv_tests
 NOT_SPMD += store_bug
 NOT_SPMD += store_bug_2
+NOT_SPMD += asic-01-vcache-dram
+NOT_SPMD += asic-09-power-high-freq
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
