@@ -189,7 +189,7 @@ int test_loader(int argc, char **argv) {
 
         /* wait until all pods have completed */
         int done = 0;
-        while (done < cfg->pods.x * cfg->pods.y) {
+        while (done < cfg->pods.x * cfg->pods.y * tg.x * tg.y) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
 
