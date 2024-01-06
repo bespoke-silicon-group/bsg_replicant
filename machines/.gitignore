@@ -2,8 +2,8 @@ synopsys_sim.*
 f1_parameters.vh
 bsg_bladerunner_configuration.rom
 bsg_bladerunner_memsys.rom
-bsg_bladerunner_configuration.v
-bsg_bladerunner_pkg.v
+bsg_bladerunner_configuration.sv
+bsg_bladerunner_pkg.sv
 bsg_manycore_machine.h
 libmachine.so
 Vmanycore_tb_top*
@@ -12,7 +12,7 @@ verilated_*.o
 dpi-vcs
 aws-vcs
 bigblade-vcs
-bsg_tag_boot_rom.v
+bsg_tag_boot_rom.sv
 bsg_tag_boot_rom.tr
 tapeout-vcs
 bigblade-verilator

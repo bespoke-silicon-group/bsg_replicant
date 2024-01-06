@@ -234,6 +234,7 @@ module replicant_tb_top
        ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
        ,.vcache_dma_data_width_p(bsg_machine_llcache_channel_width_gp)
        ,.vcache_word_tracking_p(bsg_machine_llcache_word_tracking_gp)
+       ,.ipoly_hashing_p(bsg_machine_llcache_ipoly_hashing_gp)
 
        ,.wh_flit_width_p(bsg_machine_wh_flit_width_lp)
        ,.wh_ruche_factor_p(bsg_machine_wh_ruche_factor_gp)
