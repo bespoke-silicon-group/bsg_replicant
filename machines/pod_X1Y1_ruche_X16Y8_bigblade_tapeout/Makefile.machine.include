@@ -37,8 +37,8 @@
 # Change these parameters to define your machine. All other parameters should remain constant.
 
 # Chip Pod Dimensions
-BSG_MACHINE_PODS_X                    = 1
-BSG_MACHINE_PODS_Y                    = 1
+BSG_MACHINE_PODS_X                    = 4
+BSG_MACHINE_PODS_Y                    = 2
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)

@@ -114,6 +114,9 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
                 }
         }
 
+        config[HB_MC_CONFIG_DIM_PODS_X] = 4;
+        config[HB_MC_CONFIG_DIM_PODS_Y] = 2;
+
         err = hb_mc_config_init(config, &(mc->config));
         if (err != HB_MC_SUCCESS) {
                 manycore_pr_err(mc, "%s: Failed to initialize configuration"
