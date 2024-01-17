@@ -38,7 +38,7 @@
 
 # Chip Pod Dimensions
 BSG_MACHINE_PODS_X                    = 4
-BSG_MACHINE_PODS_Y                    = 2
+BSG_MACHINE_PODS_Y                    = 1
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
