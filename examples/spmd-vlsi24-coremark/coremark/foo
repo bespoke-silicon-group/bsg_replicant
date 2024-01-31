@@ -1,0 +1,704 @@
+rm -rf *.o
+rm -rf exec.log
+rm -rf *.log
+BSG_MANYCORE_DIR=/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore \
+BASEJUMP_STL_DIR=/home/stdavids/vlsi24/bsg_bladerunner/basejump_stl \
+BSG_IP_CORES_DIR=/home/stdavids/vlsi24/bsg_bladerunner/basejump_stl \
+IGNORE_CADENV=1 \
+BSG_MACHINE_PATH=/home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/machines/pod_X1Y1_ruche_X16Y8_bigblade_tapeout \
+make -j1 -C /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark clean
+Toplevel Directory: /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore
+Dimensions: bsg_tiles_org_[X,Y] = 0 0; bsg_global_[X,Y] = 16,8; bsg_tiles[X,Y] = 1,1; bsg_group_size = 1
+CAD Environment: Ignoring cadenv
+Machine executable: /home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/machines/pod_X1Y1_ruche_X16Y8_bigblade_tapeout/simv
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark
+make[1]: Entering directory `/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark'
+rm -rf *.o *.a *.jou *.log *.pelog *.pb bsg_manycore_io_complex_rom.v *.riscv *.wdb *.bin *.hex *.ld
+rm -rf xsim.dir *.mem stack.info.*
+rm -rf ./simv csrc simv.daidir ucli.key DVEfiles *.vpd *.vdb coverage* constfile.txt
+rm -rf build/ *.bc* *.ll*
+rm -rf lfs.c *.nbf *.csv *.png
+rm -rf dramsim3epoch.json pc_stats dramsim3.json dramsim3.txt dramsim3.tag.json
+rm -rf dis
+make[1]: Leaving directory `/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark'
+rm -f /home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/examples/spmd-vlsi24/loader.o
+cc -c -o /home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/examples/spmd-vlsi24-coremark/loader.o /home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/examples/spmd-vlsi24-coremark/loader.c -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/libraries -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/libraries/platforms/bigblade-fpga -std=c99 -g -Wall -Wno-unused-function -Wno-unused-variable -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE -DVCS -fPIC -DPOD_GROUP_X=1 -DPOD_GROUP_Y=1
+g++ -o test_loader.o /home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/examples/spmd-vlsi24-coremark/loader.o -lstdc++ -lc -L/home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/libraries/platforms/bigblade-fpga -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
+echo 1
+1
+echo ====================================================================================================
+====================================================================================================
+BSG_MANYCORE_DIR=/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore \
+BASEJUMP_STL_DIR=/home/stdavids/vlsi24/bsg_bladerunner/basejump_stl \
+BSG_IP_CORES_DIR=/home/stdavids/vlsi24/bsg_bladerunner/basejump_stl \
+bsg_tiles_X=1 \
+bsg_tiles_Y=1 \
+IGNORE_CADENV=1 \
+BSG_MACHINE_PATH=/home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/machines/pod_X1Y1_ruche_X16Y8_bigblade_tapeout \
+make -j1 -C /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark main.riscv
+Toplevel Directory: /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore
+Dimensions: bsg_tiles_org_[X,Y] = 0 0; bsg_global_[X,Y] = 16,8; bsg_tiles[X,Y] = 1,1; bsg_group_size = 1
+CAD Environment: Ignoring cadenv
+Machine executable: /home/stdavids/vlsi24/bsg_bladerunner/bsg_replicant/machines/pod_X1Y1_ruche_X16Y8_bigblade_tapeout/simv
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark
+make[1]: Entering directory `/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark'
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/py/bsg_manycore_link_gen.py --default_data_loc=dmem --dram_size=1073741824 --sp=0x00000ffc --imem_size=0x01000000  --out=/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark/bsg_link.ld
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark/core_list_join.c -o core_list_join.o |& tee core_list_join.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark/core_main.c -o core_main.o |& tee core_main.comp.log
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark/core_matrix.c -o core_matrix.o |& tee core_matrix.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark/core_state.c -o core_state.o |& tee core_state.comp.log
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark/core_util.c -o core_util.o |& tee core_util.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  core_portme.c -o core_portme.o |& tee core_portme.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  cvt.c -o cvt.o |& tee cvt.comp.log
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  ee_printf.c -o ee_printf.o |& tee ee_printf.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib/bsg_tile_config_vars.c -o bsg_tile_config_vars.o |& tee bsg_tile_config_vars.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib/bsg_set_tile_x_y.c -o bsg_set_tile_x_y.o |& tee bsg_set_tile_x_y.comp.log
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib/bsg_printf.c -o bsg_printf.o |& tee bsg_printf.comp.log
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+riscv_register_priority: TARGET_RVC == 0
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-ar rcs bsg_manycore_lib.a bsg_tile_config_vars.o bsg_set_tile_x_y.o bsg_printf.o
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -march=rv32imaf -static -std=gnu99 -ffast-math -fno-common -mtune=bsg_vanilla_2020  -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/imports/coremark -I. -DITERATIONS=1 -DFLAGS_STR=\"-O2\" -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/ -I/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/bsg_manycore_lib -Dbsg_tiles_X=1 -Dbsg_tiles_Y=1 -Dbsg_global_X=16 -Dbsg_global_Y=8 -Dbsg_group_size=1 -Dbsg_pods_X=1 -Dbsg_pods_Y=1 -Dnum_pods_X=4 -Dnum_pods_Y=2 -DVCACHE_BLOCK_SIZE_WORDS=8 -DVCACHE_CAPACITY_WORDS=65536 -DIO_X_INDEX=31 -DIO_Y_INDEX=0 -fweb -frename-registers -frerun-cse-after-loop -O2 -DPREALLOCATE=0 -DHOST_DEBUG=0 -D__ASSEMBLY__=1 \
+	-c  /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common/crt.S -o crt.o
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/bin/riscv32-unknown-elf-dramfs-gcc -t -T /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark/bsg_link.ld -Wl,--defsym,bsg_group_size=1 -Wl,--defsym,_bsg_elf_dram_size=1073741824 -Wl,--defsym,_bsg_elf_vcache_size=262144 -Wl,--defsym,_bsg_elf_stack_ptr=0x00000ffc -Wl,--no-check-sections  core_list_join.o core_main.o core_matrix.o core_state.o core_util.o core_portme.o cvt.o ee_printf.o  -L. "-l:bsg_manycore_lib.a" -o main.riscv  -nostdlib -march=rv32imaf -nostartfiles -ffast-math -lc -lm -lgcc -l:crt.o -L /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/common 
+core_list_join.o
+core_main.o
+core_matrix.o
+core_state.o
+core_util.o
+core_portme.o
+cvt.o
+ee_printf.o
+./bsg_manycore_lib.a
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/lib/gcc/riscv32-unknown-elf-dramfs/9.2.0/../../../../riscv32-unknown-elf-dramfs/lib/libc.a
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/lib/gcc/riscv32-unknown-elf-dramfs/9.2.0/../../../../riscv32-unknown-elf-dramfs/lib/libm.a
+/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/riscv-tools/riscv-install/lib/gcc/riscv32-unknown-elf-dramfs/9.2.0/libgcc.a
+./crt.o
+make[1]: Leaving directory `/home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark'
+echo ====================================================================================================
+====================================================================================================
+sudo ./test_loader.o /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark/main.riscv coremark 1 1 2>&1 | tee exec.log
+BSG INFO: Regression Test: SPMD Loader
+INFO:    Reading from file: /home/stdavids/vlsi24/bsg_bladerunner/bsg_manycore/software/spmd/coremark/main.riscv
+INFO:    Pod group dim: 1 1
+INFO:    Tile group dim: 1 1
+INFO:    Loading to pod (0 0)
+INFO:    Skipping pod (0, 1)
+INFO:    Skipping pod (1, 0)
+INFO:    Skipping pod (1, 1)
+INFO:    Skipping pod (2, 0)
+INFO:    Skipping pod (2, 1)
+INFO:    Skipping pod (3, 0)
+INFO:    Skipping pod (3, 1)
+INFO:    Unfreezing pod (0 0)
+INFO:    Waiting for pods to finish...
+INFO:    Received FINISH packet from (16 8)
