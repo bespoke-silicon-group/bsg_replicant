@@ -1,19 +1,19 @@
 // Copyright (c) 2019, University of Washington All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without modification,
 // are permitted provided that the following conditions are met:
-// 
+//
 // Redistributions of source code must retain the above copyright notice, this list
 // of conditions and the following disclaimer.
-// 
+//
 // Redistributions in binary form must reproduce the above copyright notice, this
 // list of conditions and the following disclaimer in the documentation and/or
 // other materials provided with the distribution.
-// 
+//
 // Neither the name of the copyright holder nor the names of its contributors may
 // be used to endorse or promote products derived from this software without
 // specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -532,7 +532,7 @@ int hb_mc_device_init (hb_mc_device_t *device,
         XMALLOC(device->mc);
         *(device->mc) = {0};
 
-        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_init(device->mc, name, id))
+        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_init(device->mc, name, id, 4, 2))
 
         // enumerate pods
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
@@ -795,7 +795,7 @@ int hb_mc_device_pod_program_load (hb_mc_device_t *device, hb_mc_pod_t *pod)
                                device->mc,
                                &default_map,
                                tile_list,
-                               mesh_num_tiles(pod->mesh));
+                               mesh_num_tiles(pod->mesh), 1);
         if (r != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to load program '%s': %s\n",
                            __func__,
