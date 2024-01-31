@@ -98,7 +98,7 @@ int hb_mc_manycore_host_request_fence(hb_mc_manycore_t *mc, long timeout)
 
 
 /* initialize configuration */
-static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
+static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc, int pod_x, int pod_y)
 {
         int err;
         uintptr_t addr;
@@ -114,8 +114,8 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
                 }
         }
 
-        config[HB_MC_CONFIG_DIM_PODS_X] = 4;
-        config[HB_MC_CONFIG_DIM_PODS_Y] = 2;
+        config[HB_MC_CONFIG_DIM_PODS_X] = pod_x;
+        config[HB_MC_CONFIG_DIM_PODS_Y] = pod_y;
 
         err = hb_mc_config_init(config, &(mc->config));
         if (err != HB_MC_SUCCESS) {
@@ -137,7 +137,7 @@ static int hb_mc_manycore_init_config(hb_mc_manycore_t *mc)
  * @param[in] id    ID which selects the physical hardware from which this manycore is configured
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
-int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_id_t id)
+int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_id_t id, int pod_x, int pod_y)
 {
         int r = HB_MC_FAIL, err;
 
@@ -163,7 +163,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         }
 
         // read configuration
-        if ((err = hb_mc_manycore_init_config(mc)) != HB_MC_SUCCESS){
+        if ((err = hb_mc_manycore_init_config(mc, pod_x, pod_y)) != HB_MC_SUCCESS){
                 free((void*)mc->name);
                 hb_mc_platform_cleanup(mc);
                 return err;
