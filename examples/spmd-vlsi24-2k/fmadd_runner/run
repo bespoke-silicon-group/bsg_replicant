@@ -1,2 +1,1 @@
-sudo rm -f ../loader.o
 sudo make clean exec.log
