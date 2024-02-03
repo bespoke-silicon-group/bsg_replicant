@@ -41,3 +41,5 @@ for v_mv in range(550, 900 + 50, 50):
     )
 
     print(f"{v},{osc-1}", file=fid)
+
+fid.close()
