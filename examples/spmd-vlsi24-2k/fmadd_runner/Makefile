@@ -13,4 +13,5 @@ SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 include $(EXAMPLES_PATH)/spmd-vlsi24-2k/loader.mk
 
 sweep:
-	sudo python3 -u sweep.py | tee -i sweep_log
+	mkdir results
+	sudo python3 -u sweep.py | tee -i results/run.log
