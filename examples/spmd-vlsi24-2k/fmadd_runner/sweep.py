@@ -7,9 +7,11 @@ import subprocess
 from hb_board_v0p5_lib import *
 from boot import _boot_wrapper as start_asic
 
-results_csv = "results.csv"
-v_min = 560
-v_max = 560
+results_csv = "results/results.csv"
+sleep_time = 3.0
+timeout = 3
+v_min = 860
+v_max = 900
 v_step = 20
 
 print(f"[SWEEP] starting sweep from v_min={v_min} to v_max={v_max} with v_step={v_step}")
@@ -29,7 +31,7 @@ for v_mv in range(v_min, v_max + v_step, v_step):
 
         print(f"[SWEEP] try volt={v}, osc={osc}")
 
-        time.sleep(1.5)
+        time.sleep(sleep_time)
         start_asic(
             voltage=v,
             pwm=70,
@@ -38,13 +40,13 @@ for v_mv in range(v_min, v_max + v_step, v_step):
             clk_2=(True,osc,0),
             clk_3=(True,osc,0),
         )
-        time.sleep(1.5)
+        time.sleep(sleep_time)
 
         print(f"[SWEEP] launching program")
-        proc = subprocess.run(["timeout 10s make clean exec.log"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+        proc = subprocess.run([f"timeout {timeout}s make clean exec.log"], shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
 
         output = proc.stdout.decode("utf-8")
-        with open(f"sweep_exec_v{v_mv}_osc{osc}", "w") as log_fid:
+        with open(f"results/exec_v{v_mv}_osc{osc}.log", "w") as log_fid:
             print(output, file=log_fid)
 
         if proc.returncode != 0:
@@ -60,7 +62,7 @@ for v_mv in range(v_min, v_max + v_step, v_step):
             best_osc = osc
             osc_settings = osc_settings[osc_idx+1:]
 
-    time.sleep(1.5)
+    time.sleep(sleep_time)
     start_asic(
         voltage=0.8,
         pwm=20,
@@ -72,6 +74,6 @@ for v_mv in range(v_min, v_max + v_step, v_step):
 
     print(f"[SWEEP] finished sweeping for v={v}, best osc={best_osc}")
 
-    fid = open(results_csv, 'w')
+    fid = open(results_csv, 'a')
     print(f"{v},{best_osc}", file=fid)
     fid.close()
