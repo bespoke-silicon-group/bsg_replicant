@@ -10,7 +10,7 @@ from boot import _boot_wrapper as start_asic
 results_csv = "results/results.csv"
 sleep_time = 1.5
 timeout = 5
-v_min = 920
+v_min = 540
 v_max = 1000
 v_step = 20
 
