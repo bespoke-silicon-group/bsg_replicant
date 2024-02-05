@@ -8,10 +8,10 @@ from hb_board_v0p5_lib import *
 from boot import _boot_wrapper as start_asic
 
 results_csv = "results/results.csv"
-sleep_time = 3.0
-timeout = 3
-v_min = 860
-v_max = 900
+sleep_time = 1.5
+timeout = 5
+v_min = 920
+v_max = 1000
 v_step = 20
 
 print(f"[SWEEP] starting sweep from v_min={v_min} to v_max={v_max} with v_step={v_step}")
@@ -34,7 +34,7 @@ for v_mv in range(v_min, v_max + v_step, v_step):
         time.sleep(sleep_time)
         start_asic(
             voltage=v,
-            pwm=70,
+            pwm=100,
             clk_0=(True,osc,0),
             clk_1=(True,osc,0),
             clk_2=(True,osc,0),
