@@ -1,8 +1,8 @@
-POD_GROUP_X := 1
-POD_GROUP_Y := 1
-TILE_GROUP_DIM_X := 1
-TILE_GROUP_DIM_Y := 1
-export ITERATIONS := 100
+export POD_GROUP_X := 4
+export POD_GROUP_Y := 2
+export TILE_GROUP_DIM_X := 16
+export TILE_GROUP_DIM_Y := 8
+export ITERATIONS := 10000
 
 REPLICANT_PATH:=$(shell git rev-parse --show-toplevel)
 SPMD_NAME := $(notdir $(abspath $(dir $(abspath $(lastword $(MAKEFILE_LIST))))))
