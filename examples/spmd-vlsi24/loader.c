@@ -78,7 +78,7 @@ int test_loader(int argc, char **argv) {
 
   // init manycore;
   hb_mc_manycore_t manycore = {0}, *mc = &manycore;
-  hb_mc_manycore_init(&manycore, test_name, 0);
+  hb_mc_manycore_init(&manycore, test_name, 0, POD_GROUP_X, POD_GROUP_Y);
   const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
   hb_mc_coordinate_t pod;  
 

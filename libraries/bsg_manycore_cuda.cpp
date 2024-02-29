@@ -532,7 +532,7 @@ int hb_mc_device_init (hb_mc_device_t *device,
         XMALLOC(device->mc);
         *(device->mc) = {0};
 
-        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_init(device->mc, name, id))
+        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_init(device->mc, name, id, 4, 2))
 
         // enumerate pods
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);

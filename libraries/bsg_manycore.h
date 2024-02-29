@@ -89,7 +89,7 @@ extern "C" {
          * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
          */
         __attribute__((warn_unused_result))
-        int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_id_t id);
+        int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_id_t id, int pod_x, int pod_y);
 
         /**
          * Cleanup an initialized manycore instance
