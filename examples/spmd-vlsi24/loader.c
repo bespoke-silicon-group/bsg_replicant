@@ -103,7 +103,7 @@ int test_loader(int argc, char **argv) {
       // freeze tile;
       hb_mc_tile_freeze(mc, &target);
       // load program;
-      hb_mc_loader_load(program_data, program_size, mc, &default_map, &target, 1, enable_dram));
+      hb_mc_loader_load(program_data, program_size, mc, &default_map, &target, 1, enable_dram);
       // set tg origin;
       hb_mc_tile_set_origin(mc, &target, &origin);
       hb_mc_tile_set_origin_registers(mc, &target, &origin);
