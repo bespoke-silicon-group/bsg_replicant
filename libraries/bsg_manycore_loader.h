@@ -51,7 +51,7 @@ extern "C" {
                               hb_mc_manycore_t *mc,
                               const hb_mc_eva_map_t *map, 
                               const hb_mc_coordinate_t *tiles, 
-                              uint32_t len);
+                              uint32_t len, int enable_dram);
 
         /**
          * Get an EVA for a symbol from a program data.
