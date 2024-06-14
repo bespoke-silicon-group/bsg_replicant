@@ -2,3 +2,7 @@
 	path = examples/apps/aes/tiny-AES-c
 	url = git@github.com:bespoke-silicon-group/tiny-AES-c.git
         update = none
+[submodule "examples/cuda/nbody/Galois"]
+	path = examples/apps/nbody/Galois
+	url = git@github.com:bespoke-silicon-group/Galois.git
+        update = none
