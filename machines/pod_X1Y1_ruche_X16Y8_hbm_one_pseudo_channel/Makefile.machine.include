@@ -63,7 +63,7 @@ BSG_MACHINE_WH_RUCHE_FACTOR           = 2
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MEM_DRAMSIM3_PKG          = bsg_dramsim3_hbm2_1gb_x64_32ba_pkg
-BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
+BSG_MACHINE_MEM_CFG                   = e_vcache_block_mem
 
 # Enable DMA;
 # Enable transferring data between host and device by bypassing the vcache using the CUDA function:
@@ -127,7 +127,7 @@ BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 
 # Aliases required for memsys.mk, and others.
 # Specific to the HBM2E chip we're modeling (8GB, 4-stack/8-channel)
-__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^28 | bc) # 1GB
+__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS := $(shell echo 2^29 | bc) # 2GB
 __BSG_MACHINE_DRAMSIM3_CHIP_CH_SIZE_IN_WORDS := $(shell echo $(__BSG_MACHINE_DRAMSIM3_CHIP_SIZE_IN_WORDS)/1 | bc)
 
 BSG_MACHINE_POD_TILES                := $(shell echo $(BSG_MACHINE_POD_TILES_X)*$(BSG_MACHINE_POD_TILES_Y) | bc)
