@@ -67,6 +67,7 @@ DISABLE_MICRON_MEMORY_MODEL ?= yes
 include $(HARDWARE_PATH)/memsys_axi4_f1.mk
 include $(HARDWARE_PATH)/memsys_test_mem.mk
 include $(HARDWARE_PATH)/memsys_hbm2.mk
+include $(HARDWARE_PATH)/memsys_block_mem.mk
 
 # setup vdefines for the memory system
 MEMSYS_VDEFINES-$(DISABLE_MICRON_MEMORY_MODEL)   += AXI_MEMORY_MODEL=1

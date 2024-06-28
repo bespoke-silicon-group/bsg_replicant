@@ -551,7 +551,6 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
 
         if (cfg->vcache_ipoly_hashing) {
           // ipoly start;
-          ///*
           uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
           uint32_t xdimlog    = default_get_x_dimlog(cfg);
           uint32_t dram_shift
@@ -592,7 +591,6 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                   ^ dram_bit16
                   ^ dram_bit17;
           }
-          //*/
           // ipoly end;
         } else {
           // Regular hashing;

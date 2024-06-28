@@ -199,10 +199,19 @@ int hb_mc_dma_init_default(hb_mc_manycore_t *mc)
 
 int hb_mc_dma_init(hb_mc_manycore_t *mc)
 {
+        printf("%s: hb_mc_vcache_num_caches(mc) = %d\n", __func__, hb_mc_vcache_num_caches(mc));
         cache_id_to_memory_id = new parameter_t [hb_mc_vcache_num_caches(mc)];
         cache_id_to_bank_id   = new parameter_t [hb_mc_vcache_num_caches(mc)];
         if (mc->config.chip_id == HB_MC_CHIP_ID_PAPER) {
                 return hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(mc);
+        }
+        if (mc->config.chip_id == HB_MC_CHIP_ID_RUCHEEVAL) {
+                printf("%s: HB_MC_CHIP_ID_RUCHEEVAL;\n", __func__);
+                for (int i = 0 ; i < hb_mc_vcache_num_caches(mc); i++) {
+                  cache_id_to_memory_id[i] = 0;
+                  cache_id_to_bank_id[i] = i;
+                }
+                return HB_MC_SUCCESS;
         }
 
         // Despite X16 being in the dma map name, these configurations appear

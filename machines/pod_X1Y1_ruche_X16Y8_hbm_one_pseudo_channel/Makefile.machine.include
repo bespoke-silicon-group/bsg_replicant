@@ -37,7 +37,7 @@
 ############################################################################################
 
 # Change these parameters to define your machine. All other parameters should remain constant.
-BSG_MACHINE_CHIP_ID		      = 15ca2022
+BSG_MACHINE_CHIP_ID		      = 15ca2024
 
 # Chip Pod Dimensions
 BSG_MACHINE_PODS_X                    = 1
