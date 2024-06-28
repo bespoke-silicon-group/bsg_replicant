@@ -7,11 +7,13 @@ extern "C" {
 #define HB_MC_CHIP_ID_MASTER   0x00000000
 #define HB_MC_CHIP_ID_BIGBLADE 0xbb1ade00
 #define HB_MC_CHIP_ID_PAPER    0x15ca2022
+#define HB_MC_CHIP_ID_RUCHEEVAL    0x15ca2024
 
 #define HB_MC_IS_CHIP_ID(id)                    \
     ((id) == HB_MC_CHIP_ID_MASTER ||            \
      (id) == HB_MC_CHIP_ID_BIGBLADE ||          \
-     (id) == HB_MC_CHIP_ID_PAPER)
+     (id) == HB_MC_CHIP_ID_PAPER   ||          \
+     (id) == HB_MC_CHIP_ID_RUCHEEVAL)
 
 #ifdef __cplusplus
 }

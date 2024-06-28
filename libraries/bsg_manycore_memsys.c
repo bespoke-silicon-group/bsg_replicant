@@ -18,6 +18,7 @@ const char * hb_mc_memsys_id_to_string(hb_mc_memsys_id_t id)
                 [HB_MC_MEMSYS_ID_DRAMSIM3] = "DRAMSim3 HBM2",
                 [HB_MC_MEMSYS_ID_TESTMEM] = "Non-synthesizable Test Memory (via Wormhole Network)",
                 [HB_MC_MEMSYS_ID_HBM2] = "High Bandwidth Memory 2 (via Wormhole Network)",
+                [HB_MC_MEMSYS_ID_BLOCKMEM] = "Block mem",
         };
 
         return strtab[id];
@@ -41,13 +42,15 @@ int hb_mc_memsys_get_id_from_rom_value(
                 *id = HB_MC_MEMSYS_ID_TESTMEM;
         else if (memcmp(HB_MC_ROM_MEMSYS_ID_HBM2, &rom_id, sizeof(rom_id))==0)
                 *id = HB_MC_MEMSYS_ID_HBM2;
+        else if (memcmp(HB_MC_ROM_MEMSYS_ID_BLOCKMEM, &rom_id, sizeof(rom_id))==0)
+                *id = HB_MC_MEMSYS_ID_BLOCKMEM;
         else { // error - bad memory system ID
                 bsg_pr_err("%s: Invalid Memory System ID 0x%" PRIx32 "\n",
                            __func__, rom_id);
                 return HB_MC_INVALID;
         }
 
-        bsg_pr_dbg("%s: Memory System: %s\n",
+        printf("%s: Memory System: %s\n",
                    __func__, hb_mc_memsys_id_to_string(*id));
 
         return HB_MC_SUCCESS;
@@ -71,8 +74,13 @@ int hb_mc_memsys_set_features(hb_mc_memsys_t *memsys)
                 memsys->feature_cache = 1;
                 memsys->feature_dma = 1;
                 break;
+        case HB_MC_MEMSYS_ID_BLOCKMEM:
+                memsys->feature_cache = 0;
+                memsys->feature_dma = 1;
+                break;
         case HB_MC_MEMSYS_ID_NONE: // TODO - throw this error somewhere else?
                 return HB_MC_INVALID;
+
         default: // by default we support cache but not DMA
                 memsys->feature_cache = 1;
                 memsys->feature_dma = 0;
