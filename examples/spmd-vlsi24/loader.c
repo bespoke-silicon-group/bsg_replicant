@@ -92,7 +92,7 @@ int test_loader(int argc, char **argv) {
     }
 
     // enable dram? 
-    int enable_dram = (pod.y < 2);
+    int enable_dram = (1);
 
     // initialize tiles;
     printf("Loading to pod (%d %d)\n", pod.x, pod.y);
