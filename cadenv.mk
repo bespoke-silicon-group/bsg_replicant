@@ -51,5 +51,29 @@ include $(CL_DIR)/../bsg_cadenv/cadenv.mk
 export VCS_HOME=$(VCSMX_HOME)
 else
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Couldn't find bsg_cadenv. User must configure CAD Environment.$(NC)"))
+
+# Synopsys License Server
+#export LM_LICENSE_FILE = <your license server url>
+# VCS Path
+#export VCS_HOME = <VCS installation home path>
+# VERDI Path
+#export VERDI_HOME = <VERDI installation home path>
+
+# Environment Variables Checking
+ifndef LM_LICENSE_FILE
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: LM_LICENSE_FILE is not defined$(NC)"))
+endif
+ifndef VCS_HOME
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: VCS_HOME is not defined$(NC)"))
+endif
+ifndef VERDI_HOME
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: VERDI_HOME is not defined$(NC)"))
+endif
+
+# CAD Tool Paths
+VCS_BIN = $(VCS_HOME)/bin
+VERDI_BIN = $(VERDI_HOME)/bin
+export PATH:=$(PATH):$(VCS_BIN):$(VERDI_BIN)
+
 endif
 endif
