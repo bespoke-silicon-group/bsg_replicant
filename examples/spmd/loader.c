@@ -228,7 +228,10 @@ int test_loader(int argc, char **argv) {
         }
 
 cleanup:
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wunused-result"
         hb_mc_manycore_exit(mc);
+    #pragma GCC diagnostic pop
         return err;
         
 }

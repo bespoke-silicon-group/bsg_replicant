@@ -27,7 +27,7 @@
 //
 
 /*
- *  bsg_manycore_endpoint_to_fifos.v
+ *  bsg_manycore_endpoint_to_fifos.sv
  *
  * Convert manycore packets into FIFO data streams, with fields aligned
  * to 8-bit/1-byte boundaries, or vice-versa.

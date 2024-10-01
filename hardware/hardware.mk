@@ -124,8 +124,6 @@ charv2bin = $(call hex2bin, $(call charv2hex, $(1)))
 
 include $(HARDWARE_PATH)/memsys.mk
 
-$(shell ls $(VSOURCES))
-
 # This target generates the ASCII file for the memory system ROM data.
 # It is important to keep these grouped together.
 $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom: $(BSG_MACHINE_PATH)/Makefile.machine.include
