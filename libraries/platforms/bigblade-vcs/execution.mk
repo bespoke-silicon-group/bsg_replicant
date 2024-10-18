@@ -59,7 +59,7 @@ saifgen.saif: saifgen.log ;
 debug.fsdb: debug.log ;
 
 view: debug.fsdb
-	$(VERDI) -ssf $< &
+	verdi -ssf $< &
 
 platform.execution.clean:
 	rm -rf saifgen.log exec.log profile.log exec.log debug.fsdb
