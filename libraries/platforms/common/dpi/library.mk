@@ -33,6 +33,7 @@ PLATFORM_REGRESSION_CSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_regression_pla
 
 include $(LIBRARIES_PATH)/features/dma/simulation/feature.mk
 include $(LIBRARIES_PATH)/features/tracer/simulation/feature.mk
+include $(LIBRARIES_PATH)/features/pc_histogram/simulation/feature.mk
 
 PLATFORM_OBJECTS += $(patsubst %cpp,%o,$(PLATFORM_CXXSOURCES))
 PLATFORM_OBJECTS += $(patsubst %c,%o,$(PLATFORM_CSOURCES))
