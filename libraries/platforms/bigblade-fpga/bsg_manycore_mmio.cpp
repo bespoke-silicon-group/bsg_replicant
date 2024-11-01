@@ -36,6 +36,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/file.h>
 const size_t MAP_SIZE=32768UL;
 const char* device_name = "/dev/xdma0_user";
 #endif
@@ -78,6 +79,10 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 goto cleanup;
             }
         else {
+                if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
+                    fprintf(stderr, "Failed to lock device: %s\n", device_name);
+                    goto cleanup;
+                }
                 mmio->p = (uintptr_t) mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
                 printf("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, fd, mmio->p);
         }
@@ -98,6 +103,9 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
 #if defined(FPGA_TARGET_LOCAL)
         if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
             mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
+        }
+        if (flock(fd, LOCK_UN) == -1) {
+            fprintf(stderr, "Failed to unlock device: %s\n", device_name);
         }
         close(fd);
 #else
