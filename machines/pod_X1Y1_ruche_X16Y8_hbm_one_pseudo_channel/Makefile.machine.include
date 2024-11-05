@@ -43,8 +43,8 @@ BSG_MACHINE_CHIP_ID		      = 15ca2022
 BSG_MACHINE_PODS_X                    = 1
 BSG_MACHINE_PODS_Y                    = 1
 
-# 1.5 GHz Core Clock
-BSG_MACHINE_PODS_CYCLE_TIME_PS         = 666
+# 1 GHz Core Clock
+BSG_MACHINE_PODS_CYCLE_TIME_PS         = 1000
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
@@ -67,8 +67,8 @@ BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 32
 BSG_MACHINE_VCACHE_SET                = 64
-BSG_MACHINE_VCACHE_WAY                = 8
-BSG_MACHINE_VCACHE_LINE_WORDS         = 16
+BSG_MACHINE_VCACHE_WAY                = 4
+BSG_MACHINE_VCACHE_LINE_WORDS         = 8
 BSG_MACHINE_VCACHE_STRIPE_WORDS       = $(BSG_MACHINE_VCACHE_LINE_WORDS)
 BSG_MACHINE_VCACHE_WORD_TRACKING      = 1
 BSG_MACHINE_VCACHE_IPOLY_HASHING      = 1
