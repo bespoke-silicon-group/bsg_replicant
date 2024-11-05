@@ -44,7 +44,7 @@ const size_t MAP_SIZE=32768UL;
 #include <bsg_manycore_mmio.h>
 #include <fpga_pci.h>
 
-uint8_t fd;
+int fd;
 
 /**
  * Initialize MMIO for operation
@@ -85,6 +85,10 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                     goto cleanup;
                 }
                 mmio->p = (uintptr_t) mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                if(mmio->p == (uintptr_t)-1) {
+                    fprintf(stderr, "Failed to mmap device: %s\n", device_name);
+                    goto cleanup;
+                }
                 printf("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, fd, mmio->p);
         }
 #else
