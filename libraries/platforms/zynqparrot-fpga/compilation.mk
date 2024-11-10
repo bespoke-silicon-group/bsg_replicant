@@ -25,23 +25,38 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# aws-fpga does not provide a DMA feature. Therefore, we compile
-# features/dma/noimpl/bsg_manycore_dma.cpp that simply returns
-# HB_MC_NO_IMPL for each function call.
-DMA_FEATURE_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
+# This Makefile fragment defines rules for compilation of the C/C++
+# files for running regression tests.
 
-DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
-DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
-$(DMA_FEATURE_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
-$(DMA_FEATURE_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
-$(DMA_FEATURE_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+# This file REQUIRES several variables to be set. They are typically
+# set by the Makefile that includes this makefile..
+# 
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(DMA_FEATURE_OBJECTS)
+DEFINES    += -DFPGA
+INCLUDES   += -I$(LIBRARIES_PATH)
+INCLUDES   += -I$(BSG_PLATFORM_PATH)
 
-.PHONY: dma_feature.clean
-dma_feature.clean:
-	rm -f $(DMA_FEATURE_OBJECTS)
+LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
+CXXFLAGS   += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000
+CFLAGS     += $(DEFINES) -fPIC -D_BSD_SOURCE -DGP0_ENABLE -DGP0_ADDR_BASE=0x40000000
 
-platform.clean: dma_feature.clean
+# each regression target needs to build its .o from a .c and .h of the
+# same name
+%.o: %.c
+	$(CC) -c -o $@ $< $(INCLUDES) $(CFLAGS) $(CDEFINES)
+
+# ... or a .cpp and .hpp of the same name
+%.o: %.cpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
+
+.PRECIOUS: %.o
+
+.PHONY: platform.compilation.clean
+platform.compilation.clean:
+	rm -rf *.o
+
+compilation.clean: platform.compilation.clean

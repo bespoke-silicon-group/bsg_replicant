@@ -25,23 +25,39 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-# aws-fpga does not provide a DMA feature. Therefore, we compile
-# features/dma/noimpl/bsg_manycore_dma.cpp that simply returns
-# HB_MC_NO_IMPL for each function call.
-DMA_FEATURE_CXXSOURCES += $(LIBRARIES_PATH)/features/dma/noimpl/bsg_manycore_dma.cpp
+# This Makefile Fragment defines rules for linking object files for native
+# regression tests
 
-DMA_FEATURE_OBJECTS += $(patsubst %cpp,%o,$(DMA_FEATURE_CXXSOURCES))
-DMA_FEATURE_OBJECTS += $(patsubst %c,%o,$(DMA_FEATURE_CSOURCES))
+# hardware.mk is the file list for the simulation RTL. It includes the
+# platform specific hardware.mk file.
+include $(HARDWARE_PATH)/hardware.mk
 
-$(DMA_FEATURE_OBJECTS): INCLUDES := -I$(LIBRARIES_PATH)
-$(DMA_FEATURE_OBJECTS): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
-$(DMA_FEATURE_OBJECTS): CFLAGS   := -std=c11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
-$(DMA_FEATURE_OBJECTS): CXXFLAGS := -std=c++11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE $(INCLUDES)
+# libraries.mk defines how to build libbsg_manycore_runtime.so, which is
+# pre-linked against all other simulation binaries.
+include $(LIBRARIES_PATH)/libraries.mk
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(DMA_FEATURE_OBJECTS)
+ORANGE=\033[0;33m
+RED=\033[0;31m
+NC=\033[0m
 
-.PHONY: dma_feature.clean
-dma_feature.clean:
-	rm -f $(DMA_FEATURE_OBJECTS)
+LDFLAGS += -L$(BSG_PLATFORM_PATH)
+LDFLAGS += -lbsg_manycore_runtime -lbsg_manycore_regression -lbsgmc_cuda_legacy_pod_repl -lm
 
-platform.clean: dma_feature.clean
+TEST_CSOURCES   += $(filter %.c,$(TEST_SOURCES))
+TEST_CXXSOURCES += $(filter %.cpp,$(TEST_SOURCES))
+TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
+TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
+
+REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
+REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
+REGRESSION_LIBRARIES += $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
+
+test_loader.o: $(TEST_OBJECTS) $(REGRESSION_LIBRARIES)
+	$(CXX) -o $@ $^ $(LDFLAGS)
+
+.PHONY: platform.link.clean
+platform.link.clean:
+	rm -rf test_loader.o
+
+link.clean: platform.link.clean
+
