@@ -28,3 +28,4 @@ dramsim3.txt
 *.d
 *.dis
 *.diso
+lfs.c
