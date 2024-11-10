@@ -326,7 +326,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
  * Receive a packet from manycore hardware
  * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
  * @param[in] response A packet into which data should be read
- * @param[in] timeout  A timeout counter. Unused - set to -1 to wait forever.
+ * @param[in] timeout  A timeout counter. Set to -1 to wait forever.
  * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
  */
 int hb_mc_platform_receive(hb_mc_manycore_t *mc,
@@ -340,12 +340,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
         SimulationWrapper *top = platform->top;
         __m128i *pkt = reinterpret_cast<__m128i*>(packet);
 
-        if (timeout != -1) {
-                manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
-                                __func__);
-                return HB_MC_INVALID;
-        }
-
+        int t = 0;
         do {
                 top->eval();
 
@@ -359,6 +354,10 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
                 default:
                         manycore_pr_err(mc, "%s: Unknown packet type\n", __func__);
                         return HB_MC_NOIMPL;
+                }
+
+                if (timeout != -1  && t++ >= timeout) {
+                    return HB_MC_TIMEOUT;
                 }
 
         } while (err != BSG_NONSYNTH_DPI_SUCCESS &&

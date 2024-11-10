@@ -51,7 +51,7 @@ extern "C" {
          * Receive a packet from manycore hardware
          * @param[in] mc       A manycore instance initialized with hb_mc_manycore_init()
          * @param[in] response A packet into which data should be read
-         * @param[in] timeout  A timeout counter. Unused - set to -1 to wait forever.
+         * @param[in] timeout  A timeout counter. Set to -1 to wait forever.
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */
         int hb_mc_platform_receive(hb_mc_manycore_t *mc,
