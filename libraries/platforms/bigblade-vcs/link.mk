@@ -72,16 +72,15 @@ VCS_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VCS_FLAGS   = $(VCS_LDFLAGS) $(VCS_VFLAGS) $(VCS_INCLUDES) $(VCS_DEFINES)
 VCS_VSOURCES = $(VHEADERS) $(VSOURCES)
 
-$(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +memcbk
 ifeq ($(VERDI_HOME),)
   USE_VERDI ?= 0
 else
   USE_VERDI ?= 1
 endif
 ifeq ($(USE_VERDI),0)
-  $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +vcs+vcdpluson +vcs+vcdplusmemon -debug_pp +vpdfile+debug.vpd
+  $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk -debug_pp +vpdfile+debug.vpd
 else
-  $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += -kdb -debug_acc+all -debug_region+cell+encrypt +define+ENABLE_FSDB_DUMP +fsdb+struct=on
+  $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save -kdb -debug_acc+all -debug_region+cell+encrypt +memcbk +define+ENABLE_FSDB_DUMP +fsdb+struct=on
 endif
 
 $(BSG_MACHINExPLATFORM_PATH)/repl/simv $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simv $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
