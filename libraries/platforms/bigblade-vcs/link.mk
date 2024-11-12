@@ -73,7 +73,11 @@ VCS_FLAGS   = $(VCS_LDFLAGS) $(VCS_VFLAGS) $(VCS_INCLUDES) $(VCS_DEFINES)
 VCS_VSOURCES = $(VHEADERS) $(VSOURCES)
 
 $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +memcbk
-USE_VERDI ?= 0
+ifeq ($(VERDI_HOME),)
+  USE_VERDI ?= 0
+else
+  USE_VERDI ?= 1
+endif
 ifeq ($(USE_VERDI),0)
   $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +vcs+vcdpluson +vcs+vcdplusmemon -debug_pp +vpdfile+debug.vpd
 else
