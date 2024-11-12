@@ -93,7 +93,6 @@ VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_trace.sv
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.sv
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_exe_bubble_classifier.sv
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_pc_histogram.sv
-VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_pc_histogram.cpp
 VSOURCES += $(HARDWARE_PATH)/bsg_print_stat_snoop.sv
 
 VSOURCES += $(BSG_MANYCORE_DIR)/testbenches/common/v/router_profiler.sv
