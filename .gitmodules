@@ -2,3 +2,6 @@
 	path = examples/apps/aes/tiny-AES-c
 	url = git@github.com:bespoke-silicon-group/tiny-AES-c.git
         update = none
+[submodule "examples/hb_hammerbench"]
+	path = examples/hb_hammerbench
+	url = git@github.com:bespoke-silicon-group/hb_hammerbench.git
