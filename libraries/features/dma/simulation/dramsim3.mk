@@ -65,6 +65,8 @@ $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -I$(BASEJU
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -DFMT_HEADER_ONLY=1
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -DBLOOD_GRAPH
+# Uncomment the following two lines to enable blood graph trace dumping
+# NOTE: these outputs can become very large and slow down the simulation significantly, so only enable them when needed
 #$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -DBLOOD_GRAPH_ENABLE_TRACE
 #$(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXXFLAGS += -DBLOOD_GRAPH_ENABLE_PERIODIC_TRACE
 $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so: CXX=g++
