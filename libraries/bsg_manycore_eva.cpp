@@ -419,6 +419,109 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
         uint32_t dram_min_x_coord = default_dram_min_x_coord(cfg, src);
 
         *x = (hb_mc_eva_addr(eva) >> stripe_log) & xmask;
+
+
+        if (cfg->vcache_ipoly_hashing) {
+          // ipoly hashing (xy) start
+          ///*
+          uint32_t xdimlog    = default_get_x_dimlog(cfg);
+          uint32_t shift
+                  = stripe_log // stripe byte-offset bits
+                  + xdimlog    // x-coordinate bits
+                  + 1;         // north-south bit 
+          uint32_t dram_idx = ((hb_mc_eva_addr(eva) & MAKE_MASK(DEFAULT_DRAM_BITIDX)) >> shift );
+          uint32_t dram_bit0 = (dram_idx >> 0) & 1;
+          uint32_t dram_bit1 = (dram_idx >> 1) & 1;
+          uint32_t dram_bit2 = (dram_idx >> 2) & 1;
+          uint32_t dram_bit3 = (dram_idx >> 3) & 1;
+          uint32_t dram_bit4 = (dram_idx >> 4) & 1;
+          uint32_t dram_bit5 = (dram_idx >> 5) & 1;
+          uint32_t dram_bit6 = (dram_idx >> 6) & 1;
+          uint32_t dram_bit7 = (dram_idx >> 7) & 1;
+          uint32_t dram_bit8 = (dram_idx >> 8) & 1;
+          uint32_t dram_bit9 = (dram_idx >> 9) & 1;
+          uint32_t dram_bit10 = (dram_idx >> 10) & 1;
+          uint32_t dram_bit11 = (dram_idx >> 11) & 1;
+          uint32_t dram_bit12 = (dram_idx >> 12) & 1;
+          uint32_t dram_bit13 = (dram_idx >> 13) & 1;
+          uint32_t dram_bit14 = (dram_idx >> 14) & 1;
+          uint32_t dram_bit15 = (dram_idx >> 15) & 1;
+          uint32_t dram_bit16 = (dram_idx >> 16) & 1;
+          uint32_t dram_bit17 = (dram_idx >> 17) & 1;
+          uint32_t dram_bit18 = (dram_idx >> 18) & 1;
+          if (xdimlog == 4) {
+            uint32_t hash0 = (dram_bit0 ^ dram_bit3 ^ dram_bit5 ^ dram_bit6
+                       ^  dram_bit9 ^ dram_bit10 ^ dram_bit11 ^ dram_bit12  ^ dram_bit13);
+            uint32_t hash1 = (dram_bit1 ^ dram_bit4 ^ dram_bit6 ^ dram_bit7
+                       ^  dram_bit10 ^ dram_bit11 ^ dram_bit12 ^ dram_bit13  ^ dram_bit14) << 1;
+            uint32_t hash2 = (dram_bit0 ^ dram_bit2 ^ dram_bit3 ^ dram_bit6
+                       ^  dram_bit7 ^ dram_bit8 ^ dram_bit9 ^ dram_bit10  ^ dram_bit14) << 2;
+            uint32_t hash3 = (dram_bit1 ^ dram_bit3 ^ dram_bit4 ^ dram_bit7
+                       ^  dram_bit8 ^ dram_bit9 ^ dram_bit10 ^ dram_bit11) << 3;
+            *x ^= hash0;
+            *x ^= hash1;
+            *x ^= hash2;
+            *x ^= hash3;
+          } else if (xdimlog == 5) {
+            uint32_t hash0 = (dram_bit0
+                         ^ dram_bit5
+                         ^ dram_bit6
+                         ^ dram_bit10
+                         ^ dram_bit12
+                         ^ dram_bit15
+                         ^ dram_bit16
+                         ^ dram_bit17
+                         ^ dram_bit18);
+            uint32_t hash1 = (dram_bit0
+                         ^ dram_bit1
+                         ^ dram_bit5
+                         ^ dram_bit7
+                         ^ dram_bit10
+                         ^ dram_bit11
+                         ^ dram_bit12
+                         ^ dram_bit13
+                         ^ dram_bit15) << 1;
+            uint32_t hash2 = (dram_bit1
+                         ^ dram_bit2
+                         ^ dram_bit6
+                         ^ dram_bit8
+                         ^ dram_bit11
+                         ^ dram_bit12
+                         ^ dram_bit13
+                         ^ dram_bit14
+                         ^ dram_bit16) << 2;
+            uint32_t hash3 = (dram_bit2
+                         ^ dram_bit3
+                         ^ dram_bit7
+                         ^ dram_bit9
+                         ^ dram_bit12
+                         ^ dram_bit13
+                         ^ dram_bit14
+                         ^ dram_bit15
+                         ^ dram_bit17) << 3;
+            uint32_t hash4 = (dram_bit3
+                         ^ dram_bit4
+                         ^ dram_bit8
+                         ^ dram_bit10
+                         ^ dram_bit13
+                         ^ dram_bit14
+                         ^ dram_bit15
+                         ^ dram_bit16
+                         ^ dram_bit18) << 4;
+            *x ^= hash0;
+            *x ^= hash1;
+            *x ^= hash2;
+            *x ^= hash3;
+            *x ^= hash4;
+          }
+        //*/
+        // ipoly hashing (xy) end
+        } else {
+          // Regular hashing;
+          // Do nothing;;
+        }
+
+
         *x += hb_mc_coordinate_get_x(og);
         if (*x > dram_max_x_coord || *x < dram_min_x_coord) {
                 bsg_pr_err("%s: Translation of EVA 0x%08" PRIx32 " failed. The X-coordinate "
@@ -445,6 +548,56 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
 
         uint32_t is_south = (hb_mc_eva_addr(eva) >> shift) & 1;
         hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+
+        if (cfg->vcache_ipoly_hashing) {
+          // ipoly start;
+          ///*
+          uint32_t stripe_log = default_get_dram_stripe_size_log(mc);
+          uint32_t xdimlog    = default_get_x_dimlog(cfg);
+          uint32_t dram_shift
+                = stripe_log // stripe byte-offset bits
+                + xdimlog    // x-coordinate bits
+                + 1;         // north-south bit 
+          uint32_t dram_idx = ((hb_mc_eva_addr(eva) & MAKE_MASK(DEFAULT_DRAM_BITIDX)) >> dram_shift );
+          uint32_t dram_bit2 = (dram_idx >> 2) & 1;
+          uint32_t dram_bit4 = (dram_idx >> 4) & 1;
+          uint32_t dram_bit5 = (dram_idx >> 5) & 1;
+          uint32_t dram_bit8 = (dram_idx >> 8) & 1;
+          uint32_t dram_bit9 = (dram_idx >> 9) & 1;
+          uint32_t dram_bit10 = (dram_idx >> 10) & 1;
+          uint32_t dram_bit11 = (dram_idx >> 11) & 1;
+          uint32_t dram_bit12 = (dram_idx >> 12) & 1;
+          uint32_t dram_bit14 = (dram_idx >> 14) & 1;
+          uint32_t dram_bit15 = (dram_idx >> 15) & 1;
+          uint32_t dram_bit16 = (dram_idx >> 16) & 1;
+          uint32_t dram_bit17 = (dram_idx >> 17) & 1;
+          if (xdimlog == 4) {
+            is_south = is_south
+                  ^ dram_bit2
+                  ^ dram_bit4
+                  ^ dram_bit5
+                  ^ dram_bit8
+                  ^ dram_bit9
+                  ^ dram_bit10
+                  ^ dram_bit11
+                  ^ dram_bit12;
+          } else if (xdimlog == 5) {
+            is_south = is_south
+                  ^ dram_bit4
+                  ^ dram_bit5
+                  ^ dram_bit9
+                  ^ dram_bit11
+                  ^ dram_bit14
+                  ^ dram_bit15
+                  ^ dram_bit16
+                  ^ dram_bit17;
+          }
+          //*/
+          // ipoly end;
+        } else {
+          // Regular hashing;
+          // Do nothing;;;
+        }
 
         *y = is_south
             ? hb_mc_config_pod_dram_south_y(cfg, pod)

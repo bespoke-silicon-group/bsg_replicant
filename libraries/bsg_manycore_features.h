@@ -29,9 +29,13 @@
 #define BSG_MANYCORE_FEATURES_H
 // <features.h> sorts out many of these defines based on compile time flags (e.g. -std=c++11)
 #include <features.h>
-// check _BSG_SOURCE
+// check _BSD_SOURCE
 #ifndef _BSD_SOURCE
 #error "_BSD_SOURCE not defined: required for bsg_manycore_runtime"
+#endif
+// check _DEFAULT_SOURCE
+#ifndef _DEFAULT_SOURCE
+#error "_DEFAULT_SOURCE not defined: required for bsg_manycore_runtime"
 #endif
 
 // check _XOPEN_SOURCE

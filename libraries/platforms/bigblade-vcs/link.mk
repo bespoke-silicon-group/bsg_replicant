@@ -60,18 +60,28 @@ VDEFINES += BSG_MACHINE_DRAMSIM3_PKG=$(BSG_MACHINE_MEM_DRAMSIM3_PKG)
 VLDFLAGS += -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH)
 VLDFLAGS += -lbsg_manycore_regression -lbsg_manycore_runtime -lm
 VCS_LDFLAGS += $(foreach def,$(VLDFLAGS),-LDFLAGS "$(def)")
-VCS_VFLAGS  += -M -L -ntb_opts tb_timescale=1ps/1ps -lca
+VCS_VFLAGS  += -lca -ntb_opts tb_timescale=1ps/1ps
 VCS_VFLAGS  += -timescale=1ps/1ps -sverilog -full64 -licqueue -q
 VCS_VFLAGS  += -assert svaext -undef_vcs_macro
 VCS_VFLAGS  += +warn=noLCA_FEATURES_ENABLED
 VCS_VFLAGS  += +warn=noMC-FCNAFTMI
 VCS_VFLAGS  += +lint=all,TFIPC-L,noSVA-UA,noSVA-NSVU,noVCDE,noSVA-AECASR
+VCS_VFLAGS  += -reportstats
 VCS_INCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
 VCS_DEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
 VCS_FLAGS   = $(VCS_LDFLAGS) $(VCS_VFLAGS) $(VCS_INCLUDES) $(VCS_DEFINES)
 VCS_VSOURCES = $(VHEADERS) $(VSOURCES)
 
-$(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk -debug_pp
+ifeq ($(VERDI_HOME),)
+  USE_VERDI ?= 0
+else
+  USE_VERDI ?= 1
+endif
+ifeq ($(USE_VERDI),0)
+  $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save +vcs+vcdpluson +vcs+vcdplusmemon +memcbk -debug_pp +vpdfile+debug.vpd
+else
+  $(BSG_MACHINExPLATFORM_PATH)/debug/simv: VCS_VFLAGS += +plusarg_save -kdb -debug_acc+all -debug_region+cell+encrypt +memcbk +define+ENABLE_FSDB_DUMP +fsdb+struct=on
+endif
 
 $(BSG_MACHINExPLATFORM_PATH)/repl/simv $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simv $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_VCORE_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/repl/simv $(BSG_MACHINExPLATFORM_PATH)/pc-histogram/simv $(BSG_MACHINExPLATFORM_PATH)/saifgen/simv $(BSG_MACHINExPLATFORM_PATH)/exec/simv: VDEFINES += BSG_MACHINE_DISABLE_CACHE_PROFILING
