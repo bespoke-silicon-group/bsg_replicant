@@ -137,7 +137,7 @@ extern "C" {
 
 #ifdef __cplusplus
 #define RQST_ID(x, y, addr)                     \
-        request_packet_id(addr, x, y, 1)
+        request_packet_id({addr, x, y, 1})
 #else
 #define RQST_ID(x, y, addr)                                             \
         { .init = 1, .id_x_src = x, .id_y_src = y, .id_addr = addr }
