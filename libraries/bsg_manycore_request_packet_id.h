@@ -95,18 +95,33 @@ extern "C" {
         } hb_mc_request_packet_id_t;
 
         /* this is used to match an address under a mask */
+#ifdef __cplusplus
+#define RQST_ID_ADDR_UNDER_MASK(addr, mask)     \
+        {addr, mask}
+
+#define RQST_ID_ADDR(addr)                      \
+        {addr, UINT32_MAX}
+#else
 #define RQST_ID_ADDR_UNDER_MASK(addr, mask)     \
         {.a_value = addr, .a_mask = mask}
 
 #define RQST_ID_ADDR(addr)                      \
         {.a_value = addr, .a_mask = UINT32_MAX}
+#endif
 
 
         /* these are used to match INCLUSIVE ranges */
+#ifdef __cplusplus
+#define RQST_ID_RANGE_X(lo, hi)                 \
+        {lo, hi}
+#define RQST_ID_RANGE_Y(lo, hi)                 \
+        {lo, hi}
+#else
 #define RQST_ID_RANGE_X(lo, hi)                 \
         {.x_lo = lo, .x_hi = hi}
 #define RQST_ID_RANGE_Y(lo, hi)                 \
         {.y_lo = lo, .y_hi = hi}
+#endif
 
         /* these are used to match any coordinate */
 #define RQST_ID_ANY_X                           \
