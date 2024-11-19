@@ -44,6 +44,12 @@ LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
 CXXFLAGS   += $(DEFINES) -fPIC
 CFLAGS     += $(DEFINES) -fPIC
 
+# Default id is 0x0, user specified id should be digits-only integer
+ifeq ($(DEVICE_ID), 0x0)
+CXXDEFINES += -DDEVICE_ID=-1
+CDEFINES   += -DDEVICE_ID=-1
+endif
+
 # each regression target needs to build its .o from a .c and .h of the
 # same name
 %.o: %.c
