@@ -35,6 +35,11 @@ ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
 
+# Default id is 0x0, user specified id should be digits-only integer
+DEVICE_ID  ?= 0x0
+CXXDEFINES += -DDEVICE_ID=$(DEVICE_ID)
+CDEFINES   += -DDEVICE_ID=$(DEVICE_ID)
+
 # Include platform-specific compilation rules
 include $(BSG_PLATFORM_PATH)/compilation.mk
 
