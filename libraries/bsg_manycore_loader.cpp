@@ -639,11 +639,17 @@ static int hb_mc_loader_load_segments(const void *bin, size_t sz,
                         // this segment should not be loaded
                         continue;
                 } else if (hb_mc_loader_segment_is_load_once(mc, phdr, map, tiles, ntiles)) {
+                    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+                    const hb_mc_coordinate_t pod = hb_mc_config_vcore_to_pod(cfg, tiles[0]);
+                    const bool enable_dram = ( (pod.x < cfg->enable_dram_pods.x) &&
+                                               (pod.y < cfg->enable_dram_pods.y) );
+                    if (enable_dram) {
                         // this segment should be loaded only once (e.g. DRAM = .text + .dram)
                         rc = hb_mc_loader_load_tile_segment(mc, map, phdr, segdata, tiles[0]);
                         if (rc != HB_MC_SUCCESS) {
                                 return rc;
                         }
+                    }
                 } else { // this segment should be loaded once for each tile (e.g. DMEM = .data)
                         rc = hb_mc_loader_load_tiles_segment(mc, map, phdr, segdata,
                                                              tiles, ntiles);
