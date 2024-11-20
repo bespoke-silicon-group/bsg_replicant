@@ -79,7 +79,7 @@ int kernel_vec_add (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles. */
         hb_mc_dimension_t tg_dim = { .x = 2, .y = 2};
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
+        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, DEVICE_ID, tg_dim));
 
         /* if DMA is not supported just return SUCCESS */
         if (!hb_mc_manycore_supports_dma_write(device.mc)
