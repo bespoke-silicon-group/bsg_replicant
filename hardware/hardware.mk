@@ -177,6 +177,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_REMOTE_LOAD_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_EP_CREDITS)) >> $@.temp
 	@echo $(call dec2bin,0)                            >> $@.temp
+	@echo $(call hex2bin,$(BSG_MACHINE_ENABLE_DRAM_PODS_X)) >> $@.temp
+	@echo $(call hex2bin,$(BSG_MACHINE_ENABLE_DRAM_PODS_Y)) >> $@.temp
 	@echo $(call hex2bin,$(CHIP_ID))                   >> $@.temp
 	@cat $(BSG_MACHINE_PATH)/bsg_bladerunner_memsys.rom >> $@.temp
 	mv $@.temp $@

@@ -114,6 +114,10 @@ BSG_MACHINE_IO_EP_CREDITS             = 32
 BSG_MACHINE_IO_HOST_CREDITS           = $(BSG_MACHINE_IO_EP_CREDITS)
 BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 
+# Enable DRAM pod dimensions
+BSG_MACHINE_ENABLE_DRAM_PODS_X        = $(BSG_MACHINE_PODS_X)
+BSG_MACHINE_ENABLE_DRAM_PODS_Y        = $(BSG_MACHINE_PODS_Y)
+
 ##################### Constants and Computations #####################
 
 # Aliases required for memsys.mk, and others.
