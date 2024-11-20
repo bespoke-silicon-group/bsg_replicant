@@ -75,7 +75,7 @@ int test_loader (int argc, char **argv) {
 
         // init
         hb_mc_device_t device;
-        CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+        CUDA_CALL(hb_mc_device_init(&device, test_name, DEVICE_ID));
         CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
         // config tg

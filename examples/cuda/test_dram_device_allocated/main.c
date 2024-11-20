@@ -73,7 +73,7 @@ int kernel_dram_device_allocated (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
         hb_mc_device_t device;
-        rc = hb_mc_device_init(&device, test_name, 0);
+        rc = hb_mc_device_init(&device, test_name, DEVICE_ID);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize device.\n");
                 return rc;

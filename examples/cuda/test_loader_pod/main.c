@@ -125,7 +125,7 @@ int test_loader (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, DEVICE_ID));
 
         int r = test_loader_program_run(&args, &device);
 
