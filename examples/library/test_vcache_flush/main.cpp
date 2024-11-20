@@ -167,7 +167,7 @@ int test_vcache_flush(int argc, char *argv[]) {
         hb_mc_epa_t addr;
         srand(0xDEADBEEF);
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", 0);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", DEVICE_ID);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device!\n");
                 return HB_MC_FAIL;

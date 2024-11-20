@@ -52,7 +52,7 @@ int test_manycore_alignment(int argc, char *argv[]) {
 
         srand(time(0));
         
-        err = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        err = hb_mc_manycore_init(mc, TEST_NAME, DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to intialize manycore: %s\n",
                            __func__,

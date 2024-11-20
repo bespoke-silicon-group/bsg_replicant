@@ -47,7 +47,7 @@ int test_vcache_stride(int argc, char *argv[]) {
         const hb_mc_config_t *config;
         srand(time(0));
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", 0);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_vcache_stride", DEVICE_ID);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device!\n");
                 return HB_MC_FAIL;

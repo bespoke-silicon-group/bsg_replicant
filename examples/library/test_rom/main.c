@@ -53,7 +53,7 @@ int test_rom (int argc, char **argv) {
                 return rc;
         }
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_rom", 0);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_rom", DEVICE_ID);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device: %s\n",
                                 hb_mc_strerror(rc));
