@@ -47,8 +47,11 @@ BSG_MACHINE_PODS_Y                    = 2
 BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 
 # Network Parameters
+# BSG_MACHINE_NETWORK_CFG longer has an effect, fixed at e_network_half_ruche_x
 BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
 BSG_MACHINE_RUCHE_FACTOR_X            = 3
+BSG_MACHINE_BARRIER_RUCHE_FACTOR_X    = 3
+BSG_MACHINE_WH_RUCHE_FACTOR           = 2
 
 # Memory System Parameters
 BSG_MACHINE_DRAM_INCLUDED             = 1
@@ -61,6 +64,8 @@ BSG_MACHINE_VCACHE_SET                = 64
 BSG_MACHINE_VCACHE_WAY                = 4
 BSG_MACHINE_VCACHE_LINE_WORDS         = 8
 BSG_MACHINE_VCACHE_STRIPE_WORDS       = $(BSG_MACHINE_VCACHE_LINE_WORDS)
+BSG_MACHINE_VCACHE_WORD_TRACKING      = 0
+BSG_MACHINE_VCACHE_IPOLY_HASHING      = 0
 # Only applies to Non-blocking Cache
 BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
 
