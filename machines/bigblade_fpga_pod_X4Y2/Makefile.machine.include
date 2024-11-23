@@ -26,12 +26,12 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ############################################################################################
-# TIMING_MESH_8_4: this is a 8x4 array with v-caches on top and bottom (a “8x4 pod”).      #
-# Each v-cache is mapped to a separate HBM bank.                                           #
-# There is one HBM channel.                                                                #
-# There is a vanilla, 2D mesh network (no ruche links)                                     #
-# This is probably not a sensible configuration, as the tile to channel ratio is very low. #
-# But for memory bound benchmarks, it may be reasonable to use for iteration.              #
+# bigblade_fpga_pod_X4Y2                                                                   #
+# 8 pods                                                                                   #
+# 128 RISC-V Tiles per pod, 16 tiles wide, 8 tiles tall                                    #
+# Last level caches on the top and bottom of each column                                   #
+# Last level caches are connected to HBM DRAM                                              #
+# There is a vanilla, 2D mesh network augmented with Ruche links                           #
 ############################################################################################
 
 # Change these parameters to define your machine. All other parameters should remain constant.
