@@ -26,11 +26,11 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ############################################################################################
-# bigblade_fpga_pod_X4Y2                                                                   #
+# bigblade_pod_X4Y2_ruche_X16Y8_fpga                                                       #
 # 8 pods                                                                                   #
 # 128 RISC-V Tiles per pod, 16 tiles wide, 8 tiles tall                                    #
 # Last level caches on the top and bottom of each column                                   #
-# Last level caches are connected to HBM DRAM                                              #
+# Last level caches are connected to FPGA DRAM                                             #
 # There is a vanilla, 2D mesh network augmented with Ruche links                           #
 ############################################################################################
 
