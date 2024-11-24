@@ -112,8 +112,22 @@ int test_loader(int argc, char **argv) {
         /* initialize the tile */
         hb_mc_coordinate_t pod;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+        // Specify number of pods to launch, default all available pods (-1)
+        int pod_launch_x = POD_GROUP_X;
+        int pod_launch_y = POD_GROUP_Y;
+        if (pod_launch_x == -1 || pod_launch_x > cfg->pods.x) pod_launch_x = cfg->pods.x;
+        if (pod_launch_y == -1 || pod_launch_y > cfg->pods.y) pod_launch_y = cfg->pods.y;
+        printf("Pod launch dim desired: %d %d, actual: %d %d\n", 
+                POD_GROUP_X, POD_GROUP_Y, pod_launch_x, pod_launch_y);
+
         hb_mc_config_foreach_pod(pod, cfg)
         {
+                // Skip pods;
+                if ((pod.x >= pod_launch_x) || (pod.y >= pod_launch_y)) {
+                    continue;
+                }
+
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
 
@@ -173,6 +187,11 @@ int test_loader(int argc, char **argv) {
         /* unfreeze tile */
         hb_mc_config_foreach_pod(pod, cfg)
         {
+                // Skip pods;
+                if ((pod.x >= pod_launch_x) || (pod.y >= pod_launch_y)) {
+                    continue;
+                }
+
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
                 foreach_coordinate(target, origin, tg){
@@ -189,7 +208,7 @@ int test_loader(int argc, char **argv) {
 
         /* wait until all pods have completed */
         int done = 0;
-        while (done < cfg->pods.x * cfg->pods.y) {
+        while (done < pod_launch_x * pod_launch_y) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
 
