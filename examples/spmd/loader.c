@@ -207,8 +207,9 @@ int test_loader(int argc, char **argv) {
         }
 
         /* wait until all pods have completed */
+        int num_packet_per_pod = (WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
         int done = 0;
-        while (done < pod_launch_x * pod_launch_y) {
+        while (done < num_packet_per_pod * pod_launch_x * pod_launch_y) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
 
