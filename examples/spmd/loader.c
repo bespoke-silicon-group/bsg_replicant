@@ -118,8 +118,8 @@ int test_loader(int argc, char **argv) {
         int pod_launch_y = POD_GROUP_Y;
         if (pod_launch_x == -1 || pod_launch_x > cfg->pods.x) pod_launch_x = cfg->pods.x;
         if (pod_launch_y == -1 || pod_launch_y > cfg->pods.y) pod_launch_y = cfg->pods.y;
-        printf("Pod launch dim desired: %d %d, actual: %d %d\n", 
-                POD_GROUP_X, POD_GROUP_Y, pod_launch_x, pod_launch_y);
+        bsg_pr_test_info("Pod launch dim desired: %d %d, actual: %d %d\n", 
+                            POD_GROUP_X, POD_GROUP_Y, pod_launch_x, pod_launch_y);
 
         hb_mc_config_foreach_pod(pod, cfg)
         {
@@ -194,6 +194,8 @@ int test_loader(int argc, char **argv) {
 
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
+                bsg_pr_test_info("Unfreezing pod (%d %d)\n", pod.x, pod.y);
+
                 foreach_coordinate(target, origin, tg){
                         err = hb_mc_tile_unfreeze(mc, &target);
                         if (err != HB_MC_SUCCESS) {
@@ -207,6 +209,7 @@ int test_loader(int argc, char **argv) {
         }
 
         /* wait until all pods have completed */
+        bsg_pr_test_info("Waiting for pods to finish...\n");
         int num_packet_per_pod = (WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
         int done = 0;
         while (done < num_packet_per_pod * pod_launch_x * pod_launch_y) {
