@@ -212,6 +212,7 @@ int test_loader(int argc, char **argv) {
         bsg_pr_test_info("Waiting for pods to finish...\n");
         int num_packet_per_pod = (WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
         int done = 0;
+        int fail = 0;
         while (done < num_packet_per_pod * pod_launch_x * pod_launch_y) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
@@ -245,10 +246,12 @@ int test_loader(int argc, char **argv) {
                         bsg_pr_dbg("received fail packet\n");
                         err = HB_MC_FAIL;
                         done += 1;
+                        fail += 1;
                         break;
                 default: break;
                 }
         }
+        if (fail > 0) err = HB_MC_FAIL;
 
 cleanup:
     #pragma GCC diagnostic push
