@@ -61,6 +61,17 @@ DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
 
+# Specify number of pods to launch, default all available pods (-1)
+POD_GROUP_X ?= -1
+POD_GROUP_Y ?= -1
+CDEFINES   += -DPOD_GROUP_X=$(POD_GROUP_X) -DPOD_GROUP_Y=$(POD_GROUP_Y)
+CXXDEFINES += -DPOD_GROUP_X=$(POD_GROUP_X) -DPOD_GROUP_Y=$(POD_GROUP_Y)
+
+# Specify if waiting for finish packets from all tiles, default no (0)
+WAIT_ALL_TILES_DONE ?= 0
+CDEFINES   += -DWAIT_ALL_TILES_DONE=$(WAIT_ALL_TILES_DONE)
+CXXDEFINES += -DWAIT_ALL_TILES_DONE=$(WAIT_ALL_TILES_DONE)
+
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS)
