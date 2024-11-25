@@ -33,16 +33,16 @@
 # This file should be included from bsg_replicant/hardware/hardware.mk. It checks
 # BSG_PLATFORM_PATH, BASEJUMP_STL_DIR, BSG_MANYCORE_DIR, etc.
 
-VSOURCES += $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
+VSOURCES += $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.sv
 ASCII_TO_ROM_PY = $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py
 
-hardware.configuration: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
-$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
+hardware.configuration: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.sv
+$(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.sv: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
 	env python2 $(ASCII_TO_ROM_PY) $< bsg_bladerunner_configuration > $@
 
-.PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
+.PRECIOUS: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.sv
 
 hardware.clean: machine.hardware.clean
 
 machine.hardware.clean:
-	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
+	rm -f $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.sv
