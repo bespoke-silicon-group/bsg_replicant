@@ -32,7 +32,8 @@
 .PHONY: platform.execution.clean
 
 %.log: test_loader.o $(BSG_MANYCORE_KERNELS)
-	sudo ./$< $(C_ARGS) 2>&1 | tee $@
+# Need permission to open device file without sudo
+	./$< $(C_ARGS) 2>&1 | tee $@
 
 platform.execution.clean:
 	rm -rf exec.log
