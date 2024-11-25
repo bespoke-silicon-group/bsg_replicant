@@ -93,7 +93,7 @@ regression: $(TESTS)
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
-REGRESSION_PREBUILD += loader.o
+REGRESSION_PREBUILD +=
 
 
 $(TESTS): $(REGRESSION_PREBUILD)
@@ -102,7 +102,7 @@ $(TESTS): $(REGRESSION_PREBUILD)
 .PHONY: clean regression $(TESTS)
 
 clean: $(TESTS:=.clean) hardware.clean platform.clean libraries.clean link.clean
-	rm -rf loader.o
+
 %.clean:
 	$(MAKE) -C $(@:.clean=) clean
 

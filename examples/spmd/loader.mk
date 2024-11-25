@@ -55,7 +55,9 @@ TILE_GROUP_DIM_X ?= 1
 TILE_GROUP_DIM_Y ?= 1
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = $(EXAMPLES_PATH)/spmd/loader.c
+TEST_SOURCES = $(CURDIR)/loader.c
+$(CURDIR)/loader.c: $(EXAMPLES_PATH)/spmd/loader.c
+	ln -s $^ $@
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
@@ -142,6 +144,6 @@ clean:
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(SPMD_NAME) clean
-	rm -f $(EXAMPLES_PATH)/spmd/loader.o
+	rm -f $(CURDIR)/loader.c
 
 
