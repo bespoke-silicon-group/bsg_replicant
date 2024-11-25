@@ -46,6 +46,9 @@ SPMD_NAME := saif
 include $(REPLICANT_PATH)/environment.mk
 SPMD_SRC_PATH = $(BSG_MANYCORE_DIR)/software/spmd
 
+ifndef SPMD_NAME
+$(error $(shell echo -e "$(RED)BSG MAKE ERROR: SPMD_NAME is not defined$(NC)"))
+endif
 
 ###############################################################################
 # Host code compilation flags and flow
@@ -54,11 +57,29 @@ TILE_GROUP_DIM_X ?= 1
 TILE_GROUP_DIM_Y ?= 1
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = $(EXAMPLES_PATH)/spmd/loader.c
+TEST_SOURCES = $(CURDIR)/loader.c
+$(CURDIR)/loader.c: $(EXAMPLES_PATH)/spmd/loader.c
+	ln -s $^ $@
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
+
+# Specify number of pods to launch, default all available pods (-1)
+POD_GROUP_X ?= -1
+POD_GROUP_Y ?= -1
+CDEFINES   += -DPOD_GROUP_X=$(POD_GROUP_X) -DPOD_GROUP_Y=$(POD_GROUP_Y)
+CXXDEFINES += -DPOD_GROUP_X=$(POD_GROUP_X) -DPOD_GROUP_Y=$(POD_GROUP_Y)
+
+# Specify if waiting for finish packets from all tiles, default no (0)
+WAIT_ALL_TILES_DONE ?= 0
+CDEFINES   += -DWAIT_ALL_TILES_DONE=$(WAIT_ALL_TILES_DONE)
+CXXDEFINES += -DWAIT_ALL_TILES_DONE=$(WAIT_ALL_TILES_DONE)
+
+# Specify if launching multiple pods in series, default no (0)
+LAUNCH_PODS_IN_SERIES ?= 0
+CDEFINES   += -DLAUNCH_PODS_IN_SERIES=$(LAUNCH_PODS_IN_SERIES)
+CXXDEFINES += -DLAUNCH_PODS_IN_SERIES=$(LAUNCH_PODS_IN_SERIES)
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
@@ -125,4 +146,6 @@ clean:
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(SPMD_NAME) clean
-	rm -f $(EXAMPLES_PATH)/spmd/loader.o
+	rm -f $(CURDIR)/loader.c
+
+
