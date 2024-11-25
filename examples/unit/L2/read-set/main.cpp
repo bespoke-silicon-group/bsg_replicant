@@ -115,7 +115,7 @@ static int Test(int argc, char *argv[])
     bsg_pr_test_info("Set:             %08x\n", set);    
     
     // init
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "Got 99 Problems", DEVICE_ID));    
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "Got 99 Problems", HB_MC_DEVICE_ID));    
 
     std::vector<unsigned> data(cfg->vcache_block_words, 0x55555555);
     

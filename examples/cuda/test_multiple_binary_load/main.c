@@ -63,7 +63,7 @@ int kernel_multiple_binary_load (int argc, char **argv) {
         * Initialize device, load binary and unfreeze tiles.
         ******************************************************************************************************************/
         hb_mc_device_t device;
-        rc = hb_mc_device_init(&device, test_name, DEVICE_ID);
+        rc = hb_mc_device_init(&device, test_name, HB_MC_DEVICE_ID);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize device.\n");
                 return rc;
@@ -129,7 +129,7 @@ int kernel_multiple_binary_load (int argc, char **argv) {
         * Define path to binary.
         * Initialize device, load binary and unfreeze tiles.
         ******************************************************************************************************************/
-        rc = hb_mc_device_init(&device, test_name, DEVICE_ID);
+        rc = hb_mc_device_init(&device, test_name, HB_MC_DEVICE_ID);
         if (rc != HB_MC_SUCCESS) { 
                 bsg_pr_err("failed to initialize device.\n");
                 return rc;

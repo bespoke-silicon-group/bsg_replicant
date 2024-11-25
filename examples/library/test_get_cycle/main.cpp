@@ -47,7 +47,7 @@ int test_get_cycle (int argc, char **argv) {
                 return rc;
         }
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_get_cycle", DEVICE_ID);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_get_cycle", HB_MC_DEVICE_ID);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device: %s\n",
                                 hb_mc_strerror(rc));

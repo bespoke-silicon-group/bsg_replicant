@@ -45,7 +45,7 @@ int test_vcache_sequence() {
         hb_mc_manycore_t manycore = {0}, *mc = &manycore;
         int err, r = HB_MC_FAIL;
 
-        err = hb_mc_manycore_init(mc, "test_vcache_sequence", DEVICE_ID);
+        err = hb_mc_manycore_init(mc, "test_vcache_sequence", HB_MC_DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to init manycore: %s\n",
                            __func__, hb_mc_strerror(err));

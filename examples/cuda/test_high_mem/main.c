@@ -54,7 +54,7 @@ int kernel_vec_add (int argc, char **argv) {
         srand(time);
 
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, DEVICE_ID));
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, HB_MC_DEVICE_ID));
 
         int r = HB_MC_SUCCESS;
         hb_mc_pod_id_t pod;

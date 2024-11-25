@@ -108,7 +108,7 @@ int test_manycore_init(int argc, char *argv[])
     int testno, fail = 0, err;
 
     hb_mc_manycore_t initialized = {0};
-    err = hb_mc_manycore_init(&initialized, "initialized", DEVICE_ID);
+    err = hb_mc_manycore_init(&initialized, "initialized", HB_MC_DEVICE_ID);
     if (err != HB_MC_SUCCESS) {
         test_pr_err(BSG_RED("ERROR") " while initializing test suite: %s\n",
                     hb_mc_strerror(err));

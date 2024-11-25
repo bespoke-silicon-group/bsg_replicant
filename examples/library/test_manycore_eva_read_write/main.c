@@ -228,7 +228,7 @@ int test_manycore_eva_read_write (int argc, char *argv[]) {
         /********/
         /* INIT */
         /********/
-        err = hb_mc_manycore_init(mc, TEST_NAME, DEVICE_ID);
+        err = hb_mc_manycore_init(mc, TEST_NAME, HB_MC_DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to initialize manycore: %s\n",
                            __func__, hb_mc_strerror(err));

@@ -60,7 +60,7 @@ int test_vcache_simplified(int argc, char *argv[]) {
 
         srand(0);
 
-        err = hb_mc_manycore_init(mc, "test_vcache_simplified", DEVICE_ID);
+        err = hb_mc_manycore_init(mc, "test_vcache_simplified", HB_MC_DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("%s: failed to init manycore: %s\n",
                            __func__, hb_mc_strerror(err));

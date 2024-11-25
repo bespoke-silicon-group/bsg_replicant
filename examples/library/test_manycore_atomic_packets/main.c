@@ -50,7 +50,7 @@ int test_manycore_atomic_packets(int argc, char *argv[]) {
         /*****************************/
         /* Initializing the manycore */
         /*****************************/
-        BSG_CUDA_CALL(hb_mc_manycore_init(mc, "test_manycore_atomic_packets", DEVICE_ID));
+        BSG_CUDA_CALL(hb_mc_manycore_init(mc, "test_manycore_atomic_packets", HB_MC_DEVICE_ID));
 
         /*************************/
         /* Seeding the test data */

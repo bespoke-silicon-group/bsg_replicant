@@ -53,7 +53,7 @@
 
 int test_pod_iteration (int argc, char **argv) {
     hb_mc_manycore_t mc = {};
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_pod_iteration", DEVICE_ID));
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_pod_iteration", HB_MC_DEVICE_ID));
 
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(&mc);
     // iterate over each pod and report its origin coordinate

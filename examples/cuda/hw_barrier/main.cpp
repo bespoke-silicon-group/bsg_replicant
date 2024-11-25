@@ -61,7 +61,7 @@ int barrier_test_main(int argc, char *argv[])
     }
 
     // initialize
-    BSG_CUDA_CALL(hb_mc_device_init(dev, "cuda hw barrier", DEVICE_ID));
+    BSG_CUDA_CALL(hb_mc_device_init(dev, "cuda hw barrier", HB_MC_DEVICE_ID));
     BSG_CUDA_CALL(hb_mc_device_program_init(dev, rvp, "baralloc", 0));
 
     // enque job and execute

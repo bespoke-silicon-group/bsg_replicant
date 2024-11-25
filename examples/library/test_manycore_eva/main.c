@@ -85,7 +85,7 @@ int test_manycore_eva (int argc, char *argv[]) {
 
         srand(42);
 
-        rc = hb_mc_manycore_init(&mc, "manycore@test_manycore_eva", DEVICE_ID);
+        rc = hb_mc_manycore_init(&mc, "manycore@test_manycore_eva", HB_MC_DEVICE_ID);
         if(rc != HB_MC_SUCCESS){
                 bsg_pr_test_err("Failed to initialize manycore device: %s\n",
                                 hb_mc_strerror(rc));
