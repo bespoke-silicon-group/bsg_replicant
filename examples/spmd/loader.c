@@ -91,6 +91,8 @@ int test_loader(int argc, char **argv) {
         tg.x = args.tg_x;
         tg.y = args.tg_y;
 
+        int fail = 0;
+
 
         bsg_pr_test_info("Reading from file: %s\n", bin_path);
         bsg_pr_test_info("Tile group dimension: %d %d\n", tg.x, tg.y);
@@ -182,6 +184,7 @@ int test_loader(int argc, char **argv) {
                         }
 
                 }
+#if LAUNCH_PODS_IN_SERIES == 0
         }
 
         /* unfreeze tile */
@@ -194,6 +197,7 @@ int test_loader(int argc, char **argv) {
 
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
+#endif
                 bsg_pr_test_info("Unfreezing pod (%d %d)\n", pod.x, pod.y);
 
                 foreach_coordinate(target, origin, tg){
@@ -206,14 +210,16 @@ int test_loader(int argc, char **argv) {
                                 goto cleanup;
                         }
                 }
+#if LAUNCH_PODS_IN_SERIES == 0
         }
+#endif
 
         /* wait until all pods have completed */
         bsg_pr_test_info("Waiting for pods to finish...\n");
         int num_packet_per_pod = (WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
+        int num_pod_launched = (LAUNCH_PODS_IN_SERIES != 0)? 1 : pod_launch_x * pod_launch_y;
         int done = 0;
-        int fail = 0;
-        while (done < num_packet_per_pod * pod_launch_x * pod_launch_y) {
+        while (done < num_packet_per_pod * num_pod_launched) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
 
@@ -251,6 +257,9 @@ int test_loader(int argc, char **argv) {
                 default: break;
                 }
         }
+#if LAUNCH_PODS_IN_SERIES != 0
+        }
+#endif
         if (fail > 0) err = HB_MC_FAIL;
 
 cleanup:

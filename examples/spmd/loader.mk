@@ -72,6 +72,11 @@ WAIT_ALL_TILES_DONE ?= 0
 CDEFINES   += -DWAIT_ALL_TILES_DONE=$(WAIT_ALL_TILES_DONE)
 CXXDEFINES += -DWAIT_ALL_TILES_DONE=$(WAIT_ALL_TILES_DONE)
 
+# Specify if launching multiple pods in series, default no (0)
+LAUNCH_PODS_IN_SERIES ?= 0
+CDEFINES   += -DLAUNCH_PODS_IN_SERIES=$(LAUNCH_PODS_IN_SERIES)
+CXXDEFINES += -DLAUNCH_PODS_IN_SERIES=$(LAUNCH_PODS_IN_SERIES)
+
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 CXXFLAGS += -std=c++11 $(FLAGS)
