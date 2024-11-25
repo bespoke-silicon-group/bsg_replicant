@@ -76,6 +76,9 @@ NOT_SPMD += barrier_in_interrupt
 NOT_SPMD += hw_barrier_16x8_interrupt_test
 NOT_SPMD += hw_barrier_context_switch_test
 NOT_SPMD += memtest2022
+# Skip hb_mc test series
+ALL_HB_MC_TESTS := $(shell find $(CURDIR) -maxdepth 1 -type d -name 'hb_mc_*' -printf '%P\n')
+NOT_SPMD += $(ALL_HB_MC_TESTS)
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
