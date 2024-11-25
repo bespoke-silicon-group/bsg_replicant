@@ -60,7 +60,7 @@ tracer.clean:
 libraries.clean: tracer.clean
 
 # Rules for building Simulation tracer runtime library
-$(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -I$(BSG_MANYCORE_DIR)/testbenches/common/v
 # Uncomment to enable Verilator profiling with operf
 #$(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -g -pg
