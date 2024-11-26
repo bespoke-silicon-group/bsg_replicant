@@ -105,6 +105,13 @@ TESTS += $(SPMD_TESTS)
 regression: $(TESTS)
 	@echo "SPMD REGRESSION PASSED"
 
+# Define the hb_mc tests that get run
+NOT_SPMD_HB_MC_TESTS := $(shell find $(CURDIR) -maxdepth 1 -type d -name 'hb_mc_*_sdr_init_*' -printf '%P\n')
+SPMD_HB_MC_TESTS := $(filter-out $(NOT_SPMD_HB_MC_TESTS),$(ALL_HB_MC_TESTS))
+
+regression.hb_mc: $(SPMD_HB_MC_TESTS)
+	@echo "SPMD HB_MC REGRESSION PASSED"
+
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
@@ -116,9 +123,14 @@ $(TESTS): $(REGRESSION_PREBUILD)
 	@echo "Non-existing tests (please add them to current directory as soon as \
 	possible, empty means all tests exist): $(NON_EXISTING_SPMD)"
 
-.PHONY: clean regression $(TESTS)
+$(SPMD_HB_MC_TESTS):
+	$(MAKE) -C $@ regression
+
+.PHONY: clean regression $(TESTS) $(SPMD_HB_MC_TESTS)
 
 clean: $(TESTS:=.clean) hardware.clean platform.clean libraries.clean link.clean
+
+clean.hb_mc: $(SPMD_HB_MC_TESTS:=.clean)
 
 %.clean:
 	$(MAKE) -C $(@:.clean=) clean
