@@ -84,7 +84,7 @@ include $(EXAMPLES_PATH)/link.mk
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Define the tests that get run
-TESTS += test_bsg_dram_loopback_cache
+TESTS := test_bsg_dram_loopback_cache
 TESTS += test_bsg_loader_suite
 TESTS += test_bsg_scalar_print
 TESTS += test_symbol_to_eva
