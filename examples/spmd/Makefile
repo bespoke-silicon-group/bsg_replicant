@@ -73,6 +73,9 @@ NOT_SPMD += saif
 NOT_SPMD += bsg_riscv_tests
 # Runs forever (but could be used)
 NOT_SPMD += barrier_in_interrupt
+NOT_SPMD += hw_barrier_16x8_interrupt_test
+NOT_SPMD += hw_barrier_context_switch_test
+NOT_SPMD += memtest2022
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
