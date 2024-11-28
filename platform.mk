@@ -104,7 +104,7 @@ $(warning $(shell echo -e "$(RED)BSG MAKE ERROR: VCS_HOME is not defined$(NC)"))
 endif
 ifndef DVE
 ifndef VERDI_HOME
-$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: VERDI_HOME is not defined$(NC)"))
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: Neither VERDI_HOME nor DVE is defined$(NC)"))
 endif
 endif
 endif
