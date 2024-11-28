@@ -80,6 +80,36 @@ $(error $(shell echo -e "$(RED)BSG MAKE ERROR: VERILATOR not defined$(NC)"))
 endif
 endif
 
+
+# If vcs is specified, check for LM_LICENSE_FILE, VCS_HOME and VERDI_HOME
+ifeq ($(BSG_PLATFORM),bigblade-vcs)
+# Uncomment the following lines if VCS environment is not correctly set on the host
+# # Synopsys License Server
+# export LM_LICENSE_FILE = <your license server url or license file path>
+# # VCS Path
+# export VCS_HOME = <VCS installation home path>
+# # VERDI Path
+# export VERDI_HOME = <VERDI installation home path>
+# # Add VCS_HOME and VERDI_HOME to PATH
+# VCS_BIN = $(VCS_HOME)/bin
+# VERDI_BIN = $(VERDI_HOME)/bin
+# export PATH:=$(PATH):$(VCS_BIN):$(VERDI_BIN)
+
+# Environment Variables Checking
+ifndef LM_LICENSE_FILE
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: LM_LICENSE_FILE is not defined$(NC)"))
+endif
+ifndef VCS_HOME
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: VCS_HOME is not defined$(NC)"))
+endif
+ifndef DVE
+ifndef VERDI_HOME
+$(warning $(shell echo -e "$(RED)BSG MAKE ERROR: Neither VERDI_HOME nor DVE is defined$(NC)"))
+endif
+endif
+endif
+
+
 # BSG Platform Path is the path to the target platform, i.e. the
 # substrate that actually runs the machine. 
 
