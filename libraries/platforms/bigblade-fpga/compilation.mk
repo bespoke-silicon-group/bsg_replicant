@@ -46,8 +46,8 @@ CFLAGS     += $(DEFINES) -fPIC
 
 # Default id is 0x0, user specified id should be digits-only integer
 ifeq ($(HB_MC_DEVICE_ID), 0x0)
-CXXDEFINES += -DHB_MC_DEVICE_ID=-1
-CDEFINES   += -DHB_MC_DEVICE_ID=-1
+CXXDEFINES += -UHB_MC_DEVICE_ID -DHB_MC_DEVICE_ID=-1
+CDEFINES   += -UHB_MC_DEVICE_ID -DHB_MC_DEVICE_ID=-1
 endif
 
 # each regression target needs to build its .o from a .c and .h of the
