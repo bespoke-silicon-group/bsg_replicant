@@ -56,6 +56,7 @@ BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 # BSG_MACHINE_NETWORK_CFG longer has an effect, fixed at e_network_half_ruche_x
 BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
 BSG_MACHINE_RUCHE_FACTOR_X            = 3
+BSG_MACHINE_ENABLE_HW_BARRIER         = 1
 BSG_MACHINE_BARRIER_RUCHE_FACTOR_X    = 3
 BSG_MACHINE_WH_RUCHE_FACTOR           = 2
 
