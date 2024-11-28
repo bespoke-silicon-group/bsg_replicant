@@ -105,7 +105,7 @@ int test_scalar_print (int argc, char **argv) {
                 return err;
 
         // initialize the manycore
-        err = hb_mc_manycore_init(&manycore, test_name, 0);
+        err = hb_mc_manycore_init(&manycore, test_name, HB_MC_DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err("failed to initialize manycore instance: %s\n",
                            hb_mc_strerror(err));

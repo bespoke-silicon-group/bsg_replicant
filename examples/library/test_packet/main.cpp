@@ -72,7 +72,7 @@ int test_compile(int argc, char **argv)
 int test_wait (int argc, char **argv)
 {
     hb_mc_manycore_t mc = {0};
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", 0));
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_packet", HB_MC_DEVICE_ID));
 
     hb_mc_request_packet_t write_rqst;
 

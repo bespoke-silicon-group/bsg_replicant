@@ -130,7 +130,7 @@ static int run_tests(int argc, char *argv[])
 {
         int err, rc = HB_MC_FAIL;
 
-        err = hb_mc_manycore_init(mc, TEST_NAME, 0);
+        err = hb_mc_manycore_init(mc, TEST_NAME, HB_MC_DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 test_pr_err("failed to initialize manycore: %s\n",
                             hb_mc_strerror(err));

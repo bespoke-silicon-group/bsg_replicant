@@ -73,7 +73,7 @@ int test_manycore_packets(int argc, char *argv[]) {
         /*****************************/
         /* Initializing the manycore */
         /*****************************/
-        err = hb_mc_manycore_init(mc, "test_manycore_packets", 0);
+        err = hb_mc_manycore_init(mc, "test_manycore_packets", HB_MC_DEVICE_ID);
         if (err != HB_MC_SUCCESS) {
                 bsg_pr_err(BSG_RED("failed to initialize manycore: %s\n"), hb_mc_strerror(err));
                 return err;

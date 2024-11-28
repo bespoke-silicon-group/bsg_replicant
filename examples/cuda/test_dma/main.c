@@ -70,7 +70,7 @@ int test_dma (int argc, char **argv) {
         /* Initialize device, load binary and unfreeze tiles.                 */
         /**********************************************************************/
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, 0, tg_dim));
+        BSG_CUDA_CALL(hb_mc_device_init_custom_dimensions(&device, test_name, HB_MC_DEVICE_ID, tg_dim));
         const hb_mc_config_t *cfg = &device.mc->config;
         hb_mc_eva_t alignment
             = cfg->pod_shape.x

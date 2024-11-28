@@ -48,7 +48,7 @@ static int Test(int argc, char *argv[])
 {
     binary = argv[1];
     bsg_pr_info("Opening '%s'\n", binary);
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "manycore", 0));
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "manycore", HB_MC_DEVICE_ID));
     BSG_CUDA_CALL(RunAll());
     BSG_CUDA_CALL(hb_mc_manycore_exit(&mc));
     return HB_MC_SUCCESS;

@@ -54,7 +54,7 @@ int kernel_group_stride (int argc, char **argv) {
         // Initialize device, load binary and unfreeze tiles.
         //
         hb_mc_device_t device;
-        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, 0));
+        BSG_CUDA_CALL(hb_mc_device_init(&device, test_name, HB_MC_DEVICE_ID));
         BSG_CUDA_CALL(hb_mc_device_program_init(&device, bin_path, ALLOC_NAME, 0));
 
         //************************************************************

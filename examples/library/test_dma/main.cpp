@@ -50,7 +50,7 @@
 
 int test_dma (int argc, char **argv) {
     hb_mc_manycore_t mc = {};
-    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_dma", 0));
+    BSG_CUDA_CALL(hb_mc_manycore_init(&mc, "test_dma", HB_MC_DEVICE_ID));
 
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(&mc);
     // sweep from at least the cache line granularity
