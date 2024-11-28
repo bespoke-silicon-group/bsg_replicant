@@ -116,12 +116,12 @@ int test_loader(int argc, char **argv) {
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
 
         // Specify number of pods to launch, default all available pods (-1)
-        int pod_launch_x = POD_GROUP_X;
-        int pod_launch_y = POD_GROUP_Y;
+        int pod_launch_x = HB_MC_POD_GROUP_X;
+        int pod_launch_y = HB_MC_POD_GROUP_Y;
         if (pod_launch_x == -1 || pod_launch_x > cfg->pods.x) pod_launch_x = cfg->pods.x;
         if (pod_launch_y == -1 || pod_launch_y > cfg->pods.y) pod_launch_y = cfg->pods.y;
         bsg_pr_test_info("Pod launch dim desired: %d %d, actual: %d %d\n", 
-                            POD_GROUP_X, POD_GROUP_Y, pod_launch_x, pod_launch_y);
+                            HB_MC_POD_GROUP_X, HB_MC_POD_GROUP_Y, pod_launch_x, pod_launch_y);
 
         hb_mc_config_foreach_pod(pod, cfg)
         {
@@ -184,7 +184,7 @@ int test_loader(int argc, char **argv) {
                         }
 
                 }
-#if LAUNCH_PODS_IN_SERIES == 0
+#if HB_MC_LAUNCH_PODS_IN_SERIES == 0
         }
 
         /* unfreeze tile */
@@ -210,14 +210,14 @@ int test_loader(int argc, char **argv) {
                                 goto cleanup;
                         }
                 }
-#if LAUNCH_PODS_IN_SERIES == 0
+#if HB_MC_LAUNCH_PODS_IN_SERIES == 0
         }
 #endif
 
         /* wait until all pods have completed */
         bsg_pr_test_info("Waiting for pods to finish...\n");
-        int num_packet_per_pod = (WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
-        int num_pod_launched = (LAUNCH_PODS_IN_SERIES != 0)? 1 : pod_launch_x * pod_launch_y;
+        int num_packet_per_pod = (HB_MC_WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
+        int num_pod_launched = (HB_MC_LAUNCH_PODS_IN_SERIES != 0)? 1 : pod_launch_x * pod_launch_y;
         int done = 0;
         while (done < num_packet_per_pod * num_pod_launched) {
                 hb_mc_packet_t pkt;
@@ -257,7 +257,7 @@ int test_loader(int argc, char **argv) {
                 default: break;
                 }
         }
-#if LAUNCH_PODS_IN_SERIES != 0
+#if HB_MC_LAUNCH_PODS_IN_SERIES != 0
         }
 #endif
         if (fail > 0) err = HB_MC_FAIL;
