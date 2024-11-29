@@ -108,6 +108,10 @@ regression: $(TESTS)
 # Define the hb_mc tests that get run
 NOT_SPMD_HB_MC_TESTS := $(shell find $(CURDIR) -maxdepth 1 -type d -name 'hb_mc_*_sdr_init_*' -printf '%P\n')
 SPMD_HB_MC_TESTS := $(filter-out $(NOT_SPMD_HB_MC_TESTS),$(ALL_HB_MC_TESTS))
+# Filter out non_existing hb_mc spmd tests
+MCDIR_EXISTING_HB_MC_SPMD:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*' -printf '%P\n')
+NON_EXISTING_HB_MC_SPMD:=$(filter-out $(MCDIR_EXISTING_HB_MC_SPMD),$(SPMD_HB_MC_TESTS))
+SPMD_HB_MC_TESTS:=$(filter-out $(NON_EXISTING_HB_MC_SPMD),$(SPMD_HB_MC_TESTS))
 
 regression.hb_mc: $(SPMD_HB_MC_TESTS)
 	@echo "SPMD HB_MC REGRESSION PASSED"
