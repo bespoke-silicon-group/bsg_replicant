@@ -376,6 +376,15 @@ else
   $(error Invalid BSG_ELF_OFF_CHIP_MEM = $(BSG_ELF_OFF_CHIP_MEM); Only 0 and 1 are valid)
 endif
 
+# Linker gen: move rodata to dmem;
+# Set this to 1 to place constants in dmem instead of in dram;
+# By default, this is set to 0;
+LINK_GEN_MOVE_RODATA_TO_DMEM?=0
+ifeq ($(LINK_GEN_MOVE_RODATA_TO_DMEM),1)
+	LINK_GEN_OPTS += --move_rodata_to_dmem
+endif
+
+
 RISCV_LINK_SCRIPT ?= bsg_link.ld
 $(RISCV_LINK_SCRIPT): $(RISCV_LINK_GEN)
 	$(RISCV_LINK_GEN) $(LINK_GEN_OPTS) --out=$@
