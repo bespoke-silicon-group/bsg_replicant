@@ -64,6 +64,7 @@ BSG_MACHINE_WH_RUCHE_FACTOR           = 2
 BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MEM_DRAMSIM3_PKG          = bsg_dramsim3_hbm2_1gb_x64_32ba_pkg
 BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
+BSG_MACHINE_ENABLE_DMA                = 1
 
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 32
