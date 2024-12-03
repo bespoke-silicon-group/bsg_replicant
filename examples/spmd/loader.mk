@@ -53,6 +53,7 @@ endif
 ###############################################################################
 TILE_GROUP_DIM_X ?= 1
 TILE_GROUP_DIM_Y ?= 1
+LINK_GEN_MOVE_RODATA_TO_DMEM ?= 0
 
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = $(CURDIR)/loader.c
@@ -107,6 +108,7 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
 	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
+	LINK_GEN_MOVE_RODATA_TO_DMEM=$(LINK_GEN_MOVE_RODATA_TO_DMEM) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(SPMD_NAME) main.riscv
