@@ -82,6 +82,7 @@ SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
 # Find the intersection of bsg_manycore spmd tests & current directory spmd tests
 # So that the flow will not break down when new tests are added to bsg_manycore
 CUR_EXISTING_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -printf '%P\n')
+NON_EXISTING_SPMD:=$(filter-out $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 SPMD_TESTS:=$(filter $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 
 # Defines REGRESSION_PREBUILD
@@ -100,6 +101,8 @@ TESTS += $(SPMD_TESTS)
 
 regression: $(TESTS)
 	@echo "SPMD REGRESSION PASSED"
+	@echo "Non-existing tests (please add them to current directory as soon as \
+	possible, empty means all tests exist): $(NON_EXISTING_SPMD)"
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
