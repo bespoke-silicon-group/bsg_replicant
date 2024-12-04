@@ -115,6 +115,8 @@ BSG_MACHINE_IO_HOST_CREDITS           = $(BSG_MACHINE_IO_EP_CREDITS)
 BSG_MACHINE_IO_REMOTE_LOAD_CAP        = $(BSG_MACHINE_IO_EP_CREDITS)
 
 # Enable DRAM pod dimensions
+# Northwest (top-left) corner X by Y pods have DRAM enabled, other pods have DRAM disabled
+# DRAM disabled pods will skip loading program into DRAM (program must fit within icache)
 BSG_MACHINE_ENABLE_DRAM_PODS_X        = $(BSG_MACHINE_PODS_X)
 BSG_MACHINE_ENABLE_DRAM_PODS_Y        = $(BSG_MACHINE_PODS_Y)
 
