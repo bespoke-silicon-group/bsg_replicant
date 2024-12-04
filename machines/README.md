@@ -54,3 +54,11 @@ valid values are defined in [bsg_machine_network_cfg_pkg.v](https://github.com/b
 - `BSG_MACHINE_VCACHE_SET`: Number of sets in each Last-Level Cache
 - `BSG_MACHINE_VCACHE_WAY`: Number of ways (associativity) in each Last-Level Cache
 - `BSG_MACHINE_VCACHE_LINE_WORDS`: Number of words in each cache line
+
+### Enable DRAM Parameters
+- `BSG_MACHINE_ENABLE_DRAM_PODS_X`: Number of DRAM enabled Pods in the X dimension (width)
+- `BSG_MACHINE_ENABLE_DRAM_PODS_Y`: Number of DRAM enabled Pods in the Y dimension (height)
+- These parameters enable DRAM program loading during program initializations. DRAM-disabled pods will skip loading program into DRAM (program must fit within icache in order to run correctly), so that no DRAM traffic will be initiated from them.
+- Currently these parameters cannot control DRAM traffic initiated by the runtime host or kernel codes
+- Currently these parameters only support northwest (top-left) corner X by Y pods have DRAM enabled, other pods have DRAM disabled.
+
