@@ -101,8 +101,6 @@ TESTS += $(SPMD_TESTS)
 
 regression: $(TESTS)
 	@echo "SPMD REGRESSION PASSED"
-	@echo "Non-existing tests (please add them to current directory as soon as \
-	possible, empty means all tests exist): $(NON_EXISTING_SPMD)"
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
@@ -112,6 +110,8 @@ REGRESSION_PREBUILD += loader.o
 
 $(TESTS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
+	@echo "Non-existing tests (please add them to current directory as soon as \
+	possible, empty means all tests exist): $(NON_EXISTING_SPMD)"
 
 .PHONY: clean regression $(TESTS)
 
