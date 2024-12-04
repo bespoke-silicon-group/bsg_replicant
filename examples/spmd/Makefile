@@ -81,8 +81,7 @@ SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
 # Filter out non_existing spmd tests
 CUR_EXISTING_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -printf '%P\n')
-NON_EXISTING_SPMD:=$(filter-out $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
-SPMD_TESTS:=$(filter-out $(NON_EXISTING_SPMD),$(SPMD_TESTS))
+SPMD_TESTS:=$(filter $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 
 # Defines REGRESSION_PREBUILD
 include $(EXAMPLES_PATH)/link.mk
