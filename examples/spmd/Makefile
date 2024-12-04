@@ -79,7 +79,8 @@ NOT_SPMD += memtest2022
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
-# Filter out non_existing spmd tests
+# Find the intersection of bsg_manycore spmd tests & current directory spmd tests
+# So that the flow will not break down when new tests are added to bsg_manycore
 CUR_EXISTING_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 
