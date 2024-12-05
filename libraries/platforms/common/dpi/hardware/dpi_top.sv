@@ -34,7 +34,6 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_pod_tiles_y_gp            = %d", bsg_machine_pod_tiles_y_gp);
       $display("[INFO][TESTBENCH] bsg_machine_pod_tiles_subarray_x_gp   = %d", bsg_machine_pod_tiles_subarray_x_gp);
       $display("[INFO][TESTBENCH] bsg_machine_pod_tiles_subarray_y_gp   = %d", bsg_machine_pod_tiles_subarray_y_gp);
-      $display("[INFO][TESTBENCH] bsg_machine_pod_llcache_rows_gp       = %d", bsg_machine_pod_llcache_rows_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_core_icache_line_words_gp = %d", bsg_machine_core_icache_line_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_core_icache_entries_gp    = %d", bsg_machine_core_icache_entries_gp);
@@ -231,7 +230,6 @@ module replicant_tb_top
        ,.ruche_factor_X_p(bsg_machine_noc_ruche_factor_X_gp)
        ,.barrier_ruche_factor_X_p(bsg_machine_barrier_ruche_factor_X_gp)
 
-       ,.num_vcache_rows_p(bsg_machine_pod_llcache_rows_gp)
        ,.num_vcaches_per_channel_p(bsg_machine_llcache_dram_channel_ratio_gp)
        ,.vcache_data_width_p(bsg_machine_llcache_data_width_lp)
        ,.vcache_addr_width_p(bsg_machine_llcache_addr_width_lp)
