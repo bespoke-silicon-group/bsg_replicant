@@ -65,13 +65,25 @@ NOT_SPMD += interrupt_tests
 NOT_SPMD += bp_manycore_test
 NOT_SPMD += bsg_cuda_lite_runtime
 NOT_SPMD += common
+NOT_SPMD += energy_loop_test
+NOT_SPMD += energy_ubenchmark
 # Already run as part of test_saif
 NOT_SPMD += saif
 # Breaks our flow (but could be used)
 NOT_SPMD += bsg_riscv_tests
+# Runs forever (but could be used)
+NOT_SPMD += barrier_in_interrupt
+NOT_SPMD += hw_barrier_16x8_interrupt_test
+NOT_SPMD += hw_barrier_context_switch_test
+NOT_SPMD += memtest2022
 
 SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
+# Find the intersection of bsg_manycore spmd tests & current directory spmd tests
+# So that the flow will not break down when new tests are added to bsg_manycore
+CUR_EXISTING_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -printf '%P\n')
+NON_EXISTING_SPMD:=$(filter-out $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
+SPMD_TESTS:=$(filter $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 
 # Defines REGRESSION_PREBUILD
 include $(EXAMPLES_PATH)/link.mk
@@ -80,7 +92,7 @@ include $(EXAMPLES_PATH)/link.mk
 include $(EXAMPLES_PATH)/compilation.mk
 
 # Define the tests that get run
-TESTS += test_bsg_dram_loopback_cache
+TESTS := test_bsg_dram_loopback_cache
 TESTS += test_bsg_loader_suite
 TESTS += test_bsg_scalar_print
 TESTS += test_symbol_to_eva
@@ -98,6 +110,8 @@ REGRESSION_PREBUILD += loader.o
 
 $(TESTS): $(REGRESSION_PREBUILD)
 	$(MAKE) -C $@ regression
+	@echo "Non-existing tests (please add them to current directory as soon as \
+	possible, empty means all tests exist): $(NON_EXISTING_SPMD)"
 
 .PHONY: clean regression $(TESTS)
 
