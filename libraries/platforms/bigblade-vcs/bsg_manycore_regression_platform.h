@@ -1,1 +1,1 @@
-../common/dpi/bsg_manycore_regression_platform.h
+../common/dpi/include/bsg_manycore_regression_platform.h
