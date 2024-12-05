@@ -64,6 +64,13 @@ BSG_MACHINE_DRAM_INCLUDED             = 1
 BSG_MACHINE_MEM_DRAMSIM3_PKG          = bsg_dramsim3_hbm2_1gb_x64_32ba_pkg
 BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
 
+# Enable DMA;
+# Enable transferring data between host and device by bypassing the vcache using the CUDA function:
+# hb_mc_device_transfer_data_to_device();
+# hb_mc_device_transfer_data_to_host();
+BSG_MACHINE_ENABLE_DMA                = 1
+
+
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 2
 BSG_MACHINE_VCACHE_SET                = 64

@@ -2220,28 +2220,20 @@ int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *job
   * @param[in] jobs    Vector of host-to-device DMA jobs
   * @param[in] count   Number of host-to-device jobs
   */
-int hb_mc_device_transfer_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count)
+__attribute__((weak))
+int hb_mc_device_transfer_data_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count)
 {
-    int err;
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
 
     if (cfg->enable_dma) {
       // Use DMA;
-      err = hb_mc_device_dma_to_device(device, jobs, count);
-      if (err != HB_MC_SUCCESS) {
-        bsg_pr_err("%s: failed to dma to device: %s\n", __func__, hb_mc_strerror(err));
-        return err;
-      }
+      BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, jobs, count));
     } else {
       // Use memcpy;
       // for each job;
       for (size_t i = 0; i < count; i++) {
         const hb_mc_dma_htod_t *dma = &jobs[i];
-        err = hb_mc_device_memcpy_to_device(device, dma->d_addr, dma->h_addr, (uint32_t) dma->size);
-        if (err != HB_MC_SUCCESS) {
-          bsg_pr_err("%s: failed to memcpy to device (job=%d): %s\n", __func__, i, hb_mc_strerror(err));
-          return err;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy_to_device(device, dma->d_addr, dma->h_addr, (uint32_t) dma->size));
       }
     }
 
@@ -2254,28 +2246,21 @@ int hb_mc_device_transfer_to_device(hb_mc_device_t *device, const hb_mc_dma_htod
  * @param[in] jobs    Vector of device-to-host DMA jobs
  * @param[in] count   Number of device-to-host jobs
  */
-int hb_mc_device_transfer_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
+__attribute__((weak))
+int hb_mc_device_transfer_data_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
 {
     int err;
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
 
     if (cfg->enable_dma) {
       // Use DMA;
-      err = hb_mc_device_dma_to_host(device, jobs, count);
-      if (err != HB_MC_SUCCESS) {
-        bsg_pr_err("%s: failed to dma to host: %s\n", __func__, hb_mc_strerror(err));
-        return err;
-      }
+      BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, jobs, count));
     } else {
       // Use memcpy;
       // for each job;
       for (size_t i = 0; i < count; i++) {
         const hb_mc_dma_dtoh_t *dma = &jobs[i];
-        err = hb_mc_device_memcpy_to_host(device, dma->h_addr, dma->d_addr, (uint32_t) dma->size);
-        if (err != HB_MC_SUCCESS) {
-          bsg_pr_err("%s: failed to memcpy to host (job=%d): %s\n", __func__, i, hb_mc_strerror(err));
-          return err;
-        }
+        BSG_CUDA_CALL(hb_mc_device_memcpy_to_host(device, dma->h_addr, dma->d_addr, (uint32_t) dma->size));
       }
     }
 
