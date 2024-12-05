@@ -2249,7 +2249,6 @@ int hb_mc_device_transfer_data_to_device(hb_mc_device_t *device, const hb_mc_dma
 __attribute__((weak))
 int hb_mc_device_transfer_data_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
 {
-    int err;
     const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
 
     if (cfg->enable_dma) {
