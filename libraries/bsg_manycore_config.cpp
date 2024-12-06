@@ -177,6 +177,15 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_word_tracking  = raw[HB_MC_CONFIG_VCACHE_WORD_TRACKING];
         config->enable_dma            = raw[HB_MC_CONFIG_ENABLE_DMA];
 
+        // Enable DRAM pod dimensions
+        idx = raw[HB_MC_CONFIG_ENABLE_DRAM_PODS_X];
+        CHECK_FIELD(HB_MC_CONFIG_ENABLE_DRAM_PODS_X, idx >= 0 && idx <= 64);
+        config->enable_dram_pods.x = idx;
+
+        idx = raw[HB_MC_CONFIG_ENABLE_DRAM_PODS_Y];
+        CHECK_FIELD(HB_MC_CONFIG_ENABLE_DRAM_PODS_Y, idx >= 0 && idx <= 64);
+        config->enable_dram_pods.y = idx;
+
         idx = raw[HB_MC_CONFIG_VCACHE_STRIPE_WORDS];
         CHECK_FIELD(HB_MC_CONFIG_VCACHE_STRIPE_WORDS, idx >= config->vcache_block_words);
         config->vcache_stripe_words = idx;
@@ -195,15 +204,6 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         idx = raw[HB_MC_CONFIG_IO_HOST_CREDITS_CAP];
         CHECK_FIELD(HB_MC_CONFIG_IO_HOST_CREDITS_CAP, idx >= HB_MC_HOST_CREDITS_MIN && idx <= HB_MC_HOST_CREDITS_MAX);
         config->io_host_credits_cap = idx;
-
-        // Enable DRAM pod dimensions
-        idx = raw[HB_MC_CONFIG_ENABLE_DRAM_PODS_X];
-        CHECK_FIELD(HB_MC_CONFIG_ENABLE_DRAM_PODS_X, idx >= 0 && idx <= 64);
-        config->enable_dram_pods.x = idx;
-
-        idx = raw[HB_MC_CONFIG_ENABLE_DRAM_PODS_Y];
-        CHECK_FIELD(HB_MC_CONFIG_ENABLE_DRAM_PODS_Y, idx >= 0 && idx <= 64);
-        config->enable_dram_pods.y = idx;
 
         err = hb_mc_memsys_init(&raw[HB_MC_CONFIG_MEMSYS], &config->memsys);
         if (err != HB_MC_SUCCESS) {
