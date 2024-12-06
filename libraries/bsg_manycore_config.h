@@ -106,6 +106,7 @@ extern "C" {
                 uint32_t vcache_stripe_words;
                 uint32_t vcache_ipoly_hashing;
                 uint32_t vcache_word_tracking;
+                uint32_t enable_dma;
                 uint32_t io_remote_load_cap;
                 uint32_t io_host_credits_cap;
                 uint32_t io_endpoint_max_out_credits;
@@ -142,11 +143,12 @@ extern "C" {
                 HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 24,
                 HB_MC_CONFIG_VCACHE_IPOLY_HASHING = 25,
                 HB_MC_CONFIG_VCACHE_WORD_TRACKING = 26,
-                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 27,
-                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 28,
-                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 29,
-                HB_MC_CONFIG_CHIP_ID = 30,
-                HB_MC_CONFIG_MEMSYS = 31,
+                HB_MC_CONFIG_ENABLE_DMA = 27,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 28,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 29,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 30,
+                HB_MC_CONFIG_CHIP_ID = 31,
+                HB_MC_CONFIG_MEMSYS = 32,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 

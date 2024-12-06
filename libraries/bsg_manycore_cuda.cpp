@@ -2213,6 +2213,62 @@ int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *job
         return hb_mc_device_pod_dma_to_host(device, device->default_pod_id, jobs, count);
 }
 
+
+/**
+  * Depending on enable_dma config (machine variable), decide whether to use memcpy or DMA to transfer data to device;
+  * @param[in] device  Pointer to device
+  * @param[in] jobs    Vector of host-to-device DMA jobs
+  * @param[in] count   Number of host-to-device jobs
+  */
+__attribute__((weak))
+int hb_mc_device_transfer_data_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count)
+{
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
+
+    if (cfg->enable_dma) {
+      // Use DMA;
+      BSG_CUDA_CALL(hb_mc_device_dma_to_device(device, jobs, count));
+    } else {
+      // Use memcpy;
+      // for each job;
+      for (size_t i = 0; i < count; i++) {
+        const hb_mc_dma_htod_t *dma = &jobs[i];
+        BSG_CUDA_CALL(hb_mc_device_memcpy_to_device(device, dma->d_addr, dma->h_addr, (uint32_t) dma->size));
+      }
+    }
+
+    return HB_MC_SUCCESS; 
+}
+
+/**
+ * Depending on enable_dma config (machine variable), decide whether to use memcpy or DMA to transfer data to host;
+ * @param[in] device  Pointer to device
+ * @param[in] jobs    Vector of device-to-host DMA jobs
+ * @param[in] count   Number of device-to-host jobs
+ */
+__attribute__((weak))
+int hb_mc_device_transfer_data_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
+{
+    const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
+
+    if (cfg->enable_dma) {
+      // Use DMA;
+      BSG_CUDA_CALL(hb_mc_device_dma_to_host(device, jobs, count));
+    } else {
+      // Use memcpy;
+      // for each job;
+      for (size_t i = 0; i < count; i++) {
+        const hb_mc_dma_dtoh_t *dma = &jobs[i];
+        BSG_CUDA_CALL(hb_mc_device_memcpy_to_host(device, dma->h_addr, dma->d_addr, (uint32_t) dma->size));
+      }
+    }
+
+    return HB_MC_SUCCESS; 
+}
+
+
+
+
 /**
  * Frees memory on device DRAM
  * hb_mc_device_program_init() or hb_mc_device_program_init_binary() should

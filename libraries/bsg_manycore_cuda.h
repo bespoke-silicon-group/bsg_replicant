@@ -705,6 +705,25 @@ extern "C" {
         int hb_mc_device_dma_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count);
 
 
+        /**
+         * Depending on enable_dma config (machine variable), decide whether to use memcpy or DMA to transfer data to device;
+         * @param[in] device  Pointer to device
+         * @param[in] jobs    Vector of host-to-device DMA jobs
+         * @param[in] count   Number of host-to-device jobs
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_transfer_data_to_device(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count);
+
+        /**
+         * Depending on enable_dma config (machine variable), decide whether to use memcpy or DMA to transfer data to host;
+         * @param[in] device  Pointer to device
+         * @param[in] jobs    Vector of device-to-host DMA jobs
+         * @param[in] count   Number of device-to-host jobs
+         */
+        __attribute__((warn_unused_result))
+        int hb_mc_device_transfer_data_to_host(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count);
+
+
         /*********************/
         /* Pod Interface DMA */
         /*********************/
