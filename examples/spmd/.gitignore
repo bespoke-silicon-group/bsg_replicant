@@ -1,0 +1,2 @@
+# ignore symlink under each directory
+/*/loader.c
