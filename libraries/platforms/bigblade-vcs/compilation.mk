@@ -26,5 +26,4 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 include $(LIBRARIES_PATH)/platforms/common/dpi/compilation.mk
-$(PLATFORM_REGRESSION_OBJECTS): INCLUDES += $(LIBRARIES_PATH)/platforms/common/dpi
 

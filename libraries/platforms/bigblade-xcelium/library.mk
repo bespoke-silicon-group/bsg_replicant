@@ -31,5 +31,4 @@ include $(LIBRARIES_PATH)/platforms/common/dpi/library.mk
 ifeq ($(XCELIUM_RELEASE),)
 $(error Please set XCELIUM_RELEASE to an Xcelium release directory)
 endif
-$(PLATFORM_OBJECTS): INCLUDES += -I$(XCELIUM_RELEASE)/tools.lnx86/include
-
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(XCELIUM_RELEASE)/tools.lnx86/include

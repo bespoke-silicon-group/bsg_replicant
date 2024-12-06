@@ -75,20 +75,20 @@ int cosim_main(uint32_t *exit_code, char *args, char *sopath) {
         // platform compiles the executable machine and then loads the
         // program as a shared object file. This shared object is
         // passed as the string sopath and _must_ define a method
-        // vcs_main that can be called as the main function of the
+        // sim_main that can be called as the main function of the
         // program
         void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
-        int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
+        int (*sim_main)(int , char **) = dlsym(handle, "sim_main");
 
         error = dlerror();
         if (error != NULL) {
-                bsg_pr_err("Error when finding dynamically loaded symbol vcs_main: %s\n", error);
+                bsg_pr_err("Error when finding dynamically loaded symbol sim_main: %s\n", error);
                 *exit_code = -1;
                 dlclose(handle);
                 return 1;
         }
 
-        int rc = (*vcs_main)(argc, argv);
+        int rc = (*sim_main)(argc, argv);
 
         dlclose(handle);
         *exit_code = rc;

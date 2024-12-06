@@ -26,11 +26,10 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 PLATFORM_CXXSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp
-PLATFORM_CXXSOURCES += $(BSG_PLATFORM_PATH)/bsg_manycore_platform.cpp
 
 include $(LIBRARIES_PATH)/platforms/common/dpi/library.mk
 ifeq ($(VCS_HOME),)
 $(error Please set VCS_HOME to a VCS release directory)
 endif
-$(PLATFORM_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(VCS_HOME)/linux64/lib
 
