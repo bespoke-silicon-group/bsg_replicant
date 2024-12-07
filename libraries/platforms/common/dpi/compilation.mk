@@ -39,7 +39,7 @@ NC=\033[0m
 DEFINES    +=
 INCLUDES   += -I$(LIBRARIES_PATH)
 INCLUDES   += -I$(BSG_PLATFORM_PATH)
-INCLUDES   += -I$(LIBRARIES_PATH)/platforms/common/dpi
+INCLUDES   += -I$(LIBRARIES_PATH)/platforms/common/dpi/library
 
 LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
 CXXFLAGS   += $(DEFINES) -fPIC

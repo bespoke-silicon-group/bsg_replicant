@@ -104,20 +104,16 @@ LIB_OBJECTS_CUDA_POD_REPL += $(patsubst %cpp,%o,$(LIB_CXXSOURCES_CUDA_POD_REPL))
 LIB_OBJECTS_REGRESSION    += $(patsubst %cpp,%o,$(LIB_CXXSOURCES_REGRESSION))
 LIB_OBJECTS_REGRESSION    += $(patsubst %c,%o,$(LIB_CSOURCES_REGRESSION))
 
-# I don't like these, but they'll have to do for now.
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS := 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES := 
-
-include $(BSG_PLATFORM_PATH)/library.mk
-
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES := -I$(LIBRARIES_PATH)
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(LIBRARIES_PATH)/xcl
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(LIBRARIES_PATH)/features/dma
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(LIBRARIES_PATH)/features/profiler
-$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): INCLUDES += -I$(BSG_PLATFORM_PATH)
 
-$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CFLAGS    += -std=c11 -fPIC $(INCLUDES) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
-$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CXXFLAGS  += -std=c++11 -fPIC $(INCLUDES) -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
+# It is essential to have simple assignments instead of appendings, since
+# library compilation can be initiated by the app's Makefile, which may
+# contain flags that are unwanted for the library building flow
+$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CFLAGS    := -std=c11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
+$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CXXFLAGS  := -std=c++11 -fPIC -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE
 # Uncomment to enable Verilator profiling with operf
 # $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CFLAGS    += -g -pg
 # $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CXXFLAGS  += -g -pg
@@ -132,6 +128,31 @@ $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wall -Werror
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-variable
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-function
 $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
+
+# I don't like these, but they'll have to do for now.
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS :=
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES :=
+
+# Some per-target library includes are overloaded
+include $(BSG_PLATFORM_PATH)/library.mk
+
+# Add includes to flags after per-target overloading
+# By default, objects are compiled with the implicit rules
+# (for example, standalone library build)
+#     $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+#     $(CC)  $(CFLAGS)   $(CPPFLAGS) -c -o $@ $<
+# Note that when compilation.mk is also included in the flow
+# (for example, compile the library when launching an app), objects
+# will be compiled with the explicit rules. This means INCLUDES will
+# be duplicated in the flags (no harm to the flow)
+#
+# Alternatively, the following 4 lines can be eliminated and
+# library.mk (or link.mk) must be included together with compilation.mk,
+# which is not always true in the current repository setup
+$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CFLAGS    += $(INCLUDES)
+$(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CXXFLAGS  += $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS   += $(INCLUDES)
+$(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS += $(INCLUDES)
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS)
