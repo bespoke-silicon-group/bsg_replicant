@@ -13,6 +13,10 @@ int main(int argc, char **argv) {
         // vcs_main that can be called as the main function of
         // the program
 
+        // We use VCS main, so that we don't have to define different
+        // symbols for VCS and verilator. Perhaps someday we can just
+        // call it sim_main.
+
         char *sopath = argv[1];
         void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
         int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
