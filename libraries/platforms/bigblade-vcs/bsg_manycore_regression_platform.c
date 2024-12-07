@@ -51,7 +51,7 @@ void get_argv(char * args, int argc, char **argv){
 }
 
 // This function is the VCS hook for cosimulation
-int cosim_main(uint32_t *exit_code, char *args, char *sopath) {
+int covcs_main(uint32_t *exit_code, char *args, char *sopath) {
         // We aren't passed command line arguments directly so we parse them
         // from *args. args is a string from VCS - to pass a string of arguments
         // to args, pass c_args to VCS as follows: +c_args="<@separated
@@ -75,20 +75,20 @@ int cosim_main(uint32_t *exit_code, char *args, char *sopath) {
         // platform compiles the executable machine and then loads the
         // program as a shared object file. This shared object is
         // passed as the string sopath and _must_ define a method
-        // sim_main that can be called as the main function of the
+        // vcs_main that can be called as the main function of the
         // program
         void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
-        int (*sim_main)(int , char **) = dlsym(handle, "sim_main");
+        int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
 
         error = dlerror();
         if (error != NULL) {
-                bsg_pr_err("Error when finding dynamically loaded symbol sim_main: %s\n", error);
+                bsg_pr_err("Error when finding dynamically loaded symbol vcs_main: %s\n", error);
                 *exit_code = -1;
                 dlclose(handle);
                 return 1;
         }
 
-        int rc = (*sim_main)(argc, argv);
+        int rc = (*vcs_main)(argc, argv);
 
         dlclose(handle);
         *exit_code = rc;
