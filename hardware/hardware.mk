@@ -174,6 +174,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom: $(BSG_MACHINE_PATH)/Makef
 	@echo $(call dec2bin,$(BSG_MACHINE_VCACHE_IPOLY_HASHING)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_VCACHE_WORD_TRACKING)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_ENABLE_DMA)) >> $@.temp
+	@echo $(call hex2bin,$(BSG_MACHINE_ENABLE_DRAM_PODS_X)) >> $@.temp
+	@echo $(call hex2bin,$(BSG_MACHINE_ENABLE_DRAM_PODS_Y)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_REMOTE_LOAD_CAP)) >> $@.temp
 	@echo $(call dec2bin,$(BSG_MACHINE_IO_EP_CREDITS)) >> $@.temp
 	@echo $(call dec2bin,0)                            >> $@.temp

@@ -62,7 +62,9 @@ extern "C" {
         hb_mc_config_vcore_to_pod(const hb_mc_config_t *cfg, hb_mc_coordinate_t vcore)
         {
                 hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
-                return hb_mc_coordinate(vcore.x >> tile_w.x, vcore.y >> tile_w.y);
+                hb_mc_coordinate_t og = hb_mc_coordinate(1 << tile_w.x, 1 << tile_w.y);
+                return hb_mc_coordinate( ((vcore.x - og.x) >> tile_w.x),
+                                         ((vcore.y - og.y) >> tile_w.y)/2 );
         }
 
         /**

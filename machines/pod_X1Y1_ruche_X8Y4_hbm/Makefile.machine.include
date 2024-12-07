@@ -69,6 +69,12 @@ BSG_MACHINE_MEM_CFG                   = e_vcache_hbm2
 # hb_mc_device_transfer_data_to_host();
 BSG_MACHINE_ENABLE_DMA                = 1
 
+# Enable DRAM pod dimensions
+# Northwest (top-left) corner X by Y pods have DRAM enabled, other pods have DRAM disabled
+# DRAM disabled pods will skip loading program into DRAM (program must fit within icache)
+BSG_MACHINE_ENABLE_DRAM_PODS_X        = $(BSG_MACHINE_PODS_X)
+BSG_MACHINE_ENABLE_DRAM_PODS_Y        = $(BSG_MACHINE_PODS_Y)
+
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 8
 BSG_MACHINE_VCACHE_SET                = 64
