@@ -43,9 +43,6 @@ include ../environment.mk
 # flags, and a list of sources.
 include $(LIBRARIES_PATH)/libraries.mk
 
-# Include platform-specific compilation rules
-include $(BSG_PLATFORM_PATH)/compilation.mk
-
 _TARGETS :=
 _DOCSTRING :=
 

@@ -95,7 +95,7 @@ $(WAVEFORM_OBJS) $(VERILATOR_OBJS): CXXFLAGS  := -std=c++14 -fPIC $(INCLUDES) $(
 # Uncomment to enable Verilator profiling with operf
 # $(VERILATOR_OBJS): CFLAGS    += -g -pg
 # $(VERILATOR_OBJS): CXXFLAGS  += -g -pg
-$(VERILATOR_OBJS): $(BSG_MACHINExPLATFORM_PATH)/%.o : $(VERILATOR_ROOT)/include/%.cpp
+$(VERILATOR_OBJS): $(BSG_MACHINExPLATFORM_PATH)/exec/%.o : $(VERILATOR_ROOT)/include/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 $(WAVEFORM_OBJS): $(BSG_MACHINExPLATFORM_PATH)/debug/%.o : $(VERILATOR_ROOT)/include/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
