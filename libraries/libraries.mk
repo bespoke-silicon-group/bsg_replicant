@@ -130,8 +130,20 @@ $(LIB_STRICT_OBJECTS): CXXFLAGS += -Wno-unused-but-set-variable
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS :=
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: INCLUDES :=
 
+# Some per-target library includes are overloaded
 include $(BSG_PLATFORM_PATH)/library.mk
 
+# Add includes to flags after per-target overloading
+# By default objects are compiled with the implicit rules
+#     $(CXX) $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $<
+#     $(CC)  $(CFLAGS)   $(CPPFLAGS) -c -o $@ $<
+# Note that when compilation.mk is also included in the flow, objects
+# will be compiled with the explicit rules. This means INCLUDES will
+# be duplicated in the flags (no harm to the flow)
+#
+# Alternatively, the following 4 lines can be eliminated and
+# library.mk (or link.mk) must be included together with
+# compilation.mk, which is not true in the current flow setup
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CFLAGS    += $(INCLUDES)
 $(LIB_OBJECTS) $(LIB_OBJECTS_CUDA_POD_REPL) $(LIB_OBJECTS_REGRESSION): CXXFLAGS  += $(INCLUDES)
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CFLAGS   += $(INCLUDES)
