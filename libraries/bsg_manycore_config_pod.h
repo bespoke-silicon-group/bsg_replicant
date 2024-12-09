@@ -70,19 +70,19 @@ extern "C" {
         /**
          * Iterates over a pod's vanilla cores
          */
-#define hb_mc_config_pod_foreach_vcore(coord, pod_id, cfg)              \
+#define hb_mc_config_pod_foreach_vcore(coord, pod, cfg)              \
         foreach_coordinate(coord,                                       \
-                           hb_mc_config_pod_vcore_origin(cfg, pod_id), \
+                           hb_mc_config_pod_vcore_origin(cfg, pod), \
                            (cfg)->pod_shape)
 
         /**
          * Start iteration over a pod's dram banks
          */
         static inline hb_mc_coordinate_t
-        hb_mc_config_pod_dram_start(const hb_mc_config_t *cfg, hb_mc_coordinate_t pod_id)
+        hb_mc_config_pod_dram_start(const hb_mc_config_t *cfg, hb_mc_coordinate_t pod)
         {
                 // subtract a row from the origin vcore of the pod
-                hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod_id);
+                hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
                 return hb_mc_coordinate( og.x, og.y - 1 );
         }
 
@@ -91,10 +91,10 @@ extern "C" {
          */
         static inline int
         hb_mc_config_pod_dram_stop(const hb_mc_config_t *cfg,
-                                   hb_mc_coordinate_t pod_id,
+                                   hb_mc_coordinate_t pod,
                                    hb_mc_coordinate_t pos)
         {
-                hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod_id);
+                hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
                 return  pos.x >= (og.x + cfg->pod_shape.x) ||
                         pos.y >= (og.y + cfg->pod_shape.y + 1);
         }
@@ -104,10 +104,10 @@ extern "C" {
          */
         static inline hb_mc_coordinate_t
         hb_mc_config_pod_dram_next(const hb_mc_config_t *cfg,
-                                       hb_mc_coordinate_t pod_id,
+                                       hb_mc_coordinate_t pod,
                                        hb_mc_coordinate_t pos)
         {
-                hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod_id);
+                hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_idx_t north_y;
                 north_y = og.y - 1;
 
@@ -123,10 +123,10 @@ extern "C" {
         /**
          * Iterates over a pod's DRAM banks
          */
-#define hb_mc_config_pod_foreach_dram(coord, pod_id, cfg)               \
-        for (coord = hb_mc_config_pod_dram_start(cfg, pod_id);          \
-             !hb_mc_config_pod_dram_stop(cfg, pod_id, coord);           \
-             coord = hb_mc_config_pod_dram_next(cfg, pod_id, coord))
+#define hb_mc_config_pod_foreach_dram(coord, pod, cfg)               \
+        for (coord = hb_mc_config_pod_dram_start(cfg, pod);          \
+             !hb_mc_config_pod_dram_stop(cfg, pod, coord);           \
+             coord = hb_mc_config_pod_dram_next(cfg, pod, coord))
 
         /****************************************/
         /* Network pod and tile from coordinate */
