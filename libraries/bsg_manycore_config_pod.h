@@ -53,7 +53,7 @@ extern "C" {
         hb_mc_config_pod_vcore_origin(const hb_mc_config_t *cfg, hb_mc_coordinate_t pod)
         {
                 hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
-                hb_mc_coordinate_t og = hb_mc_coordinate(1 << tile_w.x, 1 << tile_w.y);
+                hb_mc_coordinate_t og = hb_mc_config_get_origin_vcore(cfg);
                 return hb_mc_coordinate( og.x + (1<<tile_w.x) * (pod.x),
                                          og.y + (1<<tile_w.y) * (pod.y*2) );
         }
@@ -62,7 +62,7 @@ extern "C" {
         hb_mc_config_vcore_to_pod(const hb_mc_config_t *cfg, hb_mc_coordinate_t vcore)
         {
                 hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
-                hb_mc_coordinate_t og = hb_mc_coordinate(1 << tile_w.x, 1 << tile_w.y);
+                hb_mc_coordinate_t og = hb_mc_config_get_origin_vcore(cfg);
                 return hb_mc_coordinate( ((vcore.x - og.x) >> tile_w.x),
                                          ((vcore.y - og.y) >> tile_w.y)/2 );
         }
