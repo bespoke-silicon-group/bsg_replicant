@@ -95,7 +95,7 @@ int test_loader(int argc, char **argv) {
 
 
         bsg_pr_test_info("Reading from file: %s\n", bin_path);
-        bsg_pr_test_info("Tile group dimension: %d %d\n", tg.x, tg.y);
+        bsg_pr_test_info("Tile group dimension: %u %u\n", tg.x, tg.y);
 
 
         // read in the program data from the file system
@@ -198,7 +198,7 @@ int test_loader(int argc, char **argv) {
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
 #endif
-                bsg_pr_test_info("Unfreezing pod (%d %d)\n", pod.x, pod.y);
+                bsg_pr_test_info("Unfreezing pod (%u %u)\n", pod.x, pod.y);
 
                 foreach_coordinate(target, origin, tg){
                         err = hb_mc_tile_unfreeze(mc, &target);
@@ -242,13 +242,13 @@ int test_loader(int argc, char **argv) {
 
                 switch (hb_mc_request_packet_get_epa(&pkt.request)) {
                 case 0xEAD0:
-                        bsg_pr_test_info("Received finish packet from (%3d,%3d)\n", src.x, src.y);
+                        bsg_pr_test_info("Received finish packet from (%3u,%3u)\n", src.x, src.y);
                         bsg_pr_dbg("received finish packet\n");
                         err = (err == HB_MC_FAIL ? HB_MC_FAIL : HB_MC_SUCCESS);
                         done += 1;
                         break;
                 case 0xEAD8:
-                        bsg_pr_test_info("Received failed packet from (%3d,%3d)\n", src.x, src.y);
+                        bsg_pr_test_info("Received failed packet from (%3u,%3u)\n", src.x, src.y);
                         bsg_pr_dbg("received fail packet\n");
                         err = HB_MC_FAIL;
                         done += 1;
