@@ -63,7 +63,7 @@ dve: debug.vpd
 	$(DVE) -full64 -vpd $< &
 
 verdi: debug.fsdb
-	verdi -ssf $< &
+	$(VERDI_BIN)/verdi -ssf $< &
 
 platform.execution.clean:
 	rm -rf saifgen.log exec.log profile.log exec.log debug.vpd debug.fsdb

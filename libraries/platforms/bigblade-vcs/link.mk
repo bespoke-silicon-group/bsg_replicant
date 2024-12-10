@@ -100,7 +100,7 @@ $(BSG_MACHINExPLATFORM_PATH)/repl $(BSG_MACHINExPLATFORM_PATH)/exec $(BSG_MACHIN
 	mkdir -p $@
 
 %/simv: $(VCS_VSOURCES) | $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so %
-	vcs -top replicant_tb_top $(VCS_VSOURCES) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
+	$(VCS_BIN)/vcs -top replicant_tb_top $(VCS_VSOURCES) $(VCS_FLAGS) -Mdirectory=$@.tmp -l $@.vcs.log -o $@
 
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/exec/simv
 .PRECIOUS:$(BSG_MACHINExPLATFORM_PATH)/repl/simv
