@@ -69,7 +69,7 @@ BSG_MACHINE_ENABLE_DMA                = 0
 # Northwest (top-left) corner X by Y pods have DRAM enabled, other pods have DRAM disabled
 # DRAM disabled pods will skip loading program into DRAM (program must fit within icache)
 BSG_MACHINE_ENABLE_DRAM_PODS_X        = $(BSG_MACHINE_PODS_X)
-BSG_MACHINE_ENABLE_DRAM_PODS_Y        = $(BSG_MACHINE_PODS_Y)
+BSG_MACHINE_ENABLE_DRAM_PODS_Y        = 2
 
 # Victim Cache Parameters
 BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
