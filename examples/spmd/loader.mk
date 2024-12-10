@@ -55,11 +55,29 @@ TILE_GROUP_DIM_X ?= 1
 TILE_GROUP_DIM_Y ?= 1
 
 # TEST_SOURCES is a list of source files that need to be compiled
-TEST_SOURCES = $(EXAMPLES_PATH)/spmd/loader.c
+TEST_SOURCES = $(CURDIR)/loader.c
+$(CURDIR)/loader.c: $(EXAMPLES_PATH)/spmd/loader.c
+	ln -s $^ $@
 
 DEFINES += -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE
 CDEFINES += 
 CXXDEFINES += 
+
+# Specify number of pods to launch, default all available pods (-1)
+HB_MC_POD_GROUP_X ?= -1
+HB_MC_POD_GROUP_Y ?= -1
+CDEFINES   += -DHB_MC_POD_GROUP_X=$(HB_MC_POD_GROUP_X) -DHB_MC_POD_GROUP_Y=$(HB_MC_POD_GROUP_Y)
+CXXDEFINES += -DHB_MC_POD_GROUP_X=$(HB_MC_POD_GROUP_X) -DHB_MC_POD_GROUP_Y=$(HB_MC_POD_GROUP_Y)
+
+# Specify if waiting for finish packets from all tiles, default no (0)
+HB_MC_WAIT_ALL_TILES_DONE ?= 0
+CDEFINES   += -DHB_MC_WAIT_ALL_TILES_DONE=$(HB_MC_WAIT_ALL_TILES_DONE)
+CXXDEFINES += -DHB_MC_WAIT_ALL_TILES_DONE=$(HB_MC_WAIT_ALL_TILES_DONE)
+
+# Specify if launching multiple pods in series, default no (0)
+HB_MC_LAUNCH_PODS_IN_SERIES ?= 0
+CDEFINES   += -DHB_MC_LAUNCH_PODS_IN_SERIES=$(HB_MC_LAUNCH_PODS_IN_SERIES)
+CXXDEFINES += -DHB_MC_LAUNCH_PODS_IN_SERIES=$(HB_MC_LAUNCH_PODS_IN_SERIES)
 
 FLAGS     = -g -Wall -Wno-unused-function -Wno-unused-variable
 CFLAGS   += -std=c99 $(FLAGS)
@@ -126,6 +144,6 @@ clean:
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(SPMD_NAME) clean
-	rm -f $(EXAMPLES_PATH)/spmd/loader.o
+	rm -f $(CURDIR)/loader.c
 
 

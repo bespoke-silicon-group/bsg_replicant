@@ -91,9 +91,11 @@ int test_loader(int argc, char **argv) {
         tg.x = args.tg_x;
         tg.y = args.tg_y;
 
+        int fail = 0;
+
 
         bsg_pr_test_info("Reading from file: %s\n", bin_path);
-        bsg_pr_test_info("Tile group dimension: %d %d\n", tg.x, tg.y);
+        bsg_pr_test_info("Tile group dimension: %u %u\n", tg.x, tg.y);
 
 
         // read in the program data from the file system
@@ -112,8 +114,22 @@ int test_loader(int argc, char **argv) {
         /* initialize the tile */
         hb_mc_coordinate_t pod;
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(mc);
+
+        // Specify number of pods to launch, default all available pods (-1)
+        int pod_launch_x = HB_MC_POD_GROUP_X;
+        int pod_launch_y = HB_MC_POD_GROUP_Y;
+        if (pod_launch_x == -1 || pod_launch_x > (int)(cfg->pods.x)) pod_launch_x = cfg->pods.x;
+        if (pod_launch_y == -1 || pod_launch_y > (int)(cfg->pods.y)) pod_launch_y = cfg->pods.y;
+        bsg_pr_test_info("Pod launch dim desired: %d %d, actual: %d %d\n", 
+                            HB_MC_POD_GROUP_X, HB_MC_POD_GROUP_Y, pod_launch_x, pod_launch_y);
+
         hb_mc_config_foreach_pod(pod, cfg)
         {
+                // Skip pods;
+                if (((int)(pod.x) >= pod_launch_x) || ((int)(pod.y) >= pod_launch_y)) {
+                    continue;
+                }
+
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
 
@@ -168,13 +184,22 @@ int test_loader(int argc, char **argv) {
                         }
 
                 }
+#if HB_MC_LAUNCH_PODS_IN_SERIES == 0
         }
 
         /* unfreeze tile */
         hb_mc_config_foreach_pod(pod, cfg)
         {
+                // Skip pods;
+                if (((int)(pod.x) >= pod_launch_x) || ((int)(pod.y) >= pod_launch_y)) {
+                    continue;
+                }
+
                 hb_mc_coordinate_t origin = hb_mc_config_pod_vcore_origin(cfg, pod);
                 hb_mc_coordinate_t target = origin;
+#endif
+                bsg_pr_test_info("Unfreezing pod (%u %u)\n", pod.x, pod.y);
+
                 foreach_coordinate(target, origin, tg){
                         err = hb_mc_tile_unfreeze(mc, &target);
                         if (err != HB_MC_SUCCESS) {
@@ -185,11 +210,16 @@ int test_loader(int argc, char **argv) {
                                 goto cleanup;
                         }
                 }
+#if HB_MC_LAUNCH_PODS_IN_SERIES == 0
         }
+#endif
 
         /* wait until all pods have completed */
+        bsg_pr_test_info("Waiting for pods to finish...\n");
+        int num_packet_per_pod = (HB_MC_WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
+        int num_pod_launched = (HB_MC_LAUNCH_PODS_IN_SERIES != 0)? 1 : pod_launch_x * pod_launch_y;
         int done = 0;
-        while (done < cfg->pods.x * cfg->pods.y) {
+        while (done < num_packet_per_pod * num_pod_launched) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
 
@@ -212,20 +242,25 @@ int test_loader(int argc, char **argv) {
 
                 switch (hb_mc_request_packet_get_epa(&pkt.request)) {
                 case 0xEAD0:
-                        bsg_pr_test_info("Received finish packet from (%3d,%3d)\n", pod.x, pod.y);
+                        bsg_pr_test_info("Received finish packet from (%3u,%3u)\n", src.x, src.y);
                         bsg_pr_dbg("received finish packet\n");
                         err = (err == HB_MC_FAIL ? HB_MC_FAIL : HB_MC_SUCCESS);
                         done += 1;
                         break;
                 case 0xEAD8:
-                        bsg_pr_test_info("Received failed packet from (%3d,%3d)\n", pod.x, pod.y);
+                        bsg_pr_test_info("Received failed packet from (%3u,%3u)\n", src.x, src.y);
                         bsg_pr_dbg("received fail packet\n");
                         err = HB_MC_FAIL;
                         done += 1;
+                        fail += 1;
                         break;
                 default: break;
                 }
         }
+#if HB_MC_LAUNCH_PODS_IN_SERIES != 0
+        }
+#endif
+        if (fail > 0) err = HB_MC_FAIL;
 
 cleanup:
     #pragma GCC diagnostic push
