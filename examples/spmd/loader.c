@@ -118,15 +118,15 @@ int test_loader(int argc, char **argv) {
         // Specify number of pods to launch, default all available pods (-1)
         int pod_launch_x = HB_MC_POD_GROUP_X;
         int pod_launch_y = HB_MC_POD_GROUP_Y;
-        if (pod_launch_x == -1 || pod_launch_x > cfg->pods.x) pod_launch_x = cfg->pods.x;
-        if (pod_launch_y == -1 || pod_launch_y > cfg->pods.y) pod_launch_y = cfg->pods.y;
+        if (pod_launch_x == -1 || pod_launch_x > (int)(cfg->pods.x)) pod_launch_x = cfg->pods.x;
+        if (pod_launch_y == -1 || pod_launch_y > (int)(cfg->pods.y)) pod_launch_y = cfg->pods.y;
         bsg_pr_test_info("Pod launch dim desired: %d %d, actual: %d %d\n", 
                             HB_MC_POD_GROUP_X, HB_MC_POD_GROUP_Y, pod_launch_x, pod_launch_y);
 
         hb_mc_config_foreach_pod(pod, cfg)
         {
                 // Skip pods;
-                if ((pod.x >= pod_launch_x) || (pod.y >= pod_launch_y)) {
+                if (((int)(pod.x) >= pod_launch_x) || ((int)(pod.y) >= pod_launch_y)) {
                     continue;
                 }
 
@@ -191,7 +191,7 @@ int test_loader(int argc, char **argv) {
         hb_mc_config_foreach_pod(pod, cfg)
         {
                 // Skip pods;
-                if ((pod.x >= pod_launch_x) || (pod.y >= pod_launch_y)) {
+                if (((int)(pod.x) >= pod_launch_x) || ((int)(pod.y) >= pod_launch_y)) {
                     continue;
                 }
 
