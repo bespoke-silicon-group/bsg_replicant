@@ -90,10 +90,6 @@ ifeq ($(BSG_PLATFORM),bigblade-vcs)
 # export VCS_HOME = <VCS installation home path>
 # # VERDI Path
 # export VERDI_HOME = <VERDI installation home path>
-# # Add VCS_HOME and VERDI_HOME to PATH
-# VCS_BIN = $(VCS_HOME)/bin
-# VERDI_BIN = $(VERDI_HOME)/bin
-# export PATH:=$(PATH):$(VCS_BIN):$(VERDI_BIN)
 
 # Environment Variables Checking
 ifndef LM_LICENSE_FILE
@@ -107,6 +103,8 @@ ifndef VERDI_HOME
 $(warning $(shell echo -e "$(RED)BSG MAKE ERROR: Neither VERDI_HOME nor DVE is defined$(NC)"))
 endif
 endif
+VCS_BIN = $(VCS_HOME)/bin
+VERDI_BIN = $(VERDI_HOME)/bin
 endif
 
 
