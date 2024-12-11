@@ -80,11 +80,11 @@
         (HB_MC_MMIO_ROM_BASE + ofs)
 
 
-/* AWS (Physical hardware) and VCS (simulated hardware) differ
+/* This (Physical hardware) and VCS (simulated hardware) differ
  * slightly, but provide the same interface to the platform. To hide
  * this fact, we use a union.
  * 
- * AWS Uses a memory mapped IO pointer to do native reads/writes.
+ * This Uses a memory mapped IO pointer to do native reads/writes.
  * VCS uses a DPI call that takes a handle (index)
  */
 typedef union {
