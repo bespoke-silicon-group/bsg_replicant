@@ -26,6 +26,8 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define FPGA_TARGET_LOCAL
+#define FPGA_TARGET_LOCAL_HANDLE_INIT (-1)
+#define FPGA_TARGET_LOCAL_HANDLE_DEFAULT (0)
 
 #ifdef FPGA_TARGET_LOCAL
 #include <sys/types.h>
@@ -42,7 +44,9 @@ const size_t MAP_SIZE=32768UL;
 #endif
 
 #include <bsg_manycore_mmio.h>
+#if !defined(FPGA_TARGET_LOCAL)
 #include <fpga_pci.h>
+#endif
 
 int fd;
 
@@ -54,10 +58,12 @@ int fd;
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
-                           pci_bar_handle_t* handle,
+                           int* handle,
                            hb_mc_manycore_id_t id)
 {
+#if !defined(FPGA_TARGET_LOCAL)
         int pf_id = FPGA_APP_PF, write_combine = 0, bar_id = APP_PF_BAR0;
+#endif
         int r = HB_MC_FAIL, err;
 
         // negative IDs are invalid at the moment
@@ -72,7 +78,7 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 return r;
         }
 #else
-        *handle = 0;
+        *handle = FPGA_TARGET_LOCAL_HANDLE_DEFAULT;
 #endif
 
 #if defined(FPGA_TARGET_LOCAL)
@@ -121,7 +127,7 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
 #else
         fpga_pci_detach(*handle);
 #endif
-        *handle = PCI_BAR_HANDLE_INIT;
+        *handle = FPGA_TARGET_LOCAL_HANDLE_INIT;
  done:
         return r;
 }
@@ -133,11 +139,11 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
-                              pci_bar_handle_t *handle)
+                              int *handle)
 {
         int err;
 
-        if (*handle == PCI_BAR_HANDLE_INIT)
+        if (*handle == FPGA_TARGET_LOCAL_HANDLE_INIT)
                 return HB_MC_SUCCESS;
 
 #if !defined(FPGA_TARGET_LOCAL)
@@ -145,7 +151,7 @@ int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
                 mmio_pr_err((*mmio), "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
 #endif
 
-        *handle = PCI_BAR_HANDLE_INIT;
+        *handle = FPGA_TARGET_LOCAL_HANDLE_INIT;
         (*mmio).p = reinterpret_cast<uintptr_t>(nullptr);
         return HB_MC_SUCCESS;
 }
