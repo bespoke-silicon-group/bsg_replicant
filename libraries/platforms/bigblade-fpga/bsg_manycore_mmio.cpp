@@ -25,11 +25,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#define FPGA_TARGET_LOCAL
-#define FPGA_TARGET_LOCAL_HANDLE_INIT (-1)
-#define FPGA_TARGET_LOCAL_HANDLE_DEFAULT (0)
+#define LOCAL_PCI_HANDLE_INIT (-1)
+#define LOCAL_PCI_HANDLE_DEFAULT (0)
 
-#ifdef FPGA_TARGET_LOCAL
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -41,12 +39,8 @@
 #include <sys/file.h>
 const size_t MAP_SIZE=32768UL;
 #define DEVICE_NAME_FORMAT "/dev/xdmaBSG%d_user"
-#endif
 
 #include <bsg_manycore_mmio.h>
-#if !defined(FPGA_TARGET_LOCAL)
-#include <fpga_pci.h>
-#endif
 
 int fd;
 
@@ -61,9 +55,6 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                            int* handle,
                            hb_mc_manycore_id_t id)
 {
-#if !defined(FPGA_TARGET_LOCAL)
-        int pf_id = FPGA_APP_PF, write_combine = 0, bar_id = APP_PF_BAR0;
-#endif
         int r = HB_MC_FAIL, err;
 
         // negative IDs are invalid at the moment
@@ -71,17 +62,8 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 mmio_pr_err((*mmio), "Failed to init MMIO: invalid ID\n");
                 return HB_MC_INVALID;
         }
-#if !defined(FPGA_TARGET_LOCAL)
-        if ((err = fpga_pci_attach(id, pf_id, bar_id, write_combine, handle)) != 0) {
-                mmio_pr_err((*mmio), "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
-                mmio_pr_err((*mmio), "Are you running with sudo?\n");
-                return r;
-        }
-#else
-        *handle = FPGA_TARGET_LOCAL_HANDLE_DEFAULT;
-#endif
+        *handle = LOCAL_PCI_HANDLE_DEFAULT;
 
-#if defined(FPGA_TARGET_LOCAL)
         char device_name_buffer[64];
         sprintf(device_name_buffer, DEVICE_NAME_FORMAT, id);
         const char* device_name = (const char*) device_name_buffer;
@@ -102,21 +84,11 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 }
                 printf("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, fd, mmio->p);
         }
-#else
-
-        // it is not clear to me where 0x4000 comes from...
-        // map in the base address register to our address space
-        if ((err = fpga_pci_get_address(*handle, 0, 0x4000, (void**)&mmio->p)) != 0) {
-                mmio_pr_err((*mmio), "Failed to init MMIO: %s\n", FPGA_ERR2STR(err));
-                goto cleanup;
-        }
-#endif
         r = HB_MC_SUCCESS;
         mmio_pr_dbg(mmio, "%s: mmio = 0x%" PRIxPTR "\n", __func__, mmio->p);
         goto done;
 
  cleanup:
-#if defined(FPGA_TARGET_LOCAL)
         if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
             mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
         }
@@ -124,10 +96,7 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
             fprintf(stderr, "Failed to unlock device: %s\n", device_name);
         }
         close(fd);
-#else
-        fpga_pci_detach(*handle);
-#endif
-        *handle = FPGA_TARGET_LOCAL_HANDLE_INIT;
+        *handle = LOCAL_PCI_HANDLE_INIT;
  done:
         return r;
 }
@@ -143,15 +112,10 @@ int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
 {
         int err;
 
-        if (*handle == FPGA_TARGET_LOCAL_HANDLE_INIT)
+        if (*handle == LOCAL_PCI_HANDLE_INIT)
                 return HB_MC_SUCCESS;
 
-#if !defined(FPGA_TARGET_LOCAL)
-        if ((err = fpga_pci_detach(*handle)) != 0)
-                mmio_pr_err((*mmio), "Failed to cleanup MMIO: %s\n", FPGA_ERR2STR(err));
-#endif
-
-        *handle = FPGA_TARGET_LOCAL_HANDLE_INIT;
+        *handle = LOCAL_PCI_HANDLE_INIT;
         (*mmio).p = reinterpret_cast<uintptr_t>(nullptr);
         return HB_MC_SUCCESS;
 }
