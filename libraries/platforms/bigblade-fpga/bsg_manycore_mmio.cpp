@@ -71,6 +71,8 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                 mmio_pr_err((*mmio), "Are you running with sudo?\n");
                 return r;
         }
+#else
+        *handle = 0;
 #endif
 
 #if defined(FPGA_TARGET_LOCAL)
