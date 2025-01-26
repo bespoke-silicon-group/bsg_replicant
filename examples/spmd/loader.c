@@ -76,6 +76,13 @@ static int read_program_file(const char *file_name, unsigned char **file_data, s
         return HB_MC_SUCCESS;
 }
 
+long long current_timestamp() {
+    struct timeval te;
+    gettimeofday(&te, NULL);
+    long long microseconds = te.tv_sec*1000000LL + te.tv_usec;
+    return microseconds;
+}
+
 int test_loader(int argc, char **argv) {
         unsigned char *program_data;
         size_t program_size;
@@ -219,6 +226,9 @@ int test_loader(int argc, char **argv) {
         int num_packet_per_pod = (HB_MC_WAIT_ALL_TILES_DONE == 0)? 1 : tg.x * tg.y;
         int num_pod_launched = (HB_MC_LAUNCH_PODS_IN_SERIES != 0)? 1 : pod_launch_x * pod_launch_y;
         int done = 0;
+        long long start_time = 0;
+        long long end_time = 0;
+        int time_count = 0;
         while (done < num_packet_per_pod * num_pod_launched) {
                 hb_mc_packet_t pkt;
                 bsg_pr_dbg("Waiting for finish packet\n");
@@ -242,21 +252,28 @@ int test_loader(int argc, char **argv) {
 
                 switch (hb_mc_request_packet_get_epa(&pkt.request)) {
                 case 0xEAD0:
-                        bsg_pr_test_info("Received finish packet from (%3u,%3u)\n", src.x, src.y);
+                        //bsg_pr_test_info("Received finish packet from (%3u,%3u)\n", src.x, src.y);
                         bsg_pr_dbg("received finish packet\n");
                         err = (err == HB_MC_FAIL ? HB_MC_FAIL : HB_MC_SUCCESS);
                         done += 1;
                         break;
                 case 0xEAD8:
-                        bsg_pr_test_info("Received failed packet from (%3u,%3u)\n", src.x, src.y);
+                        //bsg_pr_test_info("Received failed packet from (%3u,%3u)\n", src.x, src.y);
                         bsg_pr_dbg("received fail packet\n");
                         err = HB_MC_FAIL;
                         done += 1;
                         fail += 1;
                         break;
+                case 0xEAD4:
+                        //bsg_pr_test_info("Received time packet from (%3u,%3u)\n", src.x, src.y);
+                        if (time_count == 0) start_time = current_timestamp();
+                        if (time_count == num_packet_per_pod * num_pod_launched * 2 - 1) end_time = current_timestamp();
+                        time_count += 1;
+                        break;
                 default: break;
                 }
         }
+        printf("Runtime in seconds: %f\n", (end_time - start_time) / 1000000.0);
 #if HB_MC_LAUNCH_PODS_IN_SERIES != 0
         }
 #endif
