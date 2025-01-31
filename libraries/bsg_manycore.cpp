@@ -156,6 +156,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         // Initialize the underlying machine
         if ((err = hb_mc_platform_init(mc, id)) != HB_MC_SUCCESS){
                 free((void*)mc->name);
+                bsg_pr_err("%s: Failed to initialize platform\n", __func__);
                 return err;
         }
 
@@ -163,6 +164,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_init_config(mc)) != HB_MC_SUCCESS){
                 free((void*)mc->name);
                 hb_mc_platform_cleanup(mc);
+                bsg_pr_err("%s: Failed to initialize config\n", __func__);
                 return err;
         }
 
@@ -170,6 +172,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_eva_init(mc)) != HB_MC_SUCCESS){
                 free((void*)mc->name);
                 hb_mc_platform_cleanup(mc);
+                bsg_pr_err("%s: Failed to initialize eva maps\n", __func__);
                 return err;
         }
 
@@ -177,6 +180,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_responders_init(mc))){
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
+                bsg_pr_err("%s: Failed to initialize responders\n", __func__);
                 return err;
         }
 
@@ -184,6 +188,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_platform_wait_reset_done(mc)) != HB_MC_SUCCESS) {
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
+                bsg_pr_err("%s: Failed to wait for reset to complete\n", __func__);
                 return err;
         }
 
@@ -191,6 +196,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_enable_dram(mc)) != HB_MC_SUCCESS){
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
+                bsg_pr_err("%s: Failed to enable dram\n", __func__);
                 return err;
         }
 
@@ -198,6 +204,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_manycore_vcache_init(mc)) != HB_MC_SUCCESS) {
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
+                bsg_pr_err("%s: Failed to initialize vcaches\n", __func__);
                 return err;
         }
 
@@ -205,6 +212,7 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         if ((err = hb_mc_dma_init(mc)) != HB_MC_SUCCESS) {
                 hb_mc_platform_cleanup(mc);
                 free((void*)mc->name);
+                bsg_pr_err("%s: Failed to initialize dma\n", __func__);
                 return err;
         }
 
