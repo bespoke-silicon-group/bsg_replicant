@@ -95,6 +95,36 @@ int hb_mc_dma_init_pod_X2Y2_hbm(hb_mc_manycore_t *mc)
 }
 
 /**
+ * Initializes a specialized DRAM bank to channel map 2x1 pod model
+ */
+static
+int hb_mc_dma_init_pod_X2Y1_hbm(hb_mc_manycore_t *mc)
+{
+        hb_mc_coordinate_t pod;
+
+        unsigned long caches_per_channel =
+                hb_mc_vcache_num_caches(mc) /
+                hb_mc_config_get_dram_channels(&mc->config);
+
+        dma_pr_dbg(mc, "caches_per_channel: %lu\n",  caches_per_channel);
+        dma_pr_dbg(mc, "vcache_num_caches: %u\n", hb_mc_vcache_num_caches(mc));
+        dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
+
+        hb_mc_config_foreach_pod(pod, &mc->config)
+        {
+                int east_not_west = pod.x >= mc->config.pods.x/2;
+                hb_mc_coordinate_t dram;
+                hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
+                {
+                        hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
+                        cache_id_to_memory_id[id] = 0;
+                        cache_id_to_bank_id[id] = id % caches_per_channel;
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
+/**
  * Initializes a specialized DRAM bank to channel map 1x1 pod model of the BigBlade Chip
  */
 static
@@ -238,6 +268,8 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
                         return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
                 } else if (mc->config.pods.x == 2 && mc->config.pods.y == 2) {
                         return hb_mc_dma_init_pod_X2Y2_hbm(mc);
+                } else if (mc->config.pods.x == 2 && mc->config.pods.y == 1) {
+                        return hb_mc_dma_init_pod_X2Y1_hbm(mc);
                 } else if (mc->config.pods.x == 1 && mc->config.pods.y == 1) {
                         return hb_mc_dma_init_pod_X1Y1_X16_hbm(mc);
                 } else {
