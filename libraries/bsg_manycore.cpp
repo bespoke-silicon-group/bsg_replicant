@@ -209,11 +209,10 @@ int  hb_mc_manycore_init(hb_mc_manycore_t *mc, const char *name, hb_mc_manycore_
         }
 
         // initialize dma
-        if ((err = hb_mc_dma_init(mc)) != HB_MC_SUCCESS) {
-                hb_mc_platform_cleanup(mc);
-                free((void*)mc->name);
-                bsg_pr_err("%s: Failed to initialize dma\n", __func__);
-                return err;
+        err = hb_mc_dma_init(mc);
+        if (err != HB_MC_SUCCESS) {
+                bsg_pr_warn("%s: Failed to initialize dma\n", __func__);
+                mc->config.enable_dma = 0;
         }
 
         return HB_MC_SUCCESS;
