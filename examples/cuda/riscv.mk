@@ -83,7 +83,7 @@ BSG_MANYCORE_COMMON_PATH = $(BSG_MANYCORE_SPMD_PATH)/common/
 
 RISCV_TOOLS_PATH := $(BSG_MANYCORE_DIR)/software/riscv-tools/
 RISCV_GNU_PATH   := $(RISCV_TOOLS_PATH)/riscv-install
-RISCV_LLVM_PATH  := $(RISCV_TOOLS_PATH)/llvm/llvm-install
+RISCV_LLVM_PATH  := $(RISCV_GNU_PATH)
 
 ################################################################################
 # RISC-V Tool Configuration
