@@ -68,61 +68,6 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
         return HB_MC_SUCCESS;
 }
 
-/**
- * Initializes a specialized DRAM bank to channel map for the 2x2 pod
- */
-static
-int hb_mc_dma_init_pod_X2Y2_hbm(hb_mc_manycore_t *mc)
-{
-        hb_mc_coordinate_t pod;
-
-        unsigned long caches_per_channel =
-                hb_mc_vcache_num_caches(mc) /
-                hb_mc_config_get_dram_channels(&mc->config);
-
-        hb_mc_config_foreach_pod(pod, &mc->config)
-        {
-                int east_not_west = pod.x >= mc->config.pods.x/2;
-                hb_mc_coordinate_t dram;
-                hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
-                {
-                        hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
-                        cache_id_to_memory_id[id] = east_not_west ? 1 : 0;
-                        cache_id_to_bank_id[id] = id % caches_per_channel;
-                }
-        }
-        return HB_MC_SUCCESS;
-}
-
-/**
- * Initializes a specialized DRAM bank to channel map 2x1 pod model
- */
-static
-int hb_mc_dma_init_pod_X2Y1_hbm(hb_mc_manycore_t *mc)
-{
-        hb_mc_coordinate_t pod;
-
-        unsigned long caches_per_channel =
-                hb_mc_vcache_num_caches(mc) /
-                hb_mc_config_get_dram_channels(&mc->config);
-
-        dma_pr_dbg(mc, "caches_per_channel: %lu\n",  caches_per_channel);
-        dma_pr_dbg(mc, "vcache_num_caches: %u\n", hb_mc_vcache_num_caches(mc));
-        dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
-
-        hb_mc_config_foreach_pod(pod, &mc->config)
-        {
-                int east_not_west = pod.x >= mc->config.pods.x/2;
-                hb_mc_coordinate_t dram;
-                hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
-                {
-                        hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
-                        cache_id_to_memory_id[id] = 0;
-                        cache_id_to_bank_id[id] = id % caches_per_channel;
-                }
-        }
-        return HB_MC_SUCCESS;
-}
 
 
 /**
@@ -135,15 +80,12 @@ int dram_east_not_west(hb_mc_manycore_t*mc, hb_mc_coordinate_t dram)
         return dram.x >= base_x + size_x/2;
 }
 
-
 /**
- * Initializes a specialized DRAM bank to channel map 1x2 pod model
+ * Initializes a cache bank to dram bank/channel map
  */
 static
-int hb_mc_dma_init_pod_X1Y2_hbm(hb_mc_manycore_t *mc)
+int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
 {
-        hb_mc_coordinate_t pod;
-
         unsigned long caches_per_channel =
                 hb_mc_vcache_num_caches(mc) /
                 hb_mc_config_get_dram_channels(&mc->config);
@@ -153,8 +95,11 @@ int hb_mc_dma_init_pod_X1Y2_hbm(hb_mc_manycore_t *mc)
         dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
 
         hb_mc_idx_t bank_id = 0;
+        // first:  iterate over the east half of the chip
+        // second: iterate over the west half of the chip
         for (int east_not_west = 0; east_not_west < 2; east_not_west++)
         {
+                hb_mc_coordinate_t pod;
                 hb_mc_config_foreach_pod(pod, &mc->config)
                 {
                         hb_mc_coordinate_t dram;
@@ -165,14 +110,41 @@ int hb_mc_dma_init_pod_X1Y2_hbm(hb_mc_manycore_t *mc)
 
                                 hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
                                 dma_pr_dbg(mc, "id(%2u)->bank(%2u)\n", id, bank_id);
-                                cache_id_to_memory_id[id] = 0;
-                                cache_id_to_bank_id[id] = bank_id;
+                                cache_id_to_memory_id[id] = bank_id / caches_per_channel;
+                                cache_id_to_bank_id[id]   = bank_id % caches_per_channel;
 
                                 bank_id++;
                         }
                 }
         }
         return HB_MC_SUCCESS;
+}
+
+/**
+ * Initializes a specialized DRAM bank to channel map for the 2x2 pod
+ */
+static
+int hb_mc_dma_init_pod_X2Y2_hbm(hb_mc_manycore_t *mc)
+{
+        return hb_mc_dma_init_pod_XxYy_hbm(mc);
+}
+
+/**
+ * Initializes a specialized DRAM bank to channel map 2x1 pod model
+ */
+static
+int hb_mc_dma_init_pod_X2Y1_hbm(hb_mc_manycore_t *mc)
+{
+        return hb_mc_dma_init_pod_XxYy_hbm(mc);
+}
+
+/**
+ * Initializes a specialized DRAM bank to channel map 1x2 pod model
+ */
+static
+int hb_mc_dma_init_pod_X1Y2_hbm(hb_mc_manycore_t *mc)
+{
+        return hb_mc_dma_init_pod_XxYy_hbm(mc);
 }
 
 /**
