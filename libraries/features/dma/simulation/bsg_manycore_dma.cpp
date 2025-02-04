@@ -7,7 +7,7 @@
 
 /* these are convenience macros that are only good for one line prints */
 #define dma_pr_dbg(mc, fmt, ...)                   \
-        bsg_pr_dbg("%s: " fmt, mc->name, ##__VA_ARGS__)
+        bsg_pr_dbg("%s: %s: " fmt, mc->name, __func__,  ##__VA_ARGS__)
 
 #define dma_pr_err(mc, fmt, ...)                   \
         bsg_pr_err("%s: " fmt, mc->name, ##__VA_ARGS__)
@@ -249,8 +249,8 @@ int hb_mc_dma_init_pod_X4Y4_X16_test_mem(hb_mc_manycore_t *mc)
                         unsigned long vcache_id = hb_mc_config_dram_id(cfg, vcache);
                         cache_id_to_memory_id[vcache_id] = memory;
                         cache_id_to_bank_id[vcache_id] = bank;
-                        dma_pr_dbg(mc, "%s: mapping vcache @ (%d,%d) in pod (%d,%d) to memory %d and bank %d\n",
-                                   __func__, vcache.x, vcache.y, pod.x, pod.y, memory, bank);
+                        dma_pr_dbg(mc, "mapping vcache @ (%d,%d) in pod (%d,%d) to memory %d and bank %d\n",
+                                   vcache.x, vcache.y, pod.x, pod.y, memory, bank);
                 }
         }
 
@@ -338,8 +338,8 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         unsigned long channels = hb_mc_config_get_dram_channels(cfg);
         unsigned long caches_per_channel = caches/channels;
 
-        dma_pr_dbg(mc, "%s: caches = %lu, channels = %lu, caches_per_channel = %lu\n",
-                        __func__, caches, channels, caches_per_channel);
+        dma_pr_dbg(mc, "caches = %lu, channels = %lu, caches_per_channel = %lu\n",
+                        caches, channels, caches_per_channel);
 
         /*
           Figure out which memory channel and bank this NPA maps to.
@@ -369,8 +369,8 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         address_t addr = hb_mc_memsys_map_to_physical_channel_address(&cfg->memsys, cache_addr);
 
 
-        dma_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",
-                        __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
+        dma_pr_dbg(mc, "Mapped %s to Channel %2lu, Address 0x%08lx\n",
+                   hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
 
         /*
           Don't overflow memory if you can help it.
@@ -428,8 +428,8 @@ int hb_mc_dma_read(hb_mc_manycore_t *mc,
 
         char npa_str[256];
 
-        dma_pr_dbg(mc, "%s: Reading %3zu bytes from %s\n",
-                        __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+        dma_pr_dbg(mc, "Reading %3zu bytes from %s\n",
+                   sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
 
         memcpy(data, reinterpret_cast<void*>(membuffer), sz);
 
