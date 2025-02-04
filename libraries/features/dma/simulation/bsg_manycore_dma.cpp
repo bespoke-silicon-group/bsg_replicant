@@ -73,6 +73,7 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
 /**
  * Returns 1 if the dram is in the east half of the chip, 0 otherwise
  */
+static
 int dram_east_not_west(hb_mc_manycore_t*mc, hb_mc_coordinate_t dram)
 {
         hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(&mc->config);
@@ -118,33 +119,6 @@ int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
                 }
         }
         return HB_MC_SUCCESS;
-}
-
-/**
- * Initializes a specialized DRAM bank to channel map for the 2x2 pod
- */
-static
-int hb_mc_dma_init_pod_X2Y2_hbm(hb_mc_manycore_t *mc)
-{
-        return hb_mc_dma_init_pod_XxYy_hbm(mc);
-}
-
-/**
- * Initializes a specialized DRAM bank to channel map 2x1 pod model
- */
-static
-int hb_mc_dma_init_pod_X2Y1_hbm(hb_mc_manycore_t *mc)
-{
-        return hb_mc_dma_init_pod_XxYy_hbm(mc);
-}
-
-/**
- * Initializes a specialized DRAM bank to channel map 1x2 pod model
- */
-static
-int hb_mc_dma_init_pod_X1Y2_hbm(hb_mc_manycore_t *mc)
-{
-        return hb_mc_dma_init_pod_XxYy_hbm(mc);
 }
 
 /**
