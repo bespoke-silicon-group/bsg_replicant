@@ -289,17 +289,8 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2) {
                 if (mc->config.pods.x == 4 && mc->config.pods.y == 4) {
                         return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
-                } else if (mc->config.pods.x == 2 && mc->config.pods.y == 2) {
-                        return hb_mc_dma_init_pod_X2Y2_hbm(mc);
-                } else if (mc->config.pods.x == 2 && mc->config.pods.y == 1) {
-                        return hb_mc_dma_init_pod_X2Y1_hbm(mc);
-                } else if (mc->config.pods.x == 1 && mc->config.pods.y == 2) {
-                        return hb_mc_dma_init_pod_X1Y2_hbm(mc);
-                } else if (mc->config.pods.x == 1 && mc->config.pods.y == 1) {
-                        return hb_mc_dma_init_pod_X1Y1_X16_hbm(mc);
                 } else {
-                        // Pod arrangement not recognized
-                        return HB_MC_FAIL;
+                        return hb_mc_dma_init_pod_XxYy_hbm(mc);
                 }
         } else if (mc->config.memsys.id == HB_MC_MEMSYS_ID_TESTMEM
                    && mc->config.pod_shape.x == 16
