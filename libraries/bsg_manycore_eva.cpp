@@ -619,11 +619,13 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
           uint32_t dram_bit2 = (dram_idx >> 2) & 1;
           uint32_t dram_bit4 = (dram_idx >> 4) & 1;
           uint32_t dram_bit5 = (dram_idx >> 5) & 1;
+          uint32_t dram_bit6 = (dram_idx >> 6) & 1;
           uint32_t dram_bit8 = (dram_idx >> 8) & 1;
           uint32_t dram_bit9 = (dram_idx >> 9) & 1;
           uint32_t dram_bit10 = (dram_idx >> 10) & 1;
           uint32_t dram_bit11 = (dram_idx >> 11) & 1;
           uint32_t dram_bit12 = (dram_idx >> 12) & 1;
+          uint32_t dram_bit13 = (dram_idx >> 13) & 1;
           uint32_t dram_bit14 = (dram_idx >> 14) & 1;
           uint32_t dram_bit15 = (dram_idx >> 15) & 1;
           uint32_t dram_bit16 = (dram_idx >> 16) & 1;
