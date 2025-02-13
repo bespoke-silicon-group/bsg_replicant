@@ -54,8 +54,8 @@ BSG_MACHINE_HETERO_TYPE_VEC           = default:0
 
 # Network Parameters
 # BSG_MACHINE_NETWORK_CFG longer has an effect, fixed at e_network_half_ruche_x
-BSG_MACHINE_NETWORK_CFG               = e_network_half_ruche_x
-BSG_MACHINE_RUCHE_FACTOR_X            = 3
+BSG_MACHINE_NETWORK_CFG               = e_network_full_ruche
+BSG_MACHINE_RUCHE_FACTOR_X            = 2
 BSG_MACHINE_ENABLE_HW_BARRIER         = 1
 BSG_MACHINE_BARRIER_RUCHE_FACTOR_X    = 3
 BSG_MACHINE_WH_RUCHE_FACTOR           = 2
@@ -105,7 +105,7 @@ BSG_MACHINE_POD_TILES_SUBARRAY_Y      = 1
 
 # Host Coordinate (Rarely Changed)
 BSG_MACHINE_HOST_COORD_X              = 16
-BSG_MACHINE_HOST_COORD_Y              = 0
+BSG_MACHINE_HOST_COORD_Y              = 6
 
 BSG_MACHINE_HOST_X_CORD              = $(BSG_MACHINE_HOST_COORD_X)
 BSG_MACHINE_HOST_Y_CORD              = $(BSG_MACHINE_HOST_COORD_Y)

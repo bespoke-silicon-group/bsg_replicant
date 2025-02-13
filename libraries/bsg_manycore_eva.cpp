@@ -513,6 +513,64 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
             *x ^= hash2;
             *x ^= hash3;
             *x ^= hash4;
+          } else if (xdimlog == 6) {
+
+            uint32_t hash0 = (dram_bit0
+                           ^ dram_bit5
+                           ^ dram_bit7
+                           ^ dram_bit10
+                           ^ dram_bit14
+                           ^ dram_bit15
+                           ^ dram_bit17);
+            uint32_t hash1 = (dram_bit1
+                           ^ dram_bit6
+                           ^ dram_bit8
+                           ^ dram_bit11
+                           ^ dram_bit15
+                           ^ dram_bit16) << 1;
+            uint32_t hash2 = (dram_bit0
+                           ^ dram_bit2
+                           ^ dram_bit5
+                           ^ dram_bit9
+                           ^ dram_bit10
+                           ^ dram_bit12
+                           ^ dram_bit14
+                           ^ dram_bit15
+                           ^ dram_bit16
+                           ) << 2;
+            uint32_t hash3 = (dram_bit1
+                           ^ dram_bit3
+                           ^ dram_bit6
+                           ^ dram_bit10
+                           ^ dram_bit11
+                           ^ dram_bit13
+                           ^ dram_bit15
+                           ^ dram_bit16
+                           ^ dram_bit17
+                           ) << 3;
+            uint32_t hash4 = (dram_bit2
+                           ^ dram_bit4
+                           ^ dram_bit7
+                           ^ dram_bit11
+                           ^ dram_bit12
+                           ^ dram_bit14
+                           ^ dram_bit16
+                           ^ dram_bit17
+                           ) << 4;
+            uint32_t hash5 = (dram_bit3
+                           ^ dram_bit5
+                           ^ dram_bit8
+                           ^ dram_bit12
+                           ^ dram_bit13
+                           ^ dram_bit15
+                           ^ dram_bit17
+                           ) << 5;
+            *x ^= hash0;
+            *x ^= hash1;
+            *x ^= hash2;
+            *x ^= hash3;
+            *x ^= hash4;
+            *x ^= hash5;
           }
         //*/
         // ipoly hashing (xy) end
@@ -590,6 +648,14 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                   ^ dram_bit15
                   ^ dram_bit16
                   ^ dram_bit17;
+          } else if (xdimlog == 6) {
+            is_south = is_south
+                  ^ dram_bit4
+                  ^ dram_bit6
+                  ^ dram_bit9
+                  ^ dram_bit13
+                  ^ dram_bit14
+                  ^ dram_bit16;
           }
           // ipoly end;
         } else {
