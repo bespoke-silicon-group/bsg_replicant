@@ -267,7 +267,8 @@ RISCV_DEFINES += -DENABLE_HW_BARRIER
 endif
 
 
-crt.rvo: $(BSG_MANYCORE_COMMON_PATH)/crt.S
+CRT_PATH ?= $(BSG_MANYCORE_COMMON_PATH)
+crt.rvo: $(CRT_PATH)/crt.S
 	$(_RISCV_GCC) $(RISCV_CFLAGS) $(RISCV_DEFINES) $(RISCV_INCLUDES) -c $< -o $@ 2>&1 | tee $*.rvo.log
 
 # We compile these locally so that we don't interfere with the files in
