@@ -449,7 +449,11 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
           uint32_t dram_bit16 = (dram_idx >> 16) & 1;
           uint32_t dram_bit17 = (dram_idx >> 17) & 1;
           uint32_t dram_bit18 = (dram_idx >> 18) & 1;
-          if (xdimlog == 2) {
+          if (xdimlog == 1) {
+            uint32_t hash0 = (dram_bit0 ^ dram_bit1 ^ dram_bit3 ^ dram_bit4
+                       ^  dram_bit6 ^ dram_bit7 ^ dram_bit9 ^ dram_bit10);
+            *x ^= hash0;
+          } else if (xdimlog == 2) {
             uint32_t hash0 = (dram_bit0 ^ dram_bit1 ^ dram_bit2 ^ dram_bit4
                        ^  dram_bit7 ^ dram_bit8 ^ dram_bit9 ^ dram_bit11);
             uint32_t hash1 = (dram_bit1 ^ dram_bit2 ^ dram_bit3 ^ dram_bit5
@@ -594,7 +598,17 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
           uint32_t dram_bit15 = (dram_idx >> 15) & 1;
           uint32_t dram_bit16 = (dram_idx >> 16) & 1;
           uint32_t dram_bit17 = (dram_idx >> 17) & 1;
-          if (xdimlog == 2) {
+          if (xdimlog == 1) {
+            is_south = is_south
+                  ^ dram_bit0
+                  ^ dram_bit2
+                  ^ dram_bit3
+                  ^ dram_bit5
+                  ^ dram_bit6
+                  ^ dram_bit8
+                  ^ dram_bit9
+                  ^ dram_bit11;
+          } else if (xdimlog == 2) {
             is_south = is_south
                   ^ dram_bit0
                   ^ dram_bit1
