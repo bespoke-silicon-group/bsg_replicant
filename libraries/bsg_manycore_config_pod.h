@@ -53,7 +53,7 @@ extern "C" {
         hb_mc_config_pod_vcore_origin(const hb_mc_config_t *cfg, hb_mc_coordinate_t pod)
         {
                 hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
-                hb_mc_coordinate_t og = hb_mc_coordinate(1 << tile_w.x, 1 << tile_w.y);
+                hb_mc_coordinate_t og = hb_mc_config_get_origin_vcore(cfg);
                 return hb_mc_coordinate( og.x + (1<<tile_w.x) * (pod.x),
                                          og.y + (1<<tile_w.y) * (pod.y*2) );
         }
@@ -62,7 +62,7 @@ extern "C" {
         hb_mc_config_vcore_to_pod(const hb_mc_config_t *cfg, hb_mc_coordinate_t vcore)
         {
                 hb_mc_coordinate_t tile_w = hb_mc_config_tile_coord_width(cfg);
-                hb_mc_coordinate_t og = hb_mc_coordinate(1 << tile_w.x, 1 << tile_w.y);
+                hb_mc_coordinate_t og = hb_mc_config_get_origin_vcore(cfg);
                 return hb_mc_coordinate( ((vcore.x - og.x) >> tile_w.x),
                                          ((vcore.y - og.y) >> tile_w.y)/2 );
         }
@@ -207,12 +207,18 @@ extern "C" {
                          hb_mc_coordinate_t co)
         {
                 hb_mc_coordinate_t npod = hb_mc_config_npod(cfg, co);
+
+                // vcore origin
+                hb_mc_coordinate_t og = hb_mc_config_get_origin_vcore(cfg);
+                // vcore origin pod
+                hb_mc_coordinate_t og_pod = hb_mc_config_vcore_to_pod(cfg, og);
+
                 if (hb_mc_config_is_vanilla_core(cfg, co)) {
-                        return hb_mc_coordinate(npod.x-1, npod.y >> 1);
+                        return hb_mc_coordinate(npod.x-og_pod.x, npod.y >> 1);
                 } else if (hb_mc_config_is_dram_south(cfg, co)) {
-                        return hb_mc_coordinate(npod.x-1, (npod.y >> 1)-1);
+                        return hb_mc_coordinate(npod.x-og_pod.x, (npod.y >> 1)-1);
                 } else if (hb_mc_config_is_dram_north(cfg, co)) {
-                        return hb_mc_coordinate(npod.x-1, (npod.y >> 1));
+                        return hb_mc_coordinate(npod.x-og_pod.x, (npod.y >> 1));
                 }
 
                 return hb_mc_coordinate(0,0);

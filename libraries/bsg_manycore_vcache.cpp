@@ -18,9 +18,7 @@ int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc)
                 {
                         // one pod column -> split pod in half
                         // o/w -> split pod array in half
-                        int east_not_west = cfg->pods.x == 1    ?
-                                ((dram.x-bx) >= cfg->pod_shape.x/2) :
-                                (pod.x >= cfg->pods.x/2);
+                        int east_not_west = 1;
 
                         hb_mc_npa_t wh_dst_addr = hb_mc_npa(dram, HB_MC_VCACHE_EPA_OFFSET_WH_DST);
                         // cannot write32 here because wh_dest register only supports remote_store opcode
