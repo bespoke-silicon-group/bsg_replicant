@@ -49,14 +49,12 @@ SIM_ARGS += +trace_file=$(TRACE_FILE)
 # tapeout repository, independently from replicant.
 
 exec.log: $(BSG_MACHINE_PATH)/cuda/simv main.so $(BSG_MANYCORE_KERNELS) 
-	$(BSG_MACHINE_PATH)/cuda/simv $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
+	$< $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
 debug.log: $(BSG_MACHINE_PATH)/cuda/simv-debug main.so $(BSG_MANYCORE_KERNELS) 
-	$(BSG_MACHINE_PATH)/cuda/simv-debug $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
+	$< $(SIM_ARGS) +c_args="$(C_ARGS)" +c_path=$(CURDIR)/main.so 2>&1 | tee $@
 
 debug.log: SIM_ARGS += +vpdfile+debug.vpd
-debug.vpd: debug.log ;
-debug.fsdb: debug.log ;
 
 dve:
 	$(DVE) -full64 -vpd debug.vpd &
