@@ -449,7 +449,24 @@ static int default_eva_get_x_coord_dram(const hb_mc_manycore_t *mc,
           uint32_t dram_bit16 = (dram_idx >> 16) & 1;
           uint32_t dram_bit17 = (dram_idx >> 17) & 1;
           uint32_t dram_bit18 = (dram_idx >> 18) & 1;
-          if (xdimlog == 4) {
+          if (xdimlog == 2) {
+            uint32_t hash0 = (dram_bit0 ^ dram_bit1 ^ dram_bit2 ^ dram_bit4
+                       ^  dram_bit7 ^ dram_bit8 ^ dram_bit9 ^ dram_bit11);
+            uint32_t hash1 = (dram_bit1 ^ dram_bit2 ^ dram_bit3 ^ dram_bit5
+                       ^  dram_bit8 ^ dram_bit9 ^ dram_bit10 ^ dram_bit12) << 1;
+            *x ^= hash0;
+            *x ^= hash1;
+          } else if (xdimlog == 3) {
+            uint32_t hash0 = (dram_bit0 ^ dram_bit3 ^ dram_bit4 ^ dram_bit6
+                       ^  dram_bit8 ^ dram_bit9 ^ dram_bit10 ^ dram_bit11);
+            uint32_t hash1 = (dram_bit0 ^ dram_bit1 ^ dram_bit3 ^ dram_bit5
+                       ^  dram_bit6 ^ dram_bit7 ^ dram_bit8 ^ dram_bit12) << 1;
+            uint32_t hash2 = (dram_bit1 ^ dram_bit2 ^ dram_bit4 ^ dram_bit6
+                       ^  dram_bit7 ^ dram_bit8 ^ dram_bit9) << 2;
+            *x ^= hash0;
+            *x ^= hash1;
+            *x ^= hash2;
+          } else if (xdimlog == 4) {
             uint32_t hash0 = (dram_bit0 ^ dram_bit3 ^ dram_bit5 ^ dram_bit6
                        ^  dram_bit9 ^ dram_bit10 ^ dram_bit11 ^ dram_bit12  ^ dram_bit13);
             uint32_t hash1 = (dram_bit1 ^ dram_bit4 ^ dram_bit6 ^ dram_bit7
@@ -559,19 +576,44 @@ static int default_eva_get_y_coord_dram(const hb_mc_manycore_t *mc,
                 + xdimlog    // x-coordinate bits
                 + 1;         // north-south bit 
           uint32_t dram_idx = ((hb_mc_eva_addr(eva) & MAKE_MASK(DEFAULT_DRAM_BITIDX)) >> dram_shift );
+          uint32_t dram_bit0 = (dram_idx >> 0) & 1;
+          uint32_t dram_bit1 = (dram_idx >> 1) & 1;
           uint32_t dram_bit2 = (dram_idx >> 2) & 1;
+          uint32_t dram_bit3 = (dram_idx >> 3) & 1;
           uint32_t dram_bit4 = (dram_idx >> 4) & 1;
           uint32_t dram_bit5 = (dram_idx >> 5) & 1;
+          uint32_t dram_bit6 = (dram_idx >> 6) & 1;
+          uint32_t dram_bit7 = (dram_idx >> 7) & 1;
           uint32_t dram_bit8 = (dram_idx >> 8) & 1;
           uint32_t dram_bit9 = (dram_idx >> 9) & 1;
           uint32_t dram_bit10 = (dram_idx >> 10) & 1;
           uint32_t dram_bit11 = (dram_idx >> 11) & 1;
           uint32_t dram_bit12 = (dram_idx >> 12) & 1;
+          uint32_t dram_bit13 = (dram_idx >> 13) & 1;
           uint32_t dram_bit14 = (dram_idx >> 14) & 1;
           uint32_t dram_bit15 = (dram_idx >> 15) & 1;
           uint32_t dram_bit16 = (dram_idx >> 16) & 1;
           uint32_t dram_bit17 = (dram_idx >> 17) & 1;
-          if (xdimlog == 4) {
+          if (xdimlog == 2) {
+            is_south = is_south
+                  ^ dram_bit0
+                  ^ dram_bit1
+                  ^ dram_bit3
+                  ^ dram_bit6
+                  ^ dram_bit7
+                  ^ dram_bit8
+                  ^ dram_bit10
+                  ^ dram_bit13;
+          } else if (xdimlog == 3) {
+            is_south = is_south
+                  ^ dram_bit2
+                  ^ dram_bit3
+                  ^ dram_bit5
+                  ^ dram_bit7
+                  ^ dram_bit8
+                  ^ dram_bit9
+                  ^ dram_bit10;
+          } else if (xdimlog == 4) {
             is_south = is_south
                   ^ dram_bit2
                   ^ dram_bit4
