@@ -49,6 +49,53 @@ static inline int hb_mc_hw_barrier_csr_val(const hb_mc_config_t *cfg, int x, int
     // input P is always on.
     int val = 1;
 
+
+if (RUCHE_FACTOR_X == 0) {
+
+      // setting output dir
+      if (x < center_x) {
+        // output = E
+        val |= (2 << OUTDIR_OFFSET);
+      } else if (x == center_x) {
+        if (y < center_y) {
+          // output = S
+          val |= (4 << OUTDIR_OFFSET);
+        } else if (y == center_y) {
+          // output = Root
+          val |= (5 << OUTDIR_OFFSET);
+        } else {
+          // output = N
+          val |= (3 << OUTDIR_OFFSET);
+        }
+      } else {
+        // output = W
+        val |= (1 << OUTDIR_OFFSET);
+      }
+
+      // setting input mask
+      // input = W
+      if ((x <= center_x)  && (x > 0)) {
+        val |= (1 << 1);
+      }
+
+      // input = E
+      if ((x >= center_x) && (x < (tx-1))) {
+        val |= (1 << 2);
+      }
+
+      if (x == center_x) {
+        // input = N
+        if ((y > 0) && (y <= center_y)) {
+          val |= (1 << 3);
+        }
+        // input = S
+        if ((y < (ty-1)) && (y >= center_y)) {
+          val |= (1 << 4);
+        }
+      }
+
+} else {
+
     // setting output dir
     if (x <= center_x - RUCHE_FACTOR_X) {
             // output = RE
@@ -106,6 +153,8 @@ static inline int hb_mc_hw_barrier_csr_val(const hb_mc_config_t *cfg, int x, int
                     val |= (1 << 4);
             }
     }
+
+}
 
     return val;
 }
