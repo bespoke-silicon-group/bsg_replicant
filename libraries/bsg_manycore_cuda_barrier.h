@@ -124,7 +124,7 @@ if (RUCHE_FACTOR_X == 0) {
 
     // setting input mask
     // input = W
-    if (((x == (center_x-1)) || (x == center_x))  && x > 0) {
+    if (((center_x-x) < RUCHE_FACTOR_X-1) && (x <= center_x)  && (x > 0)) {
             val |= (1 << 1);
     }
 
@@ -134,7 +134,7 @@ if (RUCHE_FACTOR_X == 0) {
     }
 
     // input = E
-    if (((x == (center_x+1)) || (x == center_x)) && (x < (tx-1))) {
+    if (((x-center_x) < RUCHE_FACTOR_X-1) && (x >= center_x) && (x < (tx-1))) {
             val |= (1 << 2);
     }
 
