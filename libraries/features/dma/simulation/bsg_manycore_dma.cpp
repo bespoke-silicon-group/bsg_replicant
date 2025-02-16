@@ -286,6 +286,33 @@ int hb_mc_dma_init_pod_X4Y4_X16_test_mem(hb_mc_manycore_t *mc)
 }
 
 /**
+ * Initializes a specialized DRAM bank to channel map for the MiniBlade Chip with wormhole test memory
+ */
+static
+int hb_mc_dma_init_pod_X1Y1_X4_test_mem(hb_mc_manycore_t *mc)
+{
+        hb_mc_coordinate_t pod = hb_mc_coordinate(0, 0);
+        const hb_mc_config_t *cfg = &mc->config;
+
+        int bx = hb_mc_config_get_origin_vcore(cfg).x;
+        hb_mc_coordinate_t vcache;
+        hb_mc_config_pod_foreach_dram(vcache, pod, cfg)
+        {
+                int south_not_north = hb_mc_config_is_dram_south(cfg, vcache);
+                int bank = vcache.x - bx;
+                int memory = south_not_north;
+
+                unsigned long vcache_id = hb_mc_config_dram_id(cfg, vcache);
+                cache_id_to_memory_id[vcache_id] = memory;
+                cache_id_to_bank_id[vcache_id] = bank;
+                dma_pr_dbg(mc, "%s: mapping vcache @ (%d,%d) in pod (%d,%d) to memory %d and bank %d\n",
+                           __func__, vcache.x, vcache.y, pod.x, pod.y, memory, bank);
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+/**
  * A default DRAM bank to channel map setup - works for most configurations we use
  */
 static
@@ -329,6 +356,18 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
                 if (mc->config.pods.x == 4
                     && mc->config.pods.y == 4) {
                         return hb_mc_dma_init_pod_X4Y4_X16_test_mem(mc);
+                } else {
+                        // for now, we don't support this
+                        mc->config.memsys.feature_dma = 0;
+                        return HB_MC_SUCCESS;
+                }
+        } else if (mc->config.memsys.id == HB_MC_MEMSYS_ID_TESTMEM
+                   && mc->config.pod_shape.x == 4
+                   && mc->config.pod_shape.y == 4) {
+                // 1x1 case
+                if (mc->config.pods.x == 1
+                    && mc->config.pods.y == 1) {
+                        return hb_mc_dma_init_pod_X1Y1_X4_test_mem(mc);
                 } else {
                         // for now, we don't support this
                         mc->config.memsys.feature_dma = 0;
