@@ -103,6 +103,7 @@ RISCV_ELF2HEX    ?= LD_LIBRARY_PATH=$(RISCV_GNU_PATH)/lib $(RISCV_GNU_PATH)/bin/
 RISCV_OBJCOPY    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objcopy
 RISCV_AR         ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-ar
 RISCV_OBJDUMP    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-objdump
+RISCV_READELF    ?= $(RISCV_GNU_PATH)/bin/riscv32-unknown-elf-dramfs-readelf
 RISCV_LINK       ?= $(_RISCV_GCC) -t -T $(LINK_SCRIPT) $(RISCV_LDFLAGS)
 RISCV_LD         ?= $(_RISCV_GCC)
 
@@ -420,6 +421,12 @@ RISCV_LDFLAGS += -Wl,--no-check-sections
 
 %.diso: %.rvo
 	$(RISCV_OBJDUMP) -dS $< > $@
+
+%.readelf: %.riscv
+	$(RISCV_READELF) -a $< > $@
+
+%.objdump: %.riscv
+	$(RISCV_OBJDUMP) -x $< > $@
 
 kernel.link.clean:
 	rm -rf *.riscv *.rvo.S *.rvo.ll libbsg_manycore_riscv.a
