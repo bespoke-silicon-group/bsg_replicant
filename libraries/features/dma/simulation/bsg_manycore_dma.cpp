@@ -85,7 +85,7 @@ int dram_east_not_west(hb_mc_manycore_t*mc, hb_mc_coordinate_t dram)
  * Initializes a cache bank to dram bank/channel map
  */
 static
-int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
+int hb_mc_dma_init_pod_X1Yy_hbm(hb_mc_manycore_t *mc)
 {
         unsigned long caches_per_channel =
                 hb_mc_vcache_num_caches(mc) /
@@ -119,6 +119,59 @@ int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
                 }
         }
         return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Initializes a cache bank to dram bank/channel map
+ */
+static
+int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
+{
+    unsigned long caches_per_channel =
+        hb_mc_vcache_num_caches(mc) /
+        hb_mc_config_get_dram_channels(&mc->config);
+
+    dma_pr_dbg(mc, "caches_per_channel: %lu\n",  caches_per_channel);
+    dma_pr_dbg(mc, "vcache_num_caches: %u\n", hb_mc_vcache_num_caches(mc));
+    dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
+
+    hb_mc_idx_t bank_id = 0;
+    // 1. iterate over the east half of the chip
+    // 2. iterate over each pod row
+    // 3. iterate over north-then-south of the pod row
+    // 4. iterate over absolute x coordinate (0, total-x/2)
+    hb_mc_idx_t total_x = mc->config.pods.x * mc->config.pod_shape.x;
+    hb_mc_idx_t pods_y = mc->config.pods.y;
+    hb_mc_idx_t pods_x = mc->config.pods.x;
+    for (int east_not_west = 0; east_not_west < 2; east_not_west++) {
+        for (int pod_y = 0; pod_y < pods_y; pod_y++) {
+            int px_start = mc->config.pods.x == 1 ? 0 : mc->config.pods.x/2 - 1;
+            int px_end = 0;
+            for (int px = px_start; px >= px_end; px--) {
+                for (int south_not_north = 0; south_not_north < 2; south_not_north++) {
+                    for (int x = 0; x < mc->config.pod_shape.x; x++) {
+                        hb_mc_coordinate_t pod = {0};
+                        pod.y = pod_y;
+                        pod.x = px;
+                        pod.x += east_not_west ? mc->config.pods.x/2 : 0;
+                        hb_mc_coordinate_t dram = hb_mc_config_pod_dram_start(&mc->config, pod);
+                        dram.y += south_not_north ? mc->config.pod_shape.y+1 : 0;
+                        dram.x += x;
+                        if (pods_x == 1){
+                            dram.x += east_not_west ? mc->config.pod_shape.x/2 : 0;
+                        }
+                        hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
+                        dma_pr_dbg(mc, "id(%2u:x=%2u,y=%2u)->bank(%2u)\n", id, dram.x, dram.y,bank_id);
+                        cache_id_to_memory_id[id] = bank_id / caches_per_channel;
+                        cache_id_to_bank_id[id]   = bank_id % caches_per_channel;
+                        bank_id++;
+                    }
+                }
+            }
+        }
+    }
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -263,8 +316,10 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2) {
                 if (mc->config.pods.x == 4 && mc->config.pods.y == 4) {
                         return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
+                } else if (mc->config.pods.x == 1) {
+                        return hb_mc_dma_init_pod_X1Yy_hbm(mc);
                 } else {
-                        return hb_mc_dma_init_pod_XxYy_hbm(mc);
+                       return hb_mc_dma_init_pod_XxYy_hbm(mc);
                 }
         } else if (mc->config.memsys.id == HB_MC_MEMSYS_ID_TESTMEM
                    && mc->config.pod_shape.x == 16
