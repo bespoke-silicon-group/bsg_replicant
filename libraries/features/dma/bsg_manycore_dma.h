@@ -12,8 +12,7 @@
  */
 static inline int hb_mc_dma_supports_write(const hb_mc_manycore_t *mc)
 {
-        return hb_mc_config_memsys_feature_dma(hb_mc_manycore_get_config(mc)) == 1
-                && mc->config.enable_dma == 1;
+        return hb_mc_config_memsys_feature_dma(hb_mc_manycore_get_config(mc)) == 1;
 }
 
 /**
@@ -23,8 +22,7 @@ static inline int hb_mc_dma_supports_write(const hb_mc_manycore_t *mc)
  */
 static inline int hb_mc_dma_supports_read(const hb_mc_manycore_t *mc)
 {
-        return hb_mc_config_memsys_feature_dma(hb_mc_manycore_get_config(mc)) == 1
-            && mc->config.enable_dma == 1;
+        return hb_mc_config_memsys_feature_dma(hb_mc_manycore_get_config(mc)) == 1;
 }
 
 /**
