@@ -139,8 +139,9 @@ int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
     hb_mc_idx_t bank_id = 0;
     // 1. iterate over the east half of the chip
     // 2. iterate over each pod row
-    // 3. iterate over north-then-south of the pod row
-    // 4. iterate over absolute x coordinate (0, total-x/2)
+    // 3. iterate over pods x from east to west on this side
+    // 4. iterate over north-then-south of the pod row
+    // 5. iterate over x from east to west of the pod
     hb_mc_idx_t total_x = mc->config.pods.x * mc->config.pod_shape.x;
     hb_mc_idx_t pods_y = mc->config.pods.y;
     hb_mc_idx_t pods_x = mc->config.pods.x;
