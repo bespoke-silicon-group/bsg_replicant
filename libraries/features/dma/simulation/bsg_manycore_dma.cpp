@@ -7,7 +7,7 @@
 
 /* these are convenience macros that are only good for one line prints */
 #define dma_pr_dbg(mc, fmt, ...)                   \
-        bsg_pr_dbg("%s: " fmt, mc->name, ##__VA_ARGS__)
+        bsg_pr_dbg("%s: %s: " fmt, mc->name, __func__,  ##__VA_ARGS__)
 
 #define dma_pr_err(mc, fmt, ...)                   \
         bsg_pr_err("%s: " fmt, mc->name, ##__VA_ARGS__)
@@ -66,6 +66,113 @@ int hb_mc_dma_init_pod_X4Y4_X16_hbm(hb_mc_manycore_t *mc)
                 }
         }
         return HB_MC_SUCCESS;
+}
+
+
+
+/**
+ * Returns 1 if the dram is in the east half of the chip, 0 otherwise
+ */
+static
+int dram_east_not_west(hb_mc_manycore_t*mc, hb_mc_coordinate_t dram)
+{
+        hb_mc_idx_t base_x = hb_mc_config_get_vcore_base_x(&mc->config);
+        hb_mc_idx_t size_x = mc->config.pods.x*mc->config.pod_shape.x;
+        return dram.x >= base_x + size_x/2;
+}
+
+/**
+ * Initializes a cache bank to dram bank/channel map
+ */
+static
+int hb_mc_dma_init_pod_X1Yy_hbm(hb_mc_manycore_t *mc)
+{
+        unsigned long caches_per_channel =
+                hb_mc_vcache_num_caches(mc) /
+                hb_mc_config_get_dram_channels(&mc->config);
+
+        dma_pr_dbg(mc, "caches_per_channel: %lu\n",  caches_per_channel);
+        dma_pr_dbg(mc, "vcache_num_caches: %u\n", hb_mc_vcache_num_caches(mc));
+        dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
+
+        hb_mc_idx_t bank_id = 0;
+        // first:  iterate over the east half of the chip
+        // second: iterate over the west half of the chip
+        for (int east_not_west = 0; east_not_west < 2; east_not_west++)
+        {
+                hb_mc_coordinate_t pod;
+                hb_mc_config_foreach_pod(pod, &mc->config)
+                {
+                        hb_mc_coordinate_t dram;
+                        hb_mc_config_pod_foreach_dram(dram, pod, &mc->config)
+                        {
+                                if (dram_east_not_west(mc, dram) != east_not_west)
+                                        continue;
+
+                                hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
+                                dma_pr_dbg(mc, "id(%2u)->bank(%2u)\n", id, bank_id);
+                                cache_id_to_memory_id[id] = bank_id / caches_per_channel;
+                                cache_id_to_bank_id[id]   = bank_id % caches_per_channel;
+
+                                bank_id++;
+                        }
+                }
+        }
+        return HB_MC_SUCCESS;
+}
+
+
+/**
+ * Initializes a cache bank to dram bank/channel map
+ */
+static
+int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
+{
+    unsigned long caches_per_channel =
+        hb_mc_vcache_num_caches(mc) /
+        hb_mc_config_get_dram_channels(&mc->config);
+
+    dma_pr_dbg(mc, "caches_per_channel: %lu\n",  caches_per_channel);
+    dma_pr_dbg(mc, "vcache_num_caches: %u\n", hb_mc_vcache_num_caches(mc));
+    dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
+
+    hb_mc_idx_t bank_id = 0;
+    // 1. iterate over the west-then-east half of the chip
+    // 2. iterate over each pod row
+    // 3. iterate over pods x from pods_x/2-pod_orig.x, in ascending order, round robin
+    // 4. iterate over north-then-south of the pod row
+    // 5. iterate over x from west to east of the pod
+    hb_mc_idx_t total_x = mc->config.pods.x * mc->config.pod_shape.x;
+    hb_mc_idx_t pods_y = mc->config.pods.y;
+    hb_mc_idx_t pods_x = mc->config.pods.x;
+    for (int east_not_west = 0; east_not_west < 2; east_not_west++) {
+        for (int pod_y = 0; pod_y < pods_y; pod_y++) {
+            int px_start = (pods_x == 1) ? 0 : (pods_x/2 - (((mc->config.origin.x)/(mc->config.pod_shape.x)) % (pods_x/2)));
+            int px_end   = (pods_x == 1) ? 0 : (px_start + (pods_x/2 - 1));
+            for (int px = px_start; px <= px_end; px++) {
+                for (int south_not_north = 0; south_not_north < 2; south_not_north++) {
+                    for (int x = 0; x < mc->config.pod_shape.x; x++) {
+                        hb_mc_coordinate_t pod = {0};
+                        pod.y = pod_y;
+                        pod.x = (pods_x == 1) ? px : (px % (pods_x/2));
+                        pod.x += east_not_west ? mc->config.pods.x/2 : 0;
+                        hb_mc_coordinate_t dram = hb_mc_config_pod_dram_start(&mc->config, pod);
+                        dram.y += south_not_north ? mc->config.pod_shape.y+1 : 0;
+                        dram.x += x;
+                        if (pods_x == 1){
+                            dram.x += east_not_west ? mc->config.pod_shape.x/2 : 0;
+                        }
+                        hb_mc_idx_t id = hb_mc_config_dram_id(&mc->config, dram);
+                        dma_pr_dbg(mc, "id(%2u:x=%2u,y=%2u)->bank(%2u)\n", id, dram.x, dram.y,bank_id);
+                        cache_id_to_memory_id[id] = bank_id / caches_per_channel;
+                        cache_id_to_bank_id[id]   = bank_id % caches_per_channel;
+                        bank_id++;
+                    }
+                }
+            }
+        }
+    }
+    return HB_MC_SUCCESS;
 }
 
 /**
@@ -170,8 +277,8 @@ int hb_mc_dma_init_pod_X4Y4_X16_test_mem(hb_mc_manycore_t *mc)
                         unsigned long vcache_id = hb_mc_config_dram_id(cfg, vcache);
                         cache_id_to_memory_id[vcache_id] = memory;
                         cache_id_to_bank_id[vcache_id] = bank;
-                        dma_pr_dbg(mc, "%s: mapping vcache @ (%d,%d) in pod (%d,%d) to memory %d and bank %d\n",
-                                   __func__, vcache.x, vcache.y, pod.x, pod.y, memory, bank);
+                        dma_pr_dbg(mc, "mapping vcache @ (%d,%d) in pod (%d,%d) to memory %d and bank %d\n",
+                                   vcache.x, vcache.y, pod.x, pod.y, memory, bank);
                 }
         }
 
@@ -210,11 +317,10 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2) {
                 if (mc->config.pods.x == 4 && mc->config.pods.y == 4) {
                         return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
-                } else if (mc->config.pods.x == 1 && mc->config.pods.y == 1) {
-                        return hb_mc_dma_init_pod_X1Y1_X16_hbm(mc);
+                } else if (mc->config.pods.x == 1) {
+                        return hb_mc_dma_init_pod_X1Yy_hbm(mc);
                 } else {
-                        // Pod arrangement not recognized
-                        return HB_MC_FAIL;
+                       return hb_mc_dma_init_pod_XxYy_hbm(mc);
                 }
         } else if (mc->config.memsys.id == HB_MC_MEMSYS_ID_TESTMEM
                    && mc->config.pod_shape.x == 16
@@ -262,8 +368,8 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         unsigned long channels = hb_mc_config_get_dram_channels(cfg);
         unsigned long caches_per_channel = caches/channels;
 
-        dma_pr_dbg(mc, "%s: caches = %lu, channels = %lu, caches_per_channel = %lu\n",
-                        __func__, caches, channels, caches_per_channel);
+        dma_pr_dbg(mc, "caches = %lu, channels = %lu, caches_per_channel = %lu\n",
+                        caches, channels, caches_per_channel);
 
         /*
           Figure out which memory channel and bank this NPA maps to.
@@ -293,8 +399,8 @@ static int hb_mc_dma_npa_to_buffer(hb_mc_manycore_t *mc, const hb_mc_npa_t *npa,
         address_t addr = hb_mc_memsys_map_to_physical_channel_address(&cfg->memsys, cache_addr);
 
 
-        dma_pr_dbg(mc, "%s: Mapped %s to Channel %2lu, Address 0x%08lx\n",
-                        __func__, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
+        dma_pr_dbg(mc, "Mapped %s to Channel %2lu, Address 0x%08lx\n",
+                   hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)), id, addr);
 
         /*
           Don't overflow memory if you can help it.
@@ -352,8 +458,8 @@ int hb_mc_dma_read(hb_mc_manycore_t *mc,
 
         char npa_str[256];
 
-        dma_pr_dbg(mc, "%s: Reading %3zu bytes from %s\n",
-                        __func__, sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
+        dma_pr_dbg(mc, "Reading %3zu bytes from %s\n",
+                   sz, hb_mc_npa_to_string(npa, npa_str, sizeof(npa_str)));
 
         memcpy(data, reinterpret_cast<void*>(membuffer), sz);
 

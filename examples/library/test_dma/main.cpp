@@ -86,7 +86,12 @@ int test_dma (int argc, char **argv) {
                 BSG_CUDA_CALL(hb_mc_manycore_dma_write_no_cache_ainv(&mc, &addr, &data_i, sizeof(data_i)));
             }
         }
+    }
 
+    hb_mc_config_foreach_pod(pod, cfg)
+    {
+        // iterate over each bank
+        hb_mc_coordinate_t bank;
         hb_mc_config_pod_foreach_dram(bank, pod, cfg)
         {
             unsigned bitidx;

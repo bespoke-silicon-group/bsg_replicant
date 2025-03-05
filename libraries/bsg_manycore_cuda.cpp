@@ -538,8 +538,13 @@ int hb_mc_device_init (hb_mc_device_t *device,
         XMALLOC(device->mc);
         *(device->mc) = {0};
 
-        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_init(device->mc, name, id))
-
+        //BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_init(device->mc, name, id))
+        int r = hb_mc_manycore_init(device->mc, name, id);
+        if (r != HB_MC_SUCCESS) {
+            bsg_pr_err("Instance %s: %s: failed to initialize manycore: %s\n",
+                       name, __func__, hb_mc_strerror(r));
+                return r;
+        }
         // enumerate pods
         const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
         hb_mc_dimension_t pod_geometry = hb_mc_config_pods(cfg);
