@@ -137,24 +137,24 @@ int hb_mc_dma_init_pod_XxYy_hbm(hb_mc_manycore_t *mc)
     dma_pr_dbg(mc, "dram_channels: %u\n",hb_mc_config_get_dram_channels(&mc->config));
 
     hb_mc_idx_t bank_id = 0;
-    // 1. iterate over the east half of the chip
+    // 1. iterate over the west-then-east half of the chip
     // 2. iterate over each pod row
-    // 3. iterate over pods x from east to west on this side
+    // 3. iterate over pods x from pods_x/2-pod_orig.x, in ascending order, round robin
     // 4. iterate over north-then-south of the pod row
-    // 5. iterate over x from east to west of the pod
+    // 5. iterate over x from west to east of the pod
     hb_mc_idx_t total_x = mc->config.pods.x * mc->config.pod_shape.x;
     hb_mc_idx_t pods_y = mc->config.pods.y;
     hb_mc_idx_t pods_x = mc->config.pods.x;
     for (int east_not_west = 0; east_not_west < 2; east_not_west++) {
         for (int pod_y = 0; pod_y < pods_y; pod_y++) {
-            int px_start = mc->config.pods.x == 1 ? 0 : mc->config.pods.x/2 - 1;
-            int px_end = 0;
-            for (int px = px_start; px >= px_end; px--) {
+            int px_start = (pods_x == 1) ? 0 : (pods_x/2 - (((mc->config.origin.x)/(mc->config.pod_shape.x)) % (pods_x/2)));
+            int px_end   = (pods_x == 1) ? 0 : (px_start + (pods_x/2 - 1));
+            for (int px = px_start; px <= px_end; px++) {
                 for (int south_not_north = 0; south_not_north < 2; south_not_north++) {
                     for (int x = 0; x < mc->config.pod_shape.x; x++) {
                         hb_mc_coordinate_t pod = {0};
                         pod.y = pod_y;
-                        pod.x = px;
+                        pod.x = (pods_x == 1) ? px : (px % (pods_x/2));
                         pod.x += east_not_west ? mc->config.pods.x/2 : 0;
                         hb_mc_coordinate_t dram = hb_mc_config_pod_dram_start(&mc->config, pod);
                         dram.y += south_not_north ? mc->config.pod_shape.y+1 : 0;
