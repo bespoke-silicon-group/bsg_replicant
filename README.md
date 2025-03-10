@@ -84,6 +84,3 @@ To use Verilator platforms, users will need:
 Users should use the Verilator installation provided by
 bsg_bladerunner.
 
-
-
-
