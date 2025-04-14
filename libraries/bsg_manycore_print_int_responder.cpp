@@ -95,6 +95,7 @@ static int respond(hb_mc_responder_t *responder,
                 fprintf(f, "float32 from %s: %e\n", coordstr, f_data.f);
                 break;
         }
+        fflush(f);
         return 0;
 }
 
