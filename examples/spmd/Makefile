@@ -107,6 +107,12 @@ regression: $(TESTS)
 
 # Define the hb_mc tests that get run
 NOT_SPMD_HB_MC_TESTS := $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*_sdr_init_*' -printf '%P\n')
+ifneq (,$(findstring pod_X4Y2_,$(BSG_MACHINE_PATH)))
+  NOT_SPMD_HB_MC_TESTS += $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*_sdr_prbs_full' -printf '%P\n')
+endif
+ifneq (,$(findstring pod_X4Y4_,$(BSG_MACHINE_PATH)))
+  NOT_SPMD_HB_MC_TESTS += $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*_sdr_prbs_half' -printf '%P\n')
+endif
 SPMD_HB_MC_TESTS := $(filter-out $(NOT_SPMD_HB_MC_TESTS),$(ALL_HB_MC_TESTS))
 # Find the intersection of bsg_manycore hb_mc tests & current directory hb_mc tests
 CUR_EXISTING_HB_MC_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -name 'hb_mc_*' -printf '%P\n')
