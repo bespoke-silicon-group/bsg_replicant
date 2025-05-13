@@ -79,7 +79,7 @@ VSOURCES += $(BASEJUMP_STL_DIR)/bsg_misc/bsg_cycle_counter.v
 VSOURCES += $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v
 ASCII_TO_ROM_PY = $(BASEJUMP_STL_DIR)/bsg_mem/bsg_ascii_to_rom.py
 $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.v: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
-	env python2 $(ASCII_TO_ROM_PY) $< bsg_bladerunner_configuration > $@
+	env python $(ASCII_TO_ROM_PY) $< bsg_bladerunner_configuration > $@
 
 ################################################################################
 # Top-level file
