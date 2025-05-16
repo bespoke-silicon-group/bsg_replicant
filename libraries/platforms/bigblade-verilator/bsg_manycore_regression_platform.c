@@ -21,11 +21,11 @@ int main(int argc, char **argv) {
         void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
         int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
 
-        int error = dlerror();
+        char *error = dlerror();
         if (error != NULL) {
                 bsg_pr_err("Error when finding dynamically loaded symbol vcs_main: %s\n", error);
                 dlclose(handle);
-                return error;
+                return 1;
         }
 
         argv[1] = argv[0];

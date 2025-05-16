@@ -257,10 +257,10 @@ static error_t parse_spmd (int key, char *arg, struct argp_state *state){
                         args->name = arg;
                         break;
                 case 'x':
-                        args->tg_x = arg;
+                        args->tg_x = atoi(arg);
                         break;
                 case 'y':
-                        args->tg_y = arg;
+                        args->tg_y = atoi(arg);
                         break;
                 case ARGP_KEY_ARG:
                         if (state->arg_num == 0){
