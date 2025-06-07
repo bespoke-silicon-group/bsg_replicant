@@ -175,6 +175,7 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
         config->vcache_block_words  = raw[HB_MC_CONFIG_VCACHE_BLOCK_WORDS];
         config->vcache_ipoly_hashing  = raw[HB_MC_CONFIG_VCACHE_IPOLY_HASHING];
         config->vcache_word_tracking  = raw[HB_MC_CONFIG_VCACHE_WORD_TRACKING];
+        config->vcache_notification_en = raw[HB_MC_CONFIG_VCACHE_NOTIFICATION_EN];
         config->enable_dma            = raw[HB_MC_CONFIG_ENABLE_DMA];
 
         // Enable DRAM pod dimensions

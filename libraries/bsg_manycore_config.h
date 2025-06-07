@@ -106,6 +106,7 @@ extern "C" {
                 uint32_t vcache_stripe_words;
                 uint32_t vcache_ipoly_hashing;
                 uint32_t vcache_word_tracking;
+                uint32_t vcache_notification_en;
                 uint32_t enable_dma;
                 hb_mc_dimension_t enable_dram_pods;
                 uint32_t io_remote_load_cap;
@@ -144,14 +145,15 @@ extern "C" {
                 HB_MC_CONFIG_VCACHE_MISS_FIFO_ELS = 24,
                 HB_MC_CONFIG_VCACHE_IPOLY_HASHING = 25,
                 HB_MC_CONFIG_VCACHE_WORD_TRACKING = 26,
-                HB_MC_CONFIG_ENABLE_DMA = 27,
-                HB_MC_CONFIG_ENABLE_DRAM_PODS_X = 28,
-                HB_MC_CONFIG_ENABLE_DRAM_PODS_Y = 29,
-                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 30,
-                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 31,
-                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 32,
-                HB_MC_CONFIG_CHIP_ID = 33,
-                HB_MC_CONFIG_MEMSYS = 34,
+                HB_MC_CONFIG_VCACHE_NOTIFICATION_EN = 27,
+                HB_MC_CONFIG_ENABLE_DMA = 28,
+                HB_MC_CONFIG_ENABLE_DRAM_PODS_X = 29,
+                HB_MC_CONFIG_ENABLE_DRAM_PODS_Y = 30,
+                HB_MC_CONFIG_IO_REMOTE_LOAD_CAP = 31,
+                HB_MC_CONFIG_IO_HOST_CREDITS_CAP = 32,
+                HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 33,
+                HB_MC_CONFIG_CHIP_ID = 34,
+                HB_MC_CONFIG_MEMSYS = 35,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 

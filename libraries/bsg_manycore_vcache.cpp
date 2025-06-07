@@ -18,13 +18,21 @@ int hb_mc_manycore_vcache_init(hb_mc_manycore_t *mc)
                 {
                         // one pod column -> split pod in half
                         // o/w -> split pod array in half
-                        int east_not_west = cfg->pods.x == 1    ?
-                                ((dram.x-bx) >= cfg->pod_shape.x/2) :
-                                (pod.x >= cfg->pods.x/2);
+                        //int east_not_west = cfg->pods.x == 1    ?
+                        //        ((dram.x-bx) >= cfg->pod_shape.x/2) :
+                        //        (pod.x >= cfg->pods.x/2);
+
+                        // for miniblade, all vcache traffic should go east
+                        int east_not_west = 1;
 
                         hb_mc_npa_t wh_dst_addr = hb_mc_npa(dram, HB_MC_VCACHE_EPA_OFFSET_WH_DST);
                         // cannot write32 here because wh_dest register only supports remote_store opcode
                         BSG_MANYCORE_CALL(mc, hb_mc_manycore_write8(mc, &wh_dst_addr, east_not_west));
+
+                        hb_mc_npa_t notifi_addr = hb_mc_npa(dram, HB_MC_VCACHE_EPA_OFFSET_NOTIFI);
+                        //printf("notification_en = %d, notifi_addr.epa = %X, wh_dst_addr.epa = %X\n", cfg->vcache_notification_en, notifi_addr.epa, wh_dst_addr.epa);
+                        // cannot write32 here because wh_dest register only supports remote_store opcode
+                        BSG_MANYCORE_CALL(mc, hb_mc_manycore_write8(mc, &notifi_addr, cfg->vcache_notification_en));
                 }
         }
         return HB_MC_SUCCESS;
