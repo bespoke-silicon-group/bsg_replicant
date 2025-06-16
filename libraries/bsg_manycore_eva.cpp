@@ -79,28 +79,30 @@
 
 static uint32_t default_vcore_max_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
-    hb_mc_dimension_t pods = cfg->pods;
-    hb_mc_coordinate_t pod = {pods.x-1, pods.y-1};
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
     hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
-    return og.x + cfg->pod_shape.x-1;
+    return hb_mc_coordinate_get_x(og) + hb_mc_dimension_get_x(cfg->pod_shape) - 1;
 }
 
 static uint32_t default_vcore_min_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
-    return hb_mc_coordinate_get_x(hb_mc_config_get_origin_vcore(cfg));
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+    hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+    return hb_mc_coordinate_get_x(og);
 }
 
 static uint32_t default_vcore_max_y_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
-    hb_mc_dimension_t pods = cfg->pods;
-    hb_mc_coordinate_t pod = {pods.x-1, pods.y-1};
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
     hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
-    return og.y + cfg->pod_shape.y-1;
+    return hb_mc_coordinate_get_y(og) + hb_mc_dimension_get_y(cfg->pod_shape)-1;
 }
 
 static uint32_t default_vcore_min_y_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
 {
-    return hb_mc_coordinate_get_y(hb_mc_config_get_origin_vcore(cfg));
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+    hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+    return hb_mc_coordinate_get_y(og);
 }
 
 /**
