@@ -315,9 +315,7 @@ int hb_mc_dma_init(hb_mc_manycore_t *mc)
         // Despite X16 being in the dma map name, these configurations appear
         //   only to depend on the pod arrangement
         if (mc->config.memsys.id == HB_MC_MEMSYS_ID_HBM2) {
-                if (mc->config.pods.x == 4 && mc->config.pods.y == 4) {
-                        return hb_mc_dma_init_pod_X4Y4_X16_hbm(mc);
-                } else if (mc->config.pods.x == 1) {
+                if (mc->config.pods.x == 1) {
                         return hb_mc_dma_init_pod_X1Yy_hbm(mc);
                 } else {
                        return hb_mc_dma_init_pod_XxYy_hbm(mc);
