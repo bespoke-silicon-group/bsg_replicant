@@ -77,6 +77,34 @@
 #define DEFAULT_DRAM_BITIDX 31
 #define DEFAULT_DRAM_BITMASK (1ULL << DEFAULT_DRAM_BITIDX)
 
+static uint32_t default_vcore_max_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
+{
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+    hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+    return hb_mc_coordinate_get_x(og) + hb_mc_dimension_get_x(cfg->pod_shape) - 1;
+}
+
+static uint32_t default_vcore_min_x_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
+{
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+    hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+    return hb_mc_coordinate_get_x(og);
+}
+
+static uint32_t default_vcore_max_y_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
+{
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+    hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+    return hb_mc_coordinate_get_y(og) + hb_mc_dimension_get_y(cfg->pod_shape)-1;
+}
+
+static uint32_t default_vcore_min_y_coord(const hb_mc_config_t *cfg, const hb_mc_coordinate_t *tgt)
+{
+    hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *tgt);
+    hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
+    return hb_mc_coordinate_get_y(og);
+}
+
 /**
  * Determines if an EVA is a tile-local EVA
  * @return true if EVA addresses tile-local memory, false otherwise
@@ -241,24 +269,25 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
         hb_mc_dimension_t dim;
         hb_mc_idx_t x, y, ox, oy, dim_x, dim_y;
         hb_mc_epa_t epa;
-
+        hb_mc_coordinate_t pod = hb_mc_config_pod(cfg, *src);
+        hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
         dim = hb_mc_config_get_dimension_vcore(cfg);
         dim_x = hb_mc_dimension_get_x(dim) + hb_mc_config_get_vcore_base_x(cfg);
         dim_y = hb_mc_dimension_get_y(dim) + hb_mc_config_get_vcore_base_y(cfg);
-        ox = hb_mc_coordinate_get_x(*o);
-        oy = hb_mc_coordinate_get_y(*o);
+        ox = hb_mc_coordinate_get_x(og);
+        oy = hb_mc_coordinate_get_y(og);
         x = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_X_BITMASK) >> DEFAULT_GROUP_X_BITIDX);
         x += ox;
         y = ((hb_mc_eva_addr(eva) & DEFAULT_GROUP_Y_BITMASK) >> DEFAULT_GROUP_Y_BITIDX);
         y += oy;
-        if(dim_x < x){
+        if (default_vcore_max_x_coord(cfg, src) < x || x < default_vcore_min_x_coord(cfg, src)) {
                 bsg_pr_err("%s: Invalid Group EVA. X coordinate destination %d"
                            "is larger than current manycore configuration\n",
                            __func__, x);
                 return HB_MC_FAIL;
         }
 
-        if(dim_y < y){
+        if (default_vcore_max_y_coord(cfg, src) < y || y < default_vcore_min_y_coord(cfg, src)) {
                 bsg_pr_err("%s: Invalid Group EVA. Y coordinate destination %d"
                            "is larger than current manycore configuration\n",
                            __func__, y);
