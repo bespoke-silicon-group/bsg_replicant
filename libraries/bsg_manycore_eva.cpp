@@ -297,7 +297,7 @@ static int default_eva_to_npa_group(const hb_mc_config_t *cfg,
                 return rc;
         *npa = hb_mc_epa_to_npa(hb_mc_coordinate(x,y), epa);
 
-        bsg_pr_info("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
+        bsg_pr_dbg("%s: Translating EVA 0x%08" PRIx32 " for tile (x: %d y: %d) to NPA {x: %d y: %d, EPA: 0x%08" PRIx32 "}. \n",
                    __func__, hb_mc_eva_addr(eva),
                    hb_mc_coordinate_get_x(*src),
                    hb_mc_coordinate_get_y(*src),
