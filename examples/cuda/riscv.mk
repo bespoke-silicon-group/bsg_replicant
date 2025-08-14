@@ -246,9 +246,13 @@ endif
 ifndef BSG_MACHINE_PODS_Y
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_PODS_Y undefined"))
 endif
+
+PODS_X ?= $(BSG_MACHINE_PODS_X)
+PODS_Y ?= $(BSG_MACHINE_PODS_Y)
+
 RISCV_DEFINES += -Dbsg_group_size=$(BSG_MACHINE_POD_TILES)
-RISCV_DEFINES += -Dbsg_pods_X=$(BSG_MACHINE_PODS_X)
-RISCV_DEFINES += -Dbsg_pods_Y=$(BSG_MACHINE_PODS_Y)
+RISCV_DEFINES += -Dbsg_pods_X=$(PODS_X)
+RISCV_DEFINES += -Dbsg_pods_Y=$(PODS_Y)
 
 ifndef BSG_MACHINE_HOST_X_CORD
 $(error $(shell echo -e "$(RED)BSG MAKE ERROR: BSG_MACHINE_HOST_X_CORD undefined"))
