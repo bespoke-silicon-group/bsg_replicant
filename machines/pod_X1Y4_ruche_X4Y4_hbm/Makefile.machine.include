@@ -39,10 +39,10 @@
 
 # Chip Pod Dimensions
 BSG_MACHINE_PODS_X                    = 1
-BSG_MACHINE_PODS_Y                    = 2
+BSG_MACHINE_PODS_Y                    = 4
 
 # 1 GHz Core Clock
-BSG_MACHINE_PODS_CYCLE_TIME_PS         = 666
+BSG_MACHINE_PODS_CYCLE_TIME_PS         = 1000
 
 # Heterogeneous tile composition. Must be a 1-d array equal to the
 # number of tiles, or shorthand (default:0)
@@ -76,7 +76,7 @@ BSG_MACHINE_ENABLE_DRAM_PODS_X        = $(BSG_MACHINE_PODS_X)
 BSG_MACHINE_ENABLE_DRAM_PODS_Y        = $(BSG_MACHINE_PODS_Y)
 
 # Victim Cache Parameters
-BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 16
+BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 4
 BSG_MACHINE_VCACHE_SET                = 64
 BSG_MACHINE_VCACHE_WAY                = 8
 BSG_MACHINE_VCACHE_LINE_WORDS         = 32
@@ -95,7 +95,7 @@ BSG_MACHINE_NOC_COORD_Y_WIDTH         = 7
 
 # Pod Tile Dimensions (Rarely Changed)
 BSG_MACHINE_POD_TILES_X               = 4
-BSG_MACHINE_POD_TILES_Y               = 2
+BSG_MACHINE_POD_TILES_Y               = 4
 
 # Pod Tile subarray dimensions (Rarely changed, for physical design only)
 BSG_MACHINE_POD_TILES_SUBARRAY_X      = 1
@@ -110,7 +110,7 @@ BSG_MACHINE_HOST_Y_CORD              = $(BSG_MACHINE_HOST_COORD_Y)
 
 # Manycore Origin (Rarely Changed)
 BSG_MACHINE_ORIGIN_COORD_X            = 4
-BSG_MACHINE_ORIGIN_COORD_Y            = 2
+BSG_MACHINE_ORIGIN_COORD_Y            = 4
 
 # Cache-DRAM Interface Width (Rarely Changed)
 BSG_MACHINE_VCACHE_DMA_DATA_WIDTH     = 32
