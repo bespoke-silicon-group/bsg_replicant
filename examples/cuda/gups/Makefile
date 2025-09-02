@@ -31,7 +31,7 @@ get-concurrency = $(firstword $(subst _, ,$(filter %_concurrency,$(subst __, ,$1
 # $1 = Test name
 get-run-type = $(firstword $(subst _, ,$(filter %_run,$(subst __, ,$1))))
 
-TABLE_SIZE_NUMS	        = $(shell echo 256*1024*1024|bc)
+TABLE_SIZE_NUMS	        = $(shell echo 128*1024*1024|bc)
 UPDATES_PER_CORE_NUMS	= 512
 CORES_NUMS		= 1 2 4 8 16 32 64 128
 CORES_NUMS             += 36 40 44
