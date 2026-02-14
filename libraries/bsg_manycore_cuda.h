@@ -176,6 +176,24 @@ extern "C" {
                 }
         }
 
+int hb_mc_device_podv_try_launch_tile_groups(hb_mc_device_t *device,
+                                             hb_mc_pod_id_t *podv,
+                                             int podc);
+
+int hb_mc_device_podv_all_tile_groups_finished(hb_mc_device_t *device,
+                                               hb_mc_pod_id_t *podv,
+                                               int podc);
+
+int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
+                                                     hb_mc_pod_id_t *podv,
+                                                     int podc,
+                                                     hb_mc_pod_id_t *pod_done);
+
+int hb_mc_device_pod_tile_group_launch_first(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group);
+int hb_mc_device_pod_tile_group_launch_last(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group);
+
+int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group);
+
 #define hb_mc_device_foreach_pod_id(device_ptr, pod_id)   \
         for (pod_id = 0; pod_id < (device_ptr)->num_pods; pod_id++)
 

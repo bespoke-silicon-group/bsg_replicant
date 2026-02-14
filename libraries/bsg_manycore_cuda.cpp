@@ -1452,7 +1452,7 @@ int hb_mc_device_pod_all_tile_groups_finished(hb_mc_device_t *device, hb_mc_pod_
  * Allocate a group of free tiles and store their origin in tile_group
  */
 __attribute__((warn_unused_result))
-static
+
 int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
 {
 
@@ -1678,8 +1678,58 @@ int hb_mc_device_pod_tile_group_launch(hb_mc_device_t *device, hb_mc_pod_t *pod,
         return HB_MC_SUCCESS;
 }
 
+int hb_mc_device_pod_tile_group_launch_first(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
+{
+        hb_mc_kernel_t *kernel = tile_group->kernel;
+        bsg_pr_dbg("%s: device<%s>: program<%s>: Launching tile group running kernel = '%s'\n",
+                   __func__, device->name, pod->program->bin_name, kernel->name);
+
+        // initialize argv
+        // allocate argv
+        hb_mc_eva_t argv_addr;
+        hb_mc_pod_id_t pod_id = hb_mc_device_pod_to_pod_id(device, pod);
+        BSG_CUDA_CALL(hb_mc_device_pod_malloc(device, pod_id, kernel->argc * sizeof(*(kernel->argv)), &argv_addr));
+        tile_group->argv_eva = argv_addr;
+
+        // copy argv over
+        BSG_CUDA_CALL(hb_mc_device_pod_memcpy_to_device(device, pod_id,
+                                                        tile_group->argv_eva,
+                                                        &kernel->argv[0],
+                                                        kernel->argc * sizeof(*(kernel->argv))));
+
+        // initialize hw barrier array
+        BSG_CUDA_CALL(hb_mc_device_pod_tile_group_barrier_init(device, pod, tile_group));
+
+        return HB_MC_SUCCESS;
+}
+
+int hb_mc_device_pod_tile_group_launch_last(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
+{
+        hb_mc_kernel_t *kernel = tile_group->kernel;
+
+        // find kernel
+        hb_mc_eva_t kernel_addr;
+        BSG_CUDA_CALL(hb_mc_loader_symbol_to_eva(pod->program->bin, pod->program->bin_size, kernel->name, &kernel_addr));
+
+
+        hb_mc_coordinate_t coord;
+        foreach_coordinate(coord, tile_group->origin, tile_group->dim)
+        {
+                hb_mc_idx_t tile_id = hb_mc_get_tile_id(pod->mesh->origin, pod->mesh->dim, coord);
+                hb_mc_tile_t *tile = &pod->mesh->tiles[tile_id];
+                // this will wake the tile up
+                BSG_CUDA_CALL(tile_set_runtime_symbols(device, pod, tile, tile_group,
+                                                       kernel->argc, kernel_addr));
+        }
+
+        // make tile group as launched
+        tile_group->status = HB_MC_TILE_GROUP_STATUS_LAUNCHED;
+
+        return HB_MC_SUCCESS;
+}
+
 // forward declaration
-static
+
 int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
                                                      hb_mc_pod_id_t *podv,
                                                      int podc,
@@ -1772,7 +1822,7 @@ int hb_mc_device_pod_kernels_execute(hb_mc_device_t *device,
 /**
  * Returns true if all pods in podv have all tile-groups finished.
  */
-static
+
 int hb_mc_device_podv_all_tile_groups_finished(hb_mc_device_t *device,
                                                hb_mc_pod_id_t *podv,
                                                int podc)
@@ -1790,7 +1840,7 @@ int hb_mc_device_podv_all_tile_groups_finished(hb_mc_device_t *device,
 /**
  * Try to launch as many tile groups as possible in all pods in podv
  */
-static
+
 int hb_mc_device_podv_try_launch_tile_groups(hb_mc_device_t *device,
                                              hb_mc_pod_id_t *podv,
                                              int podc)
@@ -1808,7 +1858,7 @@ int hb_mc_device_podv_try_launch_tile_groups(hb_mc_device_t *device,
  * Wait for any tile group to complete. Cleanup and release that tile groups resources.
  * @return pod_done  The pod on which a tile-group just completed
  */
-static
+
 int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
                                                      hb_mc_pod_id_t *podv,
                                                      int podc,
