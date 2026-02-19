@@ -370,6 +370,40 @@ static int tile_set_runtime_symbols(hb_mc_device_t *device, hb_mc_pod_t *pod, hb
         return HB_MC_SUCCESS;
 }
 
+static int tile_set_runtime_symbols_first(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile, hb_mc_tile_group_t *tg,
+                                    uint32_t    argc, hb_mc_eva_t kernel_addr)
+{
+        const hb_mc_eva_map_t *map = tg->map;
+        hb_mc_eva_t argv_addr = tg->argv_eva;
+        hb_mc_npa_t finish_signal_npa = tg->finish_signal_npa;
+
+        BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_argc", argc));
+        BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_argv_ptr", argv_addr));
+
+        hb_mc_eva_t finish_signal_addr;
+        size_t sz;
+        BSG_CUDA_CALL(hb_mc_npa_to_eva(device->mc, map, &tile->coord, &finish_signal_npa, &finish_signal_addr, &sz));
+        BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_finish_signal_addr", finish_signal_addr));
+
+        // set the barrier pointer, if found
+        if (tg->barcfg_eva != 0)
+                BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "__cuda_barrier_cfg", tg->barcfg_eva));
+
+        return HB_MC_SUCCESS;
+}
+
+static int tile_set_runtime_symbols_last(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile, hb_mc_tile_group_t *tg,
+                                    uint32_t    argc, hb_mc_eva_t kernel_addr)
+{
+        const hb_mc_eva_map_t *map = tg->map;
+
+        // tiles wake-on-broken reservation on this address
+        // this write wakes up the kernel and 'launches' it
+        BSG_CUDA_CALL(tile_set_symbol_val(device, pod, tile, map, "cuda_kernel_ptr", kernel_addr));
+
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Sets the CUDA configuration symbols for a tile
  */
@@ -1700,6 +1734,21 @@ int hb_mc_device_pod_tile_group_launch_first(hb_mc_device_t *device, hb_mc_pod_t
         // initialize hw barrier array
         BSG_CUDA_CALL(hb_mc_device_pod_tile_group_barrier_init(device, pod, tile_group));
 
+        // find kernel
+        hb_mc_eva_t kernel_addr;
+        BSG_CUDA_CALL(hb_mc_loader_symbol_to_eva(pod->program->bin, pod->program->bin_size, kernel->name, &kernel_addr));
+
+
+        hb_mc_coordinate_t coord;
+        foreach_coordinate(coord, tile_group->origin, tile_group->dim)
+        {
+                hb_mc_idx_t tile_id = hb_mc_get_tile_id(pod->mesh->origin, pod->mesh->dim, coord);
+                hb_mc_tile_t *tile = &pod->mesh->tiles[tile_id];
+                // this will wake the tile up
+                BSG_CUDA_CALL(tile_set_runtime_symbols_first(device, pod, tile, tile_group,
+                                                       kernel->argc, kernel_addr));
+        }
+
         return HB_MC_SUCCESS;
 }
 
@@ -1718,7 +1767,7 @@ int hb_mc_device_pod_tile_group_launch_last(hb_mc_device_t *device, hb_mc_pod_t 
                 hb_mc_idx_t tile_id = hb_mc_get_tile_id(pod->mesh->origin, pod->mesh->dim, coord);
                 hb_mc_tile_t *tile = &pod->mesh->tiles[tile_id];
                 // this will wake the tile up
-                BSG_CUDA_CALL(tile_set_runtime_symbols(device, pod, tile, tile_group,
+                BSG_CUDA_CALL(tile_set_runtime_symbols_last(device, pod, tile, tile_group,
                                                        kernel->argc, kernel_addr));
         }
 
