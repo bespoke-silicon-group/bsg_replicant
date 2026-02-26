@@ -2434,3 +2434,95 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device)
 {
         return hb_mc_device_pod_kernels_execute(device, device->default_pod_id);
 }
+
+int hb_mc_device_pod_memcpy_h2c(hb_mc_device_t *device,
+                                      hb_mc_pod_id_t pod_id,
+                                      hb_mc_eva_t daddr,
+                                      const void *haddr,
+                                      size_t bytes)
+{
+        CHECK_POD_ID(device, pod_id);
+        const hb_mc_pod_t *pod = &device->pods[pod_id];
+        const hb_mc_coordinate_t *origin = &pod->mesh->origin;
+
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
+        hb_mc_coordinate_t tile_coord_w = hb_mc_config_tile_coord_width(cfg);
+        uint64_t pod_x = (origin->x) >> (tile_coord_w.x);
+        uint64_t pod_y = (origin->y) >> (tile_coord_w.y);
+        uint32_t block_size = hb_mc_config_get_vcache_block_size(cfg);
+
+        uint64_t addr = ((uint64_t)daddr) | (pod_x << (32+0)) | (pod_y << (32+8));
+        uint32_t align = (uint32_t) block_size;
+        const char *data = (const char*)haddr;
+        size_t sz = (size_t) bytes;
+        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_write_h2c(device->mc, addr, align, data, sz));
+
+        return HB_MC_SUCCESS;
+}
+
+__attribute__((weak))
+int hb_mc_device_memcpy_h2c(hb_mc_device_t *device,
+                                  hb_mc_eva_t daddr,
+                                  const void *haddr,
+                                  size_t bytes)
+{
+        return hb_mc_device_pod_memcpy_h2c(device, device->default_pod_id,
+                                             daddr, haddr, bytes);
+}
+
+__attribute__((weak))
+int hb_mc_device_transfer_data_h2c(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+      const hb_mc_dma_htod_t *dma = &jobs[i];
+      BSG_CUDA_CALL(hb_mc_device_memcpy_h2c(device, dma->d_addr, dma->h_addr, dma->size));
+    }
+
+    return HB_MC_SUCCESS;
+}
+
+int hb_mc_device_pod_memcpy_c2h(hb_mc_device_t *device,
+                                      hb_mc_pod_id_t pod_id,
+                                      void *haddr,
+                                      hb_mc_eva_t daddr,
+                                      size_t bytes)
+{
+        CHECK_POD_ID(device, pod_id);
+        const hb_mc_pod_t *pod = &device->pods[pod_id];
+        const hb_mc_coordinate_t *origin = &pod->mesh->origin;
+
+        const hb_mc_config_t *cfg = hb_mc_manycore_get_config(device->mc);
+        hb_mc_coordinate_t tile_coord_w = hb_mc_config_tile_coord_width(cfg);
+        uint64_t pod_x = (origin->x) >> (tile_coord_w.x);
+        uint64_t pod_y = (origin->y) >> (tile_coord_w.y);
+        uint32_t block_size = hb_mc_config_get_vcache_block_size(cfg);
+
+        uint64_t addr = ((uint64_t)daddr) | (pod_x << (32+0)) | (pod_y << (32+8));
+        uint32_t align = (uint32_t) block_size;
+        char *data = (char*)haddr;
+        size_t sz = (size_t) bytes;
+        BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_read_c2h(device->mc, addr, align, data, sz));
+
+        return HB_MC_SUCCESS;
+}
+
+__attribute__((weak))
+int hb_mc_device_memcpy_c2h(hb_mc_device_t *device,
+                                  void *haddr,
+                                  hb_mc_eva_t daddr,
+                                  size_t bytes)
+{
+        return hb_mc_device_pod_memcpy_c2h(device, device->default_pod_id,
+                                             haddr, daddr, bytes);
+}
+
+__attribute__((weak))
+int hb_mc_device_transfer_data_c2h(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
+{
+    for (size_t i = 0; i < count; i++) {
+      const hb_mc_dma_dtoh_t *dma = &jobs[i];
+      BSG_CUDA_CALL(hb_mc_device_memcpy_c2h(device, dma->h_addr, dma->d_addr, dma->size));
+    }
+
+    return HB_MC_SUCCESS;
+}

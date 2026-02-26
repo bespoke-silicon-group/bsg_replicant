@@ -208,7 +208,11 @@ extern "C" {
          * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
          */
         int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio, int *handle);
-                                      
+
+        int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t sz);
+
+        int hb_mc_mmio_read_c2h(uint64_t addr, uint32_t align, char *data, size_t sz);
+
 /* these are convenience macros that are only good for one line prints */
 #define mmio_pr_dbg(m, fmt, ...)                    \
         bsg_pr_dbg("%p: " fmt, m.p, ##__VA_ARGS__)

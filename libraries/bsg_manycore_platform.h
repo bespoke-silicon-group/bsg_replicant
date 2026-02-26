@@ -158,6 +158,10 @@ extern "C" {
          * @return HB_MC_SUCCESS on success. Otherwise an error code defined in bsg_manycore_errno.h.
          */        
         int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc);
+
+        int hb_mc_platform_write_h2c(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, const char *data, size_t sz);
+
+        int hb_mc_platform_read_c2h(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, char *data, size_t sz);
 #ifdef __cplusplus
 }
 #endif

@@ -1596,3 +1596,13 @@ int hb_mc_manycore_log_enable(hb_mc_manycore_t *mc){
 int hb_mc_manycore_log_disable(hb_mc_manycore_t *mc){
         return hb_mc_platform_log_disable(mc);
 }
+
+int hb_mc_manycore_write_h2c(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, const char *data, size_t sz)
+{
+        return hb_mc_platform_write_h2c(mc, addr, align, data, sz);
+}
+
+int hb_mc_manycore_read_c2h(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, char *data, size_t sz)
+{
+        return hb_mc_platform_read_c2h(mc, addr, align, data, sz);
+}

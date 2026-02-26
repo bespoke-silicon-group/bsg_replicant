@@ -634,3 +634,13 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
 {
         return HB_MC_SUCCESS;
 }
+
+int hb_mc_platform_write_h2c(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, const char *data, size_t sz)
+{
+        return hb_mc_mmio_write_h2c(addr, align, data, sz);
+}
+
+int hb_mc_platform_read_c2h(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, char *data, size_t sz)
+{
+        return hb_mc_mmio_read_c2h(addr, align, data, sz);
+}

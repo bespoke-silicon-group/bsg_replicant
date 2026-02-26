@@ -39,10 +39,15 @@
 #include <sys/file.h>
 const size_t MAP_SIZE=32768UL;
 #define DEVICE_NAME_FORMAT "/dev/xdmaBSG%d_user"
+#define DEVICE_H2C_NAME_FORMAT "/dev/xdmaBSG%d_h2c_0"
+#define DEVICE_C2H_NAME_FORMAT "/dev/xdmaBSG%d_c2h_0"
 
 #include <bsg_manycore_mmio.h>
+#include <cstring>
 
 int fd;
+int fd_h2c;
+int fd_c2h;
 
 /**
  * Initialize MMIO for operation
@@ -68,13 +73,37 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         sprintf(device_name_buffer, DEVICE_NAME_FORMAT, id);
         const char* device_name = (const char*) device_name_buffer;
 
+        char device_h2c_name_buffer[64];
+        sprintf(device_h2c_name_buffer, DEVICE_H2C_NAME_FORMAT, id);
+        const char* device_h2c_name = (const char*) device_h2c_name_buffer;
+
+        char device_c2h_name_buffer[64];
+        sprintf(device_c2h_name_buffer, DEVICE_C2H_NAME_FORMAT, id);
+        const char* device_c2h_name = (const char*) device_c2h_name_buffer;
+
         if ((fd = open(device_name, O_RDWR | O_SYNC)) == -1) {
                 fprintf(stderr, "Failed to open device: %s\n", device_name);
+                goto cleanup;
+            }
+        else if ((fd_h2c = open(device_h2c_name, O_RDWR | O_NONBLOCK)) < 0) {
+                fprintf(stderr, "Failed to open device: %s\n", device_h2c_name);
+                goto cleanup;
+            }
+        else if ((fd_c2h = open(device_c2h_name, O_RDWR | O_NONBLOCK)) < 0) {
+                fprintf(stderr, "Failed to open device: %s\n", device_c2h_name);
                 goto cleanup;
             }
         else {
                 if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
                     fprintf(stderr, "Failed to lock device: %s\n", device_name);
+                    goto cleanup;
+                }
+                if (flock(fd_h2c, LOCK_EX | LOCK_NB) < 0) {
+                    fprintf(stderr, "Failed to lock device: %s\n", device_h2c_name);
+                    goto cleanup;
+                }
+                if (flock(fd_c2h, LOCK_EX | LOCK_NB) < 0) {
+                    fprintf(stderr, "Failed to lock device: %s\n", device_c2h_name);
                     goto cleanup;
                 }
                 mmio->p = (uintptr_t) mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
@@ -83,6 +112,8 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
                     goto cleanup;
                 }
                 printf("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, fd, mmio->p);
+                printf("Opened device %s, %d.\n", device_h2c_name, fd_h2c);
+                printf("Opened device %s, %d.\n", device_c2h_name, fd_c2h);
         }
         r = HB_MC_SUCCESS;
         mmio_pr_dbg(mmio, "%s: mmio = 0x%" PRIxPTR "\n", __func__, mmio->p);
@@ -92,10 +123,19 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
             mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
         }
+
         if (flock(fd, LOCK_UN) == -1) {
             fprintf(stderr, "Failed to unlock device: %s\n", device_name);
         }
+        if (flock(fd_h2c, LOCK_UN) == -1) {
+            fprintf(stderr, "Failed to unlock device: %s\n", device_h2c_name);
+        }
+        if (flock(fd_c2h, LOCK_UN) == -1) {
+            fprintf(stderr, "Failed to unlock device: %s\n", device_c2h_name);
+        }
         close(fd);
+        close(fd_h2c);
+        close(fd_c2h);
         *handle = LOCAL_PCI_HANDLE_INIT;
  done:
         return r;
@@ -111,7 +151,18 @@ int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
                               int *handle)
 {
         int err;
-
+        if (flock(fd, LOCK_UN) == -1) {
+            fprintf(stderr, "Failed to unlock device\n");
+        }
+        if (flock(fd_h2c, LOCK_UN) == -1) {
+            fprintf(stderr, "Failed to unlock device\n");
+        }
+        if (flock(fd_c2h, LOCK_UN) == -1) {
+            fprintf(stderr, "Failed to unlock device\n");
+        }
+        close(fd);
+        close(fd_h2c);
+        close(fd_c2h);
         if (*handle == LOCAL_PCI_HANDLE_INIT)
                 return HB_MC_SUCCESS;
 
@@ -236,4 +287,127 @@ int hb_mc_platform_start_bulk_transfer(hb_mc_manycore_t *mc){
  */
 int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc){
         return HB_MC_SUCCESS;
+}
+
+int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t sz)
+{
+    ssize_t rc;
+    off_t offset = 0;
+    size_t count = 0;
+    size_t size = 0;
+    size_t size_padded = 0;
+
+    // check that the address is aligned to <align> byte boundary
+    if (addr % align) {
+        fprintf(stderr, "Address %llu is not aligned to %d byte boundary.\n", addr, align);
+        return HB_MC_UNALIGNED;
+    }
+
+    char *allocated = NULL;
+    char *buffer = NULL;
+    size_t step_size = 65536;
+    posix_memalign((void **)&allocated, 4096 /*alignment */ , step_size + 4096);
+    if (!allocated) {
+        fprintf(stderr, "Failed to allocate memory for h2c, OOM %lu.\n", step_size + 4096);
+        return HB_MC_UNINITIALIZED;
+    }
+    buffer = allocated + offset;
+
+    offset = addr;
+    while (count < sz) {
+        if (count + step_size > sz) {
+            size = sz - count;
+            size_padded = size;
+            // add padding to size, if size is not multiple of <align>
+            if (size % align) {
+                size_padded = size + (align - (size % align));
+            }
+        } else {
+            size = step_size;
+            size_padded = size;
+        }
+        memcpy(buffer, data+count, size);
+        for (size_t i = size; i < size_padded; i++) {
+            buffer[i] = 0;
+        }
+        if (offset) {
+            rc = lseek(fd_h2c, offset, SEEK_SET);
+            if (rc != offset) {
+                fprintf(stderr, "h2c, seek off 0x%lx != 0x%lx.\n", rc, offset);
+                perror("seek file");
+                return HB_MC_FAIL;
+            }
+        }
+        rc = write(fd_h2c, buffer, size_padded);
+        if (rc != size_padded) {
+            fprintf(stderr, "h2c, W off 0x%lx, 0x%lx != 0x%lx.\n", offset, rc, size_padded);
+            perror("write file");
+            return HB_MC_FAIL;
+        }
+        offset += size;
+        count += size;
+    }
+
+    free(allocated);
+    return HB_MC_SUCCESS;
+}
+
+int hb_mc_mmio_read_c2h(uint64_t addr, uint32_t align, char *data, size_t sz)
+{
+    ssize_t rc;
+    off_t offset = 0;
+    size_t count = 0;
+    size_t size = 0;
+    size_t size_padded = 0;
+
+    // check that the address is aligned to <align> byte boundary
+    if (addr % align) {
+        fprintf(stderr, "Address %llu is not aligned to %d byte boundary.\n", addr, align);
+        return HB_MC_UNALIGNED;
+    }
+
+    char *allocated = NULL;
+    char *buffer = NULL;
+    size_t step_size = 65536;
+    posix_memalign((void **)&allocated, 4096 /*alignment */ , step_size + 4096);
+    if (!allocated) {
+        fprintf(stderr, "Failed to allocate memory for c2h, OOM %lu.\n", step_size + 4096);
+        return HB_MC_UNINITIALIZED;
+    }
+    buffer = allocated + offset;
+
+    offset = addr;
+    while (count < sz) {
+        if (count + step_size > sz) {
+            size = sz - count;
+            size_padded = size;
+            // add padding to size, if size is not multiple of <align>
+            if (size % align) {
+                size_padded = size + (align - (size % align));
+            }
+        } else {
+            size = step_size;
+            size_padded = size;
+        }
+        if (offset) {
+            rc = lseek(fd_c2h, offset, SEEK_SET);
+            if (rc != offset) {
+                fprintf(stderr, "c2h, seek off 0x%lx != 0x%lx.\n", rc, offset);
+                perror("seek file");
+                return HB_MC_FAIL;
+            }
+        }
+        rc = read(fd_c2h, buffer, size_padded);
+        if (rc != size_padded) {
+            fprintf(stderr, "c2h, W off 0x%lx, 0x%lx != 0x%lx.\n", offset, rc, size_padded);
+            perror("read file");
+            return HB_MC_FAIL;
+        }
+        memcpy(data+count, buffer, size);
+        offset += size;
+        count += size;
+    }
+
+    free(allocated);
+    return HB_MC_SUCCESS;
 }

@@ -751,6 +751,12 @@ int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod
         __attribute__((warn_unused_result))
         int hb_mc_device_pod_dma_to_host(hb_mc_device_t *device, hb_mc_pod_id_t pod, const hb_mc_dma_dtoh_t *jobs, size_t count);
 
+        __attribute__((warn_unused_result))
+        int hb_mc_device_transfer_data_h2c(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count);
+
+        __attribute__((warn_unused_result))
+        int hb_mc_device_transfer_data_c2h(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count);
+
 
         /**
          * Convenience macro for calling a CUDA function and handling an error return code.
