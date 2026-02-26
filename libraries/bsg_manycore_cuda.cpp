@@ -2337,7 +2337,11 @@ int hb_mc_device_transfer_data_to_device(hb_mc_device_t *device, const hb_mc_dma
       // for each job;
       for (size_t i = 0; i < count; i++) {
         const hb_mc_dma_htod_t *dma = &jobs[i];
+#ifdef TRANSFER_DATA_ENABLE_H2C
+        BSG_CUDA_CALL(hb_mc_device_memcpy_h2c(device, dma->d_addr, dma->h_addr, dma->size));
+#else
         BSG_CUDA_CALL(hb_mc_device_memcpy_to_device(device, dma->d_addr, dma->h_addr, (uint32_t) dma->size));
+#endif
       }
     }
 
@@ -2363,7 +2367,11 @@ int hb_mc_device_transfer_data_to_host(hb_mc_device_t *device, const hb_mc_dma_d
       // for each job;
       for (size_t i = 0; i < count; i++) {
         const hb_mc_dma_dtoh_t *dma = &jobs[i];
+#ifdef TRANSFER_DATA_ENABLE_C2H
+        BSG_CUDA_CALL(hb_mc_device_memcpy_c2h(device, dma->h_addr, dma->d_addr, dma->size));
+#else
         BSG_CUDA_CALL(hb_mc_device_memcpy_to_host(device, dma->h_addr, dma->d_addr, (uint32_t) dma->size));
+#endif
       }
     }
 
@@ -2470,17 +2478,6 @@ int hb_mc_device_memcpy_h2c(hb_mc_device_t *device,
                                              daddr, haddr, bytes);
 }
 
-__attribute__((weak))
-int hb_mc_device_transfer_data_h2c(hb_mc_device_t *device, const hb_mc_dma_htod_t *jobs, size_t count)
-{
-    for (size_t i = 0; i < count; i++) {
-      const hb_mc_dma_htod_t *dma = &jobs[i];
-      BSG_CUDA_CALL(hb_mc_device_memcpy_h2c(device, dma->d_addr, dma->h_addr, dma->size));
-    }
-
-    return HB_MC_SUCCESS;
-}
-
 int hb_mc_device_pod_memcpy_c2h(hb_mc_device_t *device,
                                       hb_mc_pod_id_t pod_id,
                                       void *haddr,
@@ -2514,15 +2511,4 @@ int hb_mc_device_memcpy_c2h(hb_mc_device_t *device,
 {
         return hb_mc_device_pod_memcpy_c2h(device, device->default_pod_id,
                                              haddr, daddr, bytes);
-}
-
-__attribute__((weak))
-int hb_mc_device_transfer_data_c2h(hb_mc_device_t *device, const hb_mc_dma_dtoh_t *jobs, size_t count)
-{
-    for (size_t i = 0; i < count; i++) {
-      const hb_mc_dma_dtoh_t *dma = &jobs[i];
-      BSG_CUDA_CALL(hb_mc_device_memcpy_c2h(device, dma->h_addr, dma->d_addr, dma->size));
-    }
-
-    return HB_MC_SUCCESS;
 }
