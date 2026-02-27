@@ -208,7 +208,7 @@ extern "C" {
          * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
          */
         int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio, int *handle);
-
+                                      
         int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t sz);
 
         int hb_mc_mmio_read_c2h(uint64_t addr, uint32_t align, char *data, size_t sz);

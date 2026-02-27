@@ -123,7 +123,6 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
             mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
         }
-
         if (flock(fd, LOCK_UN) == -1) {
             fprintf(stderr, "Failed to unlock device: %s\n", device_name);
         }
@@ -151,6 +150,7 @@ int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
                               int *handle)
 {
         int err;
+
         if (flock(fd, LOCK_UN) == -1) {
             fprintf(stderr, "Failed to unlock device\n");
         }
