@@ -58,6 +58,8 @@ $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): LDFLAGS  += -ldl
 
 # Temporary patch for enabling xdma h2c c2h
 $(LIB_OBJECTS): CXXFLAGS += -DTRANSFER_DATA_ENABLE_H2C -DTRANSFER_DATA_ENABLE_C2H
+# Temporary patch for kernel execution timer
+$(LIB_OBJECTS): CXXFLAGS += -DENABLE_KERNEL_EXEC_TIMER
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(PLATFORM_OBJECTS)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(PLATFORM_REGRESSION_OBJECTS)

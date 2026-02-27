@@ -370,6 +370,7 @@ static int tile_set_runtime_symbols(hb_mc_device_t *device, hb_mc_pod_t *pod, hb
         return HB_MC_SUCCESS;
 }
 
+__attribute__((warn_unused_result))
 static int tile_set_runtime_symbols_first(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile, hb_mc_tile_group_t *tg,
                                     uint32_t    argc, hb_mc_eva_t kernel_addr)
 {
@@ -392,6 +393,7 @@ static int tile_set_runtime_symbols_first(hb_mc_device_t *device, hb_mc_pod_t *p
         return HB_MC_SUCCESS;
 }
 
+__attribute__((warn_unused_result))
 static int tile_set_runtime_symbols_last(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_t *tile, hb_mc_tile_group_t *tg,
                                     uint32_t    argc, hb_mc_eva_t kernel_addr)
 {
@@ -1482,11 +1484,23 @@ int hb_mc_device_pod_all_tile_groups_finished(hb_mc_device_t *device, hb_mc_pod_
         return HB_MC_SUCCESS;
 }
 
+static
+int hb_mc_device_pod_all_tile_groups_allocated(hb_mc_device_t *device, hb_mc_pod_t *pod)
+{
+        hb_mc_tile_group_t *tile_group;
+        pod_foreach_tile_group(pod, tile_group)
+        {
+                if (tile_group->status != HB_MC_TILE_GROUP_STATUS_ALLOCATED)
+                        return HB_MC_FAIL;
+        }
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Allocate a group of free tiles and store their origin in tile_group
  */
 __attribute__((warn_unused_result))
-
+static
 int hb_mc_device_pod_tile_group_allocate_tiles(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
 {
 
@@ -1712,6 +1726,8 @@ int hb_mc_device_pod_tile_group_launch(hb_mc_device_t *device, hb_mc_pod_t *pod,
         return HB_MC_SUCCESS;
 }
 
+__attribute__((warn_unused_result))
+static
 int hb_mc_device_pod_tile_group_launch_first(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
 {
         hb_mc_kernel_t *kernel = tile_group->kernel;
@@ -1752,6 +1768,8 @@ int hb_mc_device_pod_tile_group_launch_first(hb_mc_device_t *device, hb_mc_pod_t
         return HB_MC_SUCCESS;
 }
 
+__attribute__((warn_unused_result))
+static
 int hb_mc_device_pod_tile_group_launch_last(hb_mc_device_t *device, hb_mc_pod_t *pod, hb_mc_tile_group_t *tile_group)
 {
         hb_mc_kernel_t *kernel = tile_group->kernel;
@@ -1778,7 +1796,7 @@ int hb_mc_device_pod_tile_group_launch_last(hb_mc_device_t *device, hb_mc_pod_t 
 }
 
 // forward declaration
-
+static
 int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
                                                      hb_mc_pod_id_t *podv,
                                                      int podc,
@@ -1836,6 +1854,64 @@ int hb_mc_device_pod_try_launch_tile_groups(hb_mc_device_t *device,
         return HB_MC_SUCCESS;
 }
 
+static
+int hb_mc_device_pod_try_launch_tile_groups_first(hb_mc_device_t *device,
+                                            hb_mc_pod_t *pod)
+
+{
+        int r;
+        hb_mc_tile_group_t *tg;
+        hb_mc_dimension_t last_failed = hb_mc_dimension(0,0);
+
+        // scan for ready tile groups
+        pod_foreach_tile_group(pod, tg)
+        {
+                // only look at ready tile groups
+                if (tg->status != HB_MC_TILE_GROUP_STATUS_INITIALIZED)
+                        continue;
+
+                // skip if we know this shape fails
+                if (last_failed.x == tg->dim.x &&
+                    last_failed.y == tg->dim.y)
+                        continue;
+
+                // keep going if we can't allocate
+                r = hb_mc_device_pod_tile_group_allocate_tiles(device, pod, tg);
+                if (r != HB_MC_SUCCESS) {
+                        // mark this shape as the last failed
+                        last_failed = tg->dim;
+                        continue;
+                }
+
+                // launch the tile tile group
+                BSG_CUDA_CALL(hb_mc_device_pod_tile_group_launch_first(device, pod, tg));
+        }
+
+        return HB_MC_SUCCESS;
+}
+
+static
+int hb_mc_device_pod_try_launch_tile_groups_last(hb_mc_device_t *device,
+                                            hb_mc_pod_t *pod)
+
+{
+        int r;
+        hb_mc_tile_group_t *tg;
+
+        // scan for ready tile groups
+        pod_foreach_tile_group(pod, tg)
+        {
+                // skip if the tile group were not allocated
+                if (tg->status != HB_MC_TILE_GROUP_STATUS_ALLOCATED)
+                        continue;
+
+                // launch the tile tile group
+                BSG_CUDA_CALL(hb_mc_device_pod_tile_group_launch_last(device, pod, tg));
+        }
+
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Launches all kernel invocations enqueued on pod.
  * These kernel invocations are enqueued by
@@ -1871,7 +1947,7 @@ int hb_mc_device_pod_kernels_execute(hb_mc_device_t *device,
 /**
  * Returns true if all pods in podv have all tile-groups finished.
  */
-
+static
 int hb_mc_device_podv_all_tile_groups_finished(hb_mc_device_t *device,
                                                hb_mc_pod_id_t *podv,
                                                int podc)
@@ -1889,7 +1965,7 @@ int hb_mc_device_podv_all_tile_groups_finished(hb_mc_device_t *device,
 /**
  * Try to launch as many tile groups as possible in all pods in podv
  */
-
+static
 int hb_mc_device_podv_try_launch_tile_groups(hb_mc_device_t *device,
                                              hb_mc_pod_id_t *podv,
                                              int podc)
@@ -1903,11 +1979,44 @@ int hb_mc_device_podv_try_launch_tile_groups(hb_mc_device_t *device,
         return HB_MC_SUCCESS;
 }
 
+static
+int hb_mc_device_podv_try_launch_tile_groups_timer(hb_mc_device_t *device,
+                                             hb_mc_pod_id_t *podv,
+                                             int podc,
+                                             struct timespec *start_p)
+{
+        // try launching as many tile groups as possible on all pods
+        for (int podi = 0; podi < podc; podi++)
+        {
+                hb_mc_pod_t *pod = &device->pods[podv[podi]];
+                BSG_CUDA_CALL(hb_mc_device_pod_try_launch_tile_groups_first(device, pod));
+        }
+
+        // search for unallocated tile groups
+        for (int podi = 0; podi < podc; podi++)
+        {
+                hb_mc_pod_t *pod = &device->pods[podv[podi]];
+                if (hb_mc_device_pod_all_tile_groups_allocated(device, pod) != HB_MC_SUCCESS)
+                {
+                    bsg_pr_warn("One or more tile groups were not allocated in the first batch, execution time measurement can be pessimistic\n");
+                }
+        }
+
+        clock_gettime(CLOCK_MONOTONIC, start_p);
+
+        for (int podi = podc-1; podi >= 0; podi--)
+        {
+                hb_mc_pod_t *pod = &device->pods[podv[podi]];
+                BSG_CUDA_CALL(hb_mc_device_pod_try_launch_tile_groups_last(device, pod));
+        }
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Wait for any tile group to complete. Cleanup and release that tile groups resources.
  * @return pod_done  The pod on which a tile-group just completed
  */
-
+static
 int hb_mc_device_podv_wait_for_tile_group_finish_any(hb_mc_device_t *device,
                                                      hb_mc_pod_id_t *podv,
                                                      int podc,
@@ -2017,6 +2126,35 @@ int hb_mc_device_podv_kernels_execute(hb_mc_device_t *device,
         return HB_MC_SUCCESS;
 }
 
+int hb_mc_device_podv_kernels_execute_timer(hb_mc_device_t *device,
+                                      hb_mc_pod_id_t *podv,
+                                      int podc)
+{
+        struct timespec start, end;
+
+        /* launch as many tile groups as possible on all pods */
+        BSG_CUDA_CALL(hb_mc_device_podv_try_launch_tile_groups_timer(device, podv, podc, &start));
+
+        /* until all tile groups have completed */
+        while (hb_mc_device_podv_all_tile_groups_finished(device, podv, podc) != HB_MC_SUCCESS)
+        {
+                /* wait for any tile group to finish on any pod */
+                hb_mc_pod_id_t pod;
+                BSG_CUDA_CALL(hb_mc_device_podv_wait_for_tile_group_finish_any(device, podv, podc,
+                                                                               &pod));
+
+                /* try launching launching tile groups on pod with most recent completion */
+                BSG_CUDA_CALL(hb_mc_device_pod_try_launch_tile_groups(device, &device->pods[pod]));
+        }
+
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        long long ns = (end.tv_sec - start.tv_sec) * 1000000000LL + (end.tv_nsec - start.tv_nsec);
+        long long us = ns / 1000LL;
+        bsg_pr_info("Cudalite kernels execution time = %lld us\n", us);
+
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Launches all kernel invocations enqueued on pods.
  * These kernel invocations are enqueued by
@@ -2035,7 +2173,11 @@ int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device)
         {
                 podv[pod]=pod;
         }
+#ifdef ENABLE_KERNEL_EXEC_TIMER
+        return hb_mc_device_podv_kernels_execute_timer(device, podv, device->num_pods);
+#else
         return hb_mc_device_podv_kernels_execute(device, podv, device->num_pods);
+#endif
 }
 
 
@@ -2443,6 +2585,7 @@ int hb_mc_device_tile_groups_execute (hb_mc_device_t *device)
         return hb_mc_device_pod_kernels_execute(device, device->default_pod_id);
 }
 
+static
 int hb_mc_device_pod_memcpy_h2c(hb_mc_device_t *device,
                                       hb_mc_pod_id_t pod_id,
                                       hb_mc_eva_t daddr,
@@ -2478,6 +2621,7 @@ int hb_mc_device_memcpy_h2c(hb_mc_device_t *device,
                                              daddr, haddr, bytes);
 }
 
+static
 int hb_mc_device_pod_memcpy_c2h(hb_mc_device_t *device,
                                       hb_mc_pod_id_t pod_id,
                                       void *haddr,
