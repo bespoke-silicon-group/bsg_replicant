@@ -37,17 +37,12 @@
 #include <unistd.h>
 #include <limits.h>
 #include <sys/file.h>
-const size_t MAP_SIZE=32768UL;
 #define DEVICE_NAME_FORMAT "/dev/xdmaBSG%d_user"
 #define DEVICE_H2C_NAME_FORMAT "/dev/xdmaBSG%d_h2c_0"
 #define DEVICE_C2H_NAME_FORMAT "/dev/xdmaBSG%d_c2h_0"
 
 #include <bsg_manycore_mmio.h>
 #include <cstring>
-
-int fd;
-int fd_h2c;
-int fd_c2h;
 
 /**
  * Initialize MMIO for operation
@@ -57,10 +52,14 @@ int fd_c2h;
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
+                           int *fd,
+                           int *fd_h2c,
+                           int *fd_c2h,
                            int* handle,
                            hb_mc_manycore_id_t id)
 {
         int r = HB_MC_FAIL, err;
+        const size_t MAP_SIZE=32768UL;
 
         // negative IDs are invalid at the moment
         if (id < 0) {
@@ -81,39 +80,39 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         sprintf(device_c2h_name_buffer, DEVICE_C2H_NAME_FORMAT, id);
         const char* device_c2h_name = (const char*) device_c2h_name_buffer;
 
-        if ((fd = open(device_name, O_RDWR | O_SYNC)) == -1) {
+        if ((*fd = open(device_name, O_RDWR | O_SYNC)) == -1) {
                 bsg_pr_err("Failed to open device: %s\n", device_name);
                 goto cleanup;
             }
-        else if ((fd_h2c = open(device_h2c_name, O_RDWR | O_NONBLOCK)) < 0) {
+        else if ((*fd_h2c = open(device_h2c_name, O_RDWR | O_NONBLOCK)) < 0) {
                 bsg_pr_err("Failed to open device: %s\n", device_h2c_name);
                 goto cleanup;
             }
-        else if ((fd_c2h = open(device_c2h_name, O_RDWR | O_NONBLOCK)) < 0) {
+        else if ((*fd_c2h = open(device_c2h_name, O_RDWR | O_NONBLOCK)) < 0) {
                 bsg_pr_err("Failed to open device: %s\n", device_c2h_name);
                 goto cleanup;
             }
         else {
-                if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
+                if (flock(*fd, LOCK_EX | LOCK_NB) == -1) {
                     bsg_pr_err("Failed to lock device: %s\n", device_name);
                     goto cleanup;
                 }
-                if (flock(fd_h2c, LOCK_EX | LOCK_NB) < 0) {
+                if (flock(*fd_h2c, LOCK_EX | LOCK_NB) < 0) {
                     bsg_pr_err("Failed to lock device: %s\n", device_h2c_name);
                     goto cleanup;
                 }
-                if (flock(fd_c2h, LOCK_EX | LOCK_NB) < 0) {
+                if (flock(*fd_c2h, LOCK_EX | LOCK_NB) < 0) {
                     bsg_pr_err("Failed to lock device: %s\n", device_c2h_name);
                     goto cleanup;
                 }
-                mmio->p = (uintptr_t) mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+                mmio->p = (uintptr_t) mmap(0, MAP_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, *fd, 0);
                 if(mmio->p == (uintptr_t)-1) {
                     bsg_pr_err("Failed to mmap device: %s\n", device_name);
                     goto cleanup;
                 }
-                bsg_pr_info("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, fd, mmio->p);
-                bsg_pr_info("Device %s:%d is opened\n", device_h2c_name, fd_h2c);
-                bsg_pr_info("Device %s:%d is opened\n", device_c2h_name, fd_c2h);
+                bsg_pr_info("Device %s:%d is opened and memory mapped at 0x%x\n", device_name, *fd, mmio->p);
+                bsg_pr_info("Device %s:%d is opened\n", device_h2c_name, *fd_h2c);
+                bsg_pr_info("Device %s:%d is opened\n", device_c2h_name, *fd_c2h);
         }
         r = HB_MC_SUCCESS;
         mmio_pr_dbg(mmio, "%s: mmio = 0x%" PRIxPTR "\n", __func__, mmio->p);
@@ -123,18 +122,18 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
         if (munmap((void**)&mmio->p, MAP_SIZE) == -1) {
             mmio_pr_err((*mmio), "Failed to munmap MMIO!\n", __func__);
         }
-        if (flock(fd, LOCK_UN) == -1) {
+        if (flock(*fd, LOCK_UN) == -1) {
             bsg_pr_err("Failed to unlock device: %s\n", device_name);
         }
-        if (flock(fd_h2c, LOCK_UN) == -1) {
+        if (flock(*fd_h2c, LOCK_UN) == -1) {
             bsg_pr_err("Failed to unlock device: %s\n", device_h2c_name);
         }
-        if (flock(fd_c2h, LOCK_UN) == -1) {
+        if (flock(*fd_c2h, LOCK_UN) == -1) {
             bsg_pr_err("Failed to unlock device: %s\n", device_c2h_name);
         }
-        close(fd);
-        close(fd_h2c);
-        close(fd_c2h);
+        close(*fd);
+        close(*fd_h2c);
+        close(*fd_c2h);
         *handle = LOCAL_PCI_HANDLE_INIT;
  done:
         return r;
@@ -147,22 +146,25 @@ int hb_mc_mmio_init(hb_mc_mmio_t *mmio,
  * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
  */
 int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio,
+                              int *fd,
+                              int *fd_h2c,
+                              int *fd_c2h,
                               int *handle)
 {
         int err;
 
-        if (flock(fd, LOCK_UN) == -1) {
+        if (flock(*fd, LOCK_UN) == -1) {
             bsg_pr_err("Failed to unlock device\n");
         }
-        if (flock(fd_h2c, LOCK_UN) == -1) {
+        if (flock(*fd_h2c, LOCK_UN) == -1) {
             bsg_pr_err("Failed to unlock device\n");
         }
-        if (flock(fd_c2h, LOCK_UN) == -1) {
+        if (flock(*fd_c2h, LOCK_UN) == -1) {
             bsg_pr_err("Failed to unlock device\n");
         }
-        close(fd);
-        close(fd_h2c);
-        close(fd_c2h);
+        close(*fd);
+        close(*fd_h2c);
+        close(*fd_c2h);
         if (*handle == LOCAL_PCI_HANDLE_INIT)
                 return HB_MC_SUCCESS;
 
@@ -289,7 +291,7 @@ int hb_mc_platform_finish_bulk_transfer(hb_mc_manycore_t *mc){
         return HB_MC_SUCCESS;
 }
 
-int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t sz)
+int hb_mc_mmio_write_h2c(int *fd_h2c, uint64_t addr, uint32_t align, const char *data, size_t sz)
 {
     ssize_t rc;
     off_t offset = 0;
@@ -331,14 +333,14 @@ int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t
             buffer[i] = 0;
         }
         if (offset) {
-            rc = lseek(fd_h2c, offset, SEEK_SET);
+            rc = lseek(*fd_h2c, offset, SEEK_SET);
             if (rc != offset) {
                 bsg_pr_err("h2c, seek off 0x%lx != 0x%lx.\n", rc, offset);
                 perror("seek file");
                 return HB_MC_FAIL;
             }
         }
-        rc = write(fd_h2c, buffer, size_padded);
+        rc = write(*fd_h2c, buffer, size_padded);
         if (rc != size_padded) {
             bsg_pr_err("h2c, W off 0x%lx, 0x%lx != 0x%lx.\n", offset, rc, size_padded);
             perror("write file");
@@ -352,7 +354,7 @@ int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t
     return HB_MC_SUCCESS;
 }
 
-int hb_mc_mmio_read_c2h(uint64_t addr, uint32_t align, char *data, size_t sz)
+int hb_mc_mmio_read_c2h(int *fd_c2h, uint64_t addr, uint32_t align, char *data, size_t sz)
 {
     ssize_t rc;
     off_t offset = 0;
@@ -390,14 +392,14 @@ int hb_mc_mmio_read_c2h(uint64_t addr, uint32_t align, char *data, size_t sz)
             size_padded = size;
         }
         if (offset) {
-            rc = lseek(fd_c2h, offset, SEEK_SET);
+            rc = lseek(*fd_c2h, offset, SEEK_SET);
             if (rc != offset) {
                 bsg_pr_err("c2h, seek off 0x%lx != 0x%lx.\n", rc, offset);
                 perror("seek file");
                 return HB_MC_FAIL;
             }
         }
-        rc = read(fd_c2h, buffer, size_padded);
+        rc = read(*fd_c2h, buffer, size_padded);
         if (rc != size_padded) {
             bsg_pr_err("c2h, W off 0x%lx, 0x%lx != 0x%lx.\n", offset, rc, size_padded);
             perror("read file");

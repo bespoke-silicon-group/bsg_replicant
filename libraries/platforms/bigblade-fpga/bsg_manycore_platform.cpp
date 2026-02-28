@@ -31,6 +31,9 @@ typedef struct hb_mc_platform_t {
         int handle; //!< pci bar handle
         hb_mc_manycore_id_t id;  //!< which manycore instance is this
         hb_mc_mmio_t      mmio;  //!< pointer to memory mapped io (F1-specific)
+        int fd;
+        int fd_h2c;
+        int fd_c2h;
         hb_mc_profiler_t  prof;  //!< Profiler Implementation
         hb_mc_tracer_t    tracer; //!< Tracer Implementation
 } hb_mc_platform_t;
@@ -384,7 +387,7 @@ void hb_mc_platform_cleanup(hb_mc_manycore_t *mc)
 
         hb_mc_platform_fifos_cleanup(mc, pl);
 
-        hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+        hb_mc_mmio_cleanup(&pl->mmio, &pl->fd, &pl->fd_h2c, &pl->fd_c2h, &pl->handle);
 
         pl->name = nullptr;
 
@@ -438,7 +441,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         pl->id = id;
 
         // initialize manycore for MMIO
-        if ((err = hb_mc_mmio_init(&pl->mmio, (int*)&pl->handle, id)) != HB_MC_SUCCESS){
+        if ((err = hb_mc_mmio_init(&pl->mmio, &pl->fd, &pl->fd_h2c, &pl->fd_c2h, (int*)&pl->handle, id)) != HB_MC_SUCCESS){
                 delete pl;
                 active_ids.erase(active_ids.find(pl->id));
                 return err;
@@ -449,7 +452,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         // initialize FIFOs
         if ((err = hb_mc_platform_fifos_init(mc, pl)) != HB_MC_SUCCESS){
                 mc->platform = nullptr;
-                hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+                hb_mc_mmio_cleanup(&pl->mmio, &pl->fd, &pl->fd_h2c, &pl->fd_c2h, &pl->handle);
                 active_ids.erase(active_ids.find(pl->id));
                 delete pl;
                 return err;
@@ -466,7 +469,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
         if (err != HB_MC_SUCCESS && err != HB_MC_NOIMPL){
                 hb_mc_platform_fifos_cleanup(mc, pl);
                 mc->platform = nullptr;
-                hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+                hb_mc_mmio_cleanup(&pl->mmio, &pl->fd, &pl->fd_h2c, &pl->fd_c2h, &pl->handle);
                 active_ids.erase(active_ids.find(pl->id));
                 delete pl;
                 return err;
@@ -479,7 +482,7 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
                 hb_mc_profiler_cleanup(&(pl->prof));
                 hb_mc_platform_fifos_cleanup(mc, pl);
                 mc->platform = nullptr;
-                hb_mc_mmio_cleanup(&pl->mmio, &pl->handle);
+                hb_mc_mmio_cleanup(&pl->mmio, &pl->fd, &pl->fd_h2c, &pl->fd_c2h, &pl->handle);
                 active_ids.erase(active_ids.find(pl->id));
                 delete pl;
                 return err;
@@ -637,10 +640,12 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
 
 int hb_mc_platform_write_h2c(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, const char *data, size_t sz)
 {
-        return hb_mc_mmio_write_h2c(addr, align, data, sz);
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_mmio_write_h2c(&pl->fd_h2c, addr, align, data, sz);
 }
 
 int hb_mc_platform_read_c2h(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, char *data, size_t sz)
 {
-        return hb_mc_mmio_read_c2h(addr, align, data, sz);
+        hb_mc_platform_t *pl = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
+        return hb_mc_mmio_read_c2h(&pl->fd_c2h, addr, align, data, sz);
 }

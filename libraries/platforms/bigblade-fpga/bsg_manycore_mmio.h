@@ -199,7 +199,7 @@ extern "C" {
          * @param[in]  id     ID which selects the physical hardware from which this manycore is configured
          * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
          */
-        int hb_mc_mmio_init(hb_mc_mmio_t *mmio, int* handle, hb_mc_manycore_id_t id);
+        int hb_mc_mmio_init(hb_mc_mmio_t *mmio, int *fd, int *fd_h2c, int *fd_c2h, int* handle, hb_mc_manycore_id_t id);
 
         /**
          * Clean up MMIO for termination
@@ -207,11 +207,11 @@ extern "C" {
          * @param[in]  handle PCI BAR handle to unmap
          * @return HB_MC_FAIL if an error occured. HB_MC_SUCCESS otherwise.
          */
-        int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio, int *handle);
+        int hb_mc_mmio_cleanup(hb_mc_mmio_t *mmio, int *fd, int *fd_h2c, int *fd_c2h, int *handle);
                                       
-        int hb_mc_mmio_write_h2c(uint64_t addr, uint32_t align, const char *data, size_t sz);
+        int hb_mc_mmio_write_h2c(int *fd_h2c, uint64_t addr, uint32_t align, const char *data, size_t sz);
 
-        int hb_mc_mmio_read_c2h(uint64_t addr, uint32_t align, char *data, size_t sz);
+        int hb_mc_mmio_read_c2h(int *fd_c2h, uint64_t addr, uint32_t align, char *data, size_t sz);
 
 /* these are convenience macros that are only good for one line prints */
 #define mmio_pr_dbg(m, fmt, ...)                    \
