@@ -739,6 +739,12 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_device_memcpy_c2h(hb_mc_device_t *device, void *haddr, hb_mc_eva_t daddr, size_t bytes);
 
+        __attribute__((warn_unused_result))
+        int hb_mc_device_load_nbf(hb_mc_device_t *device, const char *fname);
+
+        __attribute__((warn_unused_result))
+        int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device);
+
 
         /**
          * Convenience macro for calling a CUDA function and handling an error return code.

@@ -1606,3 +1606,31 @@ int hb_mc_manycore_read_c2h(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align,
 {
         return hb_mc_platform_read_c2h(mc, addr, align, data, sz);
 }
+
+int hb_mc_manycore_write_nbf(hb_mc_manycore_t *mc, uint8_t x, uint8_t y, uint32_t addr, uint32_t data)
+{
+        int err;
+        hb_mc_packet_t rqst;
+        hb_mc_epa_t epa = addr << 2; // "epa" here refers to byte address (different from the hardware)
+        hb_mc_npa_t npa HB_MC_NPA(x, y, epa);
+
+        /* format the request packet */
+        err = hb_mc_manycore_format_request_packet(mc, &rqst.request, &npa);
+        if (err != HB_MC_SUCCESS)
+                return err;
+
+        hb_mc_request_packet_set_op(&rqst.request, HB_MC_PACKET_OP_REMOTE_STORE);
+        hb_mc_request_packet_set_data(&rqst.request, data);
+        hb_mc_request_packet_set_mask(&rqst.request, HB_MC_PACKET_REQUEST_MASK_WORD);
+
+        /* transmit the request */
+        manycore_pr_dbg(mc, "Sending %d-byte write request to NPA "
+                        "(x: %d, y: %d, 0x%08x) (data = 0x%08" PRIx32 ")\n",
+                        4,
+                        hb_mc_npa_get_x(&npa),
+                        hb_mc_npa_get_y(&npa),
+                        hb_mc_npa_get_epa(&npa),
+                        hb_mc_request_packet_get_data(&rqst.request));
+
+        return hb_mc_manycore_request_tx(mc, &rqst.request, -1);
+}

@@ -38,6 +38,9 @@
 
 #ifdef __cplusplus
 #include <cstring>
+#include <iostream>
+#include <fstream>
+#include <unistd.h>
 #else
 #include <string.h>
 #endif
@@ -2655,4 +2658,71 @@ int hb_mc_device_memcpy_c2h(hb_mc_device_t *device,
 {
         return hb_mc_device_pod_memcpy_c2h(device, device->default_pod_id,
                                              haddr, daddr, bytes);
+}
+
+__attribute__((weak))
+int hb_mc_device_load_nbf(hb_mc_device_t *device,
+                                  const char *fname)
+{
+        std::string file_path = fname;
+        // Create an input file stream object and open the file
+        std::ifstream file(file_path); 
+
+        // Check if the file was successfully opened
+        if (!file.is_open()) {
+            std::cerr << "Error opening file: " << file_path << std::endl;
+            return HB_MC_FAIL; // Exit if file cannot be opened
+        }
+
+        std::string line;
+        // Read lines from the file one by one
+        bsg_pr_info("nbf load start\n");
+        while (std::getline(file, line)) {
+            // Process the line (here, print to console)
+            //std::cout << line << std::endl; 
+            std::string x_str = line.substr(0, 2);
+            std::string y_str = line.substr(3, 2);
+            std::string addr_str = line.substr(6, 8);
+            std::string data_str = line.substr(15, 8);
+            //std::cout << "Line string: " << x_str << ", " << y_str << ", " << addr_str << ", " << data_str << std::endl;
+            uint8_t x = static_cast<uint8_t>(std::stoul(x_str, nullptr, 16));
+            uint8_t y = static_cast<uint8_t>(std::stoul(y_str, nullptr, 16));
+            uint32_t addr = static_cast<uint32_t>(std::stoul(addr_str, nullptr, 16));
+            uint32_t data = static_cast<uint32_t>(std::stoul(data_str, nullptr, 16));
+            bsg_pr_dbg("Line uint: %02x, %02x, %08x, %08x\n", x, y, addr, data);
+            if (x == 0xff && y == 0xff && addr == 0xffffffff && data == 0xffffffff) {
+                bsg_pr_info("nbf load finish\n");
+                break;
+            } else if (x == 0xff && y == 0xff && addr == 0 && data == 0) {
+                bsg_pr_info("nbf load fence\n");
+                BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_host_request_fence(device->mc, -1));
+            } else {
+                BSG_MANYCORE_CALL(device->mc, hb_mc_manycore_write_nbf(device->mc, x, y, addr, data));
+            }
+        }
+
+        // Close the file (optional, as the ifstream destructor does this automatically)
+        file.close(); 
+
+        return HB_MC_SUCCESS;
+}
+
+__attribute__((weak))
+int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
+{
+        while (true) {
+                hb_mc_request_packet_t rqst;
+
+                // perform a blocking read from the request fifo
+                BSG_CUDA_CALL(hb_mc_manycore_request_rx(device->mc, &rqst, -1));
+
+                // finish signal epa matches?
+                if (hb_mc_request_packet_get_epa(&rqst) != 0x0000ead0) {
+                        bsg_pr_dbg("Received unknown packet\n");
+                        continue;
+                }
+
+                bsg_pr_info("Received finish packet\n");
+                return HB_MC_SUCCESS;
+        }
 }

@@ -607,6 +607,9 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_manycore_read_c2h(hb_mc_manycore_t *mc, uint64_t addr, uint32_t align, char *data, size_t sz);
 
+        __attribute__((warn_unused_result))
+        int hb_mc_manycore_write_nbf(hb_mc_manycore_t *mc, uint8_t x, uint8_t y, uint32_t addr, uint32_t data);
+
         /**
          * Convenience macro for calling a manycore function and handling an error return code.
          * @param[in] stmt  A C/C++ statement that evaluates to an integer return code.
