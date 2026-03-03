@@ -2722,7 +2722,10 @@ int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
                         continue;
                 }
 
-                bsg_pr_info("Received finish packet\n");
+                hb_mc_coordinate_t src =
+                        hb_mc_coordinate(hb_mc_request_packet_get_x_src(&rqst),
+                                         hb_mc_request_packet_get_y_src(&rqst));
+                bsg_pr_info("Received finish packet from tile %02d, %02d\n", src.x, src.y);
                 return HB_MC_SUCCESS;
         }
 }
