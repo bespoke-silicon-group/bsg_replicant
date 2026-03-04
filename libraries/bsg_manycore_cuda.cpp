@@ -2716,15 +2716,22 @@ int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
                 // perform a blocking read from the request fifo
                 BSG_CUDA_CALL(hb_mc_manycore_request_rx(device->mc, &rqst, -1));
 
+                hb_mc_coordinate_t src =
+                        hb_mc_coordinate(hb_mc_request_packet_get_x_src(&rqst),
+                                         hb_mc_request_packet_get_y_src(&rqst));
+
+                // fail signal epa matches?
+                if (hb_mc_request_packet_get_epa(&rqst) == 0x0000ead8) {
+                        bsg_pr_err("Received fail packet from tile %02d, %02d\n", src.x, src.y);
+                        return HB_MC_FAIL;
+                }
+
                 // finish signal epa matches?
                 if (hb_mc_request_packet_get_epa(&rqst) != 0x0000ead0) {
                         bsg_pr_dbg("Received unknown packet\n");
                         continue;
                 }
 
-                hb_mc_coordinate_t src =
-                        hb_mc_coordinate(hb_mc_request_packet_get_x_src(&rqst),
-                                         hb_mc_request_packet_get_y_src(&rqst));
                 bsg_pr_info("Received finish packet from tile %02d, %02d\n", src.x, src.y);
                 return HB_MC_SUCCESS;
         }
