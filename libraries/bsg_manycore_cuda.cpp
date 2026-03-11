@@ -41,6 +41,11 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <queue>
+#include <thread>
+#include <atomic>
 #else
 #include <string.h>
 #endif
@@ -2707,11 +2712,79 @@ int hb_mc_device_load_nbf(hb_mc_device_t *device,
         return HB_MC_SUCCESS;
 }
 
+static struct termios oldtty;
+static int old_fd0_flags;
+
+static void term_exit(void)
+{
+    tcsetattr (0, TCSANOW, &oldtty);
+    fcntl(0, F_SETFL, old_fd0_flags);
+}
+
+static void term_init(bool allow_ctrlc)
+{
+    struct termios tty;
+
+    memset(&tty, 0, sizeof(tty));
+    tcgetattr (0, &tty);
+    oldtty = tty;
+    old_fd0_flags = fcntl(0, F_GETFL);
+
+    tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP
+                          |INLCR|IGNCR|ICRNL|IXON);
+    tty.c_oflag |= OPOST;
+    tty.c_lflag &= ~(ECHO|ECHONL|ICANON|IEXTEN);
+    if (!allow_ctrlc)
+        tty.c_lflag &= ~ISIG;
+    tty.c_cflag &= ~(CSIZE|PARENB);
+    tty.c_cflag |= CS8;
+    tty.c_cc[VMIN] = 1;
+    tty.c_cc[VTIME] = 0;
+
+    tcsetattr (0, TCSANOW, &tty);
+
+    atexit(term_exit);
+}
+
+static std::queue<int> getchar_fifo;
+static std::atomic<bool> host_exit_flag(false);
+
+static void host_monitor()
+{
+  int c;
+  while(!host_exit_flag) {
+      c = getchar();
+      if(c != -1) {
+        getchar_fifo.push(c);
+      }
+  }
+  bsg_pr_info("Host monitor thread terminated\n");
+}
+
+static void host_init() {
+    while(!getchar_fifo.empty())
+        getchar_fifo.pop();
+    std::thread host_t(&host_monitor);
+    host_t.detach();
+}
+
+static uint32_t host_read(uint32_t offset) {
+  int c = -1;
+  if(offset == 0x00000000 && !getchar_fifo.empty()) {
+    c = getchar_fifo.front();
+    getchar_fifo.pop();
+  }
+  return c;
+}
+
 __attribute__((weak))
 int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
 {
+        host_init();
+        term_init(true);
         while (true) {
                 hb_mc_request_packet_t rqst;
+                hb_mc_response_packet_t resp;
 
                 // perform a blocking read from the request fifo
                 BSG_CUDA_CALL(hb_mc_manycore_request_rx(device->mc, &rqst, -1));
@@ -2722,17 +2795,45 @@ int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
 
                 // fail signal epa matches?
                 if (hb_mc_request_packet_get_epa(&rqst) == 0x0000ead8) {
+                        term_exit();
+                        host_exit_flag = true;
                         bsg_pr_err("Received fail packet from tile %02d, %02d\n", src.x, src.y);
                         return HB_MC_FAIL;
                 }
 
-                // finish signal epa matches?
-                if (hb_mc_request_packet_get_epa(&rqst) != 0x0000ead0) {
-                        bsg_pr_dbg("Received unknown packet\n");
+                // stdin signal epa matches?
+                if (hb_mc_request_packet_get_op(&rqst) == HB_MC_PACKET_OP_REMOTE_LOAD) {
+                        bsg_pr_dbg("Received load request from tile %02d, %02d, op type = %d, load_id = %d, addr = %08x, data = %c\n",
+                                    src.x, src.y, hb_mc_request_packet_get_op(&rqst), hb_mc_request_packet_get_load_id(&rqst),
+                                    hb_mc_request_packet_get_epa(&rqst), hb_mc_request_packet_get_data(&rqst));
+                        char indata = host_read(hb_mc_request_packet_get_epa(&rqst));
+                        hb_mc_response_packet_set_data(&resp, indata);
+                        BSG_CUDA_CALL(hb_mc_manycore_response_tx(device->mc, &resp, -1));
                         continue;
                 }
 
+                // stdout signal epa matches?
+                if (hb_mc_request_packet_get_epa(&rqst) == 0x00001000) {
+                        printf("%c", hb_mc_request_packet_get_data(&rqst));
+                        fflush(stdout);
+                        continue;
+                }
+
+                // finish signal epa matches?
+                if (hb_mc_request_packet_get_epa(&rqst) != 0x00002000) {
+                        bsg_pr_info("Received unknown packet from tile %02d, %02d, op type = %d, load_id = %d, addr = %08x, data = %c\n",
+                                    src.x, src.y, hb_mc_request_packet_get_op(&rqst), hb_mc_request_packet_get_load_id(&rqst),
+                                    hb_mc_request_packet_get_epa(&rqst), hb_mc_request_packet_get_data(&rqst));
+                        fflush(stdout);
+                        continue;
+                }
+
+                term_exit();
+                host_exit_flag = true;
                 bsg_pr_info("Received finish packet from tile %02d, %02d\n", src.x, src.y);
                 return HB_MC_SUCCESS;
         }
+        term_exit();
+        host_exit_flag = true;
+        return HB_MC_FAIL;
 }

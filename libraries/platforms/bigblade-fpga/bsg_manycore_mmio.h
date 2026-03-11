@@ -40,7 +40,8 @@
 // host transmit fifo vacancy to the manycore request 0x00
 #define HB_MC_MMIO_FIFO_TX_VACANCY_OFFSET 0x00
 
-// For host sending request to manycore
+// For host sending request to manycore 0x04
+// For host sending response to manycore 0x14
 #define HB_MC_MMIO_FIFO_TX_DATA_OFFSET 0x04
 
 // host receive fifo occupancy from manycore request 0x18

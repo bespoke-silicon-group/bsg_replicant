@@ -34,6 +34,7 @@ typedef struct hb_mc_platform_t {
         int fd;
         int fd_h2c;
         int fd_c2h;
+        int num_rx_outstanding_req;
         hb_mc_profiler_t  prof;  //!< Profiler Implementation
         hb_mc_tracer_t    tracer; //!< Tracer Implementation
 } hb_mc_platform_t;
@@ -235,11 +236,23 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
         data_addr = hb_mc_mmio_fifo_get_addr(type, HB_MC_MMIO_FIFO_TX_DATA_OFFSET);
 
 
-        while(pl->transmit_vacancy == 0){
-                hb_mc_platform_get_transmit_vacancy(mc, HB_MC_FIFO_TX_REQ, &pl->transmit_vacancy);
+        if (type == HB_MC_FIFO_TX_REQ) {
+                while(pl->transmit_vacancy == 0){
+                        hb_mc_platform_get_transmit_vacancy(mc, type, &pl->transmit_vacancy);
+                }
+
+                pl->transmit_vacancy--;
         }
 
-        pl->transmit_vacancy--;
+        if (type == HB_MC_FIFO_TX_RSP) {
+                if (pl->num_rx_outstanding_req > 0) {
+                        pl->num_rx_outstanding_req -= 1;
+                } else {
+                        platform_pr_err(pl, "%s: No more rx outstanding request for response\n",
+                                __func__);
+                        return HB_MC_FAIL;
+                }
+        }
 
         // transmit the data one word at a time
         for (unsigned i = 0; i < array_size(packet->words); i++) {
@@ -300,6 +313,13 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
                         return err;
                 }
         }
+
+        if (type == HB_MC_FIFO_RX_REQ) {
+                if (hb_mc_request_packet_get_op((hb_mc_request_packet_t *)packet) == HB_MC_PACKET_OP_REMOTE_LOAD) {
+                        pl->num_rx_outstanding_req += 1;
+                }
+        }
+
         return HB_MC_SUCCESS;
 }
 
@@ -446,6 +466,9 @@ int hb_mc_platform_init(hb_mc_manycore_t *mc,
                 active_ids.erase(active_ids.find(pl->id));
                 return err;
         }
+
+        // init rx outstanding requests
+        pl->num_rx_outstanding_req = 0;
 
         mc->platform = pl;
 
