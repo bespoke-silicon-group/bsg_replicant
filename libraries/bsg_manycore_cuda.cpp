@@ -2768,9 +2768,9 @@ static void host_init() {
     host_t.detach();
 }
 
-static uint32_t host_read(uint32_t offset) {
+static uint32_t host_read(uint32_t offset, uint32_t host_addr) {
   int c = -1;
-  if(offset == 0x00000000 && !getchar_fifo.empty()) {
+  if(offset == host_addr && !getchar_fifo.empty()) {
     c = getchar_fifo.front();
     getchar_fifo.pop();
   }
@@ -2778,7 +2778,7 @@ static uint32_t host_read(uint32_t offset) {
 }
 
 __attribute__((weak))
-int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
+int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device, uint32_t stdin_addr, uint32_t stdout_addr, uint32_t finish_addr, uint32_t fail_addr)
 {
         host_init();
         term_init(true);
@@ -2792,9 +2792,12 @@ int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
                 hb_mc_coordinate_t src =
                         hb_mc_coordinate(hb_mc_request_packet_get_x_src(&rqst),
                                          hb_mc_request_packet_get_y_src(&rqst));
+                uint32_t addr = hb_mc_request_packet_get_epa(&rqst);
+                uint32_t data = hb_mc_request_packet_get_data(&rqst);
+                uint8_t op = hb_mc_request_packet_get_op(&rqst);
 
                 // fail signal epa matches?
-                if (hb_mc_request_packet_get_epa(&rqst) == 0x0000ead8) {
+                if (addr == fail_addr) {
                         term_exit();
                         host_exit_flag = true;
                         bsg_pr_err("Received fail packet from tile %02d, %02d\n", src.x, src.y);
@@ -2802,28 +2805,28 @@ int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device)
                 }
 
                 // stdin signal epa matches?
-                if (hb_mc_request_packet_get_op(&rqst) == HB_MC_PACKET_OP_REMOTE_LOAD) {
-                        bsg_pr_dbg("Received load request from tile %02d, %02d, op type = %d, load_id = %d, addr = %08x, data = %c\n",
-                                    src.x, src.y, hb_mc_request_packet_get_op(&rqst), hb_mc_request_packet_get_load_id(&rqst),
-                                    hb_mc_request_packet_get_epa(&rqst), hb_mc_request_packet_get_data(&rqst));
-                        char indata = host_read(hb_mc_request_packet_get_epa(&rqst));
+                if (op == HB_MC_PACKET_OP_REMOTE_LOAD) {
+                        bsg_pr_dbg("Received load request from tile %02d, %02d, op type = %d, addr = %08x, data = %c\n",
+                                    src.x, src.y, op, addr, data);
+                        char indata = host_read(addr, stdin_addr);
                         hb_mc_response_packet_set_data(&resp, indata);
                         BSG_CUDA_CALL(hb_mc_manycore_response_tx(device->mc, &resp, -1));
                         continue;
                 }
 
                 // stdout signal epa matches?
-                if (hb_mc_request_packet_get_epa(&rqst) == 0x00001000) {
-                        printf("%c", hb_mc_request_packet_get_data(&rqst));
+                if (addr == stdout_addr) {
+                        if (stdout_addr != 0xeadc) {
+                                printf("%c", data);
+                        }
                         fflush(stdout);
                         continue;
                 }
 
                 // finish signal epa matches?
-                if (hb_mc_request_packet_get_epa(&rqst) != 0x00002000) {
-                        bsg_pr_info("Received unknown packet from tile %02d, %02d, op type = %d, load_id = %d, addr = %08x, data = %c\n",
-                                    src.x, src.y, hb_mc_request_packet_get_op(&rqst), hb_mc_request_packet_get_load_id(&rqst),
-                                    hb_mc_request_packet_get_epa(&rqst), hb_mc_request_packet_get_data(&rqst));
+                if (addr != finish_addr) {
+                        bsg_pr_info("Received unknown packet from tile %02d, %02d, op type = %d, addr = %08x, data = %c\n",
+                                    src.x, src.y, op, addr, data);
                         fflush(stdout);
                         continue;
                 }
