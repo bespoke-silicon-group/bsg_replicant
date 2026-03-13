@@ -2610,7 +2610,7 @@ int hb_mc_device_pod_memcpy_h2c(hb_mc_device_t *device,
         uint64_t pod_y = (origin->y) >> (tile_coord_w.y);
         uint32_t block_size = hb_mc_config_get_vcache_block_size(cfg);
 
-        uint64_t addr = ((uint64_t)daddr) | (pod_x << (32+0)) | (pod_y << (32+8));
+        uint64_t addr = ((uint64_t)daddr) | (pod_x << (32+0)) | (pod_y << (32+8)) | (((uint64_t)1) << (32+16));
         uint32_t align = (uint32_t) block_size;
         const char *data = (const char*)haddr;
         size_t sz = (size_t) bytes;
@@ -2646,7 +2646,7 @@ int hb_mc_device_pod_memcpy_c2h(hb_mc_device_t *device,
         uint64_t pod_y = (origin->y) >> (tile_coord_w.y);
         uint32_t block_size = hb_mc_config_get_vcache_block_size(cfg);
 
-        uint64_t addr = ((uint64_t)daddr) | (pod_x << (32+0)) | (pod_y << (32+8));
+        uint64_t addr = ((uint64_t)daddr) | (pod_x << (32+0)) | (pod_y << (32+8)) | (((uint64_t)1) << (32+16));
         uint32_t align = (uint32_t) block_size;
         char *data = (char*)haddr;
         size_t sz = (size_t) bytes;
