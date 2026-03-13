@@ -743,7 +743,11 @@ extern "C" {
         int hb_mc_device_load_nbf(hb_mc_device_t *device, const char *fname);
 
         __attribute__((warn_unused_result))
+#ifdef __cplusplus
         int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device, uint32_t stdin_addr=0xeacc, uint32_t stdout_addr=0xeadc, uint32_t finish_addr=0xead0, uint32_t fail_addr=0xead8);
+#else
+        int hb_mc_device_wait_for_finish_nbf(hb_mc_device_t *device, uint32_t stdin_addr, uint32_t stdout_addr, uint32_t finish_addr, uint32_t fail_addr);
+#endif
 
 
         /**
