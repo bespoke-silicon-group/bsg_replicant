@@ -2163,6 +2163,17 @@ int hb_mc_device_podv_kernels_execute_timer(hb_mc_device_t *device,
         return HB_MC_SUCCESS;
 }
 
+int hb_mc_device_podv_kernels_execute_timer_no_wait(hb_mc_device_t *device,
+                                      hb_mc_pod_id_t *podv,
+                                      int podc,
+                                      struct timespec *start_p)
+{
+        /* launch as many tile groups as possible on all pods */
+        BSG_CUDA_CALL(hb_mc_device_podv_try_launch_tile_groups_timer(device, podv, podc, start_p));
+
+        return HB_MC_SUCCESS;
+}
+
 /**
  * Launches all kernel invocations enqueued on pods.
  * These kernel invocations are enqueued by
@@ -2185,6 +2196,23 @@ int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device)
         return hb_mc_device_podv_kernels_execute_timer(device, podv, device->num_pods);
 #else
         return hb_mc_device_podv_kernels_execute(device, podv, device->num_pods);
+#endif
+}
+
+int hb_mc_device_pods_kernels_execute_no_wait(hb_mc_device_t *device,
+                                              struct timespec *start_p)
+{
+        hb_mc_pod_id_t podv[device->num_pods];
+        hb_mc_pod_id_t pod;
+        hb_mc_device_foreach_pod_id(device, pod)
+        {
+                podv[pod]=pod;
+        }
+#ifdef ENABLE_KERNEL_EXEC_TIMER
+        return hb_mc_device_podv_kernels_execute_timer_no_wait(device, podv, device->num_pods, start_p);
+#else
+        bsg_pr_err("Execute no wait without timer has not been implemented\n");
+        return HB_MC_NOIMPL;
 #endif
 }
 

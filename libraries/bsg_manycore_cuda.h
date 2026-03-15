@@ -419,6 +419,10 @@ extern "C" {
         __attribute__((warn_unused_result))
         int hb_mc_device_pods_kernels_execute(hb_mc_device_t *device);
 
+        __attribute__((warn_unused_result))
+        int hb_mc_device_pods_kernels_execute_no_wait(hb_mc_device_t *device,
+                                                      struct timespec *start_p);
+
         /*************************/
         /* Pod Interface Cleanup */
         /*************************/
