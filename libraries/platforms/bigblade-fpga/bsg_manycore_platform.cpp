@@ -1,6 +1,7 @@
 #include <bsg_manycore_platform.h>
 #include <bsg_manycore_mmio.h>
 #include <bsg_manycore_config.h>
+#include <bsg_manycore_errno.h>
 #include <bsg_manycore_coordinate.h>
 #include <bsg_manycore_printing.h>
 #include <bsg_manycore_profiler.hpp>
@@ -280,20 +281,23 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
 
         const char *typestr = hb_mc_fifo_rx_to_string(type);
         uintptr_t data_addr;
-        uint32_t occupancy;
+        uint32_t occupancy = 0;
         int err;
 
-        if (timeout != -1) {
-                platform_pr_err(pl, "%s: Only a timeout value of -1 is supported\n",
-                                __func__);
+        if (timeout < -1) {
+                platform_pr_err(pl, "%s: Invalid timeout value %ld\n",
+                                __func__, timeout);
                 return HB_MC_INVALID;
         }
 
         data_addr = hb_mc_mmio_fifo_get_addr(type, HB_MC_MMIO_FIFO_RX_DATA_OFFSET);
 
         if (type == HB_MC_FIFO_RX_REQ) {
-                /* wait for a packet */
-                do {
+                long polls_remaining = timeout;
+
+                /* wait for a packet. timeout == -1 waits forever; timeout == 0
+                 * is a nonblocking poll; timeout > 0 polls that many times. */
+                while (true) {
                         err = hb_mc_platform_rx_fifo_get_occupancy(pl, type, &occupancy);
                         if (err != HB_MC_SUCCESS) {
                                 platform_pr_err(pl, "%s: Failed to get %s FIFO occupancy while waiting for packet: %s\n",
@@ -301,7 +305,22 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
                                 return err;
                         }
 
-                } while (occupancy < 1);  // this is packet occupancy, not word occupancy!
+                        if (occupancy >= 1)
+                                break;
+
+                        if (timeout == 0)
+                                return HB_MC_TIMEOUT;
+
+                        if (timeout > 0) {
+                                polls_remaining--;
+                                if (polls_remaining <= 0)
+                                        return HB_MC_TIMEOUT;
+                        }
+                }
+        } else if (timeout != -1) {
+                platform_pr_err(pl, "%s: Only a timeout value of -1 is supported for %s FIFO\n",
+                                __func__, typestr);
+                return HB_MC_INVALID;
         }
 
         /* read in the packet one word at a time */
