@@ -34,6 +34,7 @@ exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simsc
 
+%.log: SHELL := /bin/bash
 %.log: main.so $(BSG_MANYCORE_KERNELS)
 	@set -o pipefail; $(filter %/simsc, $^) $(CURDIR)/main.so $(C_ARGS) 2>&1 | tee $@
 
