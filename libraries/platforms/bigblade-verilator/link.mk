@@ -180,6 +180,12 @@ $(SIMSCS): LDFLAGS += -lz
 $(SIMSCS): LDFLAGS += $(DYNAMIC_LOADER_LIB)
 $(SIMSCS): LDFLAGS += -lpthread
 ifeq ($(shell uname -s),Darwin)
+# macOS defaults the main thread to an 8 MiB stack. Larger simulations can
+# exceed that limit in host-side application code, so request a larger stack in
+# the Mach-O executable while allowing callers to override it.
+SIMSC_DARWIN_STACK_SIZE ?= 0x2000000
+$(SIMSCS): LDFLAGS += -Wl,-stack_size,$(SIMSC_DARWIN_STACK_SIZE)
+
 # DPI exports live in Verilator's static model archive. Apple ld does not
 # extract that object solely for undefined callbacks in a linked dylib, so
 # force one export; the containing object supplies the complete DPI API.
