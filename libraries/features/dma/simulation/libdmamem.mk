@@ -48,7 +48,7 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)
 _BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK := 1
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldmamem
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation $(call RPATH,$(LIBRARIES_PATH)/features/dma/simulation) -ldmamem
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
 
 # Add a clean rule
@@ -60,13 +60,13 @@ dmamem.clean:
 libraries.clean: dmamem.clean
 
 # Rules for building Simulation "DMA library"
-$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -I$(BASEJUMP_STL_DIR)/bsg_mem
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -DBASEJUMP_STL_DIR="$(BASEJUMP_STL_DIR)"
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXX=g++
 # Uncomment to enable Verilator profiling with operf
 # $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: CXXFLAGS += -g -pg
 $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so: $(BASEJUMP_STL_DIR)/bsg_mem/bsg_mem_dma.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(notdir $@)) -o $@
 
 endif # ifndef(_BSG_F1_TESTBENCHES_LIB_DMA_MEM_MK)

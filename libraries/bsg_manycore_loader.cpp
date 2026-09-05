@@ -32,8 +32,8 @@
 #include <bsg_manycore_npa.h>
 
 #include <cinttypes>
-#include <elf.h>
-#include <endian.h>
+#include <bsg_manycore_elf32.h>
+#include <bsg_manycore_endian.h>
 
 #include <sys/stat.h>
 #include <fcntl.h>

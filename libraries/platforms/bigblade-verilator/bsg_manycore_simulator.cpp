@@ -29,6 +29,7 @@
 
 #include <bsg_manycore_simulator.hpp>
 #include <bsg_nonsynth_dpi_clock_gen.hpp>
+#include <strings.h>
 #include <verilated.h>
 #include <Vreplicant_tb_top.h>
 
@@ -73,4 +74,3 @@ SimulationWrapper::~SimulationWrapper(){
         delete top;
         this->top = nullptr;
 }
-

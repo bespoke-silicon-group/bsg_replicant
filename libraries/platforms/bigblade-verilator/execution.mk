@@ -35,7 +35,7 @@ profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
 pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simsc
 
 %.log: main.so $(BSG_MANYCORE_KERNELS)
-	$(filter %/simsc, $^) $(CURDIR)/main.so $(C_ARGS) 2>&1 | tee $@
+	@set -o pipefail; $(filter %/simsc, $^) $(CURDIR)/main.so $(C_ARGS) 2>&1 | tee $@
 
 vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 

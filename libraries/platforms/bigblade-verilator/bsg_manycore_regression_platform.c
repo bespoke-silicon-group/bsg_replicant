@@ -17,8 +17,23 @@ int main(int argc, char **argv) {
         // symbols for VCS and verilator. Perhaps someday we can just
         // call it sim_main.
 
+        if (argc < 2) {
+                bsg_pr_err("Usage: %s <regression-shared-object> [arguments...]\n", argv[0]);
+                return 1;
+        }
+
         char *sopath = argv[1];
-        void *handle = dlopen(sopath, RTLD_LAZY | RTLD_DEEPBIND);
+        int dlopen_flags = RTLD_LAZY;
+#ifdef RTLD_DEEPBIND
+        dlopen_flags |= RTLD_DEEPBIND;
+#endif
+        void *handle = dlopen(sopath, dlopen_flags);
+        if (handle == NULL) {
+                bsg_pr_err("Error when loading %s: %s\n", sopath, dlerror());
+                return 1;
+        }
+
+        dlerror();
         int (*vcs_main)(int , char **) = dlsym(handle, "vcs_main");
 
         char *error = dlerror();

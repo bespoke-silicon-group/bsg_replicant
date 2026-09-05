@@ -49,17 +49,17 @@ extern "C" {
         static inline const char * hb_mc_strerror(int err)
         {
                 static const char *strtab [] = {
-                        [-HB_MC_SUCCESS]           = "Success",
-                        [-HB_MC_FAIL]              = "Failure",
-                        [-HB_MC_TIMEOUT]           = "Timeout",
-                        [-HB_MC_UNINITIALIZED]     = "Not initialized",
-                        [-HB_MC_INVALID]           = "Invalid input",
-                        [-HB_MC_NOMEM]             = "Out of memory",
-                        [-HB_MC_NOIMPL]            = "Not implemented",
-                        [-HB_MC_NOTFOUND]          = "Not found",
-                        [-HB_MC_BUSY]              = "Busy",
-                        [-HB_MC_UNALIGNED]         = "Unaligned memory request",
-                        [-HB_MC_IOVERFLOW]         = "Integer overflow",
+                        "Success",
+                        "Failure",
+                        "Timeout",
+                        "Not initialized",
+                        "Invalid input",
+                        "Out of memory",
+                        "Not implemented",
+                        "Not found",
+                        "Busy",
+                        "Unaligned memory request",
+                        "Integer overflow",
                 };
                 return strtab[-err];
         }

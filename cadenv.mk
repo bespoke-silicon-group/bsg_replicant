@@ -53,6 +53,8 @@ ifdef VCSMX_HOME
 export VCS_HOME=$(VCSMX_HOME)
 endif
 else
+ifndef IGNORE_CADENV
 $(warning $(shell echo -e "$(ORANGE)BSG MAKE WARN: Couldn't find bsg_cadenv. User must configure CAD Environment.$(NC)"))
+endif
 endif
 endif

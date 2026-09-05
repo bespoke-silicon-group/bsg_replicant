@@ -32,7 +32,7 @@
 #include <bsg_manycore_bits.h>
 #include <bsg_manycore_errno.h>
 #include <bsg_manycore_epa.h>
-#include <endian.h>
+#include <bsg_manycore_endian.h>
 #ifdef __cplusplus
 #include <cinttypes>
 #include <cstdint>

@@ -61,7 +61,7 @@ TEST_OBJECTS    += $(TEST_CXXSOURCES:.cpp=.o)
 TEST_OBJECTS    += $(TEST_CSOURCES:.c=.o)
 
 main.so: $(TEST_OBJECTS)
-	$(CXX) -shared -o $@ $^ $(LDFLAGS)
+	$(CXX) $(SHARED_LIBRARY_FLAGS) -o $@ $^ $(LDFLAGS)
 
 .PRECIOUS: %.o %.so
 

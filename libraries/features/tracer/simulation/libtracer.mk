@@ -48,7 +48,7 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_LIBTRACER_MK)
 _BSG_F1_TESTBENCHES_LIBTRACER_MK := 1
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/tracer/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/tracer/simulation -ltracer
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/tracer/simulation $(call RPATH,$(LIBRARIES_PATH)/features/tracer/simulation) -ltracer
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so
 
 # Add a clean rule
@@ -60,7 +60,7 @@ tracer.clean:
 libraries.clean: tracer.clean
 
 # Rules for building Simulation tracer runtime library
-$(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -I$(BSG_MANYCORE_DIR)/testbenches/common/v
 # Uncomment to enable Verilator profiling with operf
 #$(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXXFLAGS += -g -pg
@@ -68,6 +68,6 @@ $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: CXX=g++
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_profiler.cpp
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: $(BSG_MANYCORE_DIR)/testbenches/common/v/vcache_profiler.cpp
 $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so: $(BSG_MANYCORE_DIR)/testbenches/common/v/remote_load_profiler.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(notdir $@)) -o $@
 
 endif # ifndef (_BSG_F1_TESTBENCHES_LIBTRACER_MK)

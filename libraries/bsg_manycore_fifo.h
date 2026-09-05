@@ -46,8 +46,8 @@ extern "C" {
         static inline const char *hb_mc_direction_to_string(hb_mc_direction_t dir)
         {
                 static const char *strtab [] = {
-                        [HB_MC_MMIO_FIFO_TO_DEVICE] = "host-initiated",
-                        [HB_MC_MMIO_FIFO_TO_HOST]   = "device-initiated",
+                        "host-initiated",
+                        "device-initiated",
                 };
 
                 return strtab[dir];
@@ -65,8 +65,8 @@ extern "C" {
         static inline const char *hb_mc_fifo_rx_to_string(hb_mc_fifo_rx_t type)
         {
                 static const char *strtab [] = {
-                        [HB_MC_FIFO_RX_RSP] = "rx-responses",
-                        [HB_MC_FIFO_RX_REQ] = "rx-requests",
+                        "rx-responses",
+                        "rx-requests",
                 };
 
                 return strtab[type];
@@ -84,8 +84,8 @@ extern "C" {
         static inline const char *hb_mc_fifo_tx_to_string(hb_mc_fifo_tx_t type)
         {
                 static const char *strtab [] = {
-                        [HB_MC_FIFO_TX_REQ] = "tx-requests",
-                        [HB_MC_FIFO_TX_RSP] = "tx-responses",
+                        "tx-requests",
+                        "tx-responses",
                 };
                 return strtab[type];
         }
