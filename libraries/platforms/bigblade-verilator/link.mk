@@ -116,8 +116,15 @@ $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_PC_HISTOGRAM
 
 # See comment in bsg_nonsynth_manycore_testbench.v
+ifeq ($(shell uname -s),Darwin)
+VERILATOR_THREADS ?= 1
+else
 VERILATOR_THREADS ?= 16
+endif
+VERILATOR_THREADS_CONFIG := $(BSG_MACHINExPLATFORM_PATH)/exec/.verilator_threads
+
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads $(VERILATOR_THREADS)
+$(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: $(VERILATOR_THREADS_CONFIG)
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_COVERAGE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCACHE_PROFILING
@@ -136,10 +143,23 @@ $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_VERILA
 # $(BSG_MACHINExPLATFORM_PATH)/operf/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --prof-cfuncs
 
 # TODO: Don't like pattern matching. Better way?
+.PHONY: verilator-threads-force
+verilator-threads-force:
+
+$(VERILATOR_THREADS_CONFIG): verilator-threads-force | $(BSG_MACHINExPLATFORM_PATH)/exec
+	@case "$(VERILATOR_THREADS)" in \
+	  ''|*[!0-9]*) echo "BSG MAKE ERROR: VERILATOR_THREADS must be a positive integer"; exit 1;; \
+	esac
+	@test "$(VERILATOR_THREADS)" -gt 0 || \
+	  { echo "BSG MAKE ERROR: VERILATOR_THREADS must be a positive integer"; exit 1; }
+	@if test ! -f "$@" || test "$$(cat "$@")" != "$(VERILATOR_THREADS)"; then \
+	  printf '%s\n' "$(VERILATOR_THREADS)" > "$@"; \
+	fi
+
 $(FRAGS): %/V$(BSG_DESIGN_TOP).mk : | %
 $(FRAGS): $(VHEADERS) $(VSOURCES)
 	$(info BSG_INFO: Running verilator)
-	@$(VERILATOR) -Mdir $(dir $@) --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $^ --top-module $(BSG_DESIGN_TOP)
+	@$(VERILATOR) -Mdir $(dir $@) --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $(filter-out $(VERILATOR_THREADS_CONFIG),$^) --top-module $(BSG_DESIGN_TOP)
 
 # Static library build rules
 $(LIBS): %/V$(BSG_DESIGN_TOP)__ALL.a : %/V$(BSG_DESIGN_TOP).mk
