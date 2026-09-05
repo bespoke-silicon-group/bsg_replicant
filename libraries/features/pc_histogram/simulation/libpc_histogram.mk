@@ -48,7 +48,7 @@ endif
 ifndef (_BSG_F1_TESTBENCHES_LIBPC_HISTOGRAM_MK)
 _BSG_F1_TESTBENCHES_LIBPC_HISTOGRAM_MK := 1
 
-$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/pc_histogram/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/pc_histogram/simulation -lpc_histogram
+$(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LDFLAGS += -L$(LIBRARIES_PATH)/features/pc_histogram/simulation $(call RPATH,$(LIBRARIES_PATH)/features/pc_histogram/simulation) -lpc_histogram
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so
 
 # Add a clean rule
@@ -60,10 +60,10 @@ pc_histogram.clean:
 libraries.clean: pc_histogram.clean
 
 # Rules for building Simulation pc_histogram runtime library
-$(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC -shared
+$(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so: CXXFLAGS += -std=c++11 -D_GNU_SOURCE -D_BSD_SOURCE -D_DEFAULT_SOURCE -Wall -fPIC
 $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so: CXXFLAGS += -I$(BSG_MANYCORE_DIR)/testbenches/common/v
 $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so: CXX=g++
 $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so: $(BSG_MANYCORE_DIR)/testbenches/common/v/vanilla_core_pc_histogram.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ -Wl,-soname,$(notdir $@) -o $@
+	$(CXX) $(CXXFLAGS) $(INCLUDES) $^ $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(notdir $@)) -o $@
 
 endif # ifndef (_BSG_F1_TESTBENCHES_LIBPC_HISTOGRAM_MK)

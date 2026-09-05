@@ -28,6 +28,20 @@
 ifndef __BSG_LIBRARIES_MK
 __BSG_LIBRARIES_MK := 1
 
+# Host-portable shared-library flags. Keep the .so filenames because they are
+# part of the existing simulator interface; Mach-O does not require .dylib.
+HOST_OS := $(shell uname -s)
+ifeq ($(HOST_OS),Darwin)
+SHARED_LIBRARY_FLAGS := -dynamiclib -Wl,-undefined,dynamic_lookup
+SHARED_LIBRARY_ID = -Wl,-install_name,@rpath/$(1)
+DYNAMIC_LOADER_LIB :=
+else
+SHARED_LIBRARY_FLAGS := -shared
+SHARED_LIBRARY_ID = -Wl,-soname,$(1)
+DYNAMIC_LOADER_LIB := -ldl
+endif
+RPATH = -Wl,-rpath,$(1)
+
 LIB_CSOURCES   +=
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_config_id_to_string.c
 LIB_CSOURCES   += $(LIBRARIES_PATH)/bsg_manycore_memsys.c
@@ -66,6 +80,8 @@ LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_tile.h
 
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_vcache.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_errno.h
+LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_endian.h
+LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_elf32.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_features.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_coordinate.h
 LIB_HEADERS += $(LIBRARIES_PATH)/bsg_manycore_npa.h
@@ -156,19 +172,22 @@ $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS += $(INCLUDES)
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS)
-	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
+	$(LD) $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(basename $(notdir $@))) -o $@ $^ $(LDFLAGS)
 
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0: LDFLAGS  :=
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0: INCLUDES :=
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0: $(LIB_OBJECTS_CUDA_POD_REPL)
-	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
+	$(LD) $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(basename $(notdir $@))) -o $@ $^ $(LDFLAGS)
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: LDFLAGS  :=
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: INCLUDES :=
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: LD = $(CXX)
+ifeq ($(HOST_OS),Darwin)
+$(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: LDFLAGS += $(ARGP_LDFLAGS)
+endif
 $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so.1.0: $(LIB_OBJECTS_REGRESSION)
-	$(LD) -shared -Wl,-soname,$(basename $(notdir $@)) -o $@ $^ $(LDFLAGS)
+	$(LD) $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(basename $(notdir $@))) -o $@ $^ $(LDFLAGS)
 
 .PHONY: libraries.clean
 libraries.clean:

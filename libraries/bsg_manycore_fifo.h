@@ -45,12 +45,11 @@ extern "C" {
 
         static inline const char *hb_mc_direction_to_string(hb_mc_direction_t dir)
         {
-                static const char *strtab [] = {
-                        [HB_MC_MMIO_FIFO_TO_DEVICE] = "host-initiated",
-                        [HB_MC_MMIO_FIFO_TO_HOST]   = "device-initiated",
-                };
-
-                return strtab[dir];
+                switch (dir) {
+                case HB_MC_MMIO_FIFO_TO_DEVICE: return "host-initiated";
+                case HB_MC_MMIO_FIFO_TO_HOST:   return "device-initiated";
+                default:                        return "unknown-direction";
+                }
         }
 
         /*
@@ -64,12 +63,11 @@ extern "C" {
 
         static inline const char *hb_mc_fifo_rx_to_string(hb_mc_fifo_rx_t type)
         {
-                static const char *strtab [] = {
-                        [HB_MC_FIFO_RX_RSP] = "rx-responses",
-                        [HB_MC_FIFO_RX_REQ] = "rx-requests",
-                };
-
-                return strtab[type];
+                switch (type) {
+                case HB_MC_FIFO_RX_RSP: return "rx-responses";
+                case HB_MC_FIFO_RX_REQ: return "rx-requests";
+                default:                return "unknown-rx";
+                }
         }
 
         /*
@@ -83,11 +81,11 @@ extern "C" {
 
         static inline const char *hb_mc_fifo_tx_to_string(hb_mc_fifo_tx_t type)
         {
-                static const char *strtab [] = {
-                        [HB_MC_FIFO_TX_REQ] = "tx-requests",
-                        [HB_MC_FIFO_TX_RSP] = "tx-responses",
-                };
-                return strtab[type];
+                switch (type) {
+                case HB_MC_FIFO_TX_REQ: return "tx-requests";
+                case HB_MC_FIFO_TX_RSP: return "tx-responses";
+                default:                return "unknown-tx";
+                }
         }
 
         inline hb_mc_direction_t hb_mc_get_rx_direction(hb_mc_fifo_rx_t d){

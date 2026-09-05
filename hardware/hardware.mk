@@ -108,6 +108,8 @@ include $(BSG_PLATFORM_PATH)/hardware.mk
 # The following functions convert a decimal string to a binary string,
 # and a hexadecimal string (WITHOUT the preceeding 0x) into binary
 # strings of 32-characters in length
+PYTHON ?= python3
+
 define dec2bin
 	`perl -e 'printf "%032b\n",'$(strip $(1))`
 endef
@@ -117,7 +119,7 @@ define hex2bin
 endef
 
 define charv2hex
-	$(shell python -c 'print("{:02x}{:02x}{:02x}{:02x}".format(*(ord(c) for c in $(strip $(1))[::-1])))')
+	$(shell $(PYTHON) -c 'print("{:02x}{:02x}{:02x}{:02x}".format(*(ord(c) for c in $(strip $(1))[::-1])))')
 endef
 
 charv2bin = $(call hex2bin, $(call charv2hex, $(1)))
@@ -228,12 +230,13 @@ $(BSG_MACHINE_PATH)/bsg_manycore_machine.h: $(BSG_MACHINE_PATH)/Makefile.machine
 # verilog format specifiers and commas. The scond sed command removes
 # the trailing comma (fencepost problem). We need to reverse the order
 # of the lines so that the first element appears last in the string
-# (at the 0'th position according to verilog).
+# (at the 0'th position according to verilog). Use awk instead of GNU tac so
+# this works on both Linux and macOS.
 #
 # dpi_fifo_els_gp defines the number of elements in the
 # manycore-to-host (request and response) FIFOs.
 $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.sv: $(BSG_MACHINE_PATH)/bsg_bladerunner_configuration.rom
-	$(eval ROM_STR=$(shell tac $< | sed "s/^\(.*\)$$/32'b\1,/" | sed '$$s/,$$//'))
+	$(eval ROM_STR=$(shell awk '{ line[NR]=$$0 } END { for (i=NR; i>0; i--) print line[i] }' $< | sed "s/^\(.*\)$$/32'b\1,/" | sed '$$s/,$$//'))
 	@echo "\`ifndef BSG_BLADERUNNER_PKG" > $@
 	@echo "\`define BSG_BLADERUNNER_PKG" >> $@
 	@echo >> $@

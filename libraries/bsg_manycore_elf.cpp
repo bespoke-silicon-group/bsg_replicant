@@ -47,7 +47,7 @@
 #endif
 
 #include <unistd.h>
-#include <elf.h>
+#include <bsg_manycore_elf32.h>
 
 #include <map>
 #include <string>

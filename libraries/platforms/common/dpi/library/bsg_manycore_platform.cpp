@@ -40,7 +40,6 @@
 #include <cstring>
 #include <set>
 #include <map>
-#include <xmmintrin.h>
 
 /* these are convenience macros that are only good for one line prints */
 #define manycore_pr_dbg(mc, fmt, ...)                   \
@@ -70,7 +69,7 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
         int err, drains = 0;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
-        __m128i *pkt;
+        bsg_dpi_128_t pkt;
 
         hb_mc_config_raw_t cap;
 
@@ -86,10 +85,10 @@ int hb_mc_platform_drain(hb_mc_manycore_t *mc, hb_mc_fifo_rx_t type)
 
                 switch(type){
                 case HB_MC_FIFO_RX_REQ:
-                        err = platform->dpi->rx_req(*pkt);
+                        err = platform->dpi->rx_req(pkt);
                         break;
                 case HB_MC_FIFO_RX_RSP:
-                        err = platform->dpi->rx_rsp(*pkt);
+                        err = platform->dpi->rx_rsp(pkt);
                         break;
                 default:
                         manycore_pr_err(mc, "%s: Unknown packet type\n", __func__);
@@ -276,7 +275,7 @@ int hb_mc_platform_transmit(hb_mc_manycore_t *mc,
 {
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
-        __m128i *pkt = reinterpret_cast<__m128i*>(packet);
+        bsg_dpi_128_t *pkt = reinterpret_cast<bsg_dpi_128_t*>(packet);
         const char *typestr = hb_mc_fifo_tx_to_string(type);
 
         int err;
@@ -338,7 +337,7 @@ int hb_mc_platform_receive(hb_mc_manycore_t *mc,
         int err;
         hb_mc_platform_t *platform = reinterpret_cast<hb_mc_platform_t *>(mc->platform);
         SimulationWrapper *top = platform->top;
-        __m128i *pkt = reinterpret_cast<__m128i*>(packet);
+        bsg_dpi_128_t *pkt = reinterpret_cast<bsg_dpi_128_t*>(packet);
 
         if (timeout != -1) {
                 manycore_pr_err(mc, "%s: Only a timeout value of -1 is supported\n",
@@ -624,4 +623,3 @@ int hb_mc_platform_wait_reset_done(hb_mc_manycore_t *mc)
 
         return HB_MC_SUCCESS;
 }
-

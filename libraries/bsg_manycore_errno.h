@@ -48,20 +48,20 @@ extern "C" {
 
         static inline const char * hb_mc_strerror(int err)
         {
-                static const char *strtab [] = {
-                        [-HB_MC_SUCCESS]           = "Success",
-                        [-HB_MC_FAIL]              = "Failure",
-                        [-HB_MC_TIMEOUT]           = "Timeout",
-                        [-HB_MC_UNINITIALIZED]     = "Not initialized",
-                        [-HB_MC_INVALID]           = "Invalid input",
-                        [-HB_MC_NOMEM]             = "Out of memory",
-                        [-HB_MC_NOIMPL]            = "Not implemented",
-                        [-HB_MC_NOTFOUND]          = "Not found",
-                        [-HB_MC_BUSY]              = "Busy",
-                        [-HB_MC_UNALIGNED]         = "Unaligned memory request",
-                        [-HB_MC_IOVERFLOW]         = "Integer overflow",
-                };
-                return strtab[-err];
+                switch (err) {
+                case HB_MC_SUCCESS:       return "Success";
+                case HB_MC_FAIL:          return "Failure";
+                case HB_MC_TIMEOUT:       return "Timeout";
+                case HB_MC_UNINITIALIZED: return "Not initialized";
+                case HB_MC_INVALID:       return "Invalid input";
+                case HB_MC_NOMEM:         return "Out of memory";
+                case HB_MC_NOIMPL:        return "Not implemented";
+                case HB_MC_NOTFOUND:      return "Not found";
+                case HB_MC_BUSY:          return "Busy";
+                case HB_MC_UNALIGNED:     return "Unaligned memory request";
+                case HB_MC_IOVERFLOW:     return "Integer overflow";
+                default:                  return "Unknown error";
+                }
         }
 
         static inline int hb_mc_is_error(int err)

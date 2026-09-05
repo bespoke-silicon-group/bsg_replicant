@@ -70,11 +70,15 @@ VERILATOR_VFLAGS = $(VERILATOR_VINCLUDES) $(VERILATOR_VDEFINES)
 VERILATOR_VFLAGS += -Wno-widthconcat -Wno-unoptflat -Wno-lint
 VERILATOR_VFLAGS += -Wno-MULTIDRIVEN # verilator no-lint doesn't work with this warning
 VERILATOR_VFLAGS += --assert
+VERILATOR_OUTPUT_SPLIT ?= 10000
+VERILATOR_OUTPUT_SPLIT_CFUNCS ?= 10000
+VERILATOR_VFLAGS += --output-split $(VERILATOR_OUTPUT_SPLIT)
+VERILATOR_VFLAGS += --output-split-cfuncs $(VERILATOR_OUTPUT_SPLIT_CFUNCS)
 
 # Debugging (in case of segfault, break glass)
 # VERILATOR_VFLAGS += --debug --gdbbt
 
-DIRS  = $(foreach t,exec debug,$(BSG_MACHINExPLATFORM_PATH)/$t)
+DIRS  = $(foreach t,exec profile debug,$(BSG_MACHINExPLATFORM_PATH)/$t)
 FRAGS = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP).mk)
 SIMOS = $(foreach d,$(DIRS),$d/bsg_manycore_simulator.o)
 LIBS  = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP)__ALL.a)
@@ -162,17 +166,24 @@ $(SIMOS): $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp
 
 # simsc binary build rules
 $(BSG_MACHINExPLATFORM_PATH)/exec/simsc: $(VERILATOR_OBJS)
+$(BSG_MACHINExPLATFORM_PATH)/profile/simsc: $(VERILATOR_OBJS)
 $(BSG_MACHINExPLATFORM_PATH)/debug/simsc: $(WAVEFORM_OBJS)
 
 $(SIMSCS): LD = $(CXX)
-$(SIMSCS): LDFLAGS  = -L$(BSG_PLATFORM_PATH) -Wl,-rpath=$(BSG_PLATFORM_PATH) -lbsg_manycore_regression -lbsg_manycore_runtime
-$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/dma/simulation -ldramsim3 -ldmamem -ltracer
-$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/tracer/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/tracer/simulation -ltracer
-$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/pc_histogram/simulation -Wl,-rpath=$(LIBRARIES_PATH)/features/pc_histogram/simulation -lpc_histogram
+$(SIMSCS): LDFLAGS  = -L$(BSG_PLATFORM_PATH) $(call RPATH,$(BSG_PLATFORM_PATH)) -lbsg_manycore_regression -lbsg_manycore_runtime
+$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation $(call RPATH,$(LIBRARIES_PATH)/features/dma/simulation) -ldramsim3 -ldmamem -ltracer
+$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/tracer/simulation $(call RPATH,$(LIBRARIES_PATH)/features/tracer/simulation) -ltracer
+$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/pc_histogram/simulation $(call RPATH,$(LIBRARIES_PATH)/features/pc_histogram/simulation) -lpc_histogram
 $(SIMSCS): LDFLAGS += -lm
 $(SIMSCS): LDFLAGS += -lz
-$(SIMSCS): LDFLAGS += -ldl
+$(SIMSCS): LDFLAGS += $(DYNAMIC_LOADER_LIB)
 $(SIMSCS): LDFLAGS += -lpthread
+ifeq ($(shell uname -s),Darwin)
+# DPI exports live in Verilator's static model archive. Apple ld does not
+# extract that object solely for undefined callbacks in a linked dylib, so
+# force one export; the containing object supplies the complete DPI API.
+$(SIMSCS): LDFLAGS += -Wl,-u,_bsg_dpi_clock_gen_set_level
+endif
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
@@ -204,4 +215,3 @@ platform.link.clean:
 	rm -rf *.debug *.exec
 
 link.clean: platform.link.clean ;
-

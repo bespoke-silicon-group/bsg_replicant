@@ -25,5 +25,15 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include $(LIBRARIES_PATH)/platforms/common/dpi/compilation.mk
+ifeq ($(shell uname -s),Darwin)
+# These glibc feature-test macros hide Darwin interfaces such as MAP_ANON.
+DEFINES := $(filter-out -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE,$(DEFINES))
+ARGP_PREFIX ?= $(shell brew --prefix argp-standalone 2>/dev/null)
+ARGP_CPPFLAGS ?= $(if $(ARGP_PREFIX),-I$(ARGP_PREFIX)/include)
+ifeq ($(strip $(ARGP_CPPFLAGS)),)
+$(error argp headers not found; install argp-standalone with Homebrew or set ARGP_CPPFLAGS)
+endif
+INCLUDES += $(ARGP_CPPFLAGS)
+endif
 
+include $(LIBRARIES_PATH)/platforms/common/dpi/compilation.mk
