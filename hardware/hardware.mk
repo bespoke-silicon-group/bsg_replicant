@@ -269,8 +269,8 @@ $(BSG_MACHINE_PATH)/bsg_bladerunner_pkg.sv: $(BSG_MACHINE_PATH)/bsg_bladerunner_
 	@echo "parameter int bsg_machine_noc_data_width_gp = $(BSG_MACHINE_DATA_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_noc_coord_x_width_gp = $(BSG_MACHINE_NOC_COORD_X_WIDTH);" >> $@
 	@echo "parameter int bsg_machine_noc_coord_y_width_gp = $(BSG_MACHINE_NOC_COORD_Y_WIDTH);" >> $@
-	@echo "parameter int bsg_machine_noc_pod_coord_x_width_gp = bsg_machine_noc_coord_x_width_gp - \$$clog2(bsg_machine_pod_tiles_x_gp);" >> $@
-	@echo "parameter int bsg_machine_noc_pod_coord_y_width_gp = bsg_machine_noc_coord_y_width_gp - \$$clog2(bsg_machine_pod_tiles_y_gp);" >> $@
+	@echo "parameter int bsg_machine_noc_pod_coord_x_width_gp = bsg_machine_noc_coord_x_width_gp - ((bsg_machine_pod_tiles_x_gp > 1) ? \$$clog2(bsg_machine_pod_tiles_x_gp) : 1);" >> $@
+	@echo "parameter int bsg_machine_noc_pod_coord_y_width_gp = bsg_machine_noc_coord_y_width_gp - ((bsg_machine_pod_tiles_y_gp > 1) ? \$$clog2(bsg_machine_pod_tiles_y_gp) : 1);" >> $@
 	@echo >> $@
 	@echo "parameter int bsg_machine_llcache_sets_gp = $(BSG_MACHINE_VCACHE_SET);" >> $@
 	@echo "parameter int bsg_machine_llcache_ways_gp = $(BSG_MACHINE_VCACHE_WAY);" >> $@

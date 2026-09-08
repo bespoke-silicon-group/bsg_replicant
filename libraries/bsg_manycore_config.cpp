@@ -214,8 +214,8 @@ int hb_mc_config_init(const hb_mc_config_raw_t raw[HB_MC_CONFIG_MAX],
 
         // Derived variables from the ROM
         config->tile_coord_width = hb_mc_coordinate(
-            log2(config->pod_shape.x),
-            log2(config->pod_shape.y)
+            (config->pod_shape.x > 1 ? log2(config->pod_shape.x) : 1),
+            (config->pod_shape.y > 1 ? log2(config->pod_shape.y) : 1)
             );
         config->pod_coord_width  = hb_mc_coordinate(
             config->noc_coord_width.x - config->tile_coord_width.x,
