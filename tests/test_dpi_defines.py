@@ -12,6 +12,49 @@ import unittest
 
 
 class DpiDefines(unittest.TestCase):
+    def test_simulator_flags_do_not_inherit_application_macros(self):
+        repo = Path(__file__).resolve().parents[1]
+        make = shutil.which("gmake") or shutil.which("make")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            # Supply empty include fragments: only evaluate the real link rules.
+            for name in ("hardware.mk", "libraries.mk", "bsg_manycore_simulator.cpp",
+                         "verilated.cpp"):
+                (root / name).touch()
+            (root / "Makefile").write_text(f"""
+BSG_PLATFORM_PATH := {root}
+LIBRARIES_PATH := {root}
+HARDWARE_PATH := {root}
+VERILATOR_ROOT := {root}
+BSG_MACHINExPLATFORM_PATH := {root}/machine
+BSG_DESIGN_TOP := probe
+DEFINES = -DN=64 -D_XOPEN_SOURCE=500 -DNUM_POD_X=1
+include {repo}/libraries/platforms/bigblade-verilator/link.mk
+""")
+            for variant in ("exec", "profile", "debug"):
+                with self.subTest(variant=variant):
+                    directory = root / "machine" / variant
+                    target = directory / "bsg_manycore_simulator.o"
+                    archive = directory / "Vprobe__ALL.a"
+                    result = subprocess.run([make, "--no-print-directory", "CXX=echo",
+                                             "-o", str(archive), str(target)],
+                                            cwd=root, text=True, capture_output=True)
+                    self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                    self.assertNotIn("-DN=", result.stdout)
+                    self.assertNotIn("-D_XOPEN_SOURCE", result.stdout)
+                    self.assertNotIn("-DNUM_POD_X", result.stdout)
+                    self.assertEqual("-DBSG_VERILATOR_WAVEFORM" in result.stdout,
+                                     variant == "debug")
+            # Verilator support objects have their own target-specific define.
+            (root / "include").mkdir()
+            (root / "include/verilated.cpp").touch()
+            result = subprocess.run([make, "--no-print-directory", "CXX=echo",
+                                     str(root / "machine/exec/verilated.o")],
+                                    cwd=root, text=True, capture_output=True)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("-DVL_PRINTF=printf", result.stdout)
+            self.assertNotIn("-DN=", result.stdout)
+
     def test_late_constants_and_feature_macros(self):
         repo = Path(__file__).resolve().parents[1]
         make = shutil.which("gmake") or shutil.which("make")

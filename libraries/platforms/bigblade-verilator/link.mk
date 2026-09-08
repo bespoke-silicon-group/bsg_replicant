@@ -94,8 +94,8 @@ WAVEFORM_OBJS = $(foreach o,$(WAVEFORM_SRCS:.cpp=.o),$(BSG_MACHINExPLATFORM_PATH
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): DEFINES := -DVL_PRINTF=printf
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): INCLUDES := -I$(VERILATOR_ROOT)/include
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
-$(WAVEFORM_OBJS) $(VERILATOR_OBJS): CFLAGS    := -std=c11 -fPIC $(INCLUDES) $(DEFINES)
-$(WAVEFORM_OBJS) $(VERILATOR_OBJS): CXXFLAGS  := -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
+$(WAVEFORM_OBJS) $(VERILATOR_OBJS): CFLAGS    = -std=c11 -fPIC $(INCLUDES) $(DEFINES)
+$(WAVEFORM_OBJS) $(VERILATOR_OBJS): CXXFLAGS  = -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
 # Uncomment to enable Verilator profiling with operf
 # $(VERILATOR_OBJS): CFLAGS    += -g -pg
 # $(VERILATOR_OBJS): CXXFLAGS  += -g -pg
@@ -170,6 +170,9 @@ $(LIBS): %/V$(BSG_DESIGN_TOP)__ALL.a : %/V$(BSG_DESIGN_TOP).mk
 # implementation of the Vmanycore_tb_top and allows
 # libbsg_manycore_runtime to be compiled independently from the
 # machine.
+# Use only simulator defines, even when reached from an application's Makefile.
+# Defer flag expansion so the target-specific values above/below take effect.
+$(SIMOS): DEFINES :=
 $(BSG_MACHINExPLATFORM_PATH)/debug/bsg_manycore_simulator.o: DEFINES  += -DBSG_VERILATOR_WAVEFORM
 $(SIMOS): INCLUDES := -I$(BSG_PLATFORM_PATH)
 $(SIMOS): INCLUDES := -I$(LIBRARIES_PATH)
@@ -178,7 +181,7 @@ $(SIMOS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test
 $(SIMOS): INCLUDES += -I$(VERILATOR_ROOT)/include
 $(SIMOS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(SIMOS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/common/dpi/library
-$(SIMOS): CXXFLAGS := -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
+$(SIMOS): CXXFLAGS = -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
 # TODO: Don't like pattern matching. Better way?
 $(SIMOS): %/bsg_manycore_simulator.o : %/V$(BSG_DESIGN_TOP)__ALL.a
 $(SIMOS): $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp 
