@@ -27,7 +27,9 @@
 
 ifeq ($(shell uname -s),Darwin)
 # These glibc feature-test macros hide Darwin interfaces such as MAP_ANON.
-DEFINES := $(filter-out -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE,$(DEFINES))
+# Keep machine constants deferred until the compile recipe expands them.
+# Applications can include their machine configuration after this fragment.
+DPI_DEFINES = $(filter-out -D_XOPEN_SOURCE=500 -D_BSD_SOURCE -D_DEFAULT_SOURCE,$(DEFINES))
 ARGP_PREFIX ?= $(shell brew --prefix argp-standalone 2>/dev/null)
 ARGP_CPPFLAGS ?= $(if $(ARGP_PREFIX),-I$(ARGP_PREFIX)/include)
 ifeq ($(strip $(ARGP_CPPFLAGS)),)

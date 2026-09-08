@@ -42,8 +42,9 @@ INCLUDES   += -I$(BSG_PLATFORM_PATH)
 INCLUDES   += -I$(LIBRARIES_PATH)/platforms/common/dpi/library
 
 LDFLAGS    += -lstdc++ -lc -L$(BSG_PLATFORM_PATH)
-CXXFLAGS   += $(DEFINES) -fPIC
-CFLAGS     += $(DEFINES) -fPIC
+DPI_DEFINES ?= $(DEFINES)
+CXXFLAGS   += $(DPI_DEFINES) -fPIC
+CFLAGS     += $(DPI_DEFINES) -fPIC
 
 # each regression target needs to build its .o from a .c and .h of the
 # same name
