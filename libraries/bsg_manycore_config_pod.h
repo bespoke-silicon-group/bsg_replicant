@@ -96,7 +96,7 @@ extern "C" {
         {
                 hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod_id);
                 return  pos.x >= (og.x + cfg->pod_shape.x) ||
-                        pos.y >= (og.y + cfg->pod_shape.y + 1);
+                        pos.y >= (og.y + (1 << cfg->tile_coord_width.y) + 1);
         }
 
         /**
@@ -115,7 +115,7 @@ extern "C" {
                 if (pos.x >= og.x + cfg->pod_shape.x &&
                     pos.y == north_y) {
                         pos.x = og.x;
-                        pos.y = og.y + cfg->pod_shape.y;
+                        pos.y = og.y + (1 << cfg->tile_coord_width.y);
                 }
                 return pos;
         }
@@ -262,7 +262,7 @@ extern "C" {
         {
                 int north = (pod_dram_id / cfg->pod_shape.x);
                 hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
-                return og.y + (north ? cfg->pod_shape.y : -1);;
+                return og.y + (north ? (1 << cfg->tile_coord_width.y) : -1);;
         }
 
         static inline hb_mc_idx_t
@@ -278,7 +278,7 @@ extern "C" {
                                       hb_mc_coordinate_t pod)
         {
                 hb_mc_coordinate_t og = hb_mc_config_pod_vcore_origin(cfg, pod);
-                return og.y + cfg->pod_shape.y;
+                return og.y + (1 << cfg->tile_coord_width.y);
         }
 
         static inline hb_mc_coordinate_t

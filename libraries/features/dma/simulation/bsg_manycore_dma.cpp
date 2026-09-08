@@ -228,6 +228,10 @@ int hb_mc_dma_init_pod_X1Y1_X16_hbm_one_pseudo_channel(hb_mc_manycore_t *mc)
                 int east_not_west = (dram.x - bx) >= cfg->pod_shape.x/2;
                 cache_id_to_memory_id[id] = 0;
 
+                if (cfg->pod_shape.x == 1) {
+                        cache_id_to_bank_id[id] = hb_mc_config_is_dram_south(cfg, dram) ? 1 : 0;
+                        continue;
+                }
                 int idx = (dram.x-bx) % (cfg->pod_shape.x/2);
                 cache_id_to_bank_id[id] =
                     east_not_west
