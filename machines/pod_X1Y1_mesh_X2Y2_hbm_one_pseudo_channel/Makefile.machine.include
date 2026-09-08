@@ -25,16 +25,10 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-############################################################################################
-# pod_X1Y1_ruche_X16Y8_hbm_one_pseudo_channel                                              #
-# 1 pod                                                                                    #
-# 128 RISC-V Tiles per pod, 16 tiles wide, 8 tiles tall                                    # 
-# Last level caches on the top and bottom of each column                                   #
-# Each last-level cache is mapped to a separate HBM bank                                   #
-# There is one HBM Pseudochannel channel per pod.                                          #
-# There is a vanilla, 2D mesh network augmented with Ruche links                           #
-# This configuration mimics a GPU. See the mem sys params                                  #
-############################################################################################
+# pod_X1Y1_mesh_X2Y2_hbm_one_pseudo_channel
+# One pod with four RISC-V tiles arranged as a 2x2 mesh.
+# Four last-level cache banks, one above and below each tile column,
+# share one HBM pseudochannel; each maps to a separate HBM bank.
 
 # Change these parameters to define your machine. All other parameters should remain constant.
 BSG_MACHINE_CHIP_ID		      = 15ca2022
@@ -77,12 +71,15 @@ BSG_MACHINE_ENABLE_DRAM_PODS_X        = $(BSG_MACHINE_PODS_X)
 BSG_MACHINE_ENABLE_DRAM_PODS_Y        = $(BSG_MACHINE_PODS_Y)
 
 # Victim Cache Parameters
-BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 2
+# Match the standard simulation profiles: 64 sets x 8 ways x 16 words = 32 KiB per bank.
+# Four cache banks share the single HBM pseudochannel named by this profile.
+# Two banks per channel would create two channels, unlike the selected host DMA map.
+BSG_MACHINE_VCACHE_PER_DRAM_CHANNEL   = 4
 BSG_MACHINE_VCACHE_SET                = 64
-BSG_MACHINE_VCACHE_WAY                = 4
-BSG_MACHINE_VCACHE_LINE_WORDS         = 8
+BSG_MACHINE_VCACHE_WAY                = 8
+BSG_MACHINE_VCACHE_LINE_WORDS         = 16
 BSG_MACHINE_VCACHE_STRIPE_WORDS       = $(BSG_MACHINE_VCACHE_LINE_WORDS)
-BSG_MACHINE_VCACHE_WORD_TRACKING      = 0
+BSG_MACHINE_VCACHE_WORD_TRACKING      = 1
 BSG_MACHINE_VCACHE_IPOLY_HASHING      = 0
 # Only applies to Non-blocking Cache
 BSG_MACHINE_VCACHE_MISS_FIFO_ELS      = 32
