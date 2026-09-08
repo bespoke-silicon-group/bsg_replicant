@@ -25,9 +25,12 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-PLATFORM_CXXSOURCES += $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
+# Keep build products in this runtime checkout when BaseJump sources are shared.
+PLATFORM_OBJECTS += $(BSG_PLATFORM_PATH)/bsg_nonsynth_dpi_clock_gen.o
 include $(LIBRARIES_PATH)/platforms/common/dpi/library.mk
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): INCLUDES += -I$(BSG_MACHINExPLATFORM_PATH)
 
+$(BSG_PLATFORM_PATH)/bsg_nonsynth_dpi_clock_gen.o: $(BASEJUMP_STL_DIR)/bsg_test/bsg_nonsynth_dpi_clock_gen.cpp
+	$(CXX) -c -o $@ $< $(INCLUDES) $(CXXFLAGS) $(CXXDEFINES)
