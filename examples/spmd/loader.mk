@@ -55,6 +55,21 @@ TILE_GROUP_DIM_X ?= 1
 TILE_GROUP_DIM_Y ?= 1
 LINK_GEN_MOVE_RODATA_TO_DMEM ?= 0
 
+# Select the compiler for SPMD device C/C++ sources. CLANG remains accepted as
+# a compatibility alias, but SPMD_COMPILER makes GCC/LLVM sweeps unambiguous.
+ifdef CLANG
+SPMD_COMPILER ?= llvm
+endif
+SPMD_COMPILER ?= gcc
+ifeq ($(filter $(SPMD_COMPILER),gcc llvm),)
+$(error Unsupported SPMD_COMPILER '$(SPMD_COMPILER)'; expected gcc or llvm)
+endif
+ifeq ($(SPMD_COMPILER),llvm)
+ifeq ($(strip $(LLVM_DIR)),)
+$(error LLVM_DIR must name the HammerBlade LLVM build when SPMD_COMPILER=llvm)
+endif
+endif
+
 # TEST_SOURCES is a list of source files that need to be compiled
 TEST_SOURCES = $(CURDIR)/loader.c
 $(CURDIR)/loader.c: $(EXAMPLES_PATH)/spmd/loader.c
@@ -106,6 +121,8 @@ $(SPMD_SRC_PATH)/$(SPMD_NAME)/main.riscv:
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
+	SPMD_COMPILER=$(SPMD_COMPILER) \
+	LLVM_DIR=$(LLVM_DIR) \
 	bsg_tiles_X=$(TILE_GROUP_DIM_X) \
 	bsg_tiles_Y=$(TILE_GROUP_DIM_Y) \
 	LINK_GEN_MOVE_RODATA_TO_DMEM=$(LINK_GEN_MOVE_RODATA_TO_DMEM) \
@@ -143,9 +160,10 @@ clean:
 	BSG_MANYCORE_DIR=$(BSG_MANYCORE_DIR) \
 	BASEJUMP_STL_DIR=$(BASEJUMP_STL_DIR) \
 	BSG_IP_CORES_DIR=$(BASEJUMP_STL_DIR) \
+	SPMD_COMPILER=$(SPMD_COMPILER) \
+	LLVM_DIR=$(LLVM_DIR) \
 	IGNORE_CADENV=1 \
 	BSG_MACHINE_PATH=$(BSG_MACHINE_PATH) \
 	$(MAKE) -j1 -C $(SPMD_SRC_PATH)/$(SPMD_NAME) clean
 	rm -f $(CURDIR)/loader.c
-
 

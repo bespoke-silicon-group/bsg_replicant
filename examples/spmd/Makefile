@@ -77,14 +77,14 @@ NOT_SPMD += hw_barrier_16x8_interrupt_test
 NOT_SPMD += hw_barrier_context_switch_test
 NOT_SPMD += memtest2022
 # Skip hb_mc test series
-ALL_HB_MC_TESTS := $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*' -printf '%P\n')
+ALL_HB_MC_TESTS := $(notdir $(patsubst %/,%,$(wildcard $(BSG_MANYCORE_DIR)/software/spmd/hb_mc_*/)))
 NOT_SPMD += $(ALL_HB_MC_TESTS)
 
-SPMD_TESTS:=$(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -printf '%P\n')
+SPMD_TESTS:=$(notdir $(patsubst %/,%,$(wildcard $(BSG_MANYCORE_DIR)/software/spmd/*/)))
 SPMD_TESTS:=$(filter-out $(NOT_SPMD),$(SPMD_TESTS))
 # Find the intersection of bsg_manycore spmd tests & current directory spmd tests
 # So that the flow will not break down when new tests are added to bsg_manycore
-CUR_EXISTING_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -printf '%P\n')
+CUR_EXISTING_SPMD:=$(notdir $(patsubst %/,%,$(wildcard $(CURDIR)/*/)))
 NON_EXISTING_SPMD:=$(filter-out $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 SPMD_TESTS:=$(filter $(CUR_EXISTING_SPMD),$(SPMD_TESTS))
 
@@ -106,16 +106,16 @@ regression: $(TESTS)
 	@echo "SPMD REGRESSION PASSED"
 
 # Define the hb_mc tests that get run
-NOT_SPMD_HB_MC_TESTS := $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*_sdr_init_*' -printf '%P\n')
+NOT_SPMD_HB_MC_TESTS := $(notdir $(patsubst %/,%,$(wildcard $(BSG_MANYCORE_DIR)/software/spmd/hb_mc_*_sdr_init_*/)))
 ifneq (,$(findstring pod_X4Y2_,$(BSG_MACHINE_PATH)))
-  NOT_SPMD_HB_MC_TESTS += $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*_sdr_prbs_full' -printf '%P\n')
+  NOT_SPMD_HB_MC_TESTS += $(notdir $(patsubst %/,%,$(wildcard $(BSG_MANYCORE_DIR)/software/spmd/hb_mc_*_sdr_prbs_full/)))
 endif
 ifneq (,$(findstring pod_X4Y4_,$(BSG_MACHINE_PATH)))
-  NOT_SPMD_HB_MC_TESTS += $(shell find $(BSG_MANYCORE_DIR)/software/spmd -maxdepth 1 -type d -name 'hb_mc_*_sdr_prbs_half' -printf '%P\n')
+  NOT_SPMD_HB_MC_TESTS += $(notdir $(patsubst %/,%,$(wildcard $(BSG_MANYCORE_DIR)/software/spmd/hb_mc_*_sdr_prbs_half/)))
 endif
 SPMD_HB_MC_TESTS := $(filter-out $(NOT_SPMD_HB_MC_TESTS),$(ALL_HB_MC_TESTS))
 # Find the intersection of bsg_manycore hb_mc tests & current directory hb_mc tests
-CUR_EXISTING_HB_MC_SPMD:=$(shell find $(CURDIR) -maxdepth 1 -type d -name 'hb_mc_*' -printf '%P\n')
+CUR_EXISTING_HB_MC_SPMD:=$(notdir $(patsubst %/,%,$(wildcard $(CURDIR)/hb_mc_*/)))
 SPMD_HB_MC_TESTS:=$(filter $(CUR_EXISTING_HB_MC_SPMD),$(SPMD_HB_MC_TESTS))
 
 regression.hb_mc: $(SPMD_HB_MC_TESTS)
@@ -143,4 +143,3 @@ clean.hb_mc: $(SPMD_HB_MC_TESTS:=.clean)
 
 %.clean:
 	$(MAKE) -C $(@:.clean=) clean
-

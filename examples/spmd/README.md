@@ -8,4 +8,8 @@ To run all tests in an appropriately configured environment, run:
 
 ```make regression``` 
 
+Device C/C++ sources use GCC by default. Select the HammerBlade LLVM build
+with `make regression SPMD_COMPILER=llvm LLVM_DIR=/path/to/llvm-build`.
+The legacy `CLANG=1` spelling remains supported.
+
 Or, alternatively, run `make help` to see a list of available targets.
