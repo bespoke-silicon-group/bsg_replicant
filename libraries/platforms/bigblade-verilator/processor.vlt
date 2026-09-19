@@ -1,0 +1,3 @@
+`verilator_config
+// Processor includes vanilla_core and its endpoint; routers/caches stay outside.
+hier_block -module "bsg_manycore_proc_vanilla"
