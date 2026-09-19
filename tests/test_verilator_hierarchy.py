@@ -83,7 +83,8 @@ include {PLATFORM}/link.mk
                                             text=True, capture_output=True)
                     self.assertEqual(result.returncode, 0, result.stderr)
                     command = result.stdout
-                    self.assertIn("--mode " + ("processor" if variant == "exec" else "flat"), command)
+                    self.assertIn("--mode " + ("flat" if variant == "debug" else "processor"), command)
+                    self.assertEqual("--profile-ports" in command, variant == "profile")
                     self.assertEqual("+define+\"BSG_MACHINE_DISABLE_REMOTE_OP_PROFILING\"" in command,
                                      variant == "exec")
                     if variant == "exec":
@@ -96,6 +97,31 @@ include {PLATFORM}/link.mk
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn("--threads " + ("16" if host == "Linux" else "1"), result.stdout)
                 self.assertNotIn("+define+\"BSG_MACHINE_DISABLE_REMOTE_OP_PROFILING\"", result.stdout)
+                result = subprocess.run([make, "-n", "VERILATOR_PROFILE_HIERARCHY=flat",
+                                         str(root / "machine/profile/Vprobe.mk")],
+                                        cwd=root, env=env, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertIn("--mode flat", result.stdout)
+                self.assertNotIn("+define+\"BSG_MACHINE_DISABLE_VCORE_PROFILING\"", result.stdout)
+
+    def test_dpi_unit_excludes_stale_children(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "Vtop__Dpi.cpp").touch()
+            child = "Vbsg_manycore_hetero_socket_1"
+            (root / child).mkdir()
+            (root / child / (child + "__Dpi.cpp")).touch()
+            H.dpi_unit(root, "top", [child[1:] + "_protectlib_combo_update"])
+            self.assertIn(child, (root / "bsg_unified_dpi.cpp").read_text())
+            H.dpi_unit(root, "top", [])
+            self.assertNotIn(child, (root / "bsg_unified_dpi.cpp").read_text())
+
+    def test_old_manycore_has_clear_profile_error(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            with patch.object(H.subprocess, "check_output", return_value="Verilator 5.050"):
+                with self.assertRaisesRegex(ValueError, "update bsg_manycore"):
+                    H.generate(root, "top", "processor", ["verilator", "--cc"], True)
 
     @unittest.skipUnless(os.environ.get("TEST_VERILATOR"), "set TEST_VERILATOR for real generation/build checks")
     def test_real_processor_flat_processor_rebuild(self):

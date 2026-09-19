@@ -22,11 +22,11 @@ def stamp(path, mode, threads, identity):
         path.write_text(content)
 
 
-def check_reuse(directory, top):
+def check_reuse(directory, top, boundary="bsg_manycore_proc_vanilla"):
     # A child archive alone is insufficient: 5.050 can emit an unused library
     # while leaving the parent flattened. Require parent imports AND call sites.
     dpi = directory / ("V" + top + "__Dpi.h")
-    pattern = r"\bbsg_manycore_proc_vanilla_[a-zA-Z0-9_]+_protectlib_combo_update\b"
+    pattern = r"\b" + re.escape(boundary) + r"_[a-zA-Z0-9_]+_protectlib_combo_update\b"
     imports = set(re.findall(pattern, dpi.read_text())) if dpi.exists() else set()
     calls = set()
     for source in directory.glob("V" + top + "*.cpp"):
@@ -39,18 +39,48 @@ def check_reuse(directory, top):
     return sorted(imports)
 
 
-def generate(directory, top, mode, command):
+def dpi_unit(directory, top, imports):
+    """Coalesce C export wrappers using Verilator's generated per-export guards.
+
+    Link this object before the archive. Otherwise the child profiler exports
+    can be dropped (weak runtime references), or extracting their object also
+    duplicates the parent's generic bsg_dpi_init/fini exports. Verilator itself
+    recommends compiling __Dpi.cpp files in one translation unit. Scope-based
+    dispatch and all model-specific callback implementations remain unchanged.
+    Only include active children, never stale files from a previous build mode.
+    """
+    sources = [directory / ("V" + top + "__Dpi.cpp")]
+    for symbol in imports:
+        child = "V" + symbol[:-len("_protectlib_combo_update")]
+        sources.append(directory / child / (child + "__Dpi.cpp"))
+    # A small non-DPI design can legitimately have no export wrapper.
+    sources = [path for path in sources if path.exists()]
+    content = "// Generated; Verilator's guards coalesce shared DPI export names.\n"
+    content += "".join('#include "' + path.relative_to(directory).as_posix() + '"\n'
+                       for path in sources)
+    (directory / "bsg_unified_dpi.cpp").write_text(content)
+    return [str(path) for path in sources]
+
+
+def generate(directory, top, mode, command, profile_ports=False):
     directory = directory.resolve()
     config = Path(__file__).resolve().parent
     version = subprocess.check_output([command[0], "--version"], text=True).strip()
     options = ["-Mdir", str(directory), "--no-skip-identical"]
+    boundary = "bsg_manycore_hetero_socket" if profile_ports else "bsg_manycore_proc_vanilla"
     if mode == "processor":
         match = re.search(r"Verilator (\d+)\.(\d+)", version)
         if not match or tuple(map(int, match.groups())) < (5, 50):
             raise ValueError("processor hierarchy requires Verilator >= 5.050; "
                              "use VERILATOR_HIERARCHY=flat with older tools")
         options += ["--hierarchical", "--hierarchical-threads", "1",
-                    str(config / "processor.vlt")]
+                    str(config / ("profile-processor.vlt" if profile_ports else "processor.vlt"))]
+        if profile_ports:
+            sockets = [Path(arg) for arg in command if arg.endswith("/bsg_manycore_hetero_socket.sv")]
+            if not sockets or not all("BSG_VERILATOR_PROFILE_PORTS" in path.read_text() for path in sockets):
+                raise ValueError("optimized profiling requires bsg_manycore's simulation-only profiler ports; "
+                                 "update bsg_manycore or use VERILATOR_PROFILE_HIERARCHY=flat")
+            options += ["+define+BSG_VERILATOR_PROFILE_PORTS"]
         if tuple(map(int, match.groups())) == (5, 50):
             # V3Param gates numeric-parameter wrapper substitution on a nonempty
             # hierParamFile; V3HierBlock only supplies one for TYPE parameters.
@@ -69,9 +99,11 @@ def generate(directory, top, mode, command):
         argv = command + options
         print("Verilator model: " + mode + " (" + version + ")", flush=True)
         subprocess.run(argv, check=True)
-        imports = check_reuse(directory, top) if mode == "processor" else []
+        imports = check_reuse(directory, top, boundary) if mode == "processor" else []
+        dpi_sources = dpi_unit(directory, top, imports)
         (directory / "hierarchy.json").write_text(json.dumps(
-            dict(mode=mode, version=version, command=argv, parent_imports=imports),
+            dict(mode=mode, version=version, command=argv, parent_imports=imports,
+                 profile_ports=profile_ports and mode == "processor", dpi_sources=dpi_sources),
             indent=2) + "\n")
     except BaseException:
         if makefile.exists():
@@ -91,6 +123,7 @@ def main():
     g.add_argument("--mode", choices=("processor", "flat"), required=True)
     g.add_argument("--mdir", type=Path, required=True)
     g.add_argument("--top", required=True)
+    g.add_argument("--profile-ports", action="store_true")
     g.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     try:
@@ -100,7 +133,7 @@ def main():
             command = args.command[1:] if args.command[:1] == ["--"] else args.command
             if not command:
                 raise ValueError("missing Verilator command")
-            generate(args.mdir, args.top, args.mode, command)
+            generate(args.mdir, args.top, args.mode, command, args.profile_ports)
     except (ValueError, subprocess.CalledProcessError, OSError) as error:
         print("BSG MAKE ERROR: " + str(error), file=sys.stderr)
         return 1

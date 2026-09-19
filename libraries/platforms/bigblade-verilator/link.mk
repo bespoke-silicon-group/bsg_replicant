@@ -83,6 +83,7 @@ VERILATOR_VFLAGS += --output-split-cfuncs $(VERILATOR_OUTPUT_SPLIT_CFUNCS)
 DIRS  = $(foreach t,exec profile debug,$(BSG_MACHINExPLATFORM_PATH)/$t)
 FRAGS = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP).mk)
 SIMOS = $(foreach d,$(DIRS),$d/bsg_manycore_simulator.o)
+DPIS = $(foreach d,$(DIRS),$d/bsg_unified_dpi.o)
 LIBS  = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP)__ALL.a)
 SIMSCS = $(foreach d,$(DIRS),$d/simsc)
 
@@ -127,11 +128,16 @@ $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_PC_HISTOGRAM
 
-# Reuse one processor+endpoint implementation across tiles. Instrumented models
-# retain the flat implementation: their cross-boundary binds are not supported.
+# Reuse one processor+endpoint implementation across tiles. Profiling uses the
+# existing socket shell's simulation-only control ports so binds stay inside
+# the shared child. Waveform debugging remains flat.
 VERILATOR_HIERARCHY ?= processor
+VERILATOR_PROFILE_HIERARCHY ?= $(VERILATOR_HIERARCHY)
 VERILATOR_MODEL_HIERARCHY = flat
+VERILATOR_PROFILE_PORTS =
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VERILATOR_MODEL_HIERARCHY = $(VERILATOR_HIERARCHY)
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VERILATOR_MODEL_HIERARCHY = $(VERILATOR_PROFILE_HIERARCHY)
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VERILATOR_PROFILE_PORTS = --profile-ports
 ifeq ($(VERILATOR_HIERARCHY),processor)
 VERILATOR_THREADS ?= 1
 else
@@ -141,13 +147,14 @@ else
 VERILATOR_THREADS ?= 16
 endif
 endif
-VERILATOR_THREADS_CONFIG := $(BSG_MACHINExPLATFORM_PATH)/exec/.verilator_config
+VERILATOR_THREADS_CONFIG := $(foreach t,exec profile debug,$(BSG_MACHINExPLATFORM_PATH)/$t/.verilator_config)
 VERILATOR_OPT_FAST ?= -O2 -march=native
 VERILATOR_OPT_SLOW ?=
 VERILATOR_OPT_GLOBAL ?= -Os
 
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads $(VERILATOR_THREADS)
-$(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: $(VERILATOR_THREADS_CONFIG)
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads 1
+$(FRAGS): %/V$(BSG_DESIGN_TOP).mk: %/.verilator_config
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_COVERAGE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCACHE_PROFILING
@@ -174,21 +181,33 @@ $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_VERILA
 .PHONY: verilator-threads-force
 verilator-threads-force:
 
-$(VERILATOR_THREADS_CONFIG): verilator-threads-force | $(BSG_MACHINExPLATFORM_PATH)/exec
+$(VERILATOR_THREADS_CONFIG): %/.verilator_config: | %
+$(VERILATOR_THREADS_CONFIG): verilator-threads-force
 	@$(PYTHON) $(VERILATOR_LINK_PATH)hierarchy.py stamp "$@" \
-	  --mode "$(VERILATOR_HIERARCHY)" --threads "$(VERILATOR_THREADS)" \
+	  --mode "$(VERILATOR_MODEL_HIERARCHY)" --threads "$(if $(filter $(BSG_MACHINExPLATFORM_PATH)/exec/%,$@),$(VERILATOR_THREADS),1)" \
 	  --identity '$(VERILATOR) $(VERILATOR_VFLAGS) $(VERILATOR_CFLAGS) CXX=$(CXX) FAST=$(VERILATOR_OPT_FAST) SLOW=$(VERILATOR_OPT_SLOW) GLOBAL=$(VERILATOR_OPT_GLOBAL)'
 
 $(FRAGS): %/V$(BSG_DESIGN_TOP).mk : | %
-$(FRAGS): $(VHEADERS) $(VSOURCES) $(VERILATOR_LINK_PATH)hierarchy.py $(VERILATOR_LINK_PATH)processor.vlt $(VERILATOR_LINK_PATH)empty-params.v $(VERILATOR_LINK_PATH)link.mk
+$(FRAGS): $(VHEADERS) $(VSOURCES) $(VERILATOR_LINK_PATH)hierarchy.py $(VERILATOR_LINK_PATH)processor.vlt $(VERILATOR_LINK_PATH)profile-processor.vlt $(VERILATOR_LINK_PATH)empty-params.v $(VERILATOR_LINK_PATH)link.mk
 	$(info BSG_INFO: Running verilator)
 	@$(PYTHON) $(VERILATOR_LINK_PATH)hierarchy.py generate \
-	  --mode $(VERILATOR_MODEL_HIERARCHY) --mdir $(dir $@) --top $(BSG_DESIGN_TOP) -- \
+	  --mode $(VERILATOR_MODEL_HIERARCHY) $(VERILATOR_PROFILE_PORTS) --mdir $(dir $@) --top $(BSG_DESIGN_TOP) -- \
 	  $(VERILATOR) --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $(VHEADERS) $(VSOURCES) --top-module $(BSG_DESIGN_TOP)
 
 # Static library build rules
 $(LIBS): %/V$(BSG_DESIGN_TOP)__ALL.a : %/V$(BSG_DESIGN_TOP).mk
-	$(MAKE) CXX="$(CXX)" OPT_FAST="$(VERILATOR_OPT_FAST)" OPT_SLOW="$(VERILATOR_OPT_SLOW)" OPT_GLOBAL="$(VERILATOR_OPT_GLOBAL)" -C $(dir $@) -f $(notdir $<) $(notdir $@)
+	$(MAKE) CXX="$(CXX)" OPT_FAST="$(VERILATOR_OPT_FAST)" OPT_SLOW="$(VERILATOR_OPT_SLOW)" OPT_GLOBAL="$(VERILATOR_OPT_GLOBAL)" \
+	  'VM_FAST=$$(filter-out %__Dpi,$$(VM_CLASSES_FAST) $$(VM_SUPPORT_FAST))' \
+	  -C $(dir $@) -f $(notdir $<) $(notdir $@)
+
+# One translation unit provides all C DPI exports, including profiler exports
+# from hierarchical children. The generated guards deduplicate init/fini.
+# VM_FAST above excludes only those C wrappers from each generated archive
+# (also for small unity builds); model-specific export callbacks remain intact.
+# Compile after generation and put this object before model archives at link.
+$(DPIS): %/bsg_unified_dpi.o: %/V$(BSG_DESIGN_TOP)__ALL.a
+	$(CXX) $(VERILATOR_OPT_GLOBAL) -std=c++14 -fPIC -I$(VERILATOR_ROOT)/include \
+	  -I$(VERILATOR_ROOT)/include/vltstd -I$(dir $@) -c $(dir $@)bsg_unified_dpi.cpp -o $@
 
 # bsg_manycore_simulator.cpp is the interface between
 # libbsg_manycore_runtime.so and libmachine.so that hides the
@@ -247,7 +266,7 @@ $(SIMSCS): $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so
 # TODO: Don't like pattern matching. Better way?
-$(SIMSCS): %/simsc : %/bsg_manycore_simulator.o %/V$(BSG_DESIGN_TOP)__ALL.a
+$(SIMSCS): %/simsc : %/bsg_manycore_simulator.o %/bsg_unified_dpi.o %/V$(BSG_DESIGN_TOP)__ALL.a
 	$(LD) -o $@ $(LDFLAGS) $^
 
 .PRECIOUS: $(SIMSCS)
