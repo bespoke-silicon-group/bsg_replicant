@@ -16,6 +16,18 @@ SPEC.loader.exec_module(H)
 
 
 class Hierarchy(unittest.TestCase):
+    def setUp(self):
+        # These tests check platform defaults as well as explicit overrides.
+        # A user's simulation policy must not change the expected defaults.
+        environment = patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
+        for name in ('VERILATOR_THREADS', 'VERILATOR_HIERARCHY',
+                     'VERILATOR_PROFILE_HIERARCHY', 'VERILATOR_OPT_FAST',
+                     'VERILATOR_OPT_SLOW', 'VERILATOR_OPT_GLOBAL', 'VDEFINES',
+                     'MAKEFLAGS', 'MFLAGS'):
+            os.environ.pop(name, None)
+
     def test_stamp_and_validation(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "stamp"

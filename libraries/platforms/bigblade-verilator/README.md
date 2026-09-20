@@ -7,10 +7,10 @@ refer to a configured Verilator source checkout. Start with the
 
 | Build-only target | Application run target | Model directory | Instrumentation |
 |---|---|---|---|
-| `sim-exec` | `exec.log` | `exec/` | Fast execution; hardware profilers and instruction text disabled |
-| `sim-profile` | `profile.log` | `profile/` | Core/cache counters, PC histogram and memory profiling; **no `vanilla.log`** |
-| `sim-trace` | `trace.log` | `trace/` | Profile instrumentation **plus `vanilla.log`** instruction text |
-| `sim-debug` | `debug.log` or `debug.fst` | `debug/` | Flat model with FST waveforms and profiling |
+| `sim-exec` | `exec.log` | `exec/` | Fast execution; hardware profilers, DRAM statistics and instruction text disabled |
+| `sim-profile` | `profile.log` | `profile/` | Core/cache counters, PC histogram and memory profiling; **no `vanilla.log` or BloodGraph** |
+| `sim-trace` | `trace.log` | `trace/` | Profile instrumentation **plus `vanilla.log`** instruction text and BloodGraph |
+| `sim-debug` | `debug.log` or `debug.fst` | `debug/` | Flat model with FST waveforms, profiling and BloodGraph |
 
 Each model has its own generated code, configuration stamp and `simsc` binary
 under `$BSG_MACHINE_PATH/bigblade-verilator`. Selecting trace does not replace
@@ -22,6 +22,32 @@ text is required. The trace target filters the legacy
 `VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE` define from `VDEFINES`, including its
 `=value` form, and explicitly enables the testbench text observer. It does not
 override independently disabled core/cache/PC observers.
+
+DRAMSim3 follows the selected mode: `exec` links `libdramsim3_exec.so`, built
+without BloodGraph, counter/histogram collection, or DRAM statistics output.
+`profile` links `libdramsim3_profile.so`, which collects ordinary DRAM statistics
+without BloodGraph. `trace` and `debug` link `libdramsim3_trace.so`, adding
+BloodGraph statistics and its per-cycle bank-state trace (`blood_graph_ch*.log`).
+Those detailed DRAM traces start at initialization and are independent of the
+HammerBlade runtime operation-trace enable. Separate DRAM command traces and
+BloodGraph periodic-statistics dumping are not enabled automatically.
+DRAM command scheduling, refresh, self-refresh and completion timing remain
+active in every mode. Lightweight HammerBlade tile markers also remain.
+
+All DRAM libraries default to `DRAMSIM3_OPT_FLAGS=-O2`, independently of
+`VERILATOR_OPT_FAST`. Override that variable for controlled experiments, for
+example `DRAMSIM3_OPT_FLAGS=-O0`. Compiler/flag changes rebuild the library and
+relink its dependent model; an unchanged build is a no-op. The common Verilator
+runtime deliberately has no DRAMSim3 dependency: the executable chooses exactly
+one library with a distinct SONAME/install name, so building another mode does
+not change an existing mode's statistics policy. Other simulator platforms
+retain `libdramsim3.so` with their existing statistics and BloodGraph counters,
+without the detailed BloodGraph trace.
+
+This requires DRAMSim3's `DRAMSIM3_STATISTICS_CONTROL` support; `exec` rejects an
+older BaseJump DRAMSim3 submodule with an update message. The disabled-statistics
+build is incompatible with the separate DRAMSim3 thermal model, which requires
+statistics. Use updated compatible submodule pins when distributing the change.
 
 Instruction text is emitted after reset, independently of runtime operation
 tracing. `hb_mc_manycore_log_enable()` controls operation CSVs in profile/trace;
@@ -154,6 +180,7 @@ does not implement that separate API.
 Run policy tests from the RP root:
 
 ```sh
+BASEJUMP_STL_DIR=/path/to/basejump_stl CXX=clang++ python3 tests/test_dramsim3_modes.py
 python3 tests/test_verilator_hierarchy.py
 TEST_VERILATOR="$VERILATOR_ROOT/bin/verilator" CXX=clang++ \
   python3 tests/test_verilator_hierarchy.py

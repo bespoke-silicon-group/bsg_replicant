@@ -268,7 +268,7 @@ $(BSG_MACHINExPLATFORM_PATH)/debug/simsc: $(WAVEFORM_OBJS)
 
 $(SIMSCS): LD = $(CXX)
 $(SIMSCS): LDFLAGS  = -L$(BSG_PLATFORM_PATH) $(call RPATH,$(BSG_PLATFORM_PATH)) -lbsg_manycore_regression -lbsg_manycore_runtime
-$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation $(call RPATH,$(LIBRARIES_PATH)/features/dma/simulation) -ldramsim3 -ldmamem -ltracer
+$(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/dma/simulation $(call RPATH,$(LIBRARIES_PATH)/features/dma/simulation) $(DRAMSIM3_MODE_LDLIB) -ldmamem -ltracer
 $(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/tracer/simulation $(call RPATH,$(LIBRARIES_PATH)/features/tracer/simulation) -ltracer
 $(SIMSCS): LDFLAGS += -L$(LIBRARIES_PATH)/features/pc_histogram/simulation $(call RPATH,$(LIBRARIES_PATH)/features/pc_histogram/simulation) -lpc_histogram
 $(SIMSCS): LDFLAGS += -lm
@@ -291,7 +291,14 @@ endif
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so
 $(SIMSCS): $(BSG_PLATFORM_PATH)/libbsg_manycore_regression.so
-$(SIMSCS): $(LIBRARIES_PATH)/features/dma/simulation/libdramsim3.so
+# Instrumentation is a property of the selected binary, independent of the most
+# recently built mode. Distinct SONAMEs also prevent LD_LIBRARY_PATH collisions.
+$(BSG_MACHINExPLATFORM_PATH)/exec/simsc: DRAMSIM3_MODE_LDLIB = -ldramsim3_exec
+$(BSG_MACHINExPLATFORM_PATH)/profile/simsc: DRAMSIM3_MODE_LDLIB = -ldramsim3_profile
+$(foreach mode,trace debug,$(BSG_MACHINExPLATFORM_PATH)/$(mode)/simsc): DRAMSIM3_MODE_LDLIB = -ldramsim3_trace
+$(BSG_MACHINExPLATFORM_PATH)/exec/simsc: $(DRAMSIM3_EXEC_LIBRARY)
+$(BSG_MACHINExPLATFORM_PATH)/profile/simsc: $(DRAMSIM3_PROFILE_LIBRARY)
+$(foreach mode,trace debug,$(BSG_MACHINExPLATFORM_PATH)/$(mode)/simsc): $(DRAMSIM3_TRACE_LIBRARY)
 $(SIMSCS): $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so
