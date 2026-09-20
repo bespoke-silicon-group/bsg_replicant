@@ -256,6 +256,9 @@ module replicant_tb_top
        ,.enable_cache_profiling_p(bsg_machine_enable_cache_profiling_lp)
        ,.enable_remote_op_profiling_p(bsg_machine_enable_remote_op_profiling_lp)
        ,.enable_vanilla_core_pc_histogram_p(bsg_machine_enable_vcore_pc_histogram_lp)
+`ifdef BSG_ENABLE_VANILLA_CORE_TRACE
+       ,.enable_vanilla_core_trace_p(1)
+`endif
        ,.hetero_type_vec_p(bsg_machine_hetero_type_vec_gp)
 
        ,.reset_depth_p(reset_depth_lp)

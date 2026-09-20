@@ -1,0 +1,4 @@
+`verilator_config
+// This existing shell contains the same processor + endpoint boundary, plus
+// simulation-only observer controls. No router or cache is moved into it.
+hier_block -module "bsg_manycore_hetero_socket"

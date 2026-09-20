@@ -31,7 +31,7 @@ BSG_DESIGN_TOP := probe
 DEFINES = -DN=64 -D_XOPEN_SOURCE=500 -DNUM_POD_X=1
 include {repo}/libraries/platforms/bigblade-verilator/link.mk
 """)
-            for variant in ("exec", "profile", "debug"):
+            for variant in ("exec", "profile", "trace", "debug"):
                 with self.subTest(variant=variant):
                     directory = root / "machine" / variant
                     target = directory / "bsg_manycore_simulator.o"

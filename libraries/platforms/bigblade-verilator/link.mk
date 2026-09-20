@@ -31,6 +31,8 @@
 ORANGE=\033[0;33m
 RED=\033[0;31m
 NC=\033[0m
+VERILATOR_LINK_PATH := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+PYTHON ?= python3
 
 # This file REQUIRES several variables to be set. They are typically set by the
 # Makefile that includes this fragment...
@@ -64,7 +66,10 @@ VCFLAGS = -fPIC -Wno-format-extra-args
 
 VERILATOR_CFLAGS    += $(foreach vcf,$(VCFLAGS),-CFLAGS "$(vcf)")
 VERILATOR_VINCLUDES += $(foreach inc,$(VINCLUDES),+incdir+"$(inc)")
-VERILATOR_VDEFINES  += $(foreach def,$(VDEFINES),+define+"$(def)")
+# The named trace build must not inherit an old profile-only text-disable
+# setting. Filter only that observer's macro, retaining all other defines.
+VERILATOR_OMIT_DEFINES =
+VERILATOR_VDEFINES  += $(foreach def,$(filter-out $(VERILATOR_OMIT_DEFINES),$(VDEFINES)),+define+"$(def)")
 VERILATOR_LDFLAGS += $(foreach vlf,$(LDFLAGS),-LDFLAGS "$(vlf)")
 VERILATOR_VFLAGS = $(VERILATOR_VINCLUDES) $(VERILATOR_VDEFINES)
 VERILATOR_VFLAGS += -Wno-widthconcat -Wno-unoptflat -Wno-lint
@@ -78,9 +83,11 @@ VERILATOR_VFLAGS += --output-split-cfuncs $(VERILATOR_OUTPUT_SPLIT_CFUNCS)
 # Debugging (in case of segfault, break glass)
 # VERILATOR_VFLAGS += --debug --gdbbt
 
-DIRS  = $(foreach t,exec profile debug,$(BSG_MACHINExPLATFORM_PATH)/$t)
+VERILATOR_BUILD_MODES := exec profile trace debug
+DIRS  = $(foreach t,$(VERILATOR_BUILD_MODES),$(BSG_MACHINExPLATFORM_PATH)/$t)
 FRAGS = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP).mk)
 SIMOS = $(foreach d,$(DIRS),$d/bsg_manycore_simulator.o)
+DPIS = $(foreach d,$(DIRS),$d/bsg_unified_dpi.o)
 LIBS  = $(foreach d,$(DIRS),$d/V$(BSG_DESIGN_TOP)__ALL.a)
 SIMSCS = $(foreach d,$(DIRS),$d/simsc)
 
@@ -91,18 +98,42 @@ WAVEFORM_SRCS  := verilated_fst_c.cpp $(VERILATOR_SRCS)
 VERILATOR_OBJS = $(foreach o,$(VERILATOR_SRCS:.cpp=.o),$(BSG_MACHINExPLATFORM_PATH)/exec/$o)
 WAVEFORM_OBJS = $(foreach o,$(WAVEFORM_SRCS:.cpp=.o),$(BSG_MACHINExPLATFORM_PATH)/debug/$o)
 
+# Newer Verilator FST writers use external LZ4 rather than bundled C code.
+# Our support objects/link step bypass verilated.mk, so carry this dependency
+# explicitly, only for debug. Linux normally finds development files directly.
+ifneq ($(wildcard $(VERILATOR_ROOT)/include/fstcpp/fstcpp_writer.cpp),)
+ifeq ($(shell uname -s),Darwin)
+VERILATOR_LZ4_PREFIX ?= $(shell brew --prefix lz4 2>/dev/null)
+VERILATOR_FST_CPPFLAGS ?= $(if $(VERILATOR_LZ4_PREFIX),-I$(VERILATOR_LZ4_PREFIX)/include)
+VERILATOR_FST_LDLIBS ?= $(if $(VERILATOR_LZ4_PREFIX),-L$(VERILATOR_LZ4_PREFIX)/lib) -llz4
+else
+VERILATOR_FST_LDLIBS ?= -llz4
+endif
+endif
+
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): DEFINES := -DVL_PRINTF=printf
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): INCLUDES := -I$(VERILATOR_ROOT)/include
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(WAVEFORM_OBJS) $(VERILATOR_OBJS): CFLAGS    = -std=c11 -fPIC $(INCLUDES) $(DEFINES)
-$(WAVEFORM_OBJS) $(VERILATOR_OBJS): CXXFLAGS  = -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
+$(WAVEFORM_OBJS) $(VERILATOR_OBJS): CXXFLAGS  = $(VERILATOR_OPT_GLOBAL) -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
+$(WAVEFORM_OBJS): CXXFLAGS += $(VERILATOR_FST_CPPFLAGS)
 # Uncomment to enable Verilator profiling with operf
 # $(VERILATOR_OBJS): CFLAGS    += -g -pg
 # $(VERILATOR_OBJS): CXXFLAGS  += -g -pg
 $(VERILATOR_OBJS): $(BSG_MACHINExPLATFORM_PATH)/exec/%.o : $(VERILATOR_ROOT)/include/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 $(WAVEFORM_OBJS): $(BSG_MACHINExPLATFORM_PATH)/debug/%.o : $(VERILATOR_ROOT)/include/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+# Support objects are built here, not a second time by the generated makefile.
+# Track their compiler/flags separately: profile/trace use exec support objects.
+VERILATOR_SUPPORT_CONFIGS := $(foreach t,exec debug,$(BSG_MACHINExPLATFORM_PATH)/$t/.verilator_support_config)
+$(VERILATOR_OBJS): $(BSG_MACHINExPLATFORM_PATH)/exec/.verilator_support_config
+$(WAVEFORM_OBJS): $(BSG_MACHINExPLATFORM_PATH)/debug/.verilator_support_config
+$(VERILATOR_SUPPORT_CONFIGS): %/.verilator_support_config: | %
+$(VERILATOR_SUPPORT_CONFIGS): verilator-threads-force
+	@$(PYTHON) $(VERILATOR_LINK_PATH)hierarchy.py stamp "$@" --mode flat --threads 1 \
+	  --identity '$(CXX) $(VERILATOR_OPT_GLOBAL) $(VERILATOR_ROOT) $(if $(filter %/debug/.verilator_support_config,$@),FST=$(VERILATOR_FST_CPPFLAGS) $(VERILATOR_FST_LDLIBS))'
 
 # Build directory rule
 $(DIRS):
@@ -115,26 +146,58 @@ $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_ROUTER_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_PC_HISTOGRAM
 
-# See comment in bsg_nonsynth_manycore_testbench.v
+# Reuse one processor+endpoint implementation across tiles. Profiling uses the
+# existing socket shell's simulation-only control ports so binds stay inside
+# the shared child. Waveform debugging remains flat.
+VERILATOR_HIERARCHY ?= processor
+VERILATOR_PROFILE_HIERARCHY ?= $(VERILATOR_HIERARCHY)
+VERILATOR_MODEL_HIERARCHY = flat
+VERILATOR_PROFILE_PORTS =
+$(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VERILATOR_MODEL_HIERARCHY = $(VERILATOR_HIERARCHY)
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VERILATOR_MODEL_HIERARCHY = $(VERILATOR_PROFILE_HIERARCHY)
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VERILATOR_PROFILE_PORTS = --profile-ports
+$(BSG_MACHINExPLATFORM_PATH)/trace/V$(BSG_DESIGN_TOP).mk: VERILATOR_MODEL_HIERARCHY = $(VERILATOR_PROFILE_HIERARCHY)
+$(BSG_MACHINExPLATFORM_PATH)/trace/V$(BSG_DESIGN_TOP).mk: VERILATOR_PROFILE_PORTS = --profile-ports
+ifeq ($(VERILATOR_HIERARCHY),processor)
+VERILATOR_THREADS ?= 1
+else
 ifeq ($(shell uname -s),Darwin)
 VERILATOR_THREADS ?= 1
 else
 VERILATOR_THREADS ?= 16
 endif
-VERILATOR_THREADS_CONFIG := $(BSG_MACHINExPLATFORM_PATH)/exec/.verilator_threads
+endif
+VERILATOR_THREADS_CONFIG := $(foreach t,$(VERILATOR_BUILD_MODES),$(BSG_MACHINExPLATFORM_PATH)/$t/.verilator_config)
+VERILATOR_OPT_FAST ?= -O2 -march=native
+VERILATOR_OPT_SLOW ?=
+VERILATOR_OPT_GLOBAL ?= -Os
 
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads $(VERILATOR_THREADS)
-$(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: $(VERILATOR_THREADS_CONFIG)
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads 1
+$(BSG_MACHINExPLATFORM_PATH)/trace/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --threads 1
+$(FRAGS): %/V$(BSG_DESIGN_TOP).mk: %/.verilator_config
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_COVERAGE
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCACHE_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_PROFILING
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_ROUTER_PROFILER
 $(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_PC_HISTOGRAM
+ifeq ($(VERILATOR_HIERARCHY),processor)
+# remote_load_trace binds refer to $root outside the hierarchical child.
+$(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_MACHINE_DISABLE_REMOTE_OP_PROFILING
+$(BSG_MACHINExPLATFORM_PATH)/exec/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_REMOTE_OP_PROFILING
+endif
+
+# Counters and runtime-controlled operation traces belong to both builds.
+# Only trace includes the unconditional detailed instruction-text logger.
+$(BSG_MACHINExPLATFORM_PATH)/profile/V$(BSG_DESIGN_TOP).mk: VDEFINES += VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE
+$(BSG_MACHINExPLATFORM_PATH)/trace/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_ENABLE_VANILLA_CORE_TRACE
+$(BSG_MACHINExPLATFORM_PATH)/trace/V$(BSG_DESIGN_TOP).mk: VERILATOR_OMIT_DEFINES = VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE=%
 
 # Defines to generate waveforms. These are specific to Verilator.
 $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VERILATOR_VFLAGS += --trace-fst --trace-structs
 $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_VERILATOR_WAVEFORM
+$(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_ENABLE_VANILLA_CORE_TRACE
 
 # TODO: A target for C/C++ profiling (to diagnose where time is being
 # spent) will be difficult It is better just to go find all the
@@ -146,24 +209,33 @@ $(BSG_MACHINExPLATFORM_PATH)/debug/V$(BSG_DESIGN_TOP).mk: VDEFINES += BSG_VERILA
 .PHONY: verilator-threads-force
 verilator-threads-force:
 
-$(VERILATOR_THREADS_CONFIG): verilator-threads-force | $(BSG_MACHINExPLATFORM_PATH)/exec
-	@case "$(VERILATOR_THREADS)" in \
-	  ''|*[!0-9]*) echo "BSG MAKE ERROR: VERILATOR_THREADS must be a positive integer"; exit 1;; \
-	esac
-	@test "$(VERILATOR_THREADS)" -gt 0 || \
-	  { echo "BSG MAKE ERROR: VERILATOR_THREADS must be a positive integer"; exit 1; }
-	@if test ! -f "$@" || test "$$(cat "$@")" != "$(VERILATOR_THREADS)"; then \
-	  printf '%s\n' "$(VERILATOR_THREADS)" > "$@"; \
-	fi
+$(VERILATOR_THREADS_CONFIG): %/.verilator_config: | %
+$(VERILATOR_THREADS_CONFIG): verilator-threads-force
+	@$(PYTHON) $(VERILATOR_LINK_PATH)hierarchy.py stamp "$@" \
+	  --mode "$(VERILATOR_MODEL_HIERARCHY)" --threads "$(if $(filter $(BSG_MACHINExPLATFORM_PATH)/exec/%,$@),$(VERILATOR_THREADS),1)" \
+	  --identity '$(VERILATOR) $(VERILATOR_VFLAGS) $(VERILATOR_CFLAGS) CXX=$(CXX) FAST=$(VERILATOR_OPT_FAST) SLOW=$(VERILATOR_OPT_SLOW) GLOBAL=$(VERILATOR_OPT_GLOBAL)'
 
 $(FRAGS): %/V$(BSG_DESIGN_TOP).mk : | %
-$(FRAGS): $(VHEADERS) $(VSOURCES)
+$(FRAGS): $(VHEADERS) $(VSOURCES) $(VERILATOR_LINK_PATH)hierarchy.py $(VERILATOR_LINK_PATH)processor.vlt $(VERILATOR_LINK_PATH)profile-processor.vlt $(VERILATOR_LINK_PATH)empty-params.v $(VERILATOR_LINK_PATH)link.mk
 	$(info BSG_INFO: Running verilator)
-	@$(VERILATOR) -Mdir $(dir $@) --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $(filter-out $(VERILATOR_THREADS_CONFIG),$^) --top-module $(BSG_DESIGN_TOP)
+	@$(PYTHON) $(VERILATOR_LINK_PATH)hierarchy.py generate \
+	  --mode $(VERILATOR_MODEL_HIERARCHY) $(VERILATOR_PROFILE_PORTS) --mdir $(dir $@) --top $(BSG_DESIGN_TOP) -- \
+	  $(VERILATOR) --cc $(VERILATOR_CFLAGS) $(VERILATOR_VFLAGS) $(VHEADERS) $(VSOURCES) --top-module $(BSG_DESIGN_TOP)
 
 # Static library build rules
 $(LIBS): %/V$(BSG_DESIGN_TOP)__ALL.a : %/V$(BSG_DESIGN_TOP).mk
-	$(MAKE) OPT_FAST="-O2 -march=native" -C $(dir $@) -f $(notdir $<) default
+	$(MAKE) CXX="$(CXX)" OPT_FAST="$(VERILATOR_OPT_FAST)" OPT_SLOW="$(VERILATOR_OPT_SLOW)" OPT_GLOBAL="$(VERILATOR_OPT_GLOBAL)" \
+	  'VM_FAST=$$(filter-out %__Dpi,$$(VM_CLASSES_FAST) $$(VM_SUPPORT_FAST))' \
+	  -C $(dir $@) -f $(notdir $<) $(notdir $@)
+
+# One translation unit provides all C DPI exports, including profiler exports
+# from hierarchical children. The generated guards deduplicate init/fini.
+# VM_FAST above excludes only those C wrappers from each generated archive
+# (also for small unity builds); model-specific export callbacks remain intact.
+# Compile after generation and put this object before model archives at link.
+$(DPIS): %/bsg_unified_dpi.o: %/V$(BSG_DESIGN_TOP)__ALL.a
+	$(CXX) $(VERILATOR_OPT_GLOBAL) -std=c++14 -fPIC -I$(VERILATOR_ROOT)/include \
+	  -I$(VERILATOR_ROOT)/include/vltstd -I$(dir $@) -c $(dir $@)bsg_unified_dpi.cpp -o $@
 
 # bsg_manycore_simulator.cpp is the interface between
 # libbsg_manycore_runtime.so and libmachine.so that hides the
@@ -191,6 +263,7 @@ $(SIMOS): $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp
 # simsc binary build rules
 $(BSG_MACHINExPLATFORM_PATH)/exec/simsc: $(VERILATOR_OBJS)
 $(BSG_MACHINExPLATFORM_PATH)/profile/simsc: $(VERILATOR_OBJS)
+$(BSG_MACHINExPLATFORM_PATH)/trace/simsc: $(VERILATOR_OBJS)
 $(BSG_MACHINExPLATFORM_PATH)/debug/simsc: $(WAVEFORM_OBJS)
 
 $(SIMSCS): LD = $(CXX)
@@ -202,6 +275,7 @@ $(SIMSCS): LDFLAGS += -lm
 $(SIMSCS): LDFLAGS += -lz
 $(SIMSCS): LDFLAGS += $(DYNAMIC_LOADER_LIB)
 $(SIMSCS): LDFLAGS += -lpthread
+$(BSG_MACHINExPLATFORM_PATH)/debug/simsc: LDFLAGS += $(VERILATOR_FST_LDLIBS)
 ifeq ($(shell uname -s),Darwin)
 # macOS defaults the main thread to an 8 MiB stack. Larger simulations can
 # exceed that limit in host-side application code, so request a larger stack in
@@ -222,10 +296,15 @@ $(SIMSCS): $(LIBRARIES_PATH)/features/dma/simulation/libdmamem.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/tracer/simulation/libtracer.so
 $(SIMSCS): $(LIBRARIES_PATH)/features/pc_histogram/simulation/libpc_histogram.so
 # TODO: Don't like pattern matching. Better way?
-$(SIMSCS): %/simsc : %/bsg_manycore_simulator.o %/V$(BSG_DESIGN_TOP)__ALL.a
+$(SIMSCS): %/simsc : %/bsg_manycore_simulator.o %/bsg_unified_dpi.o %/V$(BSG_DESIGN_TOP)__ALL.a
 	$(LD) -o $@ $(LDFLAGS) $^
 
 .PRECIOUS: $(SIMSCS)
+
+# Build-only aliases. Unprefixed exec/profile/debug names are already used by
+# application suites, so keep these distinct from both suites and *.log runs.
+.PHONY: sim-exec sim-profile sim-trace sim-debug
+$(addprefix sim-,$(VERILATOR_BUILD_MODES)): sim-%: $(BSG_MACHINExPLATFORM_PATH)/%/simsc
 
 # When running recursive regression, make is launched in independent,
 # non-communicating parallel processes that try to build these objects
