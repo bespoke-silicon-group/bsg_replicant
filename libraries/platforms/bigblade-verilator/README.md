@@ -5,9 +5,29 @@ This platform supports Linux and macOS hosts. On macOS, use current GNU Make
 refer to a configured Verilator source checkout. Start with the
 `pod_X1Y1_ruche_X4Y2_hbm_one_pseudo_channel` machine for a small supported model.
 
-- `exec/simsc`: fast execution with hardware profilers disabled
-- `profile/simsc`: core, cache, PC-histogram, and memory profiler output
-- `debug/simsc`: FST waveform generation
+| Build-only target | Application run target | Model directory | Instrumentation |
+|---|---|---|---|
+| `sim-exec` | `exec.log` | `exec/` | Fast execution; hardware profilers and instruction text disabled |
+| `sim-profile` | `profile.log` | `profile/` | Core/cache counters, PC histogram and memory profiling; **no `vanilla.log`** |
+| `sim-trace` | `trace.log` | `trace/` | Profile instrumentation **plus `vanilla.log`** instruction text |
+| `sim-debug` | `debug.log` or `debug.fst` | `debug/` | Flat model with FST waveforms and profiling |
+
+Each model has its own generated code, configuration stamp and `simsc` binary
+under `$BSG_MACHINE_PATH/bigblade-verilator`. Selecting trace does not replace
+the profile binary. Existing full-path build targets remain valid.
+
+**Migration:** older profile builds could emit instruction text. Rebuild profile
+with these rules for the no-text policy; use `sim-trace` / `trace.log` when that
+text is required. The trace target filters the legacy
+`VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE` define from `VDEFINES`, including its
+`=value` form, and explicitly enables the testbench text observer. It does not
+override independently disabled core/cache/PC observers.
+
+Instruction text is emitted after reset, independently of runtime operation
+tracing. `hb_mc_manycore_log_enable()` controls operation CSVs in profile/trace;
+it is not an on/off switch for `vanilla.log`. Match PCs against the device ELF:
+the legacy logger can show zero FP instruction bits and predecoded branch/jump
+bits, so it is not a byte-exact disassembly stream.
 
 Generated C++ is split at 10,000 statements by default. Override
 `VERILATOR_OUTPUT_SPLIT` and `VERILATOR_OUTPUT_SPLIT_CFUNCS` if a larger model
@@ -24,20 +44,20 @@ compiler changes are involved. The external control file is `processor.vlt`.
 | Setting | Default / purpose |
 |---|---|
 | `VERILATOR_HIERARCHY` | `processor`; use `flat` for the previous code-generation path |
-| `VERILATOR_PROFILE_HIERARCHY` | follows `VERILATOR_HIERARCHY`; `flat` keeps only profiling flat |
+| `VERILATOR_PROFILE_HIERARCHY` | follows `VERILATOR_HIERARCHY`; `flat` keeps profile and trace flat |
 | `VERILATOR_THREADS` | `1` with processor hierarchy on Linux and macOS; other values are rejected in this mode |
 | `VERILATOR_OPT_FAST` | `-O2 -march=native` for generated hot-category code |
 | `VERILATOR_OPT_SLOW` | empty (unoptimized generated cold-category code) |
 | `VERILATOR_OPT_GLOBAL` | `-Os` for Verilator support code |
 
-`profile/simsc` also reuses processor+endpoint code, through the existing
+`profile/simsc` and `trace/simsc` also reuse processor+endpoint code, through the existing
 `bsg_manycore_hetero_socket` shell. Four **simulation-only** ports carry the
 global counter, marker valid/tag, and trace enable into this boundary. Bound
 core and remote-operation observers consume those signals locally; processor
 and endpoint execution logic and interfaces are unchanged. This needs the
 `BSG_VERILATOR_PROFILE_PORTS` support in `bsg_manycore`; an older checkout fails
 with an explicit update/fallback message. The macro is enabled only for the
-optimized profile build. Ordinary flat and synthesis builds keep their original
+optimized profile/trace builds. Ordinary flat and synthesis builds keep their original
 ports and bindings. Waveform `debug/simsc` remains flat.
 
 Processor execution disables
@@ -59,10 +79,13 @@ directory with the usual Bladerunner environment, for example:
 ```sh
 make -j8 BSG_PLATFORM=bigblade-verilator CXX=g++ CC=gcc \
   "$BSG_MACHINE_PATH/bigblade-verilator/exec/simsc"
-# Hardware profiling with the same processor+endpoint reuse:
+# Build all four independently named models without running an application:
 make -j8 BSG_PLATFORM=bigblade-verilator CXX=g++ CC=gcc \
-  "$BSG_MACHINE_PATH/bigblade-verilator/profile/simsc"
-# If bsg_manycore has not yet been updated, keep only profiling flat:
+  sim-exec sim-profile sim-trace sim-debug
+# Run the current example (select one):
+make BSG_PLATFORM=bigblade-verilator profile.log
+make BSG_PLATFORM=bigblade-verilator trace.log
+# If bsg_manycore has not yet been updated, keep profile/trace flat:
 make -j8 BSG_PLATFORM=bigblade-verilator VERILATOR_PROFILE_HIERARCHY=flat \
   CXX=g++ CC=gcc "$BSG_MACHINE_PATH/bigblade-verilator/profile/simsc"
 # Escape hatch, including older Verilator installations:
@@ -76,6 +99,20 @@ parallelism, not simulator workers. `-march=native` means the executable must be
 rebuilt for a different host CPU. Preserve active models: use a separate RP
 checkout and machine/library destinations for experiments, not just a new run
 directory. Never clean shared infrastructure while another process uses it.
+
+Run outputs are **not** isolated automatically by model selection. The `.log`
+targets retain the application's current working directory and `C_ARGS` for
+compatibility with relative inputs. Use separate application/run directories
+for variants or concurrent processes: counters, `vanilla.log`, DRAM files and
+`debug.fst` have common names. Existing `.log` files may be considered up to date
+by Make; a fresh run directory avoids confusing an old log with a new run.
+
+Modern Verilator FST debug builds require LZ4 development files (`brew install
+lz4` on macOS; the distribution's LZ4 development package on Linux). They are
+not required by exec/profile/trace. For a nonstandard installation, set
+`VERILATOR_FST_CPPFLAGS` and `VERILATOR_FST_LDLIBS`; on macOS the default discovers
+Homebrew's LZ4 prefix. Older writers with bundled compression retain their
+existing dependencies.
 
 The per-model `.verilator_config` stamp regenerates code when mode, worker count,
 compiler/optimization strings or generation flags change. A separate support

@@ -25,13 +25,14 @@
 # (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-.PRECIOUS: threaded.log exec.log profile.log exec.log pc-histogram.log debug.fst
+.PRECIOUS: threaded.log exec.log profile.log trace.log debug.log pc-histogram.log debug.fst
 .PHONY: platform.execution.clean dve
 
 threaded.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/threaded/simsc
 debug.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/debug/simsc
 exec.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/exec/simsc
 profile.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/profile/simsc
+trace.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/trace/simsc
 pc-histogram.log: $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)/pc-histogram/simsc
 
 %.log: SHELL := /bin/bash
@@ -43,7 +44,7 @@ vanilla_stats.csv vcache_stats.csv router_stat.csv: profile.log
 debug.fst: debug.log ;
 
 platform.execution.clean:
-	rm -rf saifgen.log exec.log profile.log exec.log debug.fst
+	rm -rf saifgen.log exec.log profile.log trace.log debug.log debug.fst
 	rm -rf vanilla_stats.csv
 	rm -rf infinite_mem_stats.csv
 	rm -rf vcache_stats.csv
@@ -61,9 +62,12 @@ execution.clean: platform.execution.clean
 
 help:
 	@echo "Usage:"
-	@echo "make {clean | exec.log | profile.log | debug.log | debug.fst | threaded.log }"
+	@echo "make {sim-exec | sim-profile | sim-trace | sim-debug} (build model only)"
+	@echo "make {clean | exec.log | profile.log | trace.log | debug.log | debug.fst} (run application)"
 	@echo "      exec.log: Run program with SAIF, profilers, and waveform generation disabled (Fastest)"
-	@echo "      profile.log: Run program with profilers enabled, SAIF and waveform generation disabled"
-	@echo "      threaded.log: Run program with THREADED VERILATOR, profilers and waveform generation disabled"
+	@echo "      profile.log: Core/cache counters and PC histogram; no instruction-text log or waveforms"
+	@echo "      trace.log: Profiling plus detailed vanilla.log instruction text; no waveforms"
+	@echo "      Operation CSV traces in profile/trace require runtime trace enablement"
+	@echo "      Use separate application/run directories: CSVs, vanilla.log and DRAM outputs use the simulator cwd"
 	@echo "      debug.log debug.fst: Run program with waveform generate enabled"
 	@echo "      clean: Remove all subdirectory-specific outputs"

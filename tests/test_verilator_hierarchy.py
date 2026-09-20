@@ -77,14 +77,19 @@ include {PLATFORM}/link.mk
                 (root / "uname").write_text(f"#!/bin/sh\necho {host}\n")
                 (root / "uname").chmod(0o755)
                 env = dict(os.environ, PATH=str(root) + os.pathsep + os.environ["PATH"])
-                for variant in ("exec", "profile", "debug"):
+                for variant in ("exec", "profile", "trace", "debug"):
                     target = str(root / "machine" / variant / "Vprobe.mk")
                     result = subprocess.run([make, "-n", target], cwd=root, env=env,
                                             text=True, capture_output=True)
                     self.assertEqual(result.returncode, 0, result.stderr)
                     command = result.stdout
                     self.assertIn("--mode " + ("flat" if variant == "debug" else "processor"), command)
-                    self.assertEqual("--profile-ports" in command, variant == "profile")
+                    self.assertEqual("--profile-ports" in command, variant in ("profile", "trace"))
+                    self.assertEqual('+define+"VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE"' in command,
+                                     variant in ("exec", "profile"))
+                    self.assertEqual('+define+"BSG_ENABLE_VANILLA_CORE_TRACE"' in command,
+                                     variant in ("trace", "debug"))
+                    self.assertEqual('--trace-fst' in command, variant == "debug")
                     self.assertEqual("+define+\"BSG_MACHINE_DISABLE_REMOTE_OP_PROFILING\"" in command,
                                      variant == "exec")
                     if variant == "exec":
@@ -103,6 +108,88 @@ include {PLATFORM}/link.mk
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertIn("--mode flat", result.stdout)
                 self.assertNotIn("+define+\"BSG_MACHINE_DISABLE_VCORE_PROFILING\"", result.stdout)
+                for setting in ("VERILATOR_HIERARCHY=flat", "VERILATOR_PROFILE_HIERARCHY=flat"):
+                    result = subprocess.run([make, "-n", setting,
+                                             str(root / "machine/trace/Vprobe.mk")],
+                                            cwd=root, env=env, text=True, capture_output=True)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("--mode flat", result.stdout)
+                    self.assertIn("--threads 1", result.stdout)
+                    self.assertNotIn('+define+"VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE"', result.stdout)
+
+            # Existing task/application profile defines must not silently turn
+            # the explicitly selected trace binary into another no-text model.
+            for define in ("VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE",
+                           "VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE=1"):
+                result = subprocess.run([make, "-n", "VDEFINES=" + define + " KEEP_ME=7",
+                                         str(root / "machine/trace/Vprobe.mk")],
+                                        cwd=root, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn('+define+"VERILATOR_WORKAROUND_DISABLE_VCORE_TRACE', result.stdout)
+                self.assertIn('+define+"KEEP_ME=7"', result.stdout)
+
+    def test_debug_support_dependencies_are_isolated(self):
+        make = shutil.which("gmake") or shutil.which("make")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in ("hardware.mk", "libraries.mk"):
+                (root / name).touch()
+            include = root / "include"
+            (include / "fstcpp").mkdir(parents=True)
+            (include / "fstcpp/fstcpp_writer.cpp").touch()
+            (include / "verilated_fst_c.cpp").touch()
+            (include / "verilated.cpp").touch()
+            (root / "Makefile").write_text(f"""
+BSG_PLATFORM_PATH := {root}
+LIBRARIES_PATH := {root}
+HARDWARE_PATH := {root}
+BSG_MACHINExPLATFORM_PATH := {root}/machine
+BSG_DESIGN_TOP := probe
+VERILATOR_ROOT := {root}
+VERILATOR_LZ4_PREFIX := /test/lz4
+VERILATOR_FST_CPPFLAGS := -I/test/lz4/include
+VERILATOR_FST_LDLIBS := -L/test/lz4/lib -llz4
+include {PLATFORM}/link.mk
+""")
+            for variant, source in (("exec", "verilated"), ("debug", "verilated_fst_c")):
+                result = subprocess.run([make, "-n", str(root / "machine" / variant / (source+".o"))],
+                                        cwd=root, text=True, capture_output=True)
+                self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+                self.assertEqual("-I/test/lz4/include" in result.stdout, variant == "debug")
+                # The debug support stamp must also track link dependencies.
+                self.assertEqual("-llz4" in result.stdout, variant == "debug")
+
+    def test_named_build_and_run_targets(self):
+        make = shutil.which("gmake") or shutil.which("make")
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for name in ("hardware.mk", "libraries.mk", "main.so", "main.riscv"):
+                (root / name).touch()
+            (root / "Makefile").write_text(f"""
+BSG_PLATFORM_PATH := {root}
+LIBRARIES_PATH := {root}
+HARDWARE_PATH := {root}
+BSG_MACHINE_PATH := {root}/machine
+BSG_PLATFORM := platform
+BSG_MACHINExPLATFORM_PATH := $(BSG_MACHINE_PATH)/$(BSG_PLATFORM)
+BSG_DESIGN_TOP := probe
+BSG_MANYCORE_KERNELS := main.riscv
+VERILATOR := echo
+include {PLATFORM}/link.mk
+include {PLATFORM}/execution.mk
+""")
+            for variant in ("exec", "profile", "trace", "debug"):
+                binary = root / "machine/platform" / variant / "simsc"
+                binary.parent.mkdir(parents=True)
+                binary.touch()
+                for target in ("sim-" + variant, variant + ".log"):
+                    result = subprocess.run([make, "-n", "-o", str(binary), target],
+                                            cwd=root, text=True, capture_output=True)
+                    self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
+                    self.assertEqual(" | tee " in result.stdout, target.endswith(".log"))
+                    if target.endswith(".log"):
+                        self.assertIn(str(binary), result.stdout)
+            self.assertFalse(list(root.glob("*.log")), "dry run launched a simulator")
 
     def test_dpi_unit_excludes_stale_children(self):
         with tempfile.TemporaryDirectory() as tmp:
