@@ -16,6 +16,12 @@ Each model has its own generated code, configuration stamp and `simsc` binary
 under `$BSG_MACHINE_PATH/bigblade-verilator`. Selecting trace does not replace
 the profile binary. Existing full-path build targets remain valid.
 
+The C++14 host wrapper uses `-faligned-new` with GCC and Clang to allocate and
+delete cache-line-aligned Verilator models correctly. Without it, an allocation
+can cause a startup crash on an aligned vector access. Wrapper objects depend
+on `link.mk`, so updating these build rules recompiles cached wrappers and
+relinks the selected simulators; run the usual build target after upgrading.
+
 **Migration:** older profile builds could emit instruction text. Rebuild profile
 with these rules for the no-text policy; use `sim-trace` / `trace.log` when that
 text is required. The trace target filters the legacy
