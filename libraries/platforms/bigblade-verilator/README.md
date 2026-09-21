@@ -150,13 +150,14 @@ normal provenance checks; the stamp is not a complete content-addressed cache.
 
 ## Version guard and structural validation
 
-Verilator 5.050 at `848d926ebd4addacacd294dc84e35d9d4ae8078c` can generate a
+Verilator 5.050 at `848d926ebd4addacacd294dc84e35d9d4ae8078c` and 5.052 at
+`ea338be98e1e838d3518809ce8899f85a009963c` can generate a
 parameterized child library but leave the parent flat. A correctness test alone
 does not detect this. `hierarchy.py` requires both parent DPI imports and actual
 parent C++ calls to the processor wrapper, and records `hierarchy.json`.
 
-For **5.050 only**, the helper supplies the comment-only `empty-params.v` through
-the internal `--hierarchical-params-file` option. In that release,
+For **5.050 and 5.052 only**, the helper supplies the comment-only `empty-params.v` through
+the internal `--hierarchical-params-file` option. In these releases,
 `ParameterizedHierBlocks` in `src/V3Param.cpp` gates wrapper substitution on a
 nonempty `hierParamFile`, while `src/V3HierBlock.cpp` supplies the file only for
 type parameters. This workaround makes numeric-parameter reuse effective without

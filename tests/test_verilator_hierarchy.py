@@ -70,6 +70,15 @@ class Hierarchy(unittest.TestCase):
                 self.assertFalse(makefile.exists())
                 self.assertIn("--hierarchical-params-file", run.call_args.args[0])
 
+    def test_numeric_parameter_workaround_is_release_scoped(self):
+        for version, needed in (("5.050", True), ("5.052", True), ("5.053", False)):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as tmp:
+                with patch.object(H.subprocess, "check_output", return_value="Verilator " + version), \
+                     patch.object(H.subprocess, "run") as run, \
+                     patch.object(H, "check_reuse", return_value=[]):
+                    H.generate(Path(tmp), "top", "processor", ["verilator", "--cc"])
+                    self.assertEqual("--hierarchical-params-file" in run.call_args.args[0], needed)
+
     def test_make_branches(self):
         make = shutil.which("gmake") or shutil.which("make")
         with tempfile.TemporaryDirectory() as tmp:
