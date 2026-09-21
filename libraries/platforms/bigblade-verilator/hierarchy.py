@@ -23,7 +23,7 @@ def stamp(path, mode, threads, identity):
 
 
 def check_reuse(directory, top, boundary="bsg_manycore_proc_vanilla"):
-    # A child archive alone is insufficient: 5.050 can emit an unused library
+    # A child archive alone is insufficient: 5.050/5.052 can emit an unused library
     # while leaving the parent flattened. Require parent imports AND call sites.
     dpi = directory / ("V" + top + "__Dpi.h")
     pattern = r"\b" + re.escape(boundary) + r"_[a-zA-Z0-9_]+_protectlib_combo_update\b"
@@ -81,10 +81,10 @@ def generate(directory, top, mode, command, profile_ports=False):
                 raise ValueError("optimized profiling requires bsg_manycore's simulation-only profiler ports; "
                                  "update bsg_manycore or use VERILATOR_PROFILE_HIERARCHY=flat")
             options += ["+define+BSG_VERILATOR_PROFILE_PORTS"]
-        if tuple(map(int, match.groups())) == (5, 50):
+        if tuple(map(int, match.groups())) in ((5, 50), (5, 52)):
             # V3Param gates numeric-parameter wrapper substitution on a nonempty
             # hierParamFile; V3HierBlock only supplies one for TYPE parameters.
-            # This internal-option workaround is deliberately version-scoped.
+            # Verified in both releases; deliberately exclude unknown versions.
             options += ["--hierarchical-params-file", str(config / "empty-params.v")]
     makefile = directory / ("V" + top + ".mk")
     # The hierarchical planner runs an inner make. An existing flat parent .mk

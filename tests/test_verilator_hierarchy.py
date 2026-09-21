@@ -16,6 +16,18 @@ SPEC.loader.exec_module(H)
 
 
 class Hierarchy(unittest.TestCase):
+    def setUp(self):
+        # These tests check platform defaults as well as explicit overrides.
+        # A user's simulation policy must not change the expected defaults.
+        environment = patch.dict(os.environ)
+        environment.start()
+        self.addCleanup(environment.stop)
+        for name in ('VERILATOR_THREADS', 'VERILATOR_HIERARCHY',
+                     'VERILATOR_PROFILE_HIERARCHY', 'VERILATOR_OPT_FAST',
+                     'VERILATOR_OPT_SLOW', 'VERILATOR_OPT_GLOBAL', 'VDEFINES',
+                     'MAKEFLAGS', 'MFLAGS'):
+            os.environ.pop(name, None)
+
     def test_stamp_and_validation(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "stamp"
@@ -57,6 +69,15 @@ class Hierarchy(unittest.TestCase):
                     H.generate(root, "top", "processor", ["verilator", "--cc"])
                 self.assertFalse(makefile.exists())
                 self.assertIn("--hierarchical-params-file", run.call_args.args[0])
+
+    def test_numeric_parameter_workaround_is_release_scoped(self):
+        for version, needed in (("5.050", True), ("5.052", True), ("5.053", False)):
+            with self.subTest(version=version), tempfile.TemporaryDirectory() as tmp:
+                with patch.object(H.subprocess, "check_output", return_value="Verilator " + version), \
+                     patch.object(H.subprocess, "run") as run, \
+                     patch.object(H, "check_reuse", return_value=[]):
+                    H.generate(Path(tmp), "top", "processor", ["verilator", "--cc"])
+                    self.assertEqual("--hierarchical-params-file" in run.call_args.args[0], needed)
 
     def test_make_branches(self):
         make = shutil.which("gmake") or shutil.which("make")

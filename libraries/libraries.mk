@@ -172,7 +172,7 @@ $(PLATFORM_OBJECTS) $(PLATFORM_REGRESSION_OBJECTS): CXXFLAGS += $(INCLUDES)
 
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: LD = $(CXX)
 $(BSG_PLATFORM_PATH)/libbsg_manycore_runtime.so.1.0: $(LIB_OBJECTS)
-	$(LD) $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(basename $(notdir $@))) -o $@ $^ $(LDFLAGS)
+	$(LD) $(SHARED_LIBRARY_FLAGS) $(call SHARED_LIBRARY_ID,$(basename $(notdir $@))) -o $@ $(filter-out %.mk,$^) $(LDFLAGS)
 
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0: LDFLAGS  :=
 $(BSG_PLATFORM_PATH)/libbsgmc_cuda_legacy_pod_repl.so.1.0: INCLUDES :=
