@@ -66,7 +66,7 @@ int kernel_vec_add (int argc, char **argv) {
 
         bsg_pr_test_info("Running the CUDA Vector Addition Kernel on one 2x2 tile groups.\n\n");
 
-        srand(time); 
+        srand((unsigned int)time(NULL));
 
         /*****************************************************************************************************************
         * Define path to binary.
