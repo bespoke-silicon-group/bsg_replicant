@@ -253,11 +253,15 @@ $(SIMOS): INCLUDES += -I$(BASEJUMP_STL_DIR)/bsg_test
 $(SIMOS): INCLUDES += -I$(VERILATOR_ROOT)/include
 $(SIMOS): INCLUDES += -I$(VERILATOR_ROOT)/include/vltstd
 $(SIMOS): INCLUDES += -I$(LIBRARIES_PATH)/platforms/common/dpi/library
-$(SIMOS): CXXFLAGS = -std=c++14 -fPIC $(INCLUDES) $(DEFINES)
+# Generated models require cache-line alignment. Enable aligned new/delete in
+# this C++14 translation unit too: it allocates and destroys the top model.
+$(SIMOS): CXXFLAGS = -std=c++14 -faligned-new -fPIC $(INCLUDES) $(DEFINES)
 # TODO: Don't like pattern matching. Better way?
 $(SIMOS): %/bsg_manycore_simulator.o : %/V$(BSG_DESIGN_TOP)__ALL.a
-$(SIMOS): $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp 
-	$(CXX) -c $(CXXFLAGS) -I$(dir $@) $^ -o $@ 
+# Recompile cached wrappers when this build policy changes, even when the
+# generated model archive is unchanged. Only the source is a compiler input.
+$(SIMOS): $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp $(VERILATOR_LINK_PATH)link.mk
+	$(CXX) -c $(CXXFLAGS) -I$(dir $@) $(BSG_PLATFORM_PATH)/bsg_manycore_simulator.cpp -o $@
 
 
 # simsc binary build rules
