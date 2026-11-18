@@ -89,7 +89,7 @@ RISCV_LLVM_PATH  := $(RISCV_GNU_PATH)
 # RISC-V Tool Configuration
 ################################################################################
 
-RISCV_LINK_GEN := $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
+RISCV_LINK_GEN ?= $(BSG_MANYCORE_DIR)/software/py/bsg_manycore_link_gen.py
 
 # These flags are not supported by clang
 RISCV_GNU_FLAGS = -frerun-cse-after-loop -fweb -frename-registers -mtune=bsg_vanilla_2020
