@@ -58,6 +58,7 @@ module replicant_tb_top
       $display("[INFO][TESTBENCH] bsg_machine_llcache_channel_width_gp  = %d", bsg_machine_llcache_channel_width_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_dram_channel_ratio_gp = %d", bsg_machine_llcache_dram_channel_ratio_gp);
       $display("[INFO][TESTBENCH] bsg_machine_llcache_word_tracking_gp  = %d", bsg_machine_llcache_word_tracking_gp);
+      $display("[INFO][TESTBENCH] bsg_machine_llcache_amo_support_gp    = %d", bsg_machine_llcache_amo_support_gp);
 
       $display("[INFO][TESTBENCH] bsg_machine_dram_bank_words_gp        = %d", bsg_machine_dram_bank_words_gp);
       $display("[INFO][TESTBENCH] bsg_machine_dram_channels_gp          = %d", bsg_machine_dram_channels_gp);
@@ -239,6 +240,7 @@ module replicant_tb_top
        ,.vcache_block_size_in_words_p(bsg_machine_llcache_line_words_gp)
        ,.vcache_dma_data_width_p(bsg_machine_llcache_channel_width_gp)
        ,.vcache_word_tracking_p(bsg_machine_llcache_word_tracking_gp)
+       ,.vcache_amo_support_p(bsg_machine_llcache_amo_support_gp)
        ,.ipoly_hashing_p(bsg_machine_llcache_ipoly_hashing_gp)
 
        ,.wh_flit_width_p(bsg_machine_wh_flit_width_lp)

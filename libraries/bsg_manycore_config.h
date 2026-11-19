@@ -106,6 +106,7 @@ extern "C" {
                 uint32_t vcache_stripe_words;
                 uint32_t vcache_ipoly_hashing;
                 uint32_t vcache_word_tracking;
+                uint32_t vcache_amo_support;
                 uint32_t enable_dma;
                 hb_mc_dimension_t enable_dram_pods;
                 uint32_t io_remote_load_cap;
@@ -152,6 +153,7 @@ extern "C" {
                 HB_MC_CONFIG_IO_EP_MAX_OUT_CREDITS = 32,
                 HB_MC_CONFIG_CHIP_ID = 33,
                 HB_MC_CONFIG_MEMSYS = 34,
+                HB_MC_CONFIG_VCACHE_AMO_SUPPORT = 35,
                 HB_MC_CONFIG_MAX=HB_MC_CONFIG_MEMSYS + HB_MC_MEMSYS_ROM_IDX_MAX,
         } hb_mc_config_id_t;
 
